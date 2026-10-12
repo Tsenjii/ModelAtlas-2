@@ -51,6 +51,7 @@ import dev.modelatlas.app.ui.OfferingRef
 import dev.modelatlas.app.ui.PriceQuotaHead
 import dev.modelatlas.app.ui.SendStreamFlushController
 import dev.modelatlas.app.ui.selectedVisionCapabilities
+import dev.modelatlas.app.data.VisionImagePayload
 import dev.modelatlas.core.domain.CheckinRecord
 import dev.modelatlas.core.domain.HealthState
 import dev.modelatlas.core.domain.PriceState
@@ -771,6 +772,10 @@ class AtlasViewModel @JvmOverloads constructor(
         ) else emptySet()
         if (image != null && visionCapabilities.isEmpty()) {
             _state.update { it.copy(error = string(R.string.playground_vision_unavailable)) }
+            return
+        }
+        if (image != null && !VisionImagePayload.isValidForSend(image)) {
+            _state.update { it.copy(error = string(R.string.playground_image_error)) }
             return
         }
         val requestScopeGeneration = sendScopeGeneration

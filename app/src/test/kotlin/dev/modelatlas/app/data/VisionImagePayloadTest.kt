@@ -1,10 +1,12 @@
 package dev.modelatlas.app.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Base64
+import dev.modelatlas.core.multimodal.ImageUrlPart
 
 class VisionImagePayloadTest {
     private fun png() = byteArrayOf(
@@ -52,5 +54,27 @@ class VisionImagePayloadTest {
     @Test fun filenameCannotSmuggleNewlinesOrPaths() {
         val result = VisionImagePayload.prepare(png(), "folder/name\r\nsecret.png")
         assertEquals("namesecret.png", result.filename)
+    }
+
+    @Test fun preparedLocalImagePassesTheViewModelGuard() {
+        assertTrue(VisionImagePayload.isValidForSend(VisionImagePayload.prepare(png(), "photo.png")))
+    }
+
+    @Test fun directCallerCannotForwardRemoteUrlOrMislabelledImage() {
+        assertFalse(VisionImagePayload.isValidForSend(ImageUrlPart("https://example.invalid/private.png")))
+        val prepared = VisionImagePayload.prepare(png(), "image.png")
+        assertFalse(VisionImagePayload.isValidForSend(prepared.copy(
+            url = prepared.url.replace("data:image/png;", "data:image/jpeg;"),
+        )))
+        assertFalse(VisionImagePayload.isValidForSend(ImageUrlPart("data:image/png;base64,@@@@")))
+    }
+
+    @Test fun directCallerCannotExceedFourMiBBoundary() {
+        val bytes = ByteArray(VisionImagePayload.MAX_IMAGE_BYTES + 1)
+        bytes[0] = 0xFF.toByte()
+        bytes[1] = 0xD8.toByte()
+        bytes[2] = 0xFF.toByte()
+        val forged = ImageUrlPart("data:image/jpeg;base64," + Base64.getEncoder().encodeToString(bytes))
+        assertFalse(VisionImagePayload.isValidForSend(forged))
     }
 }

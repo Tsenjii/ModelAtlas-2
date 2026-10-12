@@ -22,6 +22,31 @@ internal object VisionImagePayload {
         )
     }
 
+    /**
+     * Defense at the ViewModel boundary: Compose's photo picker is NOT the only
+     * possible caller. Never forward an arbitrary external URL, forged MIME,
+     * malformed base64 or >4 MiB payload as a local attachment.
+     * Decode only after the encoded-length bound to prevent oversized allocations.
+     */
+    fun isValidForSend(image: ImageUrlPart): Boolean {
+        val url = image.url
+        if (!url.startsWith("data:image/")) return false
+        val separator = url.indexOf(";base64,")
+        if (separator < 0) return false
+        val mime = url.substring(5, separator)
+        if (mime !in setOf("image/png", "image/jpeg", "image/webp")) return false
+        val start = separator + ";base64,".length
+        val encodedSize = url.length - start
+        val maxEncodedSize = ((MAX_IMAGE_BYTES + 2) / 3) * 4
+        if (encodedSize <= 0 || encodedSize > maxEncodedSize) return false
+        return try {
+            val bytes = Base64.getDecoder().decode(url.substring(start))
+            bytes.isNotEmpty() && bytes.size <= MAX_IMAGE_BYTES && detectedMime(bytes) == mime
+        } catch (_: IllegalArgumentException) {
+            false
+        }
+    }
+
     /** Trust decoded signatures, never untrusted ContentResolver MIME labels or suffixes. */
     internal fun detectedMime(bytes: ByteArray): String? = when {
         bytes.size >= 8 &&

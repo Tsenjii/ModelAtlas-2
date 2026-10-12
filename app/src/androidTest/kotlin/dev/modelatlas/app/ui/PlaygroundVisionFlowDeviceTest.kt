@@ -19,6 +19,7 @@ import dev.modelatlas.core.domain.Capability
 import dev.modelatlas.core.inference.CredentialAccess
 import dev.modelatlas.core.inference.InferenceEngine
 import dev.modelatlas.core.network.OpenAiTransport
+import dev.modelatlas.core.multimodal.ImageUrlPart
 import dev.modelatlas.core.onboarding.OnboardingFlowType
 import dev.modelatlas.core.onboarding.OnboardingSnapshot
 import dev.modelatlas.core.onboarding.ReviewApproval
@@ -226,4 +227,48 @@ class PlaygroundVisionFlowDeviceTest {
         assertEquals("no HTTP request is permitted on foreign-group capability", 0, requests.size)
     }
 
+
+    @Test fun directVmCallerCannotBypassLocalImageValidation() = runBlocking {
+        val snapshot = OnboardingSnapshot(
+            workflowId = UUID.randomUUID().toString(),
+            flowType = OnboardingFlowType.ADVANCED,
+            providerName = "非法附件攔截",
+            baseUrl = "https://vision.fixture.invalid/v1",
+            credentials = emptyList(), anonymousConfirmed = true,
+            manualModelIds = listOf("fixture-model"),
+            reviewApproval = ReviewApproval(true, 1_700_000_000_000L, "確認"),
+            createdAtMillis = 1_700_000_000_000L,
+            updatedAtMillis = 1_700_000_000_001L,
+        )
+        val receipt = RoomCommitter(database).commit(snapshot)
+        val record = withTimeout(15_000L) {
+            repository.connections.first { it.any { row -> row.providerId == receipt.providerId } }
+                .single { it.providerId == receipt.providerId }
+        }
+        withTimeout(15_000L) {
+            vm.state.first { it.connections.any { item -> item.id == record.id && item.enabled } }
+        }
+        withContext(Dispatchers.Main.immediate) {
+            vm.selectConnection(record.id)
+            val field = AtlasViewModel::class.java.getDeclaredField("_allModelRows").apply {
+                isAccessible = true
+            }
+            @Suppress("UNCHECKED_CAST")
+            val rows = field.get(vm) as MutableStateFlow<List<ModelRow>>
+            rows.value = listOf(ModelRow(
+                providerId = record.providerId,
+                providerModelId = record.modelId,
+                canonicalId = "fixture-canonical",
+                endpointId = record.endpointId,
+                operation = "CHAT_COMPLETIONS", group = null,
+                selectedKeyUsable = true, supportsVision = true,
+                capabilities = setOf(Capability.VISION),
+            ))
+            vm.sendWithImage("拒絕遠端圖片 URL", ImageUrlPart("https://example.invalid/untrusted.png"))
+        }
+        assertEquals(app.getString(R.string.playground_image_error), vm.state.value.error)
+        assertTrue(vm.state.value.messages.isEmpty())
+        assertFalse(vm.state.value.busy)
+        assertEquals(0, requests.size)
+    }
 }
