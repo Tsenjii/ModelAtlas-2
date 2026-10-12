@@ -2,6 +2,26 @@
 
 package dev.modelatlas.app.ui
 
+import android.content.Context
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberUpdatedState
+import dev.modelatlas.app.data.VisionImagePayload
+import dev.modelatlas.core.multimodal.ImageUrlPart
+import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -103,6 +123,9 @@ internal fun PlaygroundTab(
   state: AtlasUiState,
   onSelect: (String) -> Unit,
   onSend: (String) -> Unit,
+  onSendVision: (String, ImageUrlPart) -> Unit,
+  canAttachVision: Boolean,
+  selectedGroup: String?,
   onCancel: () -> Unit,
   onGotoProviders: () -> Unit,
   showConnections: Boolean,
@@ -179,7 +202,7 @@ internal fun PlaygroundTab(
               ChatBubble(
                 message = message,
                 streaming = state.busy && message.id == lastMessageId && message.role == "assistant",
-                canRetry = !state.busy && lastUser != null && message.id == lastMessageId,
+                canRetry = !state.busy && lastUser != null && lastUser.attachmentName == null && message.id == lastMessageId,
                 retryEnabled = canSend,
                 // 重試仍經正常 send；不改歷史、不自動重試，也不消耗使用者未送出的草稿。
                 onRetry = { lastUser?.let { onSend(it.text) } },
@@ -212,6 +235,9 @@ internal fun PlaygroundTab(
         acceptedMessage = lastUser,
         compact = compact,
         onSend = onSend,
+        onSendVision = onSendVision,
+        canAttachVision = canAttachVision,
+        scopeKey = selectedGroup,
         onCancel = onCancel,
         onSelect = ::openConnections,
         onSamples = { focusManager.clearFocus(); keyboard?.hide(); showSamples = true },
@@ -241,6 +267,9 @@ private fun PlaygroundComposer(
   acceptedMessage: ChatMessage?,
   compact: Boolean,
   onSend: (String) -> Unit,
+  onSendVision: (String, ImageUrlPart) -> Unit,
+  canAttachVision: Boolean,
+  scopeKey: String?,
   onCancel: () -> Unit,
   onSelect: () -> Unit,
   onSamples: () -> Unit,
