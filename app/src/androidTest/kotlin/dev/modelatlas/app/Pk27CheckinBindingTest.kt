@@ -7,7 +7,9 @@ import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.waitUntilAtLeastOneExists
+import androidx.compose.ui.test.waitUntilDoesNotExist
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -53,6 +55,7 @@ import java.util.UUID
  * ConnectionCardInteractionTest, ConnectionCardFlowTest and ProviderManagementViewModelTest
  * remain the TV-9/10 regression suites.
  */
+@OptIn(ExperimentalTestApi::class)
 @RunWith(AndroidJUnit4::class)
 class Pk27CheckinBindingTest {
     @get:Rule
@@ -302,7 +305,11 @@ class Pk27CheckinBindingTest {
         // performScrollToNode 把列表捲到該卡（觸發組合），再點擊。
         compose.onNodeWithTag("providers_tab_list").performScrollToNode(hasTestTag("connection_card_${f.b}"))
         compose.onNodeWithTag("connection_card_${f.b}").performClick()
-        compose.waitUntil(TIMEOUT_MS) { exists(text(R.string.action_open_checkin)) }
+        // The Compose testing harness must own semantics-tree polling.
+        // Calling fetchSemanticsNodes repeatedly inside waitUntil's arbitrary
+        // predicate can trigger layout observation on the instrumentation
+        // thread concurrently with AndroidComposeView's main-thread updates.
+        compose.waitUntilAtLeastOneExists(hasText(text(R.string.action_open_checkin)), TIMEOUT_MS)
         headerToTop()
     }
 
@@ -320,10 +327,11 @@ class Pk27CheckinBindingTest {
         val choice = hasClickAction() and hasText(label, substring = true)
         compose.onNode(choice).performScrollTo().performClick()
         compose.waitUntil(TIMEOUT_MS) { viewModel.state.value.selectedId == connectionId }
-        // A current choice becomes disabled only after the selected action scope is loaded.
-        compose.waitUntil(TIMEOUT_MS) {
-            runCatching { compose.onNode(choice).assertIsNotEnabled() }.isSuccess
-        }
+        // Wait for the state change, let the rule synchronize composition, then
+        // assert actual UI disabled semantics. Never poll a Compose node from
+        // a raw waitUntil predicate running on the instrumentation thread.
+        compose.waitForIdle()
+        compose.onNode(choice).assertIsNotEnabled()
         headerToTop()
     }
 
@@ -341,7 +349,7 @@ class Pk27CheckinBindingTest {
 
     private fun assertHeaderEventuallyNotPending() {
         headerToTop()
-        compose.waitUntil(TIMEOUT_MS) { !exists(text(R.string.provider_detail_checkin_pending)) }
+        compose.waitUntilDoesNotExist(hasText(text(R.string.provider_detail_checkin_pending)), TIMEOUT_MS)
         assertHeaderPending(false)
     }
 
@@ -391,10 +399,8 @@ class Pk27CheckinBindingTest {
 
     private fun assertScopeAbsent(selectedId: String?) {
         headerToTop()
-        compose.waitUntil(TIMEOUT_MS) {
-            !exists(text(R.string.action_complete_checkin)) &&
-                !exists(text(R.string.provider_detail_checkin_pending))
-        }
+        compose.waitUntilDoesNotExist(hasText(text(R.string.action_complete_checkin)), TIMEOUT_MS)
+        compose.waitUntilDoesNotExist(hasText(text(R.string.provider_detail_checkin_pending)), TIMEOUT_MS)
         assertEquals("boundary selection must not have been repaired during this assertion", selectedId, viewModel.state.value.selectedId)
         compose.onNodeWithText(text(R.string.action_open_checkin)).assertExists()
         compose.onNodeWithText(text(R.string.action_complete_checkin)).assertDoesNotExist()
@@ -410,9 +416,6 @@ class Pk27CheckinBindingTest {
     }
 
     private fun text(id: Int): String = compose.activity.getString(id)
-
-    private fun exists(text: String): Boolean =
-        compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
     private companion object {
         const val TIMEOUT_MS = 15_000L

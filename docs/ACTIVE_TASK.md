@@ -3,14 +3,14 @@
 更新：2026-10-13，公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
-- **MODE：PLAY-004 Vision 多輪對話 correctness 修復（本輪候選，待 CI）**；P8/P9/P10 尚未完成正式驗收。
-- **FEATURE FREEZE：OFF**。主線 `f32522c936ee1e6561e63a52873f2e275c216e2f` 為 PR #9 的 squash merge，[Actions 38273286105](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38273286105) **build SUCCESS + device-tests SUCCESS**。
-- **最近 verified main full-green：** `f32522c`，[main CI](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38273286105) build SUCCESS + device-tests SUCCESS（PR #8、#9 功能已合併）。
+- **MODE：CORRECTNESS / main 裝置測試紅燈修復（Pk27 Compose observer crash）**；P8/P9/P10 尚未完成正式驗收。
+- **FEATURE FREEZE：ON（red-head lock）**。最新主線 `ec0464e5868aaddf20667cbd1c86bf8993abfc3f` 已合併 PR #13，但 [main Actions 38324128166](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38324128166) **build SUCCESS、device-tests FAILURE**，屬 PK-27 Compose multithreaded SnapshotStateObserver crash，整套測試僅跑約 60 項就中止。只允許修回歸並重新驗證，不開新產品功能。
+- **最近 verified main full-green：** `f32522c`，[main CI](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38273286105) build SUCCESS + device-tests SUCCESS。PR #13 候選 `767fdbd` [CI 38323252180](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38323252180) build + device SUCCESS；其 squash 後主線遇到上述不同測試的 Compose 崩潰，**不可冒稱 main 已 full-green**。
 - 本 public repo 以新歷史提交；舊 private repo 的 full-green ledger 只作參考，不能當作 public CI 認證。
 - 已合併：原始 Master Spec / Intelligence Contract / AtlasTheme UI 維護規範 PR #1；Playground scope PR #2；選定 credential 安全驗證 PR #5；群組歷史隔離 PR #7。
 
 ## 下一片（唯一生產功能入口）
-- **PLAY-004：圖片 Vision 第一切片 [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8)、安全邊界 [PR #9](https://github.com/Tsenjii/ModelAtlas-2/pull/9) 均已合併**。本輪修正：歷史圖片在第二輪純文字訊息仍被送上 wire，必須從整批待送訊息重新判斷 Vision capability；若能力撤銷，HTTP 前拒絕，不拿舊權限冒充。Playground 檔案／音訊／工具／圖片生成結果 UI 仍 PARTIAL。
+- **PLAY-004：圖片 Vision [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8)、安全邊界 [PR #9](https://github.com/Tsenjii/ModelAtlas-2/pull/9)、多輪歷史 [PR #13](https://github.com/Tsenjii/ModelAtlas-2/pull/13) 已合併**。修正針對整批待送歷史檢查 Vision 並保留同 scope 能力，若撤銷則 HTTP 前拒絕；但新 main Android suite 的 PK-27 observer crash 尚待本輪修復。接著才處理 [#14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) 新對話，及檔案／音訊／工具／結果 UI，PLAY-004 整體仍 PARTIAL。
 - 必須先讀現有 `PlaygroundScreen.kt`、`AtlasViewModel.kt`、`InferenceEngine`、`MultimodalBlocks.kt`、`OpenAiMediaTransports.kt`，確認已存在 transport / state 與實際欠缺。
 - 依現有 `AtlasTheme.kt` UI 節奏做增量 Compose，更動不能破壞 text streaming、selected credential、provider scoped telemetry。
 - 先設計最小可驗收的單一 multimodal flow；支援輸入/回應真實 wiring、permission 與 size/security guards、取消與錯誤語意、UI+core tests。
