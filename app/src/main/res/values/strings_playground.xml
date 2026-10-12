@@ -26,4 +26,10 @@
   <string name="playground_copied">已複製</string>
   <string name="playground_retry_hint">重試上一則：沿用目前對話，重新送出上一則訊息</string>
   <string name="playground_connection_count">%1$d 條連線</string>
+  <string name="playground_attach_image">附加圖片（僅支援已確認具備 Vision 能力的模型）</string>
+  <string name="playground_attached_image">附加圖片</string>
+  <string name="playground_remove_image">移除圖片</string>
+  <string name="playground_image_loading">正在讀取圖片…</string>
+  <string name="playground_image_error">圖片無法讀取。僅支援 4 MB 內的 PNG、JPEG 或 WebP 圖片。</string>
+  <string name="playground_vision_unavailable">此連線尚無可確認的圖片輸入能力，或選定的 Group 不符合能力資料。</string>
 </resources>
