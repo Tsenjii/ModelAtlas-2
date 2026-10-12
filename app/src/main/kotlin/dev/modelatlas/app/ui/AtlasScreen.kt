@@ -663,6 +663,18 @@ private fun AtlasScreenContent(
           state = state,
           onSelect = viewModel::selectConnection,
           onSend = viewModel::send,
+          onSendVision = viewModel::sendWithImage,
+          canAttachVision = state.connections.firstOrNull { it.id == state.selectedId }?.let { connection ->
+            selectedVisionCapabilities(
+              rows = allModelRows,
+              providerId = connection.providerId,
+              providerModelId = connection.modelId,
+              endpointId = connection.endpointId,
+              operation = connection.operation,
+              selectedGroup = selectedGroup,
+            ).isNotEmpty()
+          } ?: false,
+          selectedGroup = selectedGroup,
           onCancel = viewModel::cancel,
           onGotoProviders = { tab = 1 },
           showConnections = showConnections,
