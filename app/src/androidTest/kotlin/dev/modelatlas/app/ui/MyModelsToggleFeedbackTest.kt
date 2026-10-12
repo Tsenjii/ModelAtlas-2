@@ -228,8 +228,13 @@ class MyModelsToggleFeedbackTest {
     @Test
     fun addPathEnrichmentFailureIsolatedNeverReadsAsToggleError() {
         val fixture = saveFixture("pk26-enrich-isolated")
-        val key = MyModelKey(fixture.providerId, MODEL_ID)
-        onMain { viewModel.toggleMyModel(fixture.providerId, MODEL_ID) } // add; enrichment fails inside runCatching
+        // saveFixture auto-adds MODEL_ID asynchronously. Toggling that same model
+        // could REMOVE it instead of testing the ADD path (15s timeout/flaky race).
+        // Use a distinct explicit model so this is always a genuine add/enrichment test.
+        val addModelId = MODEL_ID + "-manual-enrichment"
+        val key = MyModelKey(fixture.providerId, addModelId)
+        assertTrue("enrichment test must begin with a non-member model", prewire(member = false, key = key))
+        onMain { viewModel.toggleMyModel(fixture.providerId, addModelId) } // add; enrichment fails inside runCatching
         // Membership truth lands as soon as the store write commits — do NOT wait
         // on the in-flight drain here: enrichment (bounded, inside runCatching) can
         // legitimately outlast a busy emulator's 15s window (DNS/connect on the
