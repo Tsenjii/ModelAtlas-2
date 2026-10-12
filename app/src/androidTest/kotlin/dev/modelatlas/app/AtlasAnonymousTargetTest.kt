@@ -80,6 +80,7 @@ class AtlasAnonymousTargetTest {
     private val store = ViewModelStore()
     private val ownedRefs = mutableListOf<String>()
     private val targets = CopyOnWriteArrayList<InferenceTarget>()
+    private val promptBatches = CopyOnWriteArrayList<List<PromptMessage>>()
     private val requests = CopyOnWriteArrayList<Request>()
     private val resolutions = CopyOnWriteArrayList<Pair<String, String>>()
     private val resolutionsAtTarget = CopyOnWriteArrayList<Int>()
@@ -113,6 +114,7 @@ class AtlasAnonymousTargetTest {
         val observingTransport = object : InferenceTransport {
             override fun stream(target: InferenceTarget, messages: List<PromptMessage>): Flow<StreamEvent> {
                 targets += target
+                promptBatches += messages.toList()
                 resolutionsAtTarget += resolutions.size
                 return transport.stream(target, messages)
             }
@@ -276,6 +278,78 @@ class AtlasAnonymousTargetTest {
         onMain { viewModel.cancel() }
         val again = awaitUi { !it.busy }
         assertEquals(assistantText, again.messages.last { it.role == "assistant" }.text)
+    }
+
+
+    @Test
+    fun switchingOnlyGroupClearsChatHistoryAndDoesNotReplayOldPrompt() {
+        val bearerRef = storeSecret(BEARER_VALUE)
+        val record = commit("群組歷史隔離", listOf(SafeCredentialRef(bearerRef, "推理憑證")))
+        awaitConnections(record)
+        onMain {
+            viewModel.selectConnection(record.id)
+            viewModel.selectModelKey(record.accountId, record.credentialId, "scope-a")
+        }
+        runBlocking { withTimeout(TIMEOUT_MS) { viewModel.selectedGroup.first { it == "scope-a" } } }
+
+        sendAndAwait(record, Outcome.SUCCESS)
+        assertEquals("scope-a", targets.single().group)
+        assertEquals(listOf("測試提示"), promptBatches.single().map { it.content })
+        assertTrue(viewModel.state.value.messages.isNotEmpty())
+
+        // Same ConnectionRecord, same key, DIFFERENT group: this is a new chat scope.
+        onMain { viewModel.selectModelKey(record.accountId, record.credentialId, "scope-b") }
+        runBlocking { withTimeout(TIMEOUT_MS) { viewModel.selectedGroup.first { it == "scope-b" } } }
+        assertTrue("換 group 不得繼續顯示上一群組聊天", viewModel.state.value.messages.isEmpty())
+        val historyField = AtlasViewModel::class.java.getDeclaredField("historyByConnection").apply {
+            isAccessible = true
+        }
+        @Suppress("UNCHECKED_CAST")
+        val history = historyField.get(viewModel) as Map<String, List<PromptMessage>>
+        assertTrue("換 group 必須清空舊 group 的 prompt context", history[record.id].orEmpty().isEmpty())
+
+        onMain { viewModel.send("新的群組提示") }
+        awaitUi { !it.busy && it.messages.lastOrNull()?.text == "ok" }
+        assertEquals(2, targets.size)
+        assertEquals("scope-b", targets.last().group)
+        assertEquals(
+            "上一個 group 的 prompt / assistant 不可夾帶到新的請求",
+            listOf("新的群組提示"),
+            promptBatches.last().map { it.content },
+        )
+        assertNoSecretOutsideRequest()
+    }
+
+    @Test
+    fun switchingGroupWhileStreamingCancelsOldAnswerWithoutReappearing() {
+        val bearerRef = storeSecret(BEARER_VALUE)
+        val record = commit("群組切換取消", listOf(SafeCredentialRef(bearerRef, "推理憑證")))
+        awaitConnections(record)
+        val hangingTransport = object : InferenceTransport {
+            override fun stream(target: InferenceTarget, messages: List<PromptMessage>): Flow<StreamEvent> = flow {
+                emit(StreamEvent.Delta("scope-a-partial", false))
+                awaitCancellation()
+            }
+        }
+        inject("engine", InferenceEngine(hangingTransport, repository))
+        onMain {
+            viewModel.selectConnection(record.id)
+            viewModel.selectModelKey(record.accountId, record.credentialId, "scope-a")
+            viewModel.send("來自 scope-a")
+        }
+        awaitUi { it.messages.any { m -> m.role == "assistant" && m.text.contains("scope-a-partial") } }
+        onMain { viewModel.selectModelKey(record.accountId, record.credentialId, "scope-b") }
+        val settled = awaitUi { !it.busy && it.messages.isEmpty() }
+        assertTrue("已取消的上一群組回應不得復活", settled.messages.isEmpty())
+        assertEquals("scope-b", viewModel.selectedGroup.value)
+        val sample = runBlocking { withTimeout(TIMEOUT_MS) {
+            repository.samples.first { rows ->
+                rows.any { it.providerId == record.providerId && it.outcome == Outcome.CANCELLED && it.completedAt != null }
+            }.first { it.providerId == record.providerId }
+        } }
+        assertEquals(Outcome.CANCELLED, sample.outcome)
+        assertEquals("scope-a", sample.group)
+        assertNoSecretOutsideRequest()
     }
 
     private fun customConnection(): CustomFixture {
