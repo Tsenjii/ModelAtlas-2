@@ -259,10 +259,14 @@ class MyModelsToggleFeedbackTest {
     @Test
     fun rapidDoubleToggleIsIdempotentWithNoErrorAndNoStuckInFlight() {
         val fixture = saveFixture("pk26-double-toggle")
-        val key = MyModelKey(fixture.providerId, MODEL_ID)
+        // Auto-membership for MODEL_ID is asynchronous. A different model keeps
+        // both fast taps on the intended non-member ADD path (no timing race).
+        val addModelId = MODEL_ID + "-manual-double-toggle"
+        val key = MyModelKey(fixture.providerId, addModelId)
+        assertTrue("double-toggle test must start as non-member", prewire(member = false, key = key))
         onMain {
-            viewModel.toggleMyModel(fixture.providerId, MODEL_ID)
-            viewModel.toggleMyModel(fixture.providerId, MODEL_ID) // second tap must not be swallowed
+            viewModel.toggleMyModel(fixture.providerId, addModelId)
+            viewModel.toggleMyModel(fixture.providerId, addModelId) // second tap must not be swallowed
         }
         await { viewModel.myModelToggleInFlight.first { it.isEmpty() } }
         await { viewModel.myModelKeys.first { it.contains(key) } }
@@ -322,8 +326,12 @@ class MyModelsToggleFeedbackTest {
     @Test
     fun scopeCancelIsNeverRecordedAsToggleErrorAndDrainsInFlight() {
         val fixture = saveFixture("pk26-cancel")
-        val key = MyModelKey(fixture.providerId, MODEL_ID)
-        onMain { viewModel.toggleMyModel(fixture.providerId, MODEL_ID) } // add
+        // The fixture's MODEL_ID is automatically added by saveConnection.
+        // Use an independent ID to guarantee the first toggle is truly ADD.
+        val testModelId = MODEL_ID + "-manual-cancel"
+        val key = MyModelKey(fixture.providerId, testModelId)
+        assertTrue("cancel test must start as non-member", prewire(member = false, key = key))
+        onMain { viewModel.toggleMyModel(fixture.providerId, testModelId) } // add
         await { viewModel.myModelKeys.first { it.contains(key) } }
         await { viewModel.myModelToggleInFlight.first { it.isEmpty() } }
 
@@ -333,7 +341,7 @@ class MyModelsToggleFeedbackTest {
         // in-flight always drains — holds regardless of WHERE the coroutine was
         // suspended when the scope died.
         onMain {
-            viewModel.toggleMyModel(fixture.providerId, MODEL_ID) // remove launches
+            viewModel.toggleMyModel(fixture.providerId, testModelId) // remove launches
             viewModelStore.clear() // cancel viewModelScope immediately after
         }
         await { viewModel.myModelToggleInFlight.first { it.isEmpty() } } // finally drains on cancel
