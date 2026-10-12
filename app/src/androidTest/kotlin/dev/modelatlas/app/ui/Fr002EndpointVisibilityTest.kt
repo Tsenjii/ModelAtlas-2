@@ -218,7 +218,14 @@ class Fr002EndpointVisibilityTest {
         onMain { viewModel.refreshModelRows() }
         val pending = await {
             // PROPOSED PORT P2
-            viewModel.pendingMemberRows.first { rows -> rows.count { it.providerModelId == MODEL_ADDED } == 2 }
+            viewModel.pendingMemberRows.first { rows ->
+                val candidates = rows.filter { it.providerModelId == MODEL_ADDED }
+                // Wait for the head-enriched refresh, not the earlier two-row
+                // membership-only emission; keep the exact price assertions below.
+                candidates.size == 2 &&
+                    candidates.mapNotNull { it.inputPrice }.toSet() == setOf(1.5, 2.5) &&
+                    candidates.all { it.priceState == PriceState.PAID }
+            }
         }
         val byInput = pending.filter { it.providerModelId == MODEL_ADDED }.associateBy { it.inputPrice }
         assertTrue("both endpoint heads must price their own row", byInput.containsKey(1.5) && byInput.containsKey(2.5))

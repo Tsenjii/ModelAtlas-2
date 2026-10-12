@@ -50,6 +50,7 @@ import dev.modelatlas.app.ui.ModelRowMapper
 import dev.modelatlas.app.ui.OfferingRef
 import dev.modelatlas.app.ui.PriceQuotaHead
 import dev.modelatlas.app.ui.SendStreamFlushController
+import dev.modelatlas.app.ui.selectedVisionCapabilities
 import dev.modelatlas.core.domain.CheckinRecord
 import dev.modelatlas.core.domain.HealthState
 import dev.modelatlas.core.domain.PriceState
@@ -64,6 +65,8 @@ import dev.modelatlas.core.inference.Outcome
 import dev.modelatlas.core.inference.PerformanceSample
 import dev.modelatlas.core.inference.PromptMessage
 import dev.modelatlas.core.inference.StreamEvent
+import dev.modelatlas.core.multimodal.ImageUrlPart
+import dev.modelatlas.core.multimodal.TextPart
 import dev.modelatlas.core.inference.TelemetrySource
 import dev.modelatlas.core.models.CompareLiveRowResult
 import dev.modelatlas.core.models.CompareLiveRunner
@@ -122,12 +125,15 @@ data class ConnectionItem(
     val enabled: Boolean = true,
     /** P1：是否支援 New API 手動同步（有 ACCOUNT PAT 的 provider 才 true，UI 據此顯示同步按鈕）。 */
     val supportsSync: Boolean = false,
+    val endpointId: String = "",
+    val operation: String = "CHAT_COMPLETIONS",
 )
 
 data class ChatMessage(
     val id: String,
     val role: String,
     val text: String,
+    val attachmentName: String? = null,
 )
 
 data class SampleItem(
@@ -712,7 +718,10 @@ class AtlasViewModel @JvmOverloads constructor(
         applyContextFromSelection(recompute = true)
     }
 
-    fun send(prompt: String) {
+    fun send(prompt: String) = sendWithImage(prompt, null)
+
+    /** PLAY-004: one local image (bounded to 4 MiB) via exact selected vision capability. */
+    fun sendWithImage(prompt: String, image: ImageUrlPart?) {
         if (_state.value.busy) return
         if (_providerModelAction.value.busy || _compareRunning.value) {
             _state.update { it.copy(error = string(R.string.error_busy)) }
@@ -751,12 +760,28 @@ class AtlasViewModel @JvmOverloads constructor(
             return
         }
         val requestConnectionId = record.id
+        val selectedGroupAtSend = _selectedGroup.value
+        val visionCapabilities = if (image != null) selectedVisionCapabilities(
+            rows = _allModelRows.value,
+            providerId = record.providerId,
+            providerModelId = record.modelId,
+            endpointId = record.endpointId,
+            operation = record.protocol,
+            selectedGroup = selectedGroupAtSend,
+        ) else emptySet()
+        if (image != null && visionCapabilities.isEmpty()) {
+            _state.update { it.copy(error = string(R.string.playground_vision_unavailable)) }
+            return
+        }
         val requestScopeGeneration = sendScopeGeneration
         // Capture at send time: later UI scope changes must not mutate an in-flight request.
-        val selectedGroupAtSend = _selectedGroup.value
-        val requestMessages = (historyByConnection[requestConnectionId]?.takeLast(20).orEmpty() +
-            PromptMessage("user", text))
-        val userMessage = ChatMessage(id = UUID.randomUUID().toString(), role = "user", text = text)
+        val userPrompt = if (image == null) PromptMessage("user", text) else
+            PromptMessage("user", listOf(TextPart(text), image))
+        val requestMessages = historyByConnection[requestConnectionId]?.takeLast(20).orEmpty() + userPrompt
+        val userMessage = ChatMessage(
+            id = UUID.randomUUID().toString(), role = "user", text = text,
+            attachmentName = image?.filename,
+        )
         val assistantId = UUID.randomUUID().toString()
         _state.update {
             it.copy(
@@ -823,7 +848,7 @@ class AtlasViewModel @JvmOverloads constructor(
                     bearerCredentialId = safeCredentialId,
                     authFields = customFields,
                     selectedGroup = selectedGroupAtSend,
-                )
+                ).copy(offeredCapabilities = visionCapabilities)
                 app.engine.execute(
                     target,
                     requestMessages,
@@ -868,7 +893,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 } else if (success && sendJob === myJob && _state.value.selectedId == requestConnectionId && sendScopeGeneration == requestScopeGeneration) {
                     val finalText = _state.value.messages.firstOrNull { it.id == assistantId }?.text.orEmpty()
                     val bucket = historyByConnection.getOrPut(requestConnectionId) { mutableListOf() }
-                    bucket.add(PromptMessage("user", text))
+                    bucket.add(userPrompt)
                     bucket.add(PromptMessage("assistant", finalText))
                     while (bucket.size > 20) bucket.removeAt(0)
                 }
@@ -1611,6 +1636,8 @@ class AtlasViewModel @JvmOverloads constructor(
                 // 匿名列用 anonymous 旗標：恆啟用，不查 credentialId / blocked 集。
                 enabled = if (r.anonymous) true else r.credentialEnabled && r.credentialId !in blockedCredentialIds,
                 supportsSync = r.providerId in capable,
+                endpointId = r.endpointId,
+                operation = r.protocol,
             )
         }
         val pendingForActive = pendingById.values.filter { p -> p.id !in activeIds }

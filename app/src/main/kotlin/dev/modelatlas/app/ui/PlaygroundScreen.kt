@@ -2,6 +2,26 @@
 
 package dev.modelatlas.app.ui
 
+import android.content.Context
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberUpdatedState
+import dev.modelatlas.app.data.VisionImagePayload
+import dev.modelatlas.core.multimodal.ImageUrlPart
+import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -103,6 +123,9 @@ internal fun PlaygroundTab(
   state: AtlasUiState,
   onSelect: (String) -> Unit,
   onSend: (String) -> Unit,
+  onSendVision: (String, ImageUrlPart) -> Unit,
+  canAttachVision: Boolean,
+  selectedGroup: String?,
   onCancel: () -> Unit,
   onGotoProviders: () -> Unit,
   showConnections: Boolean,
@@ -179,7 +202,7 @@ internal fun PlaygroundTab(
               ChatBubble(
                 message = message,
                 streaming = state.busy && message.id == lastMessageId && message.role == "assistant",
-                canRetry = !state.busy && lastUser != null && message.id == lastMessageId,
+                canRetry = !state.busy && lastUser != null && lastUser.attachmentName == null && message.id == lastMessageId,
                 retryEnabled = canSend,
                 // 重試仍經正常 send；不改歷史、不自動重試，也不消耗使用者未送出的草稿。
                 onRetry = { lastUser?.let { onSend(it.text) } },
@@ -212,6 +235,9 @@ internal fun PlaygroundTab(
         acceptedMessage = lastUser,
         compact = compact,
         onSend = onSend,
+        onSendVision = onSendVision,
+        canAttachVision = canAttachVision,
+        scopeKey = selectedGroup,
         onCancel = onCancel,
         onSelect = ::openConnections,
         onSamples = { focusManager.clearFocus(); keyboard?.hide(); showSamples = true },
@@ -233,6 +259,64 @@ internal fun PlaygroundTab(
   }
 }
 
+/** Preview is ephemeral Compose state; only bounded and signature-checked data URIs reach the VM. */
+private class PreparedVisionAttachment(
+  val image: ImageUrlPart,
+  val thumbnail: ImageBitmap,
+) {
+  // Content includes local media; never let Compose/debug object inspection print data URIs.
+  override fun toString(): String = "PreparedVisionAttachment(redacted)"
+}
+
+private suspend fun prepareVisionAttachment(context: Context, uri: Uri): PreparedVisionAttachment =
+  withContext(Dispatchers.IO) {
+    require(uri.scheme == "content") { "Photo picker must provide content URI" }
+    val resolver = context.contentResolver
+    val filename = runCatching {
+      resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+        if (!cursor.moveToFirst()) null else {
+          val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+          if (index < 0) null else cursor.getString(index)
+        }
+      }
+    }.getOrNull()
+    val bytes = ByteArrayOutputStream().use { output ->
+      val stream = resolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("Photo picker returned no content")
+      stream.use { input ->
+        val buffer = ByteArray(8192)
+        var total = 0
+        var emptyReads = 0
+        while (true) {
+          val read = input.read(buffer)
+          if (read < 0) break
+          if (read == 0) {
+            emptyReads += 1
+            require(emptyReads <= 16) { "Photo content stream stalled" }
+            continue
+          }
+          emptyReads = 0
+          total += read
+          require(total <= VisionImagePayload.MAX_IMAGE_BYTES) { "Image exceeds 4 MiB" }
+          output.write(buffer, 0, read)
+        }
+      }
+      output.toByteArray()
+    }
+    val image = VisionImagePayload.prepare(bytes, filename)
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+    require(bounds.outWidth in 1..8192 && bounds.outHeight in 1..8192) {
+      "Image has invalid dimensions"
+    }
+    var sample = 1
+    while (bounds.outWidth / sample > 256 || bounds.outHeight / sample > 256) sample *= 2
+    val options = BitmapFactory.Options().apply { inSampleSize = sample }
+    val preview = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+      ?: throw IllegalArgumentException("Image decoder rejected content")
+    PreparedVisionAttachment(image, preview.asImageBitmap())
+  }
+
 @Composable
 private fun PlaygroundComposer(
   selectedConnection: ConnectionItem?,
@@ -241,25 +325,66 @@ private fun PlaygroundComposer(
   acceptedMessage: ChatMessage?,
   compact: Boolean,
   onSend: (String) -> Unit,
+  onSendVision: (String, ImageUrlPart) -> Unit,
+  canAttachVision: Boolean,
+  scopeKey: String?,
   onCancel: () -> Unit,
   onSelect: () -> Unit,
   onSamples: () -> Unit,
 ) {
-  var prompt by remember { mutableStateOf("") }
-  var submittedPrompt by remember(selectedConnection?.id) { mutableStateOf<String?>(null) }
-  var submittedAfterId by remember(selectedConnection?.id) { mutableStateOf<String?>(null) }
+  // A draft belongs to exactly the selected connection and group.
+  // Never replay unsent content after switching credential/endpoint/group.
+  var prompt by remember(selectedConnection?.id, scopeKey) { mutableStateOf("") }
+  var submittedPrompt by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
+  var submittedAfterId by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
+  var submittedAttachmentName by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
+  var pendingImage by remember(selectedConnection?.id, scopeKey) { mutableStateOf<PreparedVisionAttachment?>(null) }
+  var imagePreparing by remember(selectedConnection?.id, scopeKey) { mutableStateOf(false) }
+  var imageError by remember(selectedConnection?.id, scopeKey) { mutableStateOf(false) }
+  val context = LocalContext.current
+  val launchScope = rememberCoroutineScope()
+  val currentConnectionId by rememberUpdatedState(selectedConnection?.id)
+  val currentScopeKey by rememberUpdatedState(scopeKey)
+  var pickerConnectionId by remember { mutableStateOf<String?>(null) }
+  var pickerGroup by remember { mutableStateOf<String?>(null) }
+  val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    if (uri != null && pickerConnectionId == currentConnectionId && pickerGroup == currentScopeKey) {
+      val expectedId = currentConnectionId
+      val expectedGroup = currentScopeKey
+      launchScope.launch {
+        imagePreparing = true
+        imageError = false
+        try {
+          val prepared = prepareVisionAttachment(context, uri)
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey) {
+            pendingImage = prepared
+          }
+        } catch (cancel: CancellationException) {
+          throw cancel
+        } catch (_: Exception) {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey) imageError = true
+        } finally {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey) imagePreparing = false
+        }
+      }
+    }
+  }
   val keyboard = LocalSoftwareKeyboardController.current
   val focusManager = LocalFocusManager.current
   // send 可能在前置檢查即拒絕；看到 VM 接受的新 user message 才清空相符草稿。
   LaunchedEffect(acceptedMessage?.id) {
     val submitted = submittedPrompt
-    if (submitted != null && acceptedMessage?.id != submittedAfterId && acceptedMessage?.text == submitted.trim()) {
+    if (submitted != null && acceptedMessage?.id != submittedAfterId &&
+        acceptedMessage?.text == submitted.trim() &&
+        acceptedMessage?.attachmentName == submittedAttachmentName) {
       if (prompt == submitted) {
         prompt = ""
+        pendingImage = null
         focusManager.clearFocus()
         keyboard?.hide()
       }
       submittedPrompt = null
+      submittedAttachmentName = null
     }
   }
   val switchLabel = stringResource(R.string.playground_switch_model)
@@ -273,6 +398,18 @@ private fun PlaygroundComposer(
   ) {
     Column(Modifier.padding(AtlasSpace.sm)) {
       Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm)) {
+        val attachLabel = stringResource(R.string.playground_attach_image)
+        IconButton(
+          onClick = {
+            pickerConnectionId = selectedConnection?.id
+            pickerGroup = scopeKey
+            imagePicker.launch("image/*")
+          },
+          enabled = canSend && canAttachVision && !busy && !imagePreparing && pendingImage == null,
+          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = attachLabel },
+        ) {
+          Icon(Icons.Filled.Add, contentDescription = null)
+        }
         TextField(
           value = prompt,
           onValueChange = { prompt = it },
@@ -298,13 +435,18 @@ private fun PlaygroundComposer(
         FilledIconButton(
           onClick = {
             if (busy) onCancel()
-            else if (canSend && prompt.isNotBlank()) {
+            else if (canSend && !imagePreparing && prompt.isNotBlank() &&
+                (pendingImage == null || canAttachVision)) {
               submittedPrompt = prompt
+              submittedAttachmentName = pendingImage?.image?.filename
               submittedAfterId = acceptedMessage?.id
-              onSend(prompt)
+              val selectedImage = pendingImage
+              if (selectedImage != null) onSendVision(prompt, selectedImage.image)
+              else onSend(prompt)
             }
           },
-          enabled = busy || (canSend && prompt.isNotBlank()),
+          enabled = busy || (canSend && !imagePreparing && prompt.isNotBlank() &&
+            (pendingImage == null || canAttachVision)),
           modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = actionLabel },
           shape = AtlasRadius.pill,
         ) {
@@ -316,6 +458,41 @@ private fun PlaygroundComposer(
             Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
           }
         }
+      }
+      pendingImage?.let { attachment ->
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(vertical = AtlasSpace.xs),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm),
+        ) {
+          Image(
+            bitmap = attachment.thumbnail,
+            contentDescription = stringResource(R.string.playground_attached_image),
+            modifier = Modifier.size(56.dp),
+            contentScale = ContentScale.Crop,
+          )
+          Text(
+            attachment.image.filename ?: stringResource(R.string.playground_attached_image),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+          IconButton(
+            onClick = { pendingImage = null; imageError = false },
+            modifier = Modifier.size(AtlasSpace.touch),
+          ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.playground_remove_image)) }
+        }
+      }
+      if (imagePreparing) {
+        Text(stringResource(R.string.playground_image_loading), style = MaterialTheme.typography.labelMedium)
+      }
+      if (imageError) {
+        Text(
+          stringResource(R.string.playground_image_error),
+          color = MaterialTheme.colorScheme.error,
+          style = MaterialTheme.typography.bodySmall,
+        )
       }
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -427,6 +604,12 @@ private fun ChatBubble(
         contentColor = if (isUser) colors.onPrimaryContainer else colors.onSurface,
       ) {
         Column(Modifier.padding(AtlasSpace.lg), verticalArrangement = Arrangement.spacedBy(AtlasSpace.sm)) {
+          if (message.attachmentName != null) {
+            AtlasBadge(
+              text = stringResource(R.string.playground_attached_image) + " · " + message.attachmentName,
+              tone = AtlasTone.ACCENT,
+            )
+          }
           if (message.text.isNotEmpty() || streaming) {
             // 靜態 inline cursor：隨真實 delta 前進，無 blink/timer/無限動畫或額外請求。
             SelectionContainer {
