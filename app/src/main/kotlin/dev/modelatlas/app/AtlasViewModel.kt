@@ -782,7 +782,10 @@ class AtlasViewModel @JvmOverloads constructor(
                 // P0-4 fail-closed：provider_config 載入失敗一律拒發，不以空 customFields 蒙混；
                 // API_KEY / CUSTOM_HEADER 取回空 customFields 亦拒發，不送無憑證請求。
                 // 匿名：credentialId=null，不送 Authorization；custom-only（無 INFERENCE）亦不送 Bearer，只送 custom auth refs。
-                val sendAuth = withContext(Dispatchers.IO) { loadSendAuth(record.providerId) }
+                // SEC-001: provider-wide auth metadata is NOT evidence that the selected
+                // credential is an enabled INFERENCE ref. Reuse the selected-record
+                // validator used by manual probes to reject ACCOUNT PAT/foreign refs.
+                val sendAuth = withContext(Dispatchers.IO) { loadProviderModelAuth(record) }
                 if (sendAuth.loadFailed) {
                     if (sendJob === myJob && _state.value.selectedId == requestConnectionId) {
                         _state.update { it.copy(error = string(R.string.error_load)) }
