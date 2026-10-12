@@ -11,6 +11,7 @@ import dev.modelatlas.app.data.AtlasDatabase
 import dev.modelatlas.app.data.CanonicalStore
 import dev.modelatlas.app.data.CheckinEntity
 import dev.modelatlas.app.data.ConnectionRecord
+import dev.modelatlas.app.data.buildPlaygroundInferenceTarget
 import dev.modelatlas.app.data.CompareKeyChoice
 import dev.modelatlas.app.data.CompareKeySelection
 import dev.modelatlas.app.data.MyModelKey
@@ -748,6 +749,8 @@ class AtlasViewModel @JvmOverloads constructor(
             return
         }
         val requestConnectionId = record.id
+        // Capture at send time: later UI scope changes must not mutate an in-flight request.
+        val selectedGroupAtSend = _selectedGroup.value
         val requestMessages = (historyByConnection[requestConnectionId]?.takeLast(20).orEmpty() +
             PromptMessage("user", text))
         val userMessage = ChatMessage(id = UUID.randomUUID().toString(), role = "user", text = text)
@@ -809,14 +812,11 @@ class AtlasViewModel @JvmOverloads constructor(
                     else -> record.credentialId
                 }
                 val customFields = sendAuth.customFields
-                val target = InferenceTarget(
-                    providerId = record.providerId,
-                    accountId = record.accountId,
-                    credentialId = safeCredentialId,
-                    endpointId = record.endpointId,
-                    endpointUrl = record.endpointUrl,
-                    modelId = record.modelId,
+                val target = buildPlaygroundInferenceTarget(
+                    record = record,
+                    bearerCredentialId = safeCredentialId,
                     authFields = customFields,
+                    selectedGroup = selectedGroupAtSend,
                 )
                 app.engine.execute(
                     target,
