@@ -259,6 +259,55 @@ internal fun PlaygroundTab(
   }
 }
 
+/** Preview is ephemeral Compose state; only bounded and signature-checked data URIs reach the VM. */
+private data class PreparedVisionAttachment(
+  val image: ImageUrlPart,
+  val thumbnail: ImageBitmap,
+)
+
+private suspend fun prepareVisionAttachment(context: Context, uri: Uri): PreparedVisionAttachment =
+  withContext(Dispatchers.IO) {
+    require(uri.scheme == "content") { "Photo picker must provide content URI" }
+    val resolver = context.contentResolver
+    val filename = runCatching {
+      resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+        if (!cursor.moveToFirst()) null else {
+          val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+          if (index < 0) null else cursor.getString(index)
+        }
+      }
+    }.getOrNull()
+    val bytes = ByteArrayOutputStream().use { output ->
+      val stream = resolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("Photo picker returned no content")
+      stream.use { input ->
+        val buffer = ByteArray(8192)
+        var total = 0
+        while (true) {
+          val read = input.read(buffer)
+          if (read < 0) break
+          if (read == 0) continue
+          total += read
+          require(total <= VisionImagePayload.MAX_IMAGE_BYTES) { "Image exceeds 4 MiB" }
+          output.write(buffer, 0, read)
+        }
+      }
+      output.toByteArray()
+    }
+    val image = VisionImagePayload.prepare(bytes, filename)
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+    require(bounds.outWidth in 1..8192 && bounds.outHeight in 1..8192) {
+      "Image has invalid dimensions"
+    }
+    var sample = 1
+    while (bounds.outWidth / sample > 256 || bounds.outHeight / sample > 256) sample *= 2
+    val options = BitmapFactory.Options().apply { inSampleSize = sample }
+    val preview = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+      ?: throw IllegalArgumentException("Image decoder rejected content")
+    PreparedVisionAttachment(image, preview.asImageBitmap())
+  }
+
 @Composable
 private fun PlaygroundComposer(
   selectedConnection: ConnectionItem?,
