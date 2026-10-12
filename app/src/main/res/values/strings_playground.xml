@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="playground_empty_title">從一則訊息開始</string>
+  <string name="playground_connect_hint">先新增供應商連線，再選擇模型開始對話。</string>
+  <string name="playground_switch_model">切換模型與連線</string>
+  <string name="playground_switch_hint">切換連線會開始新的對話；進行中的回應會取消。</string>
+  <string name="playground_message_label">訊息</string>
+  <string name="playground_stop">取消回應</string>
+  <string name="playground_retry">重試上一則</string>
+  <string name="playground_latest">回到最新訊息</string>
+  <string name="playground_no_content">尚未收到文字回應</string>
+  <string name="playground_search_connections">搜尋模型、供應商或憑證</string>
+  <string name="playground_clear_search">清除搜尋</string>
+  <string name="playground_no_matches">沒有符合的連線</string>
+  <string name="playground_search_hint">試試其他名稱，或清除搜尋查看所有連線。</string>
+  <string name="playground_account">帳號</string>
+  <string name="playground_samples_hint">所有連線的本機觀測，依最新時間排列；與外部 benchmark 分開呈現。</string>
+  <string name="playground_samples_empty_hint">正常對話會產生效能樣本，尚無資料的指標維持未知。</string>
+  <string name="playground_ttft">首個 token · TTFT</string>
+  <string name="playground_ttfb">首個位元組 · TTFB</string>
+  <string name="playground_output_tokens">輸出 tokens</string>
+  <string name="playground_next_message">準備下一則訊息</string>
+  <string name="playground_performance">效能</string>
+  <string name="playground_waiting">等待模型回應</string>
+  <string name="playground_copy">複製</string>
+  <string name="playground_copied">已複製</string>
+  <string name="playground_retry_hint">重試上一則：沿用目前對話，重新送出上一則訊息</string>
+  <string name="playground_connection_count">%1$d 條連線</string>
+</resources>

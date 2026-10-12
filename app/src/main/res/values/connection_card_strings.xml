@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connection_card_more">更多</string>
+    <string name="connection_card_more_label">%1$s，%2$s，%3$s，更多操作</string>
+    <string name="connection_card_open_label">開啟 %1$s 詳情</string>
+    <string name="connection_card_identity">%1$s，%2$s，%3$s</string>
+    <string name="connection_card_scope">%1$s · %2$s</string>
+    <string name="connection_card_unnamed_credential">未命名憑證</string>
+    <string name="connection_card_anonymous">匿名連線</string>
+    <string name="connection_card_actions">連線操作</string>
+    <string name="connection_card_official_health">官方：%1$s</string>
+    <string name="connection_card_local_health">本機觀測：%1$s</string>
+    <string name="connection_card_health_healthy">正常</string>
+    <string name="connection_card_health_degraded">降級</string>
+    <string name="connection_card_health_unstable">不穩定</string>
+    <string name="connection_card_health_offline">離線</string>
+    <string name="connection_card_sync_failed">同步失敗</string>
+    <string name="connection_card_dedicated_sync">Dedicated 同步</string>
+    <string name="connection_card_delete_target">刪除「%1$s」的「%2$s」憑證？同一憑證的其他模型連線也會受到影響。正在進行的請求會停止，既有用量與效能紀錄會保留。</string>
+    <string name="connection_card_checkin_shared">簽到設定由同一 Provider 共用。</string>
+    <string name="connection_card_saving">儲存中</string>
+</resources>

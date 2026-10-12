@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="form_audit_batch_masked">為避免誤貼金鑰後回顯，JSON 全程遮罩且不儲存至還原狀態。僅接受非機密供應商資料。</string>
+    <string name="form_audit_batch_invalid">匯入內容不符合格式或安全規則，已清空。請檢查 JSON，移除金鑰、PAT 與其他機密後重新貼上。</string>
+    <string name="form_audit_batch_confirm_title">確認執行批次探測？</string>
+    <string name="form_audit_batch_confirm_body">開始或繼續批次探測可能發出多筆網路請求並消耗配額；仍受探測預算限制，可隨時要求停止後續排程。每筆結果仍須個別審閱後儲存。</string>
+    <string name="form_audit_batch_confirm_action">確認執行</string>
+</resources>

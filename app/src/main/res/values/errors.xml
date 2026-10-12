@@ -1,0 +1,30 @@
+<resources>
+    <string name="error_initialization">初始化失敗，請重新啟動應用程式</string>
+    <string name="error_load">資料載入失敗，請重試</string>
+    <string name="error_busy">請先停止目前的請求</string>
+    <string name="error_required_fields">名稱、位址、模型與金鑰皆不可為空</string>
+    <string name="error_credential_format">金鑰格式不正確</string>
+    <string name="error_https">請輸入有效的 HTTPS 位址</string>
+    <string name="error_save">儲存連線失敗，請重試</string>
+    <string name="error_preparing">資料準備中，請稍候</string>
+    <string name="error_select_connection">請先新增並選擇連線</string>
+    <string name="error_request">請求失敗，請重試</string>
+    <string name="error_checkin_not_required">此連線不需簽到</string>
+    <string name="error_checkin_save">簽到記錄失敗，請重試</string>
+    <string name="error_auth">驗證失敗，請檢查金鑰</string>
+    <string name="error_rate_limit">請求過於頻繁，請稍後再試</string>
+    <string name="error_timeout">請求逾時，請重試</string>
+    <string name="error_network">網路連線失敗，請檢查網路</string>
+    <string name="error_model_unavailable">模型無法使用</string>
+    <string name="error_server">服務暫時不可用，請稍後再試</string>
+    <string name="error_cancelled">已取消</string>
+    <string name="error_parser">回應解析失敗</string>
+    <string name="error_interrupted">上次請求中斷</string>
+    <string name="error_connection_not_found">找不到連線，請重新整理</string>
+    <string name="error_credential_update">憑證狀態更新失敗，請重試</string>
+    <string name="error_credential_delete">刪除憑證失敗，請重試</string>
+    <string name="error_checkin_config">簽到設定失敗，請重試</string>
+    <string name="error_connection_disabled">此連線已停用，請選擇其他連線</string>
+    <string name="error_sync_failed">同步失敗，請重試</string>
+    <string name="error_sync_unavailable">此供應商尚未設定同步憑證或同步範圍，無法同步</string>
+</resources>

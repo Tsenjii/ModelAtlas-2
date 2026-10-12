@@ -1,0 +1,1140 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "397ce17cf359dba2d70de10b75005fa8",
+    "entities": [
+      {
+        "tableName": "providers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`providerId` TEXT NOT NULL, `name` TEXT NOT NULL, `officialHealth` TEXT NOT NULL, `observedHealth` TEXT NOT NULL, `checkinUrl` TEXT, `requiresDailyCheckin` INTEGER NOT NULL, PRIMARY KEY(`providerId`))",
+        "fields": [
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "officialHealth",
+            "columnName": "officialHealth",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "observedHealth",
+            "columnName": "observedHealth",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checkinUrl",
+            "columnName": "checkinUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "requiresDailyCheckin",
+            "columnName": "requiresDailyCheckin",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "providerId"
+          ]
+        }
+      },
+      {
+        "tableName": "accounts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`accountId` TEXT NOT NULL, `providerId` TEXT NOT NULL, PRIMARY KEY(`accountId`), FOREIGN KEY(`providerId`) REFERENCES `providers`(`providerId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "accountId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_accounts_providerId",
+            "unique": false,
+            "columnNames": [
+              "providerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_accounts_providerId` ON `${TABLE_NAME}` (`providerId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "providers",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "providerId"
+            ],
+            "referencedColumns": [
+              "providerId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "credentials",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`credentialId` TEXT NOT NULL, `accountId` TEXT NOT NULL, `label` TEXT NOT NULL, `enabled` INTEGER NOT NULL, PRIMARY KEY(`credentialId`), FOREIGN KEY(`accountId`) REFERENCES `accounts`(`accountId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "credentialId",
+            "columnName": "credentialId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enabled",
+            "columnName": "enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "credentialId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_credentials_accountId",
+            "unique": false,
+            "columnNames": [
+              "accountId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_credentials_accountId` ON `${TABLE_NAME}` (`accountId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "accounts",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "accountId"
+            ],
+            "referencedColumns": [
+              "accountId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "endpoints",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`endpointId` TEXT NOT NULL, `providerId` TEXT NOT NULL, `baseUrl` TEXT NOT NULL, `endpointUrl` TEXT NOT NULL, `protocol` TEXT NOT NULL, PRIMARY KEY(`endpointId`), FOREIGN KEY(`providerId`) REFERENCES `providers`(`providerId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "endpointId",
+            "columnName": "endpointId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "baseUrl",
+            "columnName": "baseUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endpointUrl",
+            "columnName": "endpointUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protocol",
+            "columnName": "protocol",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "endpointId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_endpoints_providerId",
+            "unique": false,
+            "columnNames": [
+              "providerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_endpoints_providerId` ON `${TABLE_NAME}` (`providerId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "providers",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "providerId"
+            ],
+            "referencedColumns": [
+              "providerId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "offerings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `providerId` TEXT NOT NULL, `endpointId` TEXT NOT NULL, `modelId` TEXT NOT NULL, `manual` INTEGER NOT NULL, `source` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`providerId`) REFERENCES `providers`(`providerId`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`endpointId`) REFERENCES `endpoints`(`endpointId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endpointId",
+            "columnName": "endpointId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerModelId",
+            "columnName": "modelId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "manual",
+            "columnName": "manual",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_offerings_providerId",
+            "unique": false,
+            "columnNames": [
+              "providerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_offerings_providerId` ON `${TABLE_NAME}` (`providerId`)"
+          },
+          {
+            "name": "index_offerings_endpointId",
+            "unique": false,
+            "columnNames": [
+              "endpointId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_offerings_endpointId` ON `${TABLE_NAME}` (`endpointId`)"
+          },
+          {
+            "name": "index_offerings_modelId",
+            "unique": false,
+            "columnNames": [
+              "modelId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_offerings_modelId` ON `${TABLE_NAME}` (`modelId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "providers",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "providerId"
+            ],
+            "referencedColumns": [
+              "providerId"
+            ]
+          },
+          {
+            "table": "endpoints",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "endpointId"
+            ],
+            "referencedColumns": [
+              "endpointId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "credential_availability",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `offeringId` TEXT NOT NULL, `accountId` TEXT NOT NULL, `credentialId` TEXT NOT NULL, `priceState` TEXT NOT NULL, `quotaState` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`offeringId`) REFERENCES `offerings`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`accountId`) REFERENCES `accounts`(`accountId`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`credentialId`) REFERENCES `credentials`(`credentialId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "offeringId",
+            "columnName": "offeringId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "credentialId",
+            "columnName": "credentialId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priceState",
+            "columnName": "priceState",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quotaState",
+            "columnName": "quotaState",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_credential_availability_offeringId",
+            "unique": false,
+            "columnNames": [
+              "offeringId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_credential_availability_offeringId` ON `${TABLE_NAME}` (`offeringId`)"
+          },
+          {
+            "name": "index_credential_availability_accountId",
+            "unique": false,
+            "columnNames": [
+              "accountId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_credential_availability_accountId` ON `${TABLE_NAME}` (`accountId`)"
+          },
+          {
+            "name": "index_credential_availability_credentialId",
+            "unique": false,
+            "columnNames": [
+              "credentialId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_credential_availability_credentialId` ON `${TABLE_NAME}` (`credentialId`)"
+          },
+          {
+            "name": "index_credential_availability_offering_account_credential",
+            "unique": true,
+            "columnNames": [
+              "offeringId",
+              "accountId",
+              "credentialId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_credential_availability_offering_account_credential` ON `${TABLE_NAME}` (`offeringId`, `accountId`, `credentialId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "offerings",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "offeringId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "accounts",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "accountId"
+            ],
+            "referencedColumns": [
+              "accountId"
+            ]
+          },
+          {
+            "table": "credentials",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "credentialId"
+            ],
+            "referencedColumns": [
+              "credentialId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "samples",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `providerId` TEXT NOT NULL, `accountId` TEXT NOT NULL, `safeCredentialId` TEXT NOT NULL, `endpointId` TEXT NOT NULL, `modelId` TEXT NOT NULL, `canonicalModelId` TEXT, `group` TEXT, `operation` TEXT NOT NULL, `source` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `firstTokenAt` INTEGER, `completedAt` INTEGER, `streaming` INTEGER NOT NULL, `ttftMs` INTEGER, `ttfbMs` INTEGER, `totalLatencyMs` INTEGER, `tps` REAL, `inputTokens` INTEGER, `outputTokens` INTEGER, `totalTokens` INTEGER, `reasoningTokens` INTEGER, `cacheReadTokens` INTEGER, `cacheWriteTokens` INTEGER, `usageEstimated` INTEGER NOT NULL, `httpStatus` INTEGER, `outcome` TEXT NOT NULL, `retryCount` INTEGER NOT NULL, `responseModelId` TEXT, `rateLimitHeaders` TEXT NOT NULL, `priceState` TEXT NOT NULL, `quotaState` TEXT NOT NULL, `pricingSnapshotId` TEXT, `quotaSnapshotBeforeId` TEXT, `quotaSnapshotAfterId` TEXT, `actualCost` TEXT, `estimatedCost` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "safeCredentialId",
+            "columnName": "safeCredentialId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endpointId",
+            "columnName": "endpointId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerModelId",
+            "columnName": "modelId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "canonicalModelId",
+            "columnName": "canonicalModelId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "group",
+            "columnName": "group",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "operation",
+            "columnName": "operation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestStartedAt",
+            "columnName": "startedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstTokenAt",
+            "columnName": "firstTokenAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "streaming",
+            "columnName": "streaming",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ttftMs",
+            "columnName": "ttftMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "ttfbMs",
+            "columnName": "ttfbMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "totalLatencyMs",
+            "columnName": "totalLatencyMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "tps",
+            "columnName": "tps",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "inputTokens",
+            "columnName": "inputTokens",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "outputTokens",
+            "columnName": "outputTokens",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "totalTokens",
+            "columnName": "totalTokens",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reasoningTokens",
+            "columnName": "reasoningTokens",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "cacheReadTokens",
+            "columnName": "cacheReadTokens",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "cacheWriteTokens",
+            "columnName": "cacheWriteTokens",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "usageEstimated",
+            "columnName": "usageEstimated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "httpStatus",
+            "columnName": "httpStatus",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "outcome",
+            "columnName": "outcome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryCount",
+            "columnName": "retryCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "responseModelId",
+            "columnName": "responseModelId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rateLimitHeaders",
+            "columnName": "rateLimitHeaders",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priceState",
+            "columnName": "priceState",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quotaState",
+            "columnName": "quotaState",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pricingSnapshotId",
+            "columnName": "pricingSnapshotId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quotaSnapshotBeforeId",
+            "columnName": "quotaSnapshotBeforeId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quotaSnapshotAfterId",
+            "columnName": "quotaSnapshotAfterId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "actualCost",
+            "columnName": "actualCost",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "estimatedCost",
+            "columnName": "estimatedCost",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_samples_providerId",
+            "unique": false,
+            "columnNames": [
+              "providerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_samples_providerId` ON `${TABLE_NAME}` (`providerId`)"
+          },
+          {
+            "name": "index_samples_modelId",
+            "unique": false,
+            "columnNames": [
+              "modelId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_samples_modelId` ON `${TABLE_NAME}` (`modelId`)"
+          },
+          {
+            "name": "index_samples_startedAt",
+            "unique": false,
+            "columnNames": [
+              "startedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_samples_startedAt` ON `${TABLE_NAME}` (`startedAt`)"
+          },
+          {
+            "name": "index_samples_outcome",
+            "unique": false,
+            "columnNames": [
+              "outcome"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_samples_outcome` ON `${TABLE_NAME}` (`outcome`)"
+          }
+        ]
+      },
+      {
+        "tableName": "evidence",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `requestId` TEXT NOT NULL, `providerId` TEXT NOT NULL, `modelId` TEXT NOT NULL, `outcome` TEXT NOT NULL, `status` INTEGER, `timestamp` INTEGER NOT NULL, `source` TEXT NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requestId",
+            "columnName": "requestId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modelId",
+            "columnName": "modelId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outcome",
+            "columnName": "outcome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_evidence_requestId",
+            "unique": false,
+            "columnNames": [
+              "requestId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_evidence_requestId` ON `${TABLE_NAME}` (`requestId`)"
+          },
+          {
+            "name": "index_evidence_timestamp",
+            "unique": false,
+            "columnNames": [
+              "timestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_evidence_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
+          }
+        ]
+      },
+      {
+        "tableName": "checkins",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`providerId` TEXT NOT NULL, `date` TEXT NOT NULL, `completedAt` INTEGER, `source` TEXT NOT NULL, `accountId` TEXT NOT NULL DEFAULT '', PRIMARY KEY(`providerId`, `date`, `accountId`))",
+        "fields": [
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "providerId",
+            "date",
+            "accountId"
+          ]
+        }
+      },
+      {
+        "tableName": "price_snapshots",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `providerId` TEXT NOT NULL, `accountId` TEXT, `credentialId` TEXT, `modelId` TEXT NOT NULL, `group` TEXT, `endpointId` TEXT NOT NULL, `operation` TEXT NOT NULL, `observedAt` INTEGER NOT NULL, `input` TEXT, `output` TEXT, `fixedRequest` TEXT, `fixedRequestKnownAbsent` INTEGER NOT NULL, `cacheRead` TEXT, `cacheWrite` TEXT, `source` TEXT NOT NULL, `evidenceId` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "credentialId",
+            "columnName": "credentialId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "modelId",
+            "columnName": "modelId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "group",
+            "columnName": "group",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "endpointId",
+            "columnName": "endpointId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operation",
+            "columnName": "operation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "observedAt",
+            "columnName": "observedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "input",
+            "columnName": "input",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "output",
+            "columnName": "output",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fixedRequest",
+            "columnName": "fixedRequest",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fixedRequestKnownAbsent",
+            "columnName": "fixedRequestKnownAbsent",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cacheRead",
+            "columnName": "cacheRead",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cacheWrite",
+            "columnName": "cacheWrite",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidenceId",
+            "columnName": "evidenceId",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_price_snapshots_providerId",
+            "unique": false,
+            "columnNames": [
+              "providerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_price_snapshots_providerId` ON `${TABLE_NAME}` (`providerId`)"
+          },
+          {
+            "name": "index_price_snapshots_modelId",
+            "unique": false,
+            "columnNames": [
+              "modelId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_price_snapshots_modelId` ON `${TABLE_NAME}` (`modelId`)"
+          },
+          {
+            "name": "index_price_snapshots_observedAt",
+            "unique": false,
+            "columnNames": [
+              "observedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_price_snapshots_observedAt` ON `${TABLE_NAME}` (`observedAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "quota_snapshots",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `providerId` TEXT NOT NULL, `accountId` TEXT, `credentialId` TEXT, `modelId` TEXT NOT NULL, `group` TEXT, `endpointId` TEXT NOT NULL, `operation` TEXT NOT NULL, `observedAt` INTEGER NOT NULL, `state` TEXT, `source` TEXT NOT NULL, `evidenceId` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "credentialId",
+            "columnName": "credentialId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "modelId",
+            "columnName": "modelId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "group",
+            "columnName": "group",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "endpointId",
+            "columnName": "endpointId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operation",
+            "columnName": "operation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "observedAt",
+            "columnName": "observedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidenceId",
+            "columnName": "evidenceId",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_quota_snapshots_providerId",
+            "unique": false,
+            "columnNames": [
+              "providerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quota_snapshots_providerId` ON `${TABLE_NAME}` (`providerId`)"
+          },
+          {
+            "name": "index_quota_snapshots_modelId",
+            "unique": false,
+            "columnNames": [
+              "modelId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quota_snapshots_modelId` ON `${TABLE_NAME}` (`modelId`)"
+          },
+          {
+            "name": "index_quota_snapshots_observedAt",
+            "unique": false,
+            "columnNames": [
+              "observedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quota_snapshots_observedAt` ON `${TABLE_NAME}` (`observedAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "onboarding_snapshots",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`workflowId` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, `snapshotJson` TEXT NOT NULL, PRIMARY KEY(`workflowId`))",
+        "fields": [
+          {
+            "fieldPath": "workflowId",
+            "columnName": "workflowId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshotJson",
+            "columnName": "snapshotJson",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "workflowId"
+          ]
+        }
+      },
+      {
+        "tableName": "onboarding_commits",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`workflowId` TEXT NOT NULL, `providerId` TEXT NOT NULL, `committedAt` INTEGER NOT NULL, PRIMARY KEY(`workflowId`))",
+        "fields": [
+          {
+            "fieldPath": "workflowId",
+            "columnName": "workflowId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "providerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "committedAt",
+            "columnName": "committedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "workflowId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '397ce17cf359dba2d70de10b75005fa8')"
+    ]
+  }
+}

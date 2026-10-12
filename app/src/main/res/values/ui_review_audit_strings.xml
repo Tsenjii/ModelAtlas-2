@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_apply_before_commit">名稱或模型選取已變更，請先套用後再提交。</string>
+    <string name="onboarding_price_unknown_basis">尚無官方價格資料；未知不代表免費。</string>
+    <string name="onboarding_quota_unknown_basis">尚無可靠配額依據。</string>
+    <string name="onboarding_found_evidence">目錄模型數的證據</string>
+    <string name="onboarding_verified_evidence">模型驗證的證據</string>
+    <string name="onboarding_confidence_low">LOW · 證據弱</string>
+    <string name="onboarding_confidence_unknown">UNKNOWN · 無證據</string>
+    <string name="models_classification_unknown">分類：未知</string>
+    <string name="onboarding_ready_with_warnings">READY_WITH_WARNINGS · 可帶缺口提交</string>
+    <string name="onboarding_step_gap">%1$s：%2$s</string>
+    <string name="onboarding_confirm_test">確認模型探測</string>
+    <string name="onboarding_confirm_test_body">此步可能測試多個模型並消耗額度。仍受每流程最多 %1$d 個模型與剩餘請求預算限制；遇到 429 停止後續排程。</string>
+</resources>
