@@ -326,18 +326,54 @@ private fun PlaygroundComposer(
   var prompt by remember { mutableStateOf("") }
   var submittedPrompt by remember(selectedConnection?.id) { mutableStateOf<String?>(null) }
   var submittedAfterId by remember(selectedConnection?.id) { mutableStateOf<String?>(null) }
+  var submittedAttachmentName by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
+  var pendingImage by remember(selectedConnection?.id, scopeKey) { mutableStateOf<PreparedVisionAttachment?>(null) }
+  var imagePreparing by remember(selectedConnection?.id, scopeKey) { mutableStateOf(false) }
+  var imageError by remember(selectedConnection?.id, scopeKey) { mutableStateOf(false) }
+  val context = LocalContext.current
+  val launchScope = rememberCoroutineScope()
+  val currentConnectionId by rememberUpdatedState(selectedConnection?.id)
+  val currentScopeKey by rememberUpdatedState(scopeKey)
+  var pickerConnectionId by remember { mutableStateOf<String?>(null) }
+  var pickerGroup by remember { mutableStateOf<String?>(null) }
+  val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    if (uri != null && pickerConnectionId == currentConnectionId && pickerGroup == currentScopeKey) {
+      val expectedId = currentConnectionId
+      val expectedGroup = currentScopeKey
+      launchScope.launch {
+        imagePreparing = true
+        imageError = false
+        try {
+          val prepared = prepareVisionAttachment(context, uri)
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey) {
+            pendingImage = prepared
+          }
+        } catch (cancel: CancellationException) {
+          throw cancel
+        } catch (_: Exception) {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey) imageError = true
+        } finally {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey) imagePreparing = false
+        }
+      }
+    }
+  }
   val keyboard = LocalSoftwareKeyboardController.current
   val focusManager = LocalFocusManager.current
   // send 可能在前置檢查即拒絕；看到 VM 接受的新 user message 才清空相符草稿。
   LaunchedEffect(acceptedMessage?.id) {
     val submitted = submittedPrompt
-    if (submitted != null && acceptedMessage?.id != submittedAfterId && acceptedMessage?.text == submitted.trim()) {
+    if (submitted != null && acceptedMessage?.id != submittedAfterId &&
+        acceptedMessage?.text == submitted.trim() &&
+        acceptedMessage.attachmentName == submittedAttachmentName) {
       if (prompt == submitted) {
         prompt = ""
+        pendingImage = null
         focusManager.clearFocus()
         keyboard?.hide()
       }
       submittedPrompt = null
+      submittedAttachmentName = null
     }
   }
   val switchLabel = stringResource(R.string.playground_switch_model)
@@ -351,6 +387,18 @@ private fun PlaygroundComposer(
   ) {
     Column(Modifier.padding(AtlasSpace.sm)) {
       Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm)) {
+        val attachLabel = stringResource(R.string.playground_attach_image)
+        IconButton(
+          onClick = {
+            pickerConnectionId = selectedConnection?.id
+            pickerGroup = scopeKey
+            imagePicker.launch("image/*")
+          },
+          enabled = canSend && canAttachVision && !busy && !imagePreparing && pendingImage == null,
+          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = attachLabel },
+        ) {
+          Icon(Icons.Filled.Add, contentDescription = null)
+        }
         TextField(
           value = prompt,
           onValueChange = { prompt = it },
@@ -378,8 +426,11 @@ private fun PlaygroundComposer(
             if (busy) onCancel()
             else if (canSend && prompt.isNotBlank()) {
               submittedPrompt = prompt
+              submittedAttachmentName = pendingImage?.image?.filename
               submittedAfterId = acceptedMessage?.id
-              onSend(prompt)
+              val selectedImage = pendingImage
+              if (selectedImage != null) onSendVision(prompt, selectedImage.image)
+              else onSend(prompt)
             }
           },
           enabled = busy || (canSend && prompt.isNotBlank()),
@@ -394,6 +445,41 @@ private fun PlaygroundComposer(
             Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
           }
         }
+      }
+      pendingImage?.let { attachment ->
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(vertical = AtlasSpace.xs),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm),
+        ) {
+          Image(
+            bitmap = attachment.thumbnail,
+            contentDescription = stringResource(R.string.playground_attached_image),
+            modifier = Modifier.size(56.dp),
+            contentScale = ContentScale.Crop,
+          )
+          Text(
+            attachment.image.filename ?: stringResource(R.string.playground_attached_image),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+          IconButton(
+            onClick = { pendingImage = null; imageError = false },
+            modifier = Modifier.size(AtlasSpace.touch),
+          ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.playground_remove_image)) }
+        }
+      }
+      if (imagePreparing) {
+        Text(stringResource(R.string.playground_image_loading), style = MaterialTheme.typography.labelMedium)
+      }
+      if (imageError) {
+        Text(
+          stringResource(R.string.playground_image_error),
+          color = MaterialTheme.colorScheme.error,
+          style = MaterialTheme.typography.bodySmall,
+        )
       }
       Row(
         modifier = Modifier.fillMaxWidth(),
