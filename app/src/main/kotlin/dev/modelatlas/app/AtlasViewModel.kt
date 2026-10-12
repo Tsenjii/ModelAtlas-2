@@ -762,7 +762,14 @@ class AtlasViewModel @JvmOverloads constructor(
         }
         val requestConnectionId = record.id
         val selectedGroupAtSend = _selectedGroup.value
-        val visionCapabilities = if (image != null) selectedVisionCapabilities(
+        // A text-only follow-up still carries earlier image blocks in this scope.
+        // Evaluate capabilities against the *whole* outgoing request, not just
+        // the newest composer attachment. Otherwise follow-up text fails at
+        // the transport gate even though the same Vision model is selected.
+        val recentHistory = historyByConnection[requestConnectionId]?.takeLast(20).orEmpty()
+        val requiresVision = image != null ||
+            recentHistory.any { message -> message.blocks.any { it is ImageUrlPart } }
+        val visionCapabilities = if (requiresVision) selectedVisionCapabilities(
             rows = _allModelRows.value,
             providerId = record.providerId,
             providerModelId = record.modelId,
@@ -770,7 +777,7 @@ class AtlasViewModel @JvmOverloads constructor(
             operation = record.protocol,
             selectedGroup = selectedGroupAtSend,
         ) else emptySet()
-        if (image != null && visionCapabilities.isEmpty()) {
+        if (requiresVision && visionCapabilities.isEmpty()) {
             _state.update { it.copy(error = string(R.string.playground_vision_unavailable)) }
             return
         }
@@ -782,7 +789,7 @@ class AtlasViewModel @JvmOverloads constructor(
         // Capture at send time: later UI scope changes must not mutate an in-flight request.
         val userPrompt = if (image == null) PromptMessage("user", text) else
             PromptMessage("user", listOf(TextPart(text), image))
-        val requestMessages = historyByConnection[requestConnectionId]?.takeLast(20).orEmpty() + userPrompt
+        val requestMessages = recentHistory + userPrompt
         val userMessage = ChatMessage(
             id = UUID.randomUUID().toString(), role = "user", text = text,
             attachmentName = image?.filename,
