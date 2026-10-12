@@ -448,6 +448,46 @@ class AtlasAnonymousTargetTest {
     }
 
     @Test
+    fun selectedAccountPatRoleCannotBeSentAsBearerEvenIfProviderHasOtherInferenceRef() {
+        val selectedRef = storeSecret(BEARER_VALUE)
+        val otherRef = storeSecret(PAT_VALUE)
+        val record = commit(
+            "選定憑證角色變動",
+            listOf(
+                SafeCredentialRef(selectedRef, "推理憑證"),
+                SafeCredentialRef(otherRef, "帳號 PAT", CredentialRole.ACCOUNT),
+            ),
+        )
+        awaitConnections(record)
+        assertEquals(selectedRef, record.credentialId)
+
+        // 模擬舊／外部管理資料在 ViewModel 快取後改了 role：provider 層仍有
+        // inference key，但選定的 ref 已成為 ACCOUNT PAT。不得錯借 role 送 Bearer。
+        val dao = database.providerConfigDao()
+        val original = runBlocking { dao.getByProvider(record.providerId) }!!
+        val modified = decodeProviderManualConfig(original.snapshotJson).copy(
+            credentials = listOf(
+                SafeCredentialRef(selectedRef, "帳號 PAT", CredentialRole.ACCOUNT),
+                SafeCredentialRef(otherRef, "推理憑證", CredentialRole.INFERENCE),
+            ),
+        )
+        val snapshot = modified.encodeToSnapshotJson()
+        ensureSnapshotJsonHasNoSecretRefs(snapshot)
+        runBlocking { dao.updateSnapshotJson(record.providerId, snapshot) }
+
+        onMain {
+            viewModel.selectConnection(record.id)
+            viewModel.send("測試提示")
+        }
+        val state = awaitUi { !it.busy && it.error != null }
+        assertNotNull(state.error)
+        assertTrue("不得將所選 PAT 當 Bearer 送到網路", requests.isEmpty())
+        assertTrue("應在進 transport 前拒絕", targets.isEmpty())
+        assertTrue("不得解析任何 PAT/Key 明文", resolutions.isEmpty())
+        assertNoSecretOutsideRequest()
+    }
+
+    @Test
     fun legacyOverlappingConfigPatFieldIsFilteredAtSendTime() {
         // Legacy 髒資料（guard 之前寫入的重疊 config）：直接覆寫 config JSON 模擬，
         // send 端過濾必須擋下 PAT header，只送 header＋query。
