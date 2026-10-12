@@ -2,6 +2,10 @@ package dev.modelatlas.app.ui
 
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -25,7 +29,7 @@ class PlaygroundVisionPickerUiTest {
         endpointId = "fixture-endpoint", operation = "CHAT_COMPLETIONS",
     )
 
-    private fun show(canAttach: Boolean) {
+    private fun show(canAttach: Boolean, group: State<String?>? = null) {
         compose.setContent {
             AtlasTheme {
                 PlaygroundTab(
@@ -38,7 +42,7 @@ class PlaygroundVisionPickerUiTest {
                     onSend = {},
                     onSendVision = { _, _ -> },
                     canAttachVision = canAttach,
-                    selectedGroup = null,
+                    selectedGroup = group?.value,
                     onCancel = {},
                     onGotoProviders = {},
                     showConnections = false,
@@ -59,5 +63,16 @@ class PlaygroundVisionPickerUiTest {
     @Test fun supportedVisionHasAccessiblePickerAction() {
         show(canAttach = true)
         compose.onNodeWithContentDescription(imageAction).assertIsEnabled()
+    }
+
+    @Test fun switchingGroupCannotReuseUnsentDraft() {
+        val group = mutableStateOf<String?>("group-a")
+        show(canAttach = true, group = group)
+        compose.onNode(hasSetTextAction()).performTextInput("group-a private draft")
+        val send = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.action_send)
+        compose.onNodeWithContentDescription(send).assertIsEnabled()
+        compose.runOnIdle { group.value = "group-b" }
+        // No text from group A remains available for sending in group B.
+        compose.onNodeWithContentDescription(send).assertIsNotEnabled()
     }
 }

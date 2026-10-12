@@ -332,9 +332,11 @@ private fun PlaygroundComposer(
   onSelect: () -> Unit,
   onSamples: () -> Unit,
 ) {
-  var prompt by remember { mutableStateOf("") }
-  var submittedPrompt by remember(selectedConnection?.id) { mutableStateOf<String?>(null) }
-  var submittedAfterId by remember(selectedConnection?.id) { mutableStateOf<String?>(null) }
+  // A draft belongs to exactly the selected connection and group.
+  // Never replay unsent content after switching credential/endpoint/group.
+  var prompt by remember(selectedConnection?.id, scopeKey) { mutableStateOf("") }
+  var submittedPrompt by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
+  var submittedAfterId by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
   var submittedAttachmentName by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
   var pendingImage by remember(selectedConnection?.id, scopeKey) { mutableStateOf<PreparedVisionAttachment?>(null) }
   var imagePreparing by remember(selectedConnection?.id, scopeKey) { mutableStateOf(false) }
@@ -433,7 +435,8 @@ private fun PlaygroundComposer(
         FilledIconButton(
           onClick = {
             if (busy) onCancel()
-            else if (canSend && !imagePreparing && prompt.isNotBlank()) {
+            else if (canSend && !imagePreparing && prompt.isNotBlank() &&
+                (pendingImage == null || canAttachVision)) {
               submittedPrompt = prompt
               submittedAttachmentName = pendingImage?.image?.filename
               submittedAfterId = acceptedMessage?.id
@@ -442,7 +445,8 @@ private fun PlaygroundComposer(
               else onSend(prompt)
             }
           },
-          enabled = busy || (canSend && !imagePreparing && prompt.isNotBlank()),
+          enabled = busy || (canSend && !imagePreparing && prompt.isNotBlank() &&
+            (pendingImage == null || canAttachVision)),
           modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = actionLabel },
           shape = AtlasRadius.pill,
         ) {
