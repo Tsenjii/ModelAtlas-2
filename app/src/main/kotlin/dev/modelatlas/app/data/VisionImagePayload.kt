@@ -22,12 +22,12 @@ internal object VisionImagePayload {
     /** Trust decoded signatures, never untrusted ContentResolver MIME labels or suffixes. */
     internal fun detectedMime(bytes: ByteArray): String? = when {
         bytes.size >= 8 &&
-            bytes[0] == 0x8.toByte()9.toByte() && bytes[1] == 0x5.toByte()0.toByte() &&
-            bytes[2] == 0x4.toByte()E.toByte() && bytes[3] == 0x4.toByte()7.toByte() &&
-            bytes[4] == 0x0.toByte()D.toByte() && bytes[5] == 0x0.toByte()A.toByte() &&
-            bytes[6] == 0x1.toByte()A.toByte() && bytes[7] == 0x0.toByte()A.toByte() -> "image/png"
-        bytes.size >= 3 && bytes[0] == 0xF.toByte()F.toByte() &&
-            bytes[1] == 0xD.toByte()8.toByte() && bytes[2] == 0xF.toByte()F.toByte() -> "image/jpeg"
+            bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() &&
+            bytes[2] == 0x4E.toByte() && bytes[3] == 0x47.toByte() &&
+            bytes[4] == 0x0D.toByte() && bytes[5] == 0x0A.toByte() &&
+            bytes[6] == 0x1A.toByte() && bytes[7] == 0x0A.toByte() -> "image/png"
+        bytes.size >= 3 && bytes[0] == 0xFF.toByte() &&
+            bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte() -> "image/jpeg"
         bytes.size >= 12 && String(bytes, 0, 4, Charsets.US_ASCII) == "RIFF" &&
             String(bytes, 8, 4, Charsets.US_ASCII) == "WEBP" -> "image/webp"
         else -> null
