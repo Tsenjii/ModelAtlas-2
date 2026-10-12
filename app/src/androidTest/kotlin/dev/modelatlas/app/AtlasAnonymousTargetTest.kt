@@ -349,7 +349,10 @@ class AtlasAnonymousTargetTest {
         assertTrue("custom header 應解析自指定 ref", request.header("X-Api-Key") == HEADER_VALUE)
         assertTrue("API_KEY 單欄不得附帶 query 參數", request.url.queryParameterNames.isEmpty())
         assertNoSecretOutsideRequest()
-        assertEquals("", sample.safeCredentialId)
+        // MODEL-008 / PLAY-002：custom-only 不帶 Bearer，但 selected safe ref 必須仍能
+        // 在本機 telemetry 精確歸屬這把 key，不可把「未送 Bearer」誤寫成匿名樣本。
+        assertEquals(headerRef, target.telemetryCredentialId)
+        assertEquals(headerRef, sample.safeCredentialId)
     }
 
     @Test
