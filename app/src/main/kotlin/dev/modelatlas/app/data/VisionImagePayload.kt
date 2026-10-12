@@ -11,7 +11,10 @@ internal object VisionImagePayload {
         require(bytes.isNotEmpty() && bytes.size <= MAX_IMAGE_BYTES) { "Image exceeds 4 MiB or is empty" }
         val mime = detectedMime(bytes) ?: throw IllegalArgumentException("Unsupported image signature")
         val safeName = filename?.substringAfterLast('/')?.substringAfterLast('\\')
-            ?.filter { it.code in 32..126 || it.code >= 160 }
+            ?.filter { ch ->
+                !Character.isISOControl(ch) && Character.getType(ch) != Character.FORMAT.toInt() &&
+                    ch != '/' && ch != '\\'
+            }
             ?.trim()?.take(80)?.takeIf { it.isNotEmpty() } ?: "image"
         return ImageUrlPart(
             url = "data:$mime;base64," + Base64.getEncoder().encodeToString(bytes),
