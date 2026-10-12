@@ -3,14 +3,14 @@
 更新：2026-10-12，公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
-- **MODE：CORRECTNESS / FULL-GREEN BASELINE ESTABLISHMENT → PLAY-004 UI**。
-- **FEATURE FREEZE：OFF**，以公開 main `44c45ecb1842e1ec866e056e4b4447028411dd1e` / Actions `38238187606` 為第一個全綠基線。
-- **最近 verified full-green：** `44c45ec`，public [Android Build and Test run](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38238187606)，build SUCCESS、device-tests SUCCESS。
+- **MODE：PLAY-004 VISION UI single-slice（未驗收 Draft）**；P8/P9/P10 尚未進入實作驗收。
+- **FEATURE FREEZE：OFF**，最近正式主線 `b0286b01e7ef6f774db9d0e8165fba78a2d5a6fc` / Actions `38250063202` 兩個必要工作均 SUCCESS。
+- **最近 verified full-green：** `b0286b0`，public [Android Build and Test run](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38250063202)，build SUCCESS、device-tests SUCCESS。
 - 本 public repo 以新歷史提交；舊 private repo 的 full-green ledger 只作參考，不能當作 public CI 認證。
-- 本輪規格/工程文件 restoration branch 屬 docs-only，不能冒稱新 UI 已完成。
+- 已合併：原始 Master Spec / Intelligence Contract / AtlasTheme UI 維護規範 PR #1；Playground scope PR #2；選定 credential 安全驗證 PR #5；群組歷史隔離 PR #7。
 
 ## 下一片（唯一生產功能入口）
-- **PLAY-004：Playground 多模態 Composer/Results UI 的第一個真實端到端切片**。
+- **PLAY-004：圖片 Vision 單切片 Draft PR #8**，包含 UI 選取/預覽/4 MiB 限制、signature 檢查、同 scope capability gating、ImageUrlPart 真正接上 VM→Engine→Transport 的請求、純 Kotlin + Compose + Android E2E 回歸測試。需以 PR #8 最新 SHA full CI 和 code review 決定是否合併；不等於 PLAY-004 全項 ACCEPTED。
 - 必須先讀現有 `PlaygroundScreen.kt`、`AtlasViewModel.kt`、`InferenceEngine`、`MultimodalBlocks.kt`、`OpenAiMediaTransports.kt`，確認已存在 transport / state 與實際欠缺。
 - 依現有 `AtlasTheme.kt` UI 節奏做增量 Compose，更動不能破壞 text streaming、selected credential、provider scoped telemetry。
 - 先設計最小可驗收的單一 multimodal flow；支援輸入/回應真實 wiring、permission 與 size/security guards、取消與錯誤語意、UI+core tests。
