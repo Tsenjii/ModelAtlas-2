@@ -20,7 +20,6 @@ import dev.modelatlas.core.inference.CredentialAccess
 import dev.modelatlas.core.inference.InferenceEngine
 import dev.modelatlas.core.network.OpenAiTransport
 import dev.modelatlas.core.multimodal.ImageUrlPart
-import dev.modelatlas.app.R
 import dev.modelatlas.core.onboarding.OnboardingFlowType
 import dev.modelatlas.core.onboarding.OnboardingSnapshot
 import dev.modelatlas.core.onboarding.ReviewApproval
