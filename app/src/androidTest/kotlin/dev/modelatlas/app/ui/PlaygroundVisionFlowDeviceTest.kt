@@ -10,6 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.modelatlas.app.AtlasApplication
 import dev.modelatlas.app.AtlasViewModel
+import dev.modelatlas.app.R
 import dev.modelatlas.app.data.AtlasDatabase
 import dev.modelatlas.app.data.AtlasRepository
 import dev.modelatlas.app.data.RoomCommitter
@@ -175,4 +176,54 @@ class PlaygroundVisionFlowDeviceTest {
         assertEquals(image.url, parts.getJSONObject(1).getJSONObject("image_url").getString("url"))
         assertFalse("輸出不得包含檔案絕對路徑", body.contains("/storage/emulated"))
     }
+
+    /** Negative proof at the real VM boundary: a foreign group cannot authorize image upload. */
+    @Test fun visionKnownOnlyForForeignGroupNeverReachesHttp() = runBlocking {
+        val snapshot = OnboardingSnapshot(
+            workflowId = UUID.randomUUID().toString(),
+            flowType = OnboardingFlowType.ADVANCED,
+            providerName = "隔離測試 Vision",
+            baseUrl = "https://vision.fixture.invalid/v1",
+            credentials = emptyList(),
+            anonymousConfirmed = true,
+            manualModelIds = listOf("fixture-model"),
+            reviewApproval = ReviewApproval(true, 1_700_000_000_000L, "測試確認"),
+            createdAtMillis = 1_700_000_000_000L,
+            updatedAtMillis = 1_700_000_000_001L,
+        )
+        val receipt = RoomCommitter(database).commit(snapshot)
+        val record = withTimeout(15_000L) {
+            repository.connections.first { it.any { row -> row.providerId == receipt.providerId } }
+                .single { it.providerId == receipt.providerId }
+        }
+        withTimeout(15_000L) {
+            vm.state.first { it.connections.any { item -> item.id == record.id && item.enabled } }
+        }
+        val image = VisionImagePayload.prepare(
+            byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0x01),
+            "foreign-group.jpg",
+        )
+        withContext(Dispatchers.Main.immediate) {
+            vm.selectConnection(record.id)
+            val field = AtlasViewModel::class.java.getDeclaredField("_allModelRows").apply {
+                isAccessible = true
+            }
+            @Suppress("UNCHECKED_CAST")
+            val rows = field.get(vm) as MutableStateFlow<List<ModelRow>>
+            rows.value = listOf(ModelRow(
+                providerId = record.providerId, providerModelId = record.modelId,
+                canonicalId = "fixture-canonical", endpointId = record.endpointId,
+                operation = "CHAT_COMPLETIONS", group = "different-group",
+                selectedKeyUsable = true, capabilities = setOf(Capability.VISION),
+                supportsVision = true,
+            ))
+            // The selected group is null, so no other group may lend Vision.
+            vm.sendWithImage("should never leave device", image)
+        }
+        assertTrue("image refusal may not create a chat message", vm.state.value.messages.isEmpty())
+        assertFalse(vm.state.value.busy)
+        assertEquals(app.getString(R.string.playground_vision_unavailable), vm.state.value.error)
+        assertEquals("no HTTP request is permitted on foreign-group capability", 0, requests.size)
+    }
+
 }
