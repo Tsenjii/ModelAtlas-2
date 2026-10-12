@@ -365,7 +365,7 @@ private fun PlaygroundComposer(
     val submitted = submittedPrompt
     if (submitted != null && acceptedMessage?.id != submittedAfterId &&
         acceptedMessage?.text == submitted.trim() &&
-        acceptedMessage.attachmentName == submittedAttachmentName) {
+        acceptedMessage?.attachmentName == submittedAttachmentName) {
       if (prompt == submitted) {
         prompt = ""
         pendingImage = null
@@ -591,6 +591,12 @@ private fun ChatBubble(
         contentColor = if (isUser) colors.onPrimaryContainer else colors.onSurface,
       ) {
         Column(Modifier.padding(AtlasSpace.lg), verticalArrangement = Arrangement.spacedBy(AtlasSpace.sm)) {
+          if (message.attachmentName != null) {
+            AtlasBadge(
+              text = stringResource(R.string.playground_attached_image) + " · " + message.attachmentName,
+              tone = AtlasTone.ACCENT,
+            )
+          }
           if (message.text.isNotEmpty() || streaming) {
             // 靜態 inline cursor：隨真實 delta 前進，無 blink/timer/無限動畫或額外請求。
             SelectionContainer {
