@@ -204,6 +204,8 @@ class AtlasViewModel @JvmOverloads constructor(
     val state: StateFlow<AtlasUiState> = _state.asStateFlow()
 
     private var sendJob: Job? = null
+    /** Invalidate stale replies/history whenever selected account, key or group changes. */
+    private var sendScopeGeneration: Long = 0L
     private var readyCache: Boolean = false
     private var initErrorCache: Boolean = false
     private var connectionCache: List<ConnectionRecord> = emptyList()
@@ -749,6 +751,7 @@ class AtlasViewModel @JvmOverloads constructor(
             return
         }
         val requestConnectionId = record.id
+        val requestScopeGeneration = sendScopeGeneration
         // Capture at send time: later UI scope changes must not mutate an in-flight request.
         val selectedGroupAtSend = _selectedGroup.value
         val requestMessages = (historyByConnection[requestConnectionId]?.takeLast(20).orEmpty() +
@@ -768,7 +771,7 @@ class AtlasViewModel @JvmOverloads constructor(
             var success = false
             var wasCancelled = false
             val flusher = SendStreamFlushController(
-                canPublish = { sendJob === myJob && _state.value.selectedId == requestConnectionId },
+                canPublish = { sendJob === myJob && _state.value.selectedId == requestConnectionId && sendScopeGeneration == requestScopeGeneration },
             ) { text ->
                 _state.update { s ->
                     s.copy(
@@ -787,7 +790,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 // validator used by manual probes to reject ACCOUNT PAT/foreign refs.
                 val sendAuth = withContext(Dispatchers.IO) { loadProviderModelAuth(record) }
                 if (sendAuth.loadFailed) {
-                    if (sendJob === myJob && _state.value.selectedId == requestConnectionId) {
+                    if (sendJob === myJob && _state.value.selectedId == requestConnectionId && sendScopeGeneration == requestScopeGeneration) {
                         _state.update { it.copy(error = string(R.string.error_load)) }
                     }
                     return@launch
@@ -795,7 +798,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 if ((sendAuth.authMode == AuthMode.API_KEY || sendAuth.authMode == AuthMode.CUSTOM_HEADER) &&
                     sendAuth.customFields.isEmpty()
                 ) {
-                    if (sendJob === myJob && _state.value.selectedId == requestConnectionId) {
+                    if (sendJob === myJob && _state.value.selectedId == requestConnectionId && sendScopeGeneration == requestScopeGeneration) {
                         _state.update { it.copy(error = string(R.string.error_auth)) }
                     }
                     return@launch
@@ -803,7 +806,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 val anonymousTarget = record.anonymous || record.credentialId.isEmpty()
                 if (!record.anonymous && record.credentialId.isBlank()) {
                     // 非匿名列缺 ref：資料損毀，fail-closed 拒發，不退化成匿名。
-                    if (sendJob === myJob && _state.value.selectedId == requestConnectionId) {
+                    if (sendJob === myJob && _state.value.selectedId == requestConnectionId && sendScopeGeneration == requestScopeGeneration) {
                         _state.update { it.copy(error = string(R.string.error_auth)) }
                     }
                     return@launch
@@ -839,16 +842,16 @@ class AtlasViewModel @JvmOverloads constructor(
                 throw e
             } catch (e: InferenceFailure) {
                 flusher.flushPending()
-                if (sendJob === myJob && _state.value.selectedId == requestConnectionId) {
+                if (sendJob === myJob && _state.value.selectedId == requestConnectionId && sendScopeGeneration == requestScopeGeneration) {
                     _state.update { it.copy(error = messageFor(e.outcome)) }
                 }
             } catch (_: Exception) {
                 flusher.flushPending()
-                if (sendJob === myJob && _state.value.selectedId == requestConnectionId) {
+                if (sendJob === myJob && _state.value.selectedId == requestConnectionId && sendScopeGeneration == requestScopeGeneration) {
                     _state.update { it.copy(error = string(R.string.error_request)) }
                 }
             } finally {
-                if (wasCancelled && sendJob === myJob && _state.value.selectedId == requestConnectionId) {
+                if (wasCancelled && sendJob === myJob && _state.value.selectedId == requestConnectionId && sendScopeGeneration == requestScopeGeneration) {
                     flusher.flushPending()
                     // F28：取消只標記截斷，不捏造內容；history 只收成功 pair，不在此寫入。
                     _state.update { s ->
@@ -862,7 +865,7 @@ class AtlasViewModel @JvmOverloads constructor(
                             },
                         )
                     }
-                } else if (success && sendJob === myJob && _state.value.selectedId == requestConnectionId) {
+                } else if (success && sendJob === myJob && _state.value.selectedId == requestConnectionId && sendScopeGeneration == requestScopeGeneration) {
                     val finalText = _state.value.messages.firstOrNull { it.id == assistantId }?.text.orEmpty()
                     val bucket = historyByConnection.getOrPut(requestConnectionId) { mutableListOf() }
                     bucket.add(PromptMessage("user", text))
@@ -2185,6 +2188,14 @@ class AtlasViewModel @JvmOverloads constructor(
      */
     private fun applySelectedContext(context: SelectedContext, recompute: Boolean) {
         if (currentContext().sameAs(context)) return
+        // Exact scope boundary: Group/key changes must never replay conversations from
+        // the previous scope (the connection id may stay unchanged). Keep sendJob
+        // owned until its socket and telemetry finalize; generation rejects late UI
+        // deltas and successful-history writes after a scope switch.
+        sendScopeGeneration += 1L
+        cancel()
+        historyByConnection.remove(_state.value.selectedId)
+        _state.update { it.copy(messages = emptyList(), error = null) }
         cancelProviderModelAction()
         _selectedAccountId.value = context.accountId
         _selectedCredentialId.value = context.credentialId
