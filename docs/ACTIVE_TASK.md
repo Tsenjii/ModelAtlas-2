@@ -1,16 +1,16 @@
 # ModelAtlas Public — ACTIVE TASK
 
-更新：2026-10-12，公開 repo `Tsenjii/ModelAtlas-2`。
+更新：2026-10-13，公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
-- **MODE：PLAY-004 Vision 子功能已合併，下一片為本機圖片輸入 ViewModel 邊界防護**；P8/P9/P10 尚未完成正式驗收。
-- **FEATURE FREEZE：OFF**。主線 `cd313947f5ef4750efaa5e681454752ec585c281` 為 PR #8 的 squash merge，[Actions 38269841531](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38269841531) **build SUCCESS + device-tests SUCCESS**。
-- **最近 verified main full-green：** `cd31394`，[main CI](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38269841531) build SUCCESS + device-tests SUCCESS（PR #8 功能已驗）；新 PR #9 仍須獨立驗證後才可合併。
+- **MODE：PLAY-004 Vision 多輪對話 correctness 修復（本輪候選，待 CI）**；P8/P9/P10 尚未完成正式驗收。
+- **FEATURE FREEZE：OFF**。主線 `f32522c936ee1e6561e63a52873f2e275c216e2f` 為 PR #9 的 squash merge，[Actions 38273286105](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38273286105) **build SUCCESS + device-tests SUCCESS**。
+- **最近 verified main full-green：** `f32522c`，[main CI](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38273286105) build SUCCESS + device-tests SUCCESS（PR #8、#9 功能已合併）。
 - 本 public repo 以新歷史提交；舊 private repo 的 full-green ledger 只作參考，不能當作 public CI 認證。
 - 已合併：原始 Master Spec / Intelligence Contract / AtlasTheme UI 維護規範 PR #1；Playground scope PR #2；選定 credential 安全驗證 PR #5；群組歷史隔離 PR #7。
 
 ## 下一片（唯一生產功能入口）
-- **PLAY-004：圖片 Vision 第一切片 [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8) 已合併**，包含 UI 選取/預覽/4 MiB 限制、signature 檢查、scope capability gating、VM→Engine→Transport 真實請求及單元／裝置測試。後續針對直接呼叫 VM 時也必須再次驗證本機圖片 URI／大小，避免繞開 Composer guard。Playground 的檔案／音訊／工具／圖片生成結果 UI 仍 PARTIAL。
+- **PLAY-004：圖片 Vision 第一切片 [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8)、安全邊界 [PR #9](https://github.com/Tsenjii/ModelAtlas-2/pull/9) 均已合併**。本輪修正：歷史圖片在第二輪純文字訊息仍被送上 wire，必須從整批待送訊息重新判斷 Vision capability；若能力撤銷，HTTP 前拒絕，不拿舊權限冒充。Playground 檔案／音訊／工具／圖片生成結果 UI 仍 PARTIAL。
 - 必須先讀現有 `PlaygroundScreen.kt`、`AtlasViewModel.kt`、`InferenceEngine`、`MultimodalBlocks.kt`、`OpenAiMediaTransports.kt`，確認已存在 transport / state 與實際欠缺。
 - 依現有 `AtlasTheme.kt` UI 節奏做增量 Compose，更動不能破壞 text streaming、selected credential、provider scoped telemetry。
 - 先設計最小可驗收的單一 multimodal flow；支援輸入/回應真實 wiring、permission 與 size/security guards、取消與錯誤語意、UI+core tests。

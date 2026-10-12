@@ -176,6 +176,61 @@ class PlaygroundVisionFlowDeviceTest {
         assertEquals("image_url", parts.getJSONObject(1).getString("type"))
         assertEquals(image.url, parts.getJSONObject(1).getJSONObject("image_url").getString("url"))
         assertFalse("輸出不得包含檔案絕對路徑", body.contains("/storage/emulated"))
+
+        // Regression: a subsequent TEXT-ONLY turn still retransmits the first
+        // Vision message from the same conversation. The target must continue
+        // exposing the selected model's verified VISION capability.
+        withContext(Dispatchers.Main.immediate) {
+            // This in-memory fixture injects the capability projection directly.
+            // A background DB refresh can replace it with UNKNOWN because the
+            // synthetic model was never classified in Room. Reapply the SAME
+            // verified selection before the next turn (not a different group).
+            val field = AtlasViewModel::class.java.getDeclaredField("_allModelRows").apply {
+                isAccessible = true
+            }
+            @Suppress("UNCHECKED_CAST")
+            val rows = field.get(vm) as MutableStateFlow<List<ModelRow>>
+            rows.value = listOf(ModelRow(
+                providerId = record.providerId, providerModelId = record.modelId,
+                canonicalId = "fixture-canonical", endpointId = record.endpointId,
+                operation = "CHAT_COMPLETIONS", group = null,
+                selectedKeyUsable = true, capabilities = setOf(Capability.VISION),
+                supportsVision = true,
+            ))
+            vm.send("接著說")
+        }
+        // Stop on any terminal state and show the actual VM error rather than
+        // obscuring a capability/auth failure behind a coroutine timeout.
+        val followUp = withTimeout(15_000L) { vm.state.first {
+            !it.busy && (it.messages.size >= 4 || it.error != null)
+        } }
+        assertNull("text follow-up rejected before HTTP; requests=${requests.size}", followUp.error)
+        assertEquals(4, followUp.messages.size)
+        assertEquals("ok", followUp.messages.last().text)
+        assertEquals(2, requests.size)
+        assertNull(requests[1].header("Authorization"))
+        val followUpBody = Buffer().also { requests[1].body!!.writeTo(it) }.readUtf8()
+        val messages = JSONObject(followUpBody).getJSONArray("messages")
+        assertEquals(3, messages.length())
+        val originalImage = messages.getJSONObject(0).getJSONArray("content")
+            .getJSONObject(1).getJSONObject("image_url").getString("url")
+        assertEquals(image.url, originalImage)
+        assertEquals("接著說", messages.getJSONObject(2).getString("content"))
+
+        // Capability revoked between turns: fail locally, never borrow stale
+        // image permission or silently strip the previous media context.
+        withContext(Dispatchers.Main.immediate) {
+            val field = AtlasViewModel::class.java.getDeclaredField("_allModelRows").apply {
+                isAccessible = true
+            }
+            @Suppress("UNCHECKED_CAST")
+            val rows = field.get(vm) as MutableStateFlow<List<ModelRow>>
+            rows.value = rows.value.map { it.copy(capabilities = emptySet(), supportsVision = false) }
+            vm.send("不可以借用已撤銷的圖片權限")
+        }
+        assertEquals(app.getString(R.string.playground_vision_unavailable), vm.state.value.error)
+        assertEquals(2, requests.size)
+        assertEquals(4, vm.state.value.messages.size)
     }
 
     /** Negative proof at the real VM boundary: a foreign group cannot authorize image upload. */
