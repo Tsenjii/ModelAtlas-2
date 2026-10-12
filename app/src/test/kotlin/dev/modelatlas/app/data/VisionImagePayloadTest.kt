@@ -44,6 +44,11 @@ class VisionImagePayloadTest {
         assertThrows(IllegalArgumentException::class.java) { VisionImagePayload.prepare(byteArrayOf(), "empty.png") }
     }
 
+    @Test fun filenameCannotSpoofExtensionWithBidiOverride() {
+        val result = VisionImagePayload.prepare(png(), "photo\u202Egnp.exe")
+        assertEquals("photognp.exe", result.filename)
+    }
+
     @Test fun filenameCannotSmuggleNewlinesOrPaths() {
         val result = VisionImagePayload.prepare(png(), "folder/name\r\nsecret.png")
         assertEquals("namesecret.png", result.filename)
