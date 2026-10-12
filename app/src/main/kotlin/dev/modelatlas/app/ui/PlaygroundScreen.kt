@@ -260,10 +260,13 @@ internal fun PlaygroundTab(
 }
 
 /** Preview is ephemeral Compose state; only bounded and signature-checked data URIs reach the VM. */
-private data class PreparedVisionAttachment(
+private class PreparedVisionAttachment(
   val image: ImageUrlPart,
   val thumbnail: ImageBitmap,
-)
+) {
+  // Content includes local media; never let Compose/debug object inspection print data URIs.
+  override fun toString(): String = "PreparedVisionAttachment(redacted)"
+}
 
 private suspend fun prepareVisionAttachment(context: Context, uri: Uri): PreparedVisionAttachment =
   withContext(Dispatchers.IO) {
@@ -283,10 +286,16 @@ private suspend fun prepareVisionAttachment(context: Context, uri: Uri): Prepare
       stream.use { input ->
         val buffer = ByteArray(8192)
         var total = 0
+        var emptyReads = 0
         while (true) {
           val read = input.read(buffer)
           if (read < 0) break
-          if (read == 0) continue
+          if (read == 0) {
+            emptyReads += 1
+            require(emptyReads <= 16) { "Photo content stream stalled" }
+            continue
+          }
+          emptyReads = 0
           total += read
           require(total <= VisionImagePayload.MAX_IMAGE_BYTES) { "Image exceeds 4 MiB" }
           output.write(buffer, 0, read)
@@ -424,7 +433,7 @@ private fun PlaygroundComposer(
         FilledIconButton(
           onClick = {
             if (busy) onCancel()
-            else if (canSend && prompt.isNotBlank()) {
+            else if (canSend && !imagePreparing && prompt.isNotBlank()) {
               submittedPrompt = prompt
               submittedAttachmentName = pendingImage?.image?.filename
               submittedAfterId = acceptedMessage?.id
@@ -433,7 +442,7 @@ private fun PlaygroundComposer(
               else onSend(prompt)
             }
           },
-          enabled = busy || (canSend && prompt.isNotBlank()),
+          enabled = busy || (canSend && !imagePreparing && prompt.isNotBlank()),
           modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = actionLabel },
           shape = AtlasRadius.pill,
         ) {
