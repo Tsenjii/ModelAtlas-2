@@ -4,8 +4,8 @@
 
 ## Live state
 - **MODE：PLAY-004 Vision 子功能已合併，下一片為本機圖片輸入 ViewModel 邊界防護**；P8/P9/P10 尚未完成正式驗收。
-- **FEATURE FREEZE：待最新主線驗證**。主線 `cd313947f5ef4750efaa5e681454752ec585c281` 為 PR #8 的 squash merge，完整主線 [Actions 38269841531](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38269841531) 需確認 build + device-tests 同 SHA 成功後才能解鎖新 phase。
-- **最近已確認的功能 PR 全綠：** `6a4f173`，[PR #8 CI](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38261796603) build SUCCESS + device-tests SUCCESS；正式主線全綠須以新 main SHA 的獨立 CI 再驗證。
+- **FEATURE FREEZE：OFF**。主線 `cd313947f5ef4750efaa5e681454752ec585c281` 為 PR #8 的 squash merge，[Actions 38269841531](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38269841531) **build SUCCESS + device-tests SUCCESS**。
+- **最近 verified main full-green：** `cd31394`，[main CI](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38269841531) build SUCCESS + device-tests SUCCESS（PR #8 功能已驗）；新 PR #9 仍須獨立驗證後才可合併。
 - 本 public repo 以新歷史提交；舊 private repo 的 full-green ledger 只作參考，不能當作 public CI 認證。
 - 已合併：原始 Master Spec / Intelligence Contract / AtlasTheme UI 維護規範 PR #1；Playground scope PR #2；選定 credential 安全驗證 PR #5；群組歷史隔離 PR #7。
 
