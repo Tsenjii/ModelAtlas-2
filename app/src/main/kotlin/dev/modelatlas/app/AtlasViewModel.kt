@@ -54,6 +54,7 @@ import dev.modelatlas.app.ui.selectedVisionCapabilities
 import dev.modelatlas.app.ui.selectedChatCapabilities
 import dev.modelatlas.app.data.VisionImagePayload
 import dev.modelatlas.app.data.LocalPdfPayload
+import dev.modelatlas.app.data.LocalAudioPayload
 import dev.modelatlas.core.domain.CheckinRecord
 import dev.modelatlas.core.domain.Capability
 import dev.modelatlas.core.domain.HealthState
@@ -69,6 +70,7 @@ import dev.modelatlas.core.inference.Outcome
 import dev.modelatlas.core.inference.PerformanceSample
 import dev.modelatlas.core.inference.PromptMessage
 import dev.modelatlas.core.inference.StreamEvent
+import dev.modelatlas.core.multimodal.AudioInputPart
 import dev.modelatlas.core.multimodal.FileRefPart
 import dev.modelatlas.core.multimodal.ImageUrlPart
 import dev.modelatlas.core.multimodal.TextPart
@@ -726,18 +728,24 @@ class AtlasViewModel @JvmOverloads constructor(
         applyContextFromSelection(recompute = true)
     }
 
-    fun send(prompt: String) = sendWithAttachment(prompt, image = null, file = null)
+    fun send(prompt: String) = sendWithAttachment(prompt, image = null, file = null, audio = null)
 
     /** Preserve the real Vision entry point and original image-only scope semantics. */
     fun sendWithImage(prompt: String, image: ImageUrlPart?) =
-        sendWithAttachment(prompt, image = image, file = null)
+        sendWithAttachment(prompt, image = image, file = null, audio = null)
 
     /** Local bounded PDF input, never an externally supplied file ID or URL. */
     fun sendWithFile(prompt: String, file: FileRefPart) =
-        sendWithAttachment(prompt, image = null, file = file)
+        sendWithAttachment(prompt, image = null, file = file, audio = null)
 
-    private fun sendWithAttachment(prompt: String, image: ImageUrlPart?, file: FileRefPart?) {
-        require(image == null || file == null) { "Only one local attachment per turn" }
+    /** Local bounded WAV/MP3 input, never capture permission or a background recording. */
+    fun sendWithAudio(prompt: String, audio: LocalAudioPayload.Prepared) =
+        sendWithAttachment(prompt, image = null, file = null, audio = audio)
+
+    private fun sendWithAttachment(
+        prompt: String, image: ImageUrlPart?, file: FileRefPart?, audio: LocalAudioPayload.Prepared?,
+    ) {
+        require(listOfNotNull(image, file, audio).size <= 1) { "Only one local attachment per turn" }
         if (_state.value.busy) return
         if (_providerModelAction.value.busy || _compareRunning.value) {
             _state.update { it.copy(error = string(R.string.error_busy)) }
@@ -786,7 +794,9 @@ class AtlasViewModel @JvmOverloads constructor(
             recentHistory.any { message -> message.blocks.any { it is ImageUrlPart } }
         val requiresFiles = file != null ||
             recentHistory.any { message -> message.blocks.any { it is FileRefPart } }
-        val mediaCapabilities = if (requiresVision || requiresFiles) selectedChatCapabilities(
+        val requiresAudio = audio != null ||
+            recentHistory.any { message -> message.blocks.any { it is AudioInputPart } }
+        val mediaCapabilities = if (requiresVision || requiresFiles || requiresAudio) selectedChatCapabilities(
             rows = _allModelRows.value,
             providerId = record.providerId,
             providerModelId = record.modelId,
@@ -804,6 +814,10 @@ class AtlasViewModel @JvmOverloads constructor(
             _state.update { it.copy(error = string(R.string.playground_pdf_unavailable)) }
             return
         }
+        if (requiresAudio && Capability.AUDIO_INPUT !in mediaCapabilities) {
+            _state.update { it.copy(error = string(R.string.playground_audio_unavailable)) }
+            return
+        }
         if (image != null && !VisionImagePayload.isValidForSend(image)) {
             _state.update { it.copy(error = string(R.string.playground_image_error)) }
             return
@@ -812,18 +826,27 @@ class AtlasViewModel @JvmOverloads constructor(
             _state.update { it.copy(error = string(R.string.playground_pdf_error)) }
             return
         }
+        if (audio != null && !LocalAudioPayload.isValidForSend(audio)) {
+            _state.update { it.copy(error = string(R.string.playground_audio_error)) }
+            return
+        }
         val requestScopeGeneration = sendScopeGeneration
         // Capture at send time: later UI scope changes must not mutate an in-flight request.
         val userPrompt = when {
             image != null -> PromptMessage("user", listOf(TextPart(text), image))
             file != null -> PromptMessage("user", listOf(TextPart(text), file))
+            audio != null -> PromptMessage("user", listOf(TextPart(text), audio.part))
             else -> PromptMessage("user", text)
         }
         val requestMessages = recentHistory + userPrompt
         val userMessage = ChatMessage(
             id = UUID.randomUUID().toString(), role = "user", text = text,
-            attachmentName = image?.filename ?: file?.filename,
-            attachmentKind = if (file != null) "FILE" else null,
+            attachmentName = image?.filename ?: file?.filename ?: audio?.filename,
+            attachmentKind = when {
+                file != null -> "FILE"
+                audio != null -> "AUDIO"
+                else -> null
+            },
         )
         val assistantId = UUID.randomUUID().toString()
         _state.update {
