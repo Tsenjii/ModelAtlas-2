@@ -2,6 +2,11 @@
 
 更新：2026-10-13，公開 repo `Tsenjii/ModelAtlas-2`。
 
+## 2026-10-13 即時核對
+- main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`；[Actions 38408176782](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38408176782) build/device-tests 均 SUCCESS。
+- [PR #18](https://github.com/Tsenjii/ModelAtlas-2/pull/18) Audio Input 已合併；PLAY-004 仍 PARTIAL。下一切片 Audio Output／轉寫結果 UI 尚未完成，不得宣稱驗收。
+- 先前 Live state 段落為歷史快照；本段與最新 GitHub HEAD 優先。
+
 ## Live state
 - **MODE：PLAY-004 / Audio Input（本機 WAV／MP3）單一候選切片**。分支 `feature/play-004-audio-input-20261013`，尚待 PR 同 SHA build/device 全綠；此切片未驗收前不得合併。
 - **最新 VERIFIED main FULL GREEN：** `d7dd460a4dbd3347bb0b33aeafb72f408b52dc09`，來自已合併 [PR #17](https://github.com/Tsenjii/ModelAtlas-2/pull/17) PDF；[main CI 38403442111](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38403442111) **build SUCCESS + device-tests SUCCESS（同 HEAD SHA）**。此 main HEAD 的 FEATURE FREEZE=OFF；下一次任何 main 紅燈即再上鎖。
