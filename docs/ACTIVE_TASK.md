@@ -3,15 +3,17 @@
 更新：2026-10-13，公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
-- **MODE：PLAY-004 / Files（PDF）第一個 production attachment 切片**。此分支為候選；需 PR 同 SHA build + device SUCCESS、合併後 main 重跑全綠才算完成。
-- **main verified full-green：** [`069b541a`](https://github.com/Tsenjii/ModelAtlas-2/commit/069b541a486e032cf19431a54ec668652a7142cc) 是 [PR #16](https://github.com/Tsenjii/ModelAtlas-2/pull/16) squash merge；[Actions 38397137563](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38397137563) **build SUCCESS + device-tests SUCCESS（同 SHA）**。FEATURE FREEZE OFF；若後續任何 main HEAD 變紅，立即重開 red-head lock。
-- **Issue #14 新對話已 merge 並經 main full-green：** `AtlasViewModel.startNewConversation` 只清當前選定連線的 UI/wire history；串流時拒絕，保留 samples/telemetry；UI 草稿與 picker late-result 按 reset generation 隔離；Android Room→VM→HTTP + Compose 已測。跨連線 A/B 的新增精確證明可持續強化。
-- **本輪單一 slice：** 真正接上 `FileRefPart` PDF（用本機 content URI、4 MiB 上限、PDF signature/mime/filename gate、精確 FILES 能力、無額外 credentials；未知能力 fail-closed）。保留 image/text/history/busy/cancel/telemetry 路徑，測試不可因 PDF 加入而降低。整體 PLAY-004 仍 **PARTIAL**，尚缺音訊／工具／生成結果 UI。
-- **上次 correctness 修復：** [PR #15](https://github.com/Tsenjii/ModelAtlas-2/pull/15) `3925ff9d`，[Actions 38392145254](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38392145254) build/device 同 SHA full-green；PK27 observer / MyModels join race 已修。歷史失敗 [38324922179](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38324922179) 不視為成功。
-- Public repo 不帶 private repo Git history / sensitive token；舊 private CI 非新主線驗收證據。
+- **MODE：PLAY-004 / Audio Input（本機 WAV／MP3）單一候選切片**。分支 `feature/play-004-audio-input-20261013`，尚待 PR 同 SHA build/device 全綠；此切片未驗收前不得合併。
+- **最新 VERIFIED main FULL GREEN：** `d7dd460a4dbd3347bb0b33aeafb72f408b52dc09`，來自已合併 [PR #17](https://github.com/Tsenjii/ModelAtlas-2/pull/17) PDF；[main CI 38403442111](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38403442111) **build SUCCESS + device-tests SUCCESS（同 HEAD SHA）**。此 main HEAD 的 FEATURE FREEZE=OFF；下一次任何 main 紅燈即再上鎖。
+- **PLAY-004 新對話 [#14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) ACCEPTED：** [PR #16](https://github.com/Tsenjii/ModelAtlas-2/pull/16)／main `069b541a` [CI 38397137563](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38397137563) build/device 全綠。只清當前選定 scope 的 UI/wire history、draft/picker；telemetry、samples、quota、他連線不可刪。
+- **PLAY-004 PDF 第一切片 ACCEPTED：** [PR #17](https://github.com/Tsenjii/ModelAtlas-2/pull/17) 候選 `f8984e1` [CI 38401105133](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38401105133) build/device SUCCESS，合併 `d7dd460a` [main 38403442111](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38403442111) build/device SUCCESS。原失敗 [38399650161](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38399650161) 不冒充綠燈。production PDF picker→LocalPdfPayload→VM FILES gate→InferenceEngine→OpenAiTransport 已驗。
+- **目前音訊片：** 延續現有 `AudioInputPart` 真實 Chat Completions wire，使用 Android `GetContent(audio/*)`，不請求麥克風權限、不錄音；本機 WAV／MP3 signature、4 MiB cap、safe filename、直接 VM 強制再驗，僅同選定 provider/account/credential/model/group/endpoint/operation 已確認的 AUDIO_INPUT 可發。歷史含音訊時也必須重新驗能力；撤銷後 HTTP 前拒發，new conversation 不重播；實際 Room→VM→Engine→HTTP 與 Compose 48dp/窄屏/大字/深淺色測試待 PR CI。
+- **PLAY-004 整體仍 PARTIAL**：Audio Input 之外仍缺 Audio Output／轉寫結果、Tool calls/工具結果 UI、Image Generation/Edit 結果展示。之後順序依單一 slice 實際驗收；再進入 P8/P9/P10。
+- PK27／MyModels 問題 [PR #15](https://github.com/Tsenjii/ModelAtlas-2/pull/15) 已在 `3925ff9d` [main CI 38392145254](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38392145254) 同 SHA build/device 全綠；本輪後續 main 綠燈亦涵蓋原回歸。
+- Public repo 不帶 private repo Git history／任何 raw key/PAT；old private CI 不得當作 public main 的驗收。
 
 ## 下一片（唯一生產功能入口）
-- **PLAY-004：圖片 Vision [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8)、安全邊界 [PR #9](https://github.com/Tsenjii/ModelAtlas-2/pull/9)、多輪歷史 [PR #13](https://github.com/Tsenjii/ModelAtlas-2/pull/13) 已合併**。修正針對整批待送歷史檢查 Vision 並保留同 scope 能力，若撤銷則 HTTP 前拒絕；主線 PK27 observer crash 已由 PR #15 修復且全綠；新對話 [#14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) 已合併並 main 同 SHA 全綠；目前處理 PDF Files 真實接線，後續才是音訊／工具／結果 UI，PLAY-004 整體仍 PARTIAL。
+- **PLAY-004：圖片 Vision [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8)、安全邊界 [PR #9](https://github.com/Tsenjii/ModelAtlas-2/pull/9)、多輪歷史 [PR #13](https://github.com/Tsenjii/ModelAtlas-2/pull/13) 已合併**。修正針對整批待送歷史檢查 Vision 並保留同 scope 能力，若撤銷則 HTTP 前拒絕；主線 PK27 observer crash 已由 PR #15 修復且全綠；新對話 [#14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) 已合併並 main 同 SHA 全綠；PDF Files 已通過 PR #17/main CI，現在只處理 WAV／MP3 Audio Input，後續另片處理音訊輸出／工具／結果 UI，PLAY-004 整體仍 PARTIAL。
 - 必須先讀現有 `PlaygroundScreen.kt`、`AtlasViewModel.kt`、`InferenceEngine`、`MultimodalBlocks.kt`、`OpenAiMediaTransports.kt`，確認已存在 transport / state 與實際欠缺。
 - 依現有 `AtlasTheme.kt` UI 節奏做增量 Compose，更動不能破壞 text streaming、selected credential、provider scoped telemetry。
 - 先設計最小可驗收的單一 multimodal flow；支援輸入/回應真實 wiring、permission 與 size/security guards、取消與錯誤語意、UI+core tests。
