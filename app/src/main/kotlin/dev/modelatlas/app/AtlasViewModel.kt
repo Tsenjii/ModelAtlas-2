@@ -3125,6 +3125,9 @@ class AtlasViewModel @JvmOverloads constructor(
         val bundleKey = BundleEnrichmentKey(providerId, providerModelId, accountId, credentialId, group)
         val bundleInFlight = bundleFlightMutex.withLock { bundleFlights[bundleKey] }
         if (bundleInFlight != null) {
+            // Notify observers at actual flight attachment, before the
+            // leader resolves. Enables deterministic join synchronization.
+            emit(RefreshAttemptEvent.Joined(w, origin))
             try {
                 bundleInFlight.await()
             } catch (e: CancellationException) {
@@ -3138,7 +3141,6 @@ class AtlasViewModel @JvmOverloads constructor(
                 throw e
             } catch (_: Exception) {
             }
-            emit(RefreshAttemptEvent.Joined(w, origin))
             val outcome = RefreshOutcome.JOINED_EXISTING_FLIGHT
             emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
             return outcome
@@ -3148,6 +3150,7 @@ class AtlasViewModel @JvmOverloads constructor(
         // charge；自己的 cancel 只斷自己（重拋），不碰 leader。
         val existing = refreshFlightMutex.withLock { refreshFlights[w] }
         if (existing != null) {
+            emit(RefreshAttemptEvent.Joined(w, origin))
             try {
                 existing.await()
             } catch (e: CancellationException) {
@@ -3162,7 +3165,6 @@ class AtlasViewModel @JvmOverloads constructor(
             } catch (_: Exception) {
                 // 重讀失敗不改變 follower 語意（仍只 Joined）。
             }
-            emit(RefreshAttemptEvent.Joined(w, origin))
             val outcome = RefreshOutcome.JOINED_EXISTING_FLIGHT
             emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
             return outcome
@@ -3228,13 +3230,13 @@ class AtlasViewModel @JvmOverloads constructor(
         }
         if (dup != null) {
             if (origin == RefreshOrigin.SESSION_AUTO) myModelRefreshPolicy.onQueuedCancel(w)
+            emit(RefreshAttemptEvent.Joined(w, origin))
             try {
                 dup.await()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
             }
-            emit(RefreshAttemptEvent.Joined(w, origin))
             val outcome = RefreshOutcome.JOINED_EXISTING_FLIGHT
             emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
             return outcome
