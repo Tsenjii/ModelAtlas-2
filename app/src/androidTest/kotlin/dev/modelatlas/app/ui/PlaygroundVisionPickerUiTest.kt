@@ -34,6 +34,7 @@ class PlaygroundVisionPickerUiTest {
 
     private fun show(
         canAttach: Boolean,
+        canAttachPdf: Boolean = false,
         group: State<String?>? = null,
         resetToken: State<Long>? = null,
         busy: Boolean = false,
@@ -53,7 +54,9 @@ class PlaygroundVisionPickerUiTest {
                     onSelect = {},
                     onSend = {},
                     onSendVision = { _, _ -> },
+                    onSendFile = { _, _ -> },
                     canAttachVision = canAttach,
+                    canAttachFile = canAttachPdf,
                     selectedGroup = group?.value,
                     onCancel = {},
                     onNewConversation = onNewConversation,
@@ -88,6 +91,13 @@ class PlaygroundVisionPickerUiTest {
         // No text from group A remains available for sending in group B.
         compose.onNodeWithContentDescription(send).assertIsNotEnabled()
     }
+    @Test fun pdfPickerRequiresSelectedCapabilityAndHas48dpTouchArea() {
+        show(canAttach = false, canAttachPdf = false)
+        val label = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(R.string.playground_attach_pdf)
+        compose.onNodeWithContentDescription(label).assertIsNotEnabled()
+    }
+
     @Test fun newConversationHas48dpTargetInLightAndDark() {
         val dark = mutableStateOf(false)
         show(canAttach = true, darkTheme = dark)
@@ -110,6 +120,15 @@ class PlaygroundVisionPickerUiTest {
         compose.onNodeWithContentDescription(send).assertIsEnabled()
         compose.onNodeWithContentDescription(newConversation).assertIsEnabled().performClick()
         compose.onNodeWithContentDescription(send).assertIsNotEnabled()
+    }
+
+    @Test fun filePickerIsAccessibleWhenSelectedModelSupportsFiles() {
+        show(canAttach = false, canAttachPdf = true)
+        val label = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(R.string.playground_attach_pdf)
+        compose.onNodeWithContentDescription(label)
+            .assertIsEnabled()
+            .assertHeightIsAtLeast(48.dp)
     }
 
     @Test fun newConversationIsDisabledWhileStreaming() {
