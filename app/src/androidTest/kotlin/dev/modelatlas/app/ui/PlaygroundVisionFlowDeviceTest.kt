@@ -20,6 +20,7 @@ import dev.modelatlas.core.multimodal.FileRefPart
 import dev.modelatlas.core.domain.Capability
 import dev.modelatlas.core.inference.CredentialAccess
 import dev.modelatlas.core.inference.InferenceEngine
+import dev.modelatlas.core.inference.PromptMessage
 import dev.modelatlas.core.network.OpenAiTransport
 import dev.modelatlas.core.multimodal.ImageUrlPart
 import dev.modelatlas.core.onboarding.OnboardingFlowType
@@ -323,9 +324,20 @@ class PlaygroundVisionFlowDeviceTest {
         assertEquals(app.getString(R.string.playground_pdf_unavailable), vm.state.value.error)
         assertEquals(1, requests.size)
         val previousSamples = vm.state.value.samples.size
+        // Cross-scope cache proof: resetting A cannot erase unrelated B.
+        val historyField = AtlasViewModel::class.java.getDeclaredField("historyByConnection").apply {
+            isAccessible = true
+        }
+        @Suppress("UNCHECKED_CAST")
+        val history = historyField.get(vm) as MutableMap<String, MutableList<PromptMessage>>
+        val otherScope = "other-connection-B"
+        val otherHistory = mutableListOf(PromptMessage("user", "B private content"))
         withContext(Dispatchers.Main.immediate) {
+            history[otherScope] = otherHistory
             vm.startNewConversation()
             assertTrue(vm.state.value.messages.isEmpty())
+            assertFalse(history.containsKey(record.id))
+            assertEquals(otherHistory, history[otherScope])
             assertEquals(previousSamples, vm.state.value.samples.size)
             vm.send("新對話純文字")
         }
