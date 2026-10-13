@@ -16,7 +16,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberUpdatedState
 import dev.modelatlas.app.data.VisionImagePayload
+import dev.modelatlas.app.data.LocalPdfPayload
 import dev.modelatlas.core.multimodal.ImageUrlPart
+import dev.modelatlas.core.multimodal.FileRefPart
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -124,7 +126,9 @@ internal fun PlaygroundTab(
   onSelect: (String) -> Unit,
   onSend: (String) -> Unit,
   onSendVision: (String, ImageUrlPart) -> Unit,
+  onSendFile: (String, FileRefPart) -> Unit,
   canAttachVision: Boolean,
+  canAttachFile: Boolean,
   selectedGroup: String?,
   onCancel: () -> Unit,
   onNewConversation: () -> Unit,
@@ -237,7 +241,9 @@ internal fun PlaygroundTab(
         compact = compact,
         onSend = onSend,
         onSendVision = onSendVision,
+        onSendFile = onSendFile,
         canAttachVision = canAttachVision,
+        canAttachFile = canAttachFile,
         scopeKey = selectedGroup,
         resetToken = state.conversationResetToken,
         onCancel = onCancel,
@@ -329,7 +335,9 @@ private fun PlaygroundComposer(
   compact: Boolean,
   onSend: (String) -> Unit,
   onSendVision: (String, ImageUrlPart) -> Unit,
+  onSendFile: (String, FileRefPart) -> Unit,
   canAttachVision: Boolean,
+  canAttachFile: Boolean,
   scopeKey: String?,
   resetToken: Long,
   onCancel: () -> Unit,
@@ -344,6 +352,9 @@ private fun PlaygroundComposer(
   var submittedAfterId by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<String?>(null) }
   var submittedAttachmentName by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<String?>(null) }
   var pendingImage by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<PreparedVisionAttachment?>(null) }
+  var pendingFile by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<PreparedPdfAttachment?>(null) }
+  var filePreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
+  var fileError by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var imagePreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var imageError by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   val context = LocalContext.current
@@ -354,6 +365,9 @@ private fun PlaygroundComposer(
   var pickerResetToken by remember { mutableStateOf<Long?>(null) }
   var pickerConnectionId by remember { mutableStateOf<String?>(null) }
   var pickerGroup by remember { mutableStateOf<String?>(null) }
+  var pdfPickerConnectionId by remember { mutableStateOf<String?>(null) }
+  var pdfPickerGroup by remember { mutableStateOf<String?>(null) }
+  var pdfPickerResetToken by remember { mutableStateOf<Long?>(null) }
   val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
     if (uri != null && pickerConnectionId == currentConnectionId && pickerGroup == currentScopeKey && pickerResetToken == currentResetToken) {
       val expectedId = currentConnectionId
@@ -377,6 +391,34 @@ private fun PlaygroundComposer(
       }
     }
   }
+  val pdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    if (uri != null && pdfPickerConnectionId == currentConnectionId &&
+        pdfPickerGroup == currentScopeKey && pdfPickerResetToken == currentResetToken) {
+      val expectedId = currentConnectionId
+      val expectedGroup = currentScopeKey
+      val expectedReset = currentResetToken
+      launchScope.launch {
+        filePreparing = true
+        fileError = false
+        try {
+          val prepared = preparePdfAttachment(context, uri)
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) {
+            pendingFile = prepared
+            pendingImage = null
+          }
+        } catch (cancel: CancellationException) {
+          throw cancel
+        } catch (_: Exception) {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) fileError = true
+        } finally {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) filePreparing = false
+        }
+      }
+    }
+  }
   val keyboard = LocalSoftwareKeyboardController.current
   val focusManager = LocalFocusManager.current
   // send 可能在前置檢查即拒絕；看到 VM 接受的新 user message 才清空相符草稿。
@@ -388,6 +430,7 @@ private fun PlaygroundComposer(
       if (prompt == submitted) {
         prompt = ""
         pendingImage = null
+        pendingFile = null
         focusManager.clearFocus()
         keyboard?.hide()
       }
