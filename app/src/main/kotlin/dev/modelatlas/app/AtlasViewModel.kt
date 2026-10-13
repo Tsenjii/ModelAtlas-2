@@ -739,7 +739,7 @@ class AtlasViewModel @JvmOverloads constructor(
         sendWithAttachment(prompt, image = null, file = file, audio = null)
 
     /** Local bounded WAV/MP3 input, never capture permission or a background recording. */
-    fun sendWithAudio(prompt: String, audio: LocalAudioPayload.Prepared) =
+    internal fun sendWithAudio(prompt: String, audio: LocalAudioPayload.Prepared) =
         sendWithAttachment(prompt, image = null, file = null, audio = audio)
 
     private fun sendWithAttachment(
