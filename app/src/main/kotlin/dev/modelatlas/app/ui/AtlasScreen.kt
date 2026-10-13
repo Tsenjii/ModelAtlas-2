@@ -676,6 +676,7 @@ private fun AtlasScreenContent(
           } ?: false,
           selectedGroup = selectedGroup,
           onCancel = viewModel::cancel,
+          onNewConversation = viewModel::startNewConversation,
           onGotoProviders = { tab = 1 },
           showConnections = showConnections,
           onShowConnections = { showConnections = it },
