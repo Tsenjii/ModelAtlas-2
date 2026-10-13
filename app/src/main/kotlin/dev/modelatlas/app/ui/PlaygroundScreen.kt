@@ -500,10 +500,25 @@ private fun PlaygroundComposer(
             pickerResetToken = resetToken
             imagePicker.launch("image/*")
           },
-          enabled = canSend && canAttachVision && !busy && !imagePreparing && pendingImage == null,
+          enabled = canSend && canAttachVision && !busy && !imagePreparing && !filePreparing && pendingImage == null && pendingFile == null,
           modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = attachLabel },
         ) {
           Icon(Icons.Filled.Add, contentDescription = null)
+        }
+        val pdfAttachLabel = stringResource(R.string.playground_attach_pdf)
+        TextButton(
+          onClick = {
+            pdfPickerConnectionId = selectedConnection?.id
+            pdfPickerGroup = scopeKey
+            pdfPickerResetToken = resetToken
+            pdfPicker.launch("application/pdf")
+          },
+          enabled = canSend && canAttachFile && !busy && !imagePreparing && !filePreparing &&
+            pendingImage == null && pendingFile == null,
+          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = pdfAttachLabel },
+          contentPadding = PaddingValues(horizontal = AtlasSpace.xs),
+        ) {
+          Text("PDF", style = MaterialTheme.typography.labelMedium)
         }
         TextField(
           value = prompt,
@@ -530,18 +545,21 @@ private fun PlaygroundComposer(
         FilledIconButton(
           onClick = {
             if (busy) onCancel()
-            else if (canSend && !imagePreparing && prompt.isNotBlank() &&
-                (pendingImage == null || canAttachVision)) {
+            else if (canSend && !imagePreparing && !filePreparing && prompt.isNotBlank() &&
+                (pendingImage == null || canAttachVision) &&
+                (pendingFile == null || canAttachFile)) {
               submittedPrompt = prompt
-              submittedAttachmentName = pendingImage?.image?.filename
+              submittedAttachmentName = pendingImage?.image?.filename ?: pendingFile?.file?.filename
               submittedAfterId = acceptedMessage?.id
               val selectedImage = pendingImage
               if (selectedImage != null) onSendVision(prompt, selectedImage.image)
+              else if (pendingFile != null) onSendFile(prompt, pendingFile!!.file)
               else onSend(prompt)
             }
           },
-          enabled = busy || (canSend && !imagePreparing && prompt.isNotBlank() &&
-            (pendingImage == null || canAttachVision)),
+          enabled = busy || (canSend && !imagePreparing && !filePreparing && prompt.isNotBlank() &&
+            (pendingImage == null || canAttachVision) &&
+            (pendingFile == null || canAttachFile)),
           modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = actionLabel },
           shape = AtlasRadius.pill,
         ) {
@@ -578,6 +596,36 @@ private fun PlaygroundComposer(
             modifier = Modifier.size(AtlasSpace.touch),
           ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.playground_remove_image)) }
         }
+      }
+      pendingFile?.let { attachment ->
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(vertical = AtlasSpace.xs),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm),
+        ) {
+          Text("PDF", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+          Text(
+            attachment.file.filename ?: stringResource(R.string.playground_attached_pdf),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+          IconButton(
+            onClick = { pendingFile = null; fileError = false },
+            modifier = Modifier.size(AtlasSpace.touch),
+          ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.playground_remove_pdf)) }
+        }
+      }
+      if (filePreparing) {
+        Text(stringResource(R.string.playground_pdf_loading), style = MaterialTheme.typography.labelMedium)
+      }
+      if (fileError) {
+        Text(
+          stringResource(R.string.playground_pdf_error),
+          color = MaterialTheme.colorScheme.error,
+          style = MaterialTheme.typography.bodySmall,
+        )
       }
       if (imagePreparing) {
         Text(stringResource(R.string.playground_image_loading), style = MaterialTheme.typography.labelMedium)
@@ -715,7 +763,10 @@ private fun ChatBubble(
         Column(Modifier.padding(AtlasSpace.lg), verticalArrangement = Arrangement.spacedBy(AtlasSpace.sm)) {
           if (message.attachmentName != null) {
             AtlasBadge(
-              text = stringResource(R.string.playground_attached_image) + " · " + message.attachmentName,
+              text = stringResource(
+                if (message.attachmentKind == "FILE") R.string.playground_attached_pdf
+                else R.string.playground_attached_image,
+              ) + " · " + message.attachmentName,
               tone = AtlasTone.ACCENT,
             )
           }
