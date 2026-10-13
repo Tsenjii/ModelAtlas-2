@@ -3,15 +3,14 @@
 更新：2026-10-13，公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
-- **MODE：CORRECTNESS / 主線紅燈解除作業（PK27 + MyModels refresh race）**；P8/P9/P10 尚未完成正式驗收。
-- **FEATURE FREEZE：ON（red-head lock）**。最新主線 `ec0464e5868aaddf20667cbd1c86bf8993abfc3f` 已合併 PR #13，但 [main Actions 38324128166](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38324128166) **build SUCCESS、device-tests FAILURE**，屬 PK-27 Compose multithreaded SnapshotStateObserver crash，整套測試僅跑約 60 項就中止。只允許修回歸並重新驗證，不開新產品功能。
-- **PR #15 本輪修復：** [Actions 38324922179](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38324922179) build SUCCESS / device-tests FAILED，失敗為 `MyModelsMetadataRetryStateTest.c3aJoinFailureLeavesBudgetOpen`：follower 在 leader 退出後才競爭進入，故誤執行不應出現的第二次 fetch。已在 [4ec80d3](https://github.com/Tsenjii/ModelAtlas-2/commit/4ec80d3602ab92d1df8b3738941df9ba0ac6ec98) 改成 attach flight 即發 Joined 事件，並以 [bfefbf7](https://github.com/Tsenjii/ModelAtlas-2/commit/bfefbf703bbafa8b832c83d941abe5eab3e147c0) 修改 C1/C2/C3/D2/D4 回歸測試，等 join 完成才 release leader。最新 [Actions 38386332526](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38386332526) **尚待 build + emulator 真實驗收**，絕不提前標成功。
-- **最近 verified main full-green：** `f32522c`，[main CI](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38273286105) build SUCCESS + device-tests SUCCESS。PR #13 候選 `767fdbd` [CI 38323252180](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38323252180) build + device SUCCESS；其 squash 後主線遇到上述不同測試的 Compose 崩潰，**不可冒稱 main 已 full-green**。
+- **MODE：PLAY-004 / Issue #14 新對話（候選實作；尚待 PR 同 SHA CI）**。
+- **FEATURE FREEZE：OFF（main 已恢復全綠；每個新 slice 仍須獨立驗收）**。主線 [`3925ff9d`](https://github.com/Tsenjii/ModelAtlas-2/commit/3925ff9dced2c97382438d0b72b9cda2e15526fd) 為 [PR #15](https://github.com/Tsenjii/ModelAtlas-2/pull/15) squash merge；[main Actions 38392145254](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38392145254) **build SUCCESS + device-tests SUCCESS（同一 HEAD SHA）**。
+- **PK27 / MyModels 維修已在 main 全綠**：PR #15 修 Compose-owned semantics waits 避免 SnapshotStateObserver 跨執行緒崩潰，並修 follower join race（flight attach 即發 Joined，測試等待 join 才釋放 leader）；先前紅燈 [38324128166](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38324128166)／[38324922179](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38324922179) 不可當成功。
+- **目前唯一可開發片：** [Issue #14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) 新對話：同 scope 清除 UI/wire history、草稿與 pending attachment，其他連線與所有 telemetry/usage/evidence 不可刪；streaming 時拒絕清除；Vision 撤銷後新對話可發純文字。此分支是候選，未獲 build+device-tests 同 SHA 成功前不得合併或 ACCEPTED。
 - 本 public repo 以新歷史提交；舊 private repo 的 full-green ledger 只作參考，不能當作 public CI 認證。
-- 已合併：原始 Master Spec / Intelligence Contract / AtlasTheme UI 維護規範 PR #1；Playground scope PR #2；選定 credential 安全驗證 PR #5；群組歷史隔離 PR #7。
 
 ## 下一片（唯一生產功能入口）
-- **PLAY-004：圖片 Vision [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8)、安全邊界 [PR #9](https://github.com/Tsenjii/ModelAtlas-2/pull/9)、多輪歷史 [PR #13](https://github.com/Tsenjii/ModelAtlas-2/pull/13) 已合併**。修正針對整批待送歷史檢查 Vision 並保留同 scope 能力，若撤銷則 HTTP 前拒絕；但新 main Android suite 的 PK-27 observer crash 尚待本輪修復。接著才處理 [#14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) 新對話，及檔案／音訊／工具／結果 UI，PLAY-004 整體仍 PARTIAL。
+- **PLAY-004：圖片 Vision [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8)、安全邊界 [PR #9](https://github.com/Tsenjii/ModelAtlas-2/pull/9)、多輪歷史 [PR #13](https://github.com/Tsenjii/ModelAtlas-2/pull/13) 已合併**。修正針對整批待送歷史檢查 Vision 並保留同 scope 能力，若撤銷則 HTTP 前拒絕；主線 PK27 observer crash 已由 PR #15 修復且全綠；目前單一切片處理 [#14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) 新對話，接著才是檔案／音訊／工具／結果 UI，PLAY-004 整體仍 PARTIAL。
 - 必須先讀現有 `PlaygroundScreen.kt`、`AtlasViewModel.kt`、`InferenceEngine`、`MultimodalBlocks.kt`、`OpenAiMediaTransports.kt`，確認已存在 transport / state 與實際欠缺。
 - 依現有 `AtlasTheme.kt` UI 節奏做增量 Compose，更動不能破壞 text streaming、selected credential、provider scoped telemetry。
 - 先設計最小可驗收的單一 multimodal flow；支援輸入/回應真實 wiring、permission 與 size/security guards、取消與錯誤語意、UI+core tests。
