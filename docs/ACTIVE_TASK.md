@@ -30,3 +30,10 @@
 - 未驗收：PLAY-004 full UI、P8/P9/P10 的全部 production flow。
 - X-011 週期背景同步仍停用，因真實 sync runner 尚未接線；不得直接改 `isPeriodicSchedulingEnabled` 為 true。
 - 舊 private source 的實際憑證曾入 git 歷史：舊 PAT 仍需由持有人撤銷；不可將舊 Git 歷史推進新 public。
+
+
+## VPS 獨立分支（2026-10-14）
+- 分支 `feature/vps-go-parity-20261014`，基於已驗證 Android main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`；[Actions 38408176782](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38408176782) build/device SUCCESS。
+- VPS Go 1.22 零第三方依賴初始切片：`vps/go.mod`、`main.go`、`main_test.go`、`README.md`；僅 HTTP health/首頁/測試，不宣稱功能追平 Android。
+- VPS branch 另行開發、另行驗收；不能將 Go 測試當 Android emulator tests，亦不可直接合併尚未 CI 驗證的切片。
+- 下一步：VPS SQLite durable schema、Provider/Model 真實 service、Playground engine/telemetry、端到端測試、Go CI、部署 systemd；保留既有 Android PLAY-004 優先與安全門檻。
