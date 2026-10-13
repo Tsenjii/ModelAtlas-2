@@ -285,6 +285,13 @@
   <string name="playground_pdf_loading">正在檢查 PDF 檔案…</string>
   <string name="playground_pdf_error">無法使用這份 PDF。僅接受本機有效 PDF，大小上限 4 MiB。</string>
   <string name="playground_pdf_unavailable">目前選擇的模型／金鑰／群組沒有經確認的檔案能力；請換成支援 Files 的連線或開始新對話。</string>
+  <string name="playground_attach_audio">附加本機音訊（WAV 或 MP3）</string>
+  <string name="playground_audio_short">音訊</string>
+  <string name="playground_attached_audio">音訊檔案</string>
+  <string name="playground_remove_audio">移除音訊附件</string>
+  <string name="playground_audio_loading">正在檢查音訊檔案…</string>
+  <string name="playground_audio_error">無法使用這份音訊。僅接受本機 WAV／MP3，大小上限 4 MiB。</string>
+  <string name="playground_audio_unavailable">目前選擇的模型／金鑰／群組沒有經確認的音訊輸入能力；請換用支援音訊輸入的連線或開始新對話。</string>
   <string name="provider_detail_website_label">官網</string>
   <string name="compare_title">即時比對</string>
   <string name="quota_pool_scope_label">配額池範圍</string>
