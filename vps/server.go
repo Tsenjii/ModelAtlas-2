@@ -16,6 +16,7 @@ import (
  "os"
  "strings"
  "time"
+ "sync"
 )
 
 type Server struct {
@@ -23,6 +24,18 @@ type Server struct {
  Token string
  Key []byte
  Client *http.Client
+ flightMu sync.Mutex
+ flights map[string]bool
+}
+func (s *Server) beginFlight(id string)bool{
+ s.flightMu.Lock();defer s.flightMu.Unlock()
+ if s.flights==nil{s.flights=make(map[string]bool)}
+ if s.flights[id]{return false}
+ s.flights[id]=true
+ return true
+}
+func (s *Server) endFlight(id string){
+ s.flightMu.Lock();delete(s.flights,id);s.flightMu.Unlock()
 }
 func (s *Server) authorized(r *http.Request) bool {
  raw:=strings.TrimPrefix(r.Header.Get("Authorization"),"Bearer ")
