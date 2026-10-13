@@ -286,14 +286,15 @@ class PlaygroundVisionFlowDeviceTest {
         }
         @Suppress("UNCHECKED_CAST")
         val rows = rowsField.get(vm) as MutableStateFlow<List<ModelRow>>
+        val verifiedPdfRow = ModelRow(
+            providerId = record.providerId, providerModelId = record.modelId,
+            canonicalId = "fixture-pdf", endpointId = record.endpointId,
+            operation = "CHAT_COMPLETIONS", group = null,
+            selectedKeyUsable = true, capabilities = setOf(Capability.FILES),
+        )
         withContext(Dispatchers.Main.immediate) {
             vm.selectConnection(record.id)
-            rows.value = listOf(ModelRow(
-                providerId = record.providerId, providerModelId = record.modelId,
-                canonicalId = "fixture-pdf", endpointId = record.endpointId,
-                operation = "CHAT_COMPLETIONS", group = null,
-                selectedKeyUsable = true, capabilities = setOf(Capability.FILES),
-            ))
+            rows.value = listOf(verifiedPdfRow)
             vm.sendWithFile("摘要 PDF", pdf)
         }
         val done = withTimeout(15_000L) { vm.state.first {
@@ -318,7 +319,7 @@ class PlaygroundVisionFlowDeviceTest {
         // Text follow-up still contains old file history; revoked FILES must fail
         // before HTTP. Starting a new conversation must drop the wire history.
         withContext(Dispatchers.Main.immediate) {
-            rows.value = rows.value.map { it.copy(capabilities = emptySet()) }
+            rows.value = listOf(verifiedPdfRow.copy(capabilities = emptySet()))
             vm.send("權限已撤銷")
         }
         assertEquals(app.getString(R.string.playground_pdf_unavailable), vm.state.value.error)
@@ -354,7 +355,9 @@ class PlaygroundVisionFlowDeviceTest {
 
         // Direct VM entry must reject arbitrary remote file IDs despite a valid FILES row.
         withContext(Dispatchers.Main.immediate) {
-            rows.value = rows.value.map { it.copy(capabilities = setOf(Capability.FILES)) }
+            // Background Room refresh may replace this synthetic classification.
+            // Reapply the SAME selected offering, never borrow another key/group.
+            rows.value = listOf(verifiedPdfRow)
             vm.sendWithFile("不可用遠端 ID", FileRefPart(fileId = "remote-id"))
         }
         assertEquals(app.getString(R.string.playground_pdf_error), vm.state.value.error)
