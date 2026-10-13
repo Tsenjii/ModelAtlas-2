@@ -82,3 +82,20 @@ func TestUnknownNeverBecomesFree(t *testing.T){
  if EvaluateCandidate(c,true,true).Classification!="ELIGIBLE"{t.Fatal("verified AA exception should qualify")}
  c.Taiwan="UNKNOWN";if EvaluateCandidate(c,true,true).Classification=="ELIGIBLE"{t.Fatal("unknown Taiwan access qualified")}
 }
+
+func TestSessionFlightIsolationAndStableOrder(t *testing.T) {
+ s:=testServer(t)
+ if !s.beginFlight("session-a"){t.Fatal("first request must acquire")}
+ if s.beginFlight("session-a"){t.Fatal("same session request must be rejected")}
+ if !s.beginFlight("session-b"){t.Fatal("separate sessions should proceed")}
+ s.endFlight("session-a");if !s.beginFlight("session-a"){t.Fatal("request not released")}
+ s.endFlight("session-a");s.endFlight("session-b")
+ if _,err:=s.Store.DB.Exec("INSERT INTO sessions(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at) VALUES('x','p','a','c','m','','CHAT_COMPLETIONS','test',1)");err!=nil{t.Fatal(err)}
+ if _,err:=s.Store.DB.Exec("INSERT INTO messages(id,session_id,role,content,created_at) VALUES('z','x','user','first',7),('a','x','assistant','second',7)");err!=nil{t.Fatal(err)}
+ var one,two string
+ rows,err:=s.Store.DB.Query("SELECT content FROM messages WHERE session_id='x' ORDER BY rowid")
+ if err!=nil{t.Fatal(err)}
+ if !rows.Next()||rows.Scan(&one)!=nil||!rows.Next()||rows.Scan(&two)!=nil{t.Fatal("messages missing")}
+ rows.Close()
+ if one!="first"||two!="second"{t.Fatalf("insertion order changed: %q,%q",one,two)}
+}
