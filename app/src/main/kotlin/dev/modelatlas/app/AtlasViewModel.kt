@@ -163,6 +163,8 @@ data class AtlasUiState(
     /** Incremented on every successful save; the form clears inputs on change. Never carries secrets. */
     val formClearToken: Int = 0,
     val messages: List<ChatMessage> = emptyList(),
+    /** Changes when this scope explicitly starts a fresh in-memory conversation. */
+    val conversationResetToken: Long = 0L,
     val samples: List<SampleItem> = emptyList(),
     val error: String? = null,
     val connectionsLoading: Boolean = true,
@@ -917,6 +919,31 @@ class AtlasViewModel @JvmOverloads constructor(
         }
         sendJob = myJob
         myJob.start()
+    }
+
+    /**
+     * PLAY-004 / #14：只清除當前 selected connection 的聊天內容與 wire history。
+     * 不碰 samples、quota、price、credential、模型資料，亦不更改 selected scope。
+     * 傳輸尚在途時直接拒絕，絕不偷偷取消 socket 或遺失 telemetry。
+     */
+    fun startNewConversation() {
+        val selectedId = _state.value.selectedId
+        if (selectedId == null) {
+            _state.update { it.copy(error = string(R.string.error_select_connection)) }
+            return
+        }
+        if (_state.value.busy || sendJob != null) {
+            _state.update { it.copy(error = string(R.string.error_busy)) }
+            return
+        }
+        sendScopeGeneration += 1L
+        historyByConnection.remove(selectedId)
+        _state.update {
+            it.copy(
+                messages = emptyList(), error = null,
+                conversationResetToken = it.conversationResetToken + 1L,
+            )
+        }
     }
 
     fun cancel() {
