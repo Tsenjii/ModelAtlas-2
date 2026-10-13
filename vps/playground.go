@@ -35,7 +35,7 @@ func (s *Server) addSession(w http.ResponseWriter,r *http.Request){
 func (s *Server) listMessages(w http.ResponseWriter,r *http.Request){
  id:=r.URL.Query().Get("session_id");if !validID(id){http.Error(w,"session_id required",400);return}
  var n int;if s.Store.DB.QueryRowContext(r.Context(),"SELECT 1 FROM sessions WHERE id=?",id).Scan(&n)!=nil {http.Error(w,"session not found",404);return}
- rows,err:=s.Store.DB.QueryContext(r.Context(),"SELECT id,session_id,role,content,created_at FROM messages WHERE session_id=? ORDER BY created_at,id LIMIT 250",id);if err!=nil{http.Error(w,"database error",500);return};defer rows.Close()
+ rows,err:=s.Store.DB.QueryContext(r.Context(),"SELECT id,session_id,role,content,created_at FROM messages WHERE session_id=? ORDER BY rowid LIMIT 250",id);if err!=nil{http.Error(w,"database error",500);return};defer rows.Close()
  out:=[]Message{};for rows.Next(){var x Message;if rows.Scan(&x.ID,&x.SessionID,&x.Role,&x.Content,&x.CreatedAt)==nil{out=append(out,x)}};jsonOK(w,200,out)
 }
 type inferRequest struct {SessionID string `json:"session_id"`; Prompt string `json:"prompt"` }
@@ -52,12 +52,14 @@ func (s *Server) infer(w http.ResponseWriter,r *http.Request){
  err:=s.Store.DB.QueryRowContext(r.Context(),"SELECT provider_id,account_id,credential_id,model_id,group_id,endpoint FROM sessions WHERE id=?",v.SessionID).Scan(&scope.ProviderID,&scope.AccountID,&scope.CredentialID,&scope.ModelID,&scope.Group,&scope.Endpoint)
  if err!=nil{http.Error(w,"session not found",404);return}
  if !s.validateSelection(r.Context(),scope){http.Error(w,"selected model or credential was removed",422);return}
+ if !s.beginFlight(v.SessionID){http.Error(w,"conversation already has an active request",409);return}
+ defer s.endFlight(v.SessionID)
  provider,key,err:=s.endpointAuth(r.Context(),scope.ProviderID,scope.AccountID,scope.CredentialID)
  if err!=nil{http.Error(w,"credential invalid",422);return}
  // We do not map group to an invented upstream header. Model group is an exact local scope.
  // A provider-specific group adapter must be explicitly implemented before it can send a grouped request.
  if scope.Group!="" {http.Error(w,"group adapter unavailable; refusing to send outside selected group",422);return}
- rows,err:=s.Store.DB.QueryContext(r.Context(),"SELECT role,content FROM messages WHERE session_id=? ORDER BY created_at,id LIMIT 100",v.SessionID)
+ rows,err:=s.Store.DB.QueryContext(r.Context(),"SELECT role,content FROM messages WHERE session_id=? ORDER BY rowid LIMIT 100",v.SessionID)
  if err!=nil{http.Error(w,"database error",500);return}
  messages:=[]chatMessage{};for rows.Next(){var x chatMessage;if rows.Scan(&x.Role,&x.Content)==nil {if x.Role=="user"||x.Role=="assistant"{messages=append(messages,x)}}};rows.Close()
  messages=append(messages,chatMessage{"user",v.Prompt})
@@ -75,7 +77,9 @@ func (s *Server) infer(w http.ResponseWriter,r *http.Request){
  var ttfb,ttft,inputs,outputs any
  var text strings.Builder
  defer func(){
-  _,_=s.Store.DB.ExecContext(context.Background(),"INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,status_code,ttfb_ms,ttft_ms,latency_ms,input_tokens,output_tokens,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",newID(),scope.ProviderID,scope.AccountID,scope.CredentialID,scope.ModelID,scope.Group,scope.Endpoint,scope.Endpoint,"PLAYGROUND",outcome,status,ttfb,ttft,time.Since(started).Milliseconds(),inputs,outputs,now())
+  var safeStatus any
+  if status>0 {safeStatus=status}
+  _,_=s.Store.DB.ExecContext(context.Background(),"INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,status_code,ttfb_ms,ttft_ms,latency_ms,input_tokens,output_tokens,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",newID(),scope.ProviderID,scope.AccountID,scope.CredentialID,scope.ModelID,scope.Group,scope.Endpoint,scope.Endpoint,"PLAYGROUND",outcome,safeStatus,ttfb,ttft,time.Since(started).Milliseconds(),inputs,outputs,now())
  }()
  resp,err:=s.Client.Do(upstream)
  if err!=nil{if errors.Is(r.Context().Err(),context.Canceled){outcome="CANCELLED"};http.Error(w,"inference network failure",502);return}
