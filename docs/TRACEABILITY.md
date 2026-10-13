@@ -45,3 +45,10 @@
 ## 公開版新增 requirement 記錄規則
 
 每片新增一行包含：Requirement ID、相關 Spec、main SHA、實際變更檔、確認的 production caller、測試 case、同 SHA Actions run、review finding、結果（PARTIAL/ACCEPTED/OPEN）。
+
+
+## VPS parity track（2026-10-14）
+
+| Requirement | Production caller / 測試 | 驗收狀態 |
+| --- | --- | --- |
+| VPS-001 / lightweight Go baseline | `vps/main.go` HTTP `/healthz` + `/`；`vps/main_test.go` health/header assertions；`vps/README.md` documented localhost-only run | **PENDING CI**；未有 Go Actions、VPS deployment、Android feature parity，禁止標 ACCEPTED |
