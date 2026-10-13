@@ -33,7 +33,8 @@ internal object LocalAudioPayload {
         val name = clip.filename
         val part = clip.part
         if (name.isBlank() || name.length > MAX_NAME_CHARS || !name.endsWith("." + part.format, true) ||
-            name.any { it == '/' || it == '\\' || Character.isISOControl(it) }) return false
+            name.any { it == '/' || it == '\\' || Character.isISOControl(it) ||
+                Character.getType(it) == Character.FORMAT.toInt() }) return false
         if (part.format !in setOf("wav", "mp3")) return false
         if (part.dataBase64.length !in 1..MAX_ENCODED_CHARS) return false
         return try {

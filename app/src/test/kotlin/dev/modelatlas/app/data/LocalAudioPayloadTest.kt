@@ -39,6 +39,11 @@ class LocalAudioPayloadTest {
         assertFalse(LocalAudioPayload.isValidForSend(LocalAudioPayload.Prepared(AudioInputPart("bm90LWF1ZGlv", "wav"), "audio.wav")))
         assertFalse(LocalAudioPayload.isValidForSend(LocalAudioPayload.Prepared(AudioInputPart("@@@@", "wav"), "audio.wav")))
         assertFalse(LocalAudioPayload.isValidForSend(LocalAudioPayload.Prepared(original.part, "../secret.wav")))
+        // U+202E is a Unicode format control (bidi override), not ISOControl.
+        // Direct VM callers must not be able to spoof an attachment filename.
+        assertFalse(LocalAudioPayload.isValidForSend(
+            LocalAudioPayload.Prepared(original.part, "safe\u202Eevil.wav")
+        ))
         assertFalse(LocalAudioPayload.isValidForSend(LocalAudioPayload.Prepared(AudioInputPart(original.part.dataBase64, "mp3"), "audio.mp3")))
     }
 }
