@@ -35,7 +35,7 @@ func (s *Server) newApiGet(ctx context.Context,p Provider,path,token string)(map
  if len(raw)>=2<<20{return nil,errors.New("New API response too large")}
  var data map[string]json.RawMessage
  if json.Unmarshal(raw,&data)!=nil{return nil,errors.New("malformed New API envelope")}
- if string(data["success"])!="true"{return nil,errors.New("upstream success=false")}
+ if string(data["success"])!="true"&&string(data["code"])!="true"{return nil,errors.New("upstream success=false")}
  return data,nil
 }
 func getNewAPIData(body map[string]json.RawMessage)(map[string]json.RawMessage,error){
