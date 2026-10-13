@@ -42,6 +42,9 @@
 
 | PLAY-004 / Audio Input local WAV/MP3 | `LocalAudioPayload.prepare/isValidForSend`（WAV/MP3 header、4 MiB cap、Base64＋路徑/filename guard）；`PlaygroundComposer` Android GetContent audio/*（不用 RECORD_AUDIO）＋窄屏自適應 media row、可取消/失敗狀態；`AtlasScreen` exact AUDIO_INPUT，`AtlasViewModel.sendWithAudio` 保留歷史音訊能力 gate／scope auth，透過正式 `InferenceEngine`/OpenAiTransport；`LocalAudioPayloadTest`／`PlaygroundVisionGateTest`／`PlaygroundVisionPickerUiTest`／`PlaygroundVisionFlowDeviceTest.localAudioRoomVmEngineHttpAndRevokedAudioCapability`。 | 分支 `feature/play-004-audio-input-20261013`，PR/head build/device 與 merge 後 main CI 尚未驗收 | PENDING；Audio Output、Tool UI、Generated Result UI 仍開放 |
 
+
+| PLAY-004 / Audio Input merged acceptance | 真實 WAV/MP3 picker→VM→InferenceEngine→HTTP、Room 與 emulator 測試；PR #18 候選 `fe72775b56482c6b2137ece05293cb3b16f1dc33`。 | [PR #18](https://github.com/Tsenjii/ModelAtlas-2/pull/18) [PR CI 38406852445](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38406852445) build/device SUCCESS；main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d` [CI 38408176782](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38408176782) build/device SUCCESS | ACCEPTED（Audio Input only）；Audio Output、Tools、Image Result UI 尚未完成 |
+
 ## 公開版新增 requirement 記錄規則
 
 每片新增一行包含：Requirement ID、相關 Spec、main SHA、實際變更檔、確認的 production caller、測試 case、同 SHA Actions run、review finding、結果（PARTIAL/ACCEPTED/OPEN）。
