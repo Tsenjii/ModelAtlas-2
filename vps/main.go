@@ -16,6 +16,8 @@ type status struct {
 
 func newHandler() http.Handler {
  mux := http.NewServeMux()
+ registry := NewRegistry()
+ mux.Handle("/api/v1/", registry.Handler())
  mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
   w.Header().Set("Content-Type", "application/json")
   w.Header().Set("Cache-Control", "no-store")
