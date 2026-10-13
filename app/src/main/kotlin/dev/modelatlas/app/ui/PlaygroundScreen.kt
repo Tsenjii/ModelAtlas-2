@@ -552,8 +552,9 @@ private fun PlaygroundComposer(
               submittedAttachmentName = pendingImage?.image?.filename ?: pendingFile?.file?.filename
               submittedAfterId = acceptedMessage?.id
               val selectedImage = pendingImage
+              val selectedFile = pendingFile
               if (selectedImage != null) onSendVision(prompt, selectedImage.image)
-              else if (pendingFile != null) onSendFile(prompt, pendingFile!!.file)
+              else if (selectedFile != null) onSendFile(prompt, selectedFile.file)
               else onSend(prompt)
             }
           },
