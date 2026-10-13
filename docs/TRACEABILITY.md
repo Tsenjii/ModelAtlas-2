@@ -60,3 +60,5 @@
 - `vps/deploy/`：systemd unit + installer，未具使用者 VPS 遠端存取，不標「已部署」。
 - 中間候選 `9b55edb41a84ac0ae5b120b2b0e8c20a06ed20eb` [CI 38444562106](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38444562106)：**vps-test + vps-linux-amd64 + vps-linux-arm64 success**；新回歸 commits 必須由新 SHA 同等測試並另外驗 Android build/device。
 - **整體 VPS Android parity = PARTIAL**。VPS 分支不可因已有 schema/mock/form 就當成 Android 功能全追平，PR 先維持 Draft，只有同 SHA 雙平台全綠且 product slice acceptance 後才可合併。
+
+| VPS-NEWAPI-001 | `vps/newapi.go` version-gated rc.25 read-only HTTP with separate account credential and inference credential, allowlisted persisted facts; `vps/newapi_test.go` TLS integration | CANDIDATE; await exact HEAD CI, further New API coverage pending |
