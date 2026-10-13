@@ -111,6 +111,7 @@ func (s *Server) Handler()http.Handler{
  api.HandleFunc("GET /research/evidence",s.listEvidence)
  api.HandleFunc("POST /research/evidence",s.addEvidence)
  api.HandleFunc("GET /research/eligibility",s.eligibility)
+ api.HandleFunc("POST /research/probe",s.probeCandidate)
  api.HandleFunc("GET /research/runs",s.listResearchRuns)
  api.HandleFunc("POST /research/runs",s.addResearchRun)
  api.HandleFunc("GET /recipes",s.listRecipes)
@@ -125,6 +126,8 @@ func (s *Server) Handler()http.Handler{
   jsonOK(w,200,map[string]any{"service":"modelatlas-vps","status":"ok"})
  })
  root.Handle("GET /{$}",s.auth(http.HandlerFunc(s.home)))
+ root.Handle("GET /app.css",s.auth(http.HandlerFunc(s.stylesheet)))
+ root.Handle("GET /app.js",s.auth(http.HandlerFunc(s.script)))
  root.Handle("/api/v1/",s.auth(http.StripPrefix("/api/v1",api)))
  return root
 }
