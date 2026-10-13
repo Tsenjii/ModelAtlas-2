@@ -9,6 +9,8 @@ import dev.modelatlas.core.inference.PromptMessage
 import dev.modelatlas.core.inference.StreamEvent
 import dev.modelatlas.core.multimodal.MultimodalKind
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 
 /**
  * `EndpointType` → transport 的可執行分派（PROV-010 repair）。
@@ -70,7 +72,22 @@ class TransportDispatch(transports: List<EndpointTransport>) : InferenceTranspor
 
     override fun stream(target: InferenceTarget, messages: List<PromptMessage>): Flow<StreamEvent> =
         when (val route = route(target.operation)) {
-            is TransportRoute.Routed -> route.transport.stream(target, messages)
+            is TransportRoute.Routed -> flow {
+                var precedingText: StreamEvent.Delta? = null
+                route.transport.stream(target, messages).collect { event ->
+                    emit(event)
+                    if (event is StreamEvent.AudioDelta && event.transcriptFragment.isNotEmpty()) {
+                        val duplicate = precedingText?.let { previous ->
+                            !previous.reasoning && previous.text == event.transcriptFragment &&
+                                previous.observedMonotonicMs == event.observedMonotonicMs
+                        } == true
+                        if (!duplicate) emit(StreamEvent.Delta(
+                            event.transcriptFragment, observedMonotonicMs = event.observedMonotonicMs,
+                        ))
+                    }
+                    precedingText = event as? StreamEvent.Delta
+                }
+            }
             is TransportRoute.Unsupported -> throw InferenceFailure(Outcome.OTHER)
         }
 
