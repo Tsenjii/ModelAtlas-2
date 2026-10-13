@@ -35,7 +35,7 @@
 ## VPS clean-room track（2026-10-14，獨立 PR）
 - 依使用者最新要求，舊 [PR #19](https://github.com/Tsenjii/ModelAtlas-2/pull/19) 已關閉、原分支 force-with-lease 重置到 Android main `5009e0c8`。乾淨重建 [PR #20](https://github.com/Tsenjii/ModelAtlas-2/pull/20)，來源分支 `feature/vps-rebuild-20261014`。
 - VPS Go/SQLite 真實 production：加密 Credential、Provider/Account/Catalog/My Models scope、Provider /models HTTP 同步、真實 Chat Completions SSE 與 durable conversation/telemetry、P8 candidate/evidence/checkpoint及僅 catalog existence probe、P9 allowlisted preview/confirm/undo、P10 versioned recipe/rollback、繁中 teal Web UI、systemd 安裝文件。
-- 安全／正確性：Go 1.23 + cgo-free SQLite；認證後 HTTP API；強制 loopback；Credential AES-GCM；群組未接正式 adapter 則 HTTP 前拒發；Unknown≠Free；明確 opt-in；不做 fallback；同 session in-flight 拒絕並用 SQLite rowid 保序。
+- 安全／正確性：Go 1.26 + cgo-free SQLite v1.60.1；認證後 HTTP API；強制 loopback；Credential AES-GCM；群組未接正式 adapter 則 HTTP 前拒發；Unknown≠Free；明確 opt-in；不做 fallback；同 session in-flight 拒絕並用 SQLite rowid 保序。
 - [VPS CI 38444562106](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38444562106)：在先前候選 `9b55edb41a84ac0ae5b120b2b0e8c20a06ed20eb` 的 vps-test、Linux AMD64、ARM64 三工作皆 SUCCESS；後續已新增 concurrency 回歸，必須以最新 PR HEAD 重新執行，不得挪用舊 SHA 結果。
 - Android main 仍參照 `5009e0c8` [full-green 38408176782](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38408176782)；VPS PR 未同 HEAD Android build/device + VPS 完整成功時保持 Draft，禁止合併。
 - **未追平 Android**：New API 多端點／Dedicated Adapters、Vision/PDF/Audio、Tool calls、完整配額／價格／LMSpeed、AA 最新 top4 ingest、自動 Crawler、LLM Assistant、可驗證自動 Reflection 與真 VPS SSH 部署。Schema／介面不代表完成；參見 `vps/README.md`。
