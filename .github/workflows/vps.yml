@@ -1,0 +1,80 @@
+name: VPS Go Build and Integration
+
+on:
+  pull_request:
+    paths:
+      - "vps/**"
+      - ".github/workflows/vps.yml"
+      - "docs/ACTIVE_TASK.md"
+      - "docs/TRACEABILITY.md"
+  push:
+    branches: [main]
+    paths:
+      - "vps/**"
+      - ".github/workflows/vps.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vps-go-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vps-test:
+    name: vps-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: false
+      - name: Resolve pinned SQLite dependency
+        run: go mod tidy
+      - name: Unit and HTTP integration tests
+        run: go test -race -count=1 ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Smoke Linux runtime
+        run: |
+          CGO_ENABLED=0 go build -trimpath -o /tmp/modelatlas-vps .
+          MODELATLAS_ADMIN_TOKEN=example-admin-token-long-enough-for-ci MODELATLAS_DB=/tmp/modelatlas-ci.sqlite MODELATLAS_LISTEN=127.0.0.1:17887 /tmp/modelatlas-vps &
+          pid=$!
+          trap 'kill $pid || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:17887/healthz >/tmp/vps-health.json; then break; fi
+            sleep 1
+          done
+          grep -q '"status":"ok"' /tmp/vps-health.json
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17887/api/v1/status)
+          test "$code" = "401"
+          curl -fsS -u "admin:example-admin-token-long-enough-for-ci" http://127.0.0.1:17887/api/v1/status
+  vps-linux:
+    name: vps-linux-${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    defaults:
+      run:
+        working-directory: vps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: false
+      - name: Build
+        run: |
+          go mod tidy
+          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o modelatlas-vps-linux-${{ matrix.arch }} .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelatlas-vps-linux-${{ matrix.arch }}
+          path: vps/modelatlas-vps-linux-${{ matrix.arch }}
+          if-no-files-found: error
