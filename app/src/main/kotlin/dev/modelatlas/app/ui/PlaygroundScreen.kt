@@ -268,6 +268,49 @@ internal fun PlaygroundTab(
   }
 }
 
+/** Scoped PDF bytes are transient and never appear in object debug strings. */
+private class PreparedPdfAttachment(val file: FileRefPart) {
+  override fun toString(): String = "PreparedPdfAttachment(redacted)"
+}
+
+private suspend fun preparePdfAttachment(context: Context, uri: Uri): PreparedPdfAttachment =
+  withContext(Dispatchers.IO) {
+    require(uri.scheme == "content") { "PDF picker must provide a content URI" }
+    val resolver = context.contentResolver
+    val name = runCatching {
+      resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+        if (!cursor.moveToFirst()) null else {
+          val column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+          if (column < 0) null else cursor.getString(column)
+        }
+      }
+    }.getOrNull()
+    val bytes = ByteArrayOutputStream().use { output ->
+      val stream = resolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("PDF picker returned no content")
+      stream.use { input ->
+        val buffer = ByteArray(8192)
+        var total = 0
+        var emptyReads = 0
+        while (true) {
+          val count = input.read(buffer)
+          if (count < 0) break
+          if (count == 0) {
+            emptyReads += 1
+            require(emptyReads <= 16) { "PDF stream stalled" }
+            continue
+          }
+          emptyReads = 0
+          total += count
+          require(total <= LocalPdfPayload.MAX_BYTES) { "PDF exceeds 4 MiB" }
+          output.write(buffer, 0, count)
+        }
+      }
+      output.toByteArray()
+    }
+    PreparedPdfAttachment(LocalPdfPayload.prepare(bytes, name))
+  }
+
 /** Preview is ephemeral Compose state; only bounded and signature-checked data URIs reach the VM. */
 private class PreparedVisionAttachment(
   val image: ImageUrlPart,
