@@ -52,3 +52,5 @@
 | Requirement | Production caller / 測試 | 驗收狀態 |
 | --- | --- | --- |
 | VPS-001 / lightweight Go baseline | `vps/main.go` HTTP `/healthz` + `/`；`vps/main_test.go` health/header assertions；`vps/README.md` documented localhost-only run | **PENDING CI**；未有 Go Actions、VPS deployment、Android feature parity，禁止標 ACCEPTED |
+
+| VPS-002 / Provider-Model API | `vps/registry.go` HTTP handler 接 `main.go`，`registry_test.go` 驗證 scope/未知免費/URL 輸入；候選 `21dac64ea11357d58e422ef5e0ecc86f53dfa6dd` | **PARTIAL / PENDING CI**；記憶體內儲存，尚無 SQLite、密鑰、Playground、VPS 部署 |
