@@ -12,7 +12,7 @@ import (
 
 type Provider struct { ID string `json:"id"`; Name string `json:"name"`; BaseURL string `json:"base_url"`; Description string `json:"description"`; AuthMode string `json:"auth_mode"` }
 type Account struct { ID string `json:"id"`; ProviderID string `json:"provider_id"`; Label string `json:"label"` }
-type Credential struct { ID string `json:"id"`; ProviderID string `json:"provider_id"`; AccountID string `json:"account_id"`; Label string `json:"label"`; Secret string `json:"secret,omitempty"`; Enabled bool `json:"enabled"` }
+type Credential struct { ID string `json:"id"`; ProviderID string `json:"provider_id"`; AccountID string `json:"account_id"`; Label string `json:"label"`; Secret string `json:"secret,omitempty"`; Enabled bool `json:"enabled"`; Role string `json:"role"` }
 type Model struct { ProviderID string `json:"provider_id"`; ID string `json:"id"`; DisplayName string `json:"display_name"`; PriceState string `json:"price_state"`; QuotaState string `json:"quota_state"`; Provenance string `json:"provenance"` }
 type Selection struct { ProviderID string `json:"provider_id"`; AccountID string `json:"account_id"`; CredentialID string `json:"credential_id"`; ModelID string `json:"model_id"`; Group string `json:"group"`; Endpoint string `json:"endpoint"` }
 
@@ -39,20 +39,22 @@ func (s *Server) addAccount(w http.ResponseWriter,r *http.Request){
  if err!=nil {http.Error(w,"missing provider or duplicate account",409);return};jsonOK(w,201,a)
 }
 func (s *Server) listCredentials(w http.ResponseWriter,r *http.Request){
- rows,err:=s.Store.DB.QueryContext(r.Context(),"SELECT id,provider_id,account_id,label,enabled FROM credentials ORDER BY provider_id,account_id,id");if err!=nil{http.Error(w,"database error",500);return};defer rows.Close()
- a:=[]Credential{};for rows.Next(){var v Credential;var enabled int;if rows.Scan(&v.ID,&v.ProviderID,&v.AccountID,&v.Label,&enabled)==nil{v.Enabled=enabled==1;a=append(a,v)}};jsonOK(w,200,a)
+ rows,err:=s.Store.DB.QueryContext(r.Context(),"SELECT id,provider_id,account_id,label,enabled,role FROM credentials ORDER BY provider_id,account_id,id");if err!=nil{http.Error(w,"database error",500);return};defer rows.Close()
+ a:=[]Credential{};for rows.Next(){var v Credential;var enabled int;if rows.Scan(&v.ID,&v.ProviderID,&v.AccountID,&v.Label,&enabled,&v.Role)==nil{v.Enabled=enabled==1;a=append(a,v)}};jsonOK(w,200,a)
 }
 func (s *Server) addCredential(w http.ResponseWriter,r *http.Request){
  var v Credential;if !decodeJSON(w,r,&v){return}
+ if v.Role==""{v.Role="INFERENCE"}
+ if v.Role!="INFERENCE"&&v.Role!="ACCOUNT_PAT"{http.Error(w,"invalid credential role",400);return}
  if !validID(v.ID)||!validID(v.ProviderID)||!validID(v.AccountID)||len(v.Label)>120||len(v.Secret)>8192 {http.Error(w,"invalid credential",400);return}
  var mode string
  if s.Store.DB.QueryRowContext(r.Context(),"SELECT p.auth_mode FROM providers p JOIN accounts a ON a.provider_id=p.id WHERE a.provider_id=? AND a.id=?",v.ProviderID,v.AccountID).Scan(&mode)!=nil {http.Error(w,"missing account",422);return}
  enc:=""
- if mode=="BEARER" {
+ if mode=="BEARER"||v.Role=="ACCOUNT_PAT" {
   if v.Secret=="" {http.Error(w,"credential secret required",400);return}
   var err error;enc,err=s.encrypt(v.Secret);if err!=nil{http.Error(w,"master encryption key required",503);return}
  } else if v.Secret!="" {http.Error(w,"anonymous provider cannot receive secret",400);return}
- _,err:=s.Store.DB.ExecContext(r.Context(),"INSERT INTO credentials(id,provider_id,account_id,label,encrypted_key,enabled,created_at) VALUES(?,?,?,?,?,1,?)",v.ID,v.ProviderID,v.AccountID,v.Label,enc,now())
+ _,err:=s.Store.DB.ExecContext(r.Context(),"INSERT INTO credentials(id,provider_id,account_id,label,encrypted_key,role,enabled,created_at) VALUES(?,?,?,?,?,?,1,?)",v.ID,v.ProviderID,v.AccountID,v.Label,enc,v.Role,now())
  if err!=nil{http.Error(w,"duplicate credential or invalid scope",409);return}
  v.Secret="";v.Enabled=true;jsonOK(w,201,v)
 }
@@ -127,7 +129,7 @@ func (s *Server) syncModels(w http.ResponseWriter,r *http.Request){
 }
 func (s *Server) endpointAuth(ctx context.Context,provider,account,credential string)(Provider,string,error){
  var p Provider;var enc string;var enabled int
- err:=s.Store.DB.QueryRowContext(ctx,"SELECT p.id,p.name,p.base_url,p.description,p.auth_mode,c.encrypted_key,c.enabled FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id WHERE p.id=? AND a.id=? AND c.id=?",provider,account,credential).Scan(&p.ID,&p.Name,&p.BaseURL,&p.Description,&p.AuthMode,&enc,&enabled)
+ err:=s.Store.DB.QueryRowContext(ctx,"SELECT p.id,p.name,p.base_url,p.description,p.auth_mode,c.encrypted_key,c.enabled FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id WHERE p.id=? AND a.id=? AND c.id=? AND c.role='INFERENCE'",provider,account,credential).Scan(&p.ID,&p.Name,&p.BaseURL,&p.Description,&p.AuthMode,&enc,&enabled)
  if err!=nil||enabled!=1 {return Provider{},"",sql.ErrNoRows}
  if !validateHTTPS(p.BaseURL){return Provider{},"",sql.ErrNoRows}
  if p.AuthMode=="NONE" {return p,"",nil}
