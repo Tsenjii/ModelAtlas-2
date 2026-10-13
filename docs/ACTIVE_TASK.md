@@ -39,3 +39,5 @@
 - [VPS CI 38444562106](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38444562106)：在先前候選 `9b55edb41a84ac0ae5b120b2b0e8c20a06ed20eb` 的 vps-test、Linux AMD64、ARM64 三工作皆 SUCCESS；後續已新增 concurrency 回歸，必須以最新 PR HEAD 重新執行，不得挪用舊 SHA 結果。
 - Android main 仍參照 `5009e0c8` [full-green 38408176782](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38408176782)；VPS PR 未同 HEAD Android build/device + VPS 完整成功時保持 Draft，禁止合併。
 - **未追平 Android**：New API 多端點／Dedicated Adapters、Vision/PDF/Audio、Tool calls、完整配額／價格／LMSpeed、AA 最新 top4 ingest、自動 Crawler、LLM Assistant、可驗證自動 Reflection 與真 VPS SSH 部署。Schema／介面不代表完成；參見 `vps/README.md`。
+
+- VPS P4 追加 `vps/newapi.go`：實際 New API `/api/status` 版本偵測，rc.25 嚴格門禁，`/api/pricing` 與 `/api/user/self` 使用獨立 ACCOUNT_PAT，`/api/usage/token/` 使用 INFERENCE Key，僅持久化白名單數值事實＋來源，不儲存原始 body / PAT；TLS fixture `newapi_test.go`，角色隔離/未知版拒發；複雜 Group、New API performance、Dedicated Adapters 仍待補。
