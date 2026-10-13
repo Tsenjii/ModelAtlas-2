@@ -30,6 +30,20 @@ class PlaygroundVisionGateTest {
         assertTrue(resolve(listOf(available.copy(selectedKeyUsable = false))).isEmpty())
     }
 
+    @Test fun audioInputRequiresExactSelectedScopeAndNeverBorrowsVision() {
+        val audio = available.copy(capabilities = setOf(Capability.AUDIO_INPUT), supportsVision = false)
+        fun select(rows: List<ModelRow>, group: String? = "free") =
+            selectedChatCapabilities(rows, "p", "vision-model", "e", "CHAT_COMPLETIONS", group)
+        assertEquals(setOf(Capability.AUDIO_INPUT), select(listOf(audio)))
+        assertTrue(select(listOf(audio), group = "premium").isEmpty())
+        assertTrue(select(listOf(audio.copy(selectedKeyUsable = false))).isEmpty())
+        assertTrue(select(listOf(audio.copy(providerId = "foreign"))).isEmpty())
+        assertTrue(select(listOf(audio.copy(endpointId = "foreign"))).isEmpty())
+        assertTrue(select(listOf(audio.copy(providerModelId = "foreign"))).isEmpty())
+        assertTrue(select(listOf(audio.copy(operation = "RESPONSES"))).isEmpty())
+        assertTrue(resolve(listOf(audio)).isEmpty())
+    }
+
     @Test fun selectedPdfCapabilityNeverBorrowsForeignScope() {
         val pdf = available.copy(capabilities = setOf(Capability.FILES), supportsVision = false)
         fun check(rows: List<ModelRow>, group: String? = "free") =

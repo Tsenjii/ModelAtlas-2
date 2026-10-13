@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberUpdatedState
 import dev.modelatlas.app.data.VisionImagePayload
 import dev.modelatlas.app.data.LocalPdfPayload
+import dev.modelatlas.app.data.LocalAudioPayload
 import dev.modelatlas.core.multimodal.ImageUrlPart
 import dev.modelatlas.core.multimodal.FileRefPart
 import java.io.ByteArrayOutputStream
@@ -127,8 +128,10 @@ internal fun PlaygroundTab(
   onSend: (String) -> Unit,
   onSendVision: (String, ImageUrlPart) -> Unit,
   onSendFile: (String, FileRefPart) -> Unit,
+  onSendAudio: (String, LocalAudioPayload.Prepared) -> Unit,
   canAttachVision: Boolean,
   canAttachFile: Boolean,
+  canAttachAudio: Boolean,
   selectedGroup: String?,
   onCancel: () -> Unit,
   onNewConversation: () -> Unit,
@@ -242,8 +245,10 @@ internal fun PlaygroundTab(
         onSend = onSend,
         onSendVision = onSendVision,
         onSendFile = onSendFile,
+        onSendAudio = onSendAudio,
         canAttachVision = canAttachVision,
         canAttachFile = canAttachFile,
+        canAttachAudio = canAttachAudio,
         scopeKey = selectedGroup,
         resetToken = state.conversationResetToken,
         onCancel = onCancel,
@@ -267,6 +272,45 @@ internal fun PlaygroundTab(
     PlaygroundSamplesSheet(samples = state.samples, onDismiss = { showSamples = false })
   }
 }
+
+/** Scoped audio selection via Storage Access Framework; no RECORD_AUDIO permission needed. */
+private suspend fun prepareAudioAttachment(context: Context, uri: Uri): LocalAudioPayload.Prepared =
+  withContext(Dispatchers.IO) {
+    require(uri.scheme == "content") { "Audio picker must provide a content URI" }
+    val resolver = context.contentResolver
+    val name = runCatching {
+      resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+        if (!cursor.moveToFirst()) null else {
+          val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+          if (index < 0) null else cursor.getString(index)
+        }
+      }
+    }.getOrNull()
+    val bytes = ByteArrayOutputStream().use { output ->
+      val input = resolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("Audio picker returned no content")
+      input.use { stream ->
+        val buffer = ByteArray(8192)
+        var total = 0
+        var emptyReads = 0
+        while (true) {
+          val count = stream.read(buffer)
+          if (count < 0) break
+          if (count == 0) {
+            emptyReads += 1
+            require(emptyReads <= 16) { "Audio stream stalled" }
+            continue
+          }
+          emptyReads = 0
+          total += count
+          require(total <= LocalAudioPayload.MAX_BYTES) { "Audio exceeds 4 MiB" }
+          output.write(buffer, 0, count)
+        }
+      }
+      output.toByteArray()
+    }
+    LocalAudioPayload.prepare(bytes, name)
+  }
 
 /** Scoped PDF bytes are transient and never appear in object debug strings. */
 private class PreparedPdfAttachment(val file: FileRefPart) {
@@ -369,6 +413,7 @@ private suspend fun prepareVisionAttachment(context: Context, uri: Uri): Prepare
     PreparedVisionAttachment(image, preview.asImageBitmap())
   }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PlaygroundComposer(
   selectedConnection: ConnectionItem?,
@@ -379,8 +424,10 @@ private fun PlaygroundComposer(
   onSend: (String) -> Unit,
   onSendVision: (String, ImageUrlPart) -> Unit,
   onSendFile: (String, FileRefPart) -> Unit,
+  onSendAudio: (String, LocalAudioPayload.Prepared) -> Unit,
   canAttachVision: Boolean,
   canAttachFile: Boolean,
+  canAttachAudio: Boolean,
   scopeKey: String?,
   resetToken: Long,
   onCancel: () -> Unit,
@@ -396,6 +443,9 @@ private fun PlaygroundComposer(
   var submittedAttachmentName by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<String?>(null) }
   var pendingImage by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<PreparedVisionAttachment?>(null) }
   var pendingFile by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<PreparedPdfAttachment?>(null) }
+  var pendingAudio by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<LocalAudioPayload.Prepared?>(null) }
+  var audioPreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
+  var audioError by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var filePreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var fileError by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var imagePreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
@@ -411,6 +461,9 @@ private fun PlaygroundComposer(
   var pdfPickerConnectionId by remember { mutableStateOf<String?>(null) }
   var pdfPickerGroup by remember { mutableStateOf<String?>(null) }
   var pdfPickerResetToken by remember { mutableStateOf<Long?>(null) }
+  var audioPickerConnectionId by remember { mutableStateOf<String?>(null) }
+  var audioPickerGroup by remember { mutableStateOf<String?>(null) }
+  var audioPickerResetToken by remember { mutableStateOf<Long?>(null) }
   val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
     if (uri != null && pickerConnectionId == currentConnectionId && pickerGroup == currentScopeKey && pickerResetToken == currentResetToken) {
       val expectedId = currentConnectionId
@@ -423,6 +476,8 @@ private fun PlaygroundComposer(
           val prepared = prepareVisionAttachment(context, uri)
           if (expectedId == currentConnectionId && expectedGroup == currentScopeKey && expectedReset == currentResetToken) {
             pendingImage = prepared
+            pendingAudio = null
+            pendingFile = null
           }
         } catch (cancel: CancellationException) {
           throw cancel
@@ -449,6 +504,7 @@ private fun PlaygroundComposer(
               expectedReset == currentResetToken) {
             pendingFile = prepared
             pendingImage = null
+            pendingAudio = null
           }
         } catch (cancel: CancellationException) {
           throw cancel
@@ -458,6 +514,35 @@ private fun PlaygroundComposer(
         } finally {
           if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
               expectedReset == currentResetToken) filePreparing = false
+        }
+      }
+    }
+  }
+  val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    if (uri != null && audioPickerConnectionId == currentConnectionId &&
+        audioPickerGroup == currentScopeKey && audioPickerResetToken == currentResetToken) {
+      val expectedId = currentConnectionId
+      val expectedGroup = currentScopeKey
+      val expectedReset = currentResetToken
+      launchScope.launch {
+        audioPreparing = true
+        audioError = false
+        try {
+          val prepared = prepareAudioAttachment(context, uri)
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) {
+            pendingAudio = prepared
+            pendingImage = null
+            pendingFile = null
+          }
+        } catch (cancel: CancellationException) {
+          throw cancel
+        } catch (_: Exception) {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) audioError = true
+        } finally {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) audioPreparing = false
         }
       }
     }
@@ -474,6 +559,7 @@ private fun PlaygroundComposer(
         prompt = ""
         pendingImage = null
         pendingFile = null
+        pendingAudio = null
         focusManager.clearFocus()
         keyboard?.hide()
       }
@@ -492,34 +578,6 @@ private fun PlaygroundComposer(
   ) {
     Column(Modifier.padding(AtlasSpace.sm)) {
       Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm)) {
-        val attachLabel = stringResource(R.string.playground_attach_image)
-        IconButton(
-          onClick = {
-            pickerConnectionId = selectedConnection?.id
-            pickerGroup = scopeKey
-            pickerResetToken = resetToken
-            imagePicker.launch("image/*")
-          },
-          enabled = canSend && canAttachVision && !busy && !imagePreparing && !filePreparing && pendingImage == null && pendingFile == null,
-          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = attachLabel },
-        ) {
-          Icon(Icons.Filled.Add, contentDescription = null)
-        }
-        val pdfAttachLabel = stringResource(R.string.playground_attach_pdf)
-        TextButton(
-          onClick = {
-            pdfPickerConnectionId = selectedConnection?.id
-            pdfPickerGroup = scopeKey
-            pdfPickerResetToken = resetToken
-            pdfPicker.launch("application/pdf")
-          },
-          enabled = canSend && canAttachFile && !busy && !imagePreparing && !filePreparing &&
-            pendingImage == null && pendingFile == null,
-          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = pdfAttachLabel },
-          contentPadding = PaddingValues(horizontal = AtlasSpace.xs),
-        ) {
-          Text("PDF", style = MaterialTheme.typography.labelMedium)
-        }
         TextField(
           value = prompt,
           onValueChange = { prompt = it },
@@ -545,22 +603,26 @@ private fun PlaygroundComposer(
         FilledIconButton(
           onClick = {
             if (busy) onCancel()
-            else if (canSend && !imagePreparing && !filePreparing && prompt.isNotBlank() &&
+            else if (canSend && !imagePreparing && !filePreparing && !audioPreparing && prompt.isNotBlank() &&
                 (pendingImage == null || canAttachVision) &&
-                (pendingFile == null || canAttachFile)) {
+                (pendingFile == null || canAttachFile) &&
+                (pendingAudio == null || canAttachAudio)) {
               submittedPrompt = prompt
-              submittedAttachmentName = pendingImage?.image?.filename ?: pendingFile?.file?.filename
+              submittedAttachmentName = pendingImage?.image?.filename ?: pendingFile?.file?.filename ?: pendingAudio?.filename
               submittedAfterId = acceptedMessage?.id
               val selectedImage = pendingImage
               val selectedFile = pendingFile
+              val selectedAudio = pendingAudio
               if (selectedImage != null) onSendVision(prompt, selectedImage.image)
               else if (selectedFile != null) onSendFile(prompt, selectedFile.file)
+              else if (selectedAudio != null) onSendAudio(prompt, selectedAudio)
               else onSend(prompt)
             }
           },
-          enabled = busy || (canSend && !imagePreparing && !filePreparing && prompt.isNotBlank() &&
+          enabled = busy || (canSend && !imagePreparing && !filePreparing && !audioPreparing && prompt.isNotBlank() &&
             (pendingImage == null || canAttachVision) &&
-            (pendingFile == null || canAttachFile)),
+            (pendingFile == null || canAttachFile) &&
+            (pendingAudio == null || canAttachAudio)),
           modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = actionLabel },
           shape = AtlasRadius.pill,
         ) {
@@ -571,6 +633,56 @@ private fun PlaygroundComposer(
           } else {
             Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
           }
+        }
+      }
+      FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm),
+        verticalArrangement = Arrangement.spacedBy(AtlasSpace.xs),
+      ) {
+        val attachLabel = stringResource(R.string.playground_attach_image)
+        IconButton(
+          onClick = {
+            pickerConnectionId = selectedConnection?.id
+            pickerGroup = scopeKey
+            pickerResetToken = resetToken
+            imagePicker.launch("image/*")
+          },
+          enabled = canSend && canAttachVision && !busy && !imagePreparing && !filePreparing && !audioPreparing && pendingImage == null && pendingFile == null && pendingAudio == null,
+          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = attachLabel },
+        ) {
+          Icon(Icons.Filled.Add, contentDescription = null)
+        }
+        val pdfAttachLabel = stringResource(R.string.playground_attach_pdf)
+        TextButton(
+          onClick = {
+            pdfPickerConnectionId = selectedConnection?.id
+            pdfPickerGroup = scopeKey
+            pdfPickerResetToken = resetToken
+            pdfPicker.launch("application/pdf")
+          },
+          enabled = canSend && canAttachFile && !busy && !imagePreparing && !filePreparing && !audioPreparing &&
+            pendingImage == null && pendingFile == null && pendingAudio == null,
+          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = pdfAttachLabel },
+          contentPadding = PaddingValues(horizontal = AtlasSpace.xs),
+        ) {
+          Text("PDF", style = MaterialTheme.typography.labelMedium)
+        }
+        val audioLabel = stringResource(R.string.playground_attach_audio)
+        TextButton(
+          onClick = {
+            audioPickerConnectionId = selectedConnection?.id
+            audioPickerGroup = scopeKey
+            audioPickerResetToken = resetToken
+            audioPicker.launch("audio/*")
+          },
+          enabled = canSend && canAttachAudio && !busy && !imagePreparing && !filePreparing &&
+            !audioPreparing && pendingImage == null && pendingFile == null && pendingAudio == null,
+          modifier = Modifier.heightIn(min = AtlasSpace.touch)
+            .semantics { contentDescription = audioLabel },
+          contentPadding = PaddingValues(horizontal = AtlasSpace.sm),
+        ) {
+          Text(stringResource(R.string.playground_audio_short), style = MaterialTheme.typography.labelMedium)
         }
       }
       pendingImage?.let { attachment ->
@@ -617,6 +729,37 @@ private fun PlaygroundComposer(
             modifier = Modifier.size(AtlasSpace.touch),
           ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.playground_remove_pdf)) }
         }
+      }
+      pendingAudio?.let { attachment ->
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(vertical = AtlasSpace.xs),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm),
+        ) {
+          Text(stringResource(R.string.playground_audio_short), style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary)
+          Text(
+            attachment.filename,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+          IconButton(
+            onClick = { pendingAudio = null; audioError = false },
+            modifier = Modifier.size(AtlasSpace.touch),
+          ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.playground_remove_audio)) }
+        }
+      }
+      if (audioPreparing) {
+        Text(stringResource(R.string.playground_audio_loading), style = MaterialTheme.typography.labelMedium)
+      }
+      if (audioError) {
+        Text(
+          stringResource(R.string.playground_audio_error),
+          color = MaterialTheme.colorScheme.error,
+          style = MaterialTheme.typography.bodySmall,
+        )
       }
       if (filePreparing) {
         Text(stringResource(R.string.playground_pdf_loading), style = MaterialTheme.typography.labelMedium)
@@ -765,8 +908,11 @@ private fun ChatBubble(
           if (message.attachmentName != null) {
             AtlasBadge(
               text = stringResource(
-                if (message.attachmentKind == "FILE") R.string.playground_attached_pdf
-                else R.string.playground_attached_image,
+                when (message.attachmentKind) {
+                  "FILE" -> R.string.playground_attached_pdf
+                  "AUDIO" -> R.string.playground_attached_audio
+                  else -> R.string.playground_attached_image
+                },
               ) + " · " + message.attachmentName,
               tone = AtlasTone.ACCENT,
             )

@@ -667,6 +667,7 @@ private fun AtlasScreenContent(
           onSend = viewModel::send,
           onSendVision = viewModel::sendWithImage,
           onSendFile = viewModel::sendWithFile,
+          onSendAudio = viewModel::sendWithAudio,
           canAttachVision = state.connections.firstOrNull { it.id == state.selectedId }?.let { connection ->
             selectedVisionCapabilities(
               rows = allModelRows,
@@ -679,6 +680,16 @@ private fun AtlasScreenContent(
           } ?: false,
           canAttachFile = state.connections.firstOrNull { it.id == state.selectedId }?.let { connection ->
             Capability.FILES in selectedChatCapabilities(
+              rows = allModelRows,
+              providerId = connection.providerId,
+              providerModelId = connection.modelId,
+              endpointId = connection.endpointId,
+              operation = connection.operation,
+              selectedGroup = selectedGroup,
+            )
+          } ?: false,
+          canAttachAudio = state.connections.firstOrNull { it.id == state.selectedId }?.let { connection ->
+            Capability.AUDIO_INPUT in selectedChatCapabilities(
               rows = allModelRows,
               providerId = connection.providerId,
               providerModelId = connection.modelId,

@@ -6,6 +6,13 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.dp
@@ -35,6 +42,9 @@ class PlaygroundVisionPickerUiTest {
     private fun show(
         canAttach: Boolean,
         canAttachPdf: Boolean = false,
+        canAttachAudio: Boolean = false,
+        narrow: Boolean = false,
+        fontScale: Float = 1f,
         group: State<String?>? = null,
         resetToken: State<Long>? = null,
         busy: Boolean = false,
@@ -42,8 +52,11 @@ class PlaygroundVisionPickerUiTest {
         onNewConversation: () -> Unit = {},
     ) {
         compose.setContent {
-            AtlasTheme(darkTheme = darkTheme?.value ?: false) {
-                PlaygroundTab(
+            val currentDensity = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(currentDensity.density, fontScale)) {
+              Box(if (narrow) Modifier.width(280.dp) else Modifier.fillMaxSize()) {
+                AtlasTheme(darkTheme = darkTheme?.value ?: false) {
+                  PlaygroundTab(
                     state = AtlasUiState(
                         connections = listOf(connection),
                         selectedId = connection.id,
@@ -55,15 +68,19 @@ class PlaygroundVisionPickerUiTest {
                     onSend = {},
                     onSendVision = { _, _ -> },
                     onSendFile = { _, _ -> },
+                    onSendAudio = { _, _ -> },
                     canAttachVision = canAttach,
                     canAttachFile = canAttachPdf,
+                    canAttachAudio = canAttachAudio,
                     selectedGroup = group?.value,
                     onCancel = {},
                     onNewConversation = onNewConversation,
                     onGotoProviders = {},
                     showConnections = false,
                     onShowConnections = {},
-                )
+                  )
+                }
+              }
             }
         }
     }
@@ -129,6 +146,34 @@ class PlaygroundVisionPickerUiTest {
         compose.onNodeWithContentDescription(label)
             .assertIsEnabled()
             .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test fun audioPickerRequiresConfirmedSelectedCapability() {
+        show(canAttach = false, canAttachPdf = false, canAttachAudio = false)
+        val label = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(R.string.playground_attach_audio)
+        compose.onNodeWithContentDescription(label).assertIsNotEnabled()
+    }
+
+    @Test fun audioPickerSurvivesNarrowLargeFontAndDarkTheme() {
+        val dark = mutableStateOf(false)
+        show(canAttach = false, canAttachPdf = true, canAttachAudio = true,
+            darkTheme = dark, narrow = true, fontScale = 1.5f)
+        val audio = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(R.string.playground_attach_audio)
+        val pdf = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(R.string.playground_attach_pdf)
+        compose.onNodeWithContentDescription(audio).assertIsEnabled().assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithContentDescription(pdf).assertIsEnabled().assertHeightIsAtLeast(48.dp)
+        compose.runOnIdle { dark.value = true }
+        compose.onNodeWithContentDescription(audio).assertIsEnabled().assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test fun audioPickerDisabledDuringLiveStreaming() {
+        show(canAttach = true, canAttachAudio = true, busy = true)
+        val label = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(R.string.playground_attach_audio)
+        compose.onNodeWithContentDescription(label).assertIsNotEnabled()
     }
 
     @Test fun newConversationIsDisabledWhileStreaming() {
