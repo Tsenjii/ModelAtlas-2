@@ -45,3 +45,18 @@
 ## 公開版新增 requirement 記錄規則
 
 每片新增一行包含：Requirement ID、相關 Spec、main SHA、實際變更檔、確認的 production caller、測試 case、同 SHA Actions run、review finding、結果（PARTIAL/ACCEPTED/OPEN）。
+
+
+## VPS 重建版 2026-10-14（**不得與 Android 已驗收 P1–P7 混算**）
+
+- 舊 MVP [PR #19](https://github.com/Tsenjii/ModelAtlas-2/pull/19) 已關閉且工作分支重置（沒有合併）；全新 [PR #20](https://github.com/Tsenjii/ModelAtlas-2/pull/20) 從已驗證的 main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d` 開始。
+- `vps/store.go`、`schema.go`：Go/SQLite WAL、FK、durable migration schema；`server_test.go` SQLite reopen persistence。
+- `vps/server.go`、`catalog.go`：auth/loopback/AES-GCM vault、Provider/Account/Credential Scope、Catalog != My Models、真 provider models sync；`server_test.go` auth/secret isolation/scope test。
+- `vps/playground.go`：真實上游 HTTP chat SSE streaming、history、telemetry、TTFB/TTFT、user cancellation/parse failure classification、per-session in-flight race lock；`integration_test.go` 實際 TLS HTTP protocol fixture，非假的 production caller。
+- `vps/research.go`、`research_gate.go`：candidate/evidence/run 與真 provider catalog probe；Unknown ≠ Free，實際 quota 類 evidence 不足不宣稱 main eligible；AA ingest / automatic crawler **NOT ACCEPTED**。
+- `vps/assistant.go`：可逆的 My Models explicit preview/confirm/undo；完整 LLM Assistant **NOT ACCEPTED**。
+- `vps/recipe.go`：allowlisted recipe version / explicit rollback + action ledger；自主 Reflection **NOT ACCEPTED**。
+- `vps/ui.go`、`ui_css.go`、`ui_browser.go`、`ui_js_views.go`、`ui_js_chat.go`：teal 繁中輕量 Web UI，三分頁、深淺色、窄屏、48px、安全文字渲染。
+- `vps/deploy/`：systemd unit + installer，未具使用者 VPS 遠端存取，不標「已部署」。
+- 中間候選 `9b55edb41a84ac0ae5b120b2b0e8c20a06ed20eb` [CI 38444562106](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38444562106)：**vps-test + vps-linux-amd64 + vps-linux-arm64 success**；新回歸 commits 必須由新 SHA 同等測試並另外驗 Android build/device。
+- **整體 VPS Android parity = PARTIAL**。VPS 分支不可因已有 schema/mock/form 就當成 Android 功能全追平，PR 先維持 Draft，只有同 SHA 雙平台全綠且 product slice acceptance 後才可合併。
