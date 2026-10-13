@@ -37,3 +37,5 @@
 - VPS Go 1.22 零第三方依賴初始切片：`vps/go.mod`、`main.go`、`main_test.go`、`README.md`；僅 HTTP health/首頁/測試，不宣稱功能追平 Android。
 - VPS branch 另行開發、另行驗收；不能將 Go 測試當 Android emulator tests，亦不可直接合併尚未 CI 驗證的切片。
 - 下一步：VPS SQLite durable schema、Provider/Model 真實 service、Playground engine/telemetry、端到端測試、Go CI、部署 systemd；保留既有 Android PLAY-004 優先與安全門檻。
+
+- VPS 追加 `vps/registry.go`、`registry_test.go` 並接上 `main.go`：真實 HTTP Provider/Model API，Provider 範圍內模型 ID 隔離，預設 UNKNOWN，未經證據拒絕 recurring-free。此為**記憶體內資料**，重啟會遺失；SQLite/憑證/Playground 尚未完成。候選 `21dac64ea11357d58e422ef5e0ecc86f53dfa6dd`，等待同 SHA CI，禁止合併。
