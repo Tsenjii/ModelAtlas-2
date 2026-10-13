@@ -51,8 +51,11 @@ import dev.modelatlas.app.ui.OfferingRef
 import dev.modelatlas.app.ui.PriceQuotaHead
 import dev.modelatlas.app.ui.SendStreamFlushController
 import dev.modelatlas.app.ui.selectedVisionCapabilities
+import dev.modelatlas.app.ui.selectedChatCapabilities
 import dev.modelatlas.app.data.VisionImagePayload
+import dev.modelatlas.app.data.LocalPdfPayload
 import dev.modelatlas.core.domain.CheckinRecord
+import dev.modelatlas.core.domain.Capability
 import dev.modelatlas.core.domain.HealthState
 import dev.modelatlas.core.domain.PriceState
 import dev.modelatlas.core.domain.QuotaState
@@ -66,6 +69,7 @@ import dev.modelatlas.core.inference.Outcome
 import dev.modelatlas.core.inference.PerformanceSample
 import dev.modelatlas.core.inference.PromptMessage
 import dev.modelatlas.core.inference.StreamEvent
+import dev.modelatlas.core.multimodal.FileRefPart
 import dev.modelatlas.core.multimodal.ImageUrlPart
 import dev.modelatlas.core.multimodal.TextPart
 import dev.modelatlas.core.inference.TelemetrySource
@@ -135,6 +139,7 @@ data class ChatMessage(
     val role: String,
     val text: String,
     val attachmentName: String? = null,
+    val attachmentKind: String? = null,
 )
 
 data class SampleItem(
@@ -721,10 +726,18 @@ class AtlasViewModel @JvmOverloads constructor(
         applyContextFromSelection(recompute = true)
     }
 
-    fun send(prompt: String) = sendWithImage(prompt, null)
+    fun send(prompt: String) = sendWithAttachment(prompt, image = null, file = null)
 
-    /** PLAY-004: one local image (bounded to 4 MiB) via exact selected vision capability. */
-    fun sendWithImage(prompt: String, image: ImageUrlPart?) {
+    /** Preserve the real Vision entry point and original image-only scope semantics. */
+    fun sendWithImage(prompt: String, image: ImageUrlPart?) =
+        sendWithAttachment(prompt, image = image, file = null)
+
+    /** Local bounded PDF input, never an externally supplied file ID or URL. */
+    fun sendWithFile(prompt: String, file: FileRefPart) =
+        sendWithAttachment(prompt, image = null, file = file)
+
+    private fun sendWithAttachment(prompt: String, image: ImageUrlPart?, file: FileRefPart?) {
+        require(image == null || file == null) { "Only one local attachment per turn" }
         if (_state.value.busy) return
         if (_providerModelAction.value.busy || _compareRunning.value) {
             _state.update { it.copy(error = string(R.string.error_busy)) }
@@ -771,7 +784,9 @@ class AtlasViewModel @JvmOverloads constructor(
         val recentHistory = historyByConnection[requestConnectionId]?.takeLast(20).orEmpty()
         val requiresVision = image != null ||
             recentHistory.any { message -> message.blocks.any { it is ImageUrlPart } }
-        val visionCapabilities = if (requiresVision) selectedVisionCapabilities(
+        val requiresFiles = file != null ||
+            recentHistory.any { message -> message.blocks.any { it is FileRefPart } }
+        val mediaCapabilities = if (requiresVision || requiresFiles) selectedChatCapabilities(
             rows = _allModelRows.value,
             providerId = record.providerId,
             providerModelId = record.modelId,
@@ -779,22 +794,36 @@ class AtlasViewModel @JvmOverloads constructor(
             operation = record.protocol,
             selectedGroup = selectedGroupAtSend,
         ) else emptySet()
-        if (requiresVision && visionCapabilities.isEmpty()) {
+        // Historical attachments still require the capability when sending a plain text turn.
+        // Never borrow capability from another key, group, model or endpoint.
+        if (requiresVision && Capability.VISION !in mediaCapabilities) {
             _state.update { it.copy(error = string(R.string.playground_vision_unavailable)) }
+            return
+        }
+        if (requiresFiles && Capability.FILES !in mediaCapabilities) {
+            _state.update { it.copy(error = string(R.string.playground_pdf_unavailable)) }
             return
         }
         if (image != null && !VisionImagePayload.isValidForSend(image)) {
             _state.update { it.copy(error = string(R.string.playground_image_error)) }
             return
         }
+        if (file != null && !LocalPdfPayload.isValidForSend(file)) {
+            _state.update { it.copy(error = string(R.string.playground_pdf_error)) }
+            return
+        }
         val requestScopeGeneration = sendScopeGeneration
         // Capture at send time: later UI scope changes must not mutate an in-flight request.
-        val userPrompt = if (image == null) PromptMessage("user", text) else
-            PromptMessage("user", listOf(TextPart(text), image))
+        val userPrompt = when {
+            image != null -> PromptMessage("user", listOf(TextPart(text), image))
+            file != null -> PromptMessage("user", listOf(TextPart(text), file))
+            else -> PromptMessage("user", text)
+        }
         val requestMessages = recentHistory + userPrompt
         val userMessage = ChatMessage(
             id = UUID.randomUUID().toString(), role = "user", text = text,
-            attachmentName = image?.filename,
+            attachmentName = image?.filename ?: file?.filename,
+            attachmentKind = if (file != null) "FILE" else null,
         )
         val assistantId = UUID.randomUUID().toString()
         _state.update {
@@ -862,7 +891,7 @@ class AtlasViewModel @JvmOverloads constructor(
                     bearerCredentialId = safeCredentialId,
                     authFields = customFields,
                     selectedGroup = selectedGroupAtSend,
-                ).copy(offeredCapabilities = visionCapabilities)
+                ).copy(offeredCapabilities = mediaCapabilities)
                 app.engine.execute(
                     target,
                     requestMessages,
