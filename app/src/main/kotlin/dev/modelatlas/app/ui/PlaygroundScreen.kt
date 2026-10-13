@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberUpdatedState
 import dev.modelatlas.app.data.VisionImagePayload
 import dev.modelatlas.app.data.LocalPdfPayload
+import dev.modelatlas.app.data.LocalAudioPayload
 import dev.modelatlas.core.multimodal.ImageUrlPart
 import dev.modelatlas.core.multimodal.FileRefPart
 import java.io.ByteArrayOutputStream
@@ -127,8 +128,10 @@ internal fun PlaygroundTab(
   onSend: (String) -> Unit,
   onSendVision: (String, ImageUrlPart) -> Unit,
   onSendFile: (String, FileRefPart) -> Unit,
+  onSendAudio: (String, LocalAudioPayload.Prepared) -> Unit,
   canAttachVision: Boolean,
   canAttachFile: Boolean,
+  canAttachAudio: Boolean,
   selectedGroup: String?,
   onCancel: () -> Unit,
   onNewConversation: () -> Unit,
@@ -242,8 +245,10 @@ internal fun PlaygroundTab(
         onSend = onSend,
         onSendVision = onSendVision,
         onSendFile = onSendFile,
+        onSendAudio = onSendAudio,
         canAttachVision = canAttachVision,
         canAttachFile = canAttachFile,
+        canAttachAudio = canAttachAudio,
         scopeKey = selectedGroup,
         resetToken = state.conversationResetToken,
         onCancel = onCancel,
@@ -267,6 +272,45 @@ internal fun PlaygroundTab(
     PlaygroundSamplesSheet(samples = state.samples, onDismiss = { showSamples = false })
   }
 }
+
+/** Scoped audio selection via Storage Access Framework; no RECORD_AUDIO permission needed. */
+private suspend fun prepareAudioAttachment(context: Context, uri: Uri): LocalAudioPayload.Prepared =
+  withContext(Dispatchers.IO) {
+    require(uri.scheme == "content") { "Audio picker must provide a content URI" }
+    val resolver = context.contentResolver
+    val name = runCatching {
+      resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+        if (!cursor.moveToFirst()) null else {
+          val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+          if (index < 0) null else cursor.getString(index)
+        }
+      }
+    }.getOrNull()
+    val bytes = ByteArrayOutputStream().use { output ->
+      val input = resolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("Audio picker returned no content")
+      input.use { stream ->
+        val buffer = ByteArray(8192)
+        var total = 0
+        var emptyReads = 0
+        while (true) {
+          val count = stream.read(buffer)
+          if (count < 0) break
+          if (count == 0) {
+            emptyReads += 1
+            require(emptyReads <= 16) { "Audio stream stalled" }
+            continue
+          }
+          emptyReads = 0
+          total += count
+          require(total <= LocalAudioPayload.MAX_BYTES) { "Audio exceeds 4 MiB" }
+          output.write(buffer, 0, count)
+        }
+      }
+      output.toByteArray()
+    }
+    LocalAudioPayload.prepare(bytes, name)
+  }
 
 /** Scoped PDF bytes are transient and never appear in object debug strings. */
 private class PreparedPdfAttachment(val file: FileRefPart) {
@@ -379,8 +423,10 @@ private fun PlaygroundComposer(
   onSend: (String) -> Unit,
   onSendVision: (String, ImageUrlPart) -> Unit,
   onSendFile: (String, FileRefPart) -> Unit,
+  onSendAudio: (String, LocalAudioPayload.Prepared) -> Unit,
   canAttachVision: Boolean,
   canAttachFile: Boolean,
+  canAttachAudio: Boolean,
   scopeKey: String?,
   resetToken: Long,
   onCancel: () -> Unit,
@@ -396,6 +442,9 @@ private fun PlaygroundComposer(
   var submittedAttachmentName by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<String?>(null) }
   var pendingImage by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<PreparedVisionAttachment?>(null) }
   var pendingFile by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<PreparedPdfAttachment?>(null) }
+  var pendingAudio by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<LocalAudioPayload.Prepared?>(null) }
+  var audioPreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
+  var audioError by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var filePreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var fileError by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var imagePreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
@@ -411,6 +460,9 @@ private fun PlaygroundComposer(
   var pdfPickerConnectionId by remember { mutableStateOf<String?>(null) }
   var pdfPickerGroup by remember { mutableStateOf<String?>(null) }
   var pdfPickerResetToken by remember { mutableStateOf<Long?>(null) }
+  var audioPickerConnectionId by remember { mutableStateOf<String?>(null) }
+  var audioPickerGroup by remember { mutableStateOf<String?>(null) }
+  var audioPickerResetToken by remember { mutableStateOf<Long?>(null) }
   val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
     if (uri != null && pickerConnectionId == currentConnectionId && pickerGroup == currentScopeKey && pickerResetToken == currentResetToken) {
       val expectedId = currentConnectionId
@@ -462,6 +514,35 @@ private fun PlaygroundComposer(
       }
     }
   }
+  val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    if (uri != null && audioPickerConnectionId == currentConnectionId &&
+        audioPickerGroup == currentScopeKey && audioPickerResetToken == currentResetToken) {
+      val expectedId = currentConnectionId
+      val expectedGroup = currentScopeKey
+      val expectedReset = currentResetToken
+      launchScope.launch {
+        audioPreparing = true
+        audioError = false
+        try {
+          val prepared = prepareAudioAttachment(context, uri)
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) {
+            pendingAudio = prepared
+            pendingImage = null
+            pendingFile = null
+          }
+        } catch (cancel: CancellationException) {
+          throw cancel
+        } catch (_: Exception) {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) audioError = true
+        } finally {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) audioPreparing = false
+        }
+      }
+    }
+  }
   val keyboard = LocalSoftwareKeyboardController.current
   val focusManager = LocalFocusManager.current
   // send 可能在前置檢查即拒絕；看到 VM 接受的新 user message 才清空相符草稿。
@@ -474,6 +555,7 @@ private fun PlaygroundComposer(
         prompt = ""
         pendingImage = null
         pendingFile = null
+        pendingAudio = null
         focusManager.clearFocus()
         keyboard?.hide()
       }
