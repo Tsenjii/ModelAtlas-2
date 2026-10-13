@@ -311,6 +311,8 @@ class MyModelsMetadataRetryStateTest {
             }
         }
         withTimeout(TIMEOUT_MS) { entered.await() }
+        // Async dispatch is not proof that every caller reached the flight.
+        awaitCond { rec.joined(w) == 4 }
         release.complete(Unit)
         jobs.forEach { withTimeout(TIMEOUT_MS) { it.await() } }
         assertEquals(1, fetch.calls)
@@ -337,6 +339,10 @@ class MyModelsMetadataRetryStateTest {
         val follower = async(Dispatchers.Default, CoroutineStart.UNDISPATCHED) {
             refresh(f, m, RefreshOrigin.SESSION_AUTO, absentCapable(), rec, throwingFetcher())
         }
+        // Prove this caller actually joined BEFORE resolving the leader;
+        // otherwise a separate request legitimately runs after leader exit.
+        awaitCond { rec.joined(w) == 1 }
+        assertEquals(0, rec.charged(w))
         release.complete(Unit)
         val o = withTimeout(TIMEOUT_MS) { follower.await() }
         assertEquals(RefreshOutcome.JOINED_EXISTING_FLIGHT, o)
@@ -361,6 +367,10 @@ class MyModelsMetadataRetryStateTest {
         val follower = async(Dispatchers.Default, CoroutineStart.UNDISPATCHED) {
             refresh(f, m, RefreshOrigin.SESSION_AUTO, absentCapable(), rec, throwingFetcher())
         }
+        // Prove this caller actually joined BEFORE resolving the leader;
+        // otherwise a separate request legitimately runs after leader exit.
+        awaitCond { rec.joined(w) == 1 }
+        assertEquals(0, rec.charged(w))
         release.complete(Unit)
         assertEquals(RefreshOutcome.JOINED_EXISTING_FLIGHT, withTimeout(TIMEOUT_MS) { follower.await() })
         assertEquals(0, rec.charged(w))
@@ -430,7 +440,9 @@ class MyModelsMetadataRetryStateTest {
         val p1 = async(Dispatchers.Default, CoroutineStart.UNDISPATCHED) { refresh(f, m, RefreshOrigin.USER_EXPLICIT, absentCapable(), rec, f1) }
         withTimeout(TIMEOUT_MS) { entered.await() }
         val p2 = async(Dispatchers.Default, CoroutineStart.UNDISPATCHED) { refresh(f, m, RefreshOrigin.USER_EXPLICIT, absentCapable(), rec, f2) }
-        awaitCond { !p2.isCompleted }
+        // A not-yet-completed Deferred may still be awaiting database work,
+        // rather than having joined the existing flight.
+        awaitCond { rec.joined(w) == 1 }
         release.complete(Unit)
         val outs = listOf(withTimeout(TIMEOUT_MS) { p1.await() }, withTimeout(TIMEOUT_MS) { p2.await() })
         assertEquals(1, f1.calls + f2.calls)
@@ -464,6 +476,7 @@ class MyModelsMetadataRetryStateTest {
         val follower = async(Dispatchers.Default, CoroutineStart.UNDISPATCHED) {
             refresh(f, m, RefreshOrigin.USER_EXPLICIT, absentCapable(), rec, throwingFetcher())
         }
+        awaitCond { rec.joined(w) == 1 }
         release.complete(Unit)
         assertEquals(RefreshOutcome.JOINED_EXISTING_FLIGHT, withTimeout(TIMEOUT_MS) { follower.await() })
         assertEquals(0, rec.userCharged(w))
