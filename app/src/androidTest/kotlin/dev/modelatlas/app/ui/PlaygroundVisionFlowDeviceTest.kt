@@ -16,7 +16,9 @@ import dev.modelatlas.app.data.AtlasRepository
 import dev.modelatlas.app.data.RoomCommitter
 import dev.modelatlas.app.data.VisionImagePayload
 import dev.modelatlas.app.data.LocalPdfPayload
+import dev.modelatlas.app.data.LocalAudioPayload
 import dev.modelatlas.core.multimodal.FileRefPart
+import dev.modelatlas.core.multimodal.AudioInputPart
 import dev.modelatlas.core.domain.Capability
 import dev.modelatlas.core.inference.CredentialAccess
 import dev.modelatlas.core.inference.InferenceEngine
@@ -362,6 +364,126 @@ class PlaygroundVisionFlowDeviceTest {
         }
         assertEquals(app.getString(R.string.playground_pdf_error), vm.state.value.error)
         assertEquals(2, requests.size)
+    }
+
+    @Test fun localAudioRoomVmEngineHttpAndRevokedAudioCapability() = runBlocking {
+        val snapshot = OnboardingSnapshot(
+            workflowId = UUID.randomUUID().toString(),
+            flowType = OnboardingFlowType.ADVANCED,
+            providerName = "匿名音訊測試模型",
+            baseUrl = "https://audio.fixture.invalid/v1",
+            credentials = emptyList(),
+            anonymousConfirmed = true,
+            manualModelIds = listOf("fixture-audio"),
+            reviewApproval = ReviewApproval(true, 1_700_000_000_000L, "測試確認"),
+            createdAtMillis = 1_700_000_000_000L,
+            updatedAtMillis = 1_700_000_000_001L,
+        )
+        val receipt = RoomCommitter(database).commit(snapshot)
+        val record = withTimeout(15_000L) {
+            repository.connections.first { it.any { row -> row.providerId == receipt.providerId } }
+                .single { it.providerId == receipt.providerId }
+        }
+        withTimeout(15_000L) {
+            vm.state.first { it.connections.any { row -> row.id == record.id && row.enabled } }
+        }
+        val wav = ByteArray(44).also { bytes ->
+            "RIFF".toByteArray().copyInto(bytes, 0)
+            "WAVE".toByteArray().copyInto(bytes, 8)
+            "fmt ".toByteArray().copyInto(bytes, 12)
+        }
+        val audio = LocalAudioPayload.prepare(wav, "lesson.wav")
+        val rowsField = AtlasViewModel::class.java.getDeclaredField("_allModelRows").apply {
+            isAccessible = true
+        }
+        @Suppress("UNCHECKED_CAST")
+        val rows = rowsField.get(vm) as MutableStateFlow<List<ModelRow>>
+        val selectedAudio = ModelRow(
+            providerId = record.providerId, providerModelId = record.modelId,
+            canonicalId = "fixture-audio", endpointId = record.endpointId,
+            operation = "CHAT_COMPLETIONS", group = null,
+            selectedKeyUsable = true, capabilities = setOf(Capability.AUDIO_INPUT),
+        )
+        withContext(Dispatchers.Main.immediate) {
+            vm.selectConnection(record.id)
+            rows.value = listOf(selectedAudio)
+            vm.sendWithAudio("請轉寫音訊", audio)
+        }
+        val done = withTimeout(15_000L) { vm.state.first {
+            !it.busy && (it.messages.size == 2 || it.error != null)
+        } }
+        assertNull("Audio HTTP path rejected: ${done.error}", done.error)
+        assertEquals(2, done.messages.size)
+        assertEquals("ok", done.messages.last().text)
+        assertEquals("AUDIO", done.messages.first().attachmentKind)
+        assertEquals("lesson.wav", done.messages.first().attachmentName)
+        assertEquals(1, requests.size)
+        assertNull(requests.single().header("Authorization"))
+        val wire = Buffer().also { requests.single().body!!.writeTo(it) }.readUtf8()
+        val parts = JSONObject(wire).getJSONArray("messages").getJSONObject(0).getJSONArray("content")
+        assertEquals("text", parts.getJSONObject(0).getString("type"))
+        assertEquals("請轉寫音訊", parts.getJSONObject(0).getString("text"))
+        assertEquals("input_audio", parts.getJSONObject(1).getString("type"))
+        val audioWire = parts.getJSONObject(1).getJSONObject("input_audio")
+        assertEquals("wav", audioWire.getString("format"))
+        assertEquals(audio.part.dataBase64, audioWire.getString("data"))
+        assertFalse("No device path", wire.contains("/storage/emulated"))
+
+        // History retains the real audio block on text-only follow-up, so capability
+        // checks must evaluate the whole request, not only the newest text.
+        withContext(Dispatchers.Main.immediate) {
+            rows.value = listOf(selectedAudio)
+            vm.send("接著解釋")
+        }
+        val followUp = withTimeout(15_000L) { vm.state.first {
+            !it.busy && (it.messages.size >= 4 || it.error != null)
+        } }
+        assertNull(followUp.error)
+        assertEquals(2, requests.size)
+        val replay = Buffer().also { requests[1].body!!.writeTo(it) }.readUtf8()
+        assertEquals(
+            "wav",
+            JSONObject(replay).getJSONArray("messages").getJSONObject(0)
+                .getJSONArray("content").getJSONObject(1)
+                .getJSONObject("input_audio").getString("format"),
+        )
+
+        // Revoking only the selected model's capability blocks all older audio data,
+        // without sending a third request or borrowing a foreign group.
+        withContext(Dispatchers.Main.immediate) {
+            rows.value = listOf(selectedAudio.copy(capabilities = emptySet()))
+            vm.send("撤銷後不可帶音訊")
+        }
+        assertEquals(app.getString(R.string.playground_audio_unavailable), vm.state.value.error)
+        assertEquals(2, requests.size)
+
+        val samplesBefore = vm.state.value.samples.size
+        withContext(Dispatchers.Main.immediate) {
+            vm.startNewConversation()
+            assertTrue(vm.state.value.messages.isEmpty())
+            assertEquals(samplesBefore, vm.state.value.samples.size)
+            vm.send("新對話純文字")
+        }
+        val fresh = withTimeout(15_000L) { vm.state.first {
+            !it.busy && (it.messages.size == 2 || it.error != null)
+        } }
+        assertNull(fresh.error)
+        assertEquals(3, requests.size)
+        val freshWire = Buffer().also { requests[2].body!!.writeTo(it) }.readUtf8()
+        val freshMessages = JSONObject(freshWire).getJSONArray("messages")
+        assertEquals(1, freshMessages.length())
+        assertEquals("新對話純文字", freshMessages.getJSONObject(0).getString("content"))
+        assertFalse(freshWire.contains("input_audio"))
+
+        // A direct VM caller cannot forge bytes/format even when FILES/Audio is allowed.
+        withContext(Dispatchers.Main.immediate) {
+            rows.value = listOf(selectedAudio)
+            vm.sendWithAudio(
+                "不合法音訊", LocalAudioPayload.Prepared(AudioInputPart("bm90LWF1ZGlv", "wav"), "fake.wav"),
+            )
+        }
+        assertEquals(app.getString(R.string.playground_audio_error), vm.state.value.error)
+        assertEquals(3, requests.size)
     }
 
     /** Negative proof at the real VM boundary: a foreign group cannot authorize image upload. */
