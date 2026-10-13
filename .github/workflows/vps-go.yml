@@ -1,0 +1,34 @@
+name: VPS Go CI
+
+on:
+  pull_request:
+    paths:
+      - "vps/**"
+      - ".github/workflows/vps-go.yml"
+  push:
+    branches: [main]
+    paths:
+      - "vps/**"
+      - ".github/workflows/vps-go.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  go-build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: vps/go.mod
+          cache-dependency-path: vps/go.mod
+      - name: Test
+        run: go test -race ./...
+      - name: Build Linux AMD64
+        run: GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o modelatlas-vps-linux-amd64 .
+      - name: Build Linux ARM64
+        run: GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -o modelatlas-vps-linux-arm64 .
