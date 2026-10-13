@@ -3,10 +3,11 @@ package dev.modelatlas.app.ui
 import dev.modelatlas.core.domain.Capability
 
 /**
- * Scope-exact gate shared by Composer and ViewModel; never guess Vision from model name.
- * Rows originate from stored classification and selected-key usability projections.
+ * Selected offering gate shared by Compose and ViewModel.
+ * The exact provider/model/endpoint/operation/group and selected-key projection
+ * must match; classification from other credentials or groups must not lend media.
  */
-internal fun selectedVisionCapabilities(
+internal fun selectedChatCapabilities(
     rows: List<ModelRow>,
     providerId: String,
     providerModelId: String,
@@ -20,6 +21,17 @@ internal fun selectedVisionCapabilities(
         row.operation == operation &&
         row.group == selectedGroup &&
         row.selectedKeyUsable &&
-        Capability.VISION in row.capabilities &&
         operation == "CHAT_COMPLETIONS"
 }?.capabilities.orEmpty()
+
+/** Compatibility: unknown/unverified Vision remains strictly unavailable. */
+internal fun selectedVisionCapabilities(
+    rows: List<ModelRow>,
+    providerId: String,
+    providerModelId: String,
+    endpointId: String,
+    operation: String,
+    selectedGroup: String?,
+): Set<Capability> = selectedChatCapabilities(
+    rows, providerId, providerModelId, endpointId, operation, selectedGroup,
+).takeIf { Capability.VISION in it }.orEmpty()
