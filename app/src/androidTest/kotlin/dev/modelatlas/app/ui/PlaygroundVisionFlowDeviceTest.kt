@@ -231,6 +231,29 @@ class PlaygroundVisionFlowDeviceTest {
         assertEquals(app.getString(R.string.playground_vision_unavailable), vm.state.value.error)
         assertEquals(2, requests.size)
         assertEquals(4, vm.state.value.messages.size)
+
+        // #14: explicit fresh conversation drops the old image *wire history*
+        // without restoring revoked Vision permission or clearing telemetry.
+        val sampleCount = vm.state.value.samples.size
+        withContext(Dispatchers.Main.immediate) {
+            vm.startNewConversation()
+            assertEquals(0, vm.state.value.messages.size)
+            assertNull(vm.state.value.error)
+            assertEquals(sampleCount, vm.state.value.samples.size)
+            vm.send("新對話只送文字")
+        }
+        val fresh = withTimeout(15_000L) { vm.state.first {
+            !it.busy && (it.messages.size == 2 || it.error != null)
+        } }
+        assertNull("text-only fresh conversation failed: ${fresh.error}", fresh.error)
+        assertEquals(2, fresh.messages.size)
+        assertEquals(3, requests.size)
+        val freshBody = Buffer().also { requests.last().body!!.writeTo(it) }.readUtf8()
+        val freshMessages = JSONObject(freshBody).getJSONArray("messages")
+        assertEquals("no previous image or assistant replay", 1, freshMessages.length())
+        assertEquals("新對話只送文字", freshMessages.getJSONObject(0).getString("content"))
+        assertFalse(freshBody.contains("image_url"))
+        assertNull(requests.last().header("Authorization"))
     }
 
     /** Negative proof at the real VM boundary: a foreign group cannot authorize image upload. */

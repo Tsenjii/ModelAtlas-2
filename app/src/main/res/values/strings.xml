@@ -278,6 +278,7 @@
   <string name="section_context">Context</string>
   <string name="section_modalities">Modalities</string>
   <string name="action_clear">清除</string>
+  <string name="playground_new_conversation">開始新對話</string>
   <string name="provider_detail_website_label">官網</string>
   <string name="compare_title">即時比對</string>
   <string name="quota_pool_scope_label">配額池範圍</string>

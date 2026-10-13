@@ -1,11 +1,14 @@
 package dev.modelatlas.app.ui
 
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -29,14 +32,23 @@ class PlaygroundVisionPickerUiTest {
         endpointId = "fixture-endpoint", operation = "CHAT_COMPLETIONS",
     )
 
-    private fun show(canAttach: Boolean, group: State<String?>? = null) {
+    private fun show(
+        canAttach: Boolean,
+        group: State<String?>? = null,
+        resetToken: State<Long>? = null,
+        busy: Boolean = false,
+        darkTheme: State<Boolean>? = null,
+        onNewConversation: () -> Unit = {},
+    ) {
         compose.setContent {
-            AtlasTheme {
+            AtlasTheme(darkTheme = darkTheme?.value ?: false) {
                 PlaygroundTab(
                     state = AtlasUiState(
                         connections = listOf(connection),
                         selectedId = connection.id,
                         connectionsLoading = false,
+                        conversationResetToken = resetToken?.value ?: 0L,
+                        busy = busy,
                     ),
                     onSelect = {},
                     onSend = {},
@@ -44,6 +56,7 @@ class PlaygroundVisionPickerUiTest {
                     canAttachVision = canAttach,
                     selectedGroup = group?.value,
                     onCancel = {},
+                    onNewConversation = onNewConversation,
                     onGotoProviders = {},
                     showConnections = false,
                     onShowConnections = {},
@@ -74,5 +87,35 @@ class PlaygroundVisionPickerUiTest {
         compose.runOnIdle { group.value = "group-b" }
         // No text from group A remains available for sending in group B.
         compose.onNodeWithContentDescription(send).assertIsNotEnabled()
+    }
+    @Test fun newConversationHas48dpTargetInLightAndDark() {
+        val dark = mutableStateOf(false)
+        show(canAttach = true, darkTheme = dark)
+        val label = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(R.string.playground_new_conversation)
+        compose.onNodeWithContentDescription(label).assertHeightIsAtLeast(48.dp)
+        compose.runOnIdle { dark.value = true }
+        compose.onNodeWithContentDescription(label).assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test fun newConversationResetsDraftThroughUiCallback() {
+        val generation = mutableStateOf(0L)
+        show(canAttach = true, resetToken = generation, onNewConversation = {
+            generation.value += 1L
+        })
+        compose.onNode(hasSetTextAction()).performTextInput("draft from previous conversation")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val send = context.getString(R.string.action_send)
+        val newConversation = context.getString(R.string.playground_new_conversation)
+        compose.onNodeWithContentDescription(send).assertIsEnabled()
+        compose.onNodeWithContentDescription(newConversation).assertIsEnabled().performClick()
+        compose.onNodeWithContentDescription(send).assertIsNotEnabled()
+    }
+
+    @Test fun newConversationIsDisabledWhileStreaming() {
+        show(canAttach = true, busy = true)
+        val label = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(R.string.playground_new_conversation)
+        compose.onNodeWithContentDescription(label).assertIsNotEnabled()
     }
 }

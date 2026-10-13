@@ -127,6 +127,7 @@ internal fun PlaygroundTab(
   canAttachVision: Boolean,
   selectedGroup: String?,
   onCancel: () -> Unit,
+  onNewConversation: () -> Unit,
   onGotoProviders: () -> Unit,
   showConnections: Boolean,
   onShowConnections: (Boolean) -> Unit,
@@ -238,7 +239,9 @@ internal fun PlaygroundTab(
         onSendVision = onSendVision,
         canAttachVision = canAttachVision,
         scopeKey = selectedGroup,
+        resetToken = state.conversationResetToken,
         onCancel = onCancel,
+        onNewConversation = onNewConversation,
         onSelect = ::openConnections,
         onSamples = { focusManager.clearFocus(); keyboard?.hide(); showSamples = true },
       )
@@ -328,43 +331,48 @@ private fun PlaygroundComposer(
   onSendVision: (String, ImageUrlPart) -> Unit,
   canAttachVision: Boolean,
   scopeKey: String?,
+  resetToken: Long,
   onCancel: () -> Unit,
+  onNewConversation: () -> Unit,
   onSelect: () -> Unit,
   onSamples: () -> Unit,
 ) {
   // A draft belongs to exactly the selected connection and group.
   // Never replay unsent content after switching credential/endpoint/group.
-  var prompt by remember(selectedConnection?.id, scopeKey) { mutableStateOf("") }
-  var submittedPrompt by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
-  var submittedAfterId by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
-  var submittedAttachmentName by remember(selectedConnection?.id, scopeKey) { mutableStateOf<String?>(null) }
-  var pendingImage by remember(selectedConnection?.id, scopeKey) { mutableStateOf<PreparedVisionAttachment?>(null) }
-  var imagePreparing by remember(selectedConnection?.id, scopeKey) { mutableStateOf(false) }
-  var imageError by remember(selectedConnection?.id, scopeKey) { mutableStateOf(false) }
+  var prompt by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf("") }
+  var submittedPrompt by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<String?>(null) }
+  var submittedAfterId by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<String?>(null) }
+  var submittedAttachmentName by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<String?>(null) }
+  var pendingImage by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<PreparedVisionAttachment?>(null) }
+  var imagePreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
+  var imageError by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   val context = LocalContext.current
   val launchScope = rememberCoroutineScope()
   val currentConnectionId by rememberUpdatedState(selectedConnection?.id)
   val currentScopeKey by rememberUpdatedState(scopeKey)
+  val currentResetToken by rememberUpdatedState(resetToken)
+  var pickerResetToken by remember { mutableStateOf<Long?>(null) }
   var pickerConnectionId by remember { mutableStateOf<String?>(null) }
   var pickerGroup by remember { mutableStateOf<String?>(null) }
   val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-    if (uri != null && pickerConnectionId == currentConnectionId && pickerGroup == currentScopeKey) {
+    if (uri != null && pickerConnectionId == currentConnectionId && pickerGroup == currentScopeKey && pickerResetToken == currentResetToken) {
       val expectedId = currentConnectionId
       val expectedGroup = currentScopeKey
+      val expectedReset = currentResetToken
       launchScope.launch {
         imagePreparing = true
         imageError = false
         try {
           val prepared = prepareVisionAttachment(context, uri)
-          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey) {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey && expectedReset == currentResetToken) {
             pendingImage = prepared
           }
         } catch (cancel: CancellationException) {
           throw cancel
         } catch (_: Exception) {
-          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey) imageError = true
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey && expectedReset == currentResetToken) imageError = true
         } finally {
-          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey) imagePreparing = false
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey && expectedReset == currentResetToken) imagePreparing = false
         }
       }
     }
@@ -403,6 +411,7 @@ private fun PlaygroundComposer(
           onClick = {
             pickerConnectionId = selectedConnection?.id
             pickerGroup = scopeKey
+            pickerResetToken = resetToken
             imagePicker.launch("image/*")
           },
           enabled = canSend && canAttachVision && !busy && !imagePreparing && pendingImage == null,
@@ -523,6 +532,20 @@ private fun PlaygroundComposer(
             }
           }
           Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null)
+        }
+        val newConversationLabel = stringResource(R.string.playground_new_conversation)
+        TextButton(
+          onClick = {
+            focusManager.clearFocus()
+            keyboard?.hide()
+            onNewConversation()
+          },
+          enabled = selectedConnection != null && !busy,
+          modifier = Modifier.heightIn(min = AtlasSpace.touch)
+            .semantics { contentDescription = newConversationLabel },
+          contentPadding = PaddingValues(horizontal = AtlasSpace.xs),
+        ) {
+          Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(AtlasSpace.icon))
         }
         val samplesLabel = stringResource(R.string.section_samples)
         TextButton(
