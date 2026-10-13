@@ -3,14 +3,15 @@
 更新：2026-10-13，公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
-- **MODE：PLAY-004 / Issue #14 新對話（候選實作；尚待 PR 同 SHA CI）**。
-- **FEATURE FREEZE：OFF（main 已恢復全綠；每個新 slice 仍須獨立驗收）**。主線 [`3925ff9d`](https://github.com/Tsenjii/ModelAtlas-2/commit/3925ff9dced2c97382438d0b72b9cda2e15526fd) 為 [PR #15](https://github.com/Tsenjii/ModelAtlas-2/pull/15) squash merge；[main Actions 38392145254](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38392145254) **build SUCCESS + device-tests SUCCESS（同一 HEAD SHA）**。
-- **PK27 / MyModels 維修已在 main 全綠**：PR #15 修 Compose-owned semantics waits 避免 SnapshotStateObserver 跨執行緒崩潰，並修 follower join race（flight attach 即發 Joined，測試等待 join 才釋放 leader）；先前紅燈 [38324128166](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38324128166)／[38324922179](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38324922179) 不可當成功。
-- **目前唯一可開發片：** [Issue #14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) 新對話：同 scope 清除 UI/wire history、草稿與 pending attachment，其他連線與所有 telemetry/usage/evidence 不可刪；streaming 時拒絕清除；Vision 撤銷後新對話可發純文字。此分支是候選，未獲 build+device-tests 同 SHA 成功前不得合併或 ACCEPTED。
-- 本 public repo 以新歷史提交；舊 private repo 的 full-green ledger 只作參考，不能當作 public CI 認證。
+- **MODE：PLAY-004 / Files（PDF）第一個 production attachment 切片**。此分支為候選；需 PR 同 SHA build + device SUCCESS、合併後 main 重跑全綠才算完成。
+- **main verified full-green：** [`069b541a`](https://github.com/Tsenjii/ModelAtlas-2/commit/069b541a486e032cf19431a54ec668652a7142cc) 是 [PR #16](https://github.com/Tsenjii/ModelAtlas-2/pull/16) squash merge；[Actions 38397137563](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38397137563) **build SUCCESS + device-tests SUCCESS（同 SHA）**。FEATURE FREEZE OFF；若後續任何 main HEAD 變紅，立即重開 red-head lock。
+- **Issue #14 新對話已 merge 並經 main full-green：** `AtlasViewModel.startNewConversation` 只清當前選定連線的 UI/wire history；串流時拒絕，保留 samples/telemetry；UI 草稿與 picker late-result 按 reset generation 隔離；Android Room→VM→HTTP + Compose 已測。跨連線 A/B 的新增精確證明可持續強化。
+- **本輪單一 slice：** 真正接上 `FileRefPart` PDF（用本機 content URI、4 MiB 上限、PDF signature/mime/filename gate、精確 FILES 能力、無額外 credentials；未知能力 fail-closed）。保留 image/text/history/busy/cancel/telemetry 路徑，測試不可因 PDF 加入而降低。整體 PLAY-004 仍 **PARTIAL**，尚缺音訊／工具／生成結果 UI。
+- **上次 correctness 修復：** [PR #15](https://github.com/Tsenjii/ModelAtlas-2/pull/15) `3925ff9d`，[Actions 38392145254](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38392145254) build/device 同 SHA full-green；PK27 observer / MyModels join race 已修。歷史失敗 [38324922179](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38324922179) 不視為成功。
+- Public repo 不帶 private repo Git history / sensitive token；舊 private CI 非新主線驗收證據。
 
 ## 下一片（唯一生產功能入口）
-- **PLAY-004：圖片 Vision [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8)、安全邊界 [PR #9](https://github.com/Tsenjii/ModelAtlas-2/pull/9)、多輪歷史 [PR #13](https://github.com/Tsenjii/ModelAtlas-2/pull/13) 已合併**。修正針對整批待送歷史檢查 Vision 並保留同 scope 能力，若撤銷則 HTTP 前拒絕；主線 PK27 observer crash 已由 PR #15 修復且全綠；目前單一切片處理 [#14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) 新對話，接著才是檔案／音訊／工具／結果 UI，PLAY-004 整體仍 PARTIAL。
+- **PLAY-004：圖片 Vision [PR #8](https://github.com/Tsenjii/ModelAtlas-2/pull/8)、安全邊界 [PR #9](https://github.com/Tsenjii/ModelAtlas-2/pull/9)、多輪歷史 [PR #13](https://github.com/Tsenjii/ModelAtlas-2/pull/13) 已合併**。修正針對整批待送歷史檢查 Vision 並保留同 scope 能力，若撤銷則 HTTP 前拒絕；主線 PK27 observer crash 已由 PR #15 修復且全綠；新對話 [#14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) 已合併並 main 同 SHA 全綠；目前處理 PDF Files 真實接線，後續才是音訊／工具／結果 UI，PLAY-004 整體仍 PARTIAL。
 - 必須先讀現有 `PlaygroundScreen.kt`、`AtlasViewModel.kt`、`InferenceEngine`、`MultimodalBlocks.kt`、`OpenAiMediaTransports.kt`，確認已存在 transport / state 與實際欠缺。
 - 依現有 `AtlasTheme.kt` UI 節奏做增量 Compose，更動不能破壞 text streaming、selected credential、provider scoped telemetry。
 - 先設計最小可驗收的單一 multimodal flow；支援輸入/回應真實 wiring、permission 與 size/security guards、取消與錯誤語意、UI+core tests。

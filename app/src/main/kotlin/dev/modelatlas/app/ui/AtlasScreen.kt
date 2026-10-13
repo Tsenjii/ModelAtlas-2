@@ -2,6 +2,8 @@
 
 package dev.modelatlas.app.ui
 
+import dev.modelatlas.core.domain.Capability
+
 import android.app.NotificationManager
 import android.content.Intent
 import android.net.Uri
@@ -664,6 +666,7 @@ private fun AtlasScreenContent(
           onSelect = viewModel::selectConnection,
           onSend = viewModel::send,
           onSendVision = viewModel::sendWithImage,
+          onSendFile = viewModel::sendWithFile,
           canAttachVision = state.connections.firstOrNull { it.id == state.selectedId }?.let { connection ->
             selectedVisionCapabilities(
               rows = allModelRows,
@@ -673,6 +676,16 @@ private fun AtlasScreenContent(
               operation = connection.operation,
               selectedGroup = selectedGroup,
             ).isNotEmpty()
+          } ?: false,
+          canAttachFile = state.connections.firstOrNull { it.id == state.selectedId }?.let { connection ->
+            Capability.FILES in selectedChatCapabilities(
+              rows = allModelRows,
+              providerId = connection.providerId,
+              providerModelId = connection.modelId,
+              endpointId = connection.endpointId,
+              operation = connection.operation,
+              selectedGroup = selectedGroup,
+            )
           } ?: false,
           selectedGroup = selectedGroup,
           onCancel = viewModel::cancel,

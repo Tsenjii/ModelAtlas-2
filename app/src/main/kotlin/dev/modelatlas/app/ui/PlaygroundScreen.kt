@@ -16,7 +16,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberUpdatedState
 import dev.modelatlas.app.data.VisionImagePayload
+import dev.modelatlas.app.data.LocalPdfPayload
 import dev.modelatlas.core.multimodal.ImageUrlPart
+import dev.modelatlas.core.multimodal.FileRefPart
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -124,7 +126,9 @@ internal fun PlaygroundTab(
   onSelect: (String) -> Unit,
   onSend: (String) -> Unit,
   onSendVision: (String, ImageUrlPart) -> Unit,
+  onSendFile: (String, FileRefPart) -> Unit,
   canAttachVision: Boolean,
+  canAttachFile: Boolean,
   selectedGroup: String?,
   onCancel: () -> Unit,
   onNewConversation: () -> Unit,
@@ -237,7 +241,9 @@ internal fun PlaygroundTab(
         compact = compact,
         onSend = onSend,
         onSendVision = onSendVision,
+        onSendFile = onSendFile,
         canAttachVision = canAttachVision,
+        canAttachFile = canAttachFile,
         scopeKey = selectedGroup,
         resetToken = state.conversationResetToken,
         onCancel = onCancel,
@@ -261,6 +267,49 @@ internal fun PlaygroundTab(
     PlaygroundSamplesSheet(samples = state.samples, onDismiss = { showSamples = false })
   }
 }
+
+/** Scoped PDF bytes are transient and never appear in object debug strings. */
+private class PreparedPdfAttachment(val file: FileRefPart) {
+  override fun toString(): String = "PreparedPdfAttachment(redacted)"
+}
+
+private suspend fun preparePdfAttachment(context: Context, uri: Uri): PreparedPdfAttachment =
+  withContext(Dispatchers.IO) {
+    require(uri.scheme == "content") { "PDF picker must provide a content URI" }
+    val resolver = context.contentResolver
+    val name = runCatching {
+      resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+        if (!cursor.moveToFirst()) null else {
+          val column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+          if (column < 0) null else cursor.getString(column)
+        }
+      }
+    }.getOrNull()
+    val bytes = ByteArrayOutputStream().use { output ->
+      val stream = resolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("PDF picker returned no content")
+      stream.use { input ->
+        val buffer = ByteArray(8192)
+        var total = 0
+        var emptyReads = 0
+        while (true) {
+          val count = input.read(buffer)
+          if (count < 0) break
+          if (count == 0) {
+            emptyReads += 1
+            require(emptyReads <= 16) { "PDF stream stalled" }
+            continue
+          }
+          emptyReads = 0
+          total += count
+          require(total <= LocalPdfPayload.MAX_BYTES) { "PDF exceeds 4 MiB" }
+          output.write(buffer, 0, count)
+        }
+      }
+      output.toByteArray()
+    }
+    PreparedPdfAttachment(LocalPdfPayload.prepare(bytes, name))
+  }
 
 /** Preview is ephemeral Compose state; only bounded and signature-checked data URIs reach the VM. */
 private class PreparedVisionAttachment(
@@ -329,7 +378,9 @@ private fun PlaygroundComposer(
   compact: Boolean,
   onSend: (String) -> Unit,
   onSendVision: (String, ImageUrlPart) -> Unit,
+  onSendFile: (String, FileRefPart) -> Unit,
   canAttachVision: Boolean,
+  canAttachFile: Boolean,
   scopeKey: String?,
   resetToken: Long,
   onCancel: () -> Unit,
@@ -344,6 +395,9 @@ private fun PlaygroundComposer(
   var submittedAfterId by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<String?>(null) }
   var submittedAttachmentName by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<String?>(null) }
   var pendingImage by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<PreparedVisionAttachment?>(null) }
+  var pendingFile by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf<PreparedPdfAttachment?>(null) }
+  var filePreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
+  var fileError by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var imagePreparing by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   var imageError by remember(selectedConnection?.id, scopeKey, resetToken) { mutableStateOf(false) }
   val context = LocalContext.current
@@ -354,6 +408,9 @@ private fun PlaygroundComposer(
   var pickerResetToken by remember { mutableStateOf<Long?>(null) }
   var pickerConnectionId by remember { mutableStateOf<String?>(null) }
   var pickerGroup by remember { mutableStateOf<String?>(null) }
+  var pdfPickerConnectionId by remember { mutableStateOf<String?>(null) }
+  var pdfPickerGroup by remember { mutableStateOf<String?>(null) }
+  var pdfPickerResetToken by remember { mutableStateOf<Long?>(null) }
   val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
     if (uri != null && pickerConnectionId == currentConnectionId && pickerGroup == currentScopeKey && pickerResetToken == currentResetToken) {
       val expectedId = currentConnectionId
@@ -377,6 +434,34 @@ private fun PlaygroundComposer(
       }
     }
   }
+  val pdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    if (uri != null && pdfPickerConnectionId == currentConnectionId &&
+        pdfPickerGroup == currentScopeKey && pdfPickerResetToken == currentResetToken) {
+      val expectedId = currentConnectionId
+      val expectedGroup = currentScopeKey
+      val expectedReset = currentResetToken
+      launchScope.launch {
+        filePreparing = true
+        fileError = false
+        try {
+          val prepared = preparePdfAttachment(context, uri)
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) {
+            pendingFile = prepared
+            pendingImage = null
+          }
+        } catch (cancel: CancellationException) {
+          throw cancel
+        } catch (_: Exception) {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) fileError = true
+        } finally {
+          if (expectedId == currentConnectionId && expectedGroup == currentScopeKey &&
+              expectedReset == currentResetToken) filePreparing = false
+        }
+      }
+    }
+  }
   val keyboard = LocalSoftwareKeyboardController.current
   val focusManager = LocalFocusManager.current
   // send 可能在前置檢查即拒絕；看到 VM 接受的新 user message 才清空相符草稿。
@@ -388,6 +473,7 @@ private fun PlaygroundComposer(
       if (prompt == submitted) {
         prompt = ""
         pendingImage = null
+        pendingFile = null
         focusManager.clearFocus()
         keyboard?.hide()
       }
@@ -414,10 +500,25 @@ private fun PlaygroundComposer(
             pickerResetToken = resetToken
             imagePicker.launch("image/*")
           },
-          enabled = canSend && canAttachVision && !busy && !imagePreparing && pendingImage == null,
+          enabled = canSend && canAttachVision && !busy && !imagePreparing && !filePreparing && pendingImage == null && pendingFile == null,
           modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = attachLabel },
         ) {
           Icon(Icons.Filled.Add, contentDescription = null)
+        }
+        val pdfAttachLabel = stringResource(R.string.playground_attach_pdf)
+        TextButton(
+          onClick = {
+            pdfPickerConnectionId = selectedConnection?.id
+            pdfPickerGroup = scopeKey
+            pdfPickerResetToken = resetToken
+            pdfPicker.launch("application/pdf")
+          },
+          enabled = canSend && canAttachFile && !busy && !imagePreparing && !filePreparing &&
+            pendingImage == null && pendingFile == null,
+          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = pdfAttachLabel },
+          contentPadding = PaddingValues(horizontal = AtlasSpace.xs),
+        ) {
+          Text("PDF", style = MaterialTheme.typography.labelMedium)
         }
         TextField(
           value = prompt,
@@ -444,18 +545,22 @@ private fun PlaygroundComposer(
         FilledIconButton(
           onClick = {
             if (busy) onCancel()
-            else if (canSend && !imagePreparing && prompt.isNotBlank() &&
-                (pendingImage == null || canAttachVision)) {
+            else if (canSend && !imagePreparing && !filePreparing && prompt.isNotBlank() &&
+                (pendingImage == null || canAttachVision) &&
+                (pendingFile == null || canAttachFile)) {
               submittedPrompt = prompt
-              submittedAttachmentName = pendingImage?.image?.filename
+              submittedAttachmentName = pendingImage?.image?.filename ?: pendingFile?.file?.filename
               submittedAfterId = acceptedMessage?.id
               val selectedImage = pendingImage
+              val selectedFile = pendingFile
               if (selectedImage != null) onSendVision(prompt, selectedImage.image)
+              else if (selectedFile != null) onSendFile(prompt, selectedFile.file)
               else onSend(prompt)
             }
           },
-          enabled = busy || (canSend && !imagePreparing && prompt.isNotBlank() &&
-            (pendingImage == null || canAttachVision)),
+          enabled = busy || (canSend && !imagePreparing && !filePreparing && prompt.isNotBlank() &&
+            (pendingImage == null || canAttachVision) &&
+            (pendingFile == null || canAttachFile)),
           modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = actionLabel },
           shape = AtlasRadius.pill,
         ) {
@@ -492,6 +597,36 @@ private fun PlaygroundComposer(
             modifier = Modifier.size(AtlasSpace.touch),
           ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.playground_remove_image)) }
         }
+      }
+      pendingFile?.let { attachment ->
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(vertical = AtlasSpace.xs),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm),
+        ) {
+          Text("PDF", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+          Text(
+            attachment.file.filename ?: stringResource(R.string.playground_attached_pdf),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+          IconButton(
+            onClick = { pendingFile = null; fileError = false },
+            modifier = Modifier.size(AtlasSpace.touch),
+          ) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.playground_remove_pdf)) }
+        }
+      }
+      if (filePreparing) {
+        Text(stringResource(R.string.playground_pdf_loading), style = MaterialTheme.typography.labelMedium)
+      }
+      if (fileError) {
+        Text(
+          stringResource(R.string.playground_pdf_error),
+          color = MaterialTheme.colorScheme.error,
+          style = MaterialTheme.typography.bodySmall,
+        )
       }
       if (imagePreparing) {
         Text(stringResource(R.string.playground_image_loading), style = MaterialTheme.typography.labelMedium)
@@ -629,7 +764,10 @@ private fun ChatBubble(
         Column(Modifier.padding(AtlasSpace.lg), verticalArrangement = Arrangement.spacedBy(AtlasSpace.sm)) {
           if (message.attachmentName != null) {
             AtlasBadge(
-              text = stringResource(R.string.playground_attached_image) + " · " + message.attachmentName,
+              text = stringResource(
+                if (message.attachmentKind == "FILE") R.string.playground_attached_pdf
+                else R.string.playground_attached_image,
+              ) + " · " + message.attachmentName,
               tone = AtlasTone.ACCENT,
             )
           }

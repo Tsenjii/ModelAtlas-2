@@ -15,9 +15,12 @@ import dev.modelatlas.app.data.AtlasDatabase
 import dev.modelatlas.app.data.AtlasRepository
 import dev.modelatlas.app.data.RoomCommitter
 import dev.modelatlas.app.data.VisionImagePayload
+import dev.modelatlas.app.data.LocalPdfPayload
+import dev.modelatlas.core.multimodal.FileRefPart
 import dev.modelatlas.core.domain.Capability
 import dev.modelatlas.core.inference.CredentialAccess
 import dev.modelatlas.core.inference.InferenceEngine
+import dev.modelatlas.core.inference.PromptMessage
 import dev.modelatlas.core.network.OpenAiTransport
 import dev.modelatlas.core.multimodal.ImageUrlPart
 import dev.modelatlas.core.onboarding.OnboardingFlowType
@@ -254,6 +257,111 @@ class PlaygroundVisionFlowDeviceTest {
         assertEquals("新對話只送文字", freshMessages.getJSONObject(0).getString("content"))
         assertFalse(freshBody.contains("image_url"))
         assertNull(requests.last().header("Authorization"))
+    }
+
+    @Test fun localPdfRoomVmEngineHttpAndRevokedFileCapability() = runBlocking {
+        val snapshot = OnboardingSnapshot(
+            workflowId = UUID.randomUUID().toString(),
+            flowType = OnboardingFlowType.ADVANCED,
+            providerName = "匿名 PDF 測試模型",
+            baseUrl = "https://pdf.fixture.invalid/v1",
+            credentials = emptyList(),
+            anonymousConfirmed = true,
+            manualModelIds = listOf("fixture-pdf"),
+            reviewApproval = ReviewApproval(true, 1_700_000_000_000L, "測試確認"),
+            createdAtMillis = 1_700_000_000_000L,
+            updatedAtMillis = 1_700_000_000_001L,
+        )
+        val receipt = RoomCommitter(database).commit(snapshot)
+        val record = withTimeout(15_000L) {
+            repository.connections.first { it.any { row -> row.providerId == receipt.providerId } }
+                .single { it.providerId == receipt.providerId }
+        }
+        withTimeout(15_000L) {
+            vm.state.first { it.connections.any { row -> row.id == record.id && row.enabled } }
+        }
+        val pdf = LocalPdfPayload.prepare("%PDF-1.7\\nfixture".toByteArray(), "essay.pdf")
+        val rowsField = AtlasViewModel::class.java.getDeclaredField("_allModelRows").apply {
+            isAccessible = true
+        }
+        @Suppress("UNCHECKED_CAST")
+        val rows = rowsField.get(vm) as MutableStateFlow<List<ModelRow>>
+        val verifiedPdfRow = ModelRow(
+            providerId = record.providerId, providerModelId = record.modelId,
+            canonicalId = "fixture-pdf", endpointId = record.endpointId,
+            operation = "CHAT_COMPLETIONS", group = null,
+            selectedKeyUsable = true, capabilities = setOf(Capability.FILES),
+        )
+        withContext(Dispatchers.Main.immediate) {
+            vm.selectConnection(record.id)
+            rows.value = listOf(verifiedPdfRow)
+            vm.sendWithFile("摘要 PDF", pdf)
+        }
+        val done = withTimeout(15_000L) { vm.state.first {
+            !it.busy && (it.messages.size == 2 || it.error != null)
+        } }
+        assertNull("PDF wire failed: ${done.error}", done.error)
+        assertEquals(2, done.messages.size)
+        assertEquals("FILE", done.messages.first().attachmentKind)
+        assertEquals("essay.pdf", done.messages.first().attachmentName)
+        assertEquals(1, requests.size)
+        assertNull(requests.single().header("Authorization"))
+        val body = Buffer().also { requests.single().body!!.writeTo(it) }.readUtf8()
+        val parts = JSONObject(body).getJSONArray("messages").getJSONObject(0).getJSONArray("content")
+        assertEquals("text", parts.getJSONObject(0).getString("type"))
+        assertEquals("摘要 PDF", parts.getJSONObject(0).getString("text"))
+        assertEquals("file", parts.getJSONObject(1).getString("type"))
+        val wireFile = parts.getJSONObject(1).getJSONObject("file")
+        assertEquals("essay.pdf", wireFile.getString("filename"))
+        assertEquals(pdf.fileDataUrl, wireFile.getString("file_data"))
+        assertFalse("Must not send device paths", body.contains("/storage/emulated"))
+
+        // Text follow-up still contains old file history; revoked FILES must fail
+        // before HTTP. Starting a new conversation must drop the wire history.
+        withContext(Dispatchers.Main.immediate) {
+            rows.value = listOf(verifiedPdfRow.copy(capabilities = emptySet()))
+            vm.send("權限已撤銷")
+        }
+        assertEquals(app.getString(R.string.playground_pdf_unavailable), vm.state.value.error)
+        assertEquals(1, requests.size)
+        val previousSamples = vm.state.value.samples.size
+        // Cross-scope cache proof: resetting A cannot erase unrelated B.
+        val historyField = AtlasViewModel::class.java.getDeclaredField("historyByConnection").apply {
+            isAccessible = true
+        }
+        @Suppress("UNCHECKED_CAST")
+        val history = historyField.get(vm) as MutableMap<String, MutableList<PromptMessage>>
+        val otherScope = "other-connection-B"
+        val otherHistory = mutableListOf(PromptMessage("user", "B private content"))
+        withContext(Dispatchers.Main.immediate) {
+            history[otherScope] = otherHistory
+            vm.startNewConversation()
+            assertTrue(vm.state.value.messages.isEmpty())
+            assertFalse(history.containsKey(record.id))
+            assertEquals(otherHistory, history[otherScope])
+            assertEquals(previousSamples, vm.state.value.samples.size)
+            vm.send("新對話純文字")
+        }
+        val fresh = withTimeout(15_000L) { vm.state.first {
+            !it.busy && (it.messages.size == 2 || it.error != null)
+        } }
+        assertNull(fresh.error)
+        assertEquals(2, requests.size)
+        val freshBody = Buffer().also { requests.last().body!!.writeTo(it) }.readUtf8()
+        val freshMessages = JSONObject(freshBody).getJSONArray("messages")
+        assertEquals(1, freshMessages.length())
+        assertEquals("新對話純文字", freshMessages.getJSONObject(0).getString("content"))
+        assertFalse("No stale PDF payload", freshBody.contains("file_data"))
+
+        // Direct VM entry must reject arbitrary remote file IDs despite a valid FILES row.
+        withContext(Dispatchers.Main.immediate) {
+            // Background Room refresh may replace this synthetic classification.
+            // Reapply the SAME selected offering, never borrow another key/group.
+            rows.value = listOf(verifiedPdfRow)
+            vm.sendWithFile("不可用遠端 ID", FileRefPart(fileId = "remote-id"))
+        }
+        assertEquals(app.getString(R.string.playground_pdf_error), vm.state.value.error)
+        assertEquals(2, requests.size)
     }
 
     /** Negative proof at the real VM boundary: a foreign group cannot authorize image upload. */

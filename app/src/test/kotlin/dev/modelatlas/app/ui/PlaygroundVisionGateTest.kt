@@ -30,6 +30,20 @@ class PlaygroundVisionGateTest {
         assertTrue(resolve(listOf(available.copy(selectedKeyUsable = false))).isEmpty())
     }
 
+    @Test fun selectedPdfCapabilityNeverBorrowsForeignScope() {
+        val pdf = available.copy(capabilities = setOf(Capability.FILES), supportsVision = false)
+        fun check(rows: List<ModelRow>, group: String? = "free") =
+            selectedChatCapabilities(rows, "p", "vision-model", "e", "CHAT_COMPLETIONS", group)
+        assertEquals(setOf(Capability.FILES), check(listOf(pdf)))
+        assertTrue(check(listOf(pdf), group = "paid").isEmpty())
+        assertTrue(check(listOf(pdf.copy(selectedKeyUsable = false))).isEmpty())
+        assertTrue(check(listOf(pdf.copy(providerId = "other"))).isEmpty())
+        assertTrue(check(listOf(pdf.copy(endpointId = "other"))).isEmpty())
+        assertTrue(check(listOf(pdf.copy(providerModelId = "other"))).isEmpty())
+        assertTrue(check(listOf(pdf.copy(operation = "RESPONSES"))).isEmpty())
+        assertTrue(resolve(listOf(pdf)).isEmpty())
+    }
+
     @Test fun foreignGroupEndpointModelOrOperationCannotLendVision() {
         assertTrue(resolve(listOf(available), group = "paid").isEmpty())
         assertTrue(resolve(listOf(available.copy(endpointId = "other"))).isEmpty())
