@@ -33,7 +33,7 @@ func TestNewApiCredentialRolesAndProvenance(t *testing.T) {
  // The account PAT must never become an inference token.
  requireCode(t,req(t,s,"POST","/api/v1/newapi/token",q),422)
  q.CredentialID="c"
- requireCode(t,req(t,s,"POST","/api/v1/newapi/token",q),502) // fixture deliberately uses wrong envelope? see rc25 code parsing
+ requireCode(t,req(t,s,"POST","/api/v1/newapi/token",q),200)
  requireCode(t,req(t,s,"POST","/api/v1/newapi/account",q),422)
  result:=req(t,s,"GET","/api/v1/newapi/snapshots",nil)
  requireCode(t,result,200)
