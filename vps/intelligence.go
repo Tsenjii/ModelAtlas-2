@@ -149,6 +149,20 @@ type Observation struct {
 }
 
 func (s *Server) observe(ctx context.Context, v Selection, kind, source, status string, facts map[string]any) error {
+	if v.CredentialID != "" {
+		version := 0
+		if snapshot, ok := ctx.Value(credentialObservationKey{}).(credentialObservation); ok && snapshot.Provider == v.ProviderID && snapshot.Account == v.AccountID && snapshot.Credential == v.CredentialID {
+			version = snapshot.Version
+		} else {
+			s.Store.DB.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&version)
+		}
+		copied := map[string]any{}
+		for k, x := range facts {
+			copied[k] = x
+		}
+		copied["credential_version"] = version
+		facts = copied
+	}
 	raw, err := json.Marshal(facts)
 	if err != nil || len(raw) > 512<<10 {
 		return sql.ErrNoRows
@@ -258,115 +272,7 @@ func (s *Server) performance(ctx context.Context, v Selection, window int64) map
 	return s.performanceBetween(ctx, v, end-window, end)
 }
 func (s *Server) performanceBetween(ctx context.Context, v Selection, start, end int64) map[string]any {
-	window := end - start
-	out := map[string]any{"source": "MY_KEY_LOCAL", "window_ms": window, "samples": 0, "success_rate": nil, "observed_rpm": nil, "observed_input_tpm": nil, "observed_output_tpm": nil, "observed_total_tpm": nil}
-	query := "SELECT outcome,status_code,ttft_ms,latency_ms,input_tokens,output_tokens,details_json,created_at FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND created_at>=? AND created_at<? ORDER BY rowid"
-	rows, err := s.Store.DB.QueryContext(ctx, query, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, start, end)
-	if err != nil {
-		return out
-	}
-	defer rows.Close()
-	samples, success, cancelled, rpm := 0, 0, 0, 0
-	var in, outTokens int64
-	inputKnown, outputKnown := true, true
-	var ttfts, lats, speeds []float64
-	failures := map[string]int{}
-	history := []map[string]any{}
-	atNow := now()
-	for rows.Next() {
-		var outcome, raw string
-		var status, ttft, lat, input, output sql.NullInt64
-		var at int64
-		if rows.Scan(&outcome, &status, &ttft, &lat, &input, &output, &raw, &at) != nil {
-			continue
-		}
-		if outcome == "CANCELLED" {
-			cancelled++
-			continue
-		}
-		if at >= atNow-60000 {
-			rpm++
-			if input.Valid {
-				in += input.Int64
-			} else {
-				inputKnown = false
-			}
-			if output.Valid {
-				outTokens += output.Int64
-			} else {
-				outputKnown = false
-			}
-		}
-		if outcome == "RUNNING" {
-			continue
-		}
-		samples++
-		if outcome == "SUCCESS" {
-			success++
-		} else {
-			failures[outcome]++
-		}
-		{
-			if ttft.Valid {
-				ttfts = append(ttfts, float64(ttft.Int64))
-			}
-			if lat.Valid {
-				lats = append(lats, float64(lat.Int64))
-			}
-			var detail map[string]any
-			if json.Unmarshal([]byte(raw), &detail) == nil {
-				if n, ok := detail["tps"].(float64); ok {
-					speeds = append(speeds, n)
-				}
-			}
-		}
-		history = append(history, map[string]any{"at": at, "outcome": outcome, "http_status": nullable(status)})
-	}
-	rows.Close()
-	out["window_start"] = start
-	out["window_end"] = end
-	out["samples"] = samples
-	out["cancelled"] = cancelled
-	out["failures"] = failures
-	if rpm > 0 {
-		out["observed_rpm"] = rpm
-	}
-	out["history"] = history
-	if samples > 0 {
-		out["success_rate"] = float64(success) / float64(samples)
-	}
-	if inputKnown && rpm > 0 {
-		out["observed_input_tpm"] = in
-	}
-	if outputKnown && rpm > 0 {
-		out["observed_output_tpm"] = outTokens
-	}
-	if inputKnown && outputKnown && rpm > 0 {
-		out["observed_total_tpm"] = in + outTokens
-	}
-	var current, knownIn, knownOut int
-	var currentIn, currentOut sql.NullInt64
-	_ = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*),COUNT(input_tokens),COUNT(output_tokens),SUM(input_tokens),SUM(output_tokens) FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND outcome!='CANCELLED' AND created_at>=? AND created_at<?", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, atNow-60000, atNow).Scan(&current, &knownIn, &knownOut, &currentIn, &currentOut)
-	out["observed_rpm"] = nil
-	out["observed_input_tpm"] = nil
-	out["observed_output_tpm"] = nil
-	out["observed_total_tpm"] = nil
-	if current > 0 {
-		out["observed_rpm"] = current
-		if knownIn == current {
-			out["observed_input_tpm"] = currentIn.Int64
-		}
-		if knownOut == current {
-			out["observed_output_tpm"] = currentOut.Int64
-		}
-		if knownIn == current && knownOut == current {
-			out["observed_total_tpm"] = currentIn.Int64 + currentOut.Int64
-		}
-	}
-	out["ttft"] = distribution(ttfts)
-	out["latency"] = distribution(lats)
-	out["tps"] = distribution(speeds)
-	return out
+	return s.performanceSQL(ctx, v, start, end, true)
 }
 func nullable(n sql.NullInt64) any {
 	if n.Valid {

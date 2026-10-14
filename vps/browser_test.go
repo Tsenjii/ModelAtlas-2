@@ -279,3 +279,42 @@ func TestBrowserKnowledgeWorkflow(t *testing.T) {
 	}
 	t.Log(string(out))
 }
+
+func TestBrowserManagementWorkflow(t *testing.T) {
+	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
+		t.Skip("enable in browser CI job")
+	}
+	s := testServer(t)
+	v := seed(t, s, "https://provider.example/v1")
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	for _, id := range []string{"unknown-model", "catalog-only"} {
+		requireCode(t, req(t, s, "POST", "/api/v1/models", Model{ProviderID: "p", ID: id, DisplayName: id}), 201)
+	}
+	other := v
+	other.ModelID = "unknown-model"
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", other), 201)
+	requireCode(t, req(t, s, "POST", "/api/v1/models/metadata", ModelMetadata{ProviderID: "p", ModelID: "m", CanonicalID: "m", Aliases: []string{"Synthetic Echo"}, Category: "CHAT_REASONING", ContextTokens: new(int64(16000))}), 200)
+	zero := "0"
+	_ = s.observe(context.Background(), v, "PRICING", "MANUAL", "SUCCESS", map[string]any{"price": PriceLegs{Input: &zero, Output: &zero, FixedAbsent: true, Unit: "USD/1K tokens"}})
+	_, e := s.Store.DB.Exec("INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,details_json,created_at) VALUES('sample','p','a','c','m','','CHAT_COMPLETIONS','CHAT_COMPLETIONS','PLAYGROUND','SUCCESS','{\"tps\":20}',?)", now())
+	if e != nil {
+		t.Fatal(e)
+	}
+	app := httptest.NewServer(s.Handler())
+	defer app.Close()
+	cmd := exec.Command("node", "e2e/management.cjs", app.URL)
+	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token)
+	out, e := cmd.CombinedOutput()
+	if e != nil {
+		t.Fatalf("Management Browser: %v\n%s", e, out)
+	}
+	if !loadSetting(s, context.Background(), "background", BackgroundSettings{}).Enabled {
+		t.Fatal("Browser settings did not reach scheduler")
+	}
+	var notes string
+	s.Store.DB.QueryRow("SELECT notes FROM entity_notes WHERE subject_id=?", scopeKey(v)).Scan(&notes)
+	if notes != "" {
+		t.Fatal("Browser Undo did not restore notes")
+	}
+	t.Log(string(out))
+}

@@ -113,3 +113,10 @@ VPS-ASSISTANT-FULL-001 同 SHA CI 已驗：`69652c9`／VPS `38567589731` 四項�
 | VPS-CONNECTOR-001 | `connectors.go` → safe GET / bounded JSON Pointer / role + exact model/group / draft / real test / approved activation / official-data source namespace / common Catalog & enrichment / failure history / Undo；TLS＋Browser | IMPLEMENTED；待新 SHA 六項 CI |
 | VPS-CREDENTIAL-EPOCH-001 | `endpointAuth` 同一查詢取得 cipher/custom fields/version，shared inference/media telemetry；research reuse 限當前 credential version，rotation TLS 回歸 | IMPLEMENTED；待新 SHA CI |
 | VPS-LIVE-KILO-001 | 明確 opt-in 的 anonymous real catalog + common engine + native tools + shared App Assistant action Review；合成資料 6 次 HTTP／26.31s 已通過 | LIVE WORKTREE VERIFIED；不以外部結果取代 deterministic 回歸或冒充 recurring-free／Taiwan／identity proof |
+
+VPS-REFLECTION-001／CONNECTOR-001／CREDENTIAL-EPOCH-001 同 SHA CI 已驗：`293bd516`／VPS `38572762140` 四項、Android `38572762176` 兩項 SUCCESS。
+
+| VPS-MANAGE-FULL-001 | `ui_js_models.go` + `offer_summary.go` + settings／control actions → 真 filter/ranking/notes/tags/Provider 編輯，scope/external unit guard；`management_test.go` 與 `e2e/management.cjs` | IMPLEMENTED；待新 SHA CI |
+| VPS-BACKGROUND-001 | `background.go` → metadata queue／bounded period／全 OFF 規則／持久 transition events／本機 notifications caller；TLS queue 與 epoch/dedupe tests | IMPLEMENTED；待新 SHA CI |
+| VPS-BACKUP-V2-001 | `backup.go` / `backup_extra.go` / export → safe v1/v2 definitions、完整 transaction／invalid rollback／停用 credentials & network／重新验证 imported rules；roundtrip 與 Browser 真下載 | IMPLEMENTED；待新 SHA CI |
+| VPS-RESOURCE-001 | `performance_sql.go` 全量保留統計／bounded chart、SQLite cache/temp／Go soft memory／flight limits／paging／gzip，1000-history invariants＋`footprint_test.go` 100000 samples + standalone TLS inference real RSS | IMPLEMENTED；CI 實測待驗，不以軟限制冒充 hard RSS 保證 |

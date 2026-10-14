@@ -10,6 +10,8 @@ Group=modelatlas
 WorkingDirectory=/var/lib/modelatlas
 Environment=MODELATLAS_DB=/var/lib/modelatlas/atlas.sqlite
 Environment=MODELATLAS_LISTEN=127.0.0.1:8787
+Environment=GOMEMLIMIT=192MiB
+Environment=MODELATLAS_MAX_FLIGHTS=4
 EnvironmentFile=/etc/modelatlas/modelatlas.env
 ExecStart=/opt/modelatlas/modelatlas-vps
 Restart=on-failure

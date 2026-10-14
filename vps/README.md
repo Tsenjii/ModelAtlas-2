@@ -102,3 +102,11 @@ Node.js / Playwright 僅供開發與 CI，VPS 產品 runtime 不需要 Node.js�
 圖片結果可直接預覽／下載；轉寫保留換行並可下載文字。供應商只回傳 HTTPS 圖片網址時，提供「開啟供應商圖片」，不自動向該網址發請求，也不轉送認證。結果在切換連線／清除／關閉頁面後釋放；請下載需要保留的結果。
 
 此為 VPS 新結果 UI 切片，驗收依最新 PR #20 同 SHA Actions；不代表 Android 剩餘 PLAY-004 或完整 P8–P10 已完成。
+
+### 背景與輕量設定
+
+Settings 可逐項啟用背景 metadata/catalog 同步（預設關閉；間隔 15 分鐘到 7 天、每輪最多 10 個連線）。研究／推論需明確啟動。Notification 總開關與每條規則皆預設關閉；瀏覽器開著且有通知權限時顯示本機通知，離線的事件保留在通知紀錄，不宣稱 Web Push。
+
+預設 Go soft memory limit 為 192 MiB，可透過 `GOMEMLIMIT` 調整；SQLite cache 2 MiB、暫存排序寫檔，`MODELATLAS_MAX_FLIGHTS=2..4` 可調整並行。Soft limit 不等於行程 RSS hard cap；100,000 retained samples + 4 real TLS streams 的 CI footprint 才是具體量測。SQL percentiles 計算完整 history；chart 最近 400 筆、列表 `limit=1..200&offset=N`，對話 history 永久保存。每次推論的原始上下文最多 1024 訊息／32 MiB，超過會提示開新對話，沒有刪除既有內容。
+
+Safe export v2 包含 definitions／aliases／notes／settings／recipes／knowledge／connector，讀取 v1/v2。Restored credentials 禁用需再輸入 Key；研究來源／背景／通知不自動啟用，知識提案需重建 evidence、connector 需重新測試。完整 SQLite 與 master key 要在服務停止後分開安全保存，才能保留全部聊天／research／raw telemetry；設定匯出只作可攜定義。

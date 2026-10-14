@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -129,7 +132,7 @@ func (s *Server) getSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer rows.Close()
-	out := map[string]any{"notifications": false, "performance_window": "7d", "timezone": "Asia/Taipei", "retention": "PERMANENT"}
+	out := map[string]any{"notifications": false, "performance_window": "7d", "timezone": "Asia/Taipei", "retention": "PERMANENT", "background": BackgroundSettings{IntervalMinutes: 60, MaxScopes: 2}, "notification_rules": NotificationRules{QuotaRemainingBelow: 100}, "ranking_weights": map[string]float64{"strength": 1, "speed": 1, "quota": 1, "reliability": 1}}
 	for rows.Next() {
 		var key, raw string
 		if rows.Scan(&key, &raw) == nil {
@@ -146,34 +149,9 @@ func (s *Server) saveSettings(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &v) {
 		return
 	}
-	for k, raw := range v {
-		switch k {
-		case "notifications":
-			var n bool
-			if json.Unmarshal(raw, &n) != nil {
-				http.Error(w, "invalid notification preference", 400)
-				return
-			}
-		case "performance_window":
-			var n string
-			if json.Unmarshal(raw, &n) != nil || !oneOf(n, "1h", "24h", "7d", "30d", "all") {
-				http.Error(w, "invalid window", 400)
-				return
-			}
-		case "timezone":
-			var n string
-			if json.Unmarshal(raw, &n) != nil {
-				http.Error(w, "invalid timezone", 400)
-				return
-			}
-			if _, err := time.LoadLocation(n); err != nil {
-				http.Error(w, "invalid timezone", 400)
-				return
-			}
-		default:
-			http.Error(w, "unsupported setting", 400)
-			return
-		}
+	if err := validateSettings(v); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
 	}
 	tx, err := s.Store.DB.BeginTx(r.Context(), nil)
 	if err != nil {
@@ -196,7 +174,16 @@ func (s *Server) saveSettings(w http.ResponseWriter, r *http.Request) {
 func (s *Server) exportBackup(w http.ResponseWriter, r *http.Request) {
 	// Portable configuration export intentionally omits keys, PATs and chat content.
 	queries := map[string]string{"endpoints": "SELECT provider_id,id,operation,url FROM endpoint_profiles", "endpoint_bindings": "SELECT provider_id,endpoint_id,operation,url,created_at FROM endpoint_bindings", "providers": "SELECT id,name,base_url,description,auth_mode FROM providers", "accounts": "SELECT id,provider_id,label FROM accounts", "credentials": "SELECT c.id,c.provider_id,c.account_id,c.label,c.role,c.enabled,COALESCE(x.group_id,'') AS group_id FROM credentials c LEFT JOIN credential_context x ON x.provider_id=c.provider_id AND x.account_id=c.account_id AND x.credential_id=c.id", "models": "SELECT provider_id,id,display_name,provenance FROM models", "my_models": "SELECT provider_id,account_id,credential_id,model_id,group_id,endpoint FROM my_models", "provider_config": "SELECT provider_id,config_json FROM provider_config", "model_metadata": "SELECT provider_id,model_id,canonical_id,metadata_json FROM model_metadata"}
-	out := map[string]any{"format": "modelatlas-safe-export", "version": 1, "secrets_included": false}
+	extraQueries := map[string]string{"aliases": "SELECT provider_id,raw_id,canonical_id,source FROM aliases", "notes": "SELECT subject_type,subject_id,notes,tags_json FROM entity_notes", "settings": "SELECT key,value_json FROM settings WHERE key IN ('notifications','background','notification_rules','ranking_weights','performance_window','timezone')", "membership_state": "SELECT scope_key,state,favorite,watchlist FROM membership_state", "recipes": "SELECT id,provider_id,version,recipe_json,reason,created_at FROM recipe_versions", "research_sources": "SELECT id,name,kind,url,language,enabled,config_json,created_at FROM research_sources", "knowledge": "SELECT id,kind,subject,version,data_json,evidence_json,reason,created_at FROM knowledge_versions", "connectors": "SELECT id,provider_id,name,version,config_json,evidence_json,reason,created_at FROM connector_versions"}
+	for key, query := range extraQueries {
+		queries[key] = query
+	}
+	secrets, err := s.knownSecrets(r.Context())
+	if err != nil {
+		http.Error(w, "vault unavailable", 503)
+		return
+	}
+	out := map[string]any{"format": "modelatlas-safe-export", "version": 2, "secrets_included": false}
 	tx, err := s.Store.DB.BeginTx(r.Context(), nil)
 	if err != nil {
 		http.Error(w, "database error", 500)
@@ -222,13 +209,81 @@ func (s *Server) exportBackup(w http.ResponseWriter, r *http.Request) {
 			}
 			obj := map[string]any{}
 			for i, key := range cols {
-				obj[key] = values[i]
+				if oneOf(key, "favorite", "watchlist", "enabled") && oneOf(table, "membership_state", "research_sources") {
+					obj[key] = fmt.Sprint(values[i]) == "1"
+				} else {
+					obj[key] = values[i]
+				}
 			}
 			list = append(list, obj)
 		}
 		rows.Close()
 		out[table] = list
 	}
+	for _, secret := range secrets {
+		if jsonContainsSecret(out, secret) {
+			http.Error(w, "secret found in configuration metadata; use encrypted database backup", 422)
+			return
+		}
+	}
 	w.Header().Set("Content-Disposition", `attachment; filename="modelatlas-config.json"`)
 	jsonOK(w, 200, out)
+}
+
+func validateSettings(v map[string]json.RawMessage) error {
+	for k, raw := range v {
+		switch k {
+		case "background":
+			var b BackgroundSettings
+			if json.Unmarshal(raw, &b) != nil || b.IntervalMinutes < 15 || b.IntervalMinutes > 10080 || b.MaxScopes < 1 || b.MaxScopes > 10 {
+				return errors.New("background interval 15..10080 minutes and 1..10 scopes required")
+			}
+		case "notification_rules":
+			var rules NotificationRules
+			d := json.NewDecoder(strings.NewReader(string(raw)))
+			d.DisallowUnknownFields()
+			if d.Decode(&rules) != nil || rules.QuotaRemainingBelow < 0 || rules.QuotaRemainingBelow > 1000000000 {
+				return errors.New("invalid notification rules")
+			}
+		case "notifications":
+			var n bool
+			if json.Unmarshal(raw, &n) != nil {
+				return errors.New("invalid notification preference")
+			}
+		case "ranking_weights":
+			var weights map[string]float64
+			if json.Unmarshal(raw, &weights) != nil || len(weights) != 4 {
+				return errors.New("four bounded ranking weights required")
+			}
+			for key, value := range weights {
+				max := 5.0
+				if key == "reliability" {
+					max = 3
+				}
+				if !oneOf(key, "strength", "speed", "quota", "reliability") || value < 0 || value > max {
+					return errors.New("invalid ranking weight")
+				}
+			}
+			if weights["strength"]+weights["speed"]+weights["quota"] == 0 {
+				return errors.New("at least one ranking component required")
+			}
+		case "performance_window":
+			var n string
+			if json.Unmarshal(raw, &n) != nil || !oneOf(n, "1h", "24h", "7d", "30d", "all") {
+				return errors.New("invalid window")
+			}
+		case "timezone":
+			var n string
+			if json.Unmarshal(raw, &n) != nil {
+				return errors.New("invalid timezone")
+			}
+			if _, err := time.LoadLocation(n); err != nil {
+				return errors.New("invalid timezone")
+			}
+		default:
+			return errors.New("unsupported setting")
+		}
+	}
+
+	return nil
 }

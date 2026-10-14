@@ -61,7 +61,7 @@ func OpenStore(path string) (*Store, error) {
 	}
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
-	for _, q := range []string{"PRAGMA foreign_keys=ON", "PRAGMA busy_timeout=5000", "PRAGMA journal_mode=WAL"} {
+	for _, q := range []string{"PRAGMA foreign_keys=ON", "PRAGMA busy_timeout=5000", "PRAGMA journal_mode=WAL", "PRAGMA cache_size=-2048", "PRAGMA temp_store=FILE", "PRAGMA mmap_size=0"} {
 		if _, err = db.Exec(q); err != nil {
 			db.Close()
 			return nil, fmt.Errorf("pragma: %w", err)

@@ -135,6 +135,7 @@ func (s *Server) discover(ctx context.Context, v syncRequest) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	ctx = withCredentialObservation(ctx, Selection{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: v.CredentialID}, p)
 	c := s.config(ctx, p)
 	adapter, ok := adapterRegistry[c.Adapter]
 	if !ok || adapter.Discover == nil {
@@ -374,6 +375,7 @@ func (s *Server) worker(ctx context.Context) {
 	s.flightMu.Unlock()
 	timer := time.NewTicker(30 * time.Second)
 	defer timer.Stop()
+	s.backgroundTick(ctx)
 	s.runPending(ctx)
 	s.runResearchPending(ctx)
 	s.expireResearchFacts(ctx)
@@ -382,10 +384,12 @@ func (s *Server) worker(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-wake:
+			s.backgroundTick(ctx)
 			s.runPending(ctx)
 			s.runResearchPending(ctx)
 			s.expireResearchFacts(ctx)
 		case <-timer.C:
+			s.backgroundTick(ctx)
 			s.runPending(ctx)
 			s.runResearchPending(ctx)
 			s.expireResearchFacts(ctx)
@@ -399,6 +403,7 @@ func (s *Server) enrich(ctx context.Context, v Selection) map[string]string {
 		out["scope"] = "UNAVAILABLE"
 		return out
 	}
+	ctx = withCredentialObservation(ctx, v, p)
 	cfg := s.config(ctx, p)
 	count, err := s.discover(ctx, syncRequest{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: v.CredentialID})
 	_ = count

@@ -8,6 +8,7 @@ import (
 )
 
 type BackupDocument struct {
+	BackupExtras
 	Endpoints        []EndpointProfile `json:"endpoints,omitempty"`
 	EndpointBindings []struct {
 		ProviderID string `json:"provider_id"`
@@ -61,11 +62,11 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 		Confirm bool           `json:"confirm"`
 		Backup  BackupDocument `json:"backup"`
 	}
-	if !decodeLimit(w, r, &v, 4<<20) {
+	if !decodeLimit(w, r, &v, 16<<20) {
 		return
 	}
 	b := v.Backup
-	if !v.Confirm || b.Format != "modelatlas-safe-export" || b.Version != 1 || b.SecretsIncluded || len(b.Providers) > 100 || len(b.Credentials) > 1000 || len(b.Models) > 10000 {
+	if !v.Confirm || b.Format != "modelatlas-safe-export" || !oneOfVersion(b.Version, 1, 2) || b.SecretsIncluded || len(b.Providers) > 100 || len(b.Credentials) > 1000 || len(b.Models) > 10000 {
 		http.Error(w, "explicit supported safe backup required", 400)
 		return
 	}
@@ -204,9 +205,24 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if b.Version >= 2 {
+		if restoreExtras(r.Context(), tx, b.BackupExtras) != nil {
+			fail()
+			return
+		}
+	}
 	if tx.Commit() != nil {
 		fail()
 		return
 	}
 	jsonOK(w, 201, map[string]any{"providers": len(b.Providers), "credentials_disabled": true, "secret_reentry_required": true})
+}
+
+func oneOfVersion(v int, versions ...int) bool {
+	for _, n := range versions {
+		if v == n {
+			return true
+		}
+	}
+	return false
 }

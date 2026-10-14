@@ -212,11 +212,15 @@ func (s *Server) activateKnowledge(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 	var k KnowledgeVersion
 	var raw string
-	if tx.QueryRowContext(r.Context(), "SELECT kind,subject,data_json FROM knowledge_versions WHERE id=?", v.ID).Scan(&k.Kind, &k.Subject, &raw) != nil {
+	if tx.QueryRowContext(r.Context(), "SELECT kind,subject,data_json,status FROM knowledge_versions WHERE id=?", v.ID).Scan(&k.Kind, &k.Subject, &raw, &k.Status) != nil {
 		http.Error(w, "version missing", 404)
 		return
 	}
 	json.Unmarshal([]byte(raw), &k.Data)
+	if k.Status == "IMPORTED" {
+		http.Error(w, "imported knowledge requires a new evidence-backed proposal before activation", 422)
+		return
+	}
 	if k.Kind == "MODEL_ALIAS_RULE" {
 		var count int
 		if k.Subject != str(k.Data["provider_id"])+"/"+str(k.Data["raw_id"]) || tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM models WHERE provider_id=? AND id=?", str(k.Data["provider_id"]), str(k.Data["raw_id"])).Scan(&count) != nil || count != 1 {

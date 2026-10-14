@@ -36,6 +36,7 @@ type Server struct {
 	cancels      map[string]context.CancelFunc
 	media        map[string][]Attachment
 	mediaBytes   int
+	MaxFlights   int
 	AutoSync     bool
 	wake         chan struct{}
 }
@@ -46,7 +47,7 @@ func (s *Server) beginFlight(id string) bool {
 	if s.flights == nil {
 		s.flights = make(map[string]bool)
 	}
-	if s.flights[id] || len(s.flights) >= 4 {
+	if s.flights[id] || len(s.flights) >= s.flightLimit() {
 		return false
 	}
 	s.flights[id] = true
@@ -231,6 +232,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /onboarding/import", s.batchImport)
 	api.HandleFunc("GET /checkins", s.listCheckins)
 	api.HandleFunc("POST /checkins", s.completeCheckin)
+	api.HandleFunc("GET /notifications", s.notificationsHTTP)
+	api.HandleFunc("POST /notifications/seen", s.seenNotifications)
 	api.HandleFunc("GET /settings", s.getSettings)
 	api.HandleFunc("POST /settings", s.saveSettings)
 	api.HandleFunc("GET /backup", s.exportBackup)
@@ -324,6 +327,7 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 200, map[string]any{"providers": providers, "models": models, "sessions": sessions, "telemetry": samples, "persistent": true})
 }
 func main() {
+	initializeMemoryLimit()
 	token := os.Getenv("MODELATLAS_ADMIN_TOKEN")
 	if len(token) < 24 {
 		log.Fatal("MODELATLAS_ADMIN_TOKEN must be at least 24 characters")
@@ -358,7 +362,7 @@ func main() {
 	}
 	defer store.Close()
 	client := &http.Client{Timeout: 120 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	srv := &Server{Store: store, Token: token, Key: key, Client: client, AutoSync: true}
+	srv := &Server{Store: store, Token: token, Key: key, Client: client, AutoSync: true, MaxFlights: configuredFlights()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	workerDone := make(chan struct{})
@@ -377,4 +381,11 @@ func main() {
 	}
 	stop()
 	<-workerDone
+}
+
+func (s *Server) flightLimit() int {
+	if s.MaxFlights >= 2 && s.MaxFlights <= 4 {
+		return s.MaxFlights
+	}
+	return 4
 }

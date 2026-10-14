@@ -40,6 +40,13 @@ jobs:
         run: go test -mod=readonly -race -count=1 ./...
       - name: Vet
         run: go vet -mod=readonly ./...
+      - name: Measure standalone resource footprint
+        run: MODELATLAS_FOOTPRINT_TEST=1 MODELATLAS_FOOTPRINT_OUT=footprint.json go test -mod=readonly -v -run TestStandaloneProcessFootprint -count=1 -timeout=3m
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelatlas-vps-footprint
+          path: vps/footprint.json
+          if-no-files-found: error
       - name: Smoke Linux runtime
         run: |
           CGO_ENABLED=0 go build -trimpath -o /tmp/modelatlas-vps .

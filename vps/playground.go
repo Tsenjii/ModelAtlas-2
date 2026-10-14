@@ -40,7 +40,8 @@ func newID() string {
 	return hex.EncodeToString(v[:])
 }
 func (s *Server) listSessions(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at FROM sessions s WHERE NOT EXISTS(SELECT 1 FROM assistant_threads t WHERE t.session_id=s.id) ORDER BY s.rowid DESC LIMIT 500")
+	limit, offset := pageRange(r, 200)
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at FROM sessions s WHERE NOT EXISTS(SELECT 1 FROM assistant_threads t WHERE t.session_id=s.id) ORDER BY s.rowid DESC LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -81,7 +82,22 @@ func (s *Server) addSession(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, x)
 }
 func (s *Server) history(ctx context.Context, id string) ([]Message, error) {
-	rows, err := s.Store.DB.QueryContext(ctx, "SELECT id,session_id,role,content,media_metadata,created_at,structured_json FROM messages WHERE session_id=? ORDER BY rowid", id)
+	var count int
+	var size int64
+	if e := s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*),COALESCE(SUM(length(CAST(content AS BLOB))+length(media_metadata)+length(structured_json)),0) FROM messages WHERE session_id=?", id).Scan(&count, &size); e != nil {
+		return nil, e
+	}
+	if count > 1024 || size > 32<<20 {
+		return nil, errors.New("conversation limit; history retained, start a new conversation")
+	}
+	return s.historyPage(ctx, id, 1024, 0, false)
+}
+func (s *Server) historyPage(ctx context.Context, id string, limit, offset int, reverse bool) ([]Message, error) {
+	order := "ASC"
+	if reverse {
+		order = "DESC"
+	}
+	rows, err := s.Store.DB.QueryContext(ctx, "SELECT id,session_id,role,content,media_metadata,created_at,structured_json FROM messages WHERE session_id=? ORDER BY rowid "+order+" LIMIT ? OFFSET ?", id, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +114,11 @@ func (s *Server) history(ctx context.Context, id string) ([]Message, error) {
 		}
 		out = append(out, x)
 	}
+	if reverse {
+		for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+			out[i], out[j] = out[j], out[i]
+		}
+	}
 	return out, rows.Err()
 }
 func (s *Server) listMessages(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +132,8 @@ func (s *Server) listMessages(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "session not found", 404)
 		return
 	}
-	out, err := s.history(r.Context(), id)
+	limit, offset := pageRange(r, 100)
+	out, err := s.historyPage(r.Context(), id, limit, offset, true)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -771,7 +793,8 @@ func (s *Server) groupBound(ctx context.Context, v Selection) bool {
 	return err == nil && group == v.Group
 }
 func (s *Server) listTelemetry(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,status_code,ttfb_ms,ttft_ms,latency_ms,input_tokens,output_tokens,created_at,details_json FROM telemetry ORDER BY rowid DESC LIMIT 500")
+	limit, offset := pageRange(r, 100)
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,status_code,ttfb_ms,ttft_ms,latency_ms,input_tokens,output_tokens,created_at,details_json FROM telemetry ORDER BY rowid DESC LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

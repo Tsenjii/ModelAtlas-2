@@ -285,7 +285,8 @@ func (s *Server) toggleCredentials(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 200, v)
 }
 func (s *Server) listModels(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,id,display_name,price_state,quota_state,provenance FROM models ORDER BY provider_id,id")
+	limit, offset := pageRange(r, 200)
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,id,display_name,price_state,quota_state,provenance FROM models ORDER BY provider_id,id LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -344,7 +345,8 @@ func (s *Server) addModel(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, m)
 }
 func (s *Server) listMyModels(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,model_id,group_id,endpoint FROM my_models ORDER BY created_at DESC")
+	limit, offset := pageRange(r, 200)
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,model_id,group_id,endpoint FROM my_models ORDER BY created_at DESC,rowid DESC LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -376,21 +378,32 @@ func (s *Server) listMyModels(w http.ResponseWriter, r *http.Request) {
 		obj["watchlist"] = watch
 		obj["metadata"] = s.metadata(r.Context(), v.ProviderID, v.ModelID)
 		obj["price_state"] = "UNKNOWN"
-		// Only an exact selected-scope official zero quote can establish FREE_NOW; positive nominal price remains distinct from effective charge.
-		for _, o := range s.observations(r.Context(), v) {
-			if o.Status != "SUCCESS" || o.Kind != "CATALOG" {
-				continue
-			}
+		details := s.offerSummary(r.Context(), v)
+		obj["offer"] = details
+		if price, ok := details["price"].(map[string]any); ok {
+			raw, _ := json.Marshal(price["legs"])
 			var legs PriceLegs
-			raw, _ := json.Marshal(o.Facts["price"])
-			if json.Unmarshal(raw, &legs) == nil && priceState(legs) == "FREE_NOW" {
-				obj["price_state"] = "FREE_NOW"
-				obj["price_source"] = o.Source
-			}
-			break
+			json.Unmarshal(raw, &legs)
+			obj["price_state"] = priceState(legs)
+			obj["price_source"] = price["source"]
 		}
-		obj["performance"] = s.performance(r.Context(), v, int64(7*24*60*60*1000))
-		obj["enabled"] = s.validateSelection(r.Context(), v)
+		obj["capabilities"] = s.capabilities(r.Context(), v)
+		window := str(s.setting(r.Context(), "performance_window", "7d"))
+		request, _ := http.NewRequest("GET", "http://local/?window="+window, nil)
+		duration := parseWindow(request)
+		obj["performance"] = s.performanceSQL(r.Context(), v, now()-duration, now(), false)
+		reliability := map[string]any{}
+		for label, duration := range map[string]int64{"1h": 3600000, "24h": 86400000} {
+			var total, success int
+			s.Store.DB.QueryRowContext(r.Context(), "SELECT COUNT(*),COALESCE(SUM(outcome='SUCCESS'),0) FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED') AND created_at>=?", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, now()-duration).Scan(&total, &success)
+			var rate any
+			if total > 0 {
+				rate = float64(success) / float64(total)
+			}
+			reliability[label] = map[string]any{"samples": total, "success_rate": rate}
+		}
+		obj["reliability"] = reliability
+		obj["enabled"] = s.selectionUsable(r.Context(), v)
 		out = append(out, obj)
 	}
 	jsonOK(w, 200, out)
