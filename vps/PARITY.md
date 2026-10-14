@@ -68,3 +68,5 @@
 - `media_test.go`、`browser_test.go`、`e2e/browser.cjs` 為本片回歸；新增 WebP decoder 依賴鎖定 `golang.org/x/image v0.47.0`，runtime 仍單一 Go binary。
 
 首輪媒體 Browser regression：`da00c79` 的 `getByLabel(端點類型)` 找不到動態 select；已補 production 可存取名稱，Catalog endpoint select 同步修正。此首輪失敗不當作完成證據。
+
+媒體 Browser 首次全綠 `36751cf`／run `38524721426` 已驗生成／編輯／轉寫／阻塞取消；後續視覺 QA 修 target 的內部 Key ID，並新增實際 PNG／UTF-8 下載 bytes 回讀，不用「有連結」代替下載成功。深淺色截圖使用 `animations:disabled`，避免 CSS transition 中間顏色誤判。

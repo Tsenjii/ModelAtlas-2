@@ -15,6 +15,7 @@ function data(form){return Object.fromEntries(new FormData(form).entries());}
 function option(select,value,title){const n=el("option",title);n.value=value;select.append(n);}
 function scope(m){return Object.fromEntries(["provider_id","account_id","credential_id","model_id","group","endpoint"].map(k=>[k,m[k]||""]));}
 function key(m){return JSON.stringify(scope(m));}
+function connectionLabel(m){const account=accounts.find(a=>a.provider_id===m.provider_id&&a.id===m.account_id),credential=credentials.find(c=>c.provider_id===m.provider_id&&c.account_id===m.account_id&&c.id===m.credential_id);return (account?.label||m.account_id)+" / "+(credential?.label||m.credential_id)+(m.group?" / "+m.group:"");}
 function targetOperation(m){return endpointProfiles.find(p=>p.provider_id===m.provider_id&&p.id===m.endpoint)?.operation||m.endpoint;}
 const operationLabels={CHAT_COMPLETIONS:"對話",IMAGES_GENERATION:"圖片生成",IMAGES_EDIT:"圖片編輯",AUDIO:"音訊轉寫"};
 function query(m){return new URLSearchParams(scope(m)).toString();}
