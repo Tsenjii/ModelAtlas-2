@@ -66,3 +66,13 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 末尾交付提交含資料與文件、200% decorative mark overflow 修整及 screenshot transition 固定；必須再查此新 HEAD 的六項 gate，不以 code 基線代替文件 HEAD。
 
 交付首輪 `eba1549` VPS test/雙架構成功、既有六個 Browser 成功，新增 Browser 截圖注入 inline style 被原有 CSP 正確拒絕（run 38615340166）；改用 browser context 的原生 `reducedMotion=reduce`，不修改 CSP、不跳過 assertions、不重試本機 Chromium。新 HEAD 六項 gate 重新驗證。
+
+
+## V1 後續體驗擴充（2026-10-15，待新 SHA gate）
+
+- `/sessions`：只查手動 Playground 對話；精確 scope、全文 literal search、ACTIVE／ARCHIVED／ALL，依置頂與近期活動排序，最多200列一頁，UI 紀錄每頁50。
+- `/sessions/update`：命名、置頂、可恢復封存、revision stale guard、生成中拒絕變更；保留獨立變更歷史，從不刪訊息或成員。
+- `/sessions/export`：認證後串流全部保留訊息／tools／session settings，JSON 或 Markdown；不受 inference 1024 則上下文界限截斷，不含原始附件，已知目前／歷史 secrets 遮罩。
+- 安全 DOM Markdown：程式碼、表格、標題、清單、引言、explicit HTTP(S) links；不使用 innerHTML，不抓遠端圖片，不執行 HTML／scripts；有界解析，過大內容保留純文字。
+- 實際 Browser caller 驗完整較早訊息只載一次、streamed reply、clipboard、命名／置頂／封存／恢復／全文搜尋、下載回讀／reload，375／1024／dark／200%。
+- RAM 目標依最新需求：512 MiB 優先，1 GiB 可接受；production 無 Node／瀏覽器。

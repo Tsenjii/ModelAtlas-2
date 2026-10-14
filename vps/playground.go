@@ -19,8 +19,14 @@ import (
 type Session struct {
 	ID string `json:"id"`
 	Selection
-	Title     string `json:"title"`
-	CreatedAt int64  `json:"created_at"`
+	Title        string `json:"title"`
+	CreatedAt    int64  `json:"created_at"`
+	UpdatedAt    int64  `json:"updated_at"`
+	Pinned       bool   `json:"pinned"`
+	Archived     bool   `json:"archived"`
+	Revision     int    `json:"revision"`
+	MessageCount int    `json:"message_count"`
+	Preview      string `json:"preview,omitempty"`
 }
 type Message struct {
 	ID          string       `json:"id"`
@@ -40,21 +46,7 @@ func newID() string {
 	return hex.EncodeToString(v[:])
 }
 func (s *Server) listSessions(w http.ResponseWriter, r *http.Request) {
-	limit, offset := pageRange(r, 200)
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at FROM sessions s WHERE NOT EXISTS(SELECT 1 FROM assistant_threads t WHERE t.session_id=s.id) ORDER BY s.rowid DESC LIMIT ? OFFSET ?", limit, offset)
-	if err != nil {
-		http.Error(w, "database error", 500)
-		return
-	}
-	defer rows.Close()
-	out := []Session{}
-	for rows.Next() {
-		var x Session
-		if rows.Scan(&x.ID, &x.ProviderID, &x.AccountID, &x.CredentialID, &x.ModelID, &x.Group, &x.Endpoint, &x.Title, &x.CreatedAt) == nil {
-			out = append(out, x)
-		}
-	}
-	jsonOK(w, 200, out)
+	s.searchSessions(w, r)
 }
 func (s *Server) addSession(w http.ResponseWriter, r *http.Request) {
 	var x Session
@@ -72,8 +64,16 @@ func (s *Server) addSession(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "title too long", 400)
 		return
 	}
+	if x.Title == "" {
+		x.Title = "新對話 · " + x.ModelID
+	}
+	if !s.safeSessionTitle(r.Context(), x.Title) {
+		http.Error(w, "invalid conversation title", 422)
+		return
+	}
 	x.ID = newID()
 	x.CreatedAt = now()
+	x.UpdatedAt = x.CreatedAt
 	_, err := s.Store.DB.ExecContext(r.Context(), "INSERT INTO sessions(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at) VALUES(?,?,?,?,?,?,?,?,?)", x.ID, x.ProviderID, x.AccountID, x.CredentialID, x.ModelID, x.Group, x.Endpoint, x.Title, x.CreatedAt)
 	if err != nil {
 		http.Error(w, "database error", 500)
@@ -230,6 +230,10 @@ func (s *Server) infer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "manual conversation missing", 404)
 		return
 	}
+	if s.sessionArchived(r.Context(), v.SessionID) {
+		http.Error(w, "conversation is archived; restore to continue", 409)
+		return
+	}
 	options, e := s.sessionSettings(r.Context(), v.SessionID)
 	if e != nil {
 		http.Error(w, "settings unavailable", 503)
@@ -314,6 +318,10 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		return result, 409
 	}
 	defer s.endFlight(v.SessionID)
+	if source == "PLAYGROUND" && s.sessionArchived(ctx, v.SessionID) {
+		result.Outcome = "CONVERSATION_ARCHIVED"
+		return result, 409
+	}
 	s.flightMu.Lock()
 	if s.cancels == nil {
 		s.cancels = map[string]context.CancelFunc{}

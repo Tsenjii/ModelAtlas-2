@@ -107,3 +107,8 @@ Reflection code `293bd516` 同 SHA 六項全綠（VPS 38572762140、Android 3857
 Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97,619,968、peak 162,525,184 bytes（155 MiB），binary 13,439,138；完整保留10萬samples，4 chats／65 Catalog／4 simultaneous 4MiPixels images／4 simultaneous 4MiB audio。Live Kilo `38612880443` 真成功 41.19s、6 inference HTTP＋7 public HTTP、3 candidates/4 evidence/3 SUCCESS tasks；Groq/OpenRouter200，Cerebras307 FAILED線索也保留，不當eligibility。
 
 末尾交付提交含資料與文件、200% decorative mark overflow 修整及 screenshot transition 固定；必須再查此新 HEAD 的六項 gate，不以 code 基線代替文件 HEAD。
+
+
+## VPS V1 後續完整體驗（2026-10-15）
+
+使用者最新授權：持續完善所有功能／UI，自行找有用的擴充；RAM 優先 ≤512 MiB，≤1 GiB 可接受。保持單 Go／SQLite，不裁功能，也不改 Android。Main 再確認 `5009e0c8`／38408176782 build/device SUCCESS。第一片為對話管理／全文搜尋／置頂／可恢復封存／完整 JSON 和 Markdown 串流匯出／安全 Markdown、程式碼複製和表格；schema14 保留所有歷史，過期編輯拒絕覆寫。正式 UI、TLS caller、1100 則完整匯出與安全回歸已落地，等待新 HEAD 六項 gate。後續完善每次請求的用量／價格／額度收據與 Detail，完成新的 standalone RAM profile；不以 aa7f001 的綠燈冒充新候選。

@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 13
+const schemaVersion = 14
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -139,5 +139,13 @@ func migrate(db *sql.DB) error {
 		}
 	}
 
+	if version < 14 {
+		if _, err = tx.Exec(`CREATE TABLE session_metadata(session_id TEXT PRIMARY KEY REFERENCES sessions(id),pinned INTEGER NOT NULL DEFAULT 0,archived INTEGER NOT NULL DEFAULT 0,revision INTEGER NOT NULL DEFAULT 0,updated_at INTEGER NOT NULL);
+ CREATE TABLE session_changes(id TEXT PRIMARY KEY,session_id TEXT NOT NULL REFERENCES sessions(id),before_json TEXT NOT NULL,after_json TEXT NOT NULL,created_at INTEGER NOT NULL);
+ CREATE INDEX messages_activity ON messages(session_id,created_at DESC);
+ PRAGMA user_version=14;`); err != nil {
+			return err
+		}
+	}
 	return tx.Commit()
 }
