@@ -168,3 +168,15 @@ func TestSafeBackupV2RoundTripAndUnsafeAtomicRollback(t *testing.T) {
 		t.Fatal("partial restore after invalid recipe")
 	}
 }
+
+func TestHumanReadableAliasesPreserveRawModelIdentity(t *testing.T) {
+	s := testServer(t)
+	seed(t, s, "https://provider.example/v1")
+	metadata := ModelMetadata{ProviderID: "p", ModelID: "m", CanonicalID: "m", Category: "CHAT_REASONING", Aliases: []string{"Synthetic Echo", "模型 別名"}}
+	requireCode(t, req(t, s, "POST", "/api/v1/models/metadata", metadata), 200)
+	if s.metadata(context.Background(), "p", "m").ModelID != "m" {
+		t.Fatal("search aliases changed provider request identity")
+	}
+	metadata.Aliases = []string{"unsafe\u202ealias"}
+	requireCode(t, req(t, s, "POST", "/api/v1/models/metadata", metadata), 400)
+}

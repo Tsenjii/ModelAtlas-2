@@ -73,7 +73,7 @@ func (s *Server) setMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, alias := range m.Aliases {
-		if !validID(alias) {
+		if safeText(alias, 200) != alias || strings.TrimSpace(alias) == "" {
 			http.Error(w, "invalid alias", 400)
 			return
 		}
