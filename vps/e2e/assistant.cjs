@@ -25,7 +25,7 @@ fs.mkdirSync('e2e/screenshots',{recursive:true});
   await page.screenshot({animations:'disabled',path:'e2e/screenshots/assistant-375-light.png',fullPage:true});
   await page.reload();await page.getByText('App Assistant',{exact:true}).click();await page.locator('#assistant-thread option').nth(1).waitFor({state:'attached'});await page.locator('#assistant-thread').selectOption(thread);
   await page.locator('#assistant-chat').getByText('已準備模型和備註，請檢查變更。',{exact:true}).waitFor();
-  await page.emulateMedia({colorScheme:'dark'});await page.evaluate(()=>document.documentElement.style.fontSize='200%');assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Assistant large font overflow');
+  await page.emulateMedia({colorScheme:'dark'});await page.evaluate(()=>document.documentElement.style.fontSize='200%');const overflow=await page.evaluate(()=>[...document.querySelectorAll('body *')].map(n=>({tag:n.tagName,id:n.id,right:n.getBoundingClientRect().right})).filter(n=>n.right>innerWidth+1).slice(0,12));assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Assistant large font overflow: '+JSON.stringify(overflow));
   await page.screenshot({animations:'disabled',path:'e2e/screenshots/assistant-375-large-dark.png',fullPage:true});assert.deepEqual(errors,[]);
   console.log('Assistant Browser: configure own model, safe secret reference, native multi-tool loop, real shared membership confirmation, metadata Undo, persisted history, 375px/200% passed.');
  }catch(e){await page.screenshot({path:'e2e/screenshots/assistant-failure.png',fullPage:true}).catch(()=>{});throw e;}finally{await browser.close();}
