@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -70,3 +71,5 @@ func (a *staticAsset) serve(w http.ResponseWriter, r *http.Request, contentType 
 
 var cssAsset = staticAsset{raw: appCSS}
 var jsAsset = staticAsset{raw: appJS}
+
+var errConversationLimit = errors.New("conversation limit; history retained, start a new conversation")

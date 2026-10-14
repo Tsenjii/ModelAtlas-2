@@ -23,11 +23,13 @@ type NotificationRules struct {
 	QuotaRemainingBelow int64 `json:"quota_remaining_below"`
 }
 type notificationSnapshot struct {
-	Version    int    `json:"version"`
-	PriceState string `json:"price_state"`
-	Price      string `json:"price"`
-	Remaining  *int64 `json:"remaining"`
-	Outcome    string `json:"outcome"`
+	Version     int    `json:"version"`
+	PriceState  string `json:"price_state"`
+	Price       string `json:"price"`
+	PriceAt     int64  `json:"price_at"`
+	Remaining   *int64 `json:"remaining"`
+	RemainingAt int64  `json:"remaining_at"`
+	Outcome     string `json:"outcome"`
 }
 
 func loadSetting[T any](s *Server, ctx context.Context, key string, fallback T) T {
@@ -112,10 +114,18 @@ func (s *Server) checkNotificationRules(ctx context.Context) {
 			var legs PriceLegs
 			_ = json.Unmarshal(raw, &legs)
 			current.PriceState = priceState(legs)
-			current.Price = string(raw)
+			if current.PriceState != "UNKNOWN" {
+				current.Price = string(raw)
+				if at := quotaInteger(p["observed_at"]); at != nil {
+					current.PriceAt = *at
+				}
+			}
 		}
 		if q, ok := offer["quota"].(map[string]any); ok {
 			current.Remaining = quotaInteger(q["remaining"])
+			if at := quotaInteger(q["observed_at"]); at != nil {
+				current.RemainingAt = *at
+			}
 		}
 		var sampleID string
 		_ = s.Store.DB.QueryRowContext(ctx, "SELECT id,outcome FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND credential_version=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED') ORDER BY rowid DESC LIMIT 1", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, current.Version).Scan(&sampleID, &current.Outcome)
@@ -154,9 +164,11 @@ func (s *Server) checkNotificationRules(ctx context.Context) {
 			if current.Price == "" {
 				current.Price = previous.Price
 				current.PriceState = previous.PriceState
+				current.PriceAt = previous.PriceAt
 			}
 			if current.Remaining == nil {
 				current.Remaining = previous.Remaining
+				current.RemainingAt = previous.RemainingAt
 			}
 			if current.Outcome == "" {
 				current.Outcome = previous.Outcome

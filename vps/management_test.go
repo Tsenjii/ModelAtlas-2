@@ -180,3 +180,131 @@ func TestHumanReadableAliasesPreserveRawModelIdentity(t *testing.T) {
 	metadata.Aliases = []string{"unsafe\u202ealias"}
 	requireCode(t, req(t, s, "POST", "/api/v1/models/metadata", metadata), 400)
 }
+
+func TestUnknownPriceCannotGenerateConfirmedChangeNotification(t *testing.T) {
+	s := testServer(t)
+	v := seed(t, s, "https://provider.example/v1")
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	ctx := context.Background()
+	requireCode(t, req(t, s, "POST", "/api/v1/settings", map[string]any{"notifications": true, "notification_rules": NotificationRules{BecameFree: true, PriceChanged: true}}), 200)
+	one := "1"
+	_ = s.observe(ctx, v, "PRICING", "MANUAL", "SUCCESS", map[string]any{"price": PriceLegs{Input: &one, Output: &one, FixedAbsent: true, Unit: "USD/1K tokens"}})
+	s.checkNotificationRules(ctx)
+	zero := "0"
+	_ = s.observe(ctx, v, "PRICING", "MANUAL", "SUCCESS", map[string]any{"price": PriceLegs{Input: &zero, Unit: "USD/1K tokens"}})
+	s.checkNotificationRules(ctx)
+	var count int
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM notification_events").Scan(&count)
+	if count != 0 {
+		t.Fatal("unknown output/fixed cost claimed a price change")
+	}
+	var raw string
+	s.Store.DB.QueryRow("SELECT state_json FROM notification_state WHERE scope_key=?", scopeKey(v)).Scan(&raw)
+	var state notificationSnapshot
+	_ = json.Unmarshal([]byte(raw), &state)
+	if state.PriceState != "PAID" {
+		t.Fatal("unknown replaced last confirmed notification price")
+	}
+}
+
+func TestBoundedConversationDoesNotPreventReadingRetainedMessages(t *testing.T) {
+	s := testServer(t)
+	v := seed(t, s, "https://provider.example/v1")
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	id, e := s.createTestSession(context.Background(), v)
+	if e != nil {
+		t.Fatal(e)
+	}
+	tx, e := s.Store.DB.Begin()
+	if e != nil {
+		t.Fatal(e)
+	}
+	for i := 0; i < 1025; i++ {
+		_, e = tx.Exec("INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,'user','retained',?)", fmt.Sprint(i), id, i)
+		if e != nil {
+			t.Fatal(e)
+		}
+	}
+	if tx.Commit() != nil {
+		t.Fatal("commit")
+	}
+	_, e = s.history(context.Background(), id)
+	if e != errConversationLimit {
+		t.Fatalf("unbounded conversation not rejected before allocation: %v", e)
+	}
+	result, status := s.execute(context.Background(), inferRequest{SessionID: id, Prompt: "next"}, "PLAYGROUND", func(string, any) error { return nil })
+	if status != 413 || result.Outcome != "CONVERSATION_LIMIT_START_NEW_CONVERSATION" {
+		t.Fatalf("wrong public limit outcome: %d %s", status, result.Outcome)
+	}
+	var rows []Message
+	response := req(t, s, "GET", "/api/v1/messages?session_id="+id+"&limit=100&offset=1000", nil)
+	requireCode(t, response, 200)
+	_ = json.Unmarshal(response.Body.Bytes(), &rows)
+	if len(rows) != 25 {
+		t.Fatal("retained history not readable")
+	}
+	var count int
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM messages").Scan(&count)
+	if count != 1025 {
+		t.Fatal("context limit purged history")
+	}
+}
+
+func TestBulkModelReviewAtomicStaleGuardAndUndo(t *testing.T) {
+	s := testServer(t)
+	a := seed(t, s, "https://provider.example/v1")
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", a), 201)
+	requireCode(t, req(t, s, "POST", "/api/v1/models", Model{ProviderID: "p", ID: "other", DisplayName: "Other"}), 201)
+	b := a
+	b.ModelID = "other"
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", b), 201)
+	preview := func() string {
+		r := req(t, s, "POST", "/api/v1/assistant/actions/preview", map[string]any{"kind": "MODEL_BATCH", "selections": []Selection{a, b}, "patch": map[string]any{"state": "ARCHIVED"}})
+		requireCode(t, r, 201)
+		if strings.Contains(r.Body.String(), "_revision") {
+			t.Fatal("internal revision leaked to review")
+		}
+		var value map[string]any
+		_ = json.Unmarshal(r.Body.Bytes(), &value)
+		return value["id"].(string)
+	}
+	stale := preview()
+	requireCode(t, req(t, s, "POST", "/api/v1/models/lifecycle", map[string]any{"provider_id": "p", "account_id": "a", "credential_id": "c", "model_id": "m", "group": "", "endpoint": "CHAT_COMPLETIONS", "state": "HIDDEN"}), 200)
+	requireCode(t, req(t, s, "POST", "/api/v1/models/lifecycle", map[string]any{"provider_id": "p", "account_id": "a", "credential_id": "c", "model_id": "m", "group": "", "endpoint": "CHAT_COMPLETIONS", "state": "ACTIVE"}), 200)
+	requireCode(t, req(t, s, "POST", "/api/v1/assistant/actions/confirm", map[string]any{"id": stale, "confirm": true}), 409)
+	var archived int
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM membership_state WHERE state='ARCHIVED'").Scan(&archived)
+	if archived != 0 {
+		t.Fatal("stale bulk partially changed models")
+	}
+	id := preview()
+	requireCode(t, req(t, s, "POST", "/api/v1/assistant/actions/confirm", map[string]any{"id": id, "confirm": true}), 200)
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM membership_state WHERE state='ARCHIVED'").Scan(&archived)
+	if archived != 2 {
+		t.Fatal("bulk not applied")
+	}
+	requireCode(t, req(t, s, "POST", "/api/v1/assistant/actions/undo", map[string]any{"id": id, "confirm": true}), 200)
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM membership_state WHERE state='ARCHIVED'").Scan(&archived)
+	if archived != 0 {
+		t.Fatal("bulk not undone")
+	}
+}
+
+func TestRankingAndTopFourCannotBorrowManualCanonicalIdentity(t *testing.T) {
+	s := testServer(t)
+	v := seed(t, s, "https://provider.example/v1")
+	ctx := context.Background()
+	s.Store.DB.Exec("INSERT INTO aa_snapshots VALUES('aa','v2','VALID','https://artificialanalysis.ai',?,?, 'fixture')", now(), now()+3600000)
+	s.Store.DB.Exec("INSERT INTO aa_models VALUES('aa','winner','winner','Winner',1,99)")
+	metadata := ModelMetadata{ProviderID: "p", ModelID: "m", CanonicalID: "winner", Category: "CHAT_REASONING", Aliases: []string{"Winner"}}
+	requireCode(t, req(t, s, "POST", "/api/v1/models/metadata", metadata), 200)
+	if _, _, valid := s.aaModelScore(ctx, Candidate{ProviderID: v.ProviderID, ModelID: "m"}); valid || s.aaTop4(ctx, Candidate{ProviderID: "p", ModelID: "m"}) {
+		t.Fatal("manual canonical alias borrowed AA identity")
+	}
+	if s.aaTop4(ctx, Candidate{ProviderID: "p", ModelID: "winner-latest"}) {
+		t.Fatal("unproven latest alias borrowed top-four exception")
+	}
+	if !s.aaTop4(ctx, Candidate{ProviderID: "p", ModelID: "winner"}) {
+		t.Fatal("exact valid ranking stopped working")
+	}
+}

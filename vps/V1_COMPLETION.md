@@ -30,3 +30,9 @@ Reflection／connector／credential epoch：`293bd5169a9038769935389e054a6b653b2
 定期 metadata/catalog sync 接真 queue，15..10080 分鐘、每輪 1..10 scopes，預設 OFF；不自動 inference 或 membership。Notification master + 7 rules 全部 OFF，依 credential epoch 保留確認值，價格／quota／outage／recovery transition 與日簽到 dedupe，持久事件與本機通知 caller。Safe backup v2 增加 aliases／notes／settings／收藏狀態／recipes／研究來源／版本知識／connector 定義；v1 可還原，完整 transaction、憑證禁用需重新輸入、網路工作不自動啟用，imported knowledge 需新 evidence-backed proposal，connector 需再真測。SQLite 全庫加密備份另保留完整聊天、觀測、研究 raw history；設定匯出不冒充全庫 backup。管理 Browser 與 standalone footprint 待候選 CI，剩餘 multi-origin／CUSTOM／native speech／最终回歸繼續。
 
 管理前輪 `9d61ceb1`：VPS test／amd64／arm64 SUCCESS，既有四個 Browser workflow 通過；新增管理 Browser 在 multiword alias fixture 發現產品 alias validator 只容許 ID（不能含空格）。修正 search alias 可用安全人類名稱、拒絕控制字元，保持原始 model ID 不變；不降低 Browser assertion。VPS test run 38579671767 的 standalone workload 實測 binary 13,308,066 bytes、idle RSS 26,468,352、warm/peak RSS 29,188,096，十萬筆 raw history 全量 percentiles＋四個真 TLS inference 已過（22.07s）。此數據是指定工作負載，不宣称所有媒體峰值相同；管理整片仍待修正版六項 CI。
+
+管理第二輪 `4acd725` 前四個 Browser 流程与新增管理流程前半通過；最後 Settings 的測試在展開 details 前等待內部欄位可見而逾時，已改為先等待可見時區，再實際展開背景設定，保留功能斷言。產品 review 另修 notification 不以缺 output/fixed price 當「已確認變更」、保留當前 epoch 的已確認值，事件時間避免重複轉換被永久 dedupe；新增 Unknown 回歸。上下文記憶體上限回傳明確 413／新對話提示，1025 訊息仍可完整分頁閱讀。
+
+管理完整 review 新增 Model batch hide/archive/restore：共用 action Preview→confirm→Undo，2..100 exact scopes，一個 transaction；任一 scope 更新／移除／ABA 都以 membership revision 拒絕整批 stale 變更，已加真 API 回歸與 Browser；內部 revision 不進 Review UI。排序權重保存後重新載入且保護未提交輸入。
+
+Ranking review 修正：搜尋／grouping aliases 與 manual canonical 不借 AA 身分或 top-4 特例；只比較實際 raw ID／AA ID／名稱及不移除版本後綴的 separator normalization。`winner-latest` 不自動當作 `winner`，exact AA raw model 仍正常；新增 regression。

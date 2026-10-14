@@ -225,7 +225,8 @@ func (s *Server) listAA(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) aaModelScore(ctx context.Context, c Candidate) (float64, int, bool) {
-	canonical := s.metadata(ctx, c.ProviderID, c.ModelID).CanonicalID
+	// Search/grouping aliases cannot lend benchmark identity or the top-four exception.
+	canonical := strings.Trim(normalizeSeparators.ReplaceAllString(strings.ToLower(strings.TrimSpace(c.ModelID)), "-"), "-")
 	var score float64
 	var rank int
 	err := s.Store.DB.QueryRowContext(ctx, `SELECT m.score,m.rank FROM aa_models m JOIN aa_snapshots a ON a.id=m.snapshot_id WHERE a.id=(SELECT id FROM aa_snapshots WHERE status='VALID' ORDER BY rowid DESC LIMIT 1) AND a.valid_until>? AND (lower(m.slug)=lower(?) OR lower(m.name)=lower(?) OR lower(m.aa_id)=lower(?) OR lower(m.slug)=lower(?)) ORDER BY m.rank LIMIT 1`, now(), c.ModelID, c.ModelID, c.ModelID, canonical).Scan(&score, &rank)

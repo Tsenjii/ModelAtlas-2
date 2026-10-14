@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 )
 
@@ -16,6 +17,7 @@ type ControlChange struct {
 	AccountID    string                     `json:"account_id,omitempty"`
 	CredentialID string                     `json:"credential_id,omitempty"`
 	Selection    Selection                  `json:"selection,omitempty"`
+	Selections   []Selection                `json:"selections,omitempty"`
 	Patch        map[string]json.RawMessage `json:"patch"`
 }
 type queryRows interface {
@@ -24,6 +26,13 @@ type queryRows interface {
 
 func resourceID(v ControlChange) string {
 	switch v.Kind {
+	case "MODEL_BATCH":
+		keys := []string{}
+		for _, selection := range v.Selections {
+			keys = append(keys, scopeKey(selection))
+		}
+		sort.Strings(keys)
+		return contentHash([]byte(strings.Join(keys, "\n")))
 	case "PROVIDER":
 		return v.ProviderID
 	case "CREDENTIAL", "CREDENTIAL_ADD", "CREDENTIAL_ROTATE":
@@ -41,6 +50,24 @@ func resourceID(v ControlChange) string {
 func resourceSnapshot(ctx context.Context, q queryRows, v ControlChange) (map[string]any, error) {
 	out := map[string]any{}
 	switch v.Kind {
+	case "MODEL_BATCH":
+		if len(v.Selections) < 2 || len(v.Selections) > 100 {
+			return nil, errors.New("select 2..100 exact model scopes")
+		}
+		seen := map[string]bool{}
+		items := []any{}
+		for _, selection := range v.Selections {
+			if seen[scopeKey(selection)] {
+				return nil, errors.New("duplicate model scope")
+			}
+			seen[scopeKey(selection)] = true
+			value, e := resourceSnapshot(ctx, q, ControlChange{Kind: "MODEL", Selection: selection})
+			if e != nil {
+				return nil, e
+			}
+			items = append(items, map[string]any{"selection": selection, "value": value})
+		}
+		out["items"] = items
 	case "PROVIDER":
 		var name, base, description, config string
 		if q.QueryRowContext(ctx, "SELECT p.name,p.base_url,p.description,COALESCE(c.config_json,'{}') FROM providers p LEFT JOIN provider_config c ON c.provider_id=p.id WHERE p.id=?", v.ProviderID).Scan(&name, &base, &description, &config) != nil {
@@ -84,6 +111,9 @@ func resourceSnapshot(ctx context.Context, q queryRows, v ControlChange) (map[st
 			return nil, e
 		}
 		out = map[string]any{"state": state, "favorite": favorite, "watchlist": watchlist}
+		var revision int64
+		q.QueryRowContext(ctx, "SELECT COALESCE(MAX(id),0) FROM membership_mutations WHERE scope_key=?", scopeKey(v.Selection)).Scan(&revision)
+		out["_revision"] = revision
 	case "NOTES":
 		subject := resourceID(v)
 		if subject == "" {
@@ -121,6 +151,18 @@ func noteKind(v ControlChange) string {
 }
 func snapshotHash(v map[string]any) string { raw, _ := json.Marshal(v); return contentHash(raw) }
 func controlAfter(v ControlChange, before map[string]any) (map[string]any, error) {
+	if v.Kind == "MODEL_BATCH" {
+		items := []any{}
+		for _, item := range list(before["items"]) {
+			row := object(item)
+			value, e := controlAfter(ControlChange{Kind: "MODEL", Patch: v.Patch}, object(row["value"]))
+			if e != nil {
+				return nil, e
+			}
+			items = append(items, map[string]any{"selection": row["selection"], "value": value})
+		}
+		return map[string]any{"items": items}, nil
+	}
 	if len(v.Patch) < 1 || len(v.Patch) > 8 {
 		return nil, errors.New("bounded patch required")
 	}
@@ -292,13 +334,40 @@ func visibleSnapshot(data map[string]any) map[string]any {
 	out := map[string]any{}
 	for k, v := range data {
 		if !strings.HasPrefix(k, "_") {
-			out[k] = v
+			if nested, ok := v.(map[string]any); ok {
+				out[k] = visibleSnapshot(nested)
+			} else if items, ok := v.([]any); ok {
+				values := []any{}
+				for _, item := range items {
+					if nested, ok := item.(map[string]any); ok {
+						values = append(values, visibleSnapshot(nested))
+					} else {
+						values = append(values, item)
+					}
+				}
+				out[k] = values
+			} else {
+				out[k] = v
+			}
 		}
 	}
 	return out
 }
 func (s *Server) writeResource(ctx context.Context, tx *sql.Tx, v ControlChange, data map[string]any) error {
 	switch v.Kind {
+	case "MODEL_BATCH":
+		for _, item := range list(data["items"]) {
+			row := object(item)
+			raw, _ := json.Marshal(row["selection"])
+			var selection Selection
+			if json.Unmarshal(raw, &selection) != nil {
+				return errors.New("invalid stored scope")
+			}
+			if e := s.writeResource(ctx, tx, ControlChange{Kind: "MODEL", Selection: selection}, object(row["value"])); e != nil {
+				return e
+			}
+		}
+		return nil
 	case "PROVIDER":
 		var cfg ProviderConfig
 		json.Unmarshal([]byte(str(data["_config"])), &cfg)
@@ -327,7 +396,10 @@ func (s *Server) writeResource(ctx context.Context, tx *sql.Tx, v ControlChange,
 		return s.writeSecretChange(ctx, tx, v, data)
 	case "MODEL":
 		_, e := tx.ExecContext(ctx, "INSERT INTO membership_state VALUES(?,?,?,?) ON CONFLICT(scope_key) DO UPDATE SET state=excluded.state,favorite=excluded.favorite,watchlist=excluded.watchlist", scopeKey(v.Selection), str(data["state"]), data["favorite"], data["watchlist"])
-		return e
+		if e != nil {
+			return e
+		}
+		return bumpMembership(tx, v.Selection)
 	case "NOTES":
 		tags, _ := json.Marshal(data["tags"])
 		_, e := tx.ExecContext(ctx, "INSERT INTO entity_notes VALUES(?,?,?,?) ON CONFLICT(subject_type,subject_id) DO UPDATE SET notes=excluded.notes,tags_json=excluded.tags_json", noteKind(v), resourceID(v), str(data["notes"]), string(tags))

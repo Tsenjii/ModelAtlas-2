@@ -88,7 +88,7 @@ func (s *Server) history(ctx context.Context, id string) ([]Message, error) {
 		return nil, e
 	}
 	if count > 1024 || size > 32<<20 {
-		return nil, errors.New("conversation limit; history retained, start a new conversation")
+		return nil, errConversationLimit
 	}
 	return s.historyPage(ctx, id, 1024, 0, false)
 }
@@ -305,6 +305,10 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	history, err := s.history(ctx, v.SessionID)
 	if err != nil {
 		result.Outcome = "HISTORY_READ"
+		if errors.Is(err, errConversationLimit) {
+			result.Outcome = "CONVERSATION_LIMIT_START_NEW_CONVERSATION"
+			return result, 413
+		}
 		return result, 500
 	}
 	caps := s.capabilities(ctx, scope)
