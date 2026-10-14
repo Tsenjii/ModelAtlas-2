@@ -22,7 +22,9 @@ func generatedAudioType(raw []byte, format string, secrets ...string) string {
 			return ""
 		}
 		fmtOK, dataOK := false, false
-		for off := 12; off+8 <= len(raw); {
+		alignment, dataSize := 0, 0
+		off := 12
+		for off+8 <= len(raw) {
 			n := int(binary.LittleEndian.Uint32(raw[off+4 : off+8]))
 			if n < 0 || n > len(raw)-off-8 {
 				return ""
@@ -36,16 +38,32 @@ func generatedAudioType(raw []byte, format string, secrets ...string) string {
 				codec := binary.LittleEndian.Uint16(chunk[:2])
 				channels := binary.LittleEndian.Uint16(chunk[2:4])
 				rate := binary.LittleEndian.Uint32(chunk[4:8])
-				if !oneOfCodec(codec) || channels < 1 || channels > 8 || rate < 8000 || rate > 192000 {
+				bits := binary.LittleEndian.Uint16(chunk[14:16])
+				if codec == 0xfffe {
+					if len(chunk) < 40 || binary.LittleEndian.Uint16(chunk[16:18]) < 22 || binary.LittleEndian.Uint16(chunk[18:20]) > bits || !bytes.Equal(chunk[28:40], []byte{0, 0, 0x10, 0, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71}) {
+						return ""
+					}
+					kind := binary.LittleEndian.Uint32(chunk[24:28])
+					if kind != 1 && kind != 3 {
+						return ""
+					}
+					codec = uint16(kind)
+				}
+				alignment = int(channels) * int(bits) / 8
+				if fmtOK || channels < 1 || channels > 8 || rate < 8000 || rate > 192000 || codec != 1 && codec != 3 || codec == 1 && bits != 8 && bits != 16 && bits != 24 && bits != 32 || codec == 3 && bits != 32 && bits != 64 || int(binary.LittleEndian.Uint16(chunk[12:14])) != alignment || uint64(binary.LittleEndian.Uint32(chunk[8:12])) != uint64(rate)*uint64(alignment) {
 					return ""
 				}
 				fmtOK = true
 			case "data":
+				if dataOK {
+					return ""
+				}
 				dataOK = n > 0
+				dataSize = n
 			}
 			off += 8 + n + (n % 2)
 		}
-		if fmtOK && dataOK {
+		if fmtOK && dataOK && alignment > 0 && dataSize%alignment == 0 && off == len(raw) {
 			return "audio/wav"
 		}
 	case "mp3":
@@ -75,4 +93,3 @@ func generatedAudioType(raw []byte, format string, secrets ...string) string {
 	}
 	return ""
 }
-func oneOfCodec(v uint16) bool { return v == 1 || v == 3 || v == 0xfffe }

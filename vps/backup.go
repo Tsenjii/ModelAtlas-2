@@ -77,6 +77,17 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "explicit supported safe backup required", 400)
 		return
 	}
+	secrets, e := s.knownSecrets(r.Context())
+	if e != nil {
+		http.Error(w, "vault unavailable", 503)
+		return
+	}
+	for _, secret := range secrets {
+		if jsonContainsSecret(b, secret) {
+			http.Error(w, "secret found in backup metadata", 422)
+			return
+		}
+	}
 	for _, p := range b.Providers {
 		if !validID(p.ID) || len(p.Name) > 120 || p.Name == "" || !validateHTTPS(p.BaseURL) || len(p.Description) > 1000 || !oneOf(p.AuthMode, "NONE", "BEARER") {
 			http.Error(w, "invalid provider", 400)
@@ -229,9 +240,19 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	for _, m := range b.EndpointBindings {
+		if m.Operation == "CUSTOM" {
+			var n int
+			_ = tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM custom_protocols WHERE provider_id=? AND endpoint_id=?", m.ProviderID, m.ID).Scan(&n)
+			if n != 1 {
+				fail()
+				return
+			}
+		}
+	}
 	for _, m := range b.MyModels {
 		selection := Selection{ProviderID: m.ProviderID, AccountID: m.AccountID, CredentialID: m.CredentialID, ModelID: m.ModelID, Group: m.GroupID, Endpoint: m.Endpoint}
-		if !validScope(selection) {
+		if !validScope(selection) || selection.Endpoint == "CUSTOM" {
 			fail()
 			return
 		}

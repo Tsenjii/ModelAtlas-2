@@ -10,6 +10,44 @@ import (
 	"testing"
 )
 
+func TestMissingTerminalReflectionRetriesFromDurableState(t *testing.T) {
+	s := testServer(t)
+	ids := []string{newID(), newID()}
+	for i, status := range []string{"COMPLETED", "BUDGET_EXHAUSTED"} {
+		if _, e := s.Store.DB.Exec("INSERT INTO research_runs VALUES(?,?,'',?,?)", ids[i], status, now(), now()); e != nil {
+			t.Fatal(e)
+		}
+		if _, e := s.Store.DB.Exec("INSERT INTO research_run_options(run_id,config_json,budget,used,probe_budget,probes_used,summary_json) VALUES(?,'{}',5,1,0,0,'{}')", ids[i]); e != nil {
+			t.Fatal(e)
+		}
+		if _, e := s.Store.DB.Exec(`INSERT INTO research_tasks(id,run_id,kind,dedupe,payload_json,status,attempts,result_json,created_at) VALUES(?,?,'SEARCH','search:en','{"language":"en","query":"free models"}','SUCCESS',1,'{}',?)`, newID(), ids[i], now()); e != nil {
+			t.Fatal(e)
+		}
+	}
+	s.retryMissingReflections(context.Background())
+	var n int
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM research_reflections").Scan(&n)
+	if n != 2 {
+		t.Fatal("missing terminal reports not rebuilt")
+	}
+	s.retryMissingReflections(context.Background())
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM research_reflections").Scan(&n)
+	if n != 2 {
+		t.Fatal("retry duplicated reflection")
+	}
+	s.Store.DB.Exec("UPDATE research_run_options SET used=2 WHERE run_id=?", ids[0])
+	s.reflectionDue = 0
+	s.retryMissingReflections(context.Background())
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM research_reflections").Scan(&n)
+	if n != 3 {
+		t.Fatal("changed terminal summary not rebuilt")
+	}
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM knowledge_active").Scan(&n)
+	if n != 0 {
+		t.Fatal("retry activated learning without confirmation")
+	}
+}
+
 func TestResearchReflectionFrozenSourcesVersionedLearningAndUndo(t *testing.T) {
 	var path string
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

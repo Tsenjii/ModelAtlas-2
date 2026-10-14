@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"io"
 	"mime"
 	"strconv"
 	"strings"
@@ -102,26 +100,40 @@ func pcmWAV(raw []byte, rate int) []byte {
 }
 
 func parseGeminiSpeech(raw []byte, v MediaRequest, result *MediaResponse, secrets []string) (*int64, *int64, bool) {
-	var root map[string]any
-	d := json.NewDecoder(bytes.NewReader(raw))
-	d.UseNumber()
-	if d.Decode(&root) != nil || d.Decode(new(any)) != io.EOF || root["error"] != nil {
+	var root struct {
+		Error      json.RawMessage `json:"error"`
+		Model      string          `json:"modelVersion"`
+		Candidates []struct {
+			Finish  string `json:"finishReason"`
+			Content struct {
+				Parts []struct {
+					Data *struct {
+						Base64 string `json:"data"`
+						MIME   string `json:"mimeType"`
+					} `json:"inlineData"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+		Usage struct {
+			Input     *int64 `json:"promptTokenCount"`
+			Output    *int64 `json:"candidatesTokenCount"`
+			Cache     *int64 `json:"cachedContentTokenCount"`
+			Reasoning *int64 `json:"thoughtsTokenCount"`
+			Total     *int64 `json:"totalTokenCount"`
+		} `json:"usageMetadata"`
+	}
+	// Unmarshal rejects trailing JSON and avoids a second decoder buffer copy
+	// of multi-MiB audio; token counts stay exact int64, including known zero.
+	if json.Unmarshal(raw, &root) != nil || len(root.Error) > 0 && string(root.Error) != "null" || len(root.Candidates) != 1 || root.Candidates[0].Finish != "STOP" || len(root.Candidates[0].Content.Parts) != 1 || root.Candidates[0].Content.Parts[0].Data == nil {
 		return nil, nil, false
 	}
-	candidates := list(root["candidates"])
-	if len(candidates) != 1 {
-		return nil, nil, false
+	data := root.Candidates[0].Content.Parts[0].Data
+	encoded := data.Base64
+	for _, secret := range secrets {
+		if secret != "" && strings.Contains(encoded, secret) {
+			return nil, nil, false
+		}
 	}
-	candidate := object(candidates[0])
-	if !oneOf(str(candidate["finishReason"]), "STOP") {
-		return nil, nil, false
-	}
-	parts := list(object(candidate["content"])["parts"])
-	if len(parts) != 1 {
-		return nil, nil, false
-	}
-	data := object(object(parts[0])["inlineData"])
-	encoded := str(data["data"])
 	if len(encoded) == 0 || len(encoded) > ((maxAttachment+2)/3)*4 {
 		return nil, nil, false
 	}
@@ -129,7 +141,7 @@ func parseGeminiSpeech(raw []byte, v MediaRequest, result *MediaResponse, secret
 	if err != nil {
 		return nil, nil, false
 	}
-	mediaType, params, err := mime.ParseMediaType(str(data["mimeType"]))
+	mediaType, params, err := mime.ParseMediaType(data.MIME)
 	if err != nil {
 		return nil, nil, false
 	}
@@ -165,13 +177,14 @@ func parseGeminiSpeech(raw []byte, v MediaRequest, result *MediaResponse, secret
 		return nil, nil, false
 	}
 	result.Data = []mediaWire{{Base64: base64.StdEncoding.EncodeToString(audio), MIME: mediaType, Format: format, SampleRate: rate}}
-	result.Details["reported_model"] = safeText(str(root["modelVersion"]), 256, secrets...)
+	result.Details["reported_model"] = safeText(root.Model, 256, secrets...)
 	result.Details["speech_dialect"] = v.SpeechDialect
-	u := usageNative(root, "GEMINI_NATIVE")
-	usage, _ := json.Marshal(u)
-	var fields map[string]json.RawMessage
-	_ = json.Unmarshal(usage, &fields)
-	in, out := intField(fields, "prompt_tokens"), intField(fields, "completion_tokens")
+	for name, count := range map[string]*int64{"cache_read_tokens": root.Usage.Cache, "reasoning_tokens": root.Usage.Reasoning, "total_tokens": root.Usage.Total} {
+		if count != nil && *count >= 0 {
+			result.Details[name] = *count
+		}
+	}
+	in, out := root.Usage.Input, root.Usage.Output
 	if in != nil && *in < 0 {
 		in = nil
 	}

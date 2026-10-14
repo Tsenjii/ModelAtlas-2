@@ -52,7 +52,7 @@ func safeConfig(c ProviderConfig) bool {
 		return false
 	}
 	for name, path := range c.Endpoints {
-		if _, ok := endpointNames[name]; !ok || !safePath(path) {
+		if _, ok := endpointNames[name]; !ok || !safePath(path) || name == "CUSTOM" {
 			return false
 		}
 	}

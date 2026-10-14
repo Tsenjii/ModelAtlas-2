@@ -44,6 +44,9 @@ func (s *Server) requestEndpoint(ctx context.Context, p Provider, c ProviderConf
 	return modelEndpoint(raw, model)
 }
 func bindEndpoint(tx *sql.Tx, p Provider, c ProviderConfig, id string) error {
+	if id == "CUSTOM" {
+		return errors.New("custom operation requires an explicit endpoint profile")
+	}
 	var raw, op string
 	if _, ok := endpointNames[id]; ok {
 		op = id

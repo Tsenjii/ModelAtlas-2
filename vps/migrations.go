@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 12
+const schemaVersion = 13
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -125,9 +125,19 @@ func migrate(db *sql.DB) error {
 	if version < 12 {
 		if _, err = tx.Exec(`CREATE TABLE custom_protocols(provider_id TEXT NOT NULL,endpoint_id TEXT NOT NULL,config_json TEXT NOT NULL,PRIMARY KEY(provider_id,endpoint_id),FOREIGN KEY(provider_id,endpoint_id) REFERENCES endpoint_profiles(provider_id,id));
  CREATE TABLE session_settings(session_id TEXT PRIMARY KEY REFERENCES sessions(id),settings_json TEXT NOT NULL);
+
  PRAGMA user_version=12;`); err != nil {
 			return err
 		}
 	}
+	if version < 13 {
+		if _, err = tx.Exec(` CREATE INDEX IF NOT EXISTS research_terminal_runs ON research_runs(status);
+ CREATE TABLE reflection_receipts(run_id TEXT PRIMARY KEY REFERENCES research_runs(id),status TEXT NOT NULL,used INTEGER NOT NULL,checkpoint TEXT NOT NULL,reflected_at INTEGER NOT NULL);
+ INSERT INTO reflection_receipts SELECT r.id,json_extract(f.report_json,'$.status'),json_extract(f.report_json,'$.http_requests'),r.checkpoint,f.created_at FROM research_runs r JOIN research_reflections f ON f.run_id=r.id WHERE json_valid(f.report_json) AND json_type(f.report_json,'$.status')='text' AND json_type(f.report_json,'$.http_requests')='integer' AND f.rowid IN (SELECT MAX(rowid) FROM research_reflections GROUP BY run_id);
+ PRAGMA user_version=13;`); err != nil {
+			return err
+		}
+	}
+
 	return tx.Commit()
 }

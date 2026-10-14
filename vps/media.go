@@ -142,13 +142,6 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	secrets = append(secrets, known...)
-	content := map[string]any{"prompt": v.Prompt, "instructions": v.Instructions, "inputs": v.Inputs, "documents": v.Documents, "speakers": v.Speakers, "turns": v.Turns}
-	for _, secret := range secrets {
-		if jsonContainsSecret(content, secret) {
-			http.Error(w, "secret found in media content", 422)
-			return
-		}
-	}
 	cfg := s.config(ctx, p)
 	endpoint, err := s.requestEndpoint(ctx, p, cfg, v.Endpoint, v.ModelID)
 	if err != nil {
@@ -211,6 +204,19 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		_, _ = part.Write(b)
 		_ = writer.Close()
 		contentType = writer.FormDataContentType()
+	}
+	var content any
+	if contentType == "application/json" {
+		if json.Unmarshal(body.Bytes(), &content) != nil {
+			http.Error(w, "invalid media content", 400)
+			return
+		}
+	}
+	for _, secret := range secrets {
+		if secret != "" && (jsonContainsSecret(content, secret) || bytes.Contains(body.Bytes(), []byte(secret))) {
+			http.Error(w, "secret found in media content", 422)
+			return
+		}
 	}
 	request, err := http.NewRequestWithContext(ctx, "POST", endpoint, body)
 	if err != nil {
@@ -367,6 +373,11 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 func mediaImageType(encoded string, pixelsLeft int64, secrets ...string) (string, int, int64) {
 	if len(encoded) == 0 || len(encoded) > ((maxAttachment+2)/3)*4 {
 		return "", 0, 0
+	}
+	for _, secret := range secrets {
+		if secret != "" && strings.Contains(encoded, secret) {
+			return "", 0, 0
+		}
 	}
 	raw, err := base64.StdEncoding.Strict().DecodeString(encoded)
 	if err != nil || len(raw) == 0 || len(raw) > maxAttachment {

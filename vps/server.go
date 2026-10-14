@@ -25,20 +25,21 @@ import (
 )
 
 type Server struct {
-	Store        *Store
-	Token        string
-	Key          []byte
-	Client       *http.Client
-	PublicClient *http.Client
-	workMu       sync.Mutex
-	flightMu     sync.Mutex
-	flights      map[string]bool
-	cancels      map[string]context.CancelFunc
-	media        map[string][]Attachment
-	mediaBytes   int
-	MaxFlights   int
-	AutoSync     bool
-	wake         chan struct{}
+	Store         *Store
+	Token         string
+	Key           []byte
+	Client        *http.Client
+	PublicClient  *http.Client
+	workMu        sync.Mutex
+	flightMu      sync.Mutex
+	flights       map[string]bool
+	cancels       map[string]context.CancelFunc
+	media         map[string][]Attachment
+	mediaBytes    int
+	MaxFlights    int
+	AutoSync      bool
+	wake          chan struct{}
+	reflectionDue int64
 }
 
 func (s *Server) beginFlight(id string) bool {

@@ -114,4 +114,17 @@ func TestNativeSpeechRejectsMalformedTruncationAndSecret(t *testing.T) {
 	if _, _, ok := parseGeminiSpeech(raw, v, &result, nil); ok {
 		t.Fatal("blocked candidate accepted")
 	}
+	// A key made only of base64 characters must not escape by being returned
+	// directly as inlineData.data rather than as the decoded audio bytes.
+	secret := "abcdefghijklmnopqrstuvwx"
+	f = speechFixture(make([]byte, 18), "audio/pcm")
+	candidate := object(list(f["candidates"])[0])
+	part := object(list(object(candidate["content"])["parts"])[0])
+	object(part["inlineData"])["data"] = secret
+
+	raw, _ = json.Marshal(f)
+	result = MediaResponse{Details: map[string]any{}}
+	if _, _, ok := parseGeminiSpeech(raw, v, &result, []string{secret}); ok {
+		t.Fatal("raw base64-shaped secret escaped")
+	}
 }

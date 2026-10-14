@@ -8,6 +8,7 @@ import (
 	"html"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"regexp"
 	"strings"
@@ -34,8 +35,42 @@ func publicURL(raw string) bool {
 	return true
 }
 func publicIP(ip net.IP) bool {
-	return ip != nil && !ip.IsPrivate() && !ip.IsLoopback() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast() && !ip.IsUnspecified() && !ip.IsMulticast() && ip.IsGlobalUnicast() && !(ip.To4() != nil && ip.To4()[0] == 100 && ip.To4()[1] >= 64 && ip.To4()[1] <= 127)
+	if ip == nil || ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() || ip.IsMulticast() || !ip.IsGlobalUnicast() {
+		return false
+	}
+	address, ok := netip.AddrFromSlice(ip)
+	if !ok {
+		return false
+	}
+	address = address.Unmap()
+	if publicNAT64.Contains(address) {
+		raw := address.As16()
+		return publicIP(net.IP(raw[12:]))
+	}
+	if address == netip.MustParseAddr("192.0.0.9") || address == netip.MustParseAddr("192.0.0.10") {
+		return true
+	}
+	for _, prefix := range nonPublicRanges {
+		if prefix.Contains(address) {
+			return false
+		}
+	}
+	return true
 }
+
+var publicNAT64 = netip.MustParsePrefix("64:ff9b::/96")
+
+// IANA special-use ranges, plus tunnel mechanisms whose embedded destination
+// cannot be treated as a pinned public web address. No DNS/proxy bypass.
+var nonPublicRanges = func() []netip.Prefix {
+	values := []string{"0.0.0.0/8", "100.64.0.0/10", "192.0.0.0/24", "192.0.2.0/24", "192.88.99.0/24", "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "240.0.0.0/4", "::/96", "fec0::/10", "64:ff9b:1::/48", "100::/64", "100:0:0:1::/64", "2001::/32", "2001:2::/48", "2001:10::/28", "2001:db8::/32", "2002::/16", "3fff::/20", "5f00::/16"}
+	out := []netip.Prefix{}
+	for _, value := range values {
+		out = append(out, netip.MustParsePrefix(value))
+	}
+	return out
+}()
+
 func newPublicClient() *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.Proxy = nil

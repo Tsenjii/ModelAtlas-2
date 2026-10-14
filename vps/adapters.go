@@ -392,6 +392,7 @@ func (s *Server) worker(ctx context.Context) {
 	s.backgroundTick(ctx)
 	s.runPending(ctx)
 	s.runResearchPending(ctx)
+	s.retryMissingReflections(ctx)
 	s.expireResearchFacts(ctx)
 	for {
 		select {
@@ -401,11 +402,13 @@ func (s *Server) worker(ctx context.Context) {
 			s.backgroundTick(ctx)
 			s.runPending(ctx)
 			s.runResearchPending(ctx)
+			s.retryMissingReflections(ctx)
 			s.expireResearchFacts(ctx)
 		case <-timer.C:
 			s.backgroundTick(ctx)
 			s.runPending(ctx)
 			s.runResearchPending(ctx)
+			s.retryMissingReflections(ctx)
 			s.expireResearchFacts(ctx)
 		}
 	}

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type OnboardingInput struct {
@@ -85,6 +86,28 @@ func (s *Server) prepareDraft(in OnboardingInput) (storedDraft, error) {
 		if _, reserved := endpointNames[profile.ID]; reserved {
 			return storedDraft{}, errors.New("reserved endpoint ID")
 		}
+		if profile.Operation == "CUSTOM" && !validCustom(profile.Custom) || profile.Operation != "CUSTOM" && profile.Custom != nil {
+			return storedDraft{}, errors.New("custom operation requires declarative definition")
+		}
+		if profile.Custom != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			secrets, e := s.knownSecrets(ctx)
+			cancel()
+			if e != nil {
+				return storedDraft{}, errors.New("vault unavailable")
+			}
+			for _, c := range in.Credentials {
+				secrets = append(secrets, c.Secret)
+				for _, field := range c.AuthFields {
+					secrets = append(secrets, field.Secret)
+				}
+			}
+			for _, secret := range secrets {
+				if jsonContainsSecret(profile.Custom, secret) {
+					return storedDraft{}, errors.New("secret found in protocol metadata")
+				}
+			}
+		}
 	}
 	if in.Endpoint == "" {
 		in.Endpoint = "CHAT_COMPLETIONS"
@@ -95,7 +118,7 @@ func (s *Server) prepareDraft(in OnboardingInput) (storedDraft, error) {
 			profileFound = true
 		}
 	}
-	if endpointNames[in.Endpoint] == "" && !profileFound {
+	if in.Endpoint == "CUSTOM" || endpointNames[in.Endpoint] == "" && !profileFound {
 		return storedDraft{}, errors.New("invalid endpoint")
 	}
 	if len(in.Credentials) == 0 && cfg.AuthMode == "NONE" {
@@ -363,6 +386,10 @@ func (s *Server) onboardingConfirm(w http.ResponseWriter, r *http.Request) {
 	for _, profile := range draft.Input.EndpointProfiles {
 		if _, err = tx.ExecContext(r.Context(), "INSERT INTO endpoint_profiles VALUES(?,?,?,?)", p.ID, profile.ID, profile.Operation, profile.URL); err != nil {
 			http.Error(w, "duplicate endpoint profile", 409)
+			return
+		}
+		if profile.Operation == "CUSTOM" && saveCustom(r.Context(), tx, p.ID, profile.ID, profile.Custom) != nil {
+			http.Error(w, "invalid custom protocol", 400)
 			return
 		}
 	}

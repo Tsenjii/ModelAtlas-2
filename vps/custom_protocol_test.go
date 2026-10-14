@@ -14,6 +14,55 @@ func customForTest() *CustomProtocol {
 	return &CustomProtocol{Request: map[string]any{"target": "$MODEL", "history": "$MESSAGES", "instruction": "$SYSTEM", "functions": "$TOOLS", "limit": "$MAX_TOKENS", "streaming": "$STREAM"}, Fields: map[string]string{"text": "/result/text", "reasoning": "/result/think", "model": "/model", "finish": "/state", "tool_calls": "/result/calls", "input_tokens": "/usage/in", "output_tokens": "/usage/out"}, Streaming: true, Done: "[DONE]", FinishValues: []string{"stop", "tool_calls", "length"}}
 }
 
+func TestReviewedOnboardingPersistsCustomProtocolAndNoSecretMetadata(t *testing.T) {
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/models" {
+			if r.Header.Get("Authorization") != "Bearer top-secret-example-key" {
+				t.Error("review catalog credential")
+			}
+			json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"id": "m"}}})
+			return
+		}
+		if r.URL.Path != "/mapped" || r.Header.Get("Authorization") != "Bearer top-secret-example-key" {
+			t.Error("reviewed custom binding")
+		}
+		json.NewEncoder(w).Encode(map[string]any{"result": map[string]any{"text": "onboarded custom"}, "state": "stop"})
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = up.Client()
+	input := OnboardingInput{Mode: "ADVANCED", Provider: Provider{ID: "p", Name: "P", BaseURL: up.URL + "/v1", AuthMode: "BEARER"}, Account: Account{ID: "a", Label: "A"}, Credentials: []Credential{{ID: "c", Label: "C", Role: "INFERENCE", Secret: "top-secret-example-key"}}, ModelIDs: []string{"m"}, Endpoint: "mapped", EndpointProfiles: []EndpointProfile{{ID: "mapped", Operation: "CUSTOM", URL: up.URL + "/mapped", Custom: customForTest()}}}
+	preview := req(t, s, "POST", "/api/v1/onboarding/preview", input)
+	requireCode(t, preview, 201)
+	var review OnboardingReview
+	json.Unmarshal(preview.Body.Bytes(), &review)
+	if strings.Contains(preview.Body.String(), "top-secret-example-key") {
+		t.Fatal("review leaked raw key")
+	}
+	requireCode(t, req(t, s, "POST", "/api/v1/onboarding/confirm", map[string]any{"id": review.ID, "confirm": true, "selected_model_ids": []string{"m"}}), 201)
+	v := Selection{ProviderID: "p", AccountID: "a", CredentialID: "c", ModelID: "m", Endpoint: "mapped"}
+	r := req(t, s, "POST", "/api/v1/sessions", Session{Selection: v})
+	requireCode(t, r, 201)
+	var session Session
+	json.Unmarshal(r.Body.Bytes(), &session)
+	stream := false
+	r = req(t, s, "POST", "/api/v1/infer", inferRequest{SessionID: session.ID, Prompt: "hello", Streaming: &stream})
+	requireCode(t, r, 200)
+	if !strings.Contains(r.Body.String(), "onboarded custom") || !strings.Contains(r.Body.String(), "event: done") {
+		t.Fatal("onboarded custom not usable")
+	}
+	input.Provider.ID = "other"
+	input.Account.ID = "other-account"
+	input.EndpointProfiles[0].Custom.Request["literal"] = "top-secret-example-key"
+	if _, e := s.prepareDraft(input); e == nil {
+		t.Fatal("raw Key accepted in custom review")
+	}
+	input.EndpointProfiles[0].Custom = nil
+	if _, e := s.prepareDraft(input); e == nil {
+		t.Fatal("undefined custom onboarding accepted")
+	}
+}
+
 func TestCustomProtocolRealTLSAndNativeTools(t *testing.T) {
 	for _, stream := range []bool{false, true} {
 		t.Run(fmt.Sprint(stream), func(t *testing.T) {

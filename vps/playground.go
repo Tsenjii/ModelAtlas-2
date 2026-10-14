@@ -398,7 +398,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	for _, f := range provider.AuthFields {
 		secrets = append(secrets, f.Secret)
 	}
-	if source == "ASSISTANT_AGENT" {
+	{
 		all, e := s.knownSecrets(ctx)
 		if e != nil {
 			result.Outcome = "VAULT_UNAVAILABLE"

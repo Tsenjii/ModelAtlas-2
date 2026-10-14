@@ -6,12 +6,42 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"time"
 )
 
+// A transient save failure must not permanently lose a terminal run's report.
+// Retry local work only, at most two runs per minute, with no external request.
+func (s *Server) retryMissingReflections(ctx context.Context) {
+	s.workMu.Lock()
+	defer s.workMu.Unlock()
+	if now() < s.reflectionDue {
+		return
+	}
+	s.reflectionDue = now() + int64(time.Minute/time.Millisecond)
+	rows, e := s.Store.DB.QueryContext(ctx, `SELECT r.id FROM research_runs r JOIN research_run_options o ON o.run_id=r.id LEFT JOIN reflection_receipts f ON f.run_id=r.id WHERE r.status IN ('COMPLETED','CANCELLED','BUDGET_EXHAUSTED') AND (f.run_id IS NULL OR f.status!=r.status OR f.used!=o.used OR f.checkpoint!=r.checkpoint OR COALESCE(r.finished_at,0)>f.reflected_at) ORDER BY r.rowid LIMIT 2`)
+	if e != nil {
+		return
+	}
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		if rows.Scan(&id) == nil {
+			ids = append(ids, id)
+		}
+	}
+	rows.Close()
+	for _, id := range ids {
+		if ctx.Err() != nil {
+			return
+		}
+		_ = s.reflectResearch(ctx, id)
+	}
+}
+
 func (s *Server) reflectResearch(ctx context.Context, run string) error {
-	var state, summary string
+	var state, summary, checkpoint string
 	var used, probes int
-	if e := s.Store.DB.QueryRowContext(ctx, "SELECT r.status,o.summary_json,o.used,o.probes_used FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", run).Scan(&state, &summary, &used, &probes); e != nil {
+	if e := s.Store.DB.QueryRowContext(ctx, "SELECT r.status,o.summary_json,o.used,o.probes_used,r.checkpoint FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", run).Scan(&state, &summary, &used, &probes, &checkpoint); e != nil {
 		return e
 	}
 	if !oneOf(state, "COMPLETED", "CANCELLED", "BUDGET_EXHAUSTED") {
@@ -83,9 +113,12 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 		return e
 	}
 	defer tx.Rollback()
+	if _, e = tx.ExecContext(ctx, "INSERT INTO reflection_receipts VALUES(?,?,?,?,?) ON CONFLICT(run_id) DO UPDATE SET status=excluded.status,used=excluded.used,checkpoint=excluded.checkpoint,reflected_at=excluded.reflected_at", run, state, used, checkpoint, now()); e != nil {
+		return e
+	}
 	var existing string
 	if tx.QueryRowContext(ctx, "SELECT id FROM research_reflections WHERE run_id=? AND fingerprint=?", run, fingerprint).Scan(&existing) == nil {
-		return nil
+		return tx.Commit()
 	}
 	id := newID()
 	if _, e = tx.ExecContext(ctx, "INSERT INTO research_reflections VALUES(?,?,?,?,?)", id, run, fingerprint, string(raw), now()); e != nil {

@@ -119,3 +119,5 @@ CUSTOM 在 Provider 詳情新增不可變端點，以 `custom_protocol` 的 JSON
 Playground 的「對話設定」保存該段系統指示、1..32768 回應 Token 上限和串流選項。手動設定不影響 App Assistant 固定系統指示；工具定義亦逐段保存。
 
 完整 RAM 實測使用 `MODELATLAS_FOOTPRINT_TEST=1 MODELATLAS_FOOTPRINT_OUT=footprint.json go test -run TestStandaloneProcessFootprint -v -count=1 -timeout=3m`：編譯 stripped standalone binary、十萬筆完整歷史統計、4 個 TLS chats、持久研究／65 個 Catalog models、4 個同時 2048×2048 圖片解碼、4 個同時 4 MiB 原生語音結果。以服務 PID 的 VmRSS/VmHWM 記錄每阶段，fixture/test runner/browser 不算入服务 RAM；需要可讀取子行程 `/proc` 的 Linux，Work 本機限制不冒充數字。
+
+公開研究來源的位址 guard 在 2026-10-15 依 [IANA IPv4 special-use](https://www.iana.org/assignments/iana-ipv4-special-registry/) 與 [IPv6 special-use](https://www.iana.org/assignments/iana-ipv6-special-registry/) 查核；private/link-local/shared/documentation/benchmark/reserved、不可驗證內嵌目的地的 tunnel 不當成 public web，NAT64 的嵌入 IPv4 重新驗證。原有 DNS pin／HTTPS／不跟 redirect／無 auth 與 proxy 邊界保留。
