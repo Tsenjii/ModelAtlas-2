@@ -18,6 +18,7 @@ type BackupDocument struct {
 		Label      string `json:"label"`
 		Role       string `json:"role"`
 		Enabled    int    `json:"enabled"`
+		GroupID    string `json:"group_id"`
 	} `json:"credentials"`
 	Models []struct {
 		ProviderID  string `json:"provider_id"`
@@ -104,6 +105,13 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	for _, c := range b.Credentials {
+		if _, err = tx.ExecContext(r.Context(), "INSERT INTO credential_context VALUES(?,?,?,?,'',0)", c.ProviderID, c.AccountID, c.ID, c.GroupID); err != nil {
+			fail()
+			return
+		}
+	}
+
 	for _, m := range b.Models {
 		if !validID(m.ProviderID) || !validID(m.ID) || len(m.DisplayName) > 200 {
 			fail()

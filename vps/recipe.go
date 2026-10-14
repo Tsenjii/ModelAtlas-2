@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -134,7 +133,7 @@ func (s *Server) rollbackRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 	var id string
-	if tx.QueryRowContext(r.Context(), "SELECT id FROM recipe_versions WHERE provider_id=? AND version=?", v.ProviderID, v.Version).Scan(&id) == sql.ErrNoRows {
+	if tx.QueryRowContext(r.Context(), "SELECT id FROM recipe_versions WHERE provider_id=? AND version=?", v.ProviderID, v.Version).Scan(&id) != nil {
 		http.Error(w, "version missing", 404)
 		return
 	}

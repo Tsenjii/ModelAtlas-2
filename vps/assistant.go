@@ -29,7 +29,7 @@ func (s *Server) assistantPreview(w http.ResponseWriter, r *http.Request) {
 	if !s.validateSelection(r.Context(), v.Selection) && v.Action == "ADD_MY_MODEL" {
 		// Adding a model requires a real scoped credential, not preexisting membership.
 		var n int
-		err := s.Store.DB.QueryRowContext(r.Context(), "SELECT 1 FROM models m JOIN credentials c ON c.provider_id=m.provider_id WHERE m.provider_id=? AND m.id=? AND c.account_id=? AND c.id=? AND c.enabled=1", v.Selection.ProviderID, v.Selection.ModelID, v.Selection.AccountID, v.Selection.CredentialID).Scan(&n)
+		err := s.Store.DB.QueryRowContext(r.Context(), "SELECT 1 FROM models m JOIN credentials c ON c.provider_id=m.provider_id WHERE m.provider_id=? AND m.id=? AND c.account_id=? AND c.id=? AND c.enabled=1 AND c.role='INFERENCE'", v.Selection.ProviderID, v.Selection.ModelID, v.Selection.AccountID, v.Selection.CredentialID).Scan(&n)
 		if err != nil {
 			http.Error(w, "model or credential not found", 422)
 			return
@@ -112,6 +112,13 @@ func (s *Server) assistantTransition(w http.ResponseWriter, r *http.Request, und
 	if undo {
 		add = !add
 	}
+	if add {
+		var allowed int
+		if tx.QueryRowContext(r.Context(), "SELECT 1 FROM credentials WHERE provider_id=? AND account_id=? AND id=? AND role='INFERENCE' AND enabled=1", choice.ProviderID, choice.AccountID, choice.CredentialID).Scan(&allowed) != nil {
+			http.Error(w, "credential role or enabled state changed", 409)
+			return
+		}
+	}
 	if err = s.applyMembership(tx, choice, add); err != nil {
 		http.Error(w, "conflicting membership state", 409)
 		return
@@ -129,6 +136,9 @@ func (s *Server) assistantTransition(w http.ResponseWriter, r *http.Request, und
 	if tx.Commit() != nil {
 		http.Error(w, "database error", 500)
 		return
+	}
+	if add {
+		s.scheduleEnrichment(r.Context(), choice)
 	}
 	jsonOK(w, 200, map[string]any{"id": v.ID, "state": next, "history_preserved": true})
 }

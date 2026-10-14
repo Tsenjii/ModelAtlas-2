@@ -44,7 +44,7 @@ func (a Attachment) validate() error {
 	case len(b) >= 4 && b[0] == 255 && b[1]&0xe0 == 0xe0 && (b[1]>>3)&3 != 1 && (b[1]>>1)&3 != 0 && (b[2]>>4) >= 1 && (b[2]>>4) <= 14 && (b[2]>>2)&3 != 3:
 		mime = "audio/mpeg"
 	}
-	if mime == "" || mime != a.MIME || a.Kind == "image" && !strings.HasPrefix(mime, "image/") || a.Kind == "pdf" && (mime != "application/pdf" || !strings.HasSuffix(strings.ToLower(a.Filename), ".pdf")) || a.Kind == "audio" && !strings.HasPrefix(mime, "audio/") || a.required() == "" {
+	if mime == "" || mime != a.MIME || a.Kind == "image" && !strings.HasPrefix(mime, "image/") || a.Kind == "pdf" && (mime != "application/pdf" || !strings.HasSuffix(strings.ToLower(a.Filename), ".pdf")) || a.Kind == "audio" && (!strings.HasPrefix(mime, "audio/") || mime == "audio/wav" && !strings.HasSuffix(strings.ToLower(a.Filename), ".wav") || mime == "audio/mpeg" && !strings.HasSuffix(strings.ToLower(a.Filename), ".mp3")) || a.required() == "" {
 		return errors.New("unsupported or forged attachment signature")
 	}
 	return nil

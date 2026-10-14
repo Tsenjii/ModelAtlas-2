@@ -21,6 +21,7 @@
 
 - 舊推論只讀最早 100 則訊息；現在不會靜默省略近期對話，超出有界 request 時明確要求新對話。
 - 停止阻塞 SSE 會立即取消 upstream context，不再記為 PARSER；User Cancel 不進 uptime 分母。
+- Browser CI 發現建立新對話時，輸入區在 session 尚未建立完成前已可輸入，可能清掉剛輸入的 prompt；新對話現在在完成前鎖住 composer。
 - 已知的 token=0 保留為 0；未知仍 null；TTFT 與 TTFB 分開，non-streaming 不捏造 TTFT。
 - 分開 reasoning/content、只選 choice index 0、完整 SSE frame/CRLF、明確 terminator；truncated 不算成功。
 - ACCOUNT_PAT 不可加入 inference target；custom-only secret 不被偷偷加成 Bearer。
