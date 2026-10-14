@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 10
+const schemaVersion = 11
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -112,6 +112,13 @@ func migrate(db *sql.DB) error {
  CREATE TABLE notification_state(scope_key TEXT PRIMARY KEY,state_json TEXT NOT NULL);
  CREATE TABLE notification_events(id TEXT PRIMARY KEY,scope_key TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL,dedupe TEXT NOT NULL UNIQUE,created_at INTEGER NOT NULL,seen_at INTEGER);
  PRAGMA user_version=10;`); err != nil {
+			return err
+		}
+	}
+	if version < 11 {
+		if _, err = tx.Exec(`CREATE TABLE credential_origins(provider_id TEXT NOT NULL,account_id TEXT NOT NULL,credential_id TEXT NOT NULL,base_url TEXT NOT NULL,auth_mode TEXT NOT NULL DEFAULT '',PRIMARY KEY(provider_id,account_id,credential_id),FOREIGN KEY(provider_id,account_id,credential_id) REFERENCES credentials(provider_id,account_id,id));
+ INSERT INTO credential_origins SELECT c.provider_id,c.account_id,c.id,p.base_url,'' FROM credentials c JOIN providers p ON p.id=c.provider_id;
+ PRAGMA user_version=11;`); err != nil {
 			return err
 		}
 	}

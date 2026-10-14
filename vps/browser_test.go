@@ -318,3 +318,34 @@ func TestBrowserManagementWorkflow(t *testing.T) {
 	}
 	t.Log(string(out))
 }
+
+func TestBrowserOriginWorkflow(t *testing.T) {
+	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
+		t.Skip("enable in browser CI job")
+	}
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		if r.Header.Get("Authorization") != "Bearer top-secret-example-key" {
+			t.Error("original A key relocated")
+		}
+		w.Write([]byte("data: {\"choices\":[{\"delta\":{\"content\":\"Origin browser reply\"}}]}\n\ndata: [DONE]\n\n"))
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = mappedFixture(up)
+	v := seed(t, s, "https://a.example/v1")
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	app := httptest.NewServer(s.Handler())
+	defer app.Close()
+	cmd := exec.Command("node", "e2e/origins.cjs", app.URL)
+	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token)
+	out, e := cmd.CombinedOutput()
+	if e != nil {
+		t.Fatalf("Origin Browser: %v\n%s", e, out)
+	}
+	p, e := s.provider(context.Background(), "p")
+	if e != nil || p.BaseURL != "https://a.example/v1" {
+		t.Fatal("Browser Undo did not restore primary URL")
+	}
+	t.Log(string(out))
+}

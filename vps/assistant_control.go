@@ -22,6 +22,7 @@ type ControlChange struct {
 }
 type queryRows interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 }
 
 func resourceID(v ControlChange) string {
@@ -76,6 +77,18 @@ func resourceSnapshot(ctx context.Context, q queryRows, v ControlChange) (map[st
 		var cfg ProviderConfig
 		json.Unmarshal([]byte(config), &cfg)
 		out = map[string]any{"name": name, "base_url": base, "description": description, "website": cfg.Website, "notes": cfg.Notes, "_config": config}
+		origins := []string{base}
+		rows, e := q.QueryContext(ctx, "SELECT DISTINCT base_url FROM credential_origins WHERE provider_id=? ORDER BY base_url", v.ProviderID)
+		if e != nil {
+			return nil, e
+		}
+		for rows.Next() {
+			var origin string
+			rows.Scan(&origin)
+			origins = append(origins, origin)
+		}
+		rows.Close()
+		out["_reviewed_origins"] = origins
 	case "CREDENTIAL", "CREDENTIAL_ADD", "CREDENTIAL_ROTATE":
 		var base string
 		if q.QueryRowContext(ctx, "SELECT p.base_url FROM providers p JOIN accounts a ON a.provider_id=p.id WHERE p.id=? AND a.id=?", v.ProviderID, v.AccountID).Scan(&base) != nil {
@@ -89,8 +102,13 @@ func resourceSnapshot(ctx context.Context, q queryRows, v ControlChange) (map[st
 			}
 			return nil, errors.New("credential missing")
 		}
+		origin, e := boundProvider(ctx, q, v.ProviderID, v.AccountID, v.CredentialID)
+		if e != nil {
+			return nil, e
+		}
+		base = origin.BaseURL
 		q.QueryRowContext(ctx, "SELECT fields_json FROM credential_auth_fields WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&fields)
-		out = map[string]any{"label": label, "role": role, "enabled": enabled == 1, "group": group, "note": note, "priority": priority, "origin": base, "exists": true, "_key_version_hash": contentHash([]byte(encrypted)), "_fields": fields}
+		out = map[string]any{"label": label, "role": role, "enabled": enabled == 1, "group": group, "note": note, "priority": priority, "origin": base, "exists": true, "_key_version_hash": contentHash([]byte(encrypted)), "_fields": fields, "auth_mode": origin.CredentialMode}
 		var keyVersion int
 		q.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&keyVersion)
 		out["_secret_version"] = keyVersion
@@ -197,7 +215,13 @@ func controlAfter(v ControlChange, before map[string]any) (map[string]any, error
 				old, _ := url.Parse(str(before[key]))
 				next, _ := url.Parse(str(value))
 				if !strings.EqualFold(old.Host, next.Host) {
-					return nil, errors.New("new origin requires shared onboarding and a new credential binding")
+					allowed := false
+					for _, origin := range before["_reviewed_origins"].([]string) {
+						allowed = allowed || origin == str(value)
+					}
+					if !allowed {
+						return nil, errors.New("new origin requires an explicitly bound credential first")
+					}
 				}
 			}
 		case "CREDENTIAL":
@@ -328,7 +352,7 @@ func (s *Server) previewControlAction(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "database error", 500)
 		return
 	}
-	jsonOK(w, 201, map[string]any{"id": id, "state": "PENDING", "action": "CONTROL_CHANGE", "kind": v.Kind, "before": visibleSnapshot(before), "after": visibleSnapshot(after), "requires_confirmation": true})
+	jsonOK(w, 201, map[string]any{"id": id, "state": "PENDING", "action": "CONTROL_CHANGE", "kind": v.Kind, "subject": resourceID(v), "before": visibleSnapshot(before), "after": visibleSnapshot(after), "requires_confirmation": true})
 }
 func visibleSnapshot(data map[string]any) map[string]any {
 	out := map[string]any{}

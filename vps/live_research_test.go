@@ -136,7 +136,9 @@ func TestLiveKiloProviderDiscovery(t *testing.T) {
 	s.Store.DB.QueryRow("SELECT result_json FROM assistant_runs ORDER BY rowid DESC LIMIT 1").Scan(&resultRaw)
 	var result any
 	_ = json.Unmarshal([]byte(resultRaw), &result)
-	report["assistant_result"] = result
+	if value, ok := result.(map[string]any); ok {
+		report["assistant_details"] = value["details"]
+	}
 	rows, e := s.Store.DB.Query("SELECT name,status,result_json FROM assistant_tool_events ORDER BY rowid")
 	if e != nil {
 		t.Fatal(e)
@@ -147,6 +149,11 @@ func TestLiveKiloProviderDiscovery(t *testing.T) {
 		rows.Scan(&name, &status, &raw)
 		var result any
 		_ = json.Unmarshal([]byte(raw), &result)
+		if name == "inspect_website" {
+			if value, ok := result.(map[string]any); ok {
+				delete(value, "untrusted_text")
+			}
+		}
 		events = append(events, map[string]any{"name": name, "status": status, "result": result})
 	}
 	rows.Close()

@@ -60,7 +60,19 @@ func (s *Server) getStructured(ctx context.Context, p Provider, c ProviderConfig
 		return nil, 0, err
 	}
 	// Never inherit permissive redirect policy from a caller-supplied HTTP client.
-	client := *s.Client
+	selectedClient := s.Client
+	if enabled, _ := ctx.Value(publicAnonymousOnboardKey{}).(bool); enabled {
+		if c.AuthMode != "NONE" || key != "" || len(p.AuthFields) > 0 || !publicURL(rawURL) {
+			return nil, 0, errors.New("public anonymous onboarding only")
+		}
+		s.flightMu.Lock()
+		if s.PublicClient == nil {
+			s.PublicClient = newPublicClient()
+		}
+		selectedClient = s.PublicClient
+		s.flightMu.Unlock()
+	}
+	client := *selectedClient
 	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	if err := s.chargeNetwork(ctx, false); err != nil {
 		return nil, 0, err
@@ -126,3 +138,5 @@ func cleanSecretEcho(value any, secrets []string, depth int) any {
 		return value
 	}
 }
+
+type publicAnonymousOnboardKey struct{}

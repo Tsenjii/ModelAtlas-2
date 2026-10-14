@@ -149,6 +149,15 @@ type Observation struct {
 }
 
 func (s *Server) observe(ctx context.Context, v Selection, kind, source, status string, facts map[string]any) error {
+	if snapshot, ok := ctx.Value(credentialObservationKey{}).(credentialObservation); ok && snapshot.Provider == v.ProviderID && snapshot.Account == v.AccountID && validateHTTPS(snapshot.Origin) {
+		copy := map[string]any{}
+		for k, x := range facts {
+			copy[k] = x
+		}
+		copy["origin"] = snapshot.Origin
+		facts = copy
+	}
+
 	if v.CredentialID != "" {
 		version := 0
 		if snapshot, ok := ctx.Value(credentialObservationKey{}).(credentialObservation); ok && snapshot.Provider == v.ProviderID && snapshot.Account == v.AccountID && snapshot.Credential == v.CredentialID {

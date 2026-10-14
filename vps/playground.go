@@ -794,7 +794,23 @@ func (s *Server) groupBound(ctx context.Context, v Selection) bool {
 	if err == sql.ErrNoRows {
 		return v.Group == ""
 	}
-	return err == nil && group == v.Group
+	if err != nil || group != v.Group {
+		return false
+	}
+	var reported, origin string
+	var known bool
+	var version sql.NullInt64
+	var at int64
+	e := s.Store.DB.QueryRowContext(ctx, "SELECT COALESCE(json_extract(facts_json,'$.group'),''),COALESCE(json_extract(facts_json,'$.group_known'),0),json_extract(facts_json,'$.credential_version'),COALESCE(json_extract(facts_json,'$.origin'),''),observed_at FROM newapi_snapshots WHERE provider_id=? AND account_id=? AND credential_id=? AND credential_role='INFERENCE' AND endpoint='/api/usage/token/' AND provider_version='v1.0.0-rc.25' AND source='NEW_API_OFFICIAL' ORDER BY rowid DESC LIMIT 1", v.ProviderID, v.AccountID, v.CredentialID).Scan(&reported, &known, &version, &origin, &at)
+	if e == nil && known && version.Valid && at >= now()-86400000 {
+		var current int64
+		s.Store.DB.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&current)
+		p, e := boundProvider(ctx, s.Store.DB, v.ProviderID, v.AccountID, v.CredentialID)
+		if e == nil && p.BaseURL == origin && version.Int64 == current && reported != v.Group {
+			return false
+		}
+	}
+	return true
 }
 func (s *Server) listTelemetry(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageRange(r, 100)

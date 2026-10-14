@@ -331,6 +331,10 @@ func (s *Server) onboardingConfirm(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "database error", 500)
 			return
 		}
+		if insertCredentialOrigin(r.Context(), tx, p.ID, a.ID, c.ID, p.BaseURL, "") != nil {
+			http.Error(w, "origin invalid", 400)
+			return
+		}
 		if _, err = tx.ExecContext(r.Context(), "INSERT INTO credential_context VALUES(?,?,?,?,?,?)", p.ID, a.ID, c.ID, c.Group, c.Note, c.Priority); err != nil {
 			http.Error(w, "database error", 500)
 			return
@@ -377,7 +381,7 @@ func (s *Server) onboardingConfirm(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "database error", 500)
 				return
 			}
-			if bindEndpoint(tx, p, cfg, selection.Endpoint) != nil {
+			if bindSelection(r.Context(), tx, p, cfg, selection) != nil {
 				http.Error(w, "endpoint binding failed", 500)
 				return
 			}

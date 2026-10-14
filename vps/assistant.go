@@ -155,7 +155,7 @@ func (s *Server) assistantTransition(w http.ResponseWriter, r *http.Request, und
 		if tx.QueryRowContext(r.Context(), "SELECT config_json FROM provider_config WHERE provider_id=?", p.ID).Scan(&raw) == nil {
 			_ = json.Unmarshal([]byte(raw), &cfg)
 		}
-		if bindEndpoint(tx, p, cfg, choice.Endpoint) != nil {
+		if bindSelection(r.Context(), tx, p, cfg, choice) != nil {
 			http.Error(w, "endpoint unavailable", 409)
 			return
 		}

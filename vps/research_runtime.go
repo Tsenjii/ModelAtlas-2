@@ -137,6 +137,24 @@ func (s *Server) saveResearchSource(w http.ResponseWriter, r *http.Request) {
 	if v.ID == "" {
 		v.ID = newID()
 	}
+	secrets, e := s.knownSecrets(r.Context())
+	if e != nil {
+		http.Error(w, "vault unavailable", 503)
+		return
+	}
+	rawSource, _ := json.Marshal(v)
+	if rawSecretPattern.Match(rawSource) {
+		http.Error(w, "secrets cannot be stored in public source definitions", 422)
+		return
+	}
+	var decoded any
+	_ = json.Unmarshal(rawSource, &decoded)
+	for _, secret := range secrets {
+		if jsonContainsSecret(decoded, secret) {
+			http.Error(w, "secrets cannot be stored in public source definitions", 422)
+			return
+		}
+	}
 	if !validSource(v) {
 		http.Error(w, "invalid research source", 400)
 		return

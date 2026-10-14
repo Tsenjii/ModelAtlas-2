@@ -13,7 +13,7 @@ func (s *Server) secretChangeAfter(ctx context.Context, v ControlChange, before 
 		return nil, errors.New("safe secret reference required")
 	}
 	ref, _, e := s.assistantSecret(ctx, refID)
-	if e != nil || ref.BaseURL != str(before["origin"]) {
+	if e != nil || v.Kind == "CREDENTIAL_ROTATE" && ref.BaseURL != str(before["origin"]) {
 		return nil, errors.New("reference must match the credential's origin")
 	}
 	if v.Kind == "CREDENTIAL_ROTATE" && ref.Role != str(before["role"]) {
@@ -28,7 +28,10 @@ func (s *Server) secretChangeAfter(ctx context.Context, v ControlChange, before 
 	}
 	var p Provider
 	p, e = s.provider(ctx, v.ProviderID)
-	if e != nil || s.config(ctx, p).AuthMode == "NONE" && ref.Role == "INFERENCE" {
+	if v.Kind == "CREDENTIAL_ROTATE" {
+		p, e = boundProvider(ctx, s.Store.DB, v.ProviderID, v.AccountID, v.CredentialID)
+	}
+	if e != nil || v.Kind == "CREDENTIAL_ROTATE" && s.config(ctx, p).AuthMode == "NONE" && ref.Role == "INFERENCE" {
 		return nil, errors.New("anonymous provider cannot receive a secret")
 	}
 	after := map[string]any{}
@@ -36,6 +39,15 @@ func (s *Server) secretChangeAfter(ctx context.Context, v ControlChange, before 
 		after[k] = x
 	}
 	if v.Kind == "CREDENTIAL_ADD" {
+		after["origin"] = ref.BaseURL
+		mode := s.config(ctx, p).AuthMode
+		if mode == "NONE" {
+			mode = "BEARER"
+		}
+		if cipher == "" && fields != "[]" {
+			mode = "CUSTOM_HEADER"
+		}
+		after["auth_mode"] = mode
 		after["label"] = ref.Label
 		after["role"] = ref.Role
 		after["group"] = ""
@@ -71,6 +83,9 @@ func (s *Server) writeSecretChange(ctx context.Context, tx *sql.Tx, v ControlCha
 			return e
 		}
 		if _, e := tx.ExecContext(ctx, "INSERT INTO credentials(id,provider_id,account_id,label,role,encrypted_key,enabled,created_at) VALUES(?,?,?,?,?,?,?,?)", v.CredentialID, v.ProviderID, v.AccountID, str(data["label"]), str(data["role"]), str(data["_cipher"]), true, now()); e != nil {
+			return e
+		}
+		if e := insertCredentialOrigin(ctx, tx, v.ProviderID, v.AccountID, v.CredentialID, str(data["origin"]), str(data["auth_mode"])); e != nil {
 			return e
 		}
 		if _, e := tx.ExecContext(ctx, "INSERT INTO credential_context VALUES(?,?,?,?,?,?)", v.ProviderID, v.AccountID, v.CredentialID, str(data["group"]), str(data["note"]), 0); e != nil {

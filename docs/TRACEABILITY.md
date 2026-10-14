@@ -124,3 +124,9 @@ VPS-REFLECTION-001／CONNECTOR-001／CREDENTIAL-EPOCH-001 同 SHA CI 已驗：`2
 VPS-MANAGE-FULL-001／BACKGROUND-001／BACKUP-V2-001／RESOURCE-001 同 SHA CI 已驗：`8f069625`／VPS `38582129810` 四項＋Android `38582129791` 两項 SUCCESS。SSR 单一執行檔十萬歷史＋四推論 profile peak 29,134,848 bytes，媒體負載仍待最終量測。
 
 | VPS-LIVE-RESEARCH-001 | opt-in `live_research_test.go` / isolated `vps-live.yml` → actual anonymous Kilo model→App tools→public official sources→durable worker/evidence，fresh catalog price/tools guard，10 model HTTP/12 source HTTP budgets，no signup/credentials/implicit My Models | CANDIDATE；本機模型工具已跑，但 direct DNS fail，Actions 待驗 |
+
+VPS-LIVE-RESEARCH-001 真實 opt-in已驗：`b7ecdaa`／Actions `38584572569`／job `115923745767`，2 candidates/3 evidence/3 SUCCESS tasks，未宣稱自動通過eligibility；普通同SHA六項全綠。
+
+| VPS-MULTI-ORIGIN-001 | `origins.go` / schema11 / shared credential auth / immutable endpoint bindings / selected PAT / connector snapshot / safe backup → sameProvider多URL、shared Review/Undo不搬Key；`origins_test.go` realTLS與`e2e/origins.cjs` | IMPLEMENTED；待新SHA CI |
+| VPS-AGENT-SOURCE-001 | static `save_research_source` / anonymous `onboard_provider` → public definition/durable runner/shared Review，public DNS-pinned client、noRawSecrets/noImplicitMembers；TLS/public boundary/registry regression | IMPLEMENTED；待新SHA CI |
+| VPS-GROUP-EPOCH-001 | certified explicit token group（origin＋currentmaterialversion＋freshness），matchingGroup／inference／offerguard、失敗來源留evidence/lead | IMPLEMENTED；待新SHA CI |

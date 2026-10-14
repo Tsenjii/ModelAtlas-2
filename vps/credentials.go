@@ -100,7 +100,7 @@ func (s *Server) rotateCredential(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "explicit valid credential change required", 400)
 		return
 	}
-	p, providerErr := s.provider(r.Context(), v.ProviderID)
+	p, providerErr := boundProvider(r.Context(), s.Store.DB, v.ProviderID, v.AccountID, v.CredentialID)
 	var role string
 	if providerErr != nil || s.Store.DB.QueryRowContext(r.Context(), "SELECT role FROM credentials WHERE provider_id=? AND account_id=? AND id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&role) != nil {
 		http.Error(w, "credential missing", 404)

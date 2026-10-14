@@ -10,11 +10,12 @@ import (
 type credentialObservationKey struct{}
 type credentialObservation struct {
 	Provider, Account, Credential string
+	Origin                        string
 	Version                       int
 }
 
 func withCredentialObservation(ctx context.Context, v Selection, p Provider) context.Context {
-	return context.WithValue(ctx, credentialObservationKey{}, credentialObservation{v.ProviderID, v.AccountID, v.CredentialID, p.CredentialVersion})
+	return context.WithValue(ctx, credentialObservationKey{}, credentialObservation{Provider: v.ProviderID, Account: v.AccountID, Credential: v.CredentialID, Version: p.CredentialVersion, Origin: p.BaseURL})
 }
 
 func (s *Server) setting(ctx context.Context, key string, fallback any) any {
@@ -45,11 +46,18 @@ func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
 		out["tags"] = tagList
 	}
 	out["notes"] = notes
+	matchingGroup := s.groupBound(ctx, v)
+	if !matchingGroup {
+		out["scope_state"] = "GROUP_MISMATCH"
+	}
 	rows, e := s.Store.DB.QueryContext(ctx, "SELECT kind,source,facts_json,observed_at FROM observations WHERE scope_key=? AND status='SUCCESS' ORDER BY rowid DESC LIMIT 100", scopeKey(v))
 	if e == nil {
 		previousPrice := ""
 		priceCount := 0
 		for rows.Next() {
+			if !matchingGroup {
+				continue
+			}
 			var kind, source, raw string
 			var at int64
 			if rows.Scan(&kind, &source, &raw, &at) != nil {
@@ -90,6 +98,21 @@ func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
 		}
 		rows.Close()
 	}
+	// A nominal group quote stays independent from this key's effective charge.
+	if matchingGroup {
+		nominal := v
+		nominal.CredentialID = ""
+		nominal.Endpoint = s.operation(ctx, v)
+		p, e := boundProvider(ctx, s.Store.DB, v.ProviderID, v.AccountID, v.CredentialID)
+		if e == nil {
+			for _, quote := range s.observations(ctx, nominal) {
+				if quote.Kind == "NOMINAL_PRICE" && quote.Status == "SUCCESS" && str(quote.Facts["origin"]) == p.BaseURL && quote.ObservedAt >= now()-86400000 {
+					out["nominal_price"] = quote
+					break
+				}
+			}
+		}
+	}
 	if score, rank, valid := s.aaModelScore(ctx, Candidate{ProviderID: v.ProviderID, ModelID: v.ModelID}); valid {
 		out["strength"] = map[string]any{"score": score, "rank": rank, "source": "ARTIFICIAL_ANALYSIS"}
 	}
@@ -108,7 +131,7 @@ func (s *Server) selectionUsable(ctx context.Context, v Selection) bool {
 	if !s.validateSelection(ctx, v) || !s.groupBound(ctx, v) {
 		return false
 	}
-	p, e := s.provider(ctx, v.ProviderID)
+	p, e := boundProvider(ctx, s.Store.DB, v.ProviderID, v.AccountID, v.CredentialID)
 	if e != nil {
 		return false
 	}

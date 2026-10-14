@@ -106,6 +106,14 @@ func (s *Server) config(ctx context.Context, p Provider) ProviderConfig {
 		}
 	}
 
+	if p.CredentialMode != "" {
+		if c.AuthMode != p.CredentialMode {
+			c.AuthHeader = ""
+			c.AuthQuery = ""
+			c.AuthPrefix = ""
+		}
+		c.AuthMode = p.CredentialMode
+	}
 	return c
 }
 func (s *Server) getConfig(w http.ResponseWriter, r *http.Request) {

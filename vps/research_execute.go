@@ -94,8 +94,24 @@ func (s *Server) sourceTask(ctx context.Context, run, id string, snapshot *Resea
 	if e != nil || !src.Enabled {
 		return nil, errors.New("source unavailable")
 	}
-	raw, ctype, _, e := s.publicFetch(ctx, src.URL)
+	raw, ctype, status, e := s.publicFetch(ctx, src.URL)
 	if e != nil {
+		// A failed Provider source is a retained lead, even before a model ID is known.
+		candidate, saveErr := s.ensureCandidate(ctx, src.Config.ProviderIDOr(src.URL), "UNKNOWN", run, src.URL)
+		if saveErr == nil {
+			facts := map[string]any{"retrieval": "FAILED"}
+			if status > 0 {
+				facts["http_status"] = status
+			}
+			_, _ = s.recordEvidence(ctx, candidate.ID, "SOURCE_FETCH_FAILURE", src.URL, "Public source retrieval failed; no eligibility facts verified.", false, EvidenceDetails{RunID: run, SourceID: id, Language: src.Language, Normalized: facts, Confidence: 0})
+			if oneOf(candidate.State, "DISCOVERED", "VERIFYING", "FAILED") {
+				_, _ = s.Store.DB.ExecContext(ctx, "UPDATE research_candidates SET state='FAILED',updated_at=? WHERE id=?", now(), candidate.ID)
+			}
+			candidate.SourceID = id
+			candidate.LastChecked = now()
+			candidate.Reason = "Public source retrieval failed; last-good evidence retained."
+			_ = s.saveCandidateDetails(ctx, candidate.ID, candidate.CandidateDetails)
+		}
 		return nil, e
 	}
 	if src.Kind == "HTML" {

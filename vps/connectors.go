@@ -87,14 +87,13 @@ func (s *Server) connectorAuth(ctx context.Context, c ConnectorConfig, v Selecti
 		key = ""
 	}
 	if c.Role == "ACCOUNT_PAT" {
-		var encrypted string
-		if s.Store.DB.QueryRowContext(ctx, "SELECT encrypted_key FROM credentials WHERE provider_id=? AND account_id=? AND id=? AND role='ACCOUNT_PAT' AND enabled=1", v.ProviderID, v.AccountID, c.PATID).Scan(&encrypted) != nil {
-			return p, cfg, "", errors.New("explicit PAT unavailable for selected account")
+		patProvider, encrypted, e := s.accountPAT(ctx, NewApiQuery{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: c.PATID})
+		if e != nil || patProvider.BaseURL != p.BaseURL {
+			return p, cfg, "", errors.New("explicit PAT must match selected credential origin")
 		}
-		key, e = s.decrypt(encrypted)
-		if e != nil {
-			return p, cfg, "", errors.New("vault unavailable")
-		}
+		// accountPAT already returns decrypted material.
+		key = encrypted
+
 		p.AuthFields = nil
 		cfg.AuthMode = "BEARER"
 		cfg.AuthHeader = ""
@@ -189,17 +188,22 @@ func extractConnector(c ConnectorConfig, v Selection, rows []any) (map[string]an
 func connectorContext(ctx context.Context, q queryRows, c ConnectorConfig, v Selection) (string, error) {
 	var cipher, fields, base, config, group string
 	var enabled int
-	if q.QueryRowContext(ctx, "SELECT c.encrypted_key,c.enabled,p.base_url,COALESCE(x.config_json,'{}'),COALESCE(g.group_id,'') FROM credentials c JOIN providers p ON p.id=c.provider_id LEFT JOIN provider_config x ON x.provider_id=p.id LEFT JOIN credential_context g ON g.provider_id=c.provider_id AND g.account_id=c.account_id AND g.credential_id=c.id WHERE c.provider_id=? AND c.account_id=? AND c.id=? AND c.role='INFERENCE'", v.ProviderID, v.AccountID, v.CredentialID).Scan(&cipher, &enabled, &base, &config, &group) != nil || enabled != 1 || group != v.Group {
+	if q.QueryRowContext(ctx, "SELECT c.encrypted_key,c.enabled,COALESCE(o.base_url,p.base_url),COALESCE(x.config_json,'{}'),COALESCE(g.group_id,'') FROM credentials c JOIN providers p ON p.id=c.provider_id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id LEFT JOIN provider_config x ON x.provider_id=p.id LEFT JOIN credential_context g ON g.provider_id=c.provider_id AND g.account_id=c.account_id AND g.credential_id=c.id WHERE c.provider_id=? AND c.account_id=? AND c.id=? AND c.role='INFERENCE'", v.ProviderID, v.AccountID, v.CredentialID).Scan(&cipher, &enabled, &base, &config, &group) != nil || enabled != 1 || group != v.Group {
 		return "", errors.New("selected credential/group unavailable")
 	}
 	q.QueryRowContext(ctx, "SELECT fields_json FROM credential_auth_fields WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&fields)
 	var pat string
-	if c.Role == "ACCOUNT_PAT" && q.QueryRowContext(ctx, "SELECT encrypted_key FROM credentials WHERE provider_id=? AND account_id=? AND id=? AND role='ACCOUNT_PAT' AND enabled=1", v.ProviderID, v.AccountID, c.PATID).Scan(&pat) != nil {
-		return "", errors.New("explicit PAT unavailable")
+	var patVersion int
+	if c.Role == "ACCOUNT_PAT" {
+		patProvider, e := boundProvider(ctx, q, v.ProviderID, v.AccountID, c.PATID)
+		if e != nil || patProvider.BaseURL != base || q.QueryRowContext(ctx, "SELECT encrypted_key FROM credentials WHERE provider_id=? AND account_id=? AND id=? AND role='ACCOUNT_PAT' AND enabled=1", v.ProviderID, v.AccountID, c.PATID).Scan(&pat) != nil {
+			return "", errors.New("explicit PAT unavailable or origin mismatch")
+		}
+		q.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, c.PATID).Scan(&patVersion)
 	}
 	var version int
 	q.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&version)
-	return snapshotHash(map[string]any{"credential_version": version, "selection": v, "credential_hash": contentHash([]byte(cipher)), "pat_hash": contentHash([]byte(pat)), "fields_hash": contentHash([]byte(fields)), "base": base, "config": config}), nil
+	return snapshotHash(map[string]any{"credential_version": version, "selection": v, "credential_hash": contentHash([]byte(cipher)), "pat_version": patVersion, "pat_hash": contentHash([]byte(pat)), "fields_hash": contentHash([]byte(fields)), "base": base, "config": config}), nil
 }
 func (s *Server) proposeConnector(w http.ResponseWriter, r *http.Request) {
 	var v ConnectorVersion

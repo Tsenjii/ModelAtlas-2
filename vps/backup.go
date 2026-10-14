@@ -30,6 +30,8 @@ type BackupDocument struct {
 		Role       string `json:"role"`
 		Enabled    int    `json:"enabled"`
 		GroupID    string `json:"group_id"`
+		BaseURL    string `json:"base_url,omitempty"`
+		AuthMode   string `json:"auth_mode,omitempty"`
 	} `json:"credentials"`
 	Models []struct {
 		ProviderID  string `json:"provider_id"`
@@ -115,6 +117,20 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 			fail()
 			return
 		}
+		base := c.BaseURL
+		if base == "" {
+			for _, p := range b.Providers {
+				if p.ID == c.ProviderID {
+					base = p.BaseURL
+					break
+				}
+			}
+		}
+		if insertCredentialOrigin(r.Context(), tx, c.ProviderID, c.AccountID, c.ID, base, c.AuthMode) != nil {
+			fail()
+			return
+		}
+
 	}
 	for _, c := range b.Credentials {
 		if _, err = tx.ExecContext(r.Context(), "INSERT INTO credential_context VALUES(?,?,?,?,'',0)", c.ProviderID, c.AccountID, c.ID, c.GroupID); err != nil {
@@ -161,8 +177,8 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		base, _ := url.Parse(p.BaseURL)
-		target, e := url.Parse(profile.URL)
-		if e != nil || base == nil || !validateHTTPS(profile.URL) || !strings.EqualFold(base.Host, target.Host) || !validID(profile.ID) || endpointNames[profile.Operation] == "" {
+		_, e := url.Parse(profile.URL)
+		if e != nil || base == nil || !validateHTTPS(profile.URL) || !backupOriginAllowed(b, profile.ProviderID, profile.URL, base.Host) || !validID(profile.ID) || endpointNames[profile.Operation] == "" {
 			fail()
 			return
 		}
@@ -180,8 +196,8 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		base, _ := url.Parse(p.BaseURL)
-		target, e := url.Parse(binding.URL)
-		if e != nil || base == nil || !validateHTTPS(binding.URL) || !strings.EqualFold(base.Host, target.Host) || !validID(binding.ID) || endpointNames[binding.Operation] == "" {
+		_, e := url.Parse(binding.URL)
+		if e != nil || base == nil || !validateHTTPS(binding.URL) || !backupOriginAllowed(b, binding.ProviderID, binding.URL, base.Host) || !validID(binding.ID) || endpointNames[binding.Operation] == "" {
 			fail()
 			return
 		}
@@ -221,6 +237,22 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 func oneOfVersion(v int, versions ...int) bool {
 	for _, n := range versions {
 		if v == n {
+			return true
+		}
+	}
+	return false
+}
+
+func backupOriginAllowed(b BackupDocument, provider, target, primaryHost string) bool {
+	u, e := url.Parse(target)
+	if e != nil {
+		return false
+	}
+	if strings.EqualFold(primaryHost, u.Host) {
+		return true
+	}
+	for _, credential := range b.Credentials {
+		if credential.ProviderID == provider && sameOrigin(credential.BaseURL, target) {
 			return true
 		}
 	}

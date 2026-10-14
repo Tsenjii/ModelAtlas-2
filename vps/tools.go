@@ -39,7 +39,7 @@ type MessageState struct {
 var toolNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_-]{0,63}$`)
 
 func validTools(tools []ToolDefinition) bool {
-	if len(tools) > 16 {
+	if len(tools) > 32 {
 		return false
 	}
 	seen := map[string]bool{}

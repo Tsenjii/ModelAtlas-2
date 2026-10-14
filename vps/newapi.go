@@ -12,6 +12,7 @@ import (
 )
 
 type NewApiQuery struct {
+	Origin       string `json:"-"`
 	ProviderID   string `json:"provider_id"`
 	AccountID    string `json:"account_id"`
 	CredentialID string `json:"credential_id"`
@@ -30,7 +31,7 @@ func (s *Server) accountPAT(ctx context.Context, q NewApiQuery) (Provider, strin
 	var p Provider
 	var enc string
 	var enabled int
-	err := s.Store.DB.QueryRowContext(ctx, "SELECT p.id,p.name,p.base_url,p.description,p.auth_mode,c.encrypted_key,c.enabled FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id WHERE p.id=? AND a.id=? AND c.id=? AND c.role='ACCOUNT_PAT'", q.ProviderID, q.AccountID, q.CredentialID).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode, &enc, &enabled)
+	err := s.Store.DB.QueryRowContext(ctx, "SELECT p.id,p.name,COALESCE(o.base_url,p.base_url),p.description,p.auth_mode,c.encrypted_key,c.enabled FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id WHERE p.id=? AND a.id=? AND c.id=? AND c.role='ACCOUNT_PAT'", q.ProviderID, q.AccountID, q.CredentialID).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode, &enc, &enabled)
 	if err != nil || enabled != 1 || !validateHTTPS(p.BaseURL) {
 		return Provider{}, "", sql.ErrNoRows
 	}
@@ -161,9 +162,16 @@ func (s *Server) newApiRead(ctx context.Context, q NewApiQuery, path string) (Ne
 	if err != nil {
 		return NewApiResult{}, errors.New("credential role/scope unavailable")
 	}
+	if q.Origin != "" {
+		if !validateHTTPS(q.Origin) || token != "" && p.BaseURL != q.Origin {
+			return NewApiResult{}, errors.New("credential origin mismatch")
+		}
+		p.BaseURL = q.Origin
+	}
 	if path == "/api/user/self" && role != "ACCOUNT_PAT" {
 		return NewApiResult{}, errors.New("account PAT required")
 	}
+	q.Origin = p.BaseURL
 	facts, version, err := s.newApiStatus(ctx, p)
 	if err != nil {
 		return NewApiResult{}, err
@@ -221,8 +229,18 @@ func (s *Server) newApiRead(ctx context.Context, q NewApiQuery, path string) (Ne
 					facts[field] = n
 				}
 			}
-			if path == "/api/user/self" {
-				facts["group"] = safeText(stringField(data, "group"), 120, token)
+			facts["group"] = nil
+			facts["group_known"] = false
+			if raw, ok := data["group"]; ok {
+				var actual string
+				if json.Unmarshal(raw, &actual) == nil && safeText(actual, 120, token) == actual {
+					facts["group"] = actual
+					facts["group_known"] = true
+				}
+			}
+			if path == "/api/usage/token/" {
+				facts["credential_version"] = p.CredentialVersion
+				facts["origin"] = p.BaseURL
 			}
 		case "/api/perf-metrics/summary", "/api/perf-metrics":
 			facts, err = parseNewApiPerformance(root, token, path == "/api/perf-metrics")
@@ -347,7 +365,7 @@ func (s *Server) mapNewApiPrices(ctx context.Context, q NewApiQuery, facts, stat
 				if operation == "CHAT_COMPLETIONS" {
 					nominalState = priceState(legs)
 				}
-				if err := s.observe(ctx, scope, "NOMINAL_PRICE", "NEW_API_OFFICIAL", "SUCCESS", map[string]any{"price": legs, "nominal_price_state": nominalState, "billing_mode": item["billing_mode"], "billing_expr": item["billing_expr"], "effective_charge": nil, "pricing_version": facts["pricing_version"]}); err != nil {
+				if err := s.observe(ctx, scope, "NOMINAL_PRICE", "NEW_API_OFFICIAL", "SUCCESS", map[string]any{"origin": q.Origin, "price": legs, "nominal_price_state": nominalState, "billing_mode": item["billing_mode"], "billing_expr": item["billing_expr"], "effective_charge": nil, "pricing_version": facts["pricing_version"]}); err != nil {
 					return err
 				}
 			}
@@ -493,7 +511,7 @@ func (s *Server) newApiKeyHTTP(w http.ResponseWriter, r *http.Request) {
 func enrichNewAPI(s *Server, ctx context.Context, v Selection, p Provider, c ProviderConfig, key string) error {
 	// Resolve one explicit account PAT; ambiguous roles are not picked arbitrarily.
 	var pat string
-	rows, err := s.Store.DB.QueryContext(ctx, "SELECT id FROM credentials WHERE provider_id=? AND account_id=? AND role='ACCOUNT_PAT' AND enabled=1", v.ProviderID, v.AccountID)
+	rows, err := s.Store.DB.QueryContext(ctx, "SELECT c.id FROM credentials c JOIN providers p ON p.id=c.provider_id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id WHERE c.provider_id=? AND c.account_id=? AND c.role='ACCOUNT_PAT' AND c.enabled=1 AND COALESCE(o.base_url,p.base_url)=?", v.ProviderID, v.AccountID, p.BaseURL)
 	if err != nil {
 		return err
 	}
@@ -508,7 +526,7 @@ func enrichNewAPI(s *Server, ctx context.Context, v Selection, p Provider, c Pro
 	if len(ids) == 1 {
 		pat = ids[0]
 	}
-	q := NewApiQuery{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: pat, ModelID: v.ModelID, Hours: 168}
+	q := NewApiQuery{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: pat, ModelID: v.ModelID, Hours: 168, Origin: p.BaseURL}
 	partial := false
 	for _, path := range []string{"/api/pricing", "/api/perf-metrics/summary", "/api/perf-metrics", "/api/notice"} {
 		result, err := s.newApiRead(ctx, q, path)

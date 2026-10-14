@@ -9,6 +9,7 @@ import (
 )
 
 type Provider struct {
+	CredentialMode    string          `json:"-"`
 	CredentialVersion int             `json:"-"`
 	AuthFields        []AuthField     `json:"-"`
 	ID                string          `json:"id"`
@@ -24,6 +25,8 @@ type Account struct {
 	Label      string `json:"label"`
 }
 type Credential struct {
+	BaseURL    string      `json:"base_url,omitempty"`
+	AuthMode   string      `json:"auth_mode,omitempty"`
 	AuthFields []AuthField `json:"auth_fields,omitempty"`
 	ID         string      `json:"id"`
 	ProviderID string      `json:"provider_id"`
@@ -158,7 +161,7 @@ func (s *Server) addAccount(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, a)
 }
 func (s *Server) listCredentials(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT c.id,c.provider_id,c.account_id,c.label,c.enabled,c.role,COALESCE(x.group_id,''),COALESCE(x.note,''),COALESCE(x.priority,0) FROM credentials c LEFT JOIN credential_context x ON x.provider_id=c.provider_id AND x.account_id=c.account_id AND x.credential_id=c.id ORDER BY c.provider_id,c.account_id,c.id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT c.id,c.provider_id,c.account_id,c.label,c.enabled,c.role,COALESCE(x.group_id,''),COALESCE(x.note,''),COALESCE(x.priority,0),COALESCE(o.base_url,p.base_url),COALESCE(o.auth_mode,'') FROM credentials c JOIN providers p ON p.id=c.provider_id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id LEFT JOIN credential_context x ON x.provider_id=c.provider_id AND x.account_id=c.account_id AND x.credential_id=c.id ORDER BY c.provider_id,c.account_id,c.id")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -168,7 +171,7 @@ func (s *Server) listCredentials(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var v Credential
 		var enabled int
-		if rows.Scan(&v.ID, &v.ProviderID, &v.AccountID, &v.Label, &enabled, &v.Role, &v.Group, &v.Note, &v.Priority) == nil {
+		if rows.Scan(&v.ID, &v.ProviderID, &v.AccountID, &v.Label, &enabled, &v.Role, &v.Group, &v.Note, &v.Priority, &v.BaseURL, &v.AuthMode) == nil {
 			v.Enabled = enabled == 1
 			a = append(a, v)
 		}
@@ -193,6 +196,16 @@ func (s *Server) addCredential(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := s.config(r.Context(), p)
+	if v.BaseURL == "" {
+		v.BaseURL = p.BaseURL
+	}
+	if !validateHTTPS(v.BaseURL) || !oneOf(v.AuthMode, "", "NONE", "BEARER", "API_KEY", "CUSTOM_HEADER") {
+		http.Error(w, "valid credential origin and auth mode required", 400)
+		return
+	}
+	if v.AuthMode != "" {
+		c.AuthMode = v.AuthMode
+	}
 	enc := ""
 	if c.AuthMode != "NONE" || v.Role == "ACCOUNT_PAT" {
 		if v.Secret == "" && !(c.AuthMode == "CUSTOM_HEADER" && len(v.AuthFields) > 0 && v.Role == "INFERENCE") {
@@ -235,6 +248,10 @@ func (s *Server) addCredential(w http.ResponseWriter, r *http.Request) {
 	}
 	if _, err = tx.ExecContext(r.Context(), "INSERT INTO credential_auth_fields VALUES(?,?,?,?)", v.ProviderID, v.AccountID, v.ID, fields); err != nil {
 		http.Error(w, "database error", 500)
+		return
+	}
+	if insertCredentialOrigin(r.Context(), tx, v.ProviderID, v.AccountID, v.ID, v.BaseURL, v.AuthMode) != nil {
+		http.Error(w, "credential origin invalid", 400)
 		return
 	}
 	if tx.Commit() != nil {
@@ -450,7 +467,7 @@ func (s *Server) addMyModel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "inference credential required", 422)
 		return
 	}
-	if bindEndpoint(tx, p, cfg, v.Endpoint) != nil {
+	if bindSelection(r.Context(), tx, p, cfg, v) != nil {
 		http.Error(w, "endpoint profile invalid", 422)
 		return
 	}
@@ -515,7 +532,7 @@ func (s *Server) endpointAuth(ctx context.Context, provider, account, credential
 	var p Provider
 	var enc, fields string
 	var enabled int
-	err := s.Store.DB.QueryRowContext(ctx, "SELECT p.id,p.name,p.base_url,p.description,p.auth_mode,c.encrypted_key,c.enabled,COALESCE(f.fields_json,''),(SELECT COALESCE(MAX(v.version),0) FROM credential_secret_versions v WHERE v.provider_id=c.provider_id AND v.account_id=c.account_id AND v.credential_id=c.id) FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id LEFT JOIN credential_auth_fields f ON f.provider_id=c.provider_id AND f.account_id=c.account_id AND f.credential_id=c.id WHERE p.id=? AND a.id=? AND c.id=? AND c.role='INFERENCE'", provider, account, credential).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode, &enc, &enabled, &fields, &p.CredentialVersion)
+	err := s.Store.DB.QueryRowContext(ctx, "SELECT p.id,p.name,COALESCE(o.base_url,p.base_url),p.description,p.auth_mode,c.encrypted_key,c.enabled,COALESCE(f.fields_json,''),(SELECT COALESCE(MAX(v.version),0) FROM credential_secret_versions v WHERE v.provider_id=c.provider_id AND v.account_id=c.account_id AND v.credential_id=c.id),COALESCE(o.auth_mode,'') FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id LEFT JOIN credential_auth_fields f ON f.provider_id=c.provider_id AND f.account_id=c.account_id AND f.credential_id=c.id WHERE p.id=? AND a.id=? AND c.id=? AND c.role='INFERENCE'", provider, account, credential).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode, &enc, &enabled, &fields, &p.CredentialVersion, &p.CredentialMode)
 	if err != nil || enabled != 1 || !validateHTTPS(p.BaseURL) {
 		return Provider{}, "", sql.ErrNoRows
 	}

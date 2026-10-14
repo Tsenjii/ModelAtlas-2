@@ -75,8 +75,20 @@ func (s *Server) addEndpoint(w http.ResponseWriter, r *http.Request) {
 	base, _ := url.Parse(p.BaseURL)
 	target, _ := url.Parse(v.URL)
 	if !strings.EqualFold(base.Host, target.Host) {
-		http.Error(w, "endpoint must match this credential origin", 422)
-		return
+		rows, e := s.Store.DB.QueryContext(r.Context(), "SELECT base_url FROM credential_origins WHERE provider_id=?", p.ID)
+		allowed := false
+		if e == nil {
+			for rows.Next() {
+				var origin string
+				rows.Scan(&origin)
+				allowed = allowed || sameOrigin(origin, v.URL)
+			}
+			rows.Close()
+		}
+		if !allowed {
+			http.Error(w, "endpoint requires an explicitly bound credential origin", 422)
+			return
+		}
 	}
 	if _, err = s.Store.DB.ExecContext(r.Context(), "INSERT INTO endpoint_profiles VALUES(?,?,?,?)", v.ProviderID, v.ID, v.Operation, v.URL); err != nil {
 		http.Error(w, "immutable endpoint profile exists", 409)
@@ -85,7 +97,7 @@ func (s *Server) addEndpoint(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, v)
 }
 func (s *Server) listEndpoints(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,id,operation,url FROM endpoint_profiles ORDER BY provider_id,id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,id,operation,url FROM endpoint_profiles UNION SELECT provider_id,endpoint_id,operation,url FROM endpoint_bindings ORDER BY provider_id,id")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
