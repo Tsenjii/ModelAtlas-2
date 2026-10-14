@@ -59,7 +59,7 @@ async function sendMedia(e){
 }
 async function stopRequest(){const request_id=mediaRequestID,session_id=$("session").value;controller?.abort();try{await submit("/infer/cancel",request_id?{request_id}:{session_id});}catch(e){if(!e.message.includes("no active"))notice(e.message,true);}}
 function bindMedia(){
- $("media-form").addEventListener("submit",sendMedia);$("media-stop").addEventListener("click",stopRequest);$("media-clear").addEventListener("click",()=>{resetMediaDraft();notice("已清除本頁結果");});
+ $("media-form").addEventListener("submit",sendMedia);$("media-stop").addEventListener("click",stopRequest);$("media-clear").addEventListener("click",()=>{clearMediaResult();notice("已清除本頁結果");});
  $("media-file").addEventListener("change",async e=>{const file=e.target.files[0],version=++fileReadVersion;e.target.value="";if(!file)return;try{const attachment=await readAttachment(selectedOperation()==="AUDIO"?"audio":"image",file);if(version!==fileReadVersion||busy)return;mediaAttachment=attachment;$("media-input-name").textContent=attachment.filename;}catch(e){notice(e.message,true);}});
  window.addEventListener("pagehide",()=>{controller?.abort();clearMediaResult();});
 }
