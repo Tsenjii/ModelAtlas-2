@@ -103,3 +103,6 @@ Playground `29eff56b7a860ff8b7f96f9f62e219339866a485`：[VPS run 38550451082](ht
 - 本片本機 Go race／TLS／budget／pause socket／restart／AA top4 更新／expiry／人工 evidence review 已通過；Browser 增加來源 → runner → 灰區 → 判讀 → verified／run report／375px 200% 的真入口。新候選 CI 仍待驗證。完整 Reflection 與 LLM Assistant 在後續片，不以本片升格。
 
 研究 API 依據（2026-10-14 查證）：[AA 新文件](https://artificialanalysis.ai/data-api/docs)、[Brave Web Search POST](https://api-dashboard.search.brave.com/api-reference/web/search/post)。兩個 integration key 只在 Settings 的 password 欄輸入；安全層加密後使用。
+
+
+Research Browser 首輪 `e07a377` 發現候選／run 並行讀取的中間狀態；已改 `research_dashboard.go` 單一 read transaction，避免完成的 run 配到尚未判讀的候選。第二輪 `dfc6004` 的畫面已正確更新，但測試在 dialog 關閉後、資料刷新完成前就讀卡片；新增等待實際「研究判讀已保存」完成狀態，保留最終 VERIFIED 斷言，不降低預期。新 SHA 必須重新六項 gate。
