@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 15
+const schemaVersion = 16
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -152,6 +152,11 @@ func migrate(db *sql.DB) error {
  CREATE INDEX requests_session ON request_context(session_id,sample_id);
  CREATE TABLE message_requests(message_id TEXT PRIMARY KEY REFERENCES messages(id),sample_id TEXT NOT NULL REFERENCES telemetry(id));
  PRAGMA user_version=15;`); err != nil {
+			return err
+		}
+	}
+	if version < 16 {
+		if _, err = tx.Exec(`CREATE INDEX IF NOT EXISTS messages_sequence ON messages(session_id); PRAGMA user_version=16;`); err != nil {
 			return err
 		}
 	}

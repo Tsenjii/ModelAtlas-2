@@ -129,4 +129,4 @@ Playground「對話紀錄」可全文搜尋、置頂、命名、封存／恢復�
 
 訊息「請求詳情」與「請求紀錄」顯示當次用量、費率／額度快照與篩選／NDJSON匯出。手動重試最後失敗請求不會重複新增使用者訊息；歷次HTTP仍各有telemetry。Models「手動價格」未勾明確確認時只是manual quote，Catalog zero也只是nominal；不等於Key免費。所有estimate與Provider-reported charge清楚分开。
 
-最新資源驗證目標依使用者要求為服務≤512MiB，≤1GiB可接受；standalone test加入4路31MiB histories及完整export，具體成功數值見PR #20最新checks／footprint artifact。預設仍192MiB soft Go limit、4 flights，保留全功能／原始歷史；OS和反向代理另計。Schema15不供較舊binary直接開啟，更新前一致備份SQLite及獨立master key。
+最新資源驗證目標依使用者要求為服務≤512MiB，≤1GiB可接受；standalone test加入4路31MiB histories及完整export，具體成功數值見PR #20最新checks／footprint artifact。預設仍192MiB soft Go limit、4 flights，保留全功能／原始歷史；OS和反向代理另計。Schema16不供較舊binary直接開啟，更新前一致備份SQLite及獨立master key。

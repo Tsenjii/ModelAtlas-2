@@ -245,7 +245,8 @@ func (s *Server) exportSession(w http.ResponseWriter, r *http.Request) {
 	}
 	defer s.endFlight(flight)
 	var messageCount int
-	if s.Store.DB.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM messages WHERE session_id=?", id).Scan(&messageCount) != nil {
+	var watermark int64
+	if s.Store.DB.QueryRowContext(r.Context(), "SELECT COUNT(*),COALESCE(MAX(rowid),0) FROM messages WHERE session_id=?", id).Scan(&messageCount, &watermark) != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
@@ -280,9 +281,11 @@ func (s *Server) exportSession(w http.ResponseWriter, r *http.Request) {
 		write(strings.TrimSuffix(string(clean), "}") + `,"messages":[`)
 	}
 	first := true
+	var cursor *int64
 	for offset := 0; offset < messageCount; offset += 4 {
 		pageSize := min(4, messageCount-offset)
-		page, e := s.historyPage(r.Context(), id, pageSize, offset, false)
+		page, next, e := s.historyExportPage(r.Context(), id, cursor, watermark)
+		cursor = &next
 		if e != nil || len(page) != pageSize {
 			panic(http.ErrAbortHandler)
 		}
