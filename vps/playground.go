@@ -40,7 +40,7 @@ func newID() string {
 	return hex.EncodeToString(v[:])
 }
 func (s *Server) listSessions(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at FROM sessions ORDER BY rowid DESC LIMIT 500")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at FROM sessions s WHERE NOT EXISTS(SELECT 1 FROM assistant_threads t WHERE t.session_id=s.id) ORDER BY s.rowid DESC LIMIT 500")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

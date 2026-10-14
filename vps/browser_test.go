@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -21,7 +22,12 @@ func TestBrowserProductionWorkflow(t *testing.T) {
 	encoded := testPNG(t)
 	var mediaCalls atomic.Int32
 	var blockedMediaStarted atomic.Bool
+	var requestMu sync.Mutex
+	requests := map[string]int{}
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestMu.Lock()
+		requests[r.URL.Path]++
+		requestMu.Unlock()
 		switch r.URL.Path {
 		case "/api/status":
 			w.Write([]byte(`{"success":true,"data":{"version":"v1.0.0-rc.25"}}`))
@@ -133,7 +139,9 @@ func TestBrowserProductionWorkflow(t *testing.T) {
 		t.Fatalf("browser workflow failed: %v\n%s", err, output)
 	}
 	if mediaCalls.Load() != 10 {
-		t.Fatalf("browser media flow made %d upstream calls, expected 10", mediaCalls.Load())
+		requestMu.Lock()
+		defer requestMu.Unlock()
+		t.Fatalf("browser media flow made %d upstream calls, expected 10; paths=%v; browser=%s", mediaCalls.Load(), requests, output)
 	}
 	t.Log(string(output))
 }
