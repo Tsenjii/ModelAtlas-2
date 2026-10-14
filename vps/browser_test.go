@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -26,14 +27,35 @@ func TestBrowserProductionWorkflow(t *testing.T) {
 			w.Write([]byte(`{"data":[{"id":"m"},{"id":"catalog-only"}]}`))
 		case "/v1/chat/completions":
 			var body struct {
-				Messages []any `json:"messages"`
+				Messages []map[string]any `json:"messages"`
+				Tools    []ToolDefinition `json:"tools"`
 			}
 			json.NewDecoder(r.Body).Decode(&body)
+			if len(body.Tools) > 0 {
+				w.Header().Set("Content-Type", "text/event-stream")
+				if body.Messages[len(body.Messages)-1]["role"] == "tool" {
+					w.Write([]byte("data: {\"choices\":[{\"delta\":{\"content\":\"Tool continued\"}}]}\n\n"))
+				} else {
+					w.Write([]byte("data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"browser-call\",\"type\":\"function\",\"function\":{\"name\":\"weather\",\"arguments\":\"{}\"}}]}}]}\n\n"))
+				}
+				w.Write([]byte("data: [DONE]\n\n"))
+				return
+			}
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.Write([]byte("data: {\"choices\":[{\"delta\":{\"content\":\"Browser reply\"}}]}\n\n"))
 			w.(http.Flusher).Flush()
 			time.Sleep(50 * time.Millisecond)
 			w.Write([]byte("data: [DONE]\n\n"))
+		case "/v1/audio/speech":
+			mediaCalls.Add(1)
+			w.Header().Set("Content-Type", "audio/wav")
+			w.Write(validTestWAV())
+		case "/v1/embeddings":
+			mediaCalls.Add(1)
+			json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"index": 0, "embedding": []float64{0.2, 0.4}}}})
+		case "/v1/rerank":
+			mediaCalls.Add(1)
+			json.NewEncoder(w).Encode(map[string]any{"results": []any{map[string]any{"index": 0, "relevance_score": 0.8}}})
 		case "/v1/images/generations":
 			mediaCalls.Add(1)
 			var body map[string]any
@@ -103,13 +125,13 @@ func TestBrowserProductionWorkflow(t *testing.T) {
 	}))
 	defer app.Close()
 	cmd := exec.Command("node", "e2e/browser.cjs", app.URL, up.URL+"/v1")
-	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token, "MODELATLAS_TEST_PNG="+encoded)
+	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token, "MODELATLAS_TEST_PNG="+encoded, "MODELATLAS_TEST_WAV="+base64.StdEncoding.EncodeToString(validTestWAV()))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("browser workflow failed: %v\n%s", err, output)
 	}
-	if mediaCalls.Load() != 7 {
-		t.Fatalf("browser media flow made %d upstream calls, expected 7", mediaCalls.Load())
+	if mediaCalls.Load() != 10 {
+		t.Fatalf("browser media flow made %d upstream calls, expected 10", mediaCalls.Load())
 	}
 	t.Log(string(output))
 }

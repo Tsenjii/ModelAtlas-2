@@ -80,3 +80,11 @@
 - Browser 最終 artifact `11875811832`／SHA256 `b65041539532db6018fbe94ae43f1d527731ef92f41948bd503aac247ea32c7e`；已檢查圖片、轉寫、375／1024px、深淺色及 200% 大字畫面。
 - 本次末尾提交僅補驗收與交接文件；新 doc HEAD 的完整六項 CI 結果仍以 PR #20 最新 body／GitHub checks 為準，不把 code 基線誤寫成任意較新 HEAD 的結果。
 - 下一個 VPS 功能切片：音訊輸出或 tools 互動 UI，依單片新增真 caller／UI／測試後驗收；Android 全體 PLAY-004、完整 P8/P9/P10 仍未 ACCEPTED。VPS 獨立分支維護，無使用者主機遠端部署證據。
+
+## 完整 V1 授權與 Playground 續片
+
+2026-10-14 使用者擴大範圍至全部完成，允許超過 Android；資源最佳化不可刪掉功能。完整清單見 `V1_COMPLETION.md`。
+
+本片新增：四種對話 protocol 的真 HTTP request / stream parser、multi-round tool calls / durable result / exact capability、語音生成六種格式與播放／下載、embedding 與 rerank caller/UI。共用四 flight / cancel / telemetry；非串流 TTFT=null；未知 usage 不填 0。原始音訊／向量結果不存 DB。新 protocol 以 native terminator 判截斷，Gemini 模型 URL 在 immutable binding 後替換；Anthropic thinking signature / Gemini thoughtSignature 與工具歷史保留。
+
+本機 Go race、TLS HTTP、工具接續、音訊／向量 guard 與 JS syntax 已驗。真 Browser 新增語音檔 bytes 回讀、向量／rerank、工具結果接續。最新 SHA CI 尚需重新完成，不借之前的綠燈。P8/P9/P10 正在後續片實作，不能用本片升格。

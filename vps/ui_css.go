@@ -1,6 +1,7 @@
 package main
 
 const appCSS = `
+audio{width:100%;max-width:100%;margin-block:1rem}
 :root{color-scheme:light dark;--primary:#087e79;--accent:#ccf3ea;--bg:#f6fbfa;--card:#ffffff;--ink:#173633;--muted:#52746f;--border:#cde4dd;--shadow:0 10px 32px #0e514018;font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;font-size:16px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);line-height:1.5}button,input,select,textarea{font:inherit}
 button{min-height:48px;padding:.65rem 1rem;border:0;border-radius:14px;background:var(--primary);color:white;font-weight:700;cursor:pointer}

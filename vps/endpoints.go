@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -29,7 +30,7 @@ func (s *Server) requestEndpoint(ctx context.Context, p Provider, c ProviderConf
 	var raw string
 	err := s.Store.DB.QueryRowContext(ctx, "SELECT url FROM endpoint_bindings WHERE provider_id=? AND endpoint_id=?", p.ID, id).Scan(&raw)
 	if err == nil {
-		return raw, nil
+		return modelEndpoint(raw, model)
 	}
 	if _, ok := endpointNames[id]; ok {
 		return endpointURL(p, c, id, model)
@@ -38,14 +39,14 @@ func (s *Server) requestEndpoint(ctx context.Context, p Provider, c ProviderConf
 	if err != nil {
 		return "", err
 	}
-	return raw, nil
+	return modelEndpoint(raw, model)
 }
 func bindEndpoint(tx *sql.Tx, p Provider, c ProviderConfig, id string) error {
 	var raw, op string
 	if _, ok := endpointNames[id]; ok {
 		op = id
 		var err error
-		raw, err = endpointURL(p, c, id, "")
+		raw, err = endpointURL(p, c, id, "{model}")
 		if err != nil {
 			return err
 		}
@@ -136,4 +137,17 @@ func backfillEndpointBindings(db *sql.DB) error {
 		}
 	}
 	return nil
+}
+
+// Model substitution occurs after immutable origin/path binding. IDs cannot add
+// path segments, a query, or change the credential origin.
+func modelEndpoint(raw, model string) (string, error) {
+	if strings.Contains(raw, "%7Bmodel%7D") || strings.Contains(raw, "{model}") {
+		model = strings.TrimPrefix(model, "models/")
+		if model == "" || strings.ContainsAny(model, "/?#\\") || model == "." || model == ".." {
+			return "", errors.New("invalid native model id")
+		}
+		raw = strings.ReplaceAll(strings.ReplaceAll(raw, "%7Bmodel%7D", url.PathEscape(model)), "{model}", url.PathEscape(model))
+	}
+	return raw, nil
 }

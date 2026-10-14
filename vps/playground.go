@@ -29,6 +29,7 @@ type Message struct {
 	Content     string       `json:"content"`
 	Attachments []Attachment `json:"attachments,omitempty"`
 	CreatedAt   int64        `json:"created_at"`
+	MessageState
 }
 
 func newID() string {
@@ -80,7 +81,7 @@ func (s *Server) addSession(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, x)
 }
 func (s *Server) history(ctx context.Context, id string) ([]Message, error) {
-	rows, err := s.Store.DB.QueryContext(ctx, "SELECT id,session_id,role,content,media_metadata,created_at FROM messages WHERE session_id=? ORDER BY rowid", id)
+	rows, err := s.Store.DB.QueryContext(ctx, "SELECT id,session_id,role,content,media_metadata,created_at,structured_json FROM messages WHERE session_id=? ORDER BY rowid", id)
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +89,11 @@ func (s *Server) history(ctx context.Context, id string) ([]Message, error) {
 	out := []Message{}
 	for rows.Next() {
 		var x Message
-		var raw string
-		if err = rows.Scan(&x.ID, &x.SessionID, &x.Role, &x.Content, &raw, &x.CreatedAt); err != nil {
+		var raw, structured string
+		if err = rows.Scan(&x.ID, &x.SessionID, &x.Role, &x.Content, &raw, &x.CreatedAt, &structured); err != nil {
 			return nil, err
 		}
-		if json.Unmarshal([]byte(raw), &x.Attachments) != nil {
+		if json.Unmarshal([]byte(raw), &x.Attachments) != nil || json.Unmarshal([]byte(structured), &x.MessageState) != nil {
 			return nil, errors.New("invalid history")
 		}
 		out = append(out, x)
@@ -119,20 +120,24 @@ func (s *Server) listMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 type inferRequest struct {
-	SessionID   string       `json:"session_id"`
-	Prompt      string       `json:"prompt"`
-	Attachments []Attachment `json:"attachments,omitempty"`
-	MaxTokens   int          `json:"max_tokens,omitempty"`
-	Streaming   *bool        `json:"streaming,omitempty"`
+	SessionID   string           `json:"session_id"`
+	Prompt      string           `json:"prompt"`
+	Attachments []Attachment     `json:"attachments,omitempty"`
+	MaxTokens   int              `json:"max_tokens,omitempty"`
+	Streaming   *bool            `json:"streaming,omitempty"`
+	Tools       []ToolDefinition `json:"tools,omitempty"`
+	ToolResults []ToolResult     `json:"tool_results,omitempty"`
 }
 type chatMessage struct {
 	Role    string `json:"role"`
 	Content any    `json:"content"`
+	MessageState
 }
 type InferenceResult struct {
 	Outcome   string         `json:"outcome"`
 	Text      string         `json:"text"`
 	Reasoning string         `json:"reasoning,omitempty"`
+	ToolCalls []ToolCall     `json:"tool_calls,omitempty"`
 	Scope     Selection      `json:"selection"`
 	Status    int            `json:"http_status,omitempty"`
 	Details   map[string]any `json:"details"`
@@ -143,12 +148,14 @@ type wireChunk struct {
 	Choices []struct {
 		Index int `json:"index"`
 		Delta struct {
-			Content   string `json:"content"`
-			Reasoning string `json:"reasoning_content"`
+			Content   string     `json:"content"`
+			Reasoning string     `json:"reasoning_content"`
+			ToolCalls []ToolCall `json:"tool_calls,omitempty"`
 		} `json:"delta"`
 		Message struct {
-			Content   string `json:"content"`
-			Reasoning string `json:"reasoning_content"`
+			Content   string     `json:"content"`
+			Reasoning string     `json:"reasoning_content"`
+			ToolCalls []ToolCall `json:"tool_calls,omitempty"`
 		} `json:"message"`
 		FinishReason *string `json:"finish_reason"`
 	} `json:"choices"`
@@ -227,7 +234,10 @@ func (s *Server) infer(w http.ResponseWriter, r *http.Request) {
 func (s *Server) execute(parent context.Context, v inferRequest, source string, emit func(string, any) error) (result InferenceResult, code int) {
 	result = InferenceResult{Outcome: "INVALID_REQUEST", Details: map[string]any{}}
 	v.Prompt = strings.TrimSpace(v.Prompt)
-	if !validID(v.SessionID) || v.Prompt == "" || len(v.Prompt) > 32000 || len(v.Attachments) > 3 || v.MaxTokens < 0 || v.MaxTokens > 32768 {
+	if v.Prompt == "" && len(v.Attachments) > 0 {
+		return result, 400
+	}
+	if !validID(v.SessionID) || (v.Prompt == "" && len(v.ToolResults) == 0) || len(v.Prompt) > 32000 || len(v.Attachments) > 3 || v.MaxTokens < 0 || v.MaxTokens > 32768 {
 		return result, 400
 	}
 	seen := map[string]bool{}
@@ -254,7 +264,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		return result, 422
 	}
 	operation := s.operation(ctx, scope)
-	if operation != "CHAT_COMPLETIONS" {
+	if !conversationOperation(operation) {
 		result.Outcome = "TRANSPORT_UNSUPPORTED"
 		return result, 422
 	}
@@ -274,10 +284,28 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		result.Outcome = "HISTORY_READ"
 		return result, 500
 	}
-	messages := []chatMessage{}
 	caps := s.capabilities(ctx, scope)
+	tools, err := s.sessionTools(ctx, v.SessionID, v.Tools)
+	if err != nil {
+		result.Outcome = "INVALID_TOOLS"
+		return result, 400
+	}
+	turns, err := toolContinuation(history, v)
+	if err != nil {
+		result.Outcome = "TOOL_RESULTS_REQUIRED_OR_INVALID"
+		return result, 422
+	}
+	needsTools := len(tools) > 0
+	for _, turn := range turns {
+		needsTools = needsTools || len(turn.ToolCalls) > 0 || turn.Role == "tool"
+	}
+	if needsTools && !oneOf("TOOL_CALLING", caps...) && !oneOf("FUNCTION_CALLING", caps...) {
+		result.Outcome = "CAPABILITY_REQUIRED_TOOL_CALLING"
+		return result, 422
+	}
+	messages := []chatMessage{}
 	total := 0
-	for _, turn := range append(history, Message{Role: "user", Content: v.Prompt, Attachments: v.Attachments}) {
+	for _, turn := range turns {
 		attachments := turn.Attachments
 		if len(attachments) > 0 && turn.ID != "" {
 			attachments = s.mediaFor(turn.ID)
@@ -296,7 +324,8 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			}
 			total += len(a.Data)
 		}
-		total += len(turn.Content)
+		stateBytes, _ := json.Marshal(turn.MessageState)
+		total += len(turn.Content) + len(stateBytes)
 		if total > 32<<20 {
 			result.Outcome = "CONVERSATION_LIMIT_START_NEW_CONVERSATION"
 			return result, 413
@@ -309,7 +338,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			}
 			content = parts
 		}
-		messages = append(messages, chatMessage{Role: turn.Role, Content: content})
+		messages = append(messages, chatMessage{Role: turn.Role, Content: content, MessageState: turn.MessageState})
 	}
 	provider, key, err := s.endpointAuth(ctx, scope.ProviderID, scope.AccountID, scope.CredentialID)
 	if err != nil {
@@ -330,17 +359,28 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		return result, 422
 	}
 	stream := v.Streaming == nil || *v.Streaming
-	payload := map[string]any{"model": scope.ModelID, "stream": stream, "max_tokens": v.MaxTokens, "messages": messages}
-	if stream {
-		payload["stream_options"] = map[string]bool{"include_usage": true}
+	payload, err := protocolPayload(operation, scope.ModelID, v.MaxTokens, stream, messages, tools)
+	if err != nil {
+		result.Outcome = "PROTOCOL_INPUT_UNSUPPORTED"
+		return result, 422
+	}
+	if operation == "GEMINI_NATIVE" {
+		endpoint = geminiEndpoint(endpoint, stream)
 	}
 	body, _ := json.Marshal(payload)
+	if len(body) > 32<<20 {
+		result.Outcome = "CONVERSATION_LIMIT_START_NEW_CONVERSATION"
+		return result, 413
+	}
 	upstream, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(body))
 	if err != nil {
 		return result, 422
 	}
 	upstream.Header.Set("Content-Type", "application/json")
 	upstream.Header.Set("Accept", "text/event-stream")
+	if operation == "ANTHROPIC_MESSAGES" && upstream.Header.Get("anthropic-version") == "" {
+		upstream.Header.Set("anthropic-version", "2023-06-01")
+	}
 	if err = s.authorizeUpstream(upstream, provider, key, cfg); err != nil {
 		return result, 422
 	}
@@ -349,10 +389,25 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		result.Outcome = "ATTACHMENT_MEMORY_LIMIT"
 		return result, 413
 	}
-	media, _ := json.Marshal(metadataOnly(v.Attachments))
-	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO messages(id,session_id,role,content,media_metadata,created_at) VALUES(?,?,?,?,?,?)", userID, v.SessionID, "user", v.Prompt, string(media), now()); err != nil {
-		result.Outcome = "HISTORY_SAVE"
-		return result, 500
+	for _, secret := range secrets {
+		if secret != "" && jsonContainsSecret(payload, secret) {
+			result.Outcome = "SECRET_IN_REQUEST_CONTENT"
+			return result, 422
+		}
+	}
+	if v.Tools != nil {
+		if err = s.saveSessionTools(ctx, v.SessionID, tools); err != nil {
+			return result, 500
+		}
+	}
+	for _, turn := range turns[len(history):] {
+		if turn.Role == "user" {
+			turn.ID = userID
+		}
+		if err = s.saveMessage(ctx, v.SessionID, turn); err != nil {
+			result.Outcome = "HISTORY_SAVE"
+			return result, 500
+		}
 	}
 	started := time.Now()
 	sampleID := newID()
@@ -365,6 +420,8 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	var ttfb, ttft, lastGenerated *int64
 	var inputs, outputs *int64
 	var text, reasoning strings.Builder
+	calls := map[int]*ToolCall{}
+	var protocolState json.RawMessage
 	defer func() {
 		if ctx.Err() != nil {
 			if parent.Err() == context.Canceled || ctx.Err() == context.Canceled {
@@ -374,7 +431,21 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			}
 		}
 		result.Text = text.String()
+		for _, secret := range secrets {
+			if secret != "" && (strings.Contains(text.String()+reasoning.String(), secret)) {
+				result.Text = ""
+				result.Reasoning = ""
+				result.Outcome = "SECRET_IN_RESPONSE"
+				text.Reset()
+				reasoning.Reset()
+				calls = map[int]*ToolCall{}
+			}
+		}
 		result.Reasoning = reasoning.String()
+		result.ToolCalls = nil
+		if result.Outcome == "SUCCESS" {
+			result.ToolCalls = orderedCalls(calls)
+		}
 		latency := time.Since(started).Milliseconds()
 		result.Details["latency_ms"] = latency
 		result.Details["retry_count"] = 0
@@ -435,6 +506,8 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		cancel()
 		return result, 0
 	}
+	textGuard := streamGuard{secrets: secrets, emit: func(v string) error { return emit("delta", map[string]string{"text": v}) }}
+	thinkGuard := streamGuard{secrets: secrets, emit: func(v string) error { return emit("reasoning", map[string]string{"text": v}) }}
 	consume := func(raw []byte) error {
 		var chunk wireChunk
 		if json.Unmarshal(raw, &chunk) != nil || len(chunk.Error) > 0 && string(chunk.Error) != "null" {
@@ -448,6 +521,35 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 				continue
 			}
 			content, think := choice.Delta.Content, choice.Delta.Reasoning
+			deltas := choice.Delta.ToolCalls
+			if !stream {
+				deltas = choice.Message.ToolCalls
+			}
+			for _, delta := range deltas {
+				call := calls[delta.Index]
+				if call == nil {
+					if len(calls) >= 16 || delta.Index < 0 || delta.Index > 63 {
+						return errors.New("tool limit")
+					}
+					call = &ToolCall{Index: delta.Index, Type: "function"}
+					calls[delta.Index] = call
+				}
+				if delta.Function.Arguments != "" && stream {
+					n := time.Since(started).Milliseconds()
+					lastGenerated = &n
+					if ttft == nil {
+						ttft = &n
+					}
+				}
+				if delta.ID != "" {
+					call.ID = delta.ID
+				}
+				call.Function.Name += delta.Function.Name
+				call.Function.Arguments += delta.Function.Arguments
+				if len(call.Function.Arguments) > 32000 || len(call.Function.Name) > 64 {
+					return errors.New("tool arguments limit")
+				}
+			}
 			if !stream {
 				content, think = choice.Message.Content, choice.Message.Reasoning
 			}
@@ -463,13 +565,13 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			}
 			if content != "" {
 				text.WriteString(content)
-				if err := emit("delta", map[string]string{"text": content}); err != nil {
+				if err := textGuard.write(content); err != nil {
 					return err
 				}
 			}
 			if think != "" {
 				reasoning.WriteString(think)
-				if err := emit("reasoning", map[string]string{"text": think}); err != nil {
+				if err := thinkGuard.write(think); err != nil {
 					return err
 				}
 			}
@@ -491,28 +593,59 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		}
 		return nil
 	}
-	if !stream {
-		raw, err := readBounded(resp.Body, 1<<20)
-		if err != nil || consume(raw) != nil {
-			result.Outcome = "PARSER"
-			return result, 0
+	if operation == "CHAT_COMPLETIONS" {
+		if !stream {
+			raw, e := readBounded(resp.Body, 1<<20)
+			if e != nil {
+				err = e
+			} else {
+				err = consume(raw)
+			}
+		} else {
+			err = readSSE(resp.Body, consume)
 		}
 	} else {
-		err = readSSE(resp.Body, consume)
-		if err != nil {
-			result.Outcome = "PARSER"
-			if err == io.ErrUnexpectedEOF {
-				_ = emit("error", map[string]string{"category": "TRUNCATED_STREAM"})
-			}
+		err = readProtocol(resp.Body, operation, stream, consume, func(raw json.RawMessage) { protocolState = raw })
+	}
+	if err != nil {
+		result.Outcome = "PARSER"
+		if err == io.ErrUnexpectedEOF {
+			_ = emit("error", map[string]string{"category": "TRUNCATED_STREAM"})
+		}
+		return result, 0
+	}
+	completedCalls := orderedCalls(calls)
+	if !validCalls(completedCalls, tools) {
+		result.Outcome = "INVALID_TOOL_CALL"
+		return result, 0
+	}
+	generated, _ := json.Marshal(Message{Content: text.String() + reasoning.String(), MessageState: MessageState{ToolCalls: completedCalls, ProtocolState: protocolState}})
+	for _, secret := range secrets {
+		if secret != "" && bytes.Contains(generated, []byte(secret)) {
+			result.Outcome = "SECRET_IN_RESPONSE"
 			return result, 0
 		}
+	}
+	if err = textGuard.flush(); err != nil {
+		cancel()
+		return result, 0
+	}
+	if err = thinkGuard.flush(); err != nil {
+		cancel()
+		return result, 0
 	}
 	if ctx.Err() != nil {
 		return result, 0
 	}
-	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)", newID(), v.SessionID, "assistant", text.String(), now()); err != nil {
+	if err = s.saveMessage(ctx, v.SessionID, Message{Role: "assistant", Content: text.String(), MessageState: MessageState{ToolCalls: completedCalls, ProtocolState: protocolState}}); err != nil {
 		result.Outcome = "HISTORY_SAVE"
 		return result, 0
+	}
+	if len(completedCalls) > 0 {
+		if err = emit("tool_calls", completedCalls); err != nil {
+			cancel()
+			return result, 0
+		}
 	}
 	result.Outcome = "SUCCESS"
 	return result, 0

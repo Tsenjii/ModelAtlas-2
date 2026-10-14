@@ -22,16 +22,25 @@ import (
 
 type MediaRequest struct {
 	Selection
-	Prompt    string      `json:"prompt"`
-	Image     *Attachment `json:"image,omitempty"`
-	Audio     *Attachment `json:"audio,omitempty"`
-	Size      string      `json:"size,omitempty"`
-	RequestID string      `json:"request_id,omitempty"`
+	Prompt       string      `json:"prompt"`
+	Image        *Attachment `json:"image,omitempty"`
+	Audio        *Attachment `json:"audio,omitempty"`
+	Size         string      `json:"size,omitempty"`
+	RequestID    string      `json:"request_id,omitempty"`
+	Voice        string      `json:"voice,omitempty"`
+	Format       string      `json:"format,omitempty"`
+	Instructions string      `json:"instructions,omitempty"`
+	Speed        float64     `json:"speed,omitempty"`
+	Inputs       []string    `json:"inputs,omitempty"`
+	Documents    []string    `json:"documents,omitempty"`
+	Dimensions   int         `json:"dimensions,omitempty"`
+	TopN         int         `json:"top_n,omitempty"`
 }
 type mediaWire struct {
 	URL    string `json:"url,omitempty"`
 	Base64 string `json:"b64_json,omitempty"`
 	MIME   string `json:"mime,omitempty"`
+	Format string `json:"format,omitempty"`
 }
 type MediaResponse struct {
 	Outcome   string         `json:"outcome"`
@@ -41,6 +50,8 @@ type MediaResponse struct {
 	Status    int            `json:"http_status,omitempty"`
 	RequestID string         `json:"request_id"`
 	Details   map[string]any `json:"details"`
+	Vectors   []VectorResult `json:"vectors,omitempty"`
+	Rankings  []RerankResult `json:"rankings,omitempty"`
 }
 
 // Media requests share the chat flight budget and cancellation registry, while
@@ -51,12 +62,12 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	operation := s.operation(r.Context(), v.Selection)
-	required := map[string]string{"IMAGES_GENERATION": "IMAGE_GENERATION", "IMAGES_EDIT": "IMAGE_EDITING", "AUDIO": "AUDIO_INPUT"}[operation]
+	required := map[string]string{"IMAGES_GENERATION": "IMAGE_GENERATION", "IMAGES_EDIT": "IMAGE_EDITING", "AUDIO": "AUDIO_INPUT", "AUDIO_SPEECH": "AUDIO_OUTPUT", "EMBEDDINGS": "EMBEDDING", "RERANK": "RERANK"}[operation]
 	if required == "" || !s.validateSelection(r.Context(), v.Selection) || !s.groupBound(r.Context(), v.Selection) || !oneOf(required, s.capabilities(r.Context(), v.Selection)...) {
 		http.Error(w, "selected media capability unavailable", 422)
 		return
 	}
-	if len(v.Prompt) > 32000 || operation != "AUDIO" && strings.TrimSpace(v.Prompt) == "" || v.Size != "" && !oneOf(v.Size, "256x256", "512x512", "1024x1024", "1024x1536", "1536x1024", "auto") || v.RequestID != "" && !validID(v.RequestID) {
+	if len(v.Prompt) > 32000 || !oneOf(operation, "AUDIO", "EMBEDDINGS") && strings.TrimSpace(v.Prompt) == "" || v.Size != "" && !oneOf(v.Size, "256x256", "512x512", "1024x1024", "1024x1536", "1536x1024", "auto") || v.RequestID != "" && !validID(v.RequestID) {
 		http.Error(w, "invalid media parameters", 400)
 		return
 	}
@@ -66,6 +77,24 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	}
 	if operation == "IMAGES_GENERATION" && (v.Image != nil || v.Audio != nil) || operation == "IMAGES_EDIT" && v.Audio != nil || operation == "AUDIO" && v.Image != nil || operation != "IMAGES_GENERATION" && v.Size != "" {
 		http.Error(w, "media inputs do not match this operation", 400)
+		return
+	}
+	if operation == "EMBEDDINGS" || operation == "RERANK" {
+		if !validVectorRequest(v, operation) {
+			http.Error(w, "invalid vector request", 400)
+			return
+		}
+	} else if len(v.Inputs) > 0 || len(v.Documents) > 0 || v.Dimensions != 0 || v.TopN != 0 {
+		http.Error(w, "vector parameters require vector endpoint", 400)
+		return
+	}
+	if operation == "AUDIO_SPEECH" {
+		if v.Image != nil || v.Audio != nil || len(v.Prompt) > 4096 || !toolNamePattern.MatchString(v.Voice) || !oneOf(v.Format, "mp3", "wav", "opus", "flac", "aac", "pcm") || len(v.Instructions) > 4096 || v.Speed != 0 && (v.Speed < 0.25 || v.Speed > 4) {
+			http.Error(w, "invalid speech parameters", 400)
+			return
+		}
+	} else if v.Voice != "" || v.Format != "" || v.Instructions != "" || v.Speed != 0 {
+		http.Error(w, "speech parameters require speech endpoint", 400)
 		return
 	}
 	if v.RequestID == "" {
@@ -102,7 +131,28 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	}
 	body := &bytes.Buffer{}
 	contentType := "application/json"
-	if operation == "IMAGES_GENERATION" {
+	if operation == "EMBEDDINGS" {
+		payload := map[string]any{"model": v.ModelID, "input": v.Inputs, "encoding_format": "float"}
+		if v.Dimensions != 0 {
+			payload["dimensions"] = v.Dimensions
+		}
+		_ = json.NewEncoder(body).Encode(payload)
+	} else if operation == "RERANK" {
+		payload := map[string]any{"model": v.ModelID, "query": v.Prompt, "documents": v.Documents}
+		if v.TopN != 0 {
+			payload["top_n"] = v.TopN
+		}
+		_ = json.NewEncoder(body).Encode(payload)
+	} else if operation == "AUDIO_SPEECH" {
+		payload := map[string]any{"model": v.ModelID, "input": v.Prompt, "voice": v.Voice, "response_format": v.Format}
+		if v.Instructions != "" {
+			payload["instructions"] = v.Instructions
+		}
+		if v.Speed != 0 {
+			payload["speed"] = v.Speed
+		}
+		_ = json.NewEncoder(body).Encode(payload)
+	} else if operation == "IMAGES_GENERATION" {
 		payload := map[string]any{"model": v.ModelID, "prompt": v.Prompt, "n": 1, "response_format": "b64_json"}
 		if v.Size != "" {
 			payload["size"] = v.Size
@@ -182,6 +232,8 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		if result.Outcome != "SUCCESS" {
 			result.Text = ""
 			result.Data = nil
+			result.Vectors = nil
+			result.Rankings = nil
 		}
 		jsonOK(w, responseStatus, result)
 	}()
@@ -203,6 +255,17 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		result.Outcome = "PARSER"
 		return
 	}
+	if operation == "AUDIO_SPEECH" {
+		mediaType := generatedAudioType(raw, v.Format, secrets...)
+		if mediaType == "" {
+			result.Outcome = "PARSER"
+			return
+		}
+		result.Data = []mediaWire{{Base64: base64.StdEncoding.EncodeToString(raw), MIME: mediaType, Format: v.Format}}
+		result.Outcome = "SUCCESS"
+		responseStatus = 200
+		return
+	}
 	var root map[string]json.RawMessage
 	if json.Unmarshal(raw, &root) != nil || root["error"] != nil && string(root["error"]) != "null" {
 		result.Outcome = "PARSER"
@@ -218,7 +281,12 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	if output != nil && *output < 0 {
 		output = nil
 	}
-	if operation == "AUDIO" {
+	if operation == "EMBEDDINGS" || operation == "RERANK" {
+		if !parseVectors(root, v, operation, &result) {
+			result.Outcome = "PARSER"
+			return
+		}
+	} else if operation == "AUDIO" {
 		if json.Unmarshal(root["text"], &result.Text) != nil || !validTranscript(result.Text, secrets) {
 			result.Outcome = "PARSER"
 			return
