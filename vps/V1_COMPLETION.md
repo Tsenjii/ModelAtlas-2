@@ -64,3 +64,5 @@ Reflection 最後 review：terminal run 的暫時 DB/vault save failure 加入 l
 Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97,619,968、peak 162,525,184 bytes（155 MiB），binary 13,439,138；完整保留10萬samples，4 chats／65 Catalog／4 simultaneous 4MiPixels images／4 simultaneous 4MiB audio。Live Kilo `38612880443` 真成功 41.19s、6 inference HTTP＋7 public HTTP、3 candidates/4 evidence/3 SUCCESS tasks；Groq/OpenRouter200，Cerebras307 FAILED線索也保留，不當eligibility。
 
 末尾交付提交含資料與文件、200% decorative mark overflow 修整及 screenshot transition 固定；必須再查此新 HEAD 的六項 gate，不以 code 基線代替文件 HEAD。
+
+交付首輪 `eba1549` VPS test/雙架構成功、既有六個 Browser 成功，新增 Browser 截圖注入 inline style 被原有 CSP 正確拒絕（run 38615340166）；改用 browser context 的原生 `reducedMotion=reduce`，不修改 CSP、不跳過 assertions、不重試本機 Chromium。新 HEAD 六項 gate 重新驗證。
