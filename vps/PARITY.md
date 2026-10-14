@@ -88,3 +88,18 @@
 本片新增：四種對話 protocol 的真 HTTP request / stream parser、multi-round tool calls / durable result / exact capability、語音生成六種格式與播放／下載、embedding 與 rerank caller/UI。共用四 flight / cancel / telemetry；非串流 TTFT=null；未知 usage 不填 0。原始音訊／向量結果不存 DB。新 protocol 以 native terminator 判截斷，Gemini 模型 URL 在 immutable binding 後替換；Anthropic thinking signature / Gemini thoughtSignature 與工具歷史保留。
 
 本機 Go race、TLS HTTP、工具接續、音訊／向量 guard 與 JS syntax 已驗。真 Browser 新增語音檔 bytes 回讀、向量／rerank、工具結果接續。最新 SHA CI 尚需重新完成，不借之前的綠燈。P8/P9/P10 正在後續片實作，不能用本片升格。
+
+
+Playground `29eff56b7a860ff8b7f96f9f62e219339866a485`：[VPS run 38550451082](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38550451082) 四項與 [Android run 38550450921](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38550450921) 兩項同 SHA SUCCESS。新的語音／向量／rerank／工具 Browser 操作全通過，截圖與下載證據已校驗。此結果不借給後續 Research 片。
+
+## Research runner 續片
+
+- Models → 全球免費強模研究 → 保存公開 HTML／JSON 來源 → 開始研究 → 真 durable worker／候選／evidence → 人工判讀／全漏斗／run report。Provider／Catalog 研究不自動加入 My Models。
+- SQLite v7：HTTP 與推論預算分開；每次實際出站嘗試先扣額，失敗／中斷不退回；暫停／取消關閉 socket，重啟 PAUSED／INTERRUPTED，明確恢复才再執行；佇列最多 128 tasks／run。
+- Public fetch 不注入 credential，限制 DNS／private network、HTTPS、redirect、回應大小、深度與跟隨數量。網頁／script 只提供文字與 endpoint pattern evidence，不執行外部程式碼。
+- 8 語系 Brave Search、LMSpeed cached seed hints、現有 Provider 的真 catalog／structured intelligence、可選小型 inference。優先沿用最近真實 telemetry，記下來源／scope／probe version；不宣稱一次 Reply OK 能證明模型身份。
+- AA 使用已查證的新版 `/api/v2/language/models/free`，完整分頁、同一 Intelligence Index version、有效總分排序、24h freshness；榜單部分失敗保留 last-good 且不延長 freshness。API 已變為固定 24h window，Free 100 requests，不沿用過時的日曆日 1000 次。Header 的 provider remaining 與本機用量分開。
+- ordinary gate 仍必須兩個門檻、可用於台灣、可直接 inference、模型強度及 recurring-free 證據；trial／未知額度／未確認強度不冒充 VERIFIED。AA 新榜掉出前四後即恢復 ordinary gate；過期與失敗資料保留。
+- 本片本機 Go race／TLS／budget／pause socket／restart／AA top4 更新／expiry／人工 evidence review 已通過；Browser 增加來源 → runner → 灰區 → 判讀 → verified／run report／375px 200% 的真入口。新候選 CI 仍待驗證。完整 Reflection 與 LLM Assistant 在後續片，不以本片升格。
+
+研究 API 依據（2026-10-14 查證）：[AA 新文件](https://artificialanalysis.ai/data-api/docs)、[Brave Web Search POST](https://api-dashboard.search.brave.com/api-reference/web/search/post)。兩個 integration key 只在 Settings 的 password 欄輸入；安全層加密後使用。

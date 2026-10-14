@@ -326,7 +326,7 @@ func (s *Server) scheduleEnrichment(ctx context.Context, v Selection) {
 	}
 }
 func (s *Server) runPending(ctx context.Context) {
-	rows, err := s.Store.DB.QueryContext(ctx, "SELECT id,scope_key FROM sync_history WHERE status='PENDING' ORDER BY rowid LIMIT 20")
+	rows, err := s.Store.DB.QueryContext(ctx, "SELECT id,scope_key FROM sync_history WHERE status='PENDING' ORDER BY rowid LIMIT 2")
 	if err != nil {
 		return
 	}
@@ -368,14 +368,20 @@ func (s *Server) worker(ctx context.Context) {
 	timer := time.NewTicker(30 * time.Second)
 	defer timer.Stop()
 	s.runPending(ctx)
+	s.runResearchPending(ctx)
+	s.expireResearchFacts(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-wake:
 			s.runPending(ctx)
+			s.runResearchPending(ctx)
+			s.expireResearchFacts(ctx)
 		case <-timer.C:
 			s.runPending(ctx)
+			s.runResearchPending(ctx)
+			s.expireResearchFacts(ctx)
 		}
 	}
 }

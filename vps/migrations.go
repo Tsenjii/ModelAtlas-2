@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 6
+const schemaVersion = 7
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -60,6 +60,23 @@ func migrate(db *sql.DB) error {
 		if _, err = tx.Exec(`ALTER TABLE messages ADD COLUMN structured_json TEXT NOT NULL DEFAULT '{}';
  CREATE TABLE IF NOT EXISTS session_options(session_id TEXT PRIMARY KEY REFERENCES sessions(id),tools_json TEXT NOT NULL);
  PRAGMA user_version=6;`); err != nil {
+			return err
+		}
+	}
+	if version < 7 {
+		if _, err = tx.Exec(`
+ CREATE TABLE research_candidate_details(candidate_id TEXT PRIMARY KEY REFERENCES research_candidates(id),details_json TEXT NOT NULL);
+ CREATE TABLE research_evidence_details(evidence_id TEXT PRIMARY KEY REFERENCES research_evidence(id),details_json TEXT NOT NULL);
+ CREATE TABLE research_sources(id TEXT PRIMARY KEY,name TEXT NOT NULL,kind TEXT NOT NULL,url TEXT NOT NULL,language TEXT NOT NULL,enabled INTEGER NOT NULL,config_json TEXT NOT NULL,created_at INTEGER NOT NULL);
+ CREATE TABLE research_run_options(run_id TEXT PRIMARY KEY REFERENCES research_runs(id),config_json TEXT NOT NULL,budget INTEGER NOT NULL,used INTEGER NOT NULL DEFAULT 0,probe_budget INTEGER NOT NULL,probes_used INTEGER NOT NULL DEFAULT 0,summary_json TEXT NOT NULL DEFAULT '{}');
+ CREATE TABLE research_tasks(id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES research_runs(id),kind TEXT NOT NULL,dedupe TEXT NOT NULL,payload_json TEXT NOT NULL,status TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,result_json TEXT NOT NULL DEFAULT '{}',created_at INTEGER NOT NULL,finished_at INTEGER,UNIQUE(run_id,dedupe));
+ CREATE INDEX research_task_queue ON research_tasks(status,created_at);
+ CREATE TABLE integration_windows(name TEXT PRIMARY KEY,window_start INTEGER NOT NULL,reset_at INTEGER NOT NULL,used INTEGER NOT NULL,request_limit INTEGER NOT NULL,provider_remaining INTEGER);
+ CREATE INDEX research_candidate_expiry ON research_candidate_details(CAST(json_extract(details_json,'$.eligibility_valid_until') AS INTEGER));
+ CREATE TABLE aa_snapshots(id TEXT PRIMARY KEY,index_version TEXT NOT NULL,status TEXT NOT NULL,source_url TEXT NOT NULL,observed_at INTEGER NOT NULL,valid_until INTEGER NOT NULL,content_hash TEXT NOT NULL);
+ CREATE TABLE aa_models(snapshot_id TEXT NOT NULL REFERENCES aa_snapshots(id),aa_id TEXT NOT NULL,slug TEXT NOT NULL,name TEXT NOT NULL,rank INTEGER NOT NULL,score REAL NOT NULL,PRIMARY KEY(snapshot_id,aa_id));
+ CREATE INDEX aa_slug ON aa_models(slug,snapshot_id);
+ PRAGMA user_version=7;`); err != nil {
 			return err
 		}
 	}

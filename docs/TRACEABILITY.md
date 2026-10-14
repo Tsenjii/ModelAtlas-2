@@ -96,3 +96,9 @@ VPS-MEDIA-UI-001／SAFE-001／CANCEL-001 **ACCEPTED（僅 VPS 切片）**：code
 
 
 | VPS-PLAY-FULL-001 | `protocols.go` / `tools.go` / `audio.go` / `vectors.go` → existing `/infer` / `/infer/media` → 4 conversation protocols / tool-result continuation / speech / embedding / rerank；`protocols_test.go` 真 TLS / exact scope / zero usage / truncation / signature / secret guard，Browser 實際新入口 | IMPLEMENTED，待本候選同 SHA 六項 CI；不能借 Android 或前片驗收 |
+
+
+VPS-PLAY-FULL-001 **同 SHA CI 已驗**：`29eff56`／VPS `38550451082` 四項＋Android `38550450921` 兩項 SUCCESS；TLS native/tool、多模態結果及真 Browser 入口已驗。
+
+| VPS-RESEARCH-RUN-001 | `research_jobs.go` / `research_execute.go` / `research_runtime.go` / `public_fetch.go` → `/research/start,control,sources,funnel,review` → 真 worker / bounded requests / complete funnel / sources / evidence / manual review / scoped traffic reuse；`research_runtime_test.go` 真 TLS / budget / socket pause / durable restart / no implicit membership；`e2e/research.cjs` 正式 UI | IMPLEMENTED，待新 SHA CI |
+| VPS-RESEARCH-AA-001 | `aa.go` / `integration_budget.go` → AA V2 free API、完整同版本分頁、dynamic top4／ordinary regression／expiry、fixed-window budget、last-good；AA TLS tests | IMPLEMENTED，待新 SHA CI；不硬編 family，不借舊榜排名 |

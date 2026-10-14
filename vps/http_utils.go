@@ -50,11 +50,17 @@ func (s *Server) getJSON(ctx context.Context, p Provider, c ProviderConfig, rawU
 	// Never inherit permissive redirect policy from a caller-supplied HTTP client.
 	client := *s.Client
 	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	if err := s.chargeNetwork(ctx, false); err != nil {
+		return nil, 0, err
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, 0, errors.New("upstream network failure")
 	}
 	defer resp.Body.Close()
+	if name, _ := ctx.Value(integrationHeaderKey{}).(string); name != "" {
+		s.observeIntegrationHeaders(ctx, name, resp.Header)
+	}
 	if resp.StatusCode != 200 {
 		return nil, resp.StatusCode, errors.New("upstream HTTP failure")
 	}

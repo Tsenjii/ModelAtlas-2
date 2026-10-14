@@ -25,17 +25,19 @@ import (
 )
 
 type Server struct {
-	Store      *Store
-	Token      string
-	Key        []byte
-	Client     *http.Client
-	flightMu   sync.Mutex
-	flights    map[string]bool
-	cancels    map[string]context.CancelFunc
-	media      map[string][]Attachment
-	mediaBytes int
-	AutoSync   bool
-	wake       chan struct{}
+	Store        *Store
+	Token        string
+	Key          []byte
+	Client       *http.Client
+	PublicClient *http.Client
+	workMu       sync.Mutex
+	flightMu     sync.Mutex
+	flights      map[string]bool
+	cancels      map[string]context.CancelFunc
+	media        map[string][]Attachment
+	mediaBytes   int
+	AutoSync     bool
+	wake         chan struct{}
 }
 
 func (s *Server) beginFlight(id string) bool {
@@ -251,6 +253,16 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /infer/media", s.mediaInference)
 	api.HandleFunc("POST /infer/cancel", s.cancelInference)
 	api.HandleFunc("GET /telemetry", s.listTelemetry)
+	api.HandleFunc("GET /research/sources", s.listResearchSources)
+	api.HandleFunc("POST /research/sources", s.saveResearchSource)
+	api.HandleFunc("POST /research/start", s.startResearch)
+	api.HandleFunc("POST /research/control", s.controlResearch)
+	api.HandleFunc("GET /research/tasks", s.listResearchTasks)
+	api.HandleFunc("GET /research/funnel", s.researchFunnel)
+	api.HandleFunc("POST /research/review", s.reviewCandidate)
+	api.HandleFunc("POST /research/integrations", s.saveResearchIntegration)
+	api.HandleFunc("POST /research/aa/sync", s.syncAA)
+	api.HandleFunc("GET /research/aa", s.listAA)
 	api.HandleFunc("GET /research/candidates", s.listCandidates)
 	api.HandleFunc("POST /research/candidates", s.addCandidate)
 	api.HandleFunc("GET /research/evidence", s.listEvidence)

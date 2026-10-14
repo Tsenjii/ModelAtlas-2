@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"net/http"
 )
 
@@ -46,35 +47,30 @@ func EvaluateCandidate(c Candidate, verifiedQuota bool, verifiedTop4 bool) Eligi
 	return x
 }
 func (s *Server) eligibility(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT c.id,c.provider_id,c.model_id,c.rpd,c.tpd,c.taiwan,c.recurring,c.strength,c.state,EXISTS(SELECT 1 FROM research_evidence e WHERE e.candidate_id=c.id AND e.verified=1 AND e.source_type='OFFICIAL_RECURRING_QUOTA') FROM research_candidates c ORDER BY c.updated_at DESC LIMIT 300")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id FROM research_candidates ORDER BY updated_at DESC LIMIT 1000")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
-	defer rows.Close()
-	out := []Eligibility{}
+	ids := []string{}
 	for rows.Next() {
-		var c Candidate
-		var rp, tp sql.NullInt64
-		var evidence int
-		if rows.Scan(&c.ID, &c.ProviderID, &c.ModelID, &rp, &tp, &c.Taiwan, &c.Recurring, &c.Strength, &c.State, &evidence) != nil {
-			continue
+		var id string
+		rows.Scan(&id)
+		ids = append(ids, id)
+	}
+	rows.Close()
+	out := []Eligibility{}
+	for _, id := range ids {
+		c, e := s.candidate(r.Context(), id)
+		if e == nil {
+			out = append(out, s.candidateEligibility(r.Context(), c))
 		}
-		if rp.Valid {
-			v := rp.Int64
-			c.RPD = &v
-		}
-		if tp.Valid {
-			v := tp.Int64
-			c.TPD = &v
-		}
-		// No trusted AA ingestion means there is no legitimate current top-4 exception.
-		out = append(out, EvaluateCandidate(c, evidence == 1, false))
 	}
 	jsonOK(w, 200, out)
 }
+
 func (s *Server) listResearchRuns(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,status,checkpoint,started_at FROM research_runs ORDER BY started_at DESC LIMIT 100")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT r.id,r.status,r.checkpoint,r.started_at,o.budget,o.used,o.probe_budget,o.probes_used,COALESCE(o.summary_json,'{}') FROM research_runs r LEFT JOIN research_run_options o ON o.run_id=r.id ORDER BY r.started_at DESC LIMIT 100")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -83,7 +79,22 @@ func (s *Server) listResearchRuns(w http.ResponseWriter, r *http.Request) {
 	out := []ResearchRun{}
 	for rows.Next() {
 		var v ResearchRun
-		if rows.Scan(&v.ID, &v.Status, &v.Checkpoint, &v.StartedAt) == nil {
+		var budget, used, probes, probeUsed sql.NullInt64
+		var raw string
+		if rows.Scan(&v.ID, &v.Status, &v.Checkpoint, &v.StartedAt, &budget, &used, &probes, &probeUsed, &raw) == nil {
+			if budget.Valid {
+				v.Budget = &budget.Int64
+			}
+			if used.Valid {
+				v.Used = &used.Int64
+			}
+			if probes.Valid {
+				v.ProbeBudget = &probes.Int64
+			}
+			if probeUsed.Valid {
+				v.ProbesUsed = &probeUsed.Int64
+			}
+			json.Unmarshal([]byte(raw), &v.Summary)
 			out = append(out, v)
 		}
 	}

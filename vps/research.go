@@ -2,10 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 )
 
 type Candidate struct {
+	CandidateDetails
 	ID         string `json:"id"`
 	ProviderID string `json:"provider_id"`
 	ModelID    string `json:"model_id"`
@@ -17,6 +19,7 @@ type Candidate struct {
 	State      string `json:"state"`
 }
 type Evidence struct {
+	EvidenceDetails
 	ID          string `json:"id"`
 	CandidateID string `json:"candidate_id"`
 	SourceType  string `json:"source_type"`
@@ -26,14 +29,19 @@ type Evidence struct {
 	ObservedAt  int64  `json:"observed_at"`
 }
 type ResearchRun struct {
-	ID         string `json:"id"`
-	Status     string `json:"status"`
-	Checkpoint string `json:"checkpoint"`
-	StartedAt  int64  `json:"started_at"`
+	ID          string         `json:"id"`
+	Status      string         `json:"status"`
+	Checkpoint  string         `json:"checkpoint"`
+	StartedAt   int64          `json:"started_at"`
+	Budget      *int64         `json:"budget"`
+	Used        *int64         `json:"used"`
+	ProbeBudget *int64         `json:"probe_budget"`
+	ProbesUsed  *int64         `json:"probes_used"`
+	Summary     map[string]any `json:"summary"`
 }
 
 func (s *Server) listCandidates(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,model_id,rpd,tpd,taiwan,recurring,strength,state FROM research_candidates ORDER BY updated_at DESC LIMIT 300")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT c.id,c.provider_id,c.model_id,c.rpd,c.tpd,c.taiwan,c.recurring,c.strength,c.state,COALESCE(d.details_json,'{}') FROM research_candidates c LEFT JOIN research_candidate_details d ON d.candidate_id=c.id ORDER BY c.updated_at DESC LIMIT 1000")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -43,7 +51,9 @@ func (s *Server) listCandidates(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var x Candidate
 		var rp, tp sql.NullInt64
-		if rows.Scan(&x.ID, &x.ProviderID, &x.ModelID, &rp, &tp, &x.Taiwan, &x.Recurring, &x.Strength, &x.State) == nil {
+		var raw string
+		if rows.Scan(&x.ID, &x.ProviderID, &x.ModelID, &rp, &tp, &x.Taiwan, &x.Recurring, &x.Strength, &x.State, &raw) == nil {
+			_ = json.Unmarshal([]byte(raw), &x.CandidateDetails)
 			if rp.Valid {
 				v := rp.Int64
 				x.RPD = &v
@@ -62,7 +72,7 @@ func (s *Server) addCandidate(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &x) {
 		return
 	}
-	if !validID(x.ProviderID) || !validID(x.ModelID) {
+	if !validID(x.ProviderID) || !validID(x.ModelID) || x.Website != "" && !publicURL(x.Website) || x.BaseURL != "" && !validateHTTPS(x.BaseURL) || len(x.Restrictions) > 16 || len(x.Reason) > 1000 {
 		http.Error(w, "invalid candidate", 400)
 		return
 	}
@@ -91,6 +101,10 @@ func (s *Server) addCandidate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid strength", 400)
 		return
 	}
+	x.Confidence = 0
+	x.CreatedRun = ""
+	x.LastChecked = 0
+	x.EligibilityValidUntil = 0
 	x.ID = newID()
 	x.State = "DISCOVERED"
 	var rp, tp any
@@ -105,6 +119,7 @@ func (s *Server) addCandidate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "database error", 500)
 		return
 	}
+	_ = s.saveCandidateDetails(r.Context(), x.ID, x.CandidateDetails)
 	jsonOK(w, 201, x)
 }
 func (s *Server) listEvidence(w http.ResponseWriter, r *http.Request) {
@@ -113,13 +128,13 @@ func (s *Server) listEvidence(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid candidate id", 400)
 		return
 	}
-	q := "SELECT id,candidate_id,source_type,source_url,claim,verified,observed_at FROM research_evidence"
+	q := "SELECT e.id,e.candidate_id,e.source_type,e.source_url,e.claim,e.verified,e.observed_at,COALESCE(d.details_json,'{}') FROM research_evidence e LEFT JOIN research_evidence_details d ON d.evidence_id=e.id"
 	var args []any
 	if id != "" {
-		q += " WHERE candidate_id=?"
+		q += " WHERE e.candidate_id=?"
 		args = append(args, id)
 	}
-	q += " ORDER BY observed_at DESC LIMIT 500"
+	q += " ORDER BY e.observed_at DESC LIMIT 500"
 	rows, err := s.Store.DB.QueryContext(r.Context(), q, args...)
 	if err != nil {
 		http.Error(w, "database error", 500)
@@ -130,7 +145,9 @@ func (s *Server) listEvidence(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var x Evidence
 		var b int
-		if rows.Scan(&x.ID, &x.CandidateID, &x.SourceType, &x.SourceURL, &x.Claim, &b, &x.ObservedAt) == nil {
+		var raw string
+		if rows.Scan(&x.ID, &x.CandidateID, &x.SourceType, &x.SourceURL, &x.Claim, &b, &x.ObservedAt, &raw) == nil {
+			json.Unmarshal([]byte(raw), &x.EvidenceDetails)
 			x.Verified = b == 1
 			out = append(out, x)
 		}

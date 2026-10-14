@@ -83,6 +83,10 @@ func OpenStore(path string) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
+	if _, err = db.Exec("UPDATE research_runs SET status='PAUSED' WHERE status IN ('RUNNING','QUEUED'); UPDATE research_tasks SET status='INTERRUPTED' WHERE status='RUNNING'"); err != nil {
+		db.Close()
+		return nil, err
+	}
 	success = true
 	return &Store{DB: db, lock: lock}, nil
 }

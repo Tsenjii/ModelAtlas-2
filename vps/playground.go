@@ -384,6 +384,10 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if err = s.authorizeUpstream(upstream, provider, key, cfg); err != nil {
 		return result, 422
 	}
+	if err = s.chargeNetwork(ctx, source == "CRAWLER_VERIFY"); err != nil {
+		result.Outcome = "RESEARCH_BUDGET_EXHAUSTED"
+		return result, 429
+	}
 	userID := newID()
 	if len(v.Attachments) > 0 && !s.rememberMedia(userID, v.Attachments) {
 		result.Outcome = "ATTACHMENT_MEMORY_LIMIT"

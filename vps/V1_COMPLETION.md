@@ -4,8 +4,8 @@
 
 | 範圍 | 真實入口與完成條件 | 目前 |
 |---|---|---|
-| 完整 Playground | Chat / Responses / Anthropic / Gemini、多輪工具結果、語音生成播放下載、embedding / rerank；同一 scope / telemetry / cancel | 開發中 |
-| 研究執行 | 持久佇列、逐步 probe、預算、取消／重啟恢復、來源與語言、完整漏斗、動態 AA top-4 | 待接線 |
+| 完整 Playground | Chat / Responses / Anthropic / Gemini、多輪工具結果、語音生成播放下載、embedding / rerank；同一 scope / telemetry / cancel | 已驗 `29eff56` 六項 CI |
+| 研究執行 | 持久佇列、逐步 probe、預算、取消／重啟恢復、來源與語言、完整漏斗、動態 AA top-4 | 已實作，候選 CI 待驗 |
 | App Assistant | 選擇任意已加入的模型、safe refs 與工具、實際讀取／研究／測試／新增／修改、共享 Review、confirm / undo / action log | 待接線 |
 | Reflection | 每輪成效、可測試的提案、版本化知識、有限權重與 recipe、可逆啟用／回復；禁止改程式或安全政策 | 待接線 |
 | 模型與管理 | 完整篩選／排序、notes / tags、背景同步與規則通知、匯出研究知識 | 待補齊 |

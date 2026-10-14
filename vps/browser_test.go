@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -132,6 +133,42 @@ func TestBrowserProductionWorkflow(t *testing.T) {
 	}
 	if mediaCalls.Load() != 10 {
 		t.Fatalf("browser media flow made %d upstream calls, expected 10", mediaCalls.Load())
+	}
+	t.Log(string(output))
+}
+
+func TestBrowserResearchWorkflow(t *testing.T) {
+	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
+		t.Skip("enable in browser CI job")
+	}
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" {
+			t.Error("public source received a credential")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"data":[{"model_id":"m","rpd":100,"tpd":1000000,"taiwan":"YES","recurring":"DAILY_RESET","free":true,"access_method":"INFERENCE_READY"}]}`))
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = mappedFixture(up)
+	s.PublicClient = mappedFixture(up)
+	seed(t, s, "https://provider.example/v1")
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { defer close(done); s.worker(ctx) }()
+	defer func() { cancel(); <-done }()
+	app := httptest.NewServer(s.Handler())
+	defer app.Close()
+	cmd := exec.Command("node", "e2e/research.cjs", app.URL)
+	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token)
+	output, e := cmd.CombinedOutput()
+	if e != nil {
+		t.Fatalf("research browser: %v\n%s", e, output)
+	}
+	var n int
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM my_models").Scan(&n)
+	if n != 0 {
+		t.Fatal("Browser research implicitly added membership")
 	}
 	t.Log(string(output))
 }
