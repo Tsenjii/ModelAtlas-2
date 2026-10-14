@@ -90,3 +90,6 @@ VPS 本片回歸補充：Browser `38503882118` 發現 new-session/composer race�
 | VPS-MEDIA-CANCEL-001 | request-id → shared flight／cancel registry → upstream socket close → durable CANCELLED；真 TLS 阻塞／四 flight／Chat 共用／uptime 排除回歸 | IMPLEMENTED；不借舊 SHA 綠燈 |
 
 原始媒體與轉寫結果僅在記憶體；URL-only 不自動抓取、不轉送 Key。Android 整體 PLAY-004 與 P8/P9/P10 acceptance 不變。下一片為音訊輸出或 tools，需單獨接 caller/UI 與新 SHA 完整驗證。
+
+
+VPS-MEDIA-UI-001／SAFE-001／CANCEL-001 **ACCEPTED（僅 VPS 切片）**：code `00f3dc205e4a59057edcf15e2de4a2135b49d4d0`，[VPS run 38526114795](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38526114795) 四項 SUCCESS＋[Android run 38526114819](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38526114819) build/device SUCCESS。Media UI、實際下載 bytes、多行 transcript、input-preserving clear、strict modal／a11y selectors、narrow/dark/200%、selected-scope／cancel／flight budget 全部覆蓋。末尾 doc-only HEAD 仍查 PR #20 當前同 SHA checks，不能借 code 基線結果冒充它。

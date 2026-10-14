@@ -70,3 +70,13 @@
 首輪媒體 Browser regression：`da00c79` 的 `getByLabel(端點類型)` 找不到動態 select；已補 production 可存取名稱，Catalog endpoint select 同步修正。此首輪失敗不當作完成證據。
 
 媒體 Browser 首次全綠 `36751cf`／run `38524721426` 已驗生成／編輯／轉寫／阻塞取消；後續視覺 QA 修 target 的內部 Key ID，並新增實際 PNG／UTF-8 下載 bytes 回讀，不用「有連結」代替下載成功。深淺色截圖使用 `animations:disabled`，避免 CSS transition 中間顏色誤判。
+
+## 本片驗收證據（2026-10-14）
+
+- Production code SHA：`00f3dc205e4a59057edcf15e2de4a2135b49d4d0`。
+- [VPS CI 38526114795](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38526114795)：Go race／HTTP／vet／runtime smoke、AMD64、ARM64、Browser 四項 SUCCESS。
+- [Android CI 38526114819](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38526114819)：build、device-tests 兩項 SUCCESS，與上述 VPS 為同一 SHA。裝置共 964 tests、0 failed，5 個通知權限測試依 API 29 條件 skip；不是刪除測試。
+- **VPS-MEDIA-UI／SAFE／CANCEL 切片 ACCEPTED**：實際 UI 三操作、PNG／UTF-8 下載回讀、scope reset、結果清除保留輸入、阻塞取消、四 flight、影像驗證／secret echo 已驗。
+- Browser 最終 artifact `11875811832`／SHA256 `b65041539532db6018fbe94ae43f1d527731ef92f41948bd503aac247ea32c7e`；已檢查圖片、轉寫、375／1024px、深淺色及 200% 大字畫面。
+- 本次末尾提交僅補驗收與交接文件；新 doc HEAD 的完整六項 CI 結果仍以 PR #20 最新 body／GitHub checks 為準，不把 code 基線誤寫成任意較新 HEAD 的結果。
+- 下一個 VPS 功能切片：音訊輸出或 tools 互動 UI，依單片新增真 caller／UI／測試後驗收；Android 全體 PLAY-004、完整 P8/P9/P10 仍未 ACCEPTED。VPS 獨立分支維護，無使用者主機遠端部署證據。
