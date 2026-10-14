@@ -121,3 +121,12 @@ Playground 的「對話設定」保存該段系統指示、1..32768 回應 Token
 完整 RAM 實測使用 `MODELATLAS_FOOTPRINT_TEST=1 MODELATLAS_FOOTPRINT_OUT=footprint.json go test -run TestStandaloneProcessFootprint -v -count=1 -timeout=3m`：編譯 stripped standalone binary、十萬筆完整歷史統計、4 個 TLS chats、持久研究／65 個 Catalog models、4 個同時 2048×2048 圖片解碼、4 個同時 4 MiB 原生語音結果。以服務 PID 的 VmRSS/VmHWM 記錄每阶段，fixture/test runner/browser 不算入服务 RAM；需要可讀取子行程 `/proc` 的 Linux，Work 本機限制不冒充數字。
 
 公開研究來源的位址 guard 在 2026-10-15 依 [IANA IPv4 special-use](https://www.iana.org/assignments/iana-ipv4-special-registry/) 與 [IPv6 special-use](https://www.iana.org/assignments/iana-ipv6-special-registry/) 查核；private/link-local/shared/documentation/benchmark/reserved、不可驗證內嵌目的地的 tunnel 不當成 public web，NAT64 的嵌入 IPv4 重新驗證。原有 DNS pin／HTTPS／不跟 redirect／無 auth 與 proxy 邊界保留。
+
+
+### 對話與請求紀錄
+
+Playground「對話紀錄」可全文搜尋、置頂、命名、封存／恢復、下載完整 JSON／Markdown。封存保留全部資料；原始附件仍僅在當次服務記憶體，export 明列 metadata-only。長對話可分批讀取／完整匯出，超過32MiB／1024則的送出會要求新對話，從不靜默刪除歷史。
+
+訊息「請求詳情」與「請求紀錄」顯示當次用量、費率／額度快照與篩選／NDJSON匯出。手動重試最後失敗請求不會重複新增使用者訊息；歷次HTTP仍各有telemetry。Models「手動價格」未勾明確確認時只是manual quote，Catalog zero也只是nominal；不等於Key免費。所有estimate與Provider-reported charge清楚分开。
+
+最新資源驗證目標依使用者要求為服務≤512MiB，≤1GiB可接受；standalone test加入4路31MiB histories及完整export，具體成功數值見PR #20最新checks／footprint artifact。預設仍192MiB soft Go limit、4 flights，保留全功能／原始歷史；OS和反向代理另計。Schema15不供較舊binary直接開啟，更新前一致備份SQLite及獨立master key。

@@ -261,6 +261,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /infer/media", s.mediaInference)
 	api.HandleFunc("POST /infer/cancel", s.cancelInference)
 	api.HandleFunc("GET /telemetry", s.listTelemetry)
+	api.HandleFunc("GET /telemetry/detail", s.telemetryDetail)
+	api.HandleFunc("GET /telemetry/export", s.exportTelemetry)
 	api.HandleFunc("GET /research/dashboard", s.researchDashboard)
 	api.HandleFunc("GET /research/sources", s.listResearchSources)
 	api.HandleFunc("POST /research/sources", s.saveResearchSource)

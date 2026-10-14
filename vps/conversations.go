@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -121,6 +120,11 @@ func (s *Server) updateSession(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid conversation change", 422)
 		return
 	}
+	secrets, err := s.knownSecrets(r.Context())
+	if err != nil {
+		http.Error(w, "vault unavailable", 503)
+		return
+	}
 	s.flightMu.Lock()
 	defer s.flightMu.Unlock()
 	if s.flights[v.SessionID] {
@@ -158,8 +162,8 @@ func (s *Server) updateSession(w http.ResponseWriter, r *http.Request) {
 	if _, e = tx.ExecContext(r.Context(), "UPDATE sessions SET title=? WHERE id=?", after.Title, v.SessionID); e == nil {
 		_, e = tx.ExecContext(r.Context(), "INSERT INTO session_metadata VALUES(?,?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET pinned=excluded.pinned,archived=excluded.archived,revision=excluded.revision,updated_at=excluded.updated_at", v.SessionID, after.Pinned, after.Archived, after.Revision, after.UpdatedAt)
 	}
-	b, _ := json.Marshal(before)
-	a, _ := json.Marshal(after)
+	b, _ := json.Marshal(cleanExportValue(before, secrets))
+	a, _ := json.Marshal(cleanExportValue(after, secrets))
 	if e == nil {
 		_, e = tx.ExecContext(r.Context(), "INSERT INTO session_changes VALUES(?,?,?,?,?)", newID(), v.SessionID, string(b), string(a), after.UpdatedAt)
 	}
@@ -167,7 +171,7 @@ func (s *Server) updateSession(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "database error", 500)
 		return
 	}
-	jsonOK(w, 200, map[string]any{"id": after.ID, "title": after.Title, "pinned": after.Pinned, "archived": after.Archived, "revision": after.Revision, "updated_at": after.UpdatedAt})
+	jsonOK(w, 200, map[string]any{"id": after.ID, "title": redactConversationText(after.Title, secrets), "pinned": after.Pinned, "archived": after.Archived, "revision": after.Revision, "updated_at": after.UpdatedAt})
 }
 
 func redactConversationText(text string, secrets []string) string {
@@ -234,13 +238,18 @@ func (s *Server) exportSession(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "tools unavailable", 503)
 		return
 	}
-	// Open and validate the cursor before sending any bytes. A single row is retained.
-	rows, e := s.Store.DB.QueryContext(r.Context(), "SELECT id,session_id,role,content,media_metadata,created_at,structured_json FROM messages WHERE session_id=? ORDER BY rowid", id)
-	if e != nil {
+	flight := "export:" + newID()
+	if !s.beginFlight(flight) {
+		http.Error(w, "export flight limit reached", 409)
+		return
+	}
+	defer s.endFlight(flight)
+	var messageCount int
+	if s.Store.DB.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM messages WHERE session_id=?", id).Scan(&messageCount) != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
-	defer rows.Close()
+
 	var writeError error
 	write := func(text string) {
 		if writeError == nil {
@@ -271,43 +280,42 @@ func (s *Server) exportSession(w http.ResponseWriter, r *http.Request) {
 		write(strings.TrimSuffix(string(clean), "}") + `,"messages":[`)
 	}
 	first := true
-	for rows.Next() {
-		var m Message
-		var media, structured string
-		if rows.Scan(&m.ID, &m.SessionID, &m.Role, &m.Content, &media, &m.CreatedAt, &structured) != nil || json.Unmarshal([]byte(media), &m.Attachments) != nil || json.Unmarshal([]byte(structured), &m.MessageState) != nil {
-			writeError = sql.ErrNoRows
-			break
+	for offset := 0; offset < messageCount; offset += 4 {
+		pageSize := min(4, messageCount-offset)
+		page, e := s.historyPage(r.Context(), id, pageSize, offset, false)
+		if e != nil || len(page) != pageSize {
+			panic(http.ErrAbortHandler)
 		}
-		if format == "markdown" {
-			write("## " + map[string]string{"user": "使用者", "assistant": "模型", "tool": "工具結果"}[m.Role] + "\n\n" + redactConversationText(m.Content, secrets) + "\n\n")
-			if len(m.Attachments) > 0 {
-				for _, a := range m.Attachments {
-					write("附件（僅中繼資料）：" + redactConversationText(a.Filename, secrets) + "\n\n")
+		for _, m := range page {
+			m.Attachments = metadataOnly(m.Attachments)
+			if format == "markdown" {
+				write("## " + map[string]string{"user": "使用者", "assistant": "模型", "tool": "工具結果"}[m.Role] + "\n\n" + redactConversationText(m.Content, secrets) + "\n\n")
+				if len(m.Attachments) > 0 {
+					for _, a := range m.Attachments {
+						write("附件（僅中繼資料）：" + redactConversationText(a.Filename, secrets) + "\n\n")
+					}
 				}
+				if len(m.ToolCalls) > 0 {
+					raw, _ := json.MarshalIndent(cleanExportValue(m.ToolCalls, secrets), "", "  ")
+					write("工具呼叫：\n\n" + string(raw) + "\n\n")
+				}
+			} else {
+				if !first {
+					write(",")
+				}
+				raw, _ := json.Marshal(cleanExportValue(m, secrets))
+				write(string(raw))
+				first = false
 			}
-			if len(m.ToolCalls) > 0 {
-				raw, _ := json.MarshalIndent(cleanExportValue(m.ToolCalls, secrets), "", "  ")
-				write("工具呼叫：\n\n" + string(raw) + "\n\n")
+			if writeError != nil {
+				panic(http.ErrAbortHandler)
 			}
-		} else {
-			if !first {
-				write(",")
-			}
-			raw, _ := json.Marshal(cleanExportValue(m, secrets))
-			write(string(raw))
-			first = false
-		}
-		if writeError != nil {
-			break
 		}
 	}
-	if writeError == nil && rows.Err() == nil && format != "markdown" {
+	if format != "markdown" {
 		write("]}\n")
 	}
-	if writeError != nil || rows.Err() != nil { // Never append an invented successful/truncated JSON document.
-		if f, ok := w.(http.Flusher); ok {
-			f.Flush()
-		}
-		return
+	if writeError != nil {
+		panic(http.ErrAbortHandler)
 	}
 }

@@ -232,7 +232,14 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	responseStatus := 502
 	started := time.Now()
 	sampleID := newID()
-	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at,credential_version) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?,?)", sampleID, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, operation, "PLAYGROUND_MEDIA", started.UnixMilli(), p.CredentialVersion); err != nil {
+	receipt, err := s.newReceipt(ctx, v.Selection, p, started.UnixMilli(), secrets)
+	if err != nil {
+		http.Error(w, "receipt unavailable", 500)
+		return
+	}
+	result.Details["sample_id"] = sampleID
+	result.Details["receipt"] = receipt
+	if err = s.startRequestRecord(ctx, sampleID, v.Selection, operation, "PLAYGROUND_MEDIA", started.UnixMilli(), p.CredentialVersion, "", v.RequestID, "", nil, result.Details); err != nil {
 		http.Error(w, "telemetry unavailable", 500)
 		return
 	}
@@ -255,6 +262,8 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		details, _ := json.Marshal(result.Details)
 		saveCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
+		s.completeReceipt(saveCtx, receipt, v.Selection, p, operation, result.Outcome, input, output, result.Details, secrets)
+		details, _ = json.Marshal(result.Details)
 		var status any
 		if result.Status > 0 {
 			status = result.Status
@@ -279,6 +288,7 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	}
 	defer response.Body.Close()
 	result.Status = response.StatusCode
+	result.Details["rate_limit_headers"] = responseRateHeaders(response.Header, secrets)
 	ttfb = time.Since(started).Milliseconds()
 	if response.StatusCode != 200 {
 		result.Outcome = classifyHTTP(response.StatusCode)
@@ -318,8 +328,22 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	}
 	var usage map[string]json.RawMessage
 	_ = json.Unmarshal(root["usage"], &usage)
+	if charge := reportedCharge(usage["cost"], p); charge != nil {
+		result.Details["provider_charge"] = charge
+	}
+	for _, name := range []string{"total_tokens", "cache_read_tokens", "cache_write_tokens", "reasoning_tokens"} {
+		if n := intField(usage, name); n != nil && *n >= 0 {
+			result.Details[name] = *n
+		}
+	}
 	input = intField(usage, "input_tokens")
 	output = intField(usage, "output_tokens")
+	if input == nil {
+		input = intField(usage, "prompt_tokens")
+	}
+	if output == nil {
+		output = intField(usage, "completion_tokens")
+	}
 	if input != nil && *input < 0 {
 		input = nil
 	}

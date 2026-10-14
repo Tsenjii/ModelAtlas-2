@@ -23,7 +23,7 @@ function resetMediaDraft(){fileReadVersion++;mediaAttachment=null;$("media-file"
 function mediaBlob(encoded,mime){const raw=atob(encoded),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);const url=URL.createObjectURL(new Blob([bytes],{type:mime}));mediaResultURLs.push(url);return url;}
 function mediaDownload(parent,url,filename,label){const a=el("a",label,"link-button");a.href=url;a.download=filename;parent.append(a);}
 function renderMediaResult(result){
- clearMediaResult();const box=$("media-result"),operation=targetOperation(result.selection);
+ clearMediaResult();const box=$("media-result"),operation=targetOperation(result.selection);requestLink(box,result.details?.sample_id,"查看本次請求");
  box.append(el("h2",["EMBEDDINGS","RERANK"].includes(operation)?"推論結果":isSpeech(operation)?"語音結果":operation==="AUDIO"?"轉寫結果":"圖片結果"));
  if(["EMBEDDINGS","RERANK"].includes(operation)){
   const value=result.vectors||result.rankings;box.append(el("pre",JSON.stringify(value,null,2)));const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:"application/json"}));mediaResultURLs.push(url);mediaDownload(box,url,"modelatlas-"+operation.toLowerCase()+".json","下載結果");
@@ -60,7 +60,7 @@ async function sendMedia(e){
  try{
   const response=await fetch("/api/v1/infer/media",{method:"POST",credentials:"same-origin",signal:controller.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   const raw=await response.text();let result;try{result=JSON.parse(raw);}catch(e){throw Error(raw.trim()==="selected media capability unavailable"?"請在模型詳情確認此連線的能力，並檢查 Key 是否啟用":raw.trim().slice(0,150)||"HTTP "+response.status);}
-  if(!response.ok||result.outcome!=="SUCCESS")throw Error({PARSER:"供應商回傳的結果無法使用",RATE_LIMITED:"供應商目前限制請求，請稍後重試",AUTH_INVALID:"Key 無效，請在 Provider 更新",INFERENCE_DENIED:"此 Key 沒有使用這個模型的權限",PAYMENT_REQUIRED:"供應商要求付款或補充額度",MODEL_UNAVAILABLE:"供應商無法提供這個模型",GONE:"供應商已移除此端點",UPSTREAM_5XX:"供應商暫時無法處理請求",NETWORK:"無法連上供應商",TIMEOUT:"處理逾時",CANCELLED:"已停止處理",TELEMETRY_SAVE:"請求紀錄無法保存"}[result.outcome]||result.outcome||"HTTP "+response.status);
+  if(!response.ok||result.outcome!=="SUCCESS"){if(result.details?.sample_id){clearMediaResult();requestLink($("media-result"),result.details.sample_id,"查看失敗請求");}throw Error({PARSER:"供應商回傳的結果無法使用",RATE_LIMITED:"供應商目前限制請求，請稍後重試",AUTH_INVALID:"Key 無效，請在 Provider 更新",INFERENCE_DENIED:"此 Key 沒有使用這個模型的權限",PAYMENT_REQUIRED:"供應商要求付款或補充額度",MODEL_UNAVAILABLE:"供應商無法提供這個模型",GONE:"供應商已移除此端點",UPSTREAM_5XX:"供應商暫時無法處理請求",NETWORK:"無法連上供應商",TIMEOUT:"處理逾時",CANCELLED:"已停止處理",TELEMETRY_SAVE:"請求紀錄無法保存"}[result.outcome]||result.outcome||"HTTP "+response.status);}
   if(key(result.selection)!==key(selection)||result.request_id!==request_id)throw Error("回應連線不符");
   if($("target").value===key(selection)){renderMediaResult(result);notice("已完成 · "+operationLabels[operation]);}
  }catch(err){clearMediaResult();notice(err.name==="AbortError"?"已停止處理":"處理失敗："+err.message,err.name!=="AbortError");}

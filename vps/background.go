@@ -25,6 +25,7 @@ type NotificationRules struct {
 type notificationSnapshot struct {
 	Version     int    `json:"version"`
 	PriceState  string `json:"price_state"`
+	PriceBasis  string `json:"price_basis"`
 	Price       string `json:"price"`
 	PriceAt     int64  `json:"price_at"`
 	Remaining   *int64 `json:"remaining"`
@@ -108,18 +109,24 @@ func (s *Server) checkNotificationRules(ctx context.Context) {
 			continue
 		}
 		offer := s.offerSummary(ctx, v)
-		current := notificationSnapshot{Version: offer["credential_version"].(int), PriceState: "UNKNOWN"}
+		current := notificationSnapshot{Version: offer["credential_version"].(int), PriceState: "UNKNOWN", PriceBasis: "EFFECTIVE_V1"}
 		if p, ok := offer["price"].(map[string]any); ok {
 			raw, _ := json.Marshal(p["legs"])
 			var legs PriceLegs
 			_ = json.Unmarshal(raw, &legs)
-			current.PriceState = priceState(legs)
-			if current.PriceState != "UNKNOWN" {
+			nominalState := priceState(legs)
+			if nominalState != "UNKNOWN" {
 				current.Price = string(raw)
 				if at := quotaInteger(p["observed_at"]); at != nil {
 					current.PriceAt = *at
 				}
 			}
+		}
+		if effective, ok := offer["effective_price"].(map[string]any); ok {
+			raw, _ := json.Marshal(effective["legs"])
+			var legs PriceLegs
+			_ = json.Unmarshal(raw, &legs)
+			current.PriceState = priceState(legs)
 		}
 		if q, ok := offer["quota"].(map[string]any); ok {
 			current.Remaining = quotaInteger(q["remaining"])
@@ -131,7 +138,7 @@ func (s *Server) checkNotificationRules(ctx context.Context) {
 		_ = s.Store.DB.QueryRowContext(ctx, "SELECT id,outcome FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND credential_version=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED') ORDER BY rowid DESC LIMIT 1", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, current.Version).Scan(&sampleID, &current.Outcome)
 		var previous notificationSnapshot
 		var old string
-		exists := s.Store.DB.QueryRowContext(ctx, "SELECT state_json FROM notification_state WHERE scope_key=?", scopeKey(v)).Scan(&old) == nil && json.Unmarshal([]byte(old), &previous) == nil && previous.Version == current.Version
+		exists := s.Store.DB.QueryRowContext(ctx, "SELECT state_json FROM notification_state WHERE scope_key=?", scopeKey(v)).Scan(&old) == nil && json.Unmarshal([]byte(old), &previous) == nil && previous.Version == current.Version && previous.PriceBasis == current.PriceBasis
 		raw, _ := json.Marshal(current)
 		eventKey := scopeKey(v) + "/" + contentHash([]byte(old)) + "/" + contentHash(raw) + "/" + sampleID
 		if exists {

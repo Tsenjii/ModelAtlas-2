@@ -29,12 +29,14 @@ type Session struct {
 	Preview      string `json:"preview,omitempty"`
 }
 type Message struct {
-	ID          string       `json:"id"`
-	SessionID   string       `json:"session_id"`
-	Role        string       `json:"role"`
-	Content     string       `json:"content"`
-	Attachments []Attachment `json:"attachments,omitempty"`
-	CreatedAt   int64        `json:"created_at"`
+	ID             string       `json:"id"`
+	SessionID      string       `json:"session_id"`
+	Role           string       `json:"role"`
+	Content        string       `json:"content"`
+	Attachments    []Attachment `json:"attachments,omitempty"`
+	CreatedAt      int64        `json:"created_at"`
+	SampleID       string       `json:"sample_id,omitempty"`
+	RequestOutcome string       `json:"request_outcome,omitempty"`
 	MessageState
 }
 
@@ -97,7 +99,7 @@ func (s *Server) historyPage(ctx context.Context, id string, limit, offset int, 
 	if reverse {
 		order = "DESC"
 	}
-	rows, err := s.Store.DB.QueryContext(ctx, "SELECT id,session_id,role,content,media_metadata,created_at,structured_json FROM messages WHERE session_id=? ORDER BY rowid "+order+" LIMIT ? OFFSET ?", id, limit, offset)
+	rows, err := s.Store.DB.QueryContext(ctx, "SELECT m.id,m.session_id,m.role,m.content,m.media_metadata,m.created_at,m.structured_json,COALESCE(mr.sample_id,''),COALESCE(t.outcome,'') FROM messages m LEFT JOIN message_requests mr ON mr.message_id=m.id LEFT JOIN telemetry t ON t.id=mr.sample_id WHERE m.session_id=? ORDER BY m.rowid "+order+" LIMIT ? OFFSET ?", id, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +108,7 @@ func (s *Server) historyPage(ctx context.Context, id string, limit, offset int, 
 	for rows.Next() {
 		var x Message
 		var raw, structured string
-		if err = rows.Scan(&x.ID, &x.SessionID, &x.Role, &x.Content, &raw, &x.CreatedAt, &structured); err != nil {
+		if err = rows.Scan(&x.ID, &x.SessionID, &x.Role, &x.Content, &raw, &x.CreatedAt, &structured, &x.SampleID, &x.RequestOutcome); err != nil {
 			return nil, err
 		}
 		if json.Unmarshal([]byte(raw), &x.Attachments) != nil || json.Unmarshal([]byte(structured), &x.MessageState) != nil {
@@ -150,6 +152,7 @@ type inferRequest struct {
 	Tools       []ToolDefinition `json:"tools,omitempty"`
 	ToolResults []ToolResult     `json:"tool_results,omitempty"`
 	System      string           `json:"system,omitempty"`
+	RetryID     string           `json:"retry_id,omitempty"`
 }
 type chatMessage struct {
 	Role    string `json:"role"`
@@ -183,11 +186,13 @@ type wireChunk struct {
 		FinishReason *string `json:"finish_reason"`
 	} `json:"choices"`
 	Usage struct {
-		Input         *int64 `json:"prompt_tokens"`
-		Output        *int64 `json:"completion_tokens"`
-		Total         *int64 `json:"total_tokens"`
+		Input         *int64          `json:"prompt_tokens"`
+		Output        *int64          `json:"completion_tokens"`
+		Total         *int64          `json:"total_tokens"`
+		Cost          json.RawMessage `json:"cost"`
 		PromptDetails struct {
-			Cache *int64 `json:"cached_tokens"`
+			Cache  *int64 `json:"cached_tokens"`
+			Writes *int64 `json:"cache_write_tokens"`
 		} `json:"prompt_tokens_details"`
 		OutputDetails struct {
 			Reasoning *int64 `json:"reasoning_tokens"`
@@ -265,6 +270,9 @@ func (s *Server) infer(w http.ResponseWriter, r *http.Request) {
 	}
 	result, code := s.execute(r.Context(), v, "PLAYGROUND", emit)
 	if code != 0 && !began {
+		if id, ok := result.Details["sample_id"].(string); ok {
+			w.Header().Set("X-ModelAtlas-Sample-ID", id)
+		}
 		http.Error(w, result.Outcome, code)
 		return
 	}
@@ -282,7 +290,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if v.Prompt == "" && len(v.Attachments) > 0 {
 		return result, 400
 	}
-	if !validID(v.SessionID) || (v.Prompt == "" && len(v.ToolResults) == 0) || len(v.Prompt) > 32000 || len(v.System) > 16000 || len(v.Attachments) > 3 || v.MaxTokens < 0 || v.MaxTokens > 32768 {
+	if !validID(v.SessionID) || (v.Prompt == "" && len(v.ToolResults) == 0 && v.RetryID == "") || len(v.Prompt) > 32000 || len(v.System) > 16000 || len(v.Attachments) > 3 || v.MaxTokens < 0 || v.MaxTokens > 32768 || v.RetryID != "" && (source != "PLAYGROUND" || !validID(v.RetryID) || v.Prompt != "" || len(v.ToolResults) > 0 || len(v.Attachments) > 0) {
 		return result, 400
 	}
 	seen := map[string]bool{}
@@ -337,6 +345,10 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		}
 		return result, 500
 	}
+	if v.RetryID != "" && !s.retryableRequest(ctx, v.SessionID, v.RetryID, history) {
+		result.Outcome = "RETRY_STALE_OR_UNAVAILABLE"
+		return result, 409
+	}
 	caps := s.capabilities(ctx, scope)
 	tools, err := s.sessionTools(ctx, v.SessionID, v.Tools)
 	if err != nil {
@@ -357,6 +369,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		return result, 422
 	}
 	messages := []chatMessage{}
+	allAttachments := []Attachment{}
 	total := 0
 	for _, turn := range turns {
 		attachments := turn.Attachments
@@ -367,6 +380,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 				return result, 422
 			}
 		}
+		allAttachments = append(allAttachments, attachments...)
 		for _, a := range attachments {
 			if !oneOf(a.required(), caps...) {
 				result.Outcome = "CAPABILITY_REQUIRED_" + a.required()
@@ -471,25 +485,34 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		return result, 429
 	}
 	userID := newID()
-	if len(v.Attachments) > 0 && !s.rememberMedia(userID, v.Attachments) {
-		result.Outcome = "ATTACHMENT_MEMORY_LIMIT"
-		return result, 413
+	if encodedJSONContainsSecret(body, secrets) {
+		result.Outcome = "SECRET_IN_REQUEST_CONTENT"
+		return result, 422
 	}
-	for _, secret := range secrets {
-		if secret != "" && jsonContainsSecret(payload, secret) {
+	for _, a := range allAttachments {
+		if attachmentContainsSecret(a, secrets) {
 			result.Outcome = "SECRET_IN_REQUEST_CONTENT"
 			return result, 422
 		}
+	}
+	if len(v.Attachments) > 0 && !s.rememberMedia(userID, v.Attachments) {
+		result.Outcome = "ATTACHMENT_MEMORY_LIMIT"
+		return result, 413
 	}
 	if v.Tools != nil {
 		if err = s.saveSessionTools(ctx, v.SessionID, tools); err != nil {
 			return result, 500
 		}
 	}
+	messageIDs := []string{}
 	for _, turn := range turns[len(history):] {
 		if turn.Role == "user" {
 			turn.ID = userID
 		}
+		if turn.ID == "" {
+			turn.ID = newID()
+		}
+		messageIDs = append(messageIDs, turn.ID)
 		if err = s.saveMessage(ctx, v.SessionID, turn); err != nil {
 			result.Outcome = "HISTORY_SAVE"
 			return result, 500
@@ -497,7 +520,14 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	}
 	started := time.Now()
 	sampleID := newID()
-	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at,credential_version) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?,?)", sampleID, scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, operation, source, started.UnixMilli(), provider.CredentialVersion); err != nil {
+	receipt, err := s.newReceipt(ctx, scope, provider, started.UnixMilli(), secrets)
+	if err != nil {
+		result.Outcome = "RECEIPT_SAVE"
+		return result, 500
+	}
+	result.Details["sample_id"] = sampleID
+	result.Details["receipt"] = receipt
+	if err = s.startRequestRecord(ctx, sampleID, scope, operation, source, started.UnixMilli(), provider.CredentialVersion, v.SessionID, "", v.RetryID, messageIDs, result.Details); err != nil {
 		result.Outcome = "TELEMETRY_SAVE"
 		return result, 500
 	}
@@ -558,6 +588,8 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		}
 		saveCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
+		s.completeReceipt(saveCtx, receipt, scope, provider, operation, result.Outcome, inputs, outputs, result.Details, secrets)
+		raw, _ = json.Marshal(result.Details)
 		_, err := s.Store.DB.ExecContext(saveCtx, "UPDATE telemetry SET outcome=?,status_code=?,ttfb_ms=?,ttft_ms=?,latency_ms=?,input_tokens=?,output_tokens=?,details_json=? WHERE id=?", result.Outcome, status, ttfb, ttft, latency, inputs, outputs, string(raw), sampleID)
 		if err != nil {
 			result.Outcome = "TELEMETRY_SAVE"
@@ -573,22 +605,12 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	result.Status = resp.StatusCode
 	elapsed := time.Since(started).Milliseconds()
 	ttfb = &elapsed
-	rates := map[string]string{}
-	for name, values := range resp.Header {
-		low := strings.ToLower(name)
-		if strings.HasPrefix(low, "x-ratelimit-") || low == "retry-after" {
-			value := safeText(strings.Join(values, ","), 256, secrets...)
-			if value != "" {
-				rates[low] = value
-			}
-		}
-	}
-	result.Details["rate_limit_headers"] = rates
+	result.Details["rate_limit_headers"] = responseRateHeaders(resp.Header, secrets)
 	if resp.StatusCode != 200 {
 		result.Outcome = classifyHTTP(resp.StatusCode)
 		return result, 502
 	}
-	if err = emit("start", map[string]any{"selection": scope}); err != nil {
+	if err = emit("start", map[string]any{"selection": scope, "sample_id": sampleID}); err != nil {
 		cancel()
 		return result, 0
 	}
@@ -671,7 +693,10 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 				result.Details["finish_reason"] = safeText(*choice.FinishReason, 64, secrets...)
 			}
 		}
-		counts := map[string]*int64{"total_tokens": chunk.Usage.Total, "reasoning_tokens": chunk.Usage.OutputDetails.Reasoning, "cache_read_tokens": chunk.Usage.PromptDetails.Cache}
+		counts := map[string]*int64{"total_tokens": chunk.Usage.Total, "reasoning_tokens": chunk.Usage.OutputDetails.Reasoning, "cache_read_tokens": chunk.Usage.PromptDetails.Cache, "cache_write_tokens": chunk.Usage.PromptDetails.Writes}
+		if charge := reportedCharge(chunk.Usage.Cost, provider); charge != nil {
+			result.Details["provider_charge"] = charge
+		}
 		for name, count := range counts {
 			if count != nil && *count >= 0 {
 				result.Details[name] = *count
@@ -731,7 +756,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if ctx.Err() != nil {
 		return result, 0
 	}
-	if err = s.saveMessage(ctx, v.SessionID, Message{Role: "assistant", Content: text.String(), MessageState: MessageState{ToolCalls: completedCalls, ProtocolState: protocolState}}); err != nil {
+	if err = s.saveMessageWithRequest(ctx, v.SessionID, Message{ID: newID(), Role: "assistant", Content: text.String(), MessageState: MessageState{ToolCalls: completedCalls, ProtocolState: protocolState}}, sampleID); err != nil {
 		result.Outcome = "HISTORY_SAVE"
 		return result, 0
 	}
@@ -850,26 +875,16 @@ func (s *Server) groupBound(ctx context.Context, v Selection) bool {
 	return true
 }
 func (s *Server) listTelemetry(w http.ResponseWriter, r *http.Request) {
-	limit, offset := pageRange(r, 100)
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,status_code,ttfb_ms,ttft_ms,latency_ms,input_tokens,output_tokens,created_at,details_json FROM telemetry ORDER BY rowid DESC LIMIT ? OFFSET ?", limit, offset)
-	if err != nil {
-		http.Error(w, "database error", 500)
+	where, args, code := s.telemetryFilters(r)
+	if code != 0 {
+		http.Error(w, "invalid request filters", code)
 		return
 	}
-	defer rows.Close()
-	out := []map[string]any{}
-	for rows.Next() {
-		var p, a, c, m, g, e, o, src, result, raw string
-		var status, ttfb, ttft, lat, in, outTokens sql.NullInt64
-		var at int64
-		if rows.Scan(&p, &a, &c, &m, &g, &e, &o, &src, &result, &status, &ttfb, &ttft, &lat, &in, &outTokens, &at, &raw) != nil {
-			continue
-		}
-		obj := map[string]any{"provider_id": p, "account_id": a, "credential_id": c, "model_id": m, "group": g, "endpoint": e, "operation": o, "source": src, "outcome": result, "created_at": at, "http_status": nullable(status), "ttfb_ms": nullable(ttfb), "ttft_ms": nullable(ttft), "latency_ms": nullable(lat), "input_tokens": nullable(in), "output_tokens": nullable(outTokens)}
-		var details map[string]any
-		_ = json.Unmarshal([]byte(raw), &details)
-		obj["details"] = details
-		out = append(out, obj)
+	limit, offset := pageRange(r, 100)
+	out, e := s.readTelemetry(r.Context(), where, args, limit, offset)
+	if e != nil {
+		http.Error(w, "database error", 500)
+		return
 	}
 	jsonOK(w, 200, out)
 }

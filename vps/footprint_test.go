@@ -53,7 +53,9 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 	imagePayload, _ := json.Marshal(map[string]any{"data": []any{map[string]any{"b64_json": base64.StdEncoding.EncodeToString(encodedImage.Bytes())}}})
 	pcm := make([]byte, maxAttachment-44)
 	speechPayload, _ := json.Marshal(speechFixture(pcm, "audio/L16;codec=pcm;rate=24000"))
-	var catalogHTTP, mediaHTTP atomic.Int32
+	var catalogHTTP, mediaHTTP, longChatHTTP atomic.Int32
+	longReady := make(chan struct{})
+	var longOnce sync.Once
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer top-secret-example-key" {
 			t.Error("profile wrong credential")
@@ -80,6 +82,37 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 			return
 		}
 		if r.URL.Path == "/v1/chat/completions" {
+			var body struct {
+				Model    string `json:"model"`
+				Messages []struct {
+					Content string `json:"content"`
+				} `json:"messages"`
+			}
+			if json.NewDecoder(io.LimitReader(r.Body, 33<<20)).Decode(&body) != nil || body.Model != "m" {
+				t.Error("invalid profile chat wire")
+				http.Error(w, "wire", 400)
+				return
+			}
+			if len(body.Messages) > 50 {
+				size := 0
+				for _, m := range body.Messages {
+					size += len(m.Content)
+				}
+				if size < 31<<20 {
+					t.Error("long history silently truncated")
+				}
+				if longChatHTTP.Add(1) == 4 {
+					longOnce.Do(func() { close(longReady) })
+				}
+				select {
+				case <-longReady:
+				case <-r.Context().Done():
+					return
+				case <-time.After(30 * time.Second):
+					t.Error("four long contexts did not run together")
+					return
+				}
+			}
 			w.Header().Set("Content-Type", "text/event-stream")
 			fmt.Fprint(w, "data: {\"choices\":[{\"delta\":{\"content\":\"profile reply\"}}]}\n\n")
 			w.(http.Flusher).Flush()
@@ -129,6 +162,38 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 			t.Fatal(e)
 		}
 		sessionIDs = append(sessionIDs, id)
+	}
+	longIDs := []string{}
+	tx, e = s.Store.DB.Begin()
+	if e != nil {
+		t.Fatal(e)
+	}
+	chunk := strings.Repeat("h", 1<<20)
+	for i := 0; i < 4; i++ {
+		id := newID()
+		longIDs = append(longIDs, id)
+		if _, e = tx.Exec("INSERT INTO sessions VALUES(?,'p','a','c','m','','CHAT_COMPLETIONS','長上下文',?)", id, now()); e != nil {
+			t.Fatal(e)
+		}
+		for j := 0; j < 31; j++ {
+			for _, message := range []struct{ role, text string }{{"user", "retained question"}, {"assistant", chunk}} {
+				if _, e = tx.Exec("INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)", newID(), id, message.role, message.text, now()); e != nil {
+					t.Fatal(e)
+				}
+			}
+		}
+	}
+	libraryID := newID()
+	if _, e = tx.Exec("INSERT INTO sessions VALUES(?,'p','a','c','m','','CHAT_COMPLETIONS','完整歷史範例',?)", libraryID, now()); e != nil {
+		t.Fatal(e)
+	}
+	for i := 0; i < 11000; i++ {
+		if _, e = tx.Exec("INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,'user',?,?)", newID(), libraryID, fmt.Sprintf("保留的完整歷史 %05d", i), now()); e != nil {
+			t.Fatal(e)
+		}
+	}
+	if tx.Commit() != nil {
+		t.Fatal("long history commit")
 	}
 	var dbPath string
 	rows, e := s.Store.DB.Query("PRAGMA database_list")
@@ -248,6 +313,49 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 		}
 	}
 	chatRSS, chatPeak := memory()
+	// Real HTTP consumes all four 31-MiB contexts before any response finishes.
+	errs = make(chan error, 4)
+	for _, id := range longIDs {
+		wg.Add(1)
+		go func(id string) {
+			defer wg.Done()
+			body, _ := json.Marshal(map[string]any{"session_id": id, "prompt": "long profile"})
+			raw, e := do("/infer", string(body))
+			if e == nil && !strings.Contains(string(raw), "event: done") {
+				e = fmt.Errorf("long context not complete")
+			}
+			errs <- e
+		}(id)
+	}
+	wg.Wait()
+	close(errs)
+	for e := range errs {
+		if e != nil {
+			t.Fatal(e)
+		}
+	}
+	if longChatHTTP.Load() != 4 {
+		t.Fatal("missing long context HTTP")
+	}
+	longRSS, longPeak := memory()
+	exported, e := do("/sessions/export?session_id="+libraryID, "")
+	if e != nil {
+		t.Fatal(e)
+	}
+	var complete struct {
+		Messages []Message `json:"messages"`
+	}
+	if json.Unmarshal(exported, &complete) != nil || len(complete.Messages) != 11000 {
+		t.Fatal("profile export incomplete")
+	}
+	allRequests, e := do("/telemetry/export", "")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if !strings.Contains(string(allRequests), `"records":100008`) {
+		t.Fatal("profile request export incomplete")
+	}
+	exportRSS, exportPeak := memory()
 	options, _ := json.Marshal(ResearchOptions{Selections: []Selection{v}, Budget: 150, ProbeBudget: 1, MinimalInference: true})
 	started, e := do("/research/start", string(options))
 	if e != nil {
@@ -328,7 +436,7 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 	warm, hwm := memory()
 	info, _ := os.Stat(binary)
 	dbInfo, _ := os.Stat(dbPath)
-	report := map[string]any{"profile": "100000 retained samples/full SQL percentiles; 4 TLS chats; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each", "binary_bytes": info.Size(), "idle_rss_bytes": idle, "warm_rss_bytes": warm, "peak_rss_bytes": hwm, "sqlite_bytes": dbInfo.Size(), "gomemlimit_bytes": 192 << 20, "chat_rss_bytes": chatRSS, "chat_peak_bytes": chatPeak, "research_rss_bytes": researchRSS, "research_peak_bytes": researchPeak, "image_rss_bytes": imageRSS, "image_peak_bytes": imagePeak, "speech_rss_bytes": speechRSS, "speech_peak_bytes": speechPeak, "catalog_http": catalogHTTP.Load(), "media_http": mediaHTTP.Load(), "image_pixels_each": 2048 * 2048, "speech_bytes_each": maxAttachment, "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser"}
+	report := map[string]any{"profile": "100000 retained samples/full SQL percentiles; 4 TLS chats + 4 simultaneous full 31-MiB contexts; retained 11000-message and full request exports; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each", "binary_bytes": info.Size(), "idle_rss_bytes": idle, "warm_rss_bytes": warm, "peak_rss_bytes": hwm, "sqlite_bytes": dbInfo.Size(), "gomemlimit_bytes": 192 << 20, "chat_rss_bytes": chatRSS, "chat_peak_bytes": chatPeak, "research_rss_bytes": researchRSS, "research_peak_bytes": researchPeak, "image_rss_bytes": imageRSS, "image_peak_bytes": imagePeak, "speech_rss_bytes": speechRSS, "speech_peak_bytes": speechPeak, "long_context_rss_bytes": longRSS, "long_context_peak_bytes": longPeak, "long_context_bytes_each": 31 << 20, "long_context_http": longChatHTTP.Load(), "export_rss_bytes": exportRSS, "export_peak_bytes": exportPeak, "export_messages": 11000, "export_requests": 100008, "rss_target_bytes": 512 << 20, "catalog_http": catalogHTTP.Load(), "media_http": mediaHTTP.Load(), "image_pixels_each": 2048 * 2048, "speech_bytes_each": maxAttachment, "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser"}
 	raw, _ := json.MarshalIndent(report, "", "  ")
 	t.Log(string(raw))
 	if path := os.Getenv("MODELATLAS_FOOTPRINT_OUT"); path != "" {
@@ -336,7 +444,7 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
-	if hwm <= 0 || hwm > 256<<20 {
-		t.Fatalf("standalone workload RSS outside 256 MiB target: %d", hwm)
+	if hwm <= 0 || hwm > 512<<20 {
+		t.Fatalf("standalone workload RSS outside 512 MiB target: %d", hwm)
 	}
 }

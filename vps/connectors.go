@@ -20,6 +20,7 @@ type ConnectorConfig struct {
 	Fields      map[string]string `json:"fields"`
 	Unit        string            `json:"unit"`
 	FixedAbsent bool              `json:"fixed_charge_absent"`
+	Effective   bool              `json:"prices_are_effective"`
 }
 type ConnectorVersion struct {
 	ID          string          `json:"id"`
@@ -39,6 +40,9 @@ type ConnectorVersion struct {
 var connectorFields = map[string]string{"CATALOG": "model_id name group", "PRICING": "model_id group input output cache fixed", "QUOTA": "model_id group rpd tpd rpm tpm remaining used reset_at", "BALANCE": "model_id group balance used remaining", "USAGE": "model_id group requests tokens input_tokens output_tokens used", "PERFORMANCE": "model_id group tps ttft_ms latency_ms success_rate sample_count", "NOTICE": "model_id group notice"}
 
 func safeConnector(c ConnectorConfig) bool {
+	if c.Effective && (c.Kind != "PRICING" || c.Scope != "MODEL_KEY_GROUP" || c.Role != "INFERENCE") {
+		return false
+	}
 	allowed, ok := connectorFields[c.Kind]
 	if !ok || !safePath(c.Path) || !validPointer(c.Root) || !oneOf(c.Role, "NONE", "INFERENCE", "ACCOUNT_PAT") || !oneOf(c.Scope, "MODEL_KEY_GROUP", "MODEL_PROVIDER", "ACCOUNT", "CATALOG") || len(c.Fields) < 1 || len(c.Fields) > 12 {
 		return false
@@ -180,6 +184,9 @@ func extractConnector(c ConnectorConfig, v Selection, rows []any) (map[string]an
 			}
 			facts["price"] = legs
 			facts["nominal_price_state"] = priceState(legs)
+			if c.Effective {
+				facts["effective_charge"] = legs
+			}
 		}
 		return facts, nil
 	}

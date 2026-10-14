@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"math/big"
 	"net/http"
@@ -199,12 +200,27 @@ func (s *Server) manualFacts(w http.ResponseWriter, r *http.Request) {
 		ScopeKind string            `json:"scope_kind"`
 		Slice     string            `json:"slice"`
 		Note      string            `json:"note"`
+		Effective bool              `json:"confirmed_effective_price"`
 	}
 	if !decodeJSON(w, r, &v) {
 		return
 	}
 	if !s.validateSelection(r.Context(), v.Selection) || len(v.Note) > 512 {
 		http.Error(w, "selected scope required", 422)
+		return
+	}
+	if v.Effective && v.Price == nil {
+		http.Error(w, "confirmed price required", 422)
+		return
+	}
+	secrets, e := s.knownSecrets(r.Context())
+	if e != nil {
+		http.Error(w, "vault unavailable", 503)
+		return
+	}
+	encoded, _ := json.Marshal(v)
+	if encodedJSONContainsSecret(encoded, secrets) || rawSecretPattern.MatchString(v.Note) {
+		http.Error(w, "secret in metadata", 422)
 		return
 	}
 	if v.Price != nil {
@@ -218,7 +234,11 @@ func (s *Server) manualFacts(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "unit required", 400)
 			return
 		}
-		if err := s.observe(r.Context(), v.Selection, "MANUAL_PRICE", "USER", "SUCCESS", map[string]any{"price": v.Price, "manual_price_state": priceState(*v.Price), "note": v.Note}); err != nil {
+		facts := map[string]any{"price": v.Price, "manual_price_state": priceState(*v.Price), "note": v.Note}
+		if v.Effective {
+			facts["effective_charge"] = v.Price
+		}
+		if err := s.observe(r.Context(), v.Selection, "MANUAL_PRICE", "USER", "SUCCESS", facts); err != nil {
 			http.Error(w, "database error", 500)
 			return
 		}

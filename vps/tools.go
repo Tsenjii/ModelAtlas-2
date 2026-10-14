@@ -107,6 +107,25 @@ func (s *Server) saveMessage(ctx context.Context, session string, m Message) err
 	_, err := s.Store.DB.ExecContext(ctx, "INSERT INTO messages(id,session_id,role,content,media_metadata,structured_json,created_at) VALUES(?,?,?,?,?,?,?)", m.ID, session, m.Role, m.Content, string(media), string(state), now())
 	return err
 }
+func (s *Server) saveMessageWithRequest(ctx context.Context, session string, m Message, sample string) error {
+	if m.ID == "" {
+		m.ID = newID()
+	}
+	media, _ := json.Marshal(metadataOnly(m.Attachments))
+	state, _ := json.Marshal(m.MessageState)
+	tx, e := s.Store.DB.BeginTx(ctx, nil)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback()
+	if _, e = tx.ExecContext(ctx, "INSERT INTO messages(id,session_id,role,content,media_metadata,structured_json,created_at) VALUES(?,?,?,?,?,?,?)", m.ID, session, m.Role, m.Content, string(media), string(state), now()); e != nil {
+		return e
+	}
+	if _, e = tx.ExecContext(ctx, "INSERT INTO message_requests VALUES(?,?)", m.ID, sample); e != nil {
+		return e
+	}
+	return tx.Commit()
+}
 func toolContinuation(history []Message, v inferRequest) ([]Message, error) {
 	pending := map[string]ToolCall{}
 	for _, m := range history {

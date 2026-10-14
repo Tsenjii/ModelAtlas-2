@@ -76,3 +76,14 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 - 安全 DOM Markdown：程式碼、表格、標題、清單、引言、explicit HTTP(S) links；不使用 innerHTML，不抓遠端圖片，不執行 HTML／scripts；有界解析，過大內容保留純文字。
 - 實際 Browser caller 驗完整較早訊息只載一次、streamed reply、clipboard、命名／置頂／封存／恢復／全文搜尋、下載回讀／reload，375／1024／dark／200%。
 - RAM 目標依最新需求：512 MiB 優先，1 GiB 可接受；production 無 Node／瀏覽器。
+
+
+## 請求收據與計費正確性續片（待新 SHA gate）
+
+- 每個真 chat／Test／Compare／Assistant／media request 在 HTTP 前保存 RUNNING 和當次證據快照。停止／失敗／重啟仍保留；訊息連到 sample，原始內容不進 telemetry。
+- pricing 引用 observedAt／Source／精確 Scope／原 HTTP material epoch／origin；fresh ≤24h，原始證據永久保留。Catalog nominal、手動標價、已明確確認的 Key effective rates、站方實際回報扣款分開；未知 cache/write／native billing basis 不杜撰成本。OpenRouter `usage.cost` 的 USD 語意只在精確官方 origin 使用，其他 origin 回報單位 UNKNOWN。官方來源：<https://openrouter.ai/docs/cookbook/administration/usage-accounting>、<https://openrouter.ai/support/>（2026-10-14 查核）；沒有额外 billing HTTP。
+- Models FREE／PAID 與 BecameFree notification 改依 effective evidence；Catalog price=0 仍保留標價及 filter/sort，不會推導 Key 免費。手動價格頁提供明確確認、固定費單位／不存在確認；declarative connector `prices_are_effective` 只限 PRICING×MODEL_KEY_GROUP×INFERENCE，仍需真測試與 Review。
+- `/telemetry/detail`、篩選／分頁／完整NDJSON export；UI 從訊息／Models／Settings 進詳情。Export 固定開始時選定的rowset，再按rowid前進讀取，CSV式頁數不截完整歷史，也不長期占用唯一 DB connection。匯出結尾提供完整件數；出錯中止下載，不回傳假完成。
+- 明確 `retry_id` 只用最後一筆失敗／停止／中斷請求，在同 session/current selected scope 用目前設定重試；不追加重複 user input，全部 attempt 與 ancestry 保留。過期／成功／busy／archived／capability revoked 仍拒發。
+- 精確零與 Unknown 使用 TLS／完整 HTTP integration 與正式 Browser驗證；包含價格中途改變、憑證rotation、cache extra、native-exclusive usage不誤減cache、header及raw attachment secret、501+ rows／concurrent export／完整較早歷史。
+- 新 standalone workload：原測試不減，增加4路各31MiB原始context全部由TLS讀取後一起完成、11000訊息完整下載、100008請求export。這是服務PID RSS；目標512MiB，192MiB只是soft Go limit，使用者整台VPS／OS尚未量測。

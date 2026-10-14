@@ -102,7 +102,7 @@ func TestScheduledSyncAndEvidenceBasedNotificationEpoch(t *testing.T) {
 		t.Fatal("background catalog added membership")
 	}
 	price := func(amount string) {
-		_ = s.observe(ctx, v, "PRICING", "MANUAL", "SUCCESS", map[string]any{"price": PriceLegs{Input: &amount, Output: &amount, FixedAbsent: true, Unit: "USD/1K tokens"}})
+		_ = s.observe(ctx, v, "PRICING", "MANUAL", "SUCCESS", map[string]any{"price": PriceLegs{Input: &amount, Output: &amount, FixedAbsent: true, Unit: "USD/1K tokens"}, "effective_charge": PriceLegs{Input: &amount, Output: &amount, FixedAbsent: true, Unit: "USD/1K tokens"}})
 	}
 	price("1")
 	s.checkNotificationRules(ctx)
@@ -188,7 +188,7 @@ func TestUnknownPriceCannotGenerateConfirmedChangeNotification(t *testing.T) {
 	ctx := context.Background()
 	requireCode(t, req(t, s, "POST", "/api/v1/settings", map[string]any{"notifications": true, "notification_rules": NotificationRules{BecameFree: true, PriceChanged: true}}), 200)
 	one := "1"
-	_ = s.observe(ctx, v, "PRICING", "MANUAL", "SUCCESS", map[string]any{"price": PriceLegs{Input: &one, Output: &one, FixedAbsent: true, Unit: "USD/1K tokens"}})
+	_ = s.observe(ctx, v, "PRICING", "MANUAL", "SUCCESS", map[string]any{"price": PriceLegs{Input: &one, Output: &one, FixedAbsent: true, Unit: "USD/1K tokens"}, "effective_charge": PriceLegs{Input: &one, Output: &one, FixedAbsent: true, Unit: "USD/1K tokens"}})
 	s.checkNotificationRules(ctx)
 	zero := "0"
 	_ = s.observe(ctx, v, "PRICING", "MANUAL", "SUCCESS", map[string]any{"price": PriceLegs{Input: &zero, Unit: "USD/1K tokens"}})

@@ -33,7 +33,7 @@ func (s *Server) setting(ctx context.Context, key string, fallback any) any {
 func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
 	var version int
 	s.Store.DB.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&version)
-	out := map[string]any{"credential_version": version, "price": nil, "quota": nil, "strength": nil, "provider_performance": nil, "external_performance": nil, "price_changed": false, "newly_added": false, "tags": []string{}, "notes": ""}
+	out := map[string]any{"credential_version": version, "price": nil, "effective_price": nil, "quota": nil, "strength": nil, "provider_performance": nil, "external_performance": nil, "price_changed": false, "newly_added": false, "tags": []string{}, "notes": ""}
 	var created int64
 	s.Store.DB.QueryRowContext(ctx, "SELECT created_at FROM my_models WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=?", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint).Scan(&created)
 	out["created_at"] = created
@@ -75,12 +75,19 @@ func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
 			if at < now()-int64(24*time.Hour/time.Millisecond) {
 				continue
 			}
+			if out["effective_price"] == nil && facts["effective_charge"] != nil && oneOf(kind, "PRICING", "GROUP_PRICING", "MANUAL_PRICE") {
+				raw, _ := json.Marshal(facts["effective_charge"])
+				var legs PriceLegs
+				if json.Unmarshal(raw, &legs) == nil && oneOf(legs.Unit, "USD/1K tokens", "USD/request") && priceState(legs) != "UNKNOWN" {
+					out["effective_price"] = map[string]any{"legs": legs, "source": source, "observed_at": at, "basis": "EFFECTIVE"}
+				}
+			}
 			if oneOf(kind, "CATALOG", "PRICING", "GROUP_PRICING") && facts["price"] != nil {
 				priceRaw, _ := json.Marshal(facts["price"])
 				var legs PriceLegs
 				if json.Unmarshal(priceRaw, &legs) == nil && legs.Unit == "USD/1K tokens" {
 					if out["price"] == nil {
-						out["price"] = map[string]any{"legs": legs, "source": source, "observed_at": at}
+						out["price"] = map[string]any{"legs": legs, "source": source, "observed_at": at, "basis": "NOMINAL"}
 						previousPrice = string(priceRaw)
 						priceCount = 1
 					} else if priceCount == 1 && source == out["price"].(map[string]any)["source"] {

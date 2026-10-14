@@ -363,6 +363,22 @@ func exactString(r *big.Rat) *string {
 	return &raw
 }
 func priceState(p PriceLegs) string {
+	if p.Unit == "USD/request" {
+		if p.Fixed == nil {
+			if p.FixedAbsent {
+				return "FREE_NOW"
+			}
+			return "UNKNOWN"
+		}
+		n := decimal(*p.Fixed)
+		if n == nil || n.Sign() < 0 {
+			return "UNKNOWN"
+		}
+		if n.Sign() == 0 {
+			return "FREE_NOW"
+		}
+		return "PAID"
+	}
 	if p.Input == nil || p.Output == nil || p.Fixed == nil && !p.FixedAbsent {
 		return "UNKNOWN"
 	}

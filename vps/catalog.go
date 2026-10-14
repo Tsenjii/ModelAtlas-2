@@ -397,7 +397,7 @@ func (s *Server) listMyModels(w http.ResponseWriter, r *http.Request) {
 		obj["price_state"] = "UNKNOWN"
 		details := s.offerSummary(r.Context(), v)
 		obj["offer"] = details
-		if price, ok := details["price"].(map[string]any); ok {
+		if price, ok := details["effective_price"].(map[string]any); ok {
 			raw, _ := json.Marshal(price["legs"])
 			var legs PriceLegs
 			json.Unmarshal(raw, &legs)
