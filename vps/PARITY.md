@@ -66,3 +66,5 @@
 - PNG／JPEG／WebP 全部解碼驗證，先限總 4 MiPixels，總 decoded bytes 4 MiB，JSON 上限 8 MiB；截斷／非 raster／secret echo 拒絕。避免小 VPS 被無界影像記憶體拖垮。
 - 瀏覽器只在記憶體持有當前結果；scope 切換清除草稿、附件和 Blob URLs，異步讀檔不能落到後來的連線。供應商 URL 結果只提供無 referrer 的開啟連結，沒有伺服器 proxy／自動外部抓圖。
 - `media_test.go`、`browser_test.go`、`e2e/browser.cjs` 為本片回歸；新增 WebP decoder 依賴鎖定 `golang.org/x/image v0.47.0`，runtime 仍單一 Go binary。
+
+首輪媒體 Browser regression：`da00c79` 的 `getByLabel(端點類型)` 找不到動態 select；已補 production 可存取名稱，Catalog endpoint select 同步修正。此首輪失敗不當作完成證據。
