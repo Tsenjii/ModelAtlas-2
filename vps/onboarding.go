@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -341,6 +340,10 @@ func (s *Server) onboardingConfirm(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "duplicate selection", 409)
 				return
 			}
+			if bumpMembership(tx, selection) != nil {
+				http.Error(w, "database error", 500)
+				return
+			}
 			selections = append(selections, selection)
 		}
 	}
@@ -415,5 +418,3 @@ func (s *Server) batchImport(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonOK(w, 201, out)
 }
-
-var _ = sql.ErrNoRows

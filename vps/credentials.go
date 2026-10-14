@@ -100,6 +100,16 @@ func (s *Server) rotateCredential(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "explicit valid credential change required", 400)
 		return
 	}
+	p, providerErr := s.provider(r.Context(), v.ProviderID)
+	var role string
+	if providerErr != nil || s.Store.DB.QueryRowContext(r.Context(), "SELECT role FROM credentials WHERE provider_id=? AND account_id=? AND id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&role) != nil {
+		http.Error(w, "credential missing", 404)
+		return
+	}
+	if s.config(r.Context(), p).AuthMode == "NONE" && role == "INFERENCE" {
+		http.Error(w, "anonymous connection cannot receive a secret", 422)
+		return
+	}
 	enc := ""
 	var err error
 	if v.Version == 0 {
@@ -144,6 +154,10 @@ func (s *Server) rotateCredential(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err = tx.ExecContext(r.Context(), "UPDATE credentials SET encrypted_key=? WHERE provider_id=? AND account_id=? AND id=?", enc, v.ProviderID, v.AccountID, v.CredentialID); err != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	if _, err = tx.ExecContext(r.Context(), "DELETE FROM capability_confirmations WHERE json_extract(scope_key,'$.provider_id')=? AND json_extract(scope_key,'$.account_id')=? AND json_extract(scope_key,'$.credential_id')=?", v.ProviderID, v.AccountID, v.CredentialID); err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}

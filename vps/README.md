@@ -77,6 +77,7 @@ SQLite 資料庫、WAL、SHM 與 `MODELATLAS_MASTER_KEY` 必須有相互一致�
 - New API：`POST /newapi/{status,notice,pricing,account,token,summary,performance}`、`GET /newapi/snapshots`
 - LMSpeed：`POST /lmspeed/{key,sync}`、`GET /lmspeed/models`
 - 設定：`GET,POST /settings`、`GET,POST /checkins`、`GET /backup`、`POST /backup/restore`
+- Media transport：`POST /infer/media`（與 Android 已註冊 image-generation/edit/audio transcription 相同；結果 UI 尚未驗收）
 - 停止：`POST /infer/cancel`，body 為 `session_id`
 - Research：`GET, POST /research/candidates`、`/research/evidence`、`/research/runs`、`GET /research/eligibility`、`POST /research/probe`
 - Assistant：`POST /assistant/preview`、`/assistant/confirm`、`/assistant/undo`

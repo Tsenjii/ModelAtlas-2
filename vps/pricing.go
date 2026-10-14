@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"math/big"
 	"net/http"
-	"strconv"
 	"strings"
 	"unicode"
 )
@@ -243,5 +241,3 @@ func (s *Server) manualFacts(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonOK(w, 200, map[string]bool{"saved": true})
 }
-
-var _ = json.Number(strconv.Itoa(0))

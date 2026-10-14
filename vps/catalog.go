@@ -374,6 +374,21 @@ func (s *Server) listMyModels(w http.ResponseWriter, r *http.Request) {
 		obj["favorite"] = favorite
 		obj["watchlist"] = watch
 		obj["metadata"] = s.metadata(r.Context(), v.ProviderID, v.ModelID)
+		obj["price_state"] = "UNKNOWN"
+		// Only an exact selected-scope official zero quote can establish FREE_NOW; positive nominal price remains distinct from effective charge.
+		for _, o := range s.observations(r.Context(), v) {
+			if o.Status != "SUCCESS" || o.Kind != "CATALOG" {
+				continue
+			}
+			var legs PriceLegs
+			raw, _ := json.Marshal(o.Facts["price"])
+			if json.Unmarshal(raw, &legs) == nil && priceState(legs) == "FREE_NOW" {
+				obj["price_state"] = "FREE_NOW"
+				obj["price_source"] = o.Source
+			}
+			break
+		}
+		obj["performance"] = s.performance(r.Context(), v, int64(7*24*60*60*1000))
 		obj["enabled"] = s.validateSelection(r.Context(), v)
 		out = append(out, obj)
 	}
@@ -404,14 +419,24 @@ func (s *Server) addMyModel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid selection", 400)
 		return
 	}
+	tx, err := s.Store.DB.BeginTx(r.Context(), nil)
+	if err != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	defer tx.Rollback()
 	var role string
-	if s.Store.DB.QueryRowContext(r.Context(), "SELECT role FROM credentials WHERE provider_id=? AND account_id=? AND id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&role) != nil || role != "INFERENCE" {
+	if tx.QueryRowContext(r.Context(), "SELECT role FROM credentials WHERE provider_id=? AND account_id=? AND id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&role) != nil || role != "INFERENCE" {
 		http.Error(w, "inference credential required", 422)
 		return
 	}
-	_, err := s.Store.DB.ExecContext(r.Context(), "INSERT INTO my_models(provider_id,account_id,credential_id,model_id,group_id,endpoint,created_at) VALUES(?,?,?,?,?,?,?)", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, now())
-	if err != nil {
+	if err = s.applyMembership(tx, v, true); err != nil {
 		http.Error(w, "scope missing or membership exists", 409)
+		return
+	}
+	_, err = tx.ExecContext(r.Context(), "UPDATE membership_state SET state='ACTIVE' WHERE scope_key=?", scopeKey(v))
+	if err != nil || tx.Commit() != nil {
+		http.Error(w, "database error", 500)
 		return
 	}
 	s.scheduleEnrichment(r.Context(), v)
@@ -422,14 +447,18 @@ func (s *Server) removeMyModel(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &v) {
 		return
 	}
-	result, err := s.Store.DB.ExecContext(r.Context(), "DELETE FROM my_models WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=?", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint)
+	tx, err := s.Store.DB.BeginTx(r.Context(), nil)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
-	n, _ := result.RowsAffected()
-	if n == 0 {
-		http.Error(w, "missing membership", 404)
+	defer tx.Rollback()
+	if err = s.applyMembership(tx, v, false); err != nil {
+		http.Error(w, "membership missing", 404)
+		return
+	}
+	if tx.Commit() != nil {
+		http.Error(w, "database error", 500)
 		return
 	}
 	jsonOK(w, 200, map[string]any{"removed": true, "history_preserved": true})

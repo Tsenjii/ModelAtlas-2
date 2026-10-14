@@ -377,13 +377,14 @@ func parseNewApiPerformance(root map[string]json.RawMessage, key string, detail 
 		entry := map[string]any{nameKey: name}
 		for _, n := range []string{"avg_latency_ms", "success_rate", "avg_tps"} {
 			value := scalarField(row, n)
-			if value == nil {
+			_, numeric := value.(json.Number)
+			if !numeric {
 				return nil, errors.New("perf metric missing")
 			}
 			entry[n] = value
 		}
 		if detail {
-			if value := scalarField(row, "avg_ttft_ms"); value != nil {
+			if value := intField(row, "avg_ttft_ms"); value != nil {
 				entry["avg_ttft_ms"] = value
 			} else {
 				return nil, errors.New("TTFT missing")

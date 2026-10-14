@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"golang.org/x/sys/unix"
 	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
@@ -11,7 +12,10 @@ import (
 	"time"
 )
 
-type Store struct{ DB *sql.DB }
+type Store struct {
+	DB   *sql.DB
+	lock *os.File
+}
 
 func OpenStore(path string) (*Store, error) {
 	if path == "" {
@@ -33,6 +37,24 @@ func OpenStore(path string) (*Store, error) {
 			return nil, err
 		}
 	}
+	var lock *os.File
+	if path != ":memory:" {
+		var err error
+		lock, err = os.OpenFile(path+".lock", os.O_CREATE|os.O_RDWR, 0600)
+		if err != nil {
+			return nil, err
+		}
+		if err = unix.Flock(int(lock.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
+			lock.Close()
+			return nil, errors.New("database already in use")
+		}
+	}
+	success := false
+	defer func() {
+		if !success && lock != nil {
+			lock.Close()
+		}
+	}()
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, err
@@ -53,10 +75,21 @@ func OpenStore(path string) (*Store, error) {
 		db.Close()
 		return nil, fmt.Errorf("migration: %w", err)
 	}
-	return &Store{DB: db}, nil
+	if _, err = db.Exec("UPDATE telemetry SET outcome='INTERRUPTED' WHERE outcome='RUNNING'"); err != nil {
+		db.Close()
+		return nil, err
+	}
+	success = true
+	return &Store{DB: db, lock: lock}, nil
 }
-func (s *Store) Close() error { return s.DB.Close() }
-func now() int64              { return time.Now().UTC().UnixMilli() }
+func (s *Store) Close() error {
+	err := s.DB.Close()
+	if s.lock != nil {
+		s.lock.Close()
+	}
+	return err
+}
+func now() int64 { return time.Now().UTC().UnixMilli() }
 func validID(v string) bool {
 	if len(v) < 1 || len(v) > 256 {
 		return false

@@ -345,6 +345,12 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		return result, 500
 	}
 	started := time.Now()
+	sampleID := newID()
+	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?)", sampleID, scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, scope.Endpoint, source, started.UnixMilli()); err != nil {
+		result.Outcome = "TELEMETRY_SAVE"
+		return result, 500
+	}
+
 	result.Outcome = "NETWORK"
 	var ttfb, ttft, lastGenerated *int64
 	var inputs, outputs *int64
@@ -385,7 +391,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		}
 		saveCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
-		_, err := s.Store.DB.ExecContext(saveCtx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,status_code,ttfb_ms,ttft_ms,latency_ms,input_tokens,output_tokens,created_at,details_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", newID(), scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, scope.Endpoint, source, result.Outcome, status, ttfb, ttft, latency, inputs, outputs, started.UnixMilli(), string(raw))
+		_, err := s.Store.DB.ExecContext(saveCtx, "UPDATE telemetry SET outcome=?,status_code=?,ttfb_ms=?,ttft_ms=?,latency_ms=?,input_tokens=?,output_tokens=?,details_json=? WHERE id=?", result.Outcome, status, ttfb, ttft, latency, inputs, outputs, string(raw), sampleID)
 		if err != nil {
 			result.Outcome = "TELEMETRY_SAVE"
 		}

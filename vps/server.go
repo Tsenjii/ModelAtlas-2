@@ -246,6 +246,7 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /sessions", s.addSession)
 	api.HandleFunc("GET /messages", s.listMessages)
 	api.HandleFunc("POST /infer", s.infer)
+	api.HandleFunc("POST /infer/media", s.mediaInference)
 	api.HandleFunc("POST /infer/cancel", s.cancelInference)
 	api.HandleFunc("GET /telemetry", s.listTelemetry)
 	api.HandleFunc("GET /research/candidates", s.listCandidates)

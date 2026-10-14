@@ -383,3 +383,123 @@ func TestSafeBackupRoundTripDisablesCredentialsAndIsAtomic(t *testing.T) {
 		t.Fatal("conflicting backup partially wrote")
 	}
 }
+func TestStartupInterruptRecoveryAndSingleWriterLock(t *testing.T) {
+	s := testServer(t)
+	s.Store.DB.Exec("INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at) VALUES('inflight','p','a','c','m','','CHAT_COMPLETIONS','CHAT_COMPLETIONS','PLAYGROUND','RUNNING',1)")
+	var path string
+	if err := s.Store.DB.QueryRow("SELECT file FROM pragma_database_list WHERE name='main'").Scan(&path); err != nil {
+		t.Fatal(err)
+	}
+	if other, err := OpenStore(path); err == nil {
+		other.Close()
+		t.Fatal("second process/store accepted same DB")
+	}
+	s.Store.Close()
+	db, err := OpenStore(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	var outcome string
+	db.DB.QueryRow("SELECT outcome FROM telemetry WHERE id='inflight'").Scan(&outcome)
+	if outcome != "INTERRUPTED" {
+		t.Fatal("crash recovery lost the request")
+	}
+}
+func TestRegisteredMediaTransportsUseScopedTelemetry(t *testing.T) {
+	var calls atomic.Int32
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		if r.Header.Get("Authorization") != "Bearer top-secret-example-key" {
+			t.Error("wrong media credential")
+		}
+		switch r.URL.Path {
+		case "/v1/images/generations":
+			w.Write([]byte(`{"data":[{"b64_json":"aW1hZ2U="}],"usage":{"input_tokens":0,"output_tokens":0}}`))
+		case "/v1/audio/transcriptions":
+			if err := r.ParseMultipartForm(5 << 20); err != nil {
+				t.Error(err)
+			}
+			if r.FormValue("model") != "m" {
+				t.Error("wrong audio model")
+			}
+			w.Write([]byte(`{"text":"transcribed text"}`))
+		default:
+			t.Error("media went to chat/unknown route")
+			http.Error(w, "wrong", 404)
+		}
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = up.Client()
+	base := seed(t, s, up.URL+"/v1")
+	v := base
+	v.Endpoint = "IMAGES_GENERATION"
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	confirmCaps(t, s, v, []string{"IMAGE_GENERATION"})
+	requireCode(t, req(t, s, "POST", "/api/v1/infer/media", MediaRequest{Selection: v, Prompt: "draw", Size: "1024x1024"}), 200)
+	v.Endpoint = "AUDIO"
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	confirmCaps(t, s, v, []string{"AUDIO_INPUT"})
+	clip := Attachment{Kind: "audio", Filename: "a.wav", MIME: "audio/wav", Data: base64.StdEncoding.EncodeToString([]byte("RIFF0000WAVE"))}
+	requireCode(t, req(t, s, "POST", "/api/v1/infer/media", MediaRequest{Selection: v, Audio: &clip}), 200)
+	if calls.Load() != 2 {
+		t.Fatal("missing media caller")
+	}
+	var count int
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM telemetry WHERE source='PLAYGROUND_MEDIA' AND outcome='SUCCESS' AND ttft_ms IS NULL").Scan(&count)
+	if count != 2 {
+		t.Fatal("media bypassed proper telemetry")
+	}
+}
+func TestEmptyTelemetryUnknownAndLongLastGoodHistory(t *testing.T) {
+	s := testServer(t)
+	v := seed(t, s, "https://provider.example/v1")
+	newSession(t, s, v)
+	p := s.performance(context.Background(), v, 86400000)
+	if p["observed_rpm"] != nil || p["observed_total_tpm"] != nil || p["success_rate"] != nil {
+		t.Fatal("no traffic treated as observed zero")
+	}
+	s.observe(context.Background(), v, "PRICE", "OFFICIAL", "SUCCESS", map[string]any{"value": "last-good"})
+	for i := 0; i < 205; i++ {
+		s.observe(context.Background(), v, "PRICE", "OFFICIAL", "FAILED", map[string]any{})
+	}
+	result := req(t, s, "GET", "/api/v1/models/detail?provider_id=p&account_id=a&credential_id=c&model_id=m&group=&endpoint=CHAT_COMPLETIONS", nil)
+	requireCode(t, result, 200)
+	if !strings.Contains(result.Body.String(), "last-good") {
+		t.Fatal("last-good hidden after repeated failures")
+	}
+	if quantile([]float64{10, 20}, .5) != 15 {
+		t.Fatal("quantile diverged from Android")
+	}
+}
+func TestStaleAssistantUndoCannotRemoveLaterMembership(t *testing.T) {
+	s := testServer(t)
+	v := seed(t, s, "https://provider.example/v1")
+	p := req(t, s, "POST", "/api/v1/assistant/preview", AssistantAction{Action: "ADD_MY_MODEL", Selection: v})
+	requireCode(t, p, 201)
+	var action AssistantAction
+	json.Unmarshal(p.Body.Bytes(), &action)
+	requireCode(t, req(t, s, "POST", "/api/v1/assistant/confirm", map[string]any{"id": action.ID, "confirm": true}), 200)
+	requireCode(t, req(t, s, "DELETE", "/api/v1/my-models", v), 200)
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	requireCode(t, req(t, s, "POST", "/api/v1/assistant/undo", map[string]any{"id": action.ID, "confirm": true}), 409)
+	if !s.validateSelection(context.Background(), v) {
+		t.Fatal("stale undo removed later membership")
+	}
+}
+func TestTinyExactPricesNeverRoundToFree(t *testing.T) {
+	tiny := decimal(json.Number("1e-40"))
+	if tiny == nil {
+		t.Fatal("valid provider decimal exponent lost")
+	}
+	rendered := exactString(tiny)
+	if rendered == nil || *rendered == "0" {
+		t.Fatal("small positive price rounded to zero")
+	}
+	zero := "0"
+	state := priceState(PriceLegs{Input: rendered, Output: &zero, FixedAbsent: true})
+	if state == "FREE_NOW" {
+		t.Fatal("tiny nonzero cost became free")
+	}
+}

@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 3
+const schemaVersion = 4
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -50,7 +50,8 @@ func migrate(db *sql.DB) error {
 	}
 	if _, err = tx.Exec(`CREATE TABLE IF NOT EXISTS credential_auth_fields(provider_id TEXT NOT NULL,account_id TEXT NOT NULL,credential_id TEXT NOT NULL,fields_json TEXT NOT NULL,PRIMARY KEY(provider_id,account_id,credential_id),FOREIGN KEY(provider_id,account_id,credential_id) REFERENCES credentials(provider_id,account_id,id));
  CREATE TABLE IF NOT EXISTS credential_secret_versions(provider_id TEXT NOT NULL,account_id TEXT NOT NULL,credential_id TEXT NOT NULL,version INTEGER NOT NULL,encrypted_key TEXT NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(provider_id,account_id,credential_id,version));
- PRAGMA user_version=3;`); err != nil {
+ CREATE TABLE IF NOT EXISTS membership_mutations(id INTEGER PRIMARY KEY AUTOINCREMENT,scope_key TEXT NOT NULL,at INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS membership_mutations_scope ON membership_mutations(scope_key,id);
+ PRAGMA user_version=4;`); err != nil {
 		return err
 	}
 	return tx.Commit()

@@ -18,34 +18,51 @@ func (s *Server) assistantPreview(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &v) {
 		return
 	}
-	if v.Action != "ADD_MY_MODEL" && v.Action != "REMOVE_MY_MODEL" {
-		http.Error(w, "tool not allowlisted", 422)
+	if !oneOf(v.Action, "ADD_MY_MODEL", "REMOVE_MY_MODEL") || !validScope(v.Selection) {
+		http.Error(w, "invalid allowlisted action or scope", 422)
 		return
 	}
-	if v.Selection.Endpoint != "CHAT_COMPLETIONS" || !validID(v.Selection.ProviderID) || !validID(v.Selection.AccountID) || !validID(v.Selection.CredentialID) || !validID(v.Selection.ModelID) || len(v.Selection.Group) > 120 {
-		http.Error(w, "invalid scope", 422)
+	tx, err := s.Store.DB.BeginTx(r.Context(), nil)
+	if err != nil {
+		http.Error(w, "database error", 500)
 		return
 	}
-	if !s.validateSelection(r.Context(), v.Selection) && v.Action == "ADD_MY_MODEL" {
-		// Adding a model requires a real scoped credential, not preexisting membership.
-		var n int
-		err := s.Store.DB.QueryRowContext(r.Context(), "SELECT 1 FROM models m JOIN credentials c ON c.provider_id=m.provider_id WHERE m.provider_id=? AND m.id=? AND c.account_id=? AND c.id=? AND c.enabled=1 AND c.role='INFERENCE'", v.Selection.ProviderID, v.Selection.ModelID, v.Selection.AccountID, v.Selection.CredentialID).Scan(&n)
-		if err != nil {
-			http.Error(w, "model or credential not found", 422)
-			return
-		}
+	defer tx.Rollback()
+	var role string
+	var enabled int
+	if tx.QueryRowContext(r.Context(), "SELECT role,enabled FROM credentials WHERE provider_id=? AND account_id=? AND id=?", v.Selection.ProviderID, v.Selection.AccountID, v.Selection.CredentialID).Scan(&role, &enabled) != nil || role != "INFERENCE" || v.Action == "ADD_MY_MODEL" && enabled != 1 {
+		http.Error(w, "inference credential required", 422)
+		return
 	}
-	exists := s.validateSelection(r.Context(), v.Selection)
+	var count int
+	if tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM my_models WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=?", v.Selection.ProviderID, v.Selection.AccountID, v.Selection.CredentialID, v.Selection.ModelID, v.Selection.Group, v.Selection.Endpoint).Scan(&count) != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	exists := count > 0
 	if v.Action == "ADD_MY_MODEL" && exists || v.Action == "REMOVE_MY_MODEL" && !exists {
 		http.Error(w, "action not applicable", 409)
+		return
+	}
+	var present int
+	if tx.QueryRowContext(r.Context(), "SELECT 1 FROM models WHERE provider_id=? AND id=?", v.Selection.ProviderID, v.Selection.ModelID).Scan(&present) != nil {
+		http.Error(w, "model missing", 422)
+		return
+	}
+	revision, err := membershipRevision(tx, v.Selection)
+	if err != nil {
+		http.Error(w, "database error", 500)
 		return
 	}
 	v.ID = newID()
 	v.State = "PENDING"
 	raw, _ := json.Marshal(v.Selection)
-	before, _ := json.Marshal(map[string]bool{"existed": exists})
-	_, err := s.Store.DB.ExecContext(r.Context(), "INSERT INTO action_ledger(id,action,subject,before_json,after_json,state,created_at) VALUES(?,?,?,?,?,'PENDING',?)", v.ID, v.Action, v.Selection.ProviderID, string(before), string(raw), now())
-	if err != nil {
+	before, _ := json.Marshal(map[string]any{"existed": exists, "revision": revision})
+	if _, err = tx.ExecContext(r.Context(), "INSERT INTO action_ledger(id,action,subject,before_json,after_json,state,created_at) VALUES(?,?,?,?,?,'PENDING',?)", v.ID, v.Action, v.Selection.ProviderID, string(before), string(raw), now()); err != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	if tx.Commit() != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
@@ -54,7 +71,10 @@ func (s *Server) assistantPreview(w http.ResponseWriter, r *http.Request) {
 func (s *Server) applyMembership(tx *sql.Tx, v Selection, add bool) error {
 	if add {
 		_, err := tx.Exec("INSERT INTO my_models(provider_id,account_id,credential_id,model_id,group_id,endpoint,created_at) VALUES(?,?,?,?,?,?,?)", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, now())
-		return err
+		if err != nil {
+			return err
+		}
+		return bumpMembership(tx, v)
 	}
 	result, err := tx.Exec("DELETE FROM my_models WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=?", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint)
 	if err != nil {
@@ -64,7 +84,7 @@ func (s *Server) applyMembership(tx *sql.Tx, v Selection, add bool) error {
 	if n != 1 {
 		return sql.ErrNoRows
 	}
-	return nil
+	return bumpMembership(tx, v)
 }
 func (s *Server) assistantTransition(w http.ResponseWriter, r *http.Request, undo bool) {
 	var v struct {
@@ -84,8 +104,8 @@ func (s *Server) assistantTransition(w http.ResponseWriter, r *http.Request, und
 		return
 	}
 	defer tx.Rollback()
-	var action, raw, state string
-	if tx.QueryRowContext(r.Context(), "SELECT action,after_json,state FROM action_ledger WHERE id=?", v.ID).Scan(&action, &raw, &state) != nil {
+	var action, raw, state, beforeRaw string
+	if tx.QueryRowContext(r.Context(), "SELECT action,after_json,state,before_json FROM action_ledger WHERE id=?", v.ID).Scan(&action, &raw, &state, &beforeRaw) != nil {
 		http.Error(w, "action missing", 404)
 		return
 	}
@@ -108,6 +128,18 @@ func (s *Server) assistantTransition(w http.ResponseWriter, r *http.Request, und
 		http.Error(w, "invalid action", 500)
 		return
 	}
+	var expected struct {
+		Revision *int64 `json:"revision"`
+	}
+	if json.Unmarshal([]byte(beforeRaw), &expected) != nil || expected.Revision == nil {
+		http.Error(w, "legacy preview must be recreated", 409)
+		return
+	}
+	revision, err := membershipRevision(tx, choice)
+	if err != nil || revision != *expected.Revision {
+		http.Error(w, "membership changed since preview or action; refuse stale undo", 409)
+		return
+	}
 	add := action == "ADD_MY_MODEL"
 	if undo {
 		add = !add
@@ -123,7 +155,13 @@ func (s *Server) assistantTransition(w http.ResponseWriter, r *http.Request, und
 		http.Error(w, "conflicting membership state", 409)
 		return
 	}
-	result, err := tx.Exec("UPDATE action_ledger SET state=? WHERE id=? AND state=?", next, v.ID, target)
+	revision, err = membershipRevision(tx, choice)
+	if err != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	before, _ := json.Marshal(map[string]any{"revision": revision})
+	result, err := tx.Exec("UPDATE action_ledger SET state=?,before_json=? WHERE id=? AND state=?", next, string(before), v.ID, target)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

@@ -3,10 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"io"
 	"net/http"
-	"strings"
 )
 
 type Eligibility struct {
@@ -133,32 +130,20 @@ func (s *Server) probeCandidate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "credential scope invalid", 422)
 		return
 	}
-	url := strings.TrimRight(p.BaseURL, "/") + "/models"
-	req, err := http.NewRequestWithContext(r.Context(), "GET", url, nil)
+	cfg := s.config(r.Context(), p)
+	url, err := endpointURL(p, cfg, "MODELS", "")
 	if err != nil {
-		http.Error(w, "invalid endpoint", 422)
+		http.Error(w, "catalog endpoint unavailable", 422)
 		return
 	}
-	if key != "" {
-		req.Header.Set("Authorization", "Bearer "+key)
-	}
-	resp, err := s.Client.Do(req)
+	adapter := adapterRegistry[cfg.Adapter]
+	catalog, err := adapter.Discover(s, r.Context(), p, cfg, key)
 	if err != nil {
-		http.Error(w, "provider request failed", 502)
-		return
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		http.Error(w, "provider request failed", 502)
-		return
-	}
-	var catalog upstreamModels
-	if json.NewDecoder(io.LimitReader(resp.Body, 2<<20)).Decode(&catalog) != nil {
-		http.Error(w, "invalid catalog", 502)
+		http.Error(w, "provider catalog unavailable", 502)
 		return
 	}
 	found := false
-	for _, m := range catalog.Data {
+	for _, m := range catalog {
 		if m.ID == model {
 			found = true
 			break

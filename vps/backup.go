@@ -151,6 +151,10 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 			fail()
 			return
 		}
+		if bumpMembership(tx, selection) != nil {
+			fail()
+			return
+		}
 	}
 	if tx.Commit() != nil {
 		fail()

@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
 
+var decimalPattern = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:[.][0-9]*)?|[.][0-9]+)(?:[eE][+-]?[0-9]{1,4})?$`)
 var normalizeSeparators = regexp.MustCompile(`[_./:@\s-]+`)
 
 func canonicalID(raw string) string {
@@ -190,6 +192,19 @@ func (s *Server) modelDetail(w http.ResponseWriter, r *http.Request) {
 			lastGood[k] = o
 		}
 	}
+	goodRows, goodErr := s.Store.DB.QueryContext(r.Context(), "SELECT id,kind,source,facts_json,observed_at FROM observations o WHERE scope_key=? AND status='SUCCESS' AND NOT EXISTS(SELECT 1 FROM observations newer WHERE newer.scope_key=o.scope_key AND newer.kind=o.kind AND newer.source=o.source AND newer.status='SUCCESS' AND newer.rowid>o.rowid)", scopeKey(v))
+	if goodErr == nil {
+		for goodRows.Next() {
+			var o Observation
+			var raw string
+			o.Selection = v
+			o.Status = "SUCCESS"
+			if goodRows.Scan(&o.ID, &o.Kind, &o.Source, &raw, &o.ObservedAt) == nil && json.Unmarshal([]byte(raw), &o.Facts) == nil {
+				lastGood[o.Kind+":"+o.Source] = o
+			}
+		}
+		goodRows.Close()
+	}
 	window := parseWindow(r)
 	if window <= 0 {
 		http.Error(w, "invalid window", 400)
@@ -199,12 +214,22 @@ func (s *Server) modelDetail(w http.ResponseWriter, r *http.Request) {
 	accountScope := v
 	accountScope.CredentialID = ""
 	accountFacts := s.observations(r.Context(), accountScope)
-	jsonOK(w, 200, map[string]any{"selection": v, "metadata": meta, "capabilities": s.capabilities(r.Context(), v), "latest": latest, "last_good": lastGood, "history": obs, "local": s.performance(r.Context(), v, window), "external": external, "account_facts": accountFacts})
+	local := s.performance(r.Context(), v, window)
+	if r.URL.Query().Get("window") == "custom" {
+		start, e1 := strconv.ParseInt(r.URL.Query().Get("start"), 10, 64)
+		end, e2 := strconv.ParseInt(r.URL.Query().Get("end"), 10, 64)
+		if e1 != nil || e2 != nil || start < 0 || end <= start || end > now() {
+			http.Error(w, "invalid custom time window", 400)
+			return
+		}
+		local = s.performanceBetween(r.Context(), v, start, end)
+	}
+	jsonOK(w, 200, map[string]any{"selection": v, "metadata": meta, "capabilities": s.capabilities(r.Context(), v), "latest": latest, "last_good": lastGood, "history": obs, "local": local, "external": external, "account_facts": accountFacts})
 }
 func parseWindow(r *http.Request) int64 {
 	raw := r.URL.Query().Get("window")
 	switch raw {
-	case "", "7d":
+	case "custom", "", "7d":
 		return int64(7 * 24 * time.Hour / time.Millisecond)
 	case "1h":
 		return int64(time.Hour / time.Millisecond)
@@ -218,9 +243,14 @@ func parseWindow(r *http.Request) int64 {
 	return 0
 }
 func (s *Server) performance(ctx context.Context, v Selection, window int64) map[string]any {
-	out := map[string]any{"source": "MY_KEY_LOCAL", "window_ms": window, "samples": 0, "success_rate": nil, "observed_rpm": 0, "observed_input_tpm": nil, "observed_output_tpm": nil, "observed_total_tpm": nil}
-	query := "SELECT outcome,status_code,ttft_ms,latency_ms,input_tokens,output_tokens,details_json,created_at FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND created_at>=? ORDER BY rowid"
-	rows, err := s.Store.DB.QueryContext(ctx, query, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, now()-window)
+	end := now()
+	return s.performanceBetween(ctx, v, end-window, end)
+}
+func (s *Server) performanceBetween(ctx context.Context, v Selection, start, end int64) map[string]any {
+	window := end - start
+	out := map[string]any{"source": "MY_KEY_LOCAL", "window_ms": window, "samples": 0, "success_rate": nil, "observed_rpm": nil, "observed_input_tpm": nil, "observed_output_tpm": nil, "observed_total_tpm": nil}
+	query := "SELECT outcome,status_code,ttft_ms,latency_ms,input_tokens,output_tokens,details_json,created_at FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND created_at>=? AND created_at<? ORDER BY rowid"
+	rows, err := s.Store.DB.QueryContext(ctx, query, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, start, end)
 	if err != nil {
 		return out
 	}
@@ -239,6 +269,10 @@ func (s *Server) performance(ctx context.Context, v Selection, window int64) map
 		if rows.Scan(&outcome, &status, &ttft, &lat, &input, &output, &raw, &at) != nil {
 			continue
 		}
+		if outcome == "CANCELLED" {
+			cancelled++
+			continue
+		}
 		if at >= atNow-60000 {
 			rpm++
 			if input.Valid {
@@ -252,8 +286,7 @@ func (s *Server) performance(ctx context.Context, v Selection, window int64) map
 				outputKnown = false
 			}
 		}
-		if outcome == "CANCELLED" {
-			cancelled++
+		if outcome == "RUNNING" {
 			continue
 		}
 		samples++
@@ -262,7 +295,7 @@ func (s *Server) performance(ctx context.Context, v Selection, window int64) map
 		} else {
 			failures[outcome]++
 		}
-		if outcome == "SUCCESS" {
+		{
 			if ttft.Valid {
 				ttfts = append(ttfts, float64(ttft.Int64))
 			}
@@ -278,26 +311,46 @@ func (s *Server) performance(ctx context.Context, v Selection, window int64) map
 		}
 		history = append(history, map[string]any{"at": at, "outcome": outcome, "http_status": nullable(status)})
 	}
+	rows.Close()
+	out["window_start"] = start
+	out["window_end"] = end
 	out["samples"] = samples
 	out["cancelled"] = cancelled
 	out["failures"] = failures
-	out["observed_rpm"] = rpm
+	if rpm > 0 {
+		out["observed_rpm"] = rpm
+	}
 	out["history"] = history
 	if samples > 0 {
 		out["success_rate"] = float64(success) / float64(samples)
 	}
-	out["confidence"] = "LOW"
-	if samples >= 20 {
-		out["confidence"] = "NORMAL"
-	}
-	if inputKnown {
+	if inputKnown && rpm > 0 {
 		out["observed_input_tpm"] = in
 	}
-	if outputKnown {
+	if outputKnown && rpm > 0 {
 		out["observed_output_tpm"] = outTokens
 	}
-	if inputKnown && outputKnown {
+	if inputKnown && outputKnown && rpm > 0 {
 		out["observed_total_tpm"] = in + outTokens
+	}
+	var current, knownIn, knownOut int
+	var currentIn, currentOut sql.NullInt64
+	_ = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*),COUNT(input_tokens),COUNT(output_tokens),SUM(input_tokens),SUM(output_tokens) FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND outcome!='CANCELLED' AND created_at>=? AND created_at<?", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, atNow-60000, atNow).Scan(&current, &knownIn, &knownOut, &currentIn, &currentOut)
+	out["observed_rpm"] = nil
+	out["observed_input_tpm"] = nil
+	out["observed_output_tpm"] = nil
+	out["observed_total_tpm"] = nil
+	if current > 0 {
+		out["observed_rpm"] = current
+		if knownIn == current {
+			out["observed_input_tpm"] = currentIn.Int64
+		}
+		if knownOut == current {
+			out["observed_output_tpm"] = currentOut.Int64
+		}
+		if knownIn == current && knownOut == current {
+			out["observed_total_tpm"] = currentIn.Int64 + currentOut.Int64
+		}
 	}
 	out["ttft"] = distribution(ttfts)
 	out["latency"] = distribution(lats)
@@ -319,7 +372,16 @@ func distribution(a []float64) any {
 	for _, v := range a {
 		sum += v
 	}
-	return map[string]float64{"mean": sum / float64(len(a)), "p50": a[(len(a)-1)*50/100], "p90": a[(len(a)-1)*90/100], "p95": a[(len(a)-1)*95/100]}
+	return map[string]float64{"mean": sum / float64(len(a)), "p50": quantile(a, .5), "p90": quantile(a, .9), "p95": quantile(a, .95)}
+}
+
+func quantile(a []float64, q float64) float64 {
+	position := float64(len(a)-1) * q
+	low := int(position)
+	if low >= len(a)-1 {
+		return a[len(a)-1]
+	}
+	return a[low] + (a[low+1]-a[low])*(position-float64(low))
 }
 
 type PriceLegs struct {
@@ -341,8 +403,14 @@ func decimal(v any) *big.Rat {
 	default:
 		return nil
 	}
-	if len(raw) > 96 || strings.ContainsAny(raw, "/eE") {
+	if len(raw) > 128 || !decimalPattern.MatchString(raw) {
 		return nil
+	}
+	if at := strings.IndexAny(raw, "eE"); at >= 0 {
+		exponent, err := strconv.Atoi(raw[at+1:])
+		if err != nil || exponent > 4096 || exponent < -4096 {
+			return nil
+		}
 	}
 	r, ok := new(big.Rat).SetString(raw)
 	if !ok {
@@ -354,7 +422,15 @@ func exactString(r *big.Rat) *string {
 	if r == nil {
 		return nil
 	}
-	raw := strings.TrimRight(strings.TrimRight(r.FloatString(30), "0"), ".")
+	scale := 34
+	exponent := len(new(big.Int).Abs(r.Num()).String()) - len(r.Denom().String())
+	if exponent < 0 {
+		scale += -exponent
+	}
+	if scale > 4130 {
+		scale = 4130
+	}
+	raw := strings.TrimRight(strings.TrimRight(r.FloatString(scale), "0"), ".")
 	if raw == "" || raw == "-0" {
 		raw = "0"
 	}
@@ -399,8 +475,14 @@ func (s *Server) lifecycle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "membership missing", 404)
 		return
 	}
-	_, err := s.Store.DB.ExecContext(r.Context(), "INSERT INTO membership_state VALUES(?,?,?,?) ON CONFLICT(scope_key) DO UPDATE SET state=excluded.state,favorite=excluded.favorite,watchlist=excluded.watchlist", scopeKey(v.Selection), v.State, v.Favorite, v.Watchlist)
+	tx, err := s.Store.DB.BeginTx(r.Context(), nil)
 	if err != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	defer tx.Rollback()
+	_, err = tx.ExecContext(r.Context(), "INSERT INTO membership_state VALUES(?,?,?,?) ON CONFLICT(scope_key) DO UPDATE SET state=excluded.state,favorite=excluded.favorite,watchlist=excluded.watchlist", scopeKey(v.Selection), v.State, v.Favorite, v.Watchlist)
+	if err != nil || bumpMembership(tx, v.Selection) != nil || tx.Commit() != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
