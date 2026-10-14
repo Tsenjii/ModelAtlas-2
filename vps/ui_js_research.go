@@ -4,7 +4,7 @@ const jsResearch = `
 let researchCandidates=[],researchSources=[],researchRuns=[],researchLimit=100,researchStamp="",researchLoading=false;
 const researchStates={DISCOVERED:"新線索",VERIFYING:"驗證中",VERIFIED:"符合門檻",HIGH_VALUE_GREY_ZONE:"待查證",STALE:"資料待更新",FAILED:"失敗",REJECTED:"不符條件"};
 async function loadResearch(){
- if(researchLoading)return;researchLoading=true;try{const [candidates,sources,runs,funnel,aa]=await Promise.all([api("/research/candidates"),api("/research/sources"),api("/research/runs"),api("/research/funnel"),api("/research/aa")]);[researchCandidates,researchSources,researchRuns]=[candidates,sources,runs];researchStamp=JSON.stringify(runs.slice(0,20).map(r=>[r.id,r.status,r.used]));renderResearch(funnel);renderAA(aa);}catch(e){notice(e.message,true);}finally{researchLoading=false;}
+ if(researchLoading)return;researchLoading=true;try{const [dashboard,aa]=await Promise.all([api("/research/dashboard"),api("/research/aa")]);const {candidates,sources,runs,funnel}=dashboard;[researchCandidates,researchSources,researchRuns]=[candidates,sources,runs];researchStamp=JSON.stringify(runs.slice(0,20).map(r=>[r.id,r.status,r.used]));renderResearch(funnel);renderAA(aa);}catch(e){notice(e.message,true);}finally{researchLoading=false;}
 }
 function renderResearch(funnel){
  const counts=$("research-funnel");counts.replaceChildren();Object.entries(funnel.states).forEach(([state,count])=>item(counts,researchStates[state],String(count)));renderResearchCandidates();
