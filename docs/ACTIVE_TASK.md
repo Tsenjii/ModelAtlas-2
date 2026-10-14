@@ -41,3 +41,9 @@
 - **未追平 Android**：New API 多端點／Dedicated Adapters、Vision/PDF/Audio、Tool calls、完整配額／價格／LMSpeed、AA 最新 top4 ingest、自動 Crawler、LLM Assistant、可驗證自動 Reflection 與真 VPS SSH 部署。Schema／介面不代表完成；參見 `vps/README.md`。
 
 - VPS P4 追加 `vps/newapi.go`：實際 New API `/api/status` 版本偵測，rc.25 嚴格門禁，`/api/pricing` 與 `/api/user/self` 使用獨立 ACCOUNT_PAT，`/api/usage/token/` 使用 INFERENCE Key，僅持久化白名單數值事實＋來源，不儲存原始 body / PAT；TLS fixture `newapi_test.go`，角色隔離/未知版拒發；複雜 Group、New API performance、Dedicated Adapters 仍待補。
+
+## VPS 最新續作（2026-10-14）
+
+使用者本輪指示：檢查既有 VPS 全部程式，修問題並追上目前 Android main。維持 `feature/vps-rebuild-20261014`／PR #20，對照 Android `5009e0c8`；不跳去未合併的 audio-output draft。具體 production 入口、修復與測試及限制以 `vps/PARITY.md` 為新版 VPS 交接，取代上方舊 VPS「仍缺 Vision/PDF/Audio 等」快照。Android 本身的 PLAY-004／P8–P10 尚未驗收狀態不變。
+
+本機 Go race/HTTP + vet 已通過，Browser 交給 `vps-browser` Actions。依最新 PR HEAD 同 SHA build/device＋VPS 四工作結果驗收；未全部成功不合併，任何 regression 直接修復。

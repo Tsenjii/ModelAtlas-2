@@ -12,21 +12,23 @@
 
 ## 目前可用功能
 
-1. 真正的 Provider/Account/加密憑證 API，手動 Catalog 或向選定供應商執行 `GET /models` 實際同步；不同 Provider 的同名模型保持獨立。
-2. My Models 僅明確加入；一次同步錯誤不刪 last-good Catalog／My Models。
-3. Playground 已連到 HTTPS Chat Completions SSE 實際上游、持久化對話、建立 Telemetry；不把 User Cancel 算成功。
-4. Research candidate/evidence/run、手動線索，真實 Catalog probe 只認證模型存在；缺 recurring quota 與 Taiwan 證據一律 Grey。RPD≥100 且 TPD≥1M 為同時門檻；AA 動態 top4 *尚需獨立正式來源接線*。
-5. Assistant 提供本地允許清單的 My Models Preview → 明確 Confirm → Undo；**尚不包含 LLM 規劃器**。
-6. Provider Recipes 限制設定欄位、保留每版歷史，明確確認才可 Rollback。
+- Quick / Advanced 新增、可恢復 Review、批次匯入、多 Account / Key、啟用／停用、加密的自訂 header/query、Key version／rollback。
+- Catalog 與 My Models 分開；canonical/alias、多維分類、搜尋、favorite/watchlist、hidden/archive、詳情與來源／歷史；加入後自動排入 durable metadata enrichment。
+- 真實 Chat Completions：文字與 reasoning SSE、完整對話、停止與新對話；圖片／PDF／WAV／MP3 每種一份且各限 4 MiB，exact-scope 能力重新驗證。
+- Manual Test / Compare Live 都走同一推論與 telemetry；預設 7d，可切 1h/24h/30d/All；取消排除 My Uptime，rolling-60s 用量、TTFT/TTFB/TPS 各自有語義。
+- New API rc.25 status/notice/pricing/PAT account/inference token/perf；保留精確價格／group 倍率／版本／來源，nominal price 不冒充 effective charge。
+- Dedicated adapter registry、LMSpeed 固定正主單頁匯入與持久化 budget/cache；官方、站方、本地、外部不互相覆蓋。
+- Check-in 按設定時區本地日期；通知預設 OFF；無 Key 的設定匯出與原子還原（credential 必須重填再啟用）。
+- 研究 candidate/evidence、可逆 action preview/confirm/undo、recipe version/rollback 保留既有 API。
 
-**限制：** 尚未追平 Android 所有 New API/Dedicated Adapters、Vision/PDF/Audio、Tool Calling、圖片生成、完整 quota/pricing、LMSpeed、自動 Crawler、實際 AA 排名匯入、完整 LLM Assistant、真實反思代理。**不要以已有資料表或接口偽稱功能已完成。** Group 非空而無已驗證的 provider adapter 時 HTTP 前拒發，不會悄悄切到預設 group。
+功能核對、修復清單、Android 主線本身尚未完成的能力，以及測試限制見 [PARITY.md](PARITY.md)。多模態 raw 附件不入 DB；服務重啟後，含媒體的舊對話必須另建新對話。沒有支援的 transport 會明確拒絕，不能藉設定混送 protocol。
 
 ## 本機測試與編譯
 
 ```sh
 cd vps
-go mod tidy
-go test -race ./...
+go mod download
+go test -mod=readonly -race ./...
 go vet ./...
 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o modelatlas-vps .
 ```
@@ -68,8 +70,24 @@ SQLite 資料庫、WAL、SHM 與 `MODELATLAS_MASTER_KEY` 必須有相互一致�
 - Models：`GET, POST /models`、`POST /models/sync`、`GET, POST, DELETE /my-models`
 - Playground：`GET, POST /sessions`、`GET /messages?session_id=`、`POST /infer`（text/event-stream）
 - Telemetry：`GET /telemetry`
+- Intelligence：`GET /models/detail`（完整七維 selected scope）、`POST /intelligence/sync`、`GET /intelligence/history`
+- Models 操作：`POST /models/{metadata,capabilities,facts,lifecycle,test,compare}`
+- Onboarding：`GET /onboarding`、`POST /onboarding/{preview,retry,confirm,import}`
+- 憑證：`POST /credentials/{toggle,rotate}`；自訂秘密只存在 encrypted vault
+- New API：`POST /newapi/{status,notice,pricing,account,token,summary,performance}`、`GET /newapi/snapshots`
+- LMSpeed：`POST /lmspeed/{key,sync}`、`GET /lmspeed/models`
+- 設定：`GET,POST /settings`、`GET,POST /checkins`、`GET /backup`、`POST /backup/restore`
+- 停止：`POST /infer/cancel`，body 為 `session_id`
 - Research：`GET, POST /research/candidates`、`/research/evidence`、`/research/runs`、`GET /research/eligibility`、`POST /research/probe`
 - Assistant：`POST /assistant/preview`、`/assistant/confirm`、`/assistant/undo`
 - Recipes：`GET, POST /recipes`、`POST /recipes/rollback`
 
 勿在 API 網址 query string 傳遞 Token／Key。
+
+## 路徑與 Group
+
+Provider Config 的自訂 endpoint path 以 origin-root 為基準，例如 `/v1/chat/completions`；留空則沿用 Base URL + adapter default。所有攜带憑證的 URL 保持同一 HTTPS origin，拒絕 redirect。Group 在 Credential 建立時明確綁定，只有相同 group 的選定對話可發出；不附加杜撰的 `X-Group` header。
+
+## Browser CI
+
+Node.js / Playwright 僅供開發與 CI，VPS 產品 runtime 不需要 Node.js。測試執行正常 `Server.Handler`、SQLite 與 TLS fixture provider，實際操作 Review／model／chat／hide/restore，不以 HTML 字串或 mock DOM 當 browser 驗收。

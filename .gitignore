@@ -7,3 +7,8 @@ local.properties
 *.hprof
 *.log
 .idea/
+
+vps/e2e/node_modules/
+vps/e2e/screenshots/
+vps/data/
+vps/modelatlas-vps*

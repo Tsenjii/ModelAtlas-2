@@ -24,5 +24,6 @@ fi
 chmod 600 /etc/modelatlas/modelatlas.env
 install -m 0644 "$(dirname "$0")/modelatlas-vps.service" /etc/systemd/system/modelatlas-vps.service
 systemctl daemon-reload
-systemctl enable --now modelatlas-vps.service
+systemctl enable modelatlas-vps.service
+systemctl restart modelatlas-vps.service
 systemctl --no-pager status modelatlas-vps.service

@@ -2,28 +2,19 @@ package main
 
 const jsViews = `
 async function refresh(){
- [providers,models,myModels,sessions]=await Promise.all([api("/providers"),api("/models"),api("/my-models"),api("/sessions")]);
- document.querySelectorAll(".provider-select").forEach(select=>{const old=select.value;select.replaceChildren();providers.forEach(p=>option(select,p.id,p.name+" ("+p.id+")"));if(providers.some(p=>p.id===old))select.value=old;});
- $("provider-list").replaceChildren();if(!providers.length)item($("provider-list"),"尚未新增 Provider","先新增 API Provider。");
- providers.forEach(p=>item($("provider-list"),p.name,p.id+" · "+p.base_url+" · "+p.auth_mode));
- $("catalog").replaceChildren();if(!models.length)item($("catalog"),"Catalog 尚無資料","新增模型或從 Provider /models 同步。");
- models.forEach(m=>item($("catalog"),m.display_name,m.provider_id+" / "+m.id+" · "+m.price_state+" · "+m.provenance));
- $("my-models").replaceChildren();if(!myModels.length)item($("my-models"),"尚未選擇","請明確加入 My Models。");
- myModels.forEach(m=>item($("my-models"),m.model_id,m.provider_id+" / "+m.account_id+" / "+m.credential_id+" / "+(m.group||"default")));
- const old=$("session").value;$("session").replaceChildren();sessions.forEach(s=>option($("session"),s.id,(s.title||"新對話")+" · "+s.model_id));if(sessions.some(s=>s.id===old))$("session").value=old;
- $("target").replaceChildren();myModels.forEach(m=>option($("target"),JSON.stringify(m),m.provider_id+" · "+m.model_id+" ("+m.account_id+")"));
- $("new-session").disabled=!myModels.length;await loadChat();
+ const version=++refreshVersion,values=await Promise.all([api("/providers"),api("/accounts"),api("/credentials"),api("/models"),api("/my-models?all=true"),api("/sessions"),api("/settings")]);if(version!==refreshVersion)return;
+ [providers,accounts,credentials,models,myModels,sessions,settings]=values;renderProviders();renderModels();renderCatalog();
+ const oldTarget=$("target").value;$("target").replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled).forEach(m=>option($("target"),key(m),m.metadata.model_id+" · "+(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" / "+(m.group||m.credential_id)));if([...$("target").options].some(o=>o.value===oldTarget))$("target").value=oldTarget;
+ const oldSession=$("session").value;$("session").replaceChildren();const target=$("target").value;sessions.filter(s=>key(s)===target).forEach(s=>option($("session"),s.id,s.title||s.model_id));if([...$("session").options].some(o=>o.value===oldSession))$("session").value=oldSession;
+ $("new-session").disabled=busy||!target;$("send").disabled=busy||!$("session").value;$("manual-target").replaceChildren();credentials.filter(c=>c.enabled&&c.role==="INFERENCE").forEach(c=>option($("manual-target"),JSON.stringify(c),c.provider_id+" / "+c.account_id+" / "+c.label));
+ if(!busy)await loadChat();
 }
-async function loadChat(){
- const id=$("session").value,log=$("chat");log.replaceChildren();
- if(!id){item(log,"尚無對話","請先建立指定連線的新對話。");return;}
- try{const history=await api("/messages?session_id="+encodeURIComponent(id));if(!history.length)item(log,"尚無訊息","輸入訊息開始聊天。");history.forEach(m=>bubble(m.role,m.content));}
- catch(e){notice("讀取對話失敗："+e.message,true);}
+function renderProviders(){const q=$("provider-search").value.toLowerCase(),box=$("provider-list");box.replaceChildren();providers.filter(p=>(p.name+" "+p.base_url).toLowerCase().includes(q)).forEach(p=>{const count=myModels.filter(m=>m.provider_id===p.id&&m.state==="ACTIVE").length;item(box,p.name,(p.description||p.config?.adapter||"OpenAI 相容")+" · "+count+" 個模型",()=>providerDetail(p));});if(!box.children.length)item(box,"尚無 Provider","展開下方表單，加入第一個連線。");}
+function renderModels(){const q=$("model-search").value.toLowerCase(),filter=$("model-provider").value,state=$("model-lifecycle").value,box=$("my-models");box.replaceChildren();
+ myModels.filter(m=>m.state===state&&(!filter||filter===m.provider_id)&&(!$("model-capability").value||m.metadata.capabilities.includes($("model-capability").value))&&(!$("model-favorites").value||m[$("model-favorites").value])&&[m.model_id,m.metadata.canonical_id,...(m.metadata.aliases||[])].join(" ").toLowerCase().includes(q)).forEach(m=>{const row=el("div",undefined,"model-row"),check=el("input");check.type="checkbox";check.checked=selectedCompare.has(key(m));check.setAttribute("aria-label","比較 "+m.model_id+" · "+m.provider_id);check.addEventListener("change",()=>{if(check.checked)selectedCompare.set(key(m),scope(m));else selectedCompare.delete(key(m));});row.append(check);item(row,(m.favorite?"★ ":"")+m.model_id,m.provider_id+" · "+(m.group||"預設 Group")+(m.enabled?"":" · 已停用"),()=>modelDetail(m));box.append(row);});if(!box.children.length)item(box,"尚無模型","從 Catalog 選擇，或手動加入模型。");
+ const old=$("model-provider").value;$("model-provider").replaceChildren();option($("model-provider"),"","全部");providers.forEach(p=>option($("model-provider"),p.id,p.name));$("model-provider").value=old;
 }
-async function loadStatus(){
- try{const [status,tel,candidates]=await Promise.all([api("/status"),api("/telemetry"),api("/research/candidates")]);
- $("status").textContent=JSON.stringify(status,null,2);$("telemetry").textContent=JSON.stringify(tel.slice(0,15),null,2);
- $("research").textContent="研究線索 "+candidates.length+" 筆\n"+JSON.stringify(candidates.slice(0,10),null,2);
- }catch(e){notice("讀取紀錄失敗："+e.message,true);}
-}
+function renderCatalog(){const box=$("catalog"),q=$("catalog-search").value.toLowerCase();box.replaceChildren();models.filter(m=>(m.id+" "+m.display_name).toLowerCase().includes(q)).slice(0,100).forEach(m=>item(box,m.display_name,m.provider_id+" · "+m.id,()=>catalogDetail(m)));if(!box.children.length)item(box,"Catalog 尚無資料","到 Provider 詳情同步，或手動加入。");}
+async function loadChat(){const version=++loadVersion,id=$("session").value;$("chat").replaceChildren();if(!id){item($("chat"),"準備開始","選擇模型，再建立新對話。");return;}try{const history=await api("/messages?session_id="+encodeURIComponent(id));if(version!==loadVersion||id!==$("session").value||busy)return;if(!history.length)item($("chat"),"新對話","輸入訊息開始聊天。");history.forEach(m=>{bubble(m.role,m.content);if(m.attachments?.length)bubble("assistant","附件："+m.attachments.map(a=>a.filename).join("、"));});}catch(e){notice(e.message,true);}}
+async function loadStatus(){try{const [status,tel,candidates,runs,onboarding]=await Promise.all([api("/status"),api("/telemetry"),api("/research/candidates"),api("/intelligence/history"),api("/onboarding")]);$("status").textContent=status.providers+" 個 Provider · "+status.telemetry+" 次請求";$("telemetry").replaceChildren();tel.slice(0,30).forEach(t=>item($("telemetry"),t.model_id+" · "+t.outcome,t.source+" · "+(t.latency_ms??"—")+" ms · "+new Date(t.created_at).toLocaleString()));$("research").textContent="研究線索 "+candidates.length+" 筆";$("sync-history").replaceChildren();runs.slice(0,15).forEach(r=>item($("sync-history"),r.selection.model_id+" · "+r.status,new Date(r.at).toLocaleString()));$("onboarding-list").replaceChildren();onboarding.filter(r=>r.status==="REVIEW").forEach(r=>item($("onboarding-list"),r.provider.name,r.models.length+" 個候選",()=>openReview(r)));const f=$("settings-form");f.elements.performance_window.value=settings.performance_window||"7d";f.elements.timezone.value=settings.timezone||"Asia/Taipei";f.elements.notifications.checked=!!settings.notifications;}catch(e){notice(e.message,true);}}
 `

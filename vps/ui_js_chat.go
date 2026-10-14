@@ -1,44 +1,29 @@
 package main
 
 const jsChat = `
+function renderAttachments(){const box=$("attachments");box.replaceChildren();attachments.forEach(a=>{const chip=el("div",undefined,"attachment");if(a.kind==="image"){const img=el("img");img.src="data:"+a.mime+";base64,"+a.data;img.alt=a.filename;chip.append(img);}chip.append(el("span",a.filename));action(chip,"移除",()=>{attachments=attachments.filter(x=>x!==a);renderAttachments();});box.append(chip);});}
+async function pickFile(kind,input){const file=input.files[0];input.value="";if(!file)return;if(file.size>4*1024*1024||file.size===0)throw Error("每份附件限 4 MiB");const bytes=new Uint8Array(await file.arrayBuffer());let mime=file.type;if(kind==="pdf")mime="application/pdf";if(kind==="audio")mime=String.fromCharCode(...bytes.slice(0,4))==="RIFF"?"audio/wav":"audio/mpeg";if(kind==="image"){mime=bytes[0]===137?"image/png":bytes[0]===255?"image/jpeg":"image/webp";}let binary="";for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));const filename=file.name.replace(/[\\/\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060-\u206f]/g,"").slice(0,75)||"attachment";attachments=attachments.filter(a=>a.kind!==kind);attachments.push({kind,filename,mime,data:btoa(binary)});renderAttachments();}
+function setBusy(value){busy=value;["target","session","new-session","prompt","image-picker","pdf-picker","audio-picker"].forEach(id=>$(id).disabled=value);$("send").disabled=value||!$("session").value;$("stop").hidden=!value;}
 async function send(e){
- e.preventDefault();const session_id=$("session").value,prompt=$("prompt").value.trim();
- if(!session_id||!prompt){notice("先選對話及輸入訊息",true);return;}
- const btn=$("send");btn.disabled=true;bubble("user",prompt);$("prompt").value="";const answer=bubble("assistant","");
- try{
-  const resp=await fetch("/api/v1/infer",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({session_id,prompt})});
-  if(!resp.ok||!resp.body)throw Error("HTTP "+resp.status);
-  const rd=resp.body.getReader(),decoder=new TextDecoder();let pending="",done=false;
-  for(;;){
-   const chunk=await rd.read();if(chunk.done)break;pending+=decoder.decode(chunk.value,{stream:true});
-   let i;while((i=pending.indexOf("\n\n"))>=0){
-    const frame=pending.slice(0,i);pending=pending.slice(i+2);
-    const e=frame.split("\n").find(x=>x.startsWith("event: ")),d=frame.split("\n").find(x=>x.startsWith("data: "));
-    if(!e||!d)continue;
-    const type=e.slice(7).trim(),payload=JSON.parse(d.slice(6));
-    if(type==="delta"){answer.textContent+=payload.text;$("chat").scrollTop=$("chat").scrollHeight;}
-    if(type==="error")throw Error(payload.category||"stream error");
-    if(type==="done")done=true;
-   }
-  }
-  if(!done)throw Error("串流中斷");notice("回應及 Telemetry 已保存");
- }catch(err){notice("推論失敗："+err.message,true);if(!answer.textContent)answer.textContent="[沒有完整回應]";}
- finally{btn.disabled=false;}
+ e.preventDefault();const session_id=$("session").value,prompt=$("prompt").value.trim(),selected=attachments.slice();if(!session_id||!prompt)return;setBusy(true);controller=new AbortController();let answer=null,think=null,done=false,started=false;
+ try{const resp=await fetch("/api/v1/infer",{method:"POST",credentials:"same-origin",signal:controller.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({session_id,prompt,attachments:selected})});if(!resp.ok||!resp.body)throw Error((await resp.text()).trim());bubble("user",prompt);answer=bubble("assistant","");$("prompt").value="";
+  const reader=resp.body.getReader(),decoder=new TextDecoder();let pending="";for(;;){const chunk=await reader.read();pending+=decoder.decode(chunk.value||new Uint8Array(),{stream:!chunk.done});let index;while((index=pending.indexOf("\n\n"))>=0){const frame=pending.slice(0,index);pending=pending.slice(index+2);const event=frame.split("\n").find(x=>x.startsWith("event:")),raw=frame.split("\n").filter(x=>x.startsWith("data:")).map(x=>x.slice(5).trim()).join("\n");if(!event||!raw)continue;const type=event.slice(6).trim(),payload=JSON.parse(raw);if(type==="start"){started=true;attachments=[];renderAttachments();}if(type==="delta"){answer.textContent+=payload.text;$("chat").scrollTop=$("chat").scrollHeight;}if(type==="reasoning"){if(!think){const details=el("details"),summary=el("summary","推理過程");think=el("div",undefined,"reasoning");details.append(summary,think);answer.before(details);}think.textContent+=payload.text;}if(type==="error")throw Error(payload.category);if(type==="done"){done=true;const d=payload.details;notice("已保存 · "+(d.ttft_ms===undefined?"":"TTFT "+d.ttft_ms+" ms · ")+d.latency_ms+" ms");}}
+  if(chunk.done)break;
+  }if(!done)throw Error("串流中斷");
+ }catch(err){if(err.name==="AbortError"){notice("已停止回應");}else{notice("回應失敗："+err.message,true);if(!started)$("prompt").value=prompt;}if(answer&&!answer.textContent)answer.textContent="未完成回應";}
+ finally{controller=null;setBusy(false);}
 }
+async function newConversation(){if(busy||!$("target").value)return;const selection=JSON.parse($("target").value),created=await submit("/sessions",{...selection,title:"新對話 · "+selection.model_id});attachments=[];$("prompt").value="";renderAttachments();await refresh();$("session").value=created.id;$("send").disabled=false;await loadChat();}
 document.addEventListener("DOMContentLoaded",async()=>{
- document.querySelectorAll(".bottom-nav button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.tab)));
- $("settings-toggle").addEventListener("click",()=>show("settings"));
- const target=document.createElement("select");target.id="target";target.setAttribute("aria-label","新對話指定連線");
- const label=document.createElement("label");label.textContent="新對話使用的連線";label.append(target);$("new-session").before(label);
- $("session").addEventListener("change",loadChat);
- $("new-session").addEventListener("click",async()=>{if(!target.value)return;try{const m=JSON.parse(target.value);const created=await submit("/sessions",{...m,title:"新對話 · "+m.model_id});await refresh();$("session").value=created.id;await loadChat();notice("對話已建立");}catch(e){notice("新增對話失敗："+e.message,true);}});
- for(const [id,path] of [["provider-form","/providers"],["account-form","/accounts"],["credential-form","/credentials"],["model-form","/models"],["membership-form","/my-models"],["sync-form","/models/sync"]]){
-  $(id).addEventListener("submit",async ev=>{ev.preventDefault();const form=ev.currentTarget,button=form.querySelector("button");button.disabled=true;
-   try{await submit(path,data(form));if(id==="credential-form")form.elements.secret.value="";notice("已儲存");await refresh();}
-   catch(err){notice("操作失敗："+err.message,true);}finally{button.disabled=false;}
-  });
- }
- $("send-form").addEventListener("submit",send);
- try{await refresh();notice("連線正常");}catch(e){notice("連線失敗："+e.message,true);}
+ document.querySelectorAll(".bottom-nav button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.tab)));$("settings-toggle").addEventListener("click",()=>show("settings"));$("detail-close").addEventListener("click",()=>$("detail").close());$("review-close").addEventListener("click",()=>$("review").close());
+ $("session").addEventListener("change",()=>{attachments=[];$("prompt").value="";renderAttachments();loadChat();});$("target").addEventListener("change",()=>{attachments=[];$("prompt").value="";renderAttachments();refresh();});$("new-session").addEventListener("click",()=>newConversation().catch(e=>notice(e.message,true)));$("send-form").addEventListener("submit",send);$("stop").addEventListener("click",async()=>{const id=$("session").value;controller?.abort();try{await submit("/infer/cancel",{session_id:id});}catch(e){if(!e.message.includes("no active"))notice(e.message,true);}});
+ for(const kind of ["image","pdf","audio"]){$(kind+"-picker").addEventListener("change",e=>pickFile(kind,e.target).catch(e=>notice(e.message,true)));}
+ $("provider-search").addEventListener("input",renderProviders);$("model-search").addEventListener("input",renderModels);$("model-lifecycle").addEventListener("change",renderModels);$("model-provider").addEventListener("change",renderModels);$("model-capability").addEventListener("change",renderModels);$("model-favorites").addEventListener("change",renderModels);$("catalog-search").addEventListener("input",renderCatalog);
+ $("compare").addEventListener("click",async()=>{try{const results=await submit("/models/compare",{selections:[...selectedCompare.values()]});$("compare-result").replaceChildren();results.forEach(r=>item($("compare-result"),r.selection.provider_id+" · "+r.outcome,"TTFT "+(r.details.ttft_ms??"—")+" ms · "+r.details.latency_ms+" ms"));}catch(e){notice(e.message,true);}});
+ $("model-form").addEventListener("submit",async e=>{e.preventDefault();try{const v=data(e.target),c=JSON.parse(v.selection);await submit("/models",{provider_id:c.provider_id,id:v.model_id,display_name:v.display_name});await submit("/my-models",{provider_id:c.provider_id,account_id:c.account_id,credential_id:c.id,model_id:v.model_id,group:c.group,endpoint:"CHAT_COMPLETIONS"});await refresh();notice("已加入模型");}catch(e){notice(e.message,true);}});
+ bindOnboarding();$("restore-form").addEventListener("submit",async e=>{e.preventDefault();try{await submit("/backup/restore",{confirm:e.target.elements.confirm.checked,backup:JSON.parse(e.target.elements.json.value)});e.target.reset();await refresh();notice("已還原；請在 Provider 詳情重新設定 Key");}catch(e){notice(e.message,true);}});$("settings-form").addEventListener("submit",async e=>{e.preventDefault();const f=e.target,v=data(f);try{await submit("/settings",{timezone:v.timezone,performance_window:v.performance_window,notifications:f.elements.notifications.checked});if(f.elements.notifications.checked&&"Notification" in window&&Notification.permission==="default")await Notification.requestPermission();await refresh();notice("設定已儲存");}catch(e){notice(e.message,true);}});
+ $("lmspeed-form").addEventListener("submit",async e=>{e.preventDefault();try{await submit("/lmspeed/key",data(e.target));e.target.elements.secret.value="";notice("LMSpeed Key 已保存");}catch(e){notice(e.message,true);}});$("lmspeed-sync").addEventListener("click",async()=>{try{await submit("/lmspeed/sync",{locale:"zh"});notice("外部資料已同步");}catch(e){notice(e.message,true);}});
+ let knownSync="";setInterval(async()=>{if(document.hidden||busy)return;try{const rows=await api("/intelligence/history"),stamp=JSON.stringify(rows.slice(0,5).map(x=>[x.id,x.status,x.at]));if(knownSync&&stamp!==knownSync){await refresh();if(settings.notifications&&"Notification" in window&&Notification.permission==="granted")new Notification("ModelAtlas",{body:"模型資料已更新"});}knownSync=stamp;}catch(e){}},10000);
+ try{await refresh();notice("已連線");}catch(e){notice(e.message,true);}
 });
 `

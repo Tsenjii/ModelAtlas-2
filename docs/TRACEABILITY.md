@@ -62,3 +62,16 @@
 - **整體 VPS Android parity = PARTIAL**。VPS 分支不可因已有 schema/mock/form 就當成 Android 功能全追平，PR 先維持 Draft，只有同 SHA 雙平台全綠且 product slice acceptance 後才可合併。
 
 | VPS-NEWAPI-001 | `vps/newapi.go` version-gated rc.25 read-only HTTP with separate account credential and inference credential, allowlisted persisted facts; `vps/newapi_test.go` TLS integration | CANDIDATE; await exact HEAD CI, further New API coverage pending |
+
+## VPS 續作 2026-10-14
+
+| Requirement | Production caller / tests | 狀態 |
+|---|---|---|
+| VPS-PARITY-001 | `vps/playground.go`、`attachments.go` → `/infer`；`parity_test.go` 的 media-history/cancel/104-message/zero-usage tests | IMPLEMENTED；latest PR HEAD CI gate |
+| VPS-PARITY-002 | `onboarding.go`、`credentials.go`、`config.go` → Preview/Confirm/Batch/custom-auth/rollback；TLS / SQLite tests | IMPLEMENTED；latest PR HEAD CI gate |
+| VPS-PARITY-003 | `newapi.go` → rc.25 exact pricing + group + perf；nil-map regression / PAT role tests | IMPLEMENTED；latest PR HEAD CI gate |
+| VPS-PARITY-004 | `adapters.go`、`intelligence.go`、`lmspeed.go` → durable enrichment / scoped sources；real TLS caller / budget tests | IMPLEMENTED；latest PR HEAD CI gate |
+| VPS-PARITY-005 | `manage.go`、`backup.go` → check-in / settings / safe export + atomic disabled-ref restore | IMPLEMENTED；latest PR HEAD CI gate |
+| VPS-PARITY-006 | `ui*.go` → real Browser API flow；`browser_test.go`、`e2e/browser.cjs` → onboarding/chat/lifecycle/narrow/dark | CANDIDATE；必須 `vps-browser` 成功，禁止將本機 Chrome 限制失敗說成已驗收 |
+
+目前 Android 主線本身尚未 production ACCEPTED 的 PLAY-004 剩餘結果 UI / P8 / P9 / P10 不在這些 entry 內偽升格。詳情 `vps/PARITY.md`；同 SHA Actions evidence 由 PR #20 最新 body 保存。
