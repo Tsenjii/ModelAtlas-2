@@ -171,7 +171,7 @@ func selectionQuery(r *http.Request) Selection {
 	return Selection{ProviderID: q.Get("provider_id"), AccountID: q.Get("account_id"), CredentialID: q.Get("credential_id"), ModelID: q.Get("model_id"), Group: q.Get("group"), Endpoint: q.Get("endpoint")}
 }
 func validScope(v Selection) bool {
-	return validID(v.ProviderID) && validID(v.AccountID) && validID(v.CredentialID) && validID(v.ModelID) && safeText(v.Group, 120) == v.Group && endpointNames[v.Endpoint] != "" && v.Endpoint != "MODELS"
+	return validID(v.ProviderID) && validID(v.AccountID) && validID(v.CredentialID) && validID(v.ModelID) && safeText(v.Group, 120) == v.Group && validID(v.Endpoint) && v.Endpoint != "MODELS"
 }
 func (s *Server) modelDetail(w http.ResponseWriter, r *http.Request) {
 	v := selectionQuery(r)

@@ -5,32 +5,35 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 type OnboardingInput struct {
-	Mode        string       `json:"mode"`
-	Provider    Provider     `json:"provider"`
-	Account     Account      `json:"account"`
-	Credentials []Credential `json:"credentials"`
-	ModelIDs    []string     `json:"model_ids"`
-	Group       string       `json:"group"`
-	Endpoint    string       `json:"endpoint"`
+	EndpointProfiles []EndpointProfile `json:"endpoint_profiles,omitempty"`
+	Mode             string            `json:"mode"`
+	Provider         Provider          `json:"provider"`
+	Account          Account           `json:"account"`
+	Credentials      []Credential      `json:"credentials"`
+	ModelIDs         []string          `json:"model_ids"`
+	Group            string            `json:"group"`
+	Endpoint         string            `json:"endpoint"`
 }
 type storedDraft struct {
 	Input     OnboardingInput   `json:"input"`
 	Encrypted map[string]string `json:"encrypted"`
 }
 type OnboardingReview struct {
-	ID              string       `json:"id"`
-	Status          string       `json:"status"`
-	Provider        Provider     `json:"provider"`
-	Account         Account      `json:"account"`
-	Credentials     []Credential `json:"credentials"`
-	Models          []string     `json:"models"`
-	CatalogVerified bool         `json:"catalog_verified"`
-	Unknown         []string     `json:"unknown_fields"`
-	Attempts        int          `json:"attempts"`
+	EndpointProfiles []EndpointProfile `json:"endpoint_profiles,omitempty"`
+	ID               string            `json:"id"`
+	Status           string            `json:"status"`
+	Provider         Provider          `json:"provider"`
+	Account          Account           `json:"account"`
+	Credentials      []Credential      `json:"credentials"`
+	Models           []string          `json:"models"`
+	CatalogVerified  bool              `json:"catalog_verified"`
+	Unknown          []string          `json:"unknown_fields"`
+	Attempts         int               `json:"attempts"`
 }
 
 func (s *Server) prepareDraft(in OnboardingInput) (storedDraft, error) {
@@ -65,10 +68,34 @@ func (s *Server) prepareDraft(in OnboardingInput) (storedDraft, error) {
 	if !validID(in.Provider.ID) || !validID(in.Account.ID) || len(in.Account.Label) > 120 {
 		return storedDraft{}, errors.New("invalid identity")
 	}
+	if len(in.EndpointProfiles) > 10 {
+		return storedDraft{}, errors.New("endpoint profile limit")
+	}
+	base, _ := url.Parse(in.Provider.BaseURL)
+	for i := range in.EndpointProfiles {
+		profile := &in.EndpointProfiles[i]
+		profile.ProviderID = in.Provider.ID
+		if profile.ID == "" {
+			profile.ID = newID()
+		}
+		target, e := url.Parse(profile.URL)
+		if e != nil || !validateHTTPS(profile.URL) || !strings.EqualFold(base.Host, target.Host) || !validID(profile.ID) || endpointNames[profile.Operation] == "" || profile.Operation == "MODELS" {
+			return storedDraft{}, errors.New("invalid endpoint profile")
+		}
+		if _, reserved := endpointNames[profile.ID]; reserved {
+			return storedDraft{}, errors.New("reserved endpoint ID")
+		}
+	}
 	if in.Endpoint == "" {
 		in.Endpoint = "CHAT_COMPLETIONS"
 	}
-	if endpointNames[in.Endpoint] == "" {
+	profileFound := false
+	for _, profile := range in.EndpointProfiles {
+		if profile.ID == in.Endpoint {
+			profileFound = true
+		}
+	}
+	if endpointNames[in.Endpoint] == "" && !profileFound {
 		return storedDraft{}, errors.New("invalid endpoint")
 	}
 	if len(in.Credentials) == 0 && cfg.AuthMode == "NONE" {
@@ -133,7 +160,7 @@ func (s *Server) prepareDraft(in OnboardingInput) (storedDraft, error) {
 }
 func (s *Server) inspectDraft(ctx context.Context, id string, draft storedDraft, attempts int) OnboardingReview {
 	in := draft.Input
-	review := OnboardingReview{ID: id, Status: "REVIEW", Provider: in.Provider, Account: in.Account, Credentials: in.Credentials, Models: append([]string{}, in.ModelIDs...), Unknown: []string{"價格", "配額", "模型可用性"}, Attempts: attempts}
+	review := OnboardingReview{EndpointProfiles: in.EndpointProfiles, ID: id, Status: "REVIEW", Provider: in.Provider, Account: in.Account, Credentials: in.Credentials, Models: append([]string{}, in.ModelIDs...), Unknown: []string{"價格", "配額", "模型可用性"}, Attempts: attempts}
 	if in.Mode == "QUICK" {
 		if _, version, err := s.newApiStatus(ctx, in.Provider); err == nil && version == "v1.0.0-rc.25" {
 			cfg := *in.Provider.Config
@@ -329,6 +356,12 @@ func (s *Server) onboardingConfirm(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	for _, profile := range draft.Input.EndpointProfiles {
+		if _, err = tx.ExecContext(r.Context(), "INSERT INTO endpoint_profiles VALUES(?,?,?,?)", p.ID, profile.ID, profile.Operation, profile.URL); err != nil {
+			http.Error(w, "duplicate endpoint profile", 409)
+			return
+		}
+	}
 	selections := []Selection{}
 	for _, c := range draft.Input.Credentials {
 		if c.Role != "INFERENCE" {
@@ -342,6 +375,10 @@ func (s *Server) onboardingConfirm(w http.ResponseWriter, r *http.Request) {
 			}
 			if bumpMembership(tx, selection) != nil {
 				http.Error(w, "database error", 500)
+				return
+			}
+			if bindEndpoint(tx, p, cfg, selection.Endpoint) != nil {
+				http.Error(w, "endpoint binding failed", 500)
 				return
 			}
 			selections = append(selections, selection)

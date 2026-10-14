@@ -204,6 +204,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /credentials/rotate", s.rotateCredential)
 	api.HandleFunc("GET /providers/config", s.getConfig)
 	api.HandleFunc("POST /providers/config", s.setConfig)
+	api.HandleFunc("GET /endpoints", s.listEndpoints)
+	api.HandleFunc("POST /endpoints", s.addEndpoint)
 	api.HandleFunc("GET /models/detail", s.modelDetail)
 	api.HandleFunc("POST /models/metadata", s.setMetadata)
 	api.HandleFunc("POST /models/capabilities", s.confirmCapabilities)

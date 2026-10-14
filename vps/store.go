@@ -75,6 +75,10 @@ func OpenStore(path string) (*Store, error) {
 		db.Close()
 		return nil, fmt.Errorf("migration: %w", err)
 	}
+	if err = backfillEndpointBindings(db); err != nil {
+		db.Close()
+		return nil, err
+	}
 	if _, err = db.Exec("UPDATE telemetry SET outcome='INTERRUPTED' WHERE outcome='RUNNING'"); err != nil {
 		db.Close()
 		return nil, err

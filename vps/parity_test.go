@@ -503,3 +503,45 @@ func TestTinyExactPricesNeverRoundToFree(t *testing.T) {
 		t.Fatal("tiny nonzero cost became free")
 	}
 }
+func TestMultipleEndpointProfilesKeepHistoryAndCapabilitiesSeparate(t *testing.T) {
+	var paths []string
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		w.Write([]byte("data: {\"choices\":[{\"delta\":{\"content\":\"ok\"}}]}\n\ndata: [DONE]\n\n"))
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = up.Client()
+	base := seed(t, s, up.URL+"/v1")
+	for _, id := range []string{"endpoint-a", "endpoint-b"} {
+		requireCode(t, req(t, s, "POST", "/api/v1/endpoints", EndpointProfile{ProviderID: "p", ID: id, Operation: "CHAT_COMPLETIONS", URL: up.URL + "/" + id}), 201)
+		v := base
+		v.Endpoint = id
+		session := newSession(t, s, v)
+		requireCode(t, req(t, s, "POST", "/api/v1/infer", inferRequest{SessionID: session.ID, Prompt: "profile"}), 200)
+	}
+	if len(paths) != 2 || paths[0] != "/endpoint-a" || paths[1] != "/endpoint-b" {
+		t.Fatalf("profile routing wrong %v", paths)
+	}
+	var count int
+	s.Store.DB.QueryRow("SELECT COUNT(DISTINCT endpoint) FROM telemetry WHERE operation='CHAT_COMPLETIONS'").Scan(&count)
+	if count != 2 {
+		t.Fatal("physical endpoints mixed telemetry")
+	}
+	requireCode(t, req(t, s, "POST", "/api/v1/endpoints", EndpointProfile{ProviderID: "p", ID: "evil", Operation: "CHAT_COMPLETIONS", URL: "https://other.example/chat"}), 422)
+}
+func TestEndpointPathEditCannotRewriteOldConversation(t *testing.T) {
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/chat/completions" {
+			t.Errorf("old conversation migrated to %s", r.URL.Path)
+		}
+		w.Write([]byte("data: [DONE]\n\n"))
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = up.Client()
+	v := seed(t, s, up.URL+"/v1")
+	session := newSession(t, s, v)
+	requireCode(t, req(t, s, "POST", "/api/v1/providers/config", map[string]any{"provider_id": "p", "config": ProviderConfig{Adapter: "GENERIC", AuthMode: "BEARER", Endpoints: map[string]string{"CHAT_COMPLETIONS": "/changed"}}}), 200)
+	requireCode(t, req(t, s, "POST", "/api/v1/infer", inferRequest{SessionID: session.ID, Prompt: "bound old endpoint"}), 200)
+}

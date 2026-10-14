@@ -395,7 +395,7 @@ func (s *Server) listMyModels(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 200, out)
 }
 func (s *Server) validateSelection(ctx context.Context, v Selection) bool {
-	if !validScope(v) {
+	if !validScope(v) || s.operation(ctx, v) == "" {
 		return false
 	}
 	var n int
@@ -419,6 +419,12 @@ func (s *Server) addMyModel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid selection", 400)
 		return
 	}
+	p, lookupErr := s.provider(r.Context(), v.ProviderID)
+	if lookupErr != nil || s.operation(r.Context(), v) == "" {
+		http.Error(w, "provider or endpoint profile missing", 422)
+		return
+	}
+	cfg := s.config(r.Context(), p)
 	tx, err := s.Store.DB.BeginTx(r.Context(), nil)
 	if err != nil {
 		http.Error(w, "database error", 500)
@@ -428,6 +434,10 @@ func (s *Server) addMyModel(w http.ResponseWriter, r *http.Request) {
 	var role string
 	if tx.QueryRowContext(r.Context(), "SELECT role FROM credentials WHERE provider_id=? AND account_id=? AND id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&role) != nil || role != "INFERENCE" {
 		http.Error(w, "inference credential required", 422)
+		return
+	}
+	if bindEndpoint(tx, p, cfg, v.Endpoint) != nil {
+		http.Error(w, "endpoint profile invalid", 422)
 		return
 	}
 	if err = s.applyMembership(tx, v, true); err != nil {

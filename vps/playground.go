@@ -244,7 +244,8 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		result.Outcome = "SELECTION_UNAVAILABLE"
 		return result, 422
 	}
-	if scope.Endpoint != "CHAT_COMPLETIONS" {
+	operation := s.operation(ctx, scope)
+	if operation != "CHAT_COMPLETIONS" {
 		result.Outcome = "TRANSPORT_UNSUPPORTED"
 		return result, 422
 	}
@@ -315,7 +316,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		secrets = append(secrets, f.Secret)
 	}
 	cfg := s.config(ctx, provider)
-	endpoint, err := endpointURL(provider, cfg, scope.Endpoint, scope.ModelID)
+	endpoint, err := s.requestEndpoint(ctx, provider, cfg, scope.Endpoint, scope.ModelID)
 	if err != nil {
 		return result, 422
 	}
@@ -346,7 +347,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	}
 	started := time.Now()
 	sampleID := newID()
-	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?)", sampleID, scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, scope.Endpoint, source, started.UnixMilli()); err != nil {
+	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?)", sampleID, scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, operation, source, started.UnixMilli()); err != nil {
 		result.Outcome = "TELEMETRY_SAVE"
 		return result, 500
 	}

@@ -145,6 +145,20 @@ func (s *Server) assistantTransition(w http.ResponseWriter, r *http.Request, und
 		add = !add
 	}
 	if add {
+		var p Provider
+		if tx.QueryRowContext(r.Context(), "SELECT id,name,base_url,description,auth_mode FROM providers WHERE id=?", choice.ProviderID).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode) != nil {
+			http.Error(w, "provider missing", 409)
+			return
+		}
+		cfg := ProviderConfig{AuthMode: p.AuthMode}
+		var raw string
+		if tx.QueryRowContext(r.Context(), "SELECT config_json FROM provider_config WHERE provider_id=?", p.ID).Scan(&raw) == nil {
+			_ = json.Unmarshal([]byte(raw), &cfg)
+		}
+		if bindEndpoint(tx, p, cfg, choice.Endpoint) != nil {
+			http.Error(w, "endpoint unavailable", 409)
+			return
+		}
 		var allowed int
 		if tx.QueryRowContext(r.Context(), "SELECT 1 FROM credentials WHERE provider_id=? AND account_id=? AND id=? AND role='INFERENCE' AND enabled=1", choice.ProviderID, choice.AccountID, choice.CredentialID).Scan(&allowed) != nil {
 			http.Error(w, "credential role or enabled state changed", 409)

@@ -343,7 +343,11 @@ func (s *Server) mapNewApiPrices(ctx context.Context, q NewApiQuery, facts, stat
 						}
 					}
 				}
-				if err := s.observe(ctx, scope, "NOMINAL_PRICE", "NEW_API_OFFICIAL", "SUCCESS", map[string]any{"price": legs, "nominal_price_state": priceState(legs), "billing_mode": item["billing_mode"], "billing_expr": item["billing_expr"], "effective_charge": nil, "pricing_version": facts["pricing_version"]}); err != nil {
+				nominalState := "UNKNOWN"
+				if operation == "CHAT_COMPLETIONS" {
+					nominalState = priceState(legs)
+				}
+				if err := s.observe(ctx, scope, "NOMINAL_PRICE", "NEW_API_OFFICIAL", "SUCCESS", map[string]any{"price": legs, "nominal_price_state": nominalState, "billing_mode": item["billing_mode"], "billing_expr": item["billing_expr"], "effective_charge": nil, "pricing_version": facts["pricing_version"]}); err != nil {
 					return err
 				}
 			}

@@ -71,6 +71,7 @@ SQLite 資料庫、WAL、SHM 與 `MODELATLAS_MASTER_KEY` 必須有相互一致�
 - Playground：`GET, POST /sessions`、`GET /messages?session_id=`、`POST /infer`（text/event-stream）
 - Telemetry：`GET /telemetry`
 - Intelligence：`GET /models/detail`（完整七維 selected scope）、`POST /intelligence/sync`、`GET /intelligence/history`
+- Endpoint Profiles：`GET,POST /endpoints`，同 HTTPS origin 的獨立端點 ID／URL／protocol，不互借歷史與能力。
 - Models 操作：`POST /models/{metadata,capabilities,facts,lifecycle,test,compare}`
 - Onboarding：`GET /onboarding`、`POST /onboarding/{preview,retry,confirm,import}`
 - 憑證：`POST /credentials/{toggle,rotate}`；自訂秘密只存在 encrypted vault

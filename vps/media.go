@@ -38,16 +38,17 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	if !decodeLimit(w, r, &v, 12<<20) {
 		return
 	}
-	required := map[string]string{"IMAGES_GENERATION": "IMAGE_GENERATION", "IMAGES_EDIT": "IMAGE_EDITING", "AUDIO": "AUDIO_INPUT"}[v.Endpoint]
+	operation := s.operation(r.Context(), v.Selection)
+	required := map[string]string{"IMAGES_GENERATION": "IMAGE_GENERATION", "IMAGES_EDIT": "IMAGE_EDITING", "AUDIO": "AUDIO_INPUT"}[operation]
 	if required == "" || !s.validateSelection(r.Context(), v.Selection) || !s.groupBound(r.Context(), v.Selection) || !oneOf(required, s.capabilities(r.Context(), v.Selection)...) {
 		http.Error(w, "selected media capability unavailable", 422)
 		return
 	}
-	if len(v.Prompt) > 32000 || v.Endpoint != "AUDIO" && strings.TrimSpace(v.Prompt) == "" || v.Size != "" && !oneOf(v.Size, "256x256", "512x512", "1024x1024", "1024x1536", "1536x1024", "auto") {
+	if len(v.Prompt) > 32000 || operation != "AUDIO" && strings.TrimSpace(v.Prompt) == "" || v.Size != "" && !oneOf(v.Size, "256x256", "512x512", "1024x1024", "1024x1536", "1536x1024", "auto") {
 		http.Error(w, "invalid media parameters", 400)
 		return
 	}
-	if v.Endpoint == "IMAGES_EDIT" && (v.Image == nil || v.Image.Kind != "image" || v.Image.validate() != nil) || v.Endpoint == "AUDIO" && (v.Audio == nil || v.Audio.Kind != "audio" || v.Audio.validate() != nil) {
+	if operation == "IMAGES_EDIT" && (v.Image == nil || v.Image.Kind != "image" || v.Image.validate() != nil) || operation == "AUDIO" && (v.Audio == nil || v.Audio.Kind != "audio" || v.Audio.validate() != nil) {
 		http.Error(w, "invalid bounded local media", 400)
 		return
 	}
@@ -59,14 +60,14 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg := s.config(ctx, p)
-	endpoint, err := endpointURL(p, cfg, v.Endpoint, v.ModelID)
+	endpoint, err := s.requestEndpoint(ctx, p, cfg, v.Endpoint, v.ModelID)
 	if err != nil {
 		http.Error(w, "endpoint unavailable", 422)
 		return
 	}
 	body := &bytes.Buffer{}
 	contentType := "application/json"
-	if v.Endpoint == "IMAGES_GENERATION" {
+	if operation == "IMAGES_GENERATION" {
 		payload := map[string]any{"model": v.ModelID, "prompt": v.Prompt, "n": 1, "response_format": "b64_json"}
 		if v.Size != "" {
 			payload["size"] = v.Size
@@ -80,7 +81,7 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		}
 		a := v.Image
 		field := "image"
-		if v.Endpoint == "AUDIO" {
+		if operation == "AUDIO" {
 			a = v.Audio
 			field = "file"
 			_ = writer.WriteField("response_format", "json")
@@ -111,7 +112,7 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	result := MediaResponse{Outcome: "NETWORK", Selection: v.Selection}
 	started := time.Now()
 	sampleID := newID()
-	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?)", sampleID, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, v.Endpoint, "PLAYGROUND_MEDIA", started.UnixMilli()); err != nil {
+	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?)", sampleID, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, operation, "PLAYGROUND_MEDIA", started.UnixMilli()); err != nil {
 		http.Error(w, "telemetry unavailable", 500)
 		return
 	}
@@ -164,7 +165,7 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	_ = json.Unmarshal(root["usage"], &usage)
 	input = intField(usage, "input_tokens")
 	output = intField(usage, "output_tokens")
-	if v.Endpoint == "AUDIO" {
+	if operation == "AUDIO" {
 		result.Text = safeText(stringField(root, "text"), 256<<10, key)
 		if result.Text == "" {
 			result.Outcome = "PARSER"

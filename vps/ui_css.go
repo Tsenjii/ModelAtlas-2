@@ -34,4 +34,5 @@ dialog{max-width:760px;width:calc(100% - 24px);max-height:88dvh;padding:24px;bor
 @media(max-width:420px){.toolbar>label{min-width:100%;flex:1}.composer-tools{gap:8px}.attachment-buttons{width:100%}.chat{max-height:50dvh}dialog{padding:16px}.dialog-bar{top:-16px}.brand small{font-size:.75rem}.metrics{grid-template-columns:1fr 1fr}}
 .bottom-nav button{min-width:0;padding:8px 4px;overflow-wrap:anywhere;font-size:clamp(.8rem,3.2vw,.95rem)}
 button{appearance:none}#model-filters{margin:12px 0 18px}#model-filters[open]{padding:12px;border:1px solid var(--border);border-radius:14px}#model-filters .toolbar{margin-bottom:12px}
+.brand,.brand>div{min-width:0}.brand strong{overflow-wrap:anywhere}.mark{flex-shrink:0}
 `

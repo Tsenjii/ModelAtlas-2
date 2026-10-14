@@ -6,21 +6,22 @@
 
 | Android 已落地範圍 | VPS 真實入口 | 驗證 |
 |---|---|---|
-| P1 持久化、憑證、scope、取消與用量 | SQLite v4 additive migration；AES-GCM；Basic/Bearer；認證 API；角色、跨 origin/redirect/CSRF 邊界 | Go race、原有 TLS HTTP tests；`parity_test.go` |
+| P1 持久化、憑證、scope、取消與用量 | SQLite v5 additive migration；AES-GCM；Basic/Bearer；認證 API；角色、跨 origin/redirect/CSRF 邊界 | Go race、原有 TLS HTTP tests；`parity_test.go` |
 | P2 文字／推理串流、多輪、新對話 | `/sessions`、`/messages`、`/infer`、`/infer/cancel`；同一 engine 用於 Playground/Test/Compare | 真 TLS HTTP、阻塞 socket 取消、零 usage、完整 104 則歷史、非串流 TTFT=null |
 | Android 已註冊 media transport | `/infer/media` → 圖片生成、multipart edit／audio transcription，獨立 capability 與 telemetry | TLS wire + operation/source scope、non-streaming TTFT=null；result UI 仍同 Android 未驗收 |
 | PLAY-004 已合併的圖片／PDF／音訊輸入 | Browser picker → `Attachment.validate` → exact-scope capability → Chat Completions content array | signature/4 MiB；歷史圖片重新驗能力；原始媒體不進 DB/telemetry |
-| P3 Quick / Advanced / Review / Batch、多帳戶／Key、自訂認證 | `/onboarding/preview,retry,confirm,import`；`/providers/config`；`/credentials,toggle,rotate`；加密的 extra header/query | Review 不先保存 Provider；未選 Catalog 不進 My Models；原子交易；role/vault/rollback tests |
+| P3 Quick / Advanced / Review / Batch、多帳戶／Key、自訂認證 | `/onboarding/preview,retry,confirm,import`；`/providers/config`、`/endpoints`；`/credentials,toggle,rotate`；加密的 extra header/query | Review 不先保存 Provider；未選 Catalog 不進 My Models；原子交易；role/vault/rollback tests |
 | P4 New API | rc.25 status/notice/pricing/account/token/perf summary/per-model；精確倍率／scope／保留 billing_expr；有界算術 parser | 版本未知拒發；PAT 不進推論；精確 `0.0002/0.0004`；錯誤 schema 不崩潰 |
 | P5 Dedicated adapters | map registry：NVIDIA hosted/self-hosted、AMD shared/dedicated、OpenRouter Free、Gemini Free、Groq Free | 各自 catalog／metadata／quota/metrics 來源；無 structured 數值時 Unknown/RequiresLogin，沒有杜撰額度 |
 | P6 My Models／Alias／分類／Filter／Detail／Compare | `model_metadata`、`aliases`、exact-scope observations、favorite/watchlist、hidden/archive、Test/Compare 同 engine | 搜尋、分類、hidden 歷史保留；加入後 durable enrichment job；取消排除 uptime |
 | P7 LMSpeed | `x-api-key`、固定正主、單頁 50 models、1000/day durable budget、24h freshness、external history | 真 TLS fixture、secret echo 剔除、budget 擋 HTTP、external 不進 local telemetry；UI attribution |
 | Android 跨切設定／匯出 | check-in 本地日、通知預設 OFF、設定匯出／原子還原 | 還原只建立 disabled credential refs，需重新輸入 key；不匯入明文憑證 |
-| 原 UI 節奏 | teal／深淺色／三分頁／設定右上／48px／native dialog／Provider、Model Detail | 真 Browser onboarding→Review→chat→hide/restore；375/1024px 與深淺色，CI `vps-browser` |
+| 原 UI 節奏 | teal／深淺色／三分頁／設定右上／48px／native dialog／Provider、Model Detail | 真 Browser onboarding→Review→chat→hide/restore；375/1024px 與深淺色、200% 大字，CI `vps-browser` |
 
 ## 已修正舊程式問題
 
 - 舊推論只讀最早 100 則訊息；現在不會靜默省略近期對話，超出有界 request 時明確要求新對話。
+- Endpoint profiles 各有 immutable ID／URL／protocol；預設端點在加入模型時固定 URL，後續 config/recipe 不能改寫舊對話的出站路徑。
 - Request 發出前持久化 RUNNING；重啟恢復 INTERRUPTED，single-writer lock 防止第二進程重置在途樣本。
 - Assistant 以 membership revision 拒絕過期的 confirm/undo；不會撤銷使用者之後重新加入的模型。
 - 空流量的 RPM/TPM 保留 Unknown，不發明 confidence 門檻；分位用 Android 相同線性內插；自訂歷史窗口與 current rolling-60s 分開。
@@ -52,3 +53,6 @@
 3. PR #20 在同 SHA 全部成功以前保持 Draft。不得挪用基線或前一個 SHA 的 CI；先修本片 regression 再續 Android 尚未完成的功能。
 4. `vps/README.md` 是啟動／API／部署說明；schema 在 `migrations.go`，不要 destructive migration。不要複製 private Git history／帳號資料。
 5. 具體 CI run、commit 與結論記在 PR #20 的最新 body；次輪啟動先重新讀 repo branch HEAD 與該 SHA checks。長期部署維護仍使用 VPS 獨立分支。
+
+
+本輪 Endpoint / UI 最後回歸：`/endpoints` 支援同 origin 多個 immutable endpoint profiles；同模型不同 profile 有獨立 telemetry／capability／history；default URL 在 membership 建立時固定並於升級時 backfill。設定匯出／還原亦帶 profile 與 binding。Browser 另驗 200% 大字，主模型列表的多項篩選預設收起，顯示 Provider 名稱而不是 UUID。

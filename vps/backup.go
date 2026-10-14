@@ -3,9 +3,19 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 type BackupDocument struct {
+	Endpoints        []EndpointProfile `json:"endpoints,omitempty"`
+	EndpointBindings []struct {
+		ProviderID string `json:"provider_id"`
+		ID         string `json:"endpoint_id"`
+		Operation  string `json:"operation"`
+		URL        string `json:"url"`
+		CreatedAt  int64  `json:"created_at"`
+	} `json:"endpoint_bindings,omitempty"`
 	Format          string     `json:"format"`
 	Version         int        `json:"version"`
 	SecretsIncluded bool       `json:"secrets_included"`
@@ -137,6 +147,44 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 		meta.Source = "MANUAL_IMPORT"
 		raw, _ := json.Marshal(meta)
 		if _, err = tx.ExecContext(r.Context(), "INSERT INTO model_metadata VALUES(?,?,?,?)", m.ProviderID, m.ModelID, meta.CanonicalID, string(raw)); err != nil {
+			fail()
+			return
+		}
+	}
+	for _, profile := range b.Endpoints {
+		var p Provider
+		for _, candidate := range b.Providers {
+			if candidate.ID == profile.ProviderID {
+				p = candidate
+				break
+			}
+		}
+		base, _ := url.Parse(p.BaseURL)
+		target, e := url.Parse(profile.URL)
+		if e != nil || base == nil || !validateHTTPS(profile.URL) || !strings.EqualFold(base.Host, target.Host) || !validID(profile.ID) || endpointNames[profile.Operation] == "" {
+			fail()
+			return
+		}
+		if _, err = tx.ExecContext(r.Context(), "INSERT INTO endpoint_profiles VALUES(?,?,?,?)", profile.ProviderID, profile.ID, profile.Operation, profile.URL); err != nil {
+			fail()
+			return
+		}
+	}
+	for _, binding := range b.EndpointBindings {
+		var p Provider
+		for _, candidate := range b.Providers {
+			if candidate.ID == binding.ProviderID {
+				p = candidate
+				break
+			}
+		}
+		base, _ := url.Parse(p.BaseURL)
+		target, e := url.Parse(binding.URL)
+		if e != nil || base == nil || !validateHTTPS(binding.URL) || !strings.EqualFold(base.Host, target.Host) || !validID(binding.ID) || endpointNames[binding.Operation] == "" {
+			fail()
+			return
+		}
+		if _, err = tx.ExecContext(r.Context(), "INSERT INTO endpoint_bindings VALUES(?,?,?,?,?)", binding.ProviderID, binding.ID, binding.Operation, binding.URL, binding.CreatedAt); err != nil {
 			fail()
 			return
 		}

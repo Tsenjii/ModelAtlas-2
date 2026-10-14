@@ -4,7 +4,7 @@ const appJS = jsCore + jsViews + jsChat + jsDetails + jsOnboard
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);
-let providers=[],accounts=[],credentials=[],models=[],myModels=[],sessions=[],settings={},busy=false,refreshVersion=0,loadVersion=0,attachments=[],controller=null,currentReview=null;
+let endpointProfiles=[],providers=[],accounts=[],credentials=[],models=[],myModels=[],sessions=[],settings={},busy=false,refreshVersion=0,loadVersion=0,attachments=[],controller=null,currentReview=null;
 const selectedCompare=new Map();
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function notice(msg,bad=false){$("notice").textContent=msg;$("notice").classList.toggle("error",bad);}
