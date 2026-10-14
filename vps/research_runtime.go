@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -77,10 +78,16 @@ func pointer(value any, path string) any {
 	for _, part := range strings.Split(strings.TrimPrefix(path, "/"), "/") {
 		part = strings.ReplaceAll(strings.ReplaceAll(part, "~1", "/"), "~0", "~")
 		m, ok := value.(map[string]any)
-		if !ok {
+		if ok {
+			value = m[part]
+			continue
+		}
+		array, ok := value.([]any)
+		index, e := strconv.Atoi(part)
+		if !ok || e != nil || index < 0 || index >= len(array) || strconv.Itoa(index) != part {
 			return nil
 		}
-		value = m[part]
+		value = array[index]
 	}
 	return value
 }
@@ -150,7 +157,24 @@ func (s *Server) saveResearchSource(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	raw, _ := json.Marshal(v.Config)
-	if _, e := s.Store.DB.ExecContext(r.Context(), "INSERT INTO research_sources VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,kind=excluded.kind,url=excluded.url,language=excluded.language,enabled=excluded.enabled,config_json=excluded.config_json", v.ID, v.Name, v.Kind, v.URL, v.Language, v.Enabled, string(raw), now()); e != nil {
+	tx, e := s.Store.DB.BeginTx(r.Context(), nil)
+	if e != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	defer tx.Rollback()
+	if _, e := tx.ExecContext(r.Context(), "INSERT INTO research_sources VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,kind=excluded.kind,url=excluded.url,language=excluded.language,enabled=excluded.enabled,config_json=excluded.config_json", v.ID, v.Name, v.Kind, v.URL, v.Language, v.Enabled, string(raw), now()); e != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	var version int
+	tx.QueryRowContext(r.Context(), "SELECT COALESCE(MAX(version),0)+1 FROM research_source_versions WHERE source_id=?", v.ID).Scan(&version)
+	full, _ := json.Marshal(v)
+	if _, e = tx.ExecContext(r.Context(), "INSERT INTO research_source_versions VALUES(?,?,?,?)", v.ID, version, string(full), now()); e != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	if tx.Commit() != nil {
 		http.Error(w, "database error", 500)
 		return
 	}

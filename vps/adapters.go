@@ -140,7 +140,10 @@ func (s *Server) discover(ctx context.Context, v syncRequest) (int, error) {
 	if !ok || adapter.Discover == nil {
 		return 0, errors.New("unsupported discovery")
 	}
-	entries, err := adapter.Discover(s, ctx, p, c, key)
+	entries, custom, err := s.connectorCatalog(ctx, v)
+	if !custom {
+		entries, err = adapter.Discover(s, ctx, p, c, key)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -169,7 +172,11 @@ func (s *Server) discover(ctx context.Context, v syncRequest) (int, error) {
 		if entry.Price != nil {
 			facts["price"] = entry.Price
 		}
-		if err = s.observe(ctx, scope, "CATALOG", c.Adapter+"_OFFICIAL", "SUCCESS", facts); err != nil {
+		source := c.Adapter + "_OFFICIAL"
+		if override := str(facts["source_override"]); strings.HasPrefix(override, "DECLARATIVE_PROVIDER_META:") {
+			source = override
+		}
+		if err = s.observe(ctx, scope, "CATALOG", source, "SUCCESS", facts); err != nil {
 			return 0, err
 		}
 	}
@@ -411,6 +418,9 @@ func (s *Server) enrich(ctx context.Context, v Selection) map[string]string {
 		}
 	} else {
 		out["intelligence"] = "UNSUPPORTED"
+	}
+	for k, status := range s.enrichConnectors(ctx, v) {
+		out[k] = status
 	}
 	return out
 }

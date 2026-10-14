@@ -26,7 +26,7 @@ func assistantTools() []ToolDefinition {
 		name, description string
 		schema            map[string]any
 	}{
-		{"read_app", "Read safe provider/account/credential/model/settings/research/notes/action/recipe data. Optional query narrows names/IDs.", toolSchema(map[string]any{"section": map[string]any{"type": "string", "enum": []string{"providers", "accounts", "credentials", "models", "my_models", "settings", "research", "actions", "notes", "recipes", "external"}}, "query": stringSchema()}, "section")},
+		{"read_app", "Read safe provider/account/credential/model/settings/research/notes/action/recipe data. Optional query narrows names/IDs.", toolSchema(map[string]any{"section": map[string]any{"type": "string", "enum": []string{"providers", "accounts", "credentials", "models", "my_models", "settings", "research", "actions", "notes", "recipes", "external", "knowledge", "connectors", "reflections"}}, "query": stringSchema()}, "section")},
 		{"model_detail", "Read one exact scope's pricing/quota/usage/telemetry and evidence, without merging sources.", toolSchema(map[string]any{"selection": selectionSchema()}, "selection")},
 		{"discover_models", "Synchronize a provider's catalog with an explicit inference credential; never add membership.", toolSchema(map[string]any{"provider_id": stringSchema(), "account_id": stringSchema(), "credential_id": stringSchema()}, "provider_id", "account_id", "credential_id")},
 		{"sync_model", "Read available intelligence for an explicitly selected model scope.", toolSchema(map[string]any{"selection": selectionSchema()}, "selection")},
@@ -40,6 +40,7 @@ func assistantTools() []ToolDefinition {
 		{"add_model", "Save an explicitly requested manual model to Catalog and prepare My Models Review. No implicit membership until user confirms.", toolSchema(map[string]any{"selection": selectionSchema(), "display_name": stringSchema()}, "selection", "display_name")},
 		{"select_target", "Select an enabled exact Playground target in the user interface. No routing or fallback.", toolSchema(map[string]any{"selection": selectionSchema()}, "selection")},
 		{"prepare_credential", "Prepare a new credential or rotation with an origin-bound safe secret reference. User confirms; role and origin cannot change.", toolSchema(map[string]any{"kind": map[string]any{"type": "string", "enum": []string{"CREDENTIAL_ADD", "CREDENTIAL_ROTATE"}}, "provider_id": stringSchema(), "account_id": stringSchema(), "credential_id": stringSchema(), "safe_secret_ref": stringSchema(), "label": stringSchema(), "group": stringSchema()}, "kind", "provider_id", "account_id", "safe_secret_ref")},
+		{"propose_extension", "Save an evidence-backed knowledge or declarative GET connector draft. It cannot activate itself; user tests/reviews and confirms in the app.", toolSchema(map[string]any{"family": map[string]any{"type": "string", "enum": []string{"KNOWLEDGE", "CONNECTOR"}}, "definition": map[string]any{"type": "object"}}, "family", "definition")},
 		{"query_history", "Read scoped local telemetry history with 1h/24h/7d/30d/all window; never borrow another key/group/endpoint.", toolSchema(map[string]any{"selection": selectionSchema(), "window": map[string]any{"type": "string", "enum": []string{"1h", "24h", "7d", "30d", "all"}}}, "selection", "window")},
 	}
 	out := []ToolDefinition{}
@@ -131,6 +132,29 @@ func (s *Server) assistantTool(ctx context.Context, run string, call ToolCall, b
 			}
 		}
 		return s.localAPI(ctx, "POST", "/assistant/actions/preview", ControlChange{Kind: v.Kind, ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: v.CredentialID, Patch: patch})
+	case "propose_extension":
+		var v struct {
+			Family     string          `json:"family"`
+			Definition json.RawMessage `json:"definition"`
+		}
+		if e := strictArguments(call.Function.Arguments, &v); e != nil {
+			return nil, e
+		}
+		if v.Family == "KNOWLEDGE" {
+			var proposal KnowledgeVersion
+			if e := strictArguments(string(v.Definition), &proposal); e != nil {
+				return nil, e
+			}
+			return s.localAPI(ctx, "POST", "/research/knowledge", proposal)
+		}
+		if v.Family == "CONNECTOR" {
+			var proposal ConnectorVersion
+			if e := strictArguments(string(v.Definition), &proposal); e != nil {
+				return nil, e
+			}
+			return s.localAPI(ctx, "POST", "/connectors", proposal)
+		}
+		return nil, errors.New("unsupported declarative proposal family")
 	case "read_app":
 		var v struct {
 			Section string `json:"section"`
@@ -139,7 +163,7 @@ func (s *Server) assistantTool(ctx context.Context, run string, call ToolCall, b
 		if e := strictArguments(call.Function.Arguments, &v); e != nil {
 			return nil, e
 		}
-		paths := map[string]string{"providers": "/providers", "accounts": "/accounts", "credentials": "/credentials", "models": "/models", "my_models": "/my-models?all=true", "settings": "/settings", "research": "/research/dashboard", "actions": "/assistant/actions", "notes": "/notes", "recipes": "/recipes", "external": "/lmspeed/models"}
+		paths := map[string]string{"providers": "/providers", "accounts": "/accounts", "credentials": "/credentials", "models": "/models", "my_models": "/my-models?all=true", "settings": "/settings", "research": "/research/dashboard", "actions": "/assistant/actions", "notes": "/notes", "recipes": "/recipes", "external": "/lmspeed/models", "knowledge": "/research/knowledge", "connectors": "/connectors", "reflections": "/research/reflections"}
 		path := paths[v.Section]
 		if path == "" || len(v.Query) > 200 {
 			return nil, errors.New("unsupported read section")

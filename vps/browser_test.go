@@ -236,3 +236,46 @@ func TestBrowserAssistantWorkflow(t *testing.T) {
 	}
 	t.Log(string(out))
 }
+
+func TestBrowserKnowledgeWorkflow(t *testing.T) {
+	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
+		t.Skip("enable in browser CI job")
+	}
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/source":
+			w.Write([]byte(`{"data":[{"model_id":"m","rpd":100,"tpd":1000000,"taiwan":"YES","recurring":"DAILY_RESET","free":true,"access_method":"INFERENCE_READY"}]}`))
+		case "/metadata":
+			if r.Header.Get("Authorization") != "Bearer top-secret-example-key" {
+				t.Error("Browser connector used wrong credential")
+			}
+			w.Write([]byte(`{"data":[{"model":"m","group":"","quota":{"rpd":100,"tpd":1000000}}]}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = mappedFixture(up)
+	s.PublicClient = mappedFixture(up)
+	v := seed(t, s, "https://provider.example/v1")
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	requireCode(t, req(t, s, "POST", "/api/v1/research/sources", ResearchSource{ID: "source", Name: "Fixture source", Kind: "JSON", URL: "https://provider.example/source", Language: "en", Enabled: true, Config: SourceConfig{ProviderID: "p", Official: true, ItemsPointer: "/data"}}), 200)
+	researchRunID(t, s, ResearchOptions{SourceIDs: []string{"source"}, Budget: 2})
+	s.runResearchPending(context.Background())
+	app := httptest.NewServer(s.Handler())
+	defer app.Close()
+	cmd := exec.Command("node", "e2e/knowledge.cjs", app.URL)
+	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token)
+	out, e := cmd.CombinedOutput()
+	if e != nil {
+		t.Fatalf("Knowledge Browser: %v\n%s", e, out)
+	}
+	var active int
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM connector_active").Scan(&active)
+	if active != 0 {
+		t.Fatal("Browser connector Undo did not restore activation")
+	}
+	t.Log(string(out))
+}

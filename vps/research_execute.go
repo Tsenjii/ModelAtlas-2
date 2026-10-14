@@ -85,8 +85,12 @@ func quotaInteger(v any) *int64 {
 	out := n.Num().Int64()
 	return &out
 }
-func (s *Server) sourceTask(ctx context.Context, run, id string) (map[string]any, error) {
+func (s *Server) sourceTask(ctx context.Context, run, id string, snapshot *ResearchSource) (map[string]any, error) {
 	src, e := s.source(ctx, id)
+	if snapshot != nil {
+		src = *snapshot
+		e = nil
+	}
 	if e != nil || !src.Enabled {
 		return nil, errors.New("source unavailable")
 	}
@@ -333,7 +337,7 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 		return map[string]any{"seed_hints": hints, "unresolved_count": len(hints)}, nil
 
 	case "SOURCE":
-		return s.sourceTask(ctx, run, input.SourceID)
+		return s.sourceTask(ctx, run, input.SourceID, input.SourceSnapshot)
 	case "SEARCH":
 		return s.searchTask(ctx, run, input)
 	case "INSPECT", "INSPECT_LINK":
@@ -408,13 +412,17 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 		if e != nil {
 			return nil, e
 		}
+		selected, _, e := s.endpointAuth(ctx, v.ProviderID, v.AccountID, v.CredentialID)
+		if e != nil || !s.validateSelection(ctx, v) || !s.groupBound(ctx, v) {
+			return nil, errors.New("current inference scope unavailable")
+		}
 		c, e := s.ensureCandidate(ctx, p.ID, v.ModelID, run, p.BaseURL)
 		if e != nil {
 			return nil, e
 		}
 		var outcome, details string
 		var at int64
-		e = s.Store.DB.QueryRowContext(ctx, "SELECT outcome,details_json,created_at FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED') AND created_at>=? ORDER BY rowid DESC LIMIT 1", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, now()-int64(24*time.Hour/time.Millisecond)).Scan(&outcome, &details, &at)
+		e = s.Store.DB.QueryRowContext(ctx, "SELECT outcome,details_json,created_at FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND credential_version=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED') AND created_at>=? ORDER BY rowid DESC LIMIT 1", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, selected.CredentialVersion, now()-int64(24*time.Hour/time.Millisecond)).Scan(&outcome, &details, &at)
 		reused := e == nil
 		if !reused {
 			id, e := s.createTestSession(ctx, v)

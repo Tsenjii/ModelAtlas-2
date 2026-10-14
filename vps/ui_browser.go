@@ -1,6 +1,6 @@
 package main
 
-const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsDetails + jsOnboard + jsAssistant
+const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsDetails + jsOnboard + jsAssistant + jsKnowledge
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);

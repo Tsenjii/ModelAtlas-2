@@ -280,7 +280,7 @@ func (s *Server) runAssistant(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			budget.tools++
-			if emit("tool", map[string]any{"name": call.Function.Name, "status": "RUNNING"}) != nil {
+			if emit("tool", map[string]any{"call_id": call.ID, "name": call.Function.Name, "status": "RUNNING"}) != nil {
 				cancel()
 				return
 			}
@@ -306,7 +306,7 @@ func (s *Server) runAssistant(w http.ResponseWriter, r *http.Request) {
 				status = "TOOL_JOURNAL_UNAVAILABLE"
 				return
 			}
-			if emit("tool", map[string]any{"name": call.Function.Name, "status": toolStatus, "result": json.RawMessage(clean)}) != nil {
+			if emit("tool", map[string]any{"call_id": call.ID, "name": call.Function.Name, "status": toolStatus, "result": json.RawMessage(clean)}) != nil {
 				cancel()
 				return
 			}

@@ -198,7 +198,7 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	responseStatus := 502
 	started := time.Now()
 	sampleID := newID()
-	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?)", sampleID, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, operation, "PLAYGROUND_MEDIA", started.UnixMilli()); err != nil {
+	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at,credential_version) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?,?)", sampleID, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, operation, "PLAYGROUND_MEDIA", started.UnixMilli(), p.CredentialVersion); err != nil {
 		http.Error(w, "telemetry unavailable", 500)
 		return
 	}

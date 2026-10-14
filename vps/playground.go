@@ -436,7 +436,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	}
 	started := time.Now()
 	sampleID := newID()
-	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?)", sampleID, scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, operation, source, started.UnixMilli()); err != nil {
+	if _, err = s.Store.DB.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at,credential_version) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?,?)", sampleID, scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, operation, source, started.UnixMilli(), provider.CredentialVersion); err != nil {
 		result.Outcome = "TELEMETRY_SAVE"
 		return result, 500
 	}

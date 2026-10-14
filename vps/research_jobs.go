@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 )
@@ -31,12 +33,13 @@ type ResearchTask struct {
 	Result   json.RawMessage `json:"result"`
 }
 type taskInput struct {
-	SourceID    string     `json:"source_id,omitempty"`
-	CandidateID string     `json:"candidate_id,omitempty"`
-	Selection   *Selection `json:"selection,omitempty"`
-	Language    string     `json:"language,omitempty"`
-	Query       string     `json:"query,omitempty"`
-	URL         string     `json:"url,omitempty"`
+	SourceSnapshot *ResearchSource `json:"source_snapshot,omitempty"`
+	SourceID       string          `json:"source_id,omitempty"`
+	CandidateID    string          `json:"candidate_id,omitempty"`
+	Selection      *Selection      `json:"selection,omitempty"`
+	Language       string          `json:"language,omitempty"`
+	Query          string          `json:"query,omitempty"`
+	URL            string          `json:"url,omitempty"`
 }
 type researchBudgetKey struct{}
 
@@ -117,7 +120,7 @@ func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
 		tasks = append(tasks, struct {
 			kind, dedupe string
 			input        taskInput
-		}{"SOURCE", "source:" + id, taskInput{SourceID: id}})
+		}{"SOURCE", "source:" + id, taskInput{SourceID: id, SourceSnapshot: &src}})
 	}
 	for i := range v.Selections {
 		scope := v.Selections[i]
@@ -149,7 +152,13 @@ func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
 	}
 	if v.Search {
 		if len(v.Queries) == 0 {
-			v.Queries = searchQueries
+			v.Queries = map[string]string{}
+			for lang, q := range searchQueries {
+				if learned := s.activeKnowledge(r.Context(), "RESEARCH_STRATEGY", lang); str(learned["query"]) != "" {
+					q = str(learned["query"])
+				}
+				v.Queries[lang] = q
+			}
 		}
 		for lang, q := range v.Queries {
 			tasks = append(tasks, struct {
@@ -170,6 +179,28 @@ func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
 			input        taskInput
 		}{"LMSPEED_SEEDS", "lmspeed", taskInput{}})
 	}
+	// Learned priorities only reorder work the user explicitly selected.
+	weights := map[string]float64{}
+	for _, task := range tasks {
+		weight := 1.0
+		var learned map[string]any
+		if task.input.SourceID != "" {
+			learned = s.activeKnowledge(r.Context(), "SOURCE_RELIABILITY", task.input.SourceID)
+		}
+		if task.input.Language != "" {
+			learned = s.activeKnowledge(r.Context(), "RESEARCH_STRATEGY", task.input.Language)
+		}
+		if n := decimal(json.Number(fmt.Sprint(learned["weight"]))); n != nil {
+			weight, _ = n.Float64()
+		}
+		if task.input.Language != "" {
+			if n := quotaInteger(json.Number(fmt.Sprint(learned["priority"]))); n != nil {
+				weight *= float64(*n)
+			}
+		}
+		weights[task.dedupe] = weight
+	}
+	sort.SliceStable(tasks, func(i, j int) bool { return weights[tasks[i].dedupe] > weights[tasks[j].dedupe] })
 	if len(tasks) == 0 {
 		http.Error(w, "select sources, providers, candidates or search", 400)
 		return
@@ -287,6 +318,7 @@ func (s *Server) controlResearch(w http.ResponseWriter, r *http.Request) {
 	} else {
 		s.wakeWorker()
 	}
+	s.updateResearchSummary(r.Context(), v.ID)
 	jsonOK(w, 200, map[string]any{"id": v.ID, "status": next})
 }
 func (s *Server) listResearchTasks(w http.ResponseWriter, r *http.Request) {
@@ -449,4 +481,5 @@ func (s *Server) updateResearchSummary(ctx context.Context, id string) {
 	summary["high_signal_count"] = states["VERIFIED"] + states["HIGH_VALUE_GREY_ZONE"]
 	raw, _ := json.Marshal(summary)
 	_, _ = s.Store.DB.ExecContext(ctx, "UPDATE research_run_options SET summary_json=? WHERE run_id=?", string(raw), id)
+	_ = s.reflectResearch(ctx, id)
 }

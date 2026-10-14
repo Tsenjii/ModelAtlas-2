@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 8
+const schemaVersion = 9
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -89,6 +89,21 @@ func migrate(db *sql.DB) error {
  CREATE TABLE entity_notes(subject_type TEXT NOT NULL,subject_id TEXT NOT NULL,notes TEXT NOT NULL,tags_json TEXT NOT NULL,PRIMARY KEY(subject_type,subject_id));
  CREATE TABLE assistant_action_details(action_id TEXT PRIMARY KEY REFERENCES action_ledger(id),kind TEXT NOT NULL,resource_json TEXT NOT NULL,before_hash TEXT NOT NULL,after_hash TEXT NOT NULL DEFAULT '');
  PRAGMA user_version=8;`); err != nil {
+			return err
+		}
+	}
+	if version < 9 {
+		if _, err = tx.Exec(`
+ ALTER TABLE telemetry ADD COLUMN credential_version INTEGER NOT NULL DEFAULT 0;
+ CREATE TABLE research_source_versions(source_id TEXT NOT NULL REFERENCES research_sources(id),version INTEGER NOT NULL,source_json TEXT NOT NULL,created_at INTEGER NOT NULL,PRIMARY KEY(source_id,version));
+ CREATE TABLE research_reflections(id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES research_runs(id),fingerprint TEXT NOT NULL,report_json TEXT NOT NULL,created_at INTEGER NOT NULL,UNIQUE(run_id,fingerprint));
+ CREATE TABLE knowledge_versions(id TEXT PRIMARY KEY,kind TEXT NOT NULL,subject TEXT NOT NULL,version INTEGER NOT NULL,data_json TEXT NOT NULL,evidence_json TEXT NOT NULL,reason TEXT NOT NULL,status TEXT NOT NULL,run_id TEXT NOT NULL DEFAULT '',created_at INTEGER NOT NULL,UNIQUE(kind,subject,version));
+ CREATE TABLE knowledge_active(kind TEXT NOT NULL,subject TEXT NOT NULL,version_id TEXT NOT NULL REFERENCES knowledge_versions(id),PRIMARY KEY(kind,subject));
+ CREATE TABLE connector_versions(id TEXT PRIMARY KEY,provider_id TEXT NOT NULL REFERENCES providers(id),name TEXT NOT NULL,version INTEGER NOT NULL,config_json TEXT NOT NULL,evidence_json TEXT NOT NULL,reason TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'DRAFT',test_json TEXT NOT NULL DEFAULT '{}',tested_at INTEGER,created_at INTEGER NOT NULL,UNIQUE(provider_id,name,version));
+ CREATE TABLE connector_active(provider_id TEXT NOT NULL,name TEXT NOT NULL,version_id TEXT NOT NULL REFERENCES connector_versions(id),PRIMARY KEY(provider_id,name));
+ CREATE TABLE connector_test_history(id TEXT PRIMARY KEY,version_id TEXT NOT NULL REFERENCES connector_versions(id),status TEXT NOT NULL,result_json TEXT NOT NULL,created_at INTEGER NOT NULL);
+ CREATE TABLE version_action_details(action_id TEXT PRIMARY KEY REFERENCES action_ledger(id),family TEXT NOT NULL,kind TEXT NOT NULL,subject TEXT NOT NULL,before_id TEXT NOT NULL,after_id TEXT NOT NULL);
+ PRAGMA user_version=9;`); err != nil {
 			return err
 		}
 	}

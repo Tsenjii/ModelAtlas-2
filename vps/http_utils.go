@@ -39,6 +39,18 @@ func safeText(value string, max int, secrets ...string) string {
 	return value
 }
 func (s *Server) getJSON(ctx context.Context, p Provider, c ProviderConfig, rawURL, key string, limit int64) (map[string]json.RawMessage, int, error) {
+	value, status, e := s.getStructured(ctx, p, c, rawURL, key, limit)
+	if e != nil {
+		return nil, status, e
+	}
+	raw, _ := json.Marshal(value)
+	var root map[string]json.RawMessage
+	if json.Unmarshal(raw, &root) != nil || root == nil {
+		return nil, status, errors.New("malformed JSON object")
+	}
+	return root, status, nil
+}
+func (s *Server) getStructured(ctx context.Context, p Provider, c ProviderConfig, rawURL, key string, limit int64) (any, int, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
 	if err != nil {
 		return nil, 0, err
@@ -78,16 +90,11 @@ func (s *Server) getJSON(ctx context.Context, p Provider, c ProviderConfig, rawU
 	if decoder.Decode(&decoded) != nil {
 		return nil, resp.StatusCode, errors.New("malformed JSON")
 	}
+	if decoder.Decode(new(any)) != io.EOF {
+		return nil, resp.StatusCode, errors.New("trailing JSON")
+	}
 	cleaned := cleanSecretEcho(decoded, secrets, 0)
-	b, err = json.Marshal(cleaned)
-	if err != nil {
-		return nil, resp.StatusCode, errors.New("invalid JSON")
-	}
-	var root map[string]json.RawMessage
-	if json.Unmarshal(b, &root) != nil || root == nil {
-		return nil, resp.StatusCode, errors.New("malformed JSON")
-	}
-	return root, resp.StatusCode, nil
+	return cleaned, resp.StatusCode, nil
 }
 
 func cleanSecretEcho(value any, secrets []string, depth int) any {

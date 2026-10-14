@@ -9,13 +9,14 @@ import (
 )
 
 type Provider struct {
-	AuthFields  []AuthField     `json:"-"`
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	BaseURL     string          `json:"base_url"`
-	Description string          `json:"description"`
-	AuthMode    string          `json:"auth_mode"`
-	Config      *ProviderConfig `json:"config,omitempty"`
+	CredentialVersion int             `json:"-"`
+	AuthFields        []AuthField     `json:"-"`
+	ID                string          `json:"id"`
+	Name              string          `json:"name"`
+	BaseURL           string          `json:"base_url"`
+	Description       string          `json:"description"`
+	AuthMode          string          `json:"auth_mode"`
+	Config            *ProviderConfig `json:"config,omitempty"`
 }
 type Account struct {
 	ID         string `json:"id"`
@@ -499,9 +500,9 @@ func (s *Server) syncModels(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) endpointAuth(ctx context.Context, provider, account, credential string) (Provider, string, error) {
 	var p Provider
-	var enc string
+	var enc, fields string
 	var enabled int
-	err := s.Store.DB.QueryRowContext(ctx, "SELECT p.id,p.name,p.base_url,p.description,p.auth_mode,c.encrypted_key,c.enabled FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id WHERE p.id=? AND a.id=? AND c.id=? AND c.role='INFERENCE'", provider, account, credential).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode, &enc, &enabled)
+	err := s.Store.DB.QueryRowContext(ctx, "SELECT p.id,p.name,p.base_url,p.description,p.auth_mode,c.encrypted_key,c.enabled,COALESCE(f.fields_json,''),(SELECT COALESCE(MAX(v.version),0) FROM credential_secret_versions v WHERE v.provider_id=c.provider_id AND v.account_id=c.account_id AND v.credential_id=c.id) FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id LEFT JOIN credential_auth_fields f ON f.provider_id=c.provider_id AND f.account_id=c.account_id AND f.credential_id=c.id WHERE p.id=? AND a.id=? AND c.id=? AND c.role='INFERENCE'", provider, account, credential).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode, &enc, &enabled, &fields, &p.CredentialVersion)
 	if err != nil || enabled != 1 || !validateHTTPS(p.BaseURL) {
 		return Provider{}, "", sql.ErrNoRows
 	}
@@ -510,7 +511,7 @@ func (s *Server) endpointAuth(ctx context.Context, provider, account, credential
 	if p.AuthMode == "NONE" {
 		return p, "", nil
 	}
-	p.AuthFields, err = s.resolveFields(ctx, provider, account, credential)
+	p.AuthFields, err = s.decryptFields(fields)
 	if err != nil {
 		return Provider{}, "", err
 	}

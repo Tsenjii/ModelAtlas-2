@@ -64,6 +64,9 @@ func resourceSnapshot(ctx context.Context, q queryRows, v ControlChange) (map[st
 		}
 		q.QueryRowContext(ctx, "SELECT fields_json FROM credential_auth_fields WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&fields)
 		out = map[string]any{"label": label, "role": role, "enabled": enabled == 1, "group": group, "note": note, "priority": priority, "origin": base, "exists": true, "_key_version_hash": contentHash([]byte(encrypted)), "_fields": fields}
+		var keyVersion int
+		q.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&keyVersion)
+		out["_secret_version"] = keyVersion
 		if v.Kind == "CREDENTIAL_ROTATE" || v.Kind == "CREDENTIAL_ADD" {
 			out["_cipher"] = encrypted
 		}
@@ -355,6 +358,15 @@ func (s *Server) controlTransition(w http.ResponseWriter, r *http.Request, undo 
 			path = "/assistant/undo"
 		}
 		result, e := s.localAPI(r.Context(), "POST", path, v)
+		if e != nil {
+			http.Error(w, e.Error(), 409)
+			return
+		}
+		jsonOK(w, 200, result)
+		return
+	}
+	if undo && oneOf(action, "ACTIVATE_KNOWLEDGE", "ACTIVATE_CONNECTOR") {
+		result, e := s.localAPI(r.Context(), "POST", "/versions/undo", v)
 		if e != nil {
 			http.Error(w, e.Error(), 409)
 			return

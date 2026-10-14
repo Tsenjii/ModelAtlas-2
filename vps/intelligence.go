@@ -33,6 +33,7 @@ type ModelMetadata struct {
 	Description   string   `json:"description"`
 	ContextTokens *int64   `json:"context_tokens,omitempty"`
 	Source        string   `json:"source"`
+	AliasSource   string   `json:"alias_rule_source,omitempty"`
 }
 
 var capabilityNames = []string{"REASONING", "CODING", "TOOL_CALLING", "FUNCTION_CALLING", "STRUCTURED_OUTPUT", "JSON_MODE", "VISION", "FILES", "IMAGE_GENERATION", "IMAGE_EDITING", "AUDIO_INPUT", "AUDIO_OUTPUT", "WEB_SEARCH", "COMPUTER_USE", "LONG_CONTEXT", "EMBEDDING", "RERANK", "SAFETY", "OTHER"}
@@ -53,6 +54,12 @@ func (s *Server) metadata(ctx context.Context, p, m string) ModelMetadata {
 	var raw string
 	if s.Store.DB.QueryRowContext(ctx, "SELECT metadata_json FROM model_metadata WHERE provider_id=? AND model_id=?", p, m).Scan(&raw) == nil {
 		_ = json.Unmarshal([]byte(raw), &out)
+	}
+	if out.Source != "MANUAL" {
+		if rule := s.activeKnowledge(ctx, "MODEL_ALIAS_RULE", p+"/"+m); validID(str(rule["canonical_id"])) {
+			out.CanonicalID = str(rule["canonical_id"])
+			out.AliasSource = "USER_APPROVED_ALIAS_RULE"
+		}
 	}
 	return out
 }
@@ -224,7 +231,11 @@ func (s *Server) modelDetail(w http.ResponseWriter, r *http.Request) {
 		}
 		local = s.performanceBetween(r.Context(), v, start, end)
 	}
-	jsonOK(w, 200, map[string]any{"selection": v, "metadata": meta, "capabilities": s.capabilities(r.Context(), v), "latest": latest, "last_good": lastGood, "history": obs, "local": local, "external": external, "account_facts": accountFacts, "resource_pools": s.resourcePools(r.Context(), v)})
+	providerScope := v
+	providerScope.AccountID = ""
+	providerScope.CredentialID = ""
+	providerScope.Group = ""
+	jsonOK(w, 200, map[string]any{"selection": v, "metadata": meta, "capabilities": s.capabilities(r.Context(), v), "latest": latest, "last_good": lastGood, "history": obs, "local": local, "external": external, "account_facts": accountFacts, "provider_facts": s.observations(r.Context(), providerScope), "resource_pools": s.resourcePools(r.Context(), v)})
 }
 func parseWindow(r *http.Request) int64 {
 	raw := r.URL.Query().Get("window")
