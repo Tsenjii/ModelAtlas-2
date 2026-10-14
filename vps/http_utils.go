@@ -62,9 +62,54 @@ func (s *Server) getJSON(ctx context.Context, p Provider, c ProviderConfig, rawU
 	if err != nil {
 		return nil, resp.StatusCode, err
 	}
+	secrets := []string{key}
+	for _, field := range p.AuthFields {
+		secrets = append(secrets, field.Secret)
+	}
+	var decoded any
+	decoder := json.NewDecoder(strings.NewReader(string(b)))
+	decoder.UseNumber()
+	if decoder.Decode(&decoded) != nil {
+		return nil, resp.StatusCode, errors.New("malformed JSON")
+	}
+	cleaned := cleanSecretEcho(decoded, secrets, 0)
+	b, err = json.Marshal(cleaned)
+	if err != nil {
+		return nil, resp.StatusCode, errors.New("invalid JSON")
+	}
 	var root map[string]json.RawMessage
 	if json.Unmarshal(b, &root) != nil || root == nil {
 		return nil, resp.StatusCode, errors.New("malformed JSON")
 	}
 	return root, resp.StatusCode, nil
+}
+
+func cleanSecretEcho(value any, secrets []string, depth int) any {
+	if depth > 64 {
+		return nil
+	}
+	switch v := value.(type) {
+	case string:
+		if safeText(v, len(v), secrets...) == "" && v != "" {
+			return nil
+		}
+		return v
+	case map[string]any:
+		out := map[string]any{}
+		for key, value := range v {
+			if key != "" && safeText(key, len(key), secrets...) == "" {
+				continue
+			}
+			out[key] = cleanSecretEcho(value, secrets, depth+1)
+		}
+		return out
+	case []any:
+		out := make([]any, len(v))
+		for i, value := range v {
+			out[i] = cleanSecretEcho(value, secrets, depth+1)
+		}
+		return out
+	default:
+		return value
+	}
 }

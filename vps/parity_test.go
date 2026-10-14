@@ -545,3 +545,39 @@ func TestEndpointPathEditCannotRewriteOldConversation(t *testing.T) {
 	requireCode(t, req(t, s, "POST", "/api/v1/providers/config", map[string]any{"provider_id": "p", "config": ProviderConfig{Adapter: "GENERIC", AuthMode: "BEARER", Endpoints: map[string]string{"CHAT_COMPLETIONS": "/changed"}}}), 200)
 	requireCode(t, req(t, s, "POST", "/api/v1/infer", inferRequest{SessionID: session.ID, Prompt: "bound old endpoint"}), 200)
 }
+func TestCustomCredentialEchoRemovedBeforeMetadataPersistence(t *testing.T) {
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"data":[{"id":"m","owned_by":"extra-header-secret"},{"id":"extra-header-secret"}]}`))
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = up.Client()
+	requireCode(t, req(t, s, "POST", "/api/v1/providers", Provider{ID: "p", Name: "custom", BaseURL: up.URL + "/v1", AuthMode: "CUSTOM_HEADER"}), 201)
+	requireCode(t, req(t, s, "POST", "/api/v1/accounts", Account{ID: "a", ProviderID: "p"}), 201)
+	requireCode(t, req(t, s, "POST", "/api/v1/credentials", Credential{ID: "c", ProviderID: "p", AccountID: "a", AuthFields: []AuthField{{Name: "X-Secret", Secret: "extra-header-secret"}}}), 201)
+	requireCode(t, req(t, s, "POST", "/api/v1/models/sync", syncRequest{ProviderID: "p", AccountID: "a", CredentialID: "c"}), 200)
+	result := req(t, s, "GET", "/api/v1/models", nil)
+	if strings.Contains(result.Body.String(), "extra-header-secret") {
+		t.Fatal("custom header credential echoed into catalog")
+	}
+}
+func TestResourcePoolsOnlyAttachSelectedAccountAndKey(t *testing.T) {
+	s := testServer(t)
+	v := seed(t, s, "https://provider.example/v1")
+	newSession(t, s, v)
+	pool := v
+	pool.ModelID = ""
+	pool.Endpoint = "UNKNOWN"
+	s.observe(context.Background(), pool, "TOKEN_QUOTA", "OFFICIAL", "SUCCESS", map[string]any{"remaining": 100})
+	wrong := pool
+	wrong.AccountID = "other-account"
+	s.observe(context.Background(), wrong, "TOKEN_QUOTA", "OFFICIAL", "SUCCESS", map[string]any{"marker": "wrong-account-data"})
+	wrong = pool
+	wrong.CredentialID = "other-key"
+	s.observe(context.Background(), wrong, "TOKEN_QUOTA", "OFFICIAL", "SUCCESS", map[string]any{"marker": "wrong-key-data"})
+	pools := s.resourcePools(context.Background(), v)
+	raw, _ := json.Marshal(pools)
+	if len(pools) != 1 || strings.Contains(string(raw), "wrong-") {
+		t.Fatalf("wrong pool attached: %s", raw)
+	}
+}

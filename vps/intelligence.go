@@ -224,7 +224,7 @@ func (s *Server) modelDetail(w http.ResponseWriter, r *http.Request) {
 		}
 		local = s.performanceBetween(r.Context(), v, start, end)
 	}
-	jsonOK(w, 200, map[string]any{"selection": v, "metadata": meta, "capabilities": s.capabilities(r.Context(), v), "latest": latest, "last_good": lastGood, "history": obs, "local": local, "external": external, "account_facts": accountFacts})
+	jsonOK(w, 200, map[string]any{"selection": v, "metadata": meta, "capabilities": s.capabilities(r.Context(), v), "latest": latest, "last_good": lastGood, "history": obs, "local": local, "external": external, "account_facts": accountFacts, "resource_pools": s.resourcePools(r.Context(), v)})
 }
 func parseWindow(r *http.Request) int64 {
 	raw := r.URL.Query().Get("window")
@@ -487,4 +487,46 @@ func (s *Server) lifecycle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonOK(w, 200, v)
+}
+
+// Resource pools are displayed at their own scope. They never replace model-local uptime or price.
+func (s *Server) resourcePools(ctx context.Context, v Selection) []map[string]any {
+	rows, err := s.Store.DB.QueryContext(ctx, "SELECT id,scope_key,kind,source,status,facts_json,observed_at FROM observations WHERE json_extract(scope_key,'$.provider_id')=? AND json_extract(scope_key,'$.account_id')=? AND json_extract(scope_key,'$.model_id')='' AND (json_extract(scope_key,'$.credential_id')=? OR json_extract(scope_key,'$.credential_id')='') ORDER BY rowid DESC LIMIT 100", v.ProviderID, v.AccountID, v.CredentialID)
+	if err != nil {
+		return []map[string]any{}
+	}
+	out := []map[string]any{}
+	for rows.Next() {
+		var id, key, kind, source, status, raw string
+		var at int64
+		if rows.Scan(&id, &key, &kind, &source, &status, &raw, &at) == nil {
+			var scope Selection
+			var facts any
+			_ = json.Unmarshal([]byte(key), &scope)
+			_ = json.Unmarshal([]byte(raw), &facts)
+			out = append(out, map[string]any{"id": id, "scope": scope, "kind": kind, "source": source, "status": status, "facts": facts, "observed_at": at})
+		}
+	}
+	rows.Close()
+	rows, err = s.Store.DB.QueryContext(ctx, "SELECT id,credential_id,credential_role,endpoint,facts_json,observed_at FROM newapi_snapshots WHERE provider_id=? AND account_id=? AND ((credential_role='INFERENCE' AND credential_id=?) OR credential_role='ACCOUNT_PAT') ORDER BY rowid DESC LIMIT 100", v.ProviderID, v.AccountID, v.CredentialID)
+	if err != nil {
+		return out
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, credential, role, endpoint, raw string
+		var at int64
+		if rows.Scan(&id, &credential, &role, &endpoint, &raw, &at) != nil {
+			continue
+		}
+		var facts map[string]any
+		if json.Unmarshal([]byte(raw), &facts) != nil {
+			continue
+		}
+		if model, ok := facts["model_name"].(string); ok && model != v.ModelID {
+			continue
+		}
+		out = append(out, map[string]any{"id": id, "provider_id": v.ProviderID, "account_id": v.AccountID, "credential_id": credential, "role": role, "endpoint": endpoint, "facts": facts, "observed_at": at, "source": "NEW_API_OFFICIAL"})
+	}
+	return out
 }
