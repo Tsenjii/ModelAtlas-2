@@ -78,8 +78,8 @@ SQLite 資料庫、WAL、SHM 與 `MODELATLAS_MASTER_KEY` 必須有相互一致�
 - New API：`POST /newapi/{status,notice,pricing,account,token,summary,performance}`、`GET /newapi/snapshots`
 - LMSpeed：`POST /lmspeed/{key,sync}`、`GET /lmspeed/models`
 - 設定：`GET,POST /settings`、`GET,POST /checkins`、`GET /backup`、`POST /backup/restore`
-- Media transport：`POST /infer/media`（與 Android 已註冊 image-generation/edit/audio transcription 相同；結果 UI 尚未驗收）
-- 停止：`POST /infer/cancel`，body 為 `session_id`
+- 媒體 Playground：`POST /infer/media`（圖片生成／編輯／音訊轉寫，對應表單、圖片預覽／下載、多行文字結果）。結果只保留於頁面記憶體；圖片總 4 MiB／4 MiPixels，JSON 上限 8 MiB。
+- 停止：`POST /infer/cancel`，Chat body 為 `session_id`；媒體則為送出時的 `request_id`，兩者擇一。共用四個 in-flight 上限。
 - Research：`GET, POST /research/candidates`、`/research/evidence`、`/research/runs`、`GET /research/eligibility`、`POST /research/probe`
 - Assistant：`POST /assistant/preview`、`/assistant/confirm`、`/assistant/undo`
 - Recipes：`GET, POST /recipes`、`POST /recipes/rollback`
@@ -93,3 +93,12 @@ Provider Config 的自訂 endpoint path 以 origin-root 為基準，例如 `/v1/
 ## Browser CI
 
 Node.js / Playwright 僅供開發與 CI，VPS 產品 runtime 不需要 Node.js。測試執行正常 `Server.Handler`、SQLite 與 TLS fixture provider，實際操作 Review／model／chat／hide/restore，不以 HTML 字串或 mock DOM 當 browser 驗收。
+
+
+### 媒體操作
+
+在 Provider 詳情新增同 origin 的 `IMAGES_GENERATION`／`IMAGES_EDIT`／`AUDIO` endpoint profile；從 Catalog 將模型加入該 endpoint，在模型詳情明確確認圖片生成／圖片編輯／音訊能力，再選「使用此模型」。Playground 會顯示對應表單。WAV／MP3 不需要錄音或麥克風權限；圖片編輯使用本機 PNG／JPEG／WebP。沒有已確認的能力時，在 HTTP 前拒發。
+
+圖片結果可直接預覽／下載；轉寫保留換行並可下載文字。供應商只回傳 HTTPS 圖片網址時，提供「開啟供應商圖片」，不自動向該網址發請求，也不轉送認證。結果在切換連線／清除／關閉頁面後釋放；請下載需要保留的結果。
+
+此為 VPS 新結果 UI 切片，驗收依最新 PR #20 同 SHA Actions；不代表 Android 剩餘 PLAY-004 或完整 P8–P10 已完成。

@@ -1,10 +1,11 @@
 package main
 
-const appJS = jsCore + jsViews + jsChat + jsDetails + jsOnboard
+const appJS = jsCore + jsViews + jsChat + jsMedia + jsDetails + jsOnboard
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);
 let endpointProfiles=[],providers=[],accounts=[],credentials=[],models=[],myModels=[],sessions=[],settings={},busy=false,refreshVersion=0,loadVersion=0,attachments=[],controller=null,currentReview=null;
+let mediaAttachment=null,mediaRequestID=null,mediaResultURLs=[],fileReadVersion=0,attachmentReads={};
 const selectedCompare=new Map();
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function notice(msg,bad=false){$("notice").textContent=msg;$("notice").classList.toggle("error",bad);}
@@ -14,6 +15,8 @@ function data(form){return Object.fromEntries(new FormData(form).entries());}
 function option(select,value,title){const n=el("option",title);n.value=value;select.append(n);}
 function scope(m){return Object.fromEntries(["provider_id","account_id","credential_id","model_id","group","endpoint"].map(k=>[k,m[k]||""]));}
 function key(m){return JSON.stringify(scope(m));}
+function targetOperation(m){return endpointProfiles.find(p=>p.provider_id===m.provider_id&&p.id===m.endpoint)?.operation||m.endpoint;}
+const operationLabels={CHAT_COMPLETIONS:"對話",IMAGES_GENERATION:"圖片生成",IMAGES_EDIT:"圖片編輯",AUDIO:"音訊轉寫"};
 function query(m){return new URLSearchParams(scope(m)).toString();}
 function item(target,title,detail,onClick){const n=el(onClick?"button":"div",undefined,"item");if(onClick){n.type="button";n.classList.add("item-button");n.addEventListener("click",onClick);}const a=el("strong",title);const b=el("small",detail);n.append(a,b);target.append(n);return n;}
 function action(target,label,callback,ghost=true){const b=el("button",label,ghost?"ghost":"");b.type="button";b.addEventListener("click",async()=>{b.disabled=true;try{await callback();}catch(e){notice(e.message,true);}finally{b.disabled=false;}});target.append(b);return b;}

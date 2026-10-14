@@ -35,4 +35,5 @@ dialog{max-width:760px;width:calc(100% - 24px);max-height:88dvh;padding:24px;bor
 .bottom-nav button{min-width:0;padding:8px 4px;overflow-wrap:anywhere;font-size:clamp(.8rem,3.2vw,.95rem)}
 button{appearance:none}#model-filters{margin:12px 0 18px}#model-filters[open]{padding:12px;border:1px solid var(--border);border-radius:14px}#model-filters .toolbar{margin-bottom:12px}
 .brand,.brand>div{min-width:0}.brand strong{overflow-wrap:anywhere}.mark{flex-shrink:0}
+#media-ui h2{margin:18px 0 12px}#media-result{margin-top:24px}.media-images{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr))}.media-image{margin:0;padding:12px;border:1px solid var(--border);border-radius:14px;min-width:0}.media-image img{display:block;max-width:100%;max-height:60dvh;margin:auto auto 12px;object-fit:contain}.transcript{white-space:pre-wrap;margin-bottom:12px}.media-hint,.media-metrics,#media-input-name{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}
 `

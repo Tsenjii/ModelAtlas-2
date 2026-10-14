@@ -32,15 +32,12 @@
 - 舊 private source 的實際憑證曾入 git 歷史：舊 PAT 仍需由持有人撤銷；不可將舊 Git 歷史推進新 public。
 
 
-## VPS clean-room track（2026-10-14，獨立 PR）
-- 依使用者最新要求，舊 [PR #19](https://github.com/Tsenjii/ModelAtlas-2/pull/19) 已關閉、原分支 force-with-lease 重置到 Android main `5009e0c8`。乾淨重建 [PR #20](https://github.com/Tsenjii/ModelAtlas-2/pull/20)，來源分支 `feature/vps-rebuild-20261014`。
-- VPS Go/SQLite 真實 production：加密 Credential、Provider/Account/Catalog/My Models scope、Provider /models HTTP 同步、真實 Chat Completions SSE 與 durable conversation/telemetry、P8 candidate/evidence/checkpoint及僅 catalog existence probe、P9 allowlisted preview/confirm/undo、P10 versioned recipe/rollback、繁中 teal Web UI、systemd 安裝文件。
-- 安全／正確性：Go 1.26 + cgo-free SQLite v1.60.1；認證後 HTTP API；強制 loopback；Credential AES-GCM；群組未接正式 adapter 則 HTTP 前拒發；Unknown≠Free；明確 opt-in；不做 fallback；同 session in-flight 拒絕並用 SQLite rowid 保序。
-- [VPS CI 38444562106](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38444562106)：在先前候選 `9b55edb41a84ac0ae5b120b2b0e8c20a06ed20eb` 的 vps-test、Linux AMD64、ARM64 三工作皆 SUCCESS；後續已新增 concurrency 回歸，必須以最新 PR HEAD 重新執行，不得挪用舊 SHA 結果。
-- Android main 仍參照 `5009e0c8` [full-green 38408176782](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38408176782)；VPS PR 未同 HEAD Android build/device + VPS 完整成功時保持 Draft，禁止合併。
-- **未追平 Android**：New API 多端點／Dedicated Adapters、Vision/PDF/Audio、Tool calls、完整配額／價格／LMSpeed、AA 最新 top4 ingest、自動 Crawler、LLM Assistant、可驗證自動 Reflection 與真 VPS SSH 部署。Schema／介面不代表完成；參見 `vps/README.md`。
+## VPS 獨立維護基線（2026-10-14）
 
-- VPS P4 追加 `vps/newapi.go`：實際 New API `/api/status` 版本偵測，rc.25 嚴格門禁，`/api/pricing` 與 `/api/user/self` 使用獨立 ACCOUNT_PAT，`/api/usage/token/` 使用 INFERENCE Key，僅持久化白名單數值事實＋來源，不儲存原始 body / PAT；TLS fixture `newapi_test.go`，角色隔離/未知版拒發；複雜 Group、New API performance、Dedicated Adapters 仍待補。
+- 舊 PR #19 已關閉，VPS 在 `feature/vps-rebuild-20261014`／[PR #20](https://github.com/Tsenjii/ModelAtlas-2/pull/20) 維護；不合併私人 Git 歷史，也不改 Android main。
+- 前一片已驗收 code SHA `9a46804cde0052ae2b65710fba252fe1ee6a2d5f`：[VPS 38508548084](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38508548084) Go race／HTTP／vet、AMD64、ARM64、Browser 四項 SUCCESS；[Android 38508548193](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38508548193) build、device-tests SUCCESS，六項為同一 SHA。PR 曾轉為 Ready。
+- 該片 production 入口與修復以 `vps/PARITY.md` 為準；原本缺少的 onboarding、多 endpoint、Vision/PDF/Audio Input、New API／Dedicated／LMSpeed 已有實際 caller 與驗證，舊缺口快照不再代表最新 VPS 狀態。
+- 未驗收：Android 整體 PLAY-004、完整 P8／P9／P10；未取得使用者主機存取，沒有真 VPS 遠端部署證據。
 
 ## VPS 最新續作（2026-10-14）
 
@@ -49,3 +46,14 @@
 本機 Go race/HTTP + vet 已通過，Browser 交給 `vps-browser` Actions。依最新 PR HEAD 同 SHA build/device＋VPS 四工作結果驗收；未全部成功不合併，任何 regression 直接修復。
 
 Browser 初次回歸已定位並修復（new conversation 前 composer lock），`a938fef` 的 VPS 四 job 全綠。最後 code-audit 已把 Android root 已註冊 media transport、interrupted recovery、資料庫單寫者、exact stats／custom window、stale Undo guard 接線；Final gate 仍查 PR 最新 HEAD，完整結果由 PR body 保存。
+
+## VPS 本次繼續：媒體 Playground 結果切片
+
+2026-10-14 再確認 Android main 仍 `5009e0c8`；使用者指示「繼續」。只新增 VPS 媒體 Playground，不改 Android 已驗收狀態，不疊 P8/P9/P10。
+
+- `ui_js_media.go`：依 immutable endpoint 的 operation 顯示圖片生成／圖片編輯／音訊轉寫；獨立輸入表單、預覽／下載、繁中錯誤、停止；切換 scope 清草稿／附件／結果／Blob。Chat 不接收媒體 operation。
+- `media.go`：共用最多四 flight 與 explicit request-id cancel；多行 transcript；完整 PNG/JPEG/WebP 解碼前先查像素，結果全體 4 MiB／4 MiPixels、HTTP JSON 8 MiB；不回傳自訂 secret echo；無效內容不記 SUCCESS。
+- 原始媒體／轉寫內容不進 DB／telemetry，結果在頁面記憶體；URL-only 由使用者明確開啟，不自動向外部圖片站發請求或轉送 Key。
+- `media_test.go`／Browser production flow 驗證真 TLS caller、三操作、能力撤銷、multipart MIME、零 usage、429、壞／截斷圖片、custom secret、取消與 shared budget。Browser 驗窄屏／深淺色／200% 大字。
+- 本片先維持 Draft；新的 HEAD 必須重新通過 Android 兩項與 VPS 四項同 SHA gate；最終 SHA、Actions run、結論由 PR #20 最新 body 保存，不挪用 `9a46804` 結果。
+- 下一個缺口仍是音訊輸出與工具互動 UI；本片不宣稱全部 PLAY-004／V1 已完成。

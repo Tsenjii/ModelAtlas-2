@@ -407,6 +407,7 @@ func TestStartupInterruptRecoveryAndSingleWriterLock(t *testing.T) {
 	}
 }
 func TestRegisteredMediaTransportsUseScopedTelemetry(t *testing.T) {
+	encoded := testPNG(t)
 	var calls atomic.Int32
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)
@@ -415,7 +416,7 @@ func TestRegisteredMediaTransportsUseScopedTelemetry(t *testing.T) {
 		}
 		switch r.URL.Path {
 		case "/v1/images/generations":
-			w.Write([]byte(`{"data":[{"b64_json":"aW1hZ2U="}],"usage":{"input_tokens":0,"output_tokens":0}}`))
+			json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"b64_json": encoded}}, "usage": map[string]int{"input_tokens": 0, "output_tokens": 0}})
 		case "/v1/audio/transcriptions":
 			if err := r.ParseMultipartForm(5 << 20); err != nil {
 				t.Error(err)

@@ -168,12 +168,21 @@ type wireChunk struct {
 func (s *Server) cancelInference(w http.ResponseWriter, r *http.Request) {
 	var v struct {
 		SessionID string `json:"session_id"`
+		RequestID string `json:"request_id"`
 	}
 	if !decodeJSON(w, r, &v) {
 		return
 	}
+	if (v.SessionID == "") == (v.RequestID == "") || v.RequestID != "" && !validID(v.RequestID) {
+		http.Error(w, "select one active session or media request", 400)
+		return
+	}
+	id := v.SessionID
+	if v.RequestID != "" {
+		id = "media:" + v.RequestID
+	}
 	s.flightMu.Lock()
-	cancel := s.cancels[v.SessionID]
+	cancel := s.cancels[id]
 	s.flightMu.Unlock()
 	if cancel == nil {
 		http.Error(w, "no active inference", 404)

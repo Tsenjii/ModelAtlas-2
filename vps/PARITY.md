@@ -8,7 +8,7 @@
 |---|---|---|
 | P1 持久化、憑證、scope、取消與用量 | SQLite v5 additive migration；AES-GCM；Basic/Bearer；認證 API；角色、跨 origin/redirect/CSRF 邊界 | Go race、原有 TLS HTTP tests；`parity_test.go` |
 | P2 文字／推理串流、多輪、新對話 | `/sessions`、`/messages`、`/infer`、`/infer/cancel`；同一 engine 用於 Playground/Test/Compare | 真 TLS HTTP、阻塞 socket 取消、零 usage、完整 104 則歷史、非串流 TTFT=null |
-| Android 已註冊 media transport | `/infer/media` → 圖片生成、multipart edit／audio transcription，獨立 capability 與 telemetry | TLS wire + operation/source scope、non-streaming TTFT=null；result UI 仍同 Android 未驗收 |
+| Android 已註冊 media transport | `/infer/media` → 圖片生成、multipart edit／audio transcription，獨立 capability 與 telemetry | TLS wire + operation/source scope、non-streaming TTFT=null；新增 VPS 媒體 Playground 結果切片；Android 結果 UI 仍未驗收 |
 | PLAY-004 已合併的圖片／PDF／音訊輸入 | Browser picker → `Attachment.validate` → exact-scope capability → Chat Completions content array | signature/4 MiB；歷史圖片重新驗能力；原始媒體不進 DB/telemetry |
 | P3 Quick / Advanced / Review / Batch、多帳戶／Key、自訂認證 | `/onboarding/preview,retry,confirm,import`；`/providers/config`、`/endpoints`；`/credentials,toggle,rotate`；加密的 extra header/query | Review 不先保存 Provider；未選 Catalog 不進 My Models；原子交易；role/vault/rollback tests |
 | P4 New API | rc.25 status/notice/pricing/account/token/perf summary/per-model；精確倍率／scope／保留 billing_expr；有界算術 parser | 版本未知拒發；PAT 不進推論；精確 `0.0002/0.0004`；錯誤 schema 不崩潰 |
@@ -56,3 +56,13 @@
 
 
 本輪 Endpoint / UI 最後回歸：`/endpoints` 支援同 origin 多個 immutable endpoint profiles；同模型不同 profile 有獨立 telemetry／capability／history；default URL 在 membership 建立時固定並於升級時 backfill。設定匯出／還原亦帶 profile 與 binding。Browser 另驗 200% 大字，主模型列表的多項篩選預設收起，顯示 Provider 名稱而不是 UUID。
+
+## VPS 媒體結果續作（2026-10-14）
+
+上一片 `9a46804` 已在 VPS run `38508548084` 與 Android run `38508548193` 同 SHA 六項 SUCCESS；本次 code 需重新驗最新 HEAD，以 PR #20 body 為最終證據。
+
+- 圖片生成／編輯／音訊轉寫：Models 選入指定 endpoint、確認該 scope 能力 → Playground 對應表單 → 真實 `/infer/media` → 圖片 Blob 預覽與下載／多行轉寫與文字下載。此 VPS 新切片不會把 Android PLAY-004 狀態升格。
+- 媒體 request-id 可明確停止，與 Chat 共用四個 flight；取消記 CANCELLED 並排除 uptime。HTTP 429 等保留分類且不重試。
+- PNG／JPEG／WebP 全部解碼驗證，先限總 4 MiPixels，總 decoded bytes 4 MiB，JSON 上限 8 MiB；截斷／非 raster／secret echo 拒絕。避免小 VPS 被無界影像記憶體拖垮。
+- 瀏覽器只在記憶體持有當前結果；scope 切換清除草稿、附件和 Blob URLs，異步讀檔不能落到後來的連線。供應商 URL 結果只提供無 referrer 的開啟連結，沒有伺服器 proxy／自動外部抓圖。
+- `media_test.go`、`browser_test.go`、`e2e/browser.cjs` 為本片回歸；新增 WebP decoder 依賴鎖定 `golang.org/x/image v0.47.0`，runtime 仍單一 Go binary。

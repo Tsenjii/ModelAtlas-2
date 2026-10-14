@@ -77,3 +77,16 @@
 目前 Android 主線本身尚未 production ACCEPTED 的 PLAY-004 剩餘結果 UI / P8 / P9 / P10 不在這些 entry 內偽升格。詳情 `vps/PARITY.md`；同 SHA Actions evidence 由 PR #20 最新 body 保存。
 
 VPS 本片回歸補充：Browser `38503882118` 發現 new-session/composer race，修復 `a938fef` 後 `38504248117` 的 Go test／amd64／arm64／browser 全 SUCCESS。其後源碼核對補上 Android 已註冊 media transport、RUNNING→INTERRUPTED、single writer、Unknown empty traffic／相同分位／custom window、last-good>200 failures、stale assistant undo；**最終 HEAD 仍必須重新取得雙平台同 SHA CI，不能沿用 `a938fef` 綠燈。**
+
+
+## VPS 媒體結果 UI 續片（2026-10-14）
+
+上一個 parity 基線 `9a46804` 已由 VPS run `38508548084` 四項與 Android run `38508548193` 兩項同 SHA 全綠；本片由使用者「繼續」授權，僅 VPS。
+
+| Requirement | Production caller／回歸 | 狀態 |
+|---|---|---|
+| VPS-MEDIA-UI-001 | Models endpoint／能力確認 → `ui_js_media.go` → `/infer/media` → PNG/JPEG/WebP 預覽與下載、multipart edit、multiline transcript 下載；Browser 三操作真 TLS／375/1024／dark/light/200% | IMPLEMENTED；最新 HEAD 六項 gate 由 PR #20 body 保存 |
+| VPS-MEDIA-SAFE-001 | `media.go` 完整 raster 驗證／先限像素與 byte、所有選定 secret echo、operation-file guard；`media_test.go` 壞／截斷／SVG／custom secret／revoked-cap tests | IMPLEMENTED；不借舊 SHA 綠燈 |
+| VPS-MEDIA-CANCEL-001 | request-id → shared flight／cancel registry → upstream socket close → durable CANCELLED；真 TLS 阻塞／四 flight／Chat 共用／uptime 排除回歸 | IMPLEMENTED；不借舊 SHA 綠燈 |
+
+原始媒體與轉寫結果僅在記憶體；URL-only 不自動抓取、不轉送 Key。Android 整體 PLAY-004 與 P8/P9/P10 acceptance 不變。下一片為音訊輸出或 tools，需單獨接 caller/UI 與新 SHA 完整驗證。
