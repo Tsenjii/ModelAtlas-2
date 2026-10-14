@@ -127,6 +127,7 @@ type inferRequest struct {
 	Streaming   *bool            `json:"streaming,omitempty"`
 	Tools       []ToolDefinition `json:"tools,omitempty"`
 	ToolResults []ToolResult     `json:"tool_results,omitempty"`
+	System      string           `json:"system,omitempty"`
 }
 type chatMessage struct {
 	Role    string `json:"role"`
@@ -237,7 +238,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if v.Prompt == "" && len(v.Attachments) > 0 {
 		return result, 400
 	}
-	if !validID(v.SessionID) || (v.Prompt == "" && len(v.ToolResults) == 0) || len(v.Prompt) > 32000 || len(v.Attachments) > 3 || v.MaxTokens < 0 || v.MaxTokens > 32768 {
+	if !validID(v.SessionID) || (v.Prompt == "" && len(v.ToolResults) == 0) || len(v.Prompt) > 32000 || len(v.System) > 16000 || len(v.Attachments) > 3 || v.MaxTokens < 0 || v.MaxTokens > 32768 {
 		return result, 400
 	}
 	seen := map[string]bool{}
@@ -353,6 +354,14 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	for _, f := range provider.AuthFields {
 		secrets = append(secrets, f.Secret)
 	}
+	if source == "ASSISTANT_AGENT" {
+		all, e := s.knownSecrets(ctx)
+		if e != nil {
+			result.Outcome = "VAULT_UNAVAILABLE"
+			return result, 503
+		}
+		secrets = append(secrets, all...)
+	}
 	cfg := s.config(ctx, provider)
 	endpoint, err := s.requestEndpoint(ctx, provider, cfg, scope.Endpoint, scope.ModelID)
 	if err != nil {
@@ -363,6 +372,18 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if err != nil {
 		result.Outcome = "PROTOCOL_INPUT_UNSUPPORTED"
 		return result, 422
+	}
+	if v.System != "" {
+		switch operation {
+		case "CHAT_COMPLETIONS":
+			payload["messages"] = append([]map[string]any{{"role": "system", "content": v.System}}, payload["messages"].([]map[string]any)...)
+		case "RESPONSES":
+			payload["instructions"] = v.System
+		case "ANTHROPIC_MESSAGES":
+			payload["system"] = v.System
+		case "GEMINI_NATIVE":
+			payload["systemInstruction"] = map[string]any{"parts": []any{map[string]any{"text": v.System}}}
+		}
 	}
 	if operation == "GEMINI_NATIVE" {
 		endpoint = geminiEndpoint(endpoint, stream)
@@ -529,7 +550,13 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			if !stream {
 				deltas = choice.Message.ToolCalls
 			}
-			for _, delta := range deltas {
+			for position, delta := range deltas {
+				// Non-streaming OpenAI tool calls have no delta index. Their
+				// array positions identify distinct calls; treating absent indices
+				// as zero would concatenate unrelated names and arguments.
+				if !stream {
+					delta.Index = position
+				}
 				call := calls[delta.Index]
 				if call == nil {
 					if len(calls) >= 16 || delta.Index < 0 || delta.Index > 63 {

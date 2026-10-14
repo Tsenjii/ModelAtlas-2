@@ -102,3 +102,7 @@ VPS-PLAY-FULL-001 **同 SHA CI 已驗**：`29eff56`／VPS `38550451082` 四項�
 
 | VPS-RESEARCH-RUN-001 | `research_jobs.go` / `research_execute.go` / `research_runtime.go` / `public_fetch.go` → `/research/start,control,sources,funnel,review` → 真 worker / bounded requests / complete funnel / sources / evidence / manual review / scoped traffic reuse；`research_runtime_test.go` 真 TLS / budget / socket pause / durable restart / no implicit membership；`e2e/research.cjs` 正式 UI | IMPLEMENTED，待新 SHA CI |
 | VPS-RESEARCH-AA-001 | `aa.go` / `integration_budget.go` → AA V2 free API、完整同版本分頁、dynamic top4／ordinary regression／expiry、fixed-window budget、last-good；AA TLS tests | IMPLEMENTED，待新 SHA CI；不硬編 family，不借舊榜排名 |
+
+VPS-RESEARCH-RUN-001／AA-001 同 SHA CI 已驗：`fa7c291`／VPS `38558907867` 四項、Android `38558907976` attempt 2 兩項 SUCCESS；未聲稱 Android P8 完整驗收。
+
+| VPS-ASSISTANT-FULL-001 | `/assistant/config,run,secrets,actions` → `assistant_runtime.go` / allowlisted tools / common engine / shared onboarding Review / stale-safe reversible metadata與憑證參照操作；`assistant_runtime_test.go` 真 TLS／多工具／vault boundary／確認與 Undo／不中斷重播／真 socket cancel，`e2e/assistant.cjs` 正式 UI | IMPLEMENTED，待新 SHA 六項 CI |

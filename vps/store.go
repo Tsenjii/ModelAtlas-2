@@ -87,6 +87,10 @@ func OpenStore(path string) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
+	if _, err = db.Exec("UPDATE assistant_runs SET status='INTERRUPTED',finished_at=? WHERE status='RUNNING'", now()); err != nil {
+		db.Close()
+		return nil, err
+	}
 	success = true
 	return &Store{DB: db, lock: lock}, nil
 }

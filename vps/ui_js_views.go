@@ -3,7 +3,7 @@ package main
 const jsViews = `
 async function refresh(){
  const version=++refreshVersion,values=await Promise.all([api("/providers"),api("/accounts"),api("/credentials"),api("/models"),api("/my-models?all=true"),api("/sessions"),api("/settings"),api("/endpoints")]);if(version!==refreshVersion)return;
- [providers,accounts,credentials,models,myModels,sessions,settings,endpointProfiles]=values;renderProviders();renderModels();renderCatalog();
+ [providers,accounts,credentials,models,myModels,sessions,settings,endpointProfiles]=values;renderProviders();renderModels();renderCatalog();assistantTargets();
  const oldTarget=$("target").value;$("target").replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled&&operationLabels[targetOperation(m)]).forEach(m=>option($("target"),key(m),m.metadata.model_id+" · "+operationLabels[targetOperation(m)]+" · "+(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" / "+connectionLabel(m)));if([...$("target").options].some(o=>o.value===oldTarget))$("target").value=oldTarget;
  const oldSession=$("session").value;$("session").replaceChildren();const target=$("target").value;sessions.filter(s=>key(s)===target).forEach(s=>option($("session"),s.id,s.title||s.model_id));if([...$("session").options].some(o=>o.value===oldSession))$("session").value=oldSession;
  if(oldTarget!==target)resetMediaDraft();updatePlayground();$("manual-target").replaceChildren();credentials.filter(c=>c.enabled&&c.role==="INFERENCE").forEach(c=>option($("manual-target"),JSON.stringify(c),c.provider_id+" / "+c.account_id+" / "+c.label));

@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -171,4 +172,59 @@ func TestBrowserResearchWorkflow(t *testing.T) {
 		t.Fatal("Browser research implicitly added membership")
 	}
 	t.Log(string(output))
+}
+
+func TestBrowserAssistantWorkflow(t *testing.T) {
+	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
+		t.Skip("enable in browser CI job")
+	}
+	s := testServer(t)
+	var round atomic.Int32
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		if json.NewDecoder(r.Body).Decode(&body) != nil {
+			t.Error("assistant request not JSON")
+			return
+		}
+		raw, _ := json.Marshal(body)
+		for _, secret := range []string{"top-secret-example-key", "browser-private-ref-key", s.Token} {
+			if strings.Contains(string(raw), secret) {
+				t.Error("Assistant Browser exposed secret to model")
+			}
+		}
+		if round.Add(1) == 1 {
+			selection := Selection{ProviderID: "p", AccountID: "a", CredentialID: "c", ModelID: "browser-added", Endpoint: "CHAT_COMPLETIONS"}
+			assistantReply(w, "", functionCall("browser-add", "add_model", map[string]any{"selection": selection, "display_name": "Browser Added"}), functionCall("browser-notes", "preview_change", map[string]any{"kind": "NOTES", "provider_id": "p", "patch": map[string]any{"notes": "Browser assistant note", "tags": []string{"browser"}}}))
+		} else {
+			assistantReply(w, "已準備模型和備註，請檢查變更。")
+		}
+	}))
+	defer up.Close()
+	s.Client = up.Client()
+	v := seed(t, s, up.URL+"/v1")
+	configureAssistant(t, s, v)
+	// The Browser must configure the selection through the real UI itself.
+	s.Store.DB.Exec("DELETE FROM settings WHERE key='assistant_selection'")
+	app := httptest.NewServer(s.Handler())
+	defer app.Close()
+	cmd := exec.Command("node", "e2e/assistant.cjs", app.URL, up.URL+"/v1")
+	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token)
+	out, e := cmd.CombinedOutput()
+	if e != nil {
+		t.Fatalf("Assistant Browser: %v\n%s", e, out)
+	}
+	if round.Load() != 2 {
+		t.Fatal("Browser agent did not perform native tool round trip")
+	}
+	var members int
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM my_models").Scan(&members)
+	if members != 2 {
+		t.Fatal("Browser did not confirm real membership")
+	}
+	var notes string
+	s.Store.DB.QueryRow("SELECT notes FROM entity_notes WHERE subject_type='PROVIDER' AND subject_id='p'").Scan(&notes)
+	if notes != "" {
+		t.Fatal("Browser Undo did not restore notes")
+	}
+	t.Log(string(out))
 }

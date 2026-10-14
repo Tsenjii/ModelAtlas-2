@@ -186,9 +186,9 @@ func TestNativeTruncationAndUnsupportedInput(t *testing.T) {
 	}
 }
 func validTestWAV() []byte {
-	raw := make([]byte, 48)
+	raw := make([]byte, 44+48000)
 	copy(raw, "RIFF")
-	binary.LittleEndian.PutUint32(raw[4:], 40)
+	binary.LittleEndian.PutUint32(raw[4:], uint32(len(raw)-8))
 	copy(raw[8:], "WAVEfmt ")
 	binary.LittleEndian.PutUint32(raw[16:], 16)
 	binary.LittleEndian.PutUint16(raw[20:], 1)
@@ -198,7 +198,7 @@ func validTestWAV() []byte {
 	binary.LittleEndian.PutUint16(raw[32:], 2)
 	binary.LittleEndian.PutUint16(raw[34:], 16)
 	copy(raw[36:], "data")
-	binary.LittleEndian.PutUint32(raw[40:], 4)
+	binary.LittleEndian.PutUint32(raw[40:], 48000)
 	return raw
 }
 func TestSpeechVectorsThroughRealHTTP(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 7
+const schemaVersion = 8
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -77,6 +77,18 @@ func migrate(db *sql.DB) error {
  CREATE TABLE aa_models(snapshot_id TEXT NOT NULL REFERENCES aa_snapshots(id),aa_id TEXT NOT NULL,slug TEXT NOT NULL,name TEXT NOT NULL,rank INTEGER NOT NULL,score REAL NOT NULL,PRIMARY KEY(snapshot_id,aa_id));
  CREATE INDEX aa_slug ON aa_models(slug,snapshot_id);
  PRAGMA user_version=7;`); err != nil {
+			return err
+		}
+	}
+	if version < 8 {
+		if _, err = tx.Exec(`
+ CREATE TABLE assistant_threads(id TEXT PRIMARY KEY,session_id TEXT NOT NULL REFERENCES sessions(id),scope_key TEXT NOT NULL,created_at INTEGER NOT NULL);
+ CREATE TABLE assistant_runs(id TEXT PRIMARY KEY,thread_id TEXT NOT NULL REFERENCES assistant_threads(id),status TEXT NOT NULL,user_message TEXT NOT NULL,result_json TEXT NOT NULL DEFAULT '{}',created_at INTEGER NOT NULL,finished_at INTEGER);
+ CREATE TABLE assistant_tool_events(id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES assistant_runs(id),call_id TEXT NOT NULL,name TEXT NOT NULL,args_json TEXT NOT NULL,result_json TEXT NOT NULL,status TEXT NOT NULL,created_at INTEGER NOT NULL);
+ CREATE TABLE assistant_secret_refs(id TEXT PRIMARY KEY,base_url TEXT NOT NULL,label TEXT NOT NULL,role TEXT NOT NULL,encrypted_key TEXT NOT NULL,fields_json TEXT NOT NULL,created_at INTEGER NOT NULL);
+ CREATE TABLE entity_notes(subject_type TEXT NOT NULL,subject_id TEXT NOT NULL,notes TEXT NOT NULL,tags_json TEXT NOT NULL,PRIMARY KEY(subject_type,subject_id));
+ CREATE TABLE assistant_action_details(action_id TEXT PRIMARY KEY REFERENCES action_ledger(id),kind TEXT NOT NULL,resource_json TEXT NOT NULL,before_hash TEXT NOT NULL,after_hash TEXT NOT NULL DEFAULT '');
+ PRAGMA user_version=8;`); err != nil {
 			return err
 		}
 	}
