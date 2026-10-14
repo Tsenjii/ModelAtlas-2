@@ -36,3 +36,7 @@ Reflection／connector／credential epoch：`293bd5169a9038769935389e054a6b653b2
 管理完整 review 新增 Model batch hide/archive/restore：共用 action Preview→confirm→Undo，2..100 exact scopes，一個 transaction；任一 scope 更新／移除／ABA 都以 membership revision 拒絕整批 stale 變更，已加真 API 回歸與 Browser；內部 revision 不進 Review UI。排序權重保存後重新載入且保護未提交輸入。
 
 Ranking review 修正：搜尋／grouping aliases 與 manual canonical 不借 AA 身分或 top-4 特例；只比較實際 raw ID／AA ID／名稱及不移除版本後綴的 separator normalization。`winner-latest` 不自動當作 `winner`，exact AA raw model 仍正常；新增 regression。
+
+管理／資源片 `8f0696256cff19a360b8b7e29e75932c2c3a054b` 同 SHA 全綠：VPS `38582129810` browser `115914470596`、test `115914471220`、amd64 `115914471212`、arm64 `115914470849` SUCCESS；Android `38582129791` build `115914470312`、device `115914470641` SUCCESS。Browser `11904166438` digest `a9fc914f9023b0d84b9e3a22b49c790000ce98f10ce8294521be830277803207` 已檢視管理 375px／200% 深色。最終本片 standalone artifact `11904471293`：binary 13,316,258 bytes、idle RSS 26,447,872、warm/peak RSS 29,134,848、SQLite 20,578,304 bytes；十萬筆 raw history＋四個 TLS streams，尚未把媒體負載當作已量測。
+
+22:37 使用者新增：全部完成後量測程式 RAM，先讓 Kilo 找 Provider，再繼續 UI。`live_research_test.go` 以匿名 Kilo 真 Agent 工具嘗試 Groq／Cerebras／OpenRouter 公開官方來源與 durable research，未登入／註冊／動使用者憑證。當前 Work 執行環境無外部 direct DNS（實測 DNS unavailable），不降低 production DNS pin／SSRF 邊界；已保存失敗紀錄，改由獨立 opt-in Actions Linux workflow 執行。普通 deterministic CI 不耗免費服務。Provider leads 須實際頁面、source/evidence/history；不能以 LLM 文本或任務建立冒充擷取成功。

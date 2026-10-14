@@ -120,3 +120,7 @@ VPS-REFLECTION-001／CONNECTOR-001／CREDENTIAL-EPOCH-001 同 SHA CI 已驗：`2
 | VPS-BACKGROUND-001 | `background.go` → metadata queue／bounded period／全 OFF 規則／持久 transition events／本機 notifications caller；TLS queue 與 epoch/dedupe tests | IMPLEMENTED；待新 SHA CI |
 | VPS-BACKUP-V2-001 | `backup.go` / `backup_extra.go` / export → safe v1/v2 definitions、完整 transaction／invalid rollback／停用 credentials & network／重新验证 imported rules；roundtrip 與 Browser 真下載 | IMPLEMENTED；待新 SHA CI |
 | VPS-RESOURCE-001 | `performance_sql.go` 全量保留統計／bounded chart、SQLite cache/temp／Go soft memory／flight limits／paging／gzip，1000-history invariants＋`footprint_test.go` 100000 samples + standalone TLS inference real RSS | IMPLEMENTED；CI 實測待驗，不以軟限制冒充 hard RSS 保證 |
+
+VPS-MANAGE-FULL-001／BACKGROUND-001／BACKUP-V2-001／RESOURCE-001 同 SHA CI 已驗：`8f069625`／VPS `38582129810` 四項＋Android `38582129791` 两項 SUCCESS。SSR 单一執行檔十萬歷史＋四推論 profile peak 29,134,848 bytes，媒體負載仍待最終量測。
+
+| VPS-LIVE-RESEARCH-001 | opt-in `live_research_test.go` / isolated `vps-live.yml` → actual anonymous Kilo model→App tools→public official sources→durable worker/evidence，fresh catalog price/tools guard，10 model HTTP/12 source HTTP budgets，no signup/credentials/implicit My Models | CANDIDATE；本機模型工具已跑，但 direct DNS fail，Actions 待驗 |
