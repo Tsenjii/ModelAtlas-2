@@ -8,8 +8,8 @@
 | 研究執行 | 持久佇列、逐步 probe、預算、取消／重啟恢復、來源與語言、完整漏斗、動態 AA top-4 | 已驗 `fa7c291` 六項 CI |
 | App Assistant | 選擇任意已加入的模型、safe refs 與工具、實際讀取／研究／測試／新增／修改、共享 Review、confirm / undo / action log | 已驗 `69652c9` 六項 CI |
 | Reflection | 每輪成效、可測試的提案、版本化知識、有限權重與 recipe、可逆啟用／回復；禁止改程式或安全政策 | 已驗 `293bd516` 六項 CI |
-| 模型與管理 | 完整篩選／排序、notes / tags、背景同步與規則通知、匯出研究知識 | 本片已實作／待新 SHA 六項 CI |
-| 輕量與交付 | 單一 Go binary / SQLite、bounded HTTP / worker / memory、真 Browser、race / vet、雙架構、同 SHA Android CI | 最終驗收 |
+| 模型與管理 | 完整篩選／排序、notes / tags、背景同步與規則通知、匯出研究知識 | 已驗 `ce2ca91` 六項 CI |
+| 輕量與交付 | 單一 Go binary / SQLite、bounded HTTP / worker / memory、真 Browser、race / vet、雙架構、同 SHA Android CI | 已驗 `ce2ca91` 六項 CI，RAM 155 MiB peak |
 
 沿用既有功能，不重寫 Android；使用者金鑰僅由 privileged HTTP layer 使用。所有來源、失敗、歷史永久保留；Unknown 不推成 0 或 Free。未接真 caller 的功能不得寫完成。測試中的自建 TLS Provider 只驗 protocol / production flow，不冒充使用者帳號或外部實測。
 
@@ -27,7 +27,7 @@ Reflection／connector／credential epoch：`293bd5169a9038769935389e054a6b653b2
 
 管理／資源候選：模型 fuzzy aliases、多條件 filter、價格／額度／AA 強度／最近使用排序，可設定強度／速度／額度的加權再套用可靠度，Unknown 不當 0。Provider ranking 僅計目前 enabled 的 My Models，Global Catalog 不借我的 Key 數據。Notes／tags 與 Provider 編輯共用可逆 action Review；能力更新 reactive；對話工具顯示修正。所有原始歷史完整保留，SQL 計算全量 mean/p50/p90/p95；只顯示 400 個 chart 樣本，其他 history／catalog／membership 有 API paging。預設 SQLite 2 MiB cache、檔案暫存與 192 MiB Go soft memory limit、2..4 flights；靜態 JS/CSS gzip/ETag。真正 standalone process（100,000 raw telemetry、完整分位數查詢、4 個 TLS inference）RSS 量測加入 CI；本機 proc namespace 無法讀取子行程 RSS，不以本機數值冒充實測。
 
-定期 metadata/catalog sync 接真 queue，15..10080 分鐘、每輪 1..10 scopes，預設 OFF；不自動 inference 或 membership。Notification master + 7 rules 全部 OFF，依 credential epoch 保留確認值，價格／quota／outage／recovery transition 與日簽到 dedupe，持久事件與本機通知 caller。Safe backup v2 增加 aliases／notes／settings／收藏狀態／recipes／研究來源／版本知識／connector 定義；v1 可還原，完整 transaction、憑證禁用需重新輸入、網路工作不自動啟用，imported knowledge 需新 evidence-backed proposal，connector 需再真測。SQLite 全庫加密備份另保留完整聊天、觀測、研究 raw history；設定匯出不冒充全庫 backup。管理 Browser 與 standalone footprint 待候選 CI，剩餘 multi-origin／CUSTOM／native speech／最终回歸繼續。
+定期 metadata/catalog sync 接真 queue，15..10080 分鐘、每輪 1..10 scopes，預設 OFF；不自動 inference 或 membership。Notification master + 7 rules 全部 OFF，依 credential epoch 保留確認值，價格／quota／outage／recovery transition 與日簽到 dedupe，持久事件與本機通知 caller。Safe backup v2 增加 aliases／notes／settings／收藏狀態／recipes／研究來源／版本知識／connector 定義；v1 可還原，完整 transaction、憑證禁用需重新輸入、網路工作不自動啟用，imported knowledge 需新 evidence-backed proposal，connector 需再真測。SQLite 全庫備份另保留完整聊天、觀測、研究 raw history；設定匯出不冒充全庫 backup。管理 Browser 與 standalone footprint 待候選 CI，剩餘 multi-origin／CUSTOM／native speech／最终回歸繼續。
 
 管理前輪 `9d61ceb1`：VPS test／amd64／arm64 SUCCESS，既有四個 Browser workflow 通過；新增管理 Browser 在 multiword alias fixture 發現產品 alias validator 只容許 ID（不能含空格）。修正 search alias 可用安全人類名稱、拒絕控制字元，保持原始 model ID 不變；不降低 Browser assertion。VPS test run 38579671767 的 standalone workload 實測 binary 13,308,066 bytes、idle RSS 26,468,352、warm/peak RSS 29,188,096，十萬筆 raw history 全量 percentiles＋四個真 TLS inference 已過（22.07s）。此數據是指定工作負載，不宣称所有媒體峰值相同；管理整片仍待修正版六項 CI。
 
@@ -55,3 +55,12 @@ Kilo 研究 code `b7ecdaa976ed4f26cfdd2783f83e054500ef19c6` 同 SHA 全綠：VPS
 `747f457` 第一輪 VPS test／amd64／arm64 SUCCESS：standalone peak 166,162,432 bytes（約 158.5 MiB），idle 26,370,048、chat 29,794,304、research 29,982,720、image 97,390,592；binary 13,418,658 bytes，100k raw history＋4 chats＋65 Catalog＋4 個同時 4 MiPixels 圖片＋4 個同時 4 MiB 原生語音。Browser 前六個全過，新語音 CURRENT／LEGACY／雙人及真播放下載通過；新後半因測試未展開「探索 Catalog」而逾時，修正實際展開流程，斷言不變。下一版減少多 MiB JSON 音訊解析的副本，WAV 增加 codec／bits／frame／byteRate 一致性驗證；公開擷取依 IANA special-use registry 防保留位址及 embedded-private NAT64／tunnel，保留 public NAT64 與真 public IPv4-mapped，相同 DNS pin／無 proxy。UI 收合進階語音設定。
 
 Reflection 最後 review：terminal run 的暫時 DB/vault save failure 加入 local-only bounded retry（每分鐘最多兩輪），依 status/HTTP used 查缺失或過期報告；保留 raw tasks/舊 report/版本，不自動 activate knowledge，不增加外部 HTTP。新增持久重建／idempotence／summary change／no autoactivation regression。
+
+
+## VPS 完整 V1 code 驗收（2026-10-15）
+
+`ce2ca91a8ff21606bcc335c76d3e6dd47bc0ada8` 同 SHA 六項 SUCCESS：VPS `38612813568` test `116020220644`、amd64 `116020220452`、arm64 `116020220414`、browser `116020220318`；Android `38612813557` build `116020220795`、device `116020219982`。七個 Browser workflows 均成功。剩餘 native speech／CUSTOM／manual session settings、Catalog exact-response 與 security／reflection recovery 均已接正式 caller 並驗收。完整功能、實測 RAM/Kilo、限制與安裝見 `vps/DELIVERY.md`；這不改 Android 本身 PLAY-004／P8–P10 的状态。無獨立外部 reviewer／無 merge／無目標 VPS 部署證據。
+
+Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97,619,968、peak 162,525,184 bytes（155 MiB），binary 13,439,138；完整保留10萬samples，4 chats／65 Catalog／4 simultaneous 4MiPixels images／4 simultaneous 4MiB audio。Live Kilo `38612880443` 真成功 41.19s、6 inference HTTP＋7 public HTTP、3 candidates/4 evidence/3 SUCCESS tasks；Groq/OpenRouter200，Cerebras307 FAILED線索也保留，不當eligibility。
+
+末尾交付提交含資料與文件、200% decorative mark overflow 修整及 screenshot transition 固定；必須再查此新 HEAD 的六項 gate，不以 code 基線代替文件 HEAD。

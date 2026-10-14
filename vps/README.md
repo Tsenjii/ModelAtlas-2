@@ -1,6 +1,6 @@
 # ModelAtlas VPS — Go / SQLite
 
-這是與 Android 同 repo、**獨立維護**的 VPS Web 服務。源自 Android 已驗收的產品契約（`docs/DECISIONS.md`、`docs/PRODUCT_SPEC.md`、`docs/RESEARCH_POLICY.md`），不是把 Android APK 改名當伺服器，也不會憑空聲稱全部同等功能。
+這是與 Android 同 repo、**獨立維護**的 VPS Web 服務。完整 V1 功能與實測驗收見 [DELIVERY.md](DELIVERY.md)。源自 Android 已驗收的產品契約（`docs/DECISIONS.md`、`docs/PRODUCT_SPEC.md`、`docs/RESEARCH_POLICY.md`），不是把 Android APK 改名當伺服器，也不會憑空聲稱全部同等功能。
 
 ## 架構及安全
 

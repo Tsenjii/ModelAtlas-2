@@ -8,7 +8,7 @@ button{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;min-
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d59e30;outline-offset:2px}
 button:disabled{opacity:.48;cursor:wait}button.ghost{border:1px solid var(--border);color:var(--primary);background:var(--card)}
 .shell{max-width:1080px;margin:0 auto;padding:0 16px 92px}header{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:24px 0 18px;border-bottom:1px solid var(--border)}
-.brand{display:flex;align-items:center;gap:12px}.brand strong{display:block;font-size:1.4rem}.brand small{display:block;color:var(--muted)}.mark{display:grid;place-items:center;width:45px;height:45px;border-radius:14px;background:var(--primary);color:white;font-size:1.7rem}
+.brand{display:flex;align-items:center;gap:12px}.brand strong{display:block;font-size:1.4rem}.brand small{display:block;color:var(--muted)}.mark{display:grid;place-items:center;width:45px;height:45px;border-radius:14px;background:var(--primary);color:white;font-size:28px;line-height:1}
 h1{font-size:clamp(1.4rem,4vw,2rem);letter-spacing:-.02em;margin:0 0 6px}h2{font-size:1.15rem;margin:0 0 14px}.heading{margin:24px 0}.heading p{margin:0;color:var(--muted)}
 .card{background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:22px;padding:clamp(16px,3vw,26px);margin-bottom:16px}
 .columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.columns .card{margin:0 0 16px}
