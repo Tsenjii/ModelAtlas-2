@@ -46,3 +46,8 @@ Kilo 研究 code `b7ecdaa976ed4f26cfdd2783f83e054500ef19c6` 同 SHA 全綠：VPS
 當前多 origin／App research 能力候選：immutable credential origins＋optional auth override，舊 Key／PAT／endpoint／session 不隨 primary URL 修改，secondary URL 要 explicit profile，primary change 先有新的 bound credential且共享 Review/Undo；已接 creation/onboarding/Assistant/PAT/connector/backup 與 Provider UI。Token Group 只用同 credential epoch/origin、最新 certified explicit group assertion；錯誤 Group 不借免費價格／不可 inference，rotation 不借舊 assertion。Nominal group quote保留獨立資料，不轉成此 Key effective/free。Assistant 能保存 public source與匿名 Provider Review（使用 DNS-pinned public client）；typed tool registry最多32definitions，單run12tools/4web budgets不變。來源抓取失敗仍保留FAILED lead与failureevidence、last-good不覆蓋。Provider表單收合、Review顯示具體scope，新TLS與Browser待新SHA gate。CUSTOM／native speech／session設定／最終媒體RAM仍接續。
 
 多origin候選 `60f6c8e`：VPS test/footprint/amd64/arm64通過；新Origin Browser (2.31s) 與Research/Assistant/Knowledge/Management五項均通過，既有Production Browser需配合Provider表單收合新增實際展開動作，原10次media/下載/播放/無橫向overflow斷言不變。更新測試後仍要新SHA完整六項，其他剩餘功能接續。
+
+
+多網址／Group epoch／Agent public source 片 `d3da38c50a90976de5eac95c764b7cac66f80ddb` 同 SHA 六項 SUCCESS：VPS `38590860925` test `115945054314`、amd64 `115945054916`、browser `115945054937`、arm64 `115945055188`；Android `38590861082` build `115945620723`、device `115945553268`。現在整合剩餘 Playground：原生 Gemini 語音 CURRENT／LEGACY／雙人 metadata、宣告式 CUSTOM 對話、逐段 system/max_tokens/streaming 設定；共用 scope／工具／取消／telemetry，Assistant 固定 system 不受手動設定覆寫。新增 TLS／Browser／safe backup 與全服務 heavy media RAM profile；本片待新 SHA CI，不把前片或未執行的 footprint 當驗收。
+
+研究 Catalog review：正式 caller 現在直接使用同一 HTTP/auth snapshot 的全部回傳 CatalogEntry，保留 origin/material version 與每個 raw model 的 selection；不從 Provider union Catalog 借模型，不截成 50 個。新增 65 模型／其他 Key 舊模型隔離 regression。

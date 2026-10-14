@@ -226,6 +226,24 @@ func (s *Server) infer(w http.ResponseWriter, r *http.Request) {
 	if !decodeLimit(w, r, &v, 17<<20) {
 		return
 	}
+	if !s.manualSession(r.Context(), v.SessionID) {
+		http.Error(w, "manual conversation missing", 404)
+		return
+	}
+	options, e := s.sessionSettings(r.Context(), v.SessionID)
+	if e != nil {
+		http.Error(w, "settings unavailable", 503)
+		return
+	}
+	if v.System == "" {
+		v.System = options.System
+	}
+	if v.MaxTokens == 0 {
+		v.MaxTokens = options.MaxTokens
+	}
+	if v.Streaming == nil {
+		v.Streaming = &options.Streaming
+	}
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "streaming unsupported", 500)
@@ -394,7 +412,16 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		return result, 422
 	}
 	stream := v.Streaming == nil || *v.Streaming
-	payload, err := protocolPayload(operation, scope.ModelID, v.MaxTokens, stream, messages, tools)
+	var custom *CustomProtocol
+	var payload map[string]any
+	if operation == "CUSTOM" {
+		custom, err = s.customProtocol(ctx, scope)
+		if err == nil {
+			payload, err = customPayload(custom, scope.ModelID, v.System, v.MaxTokens, stream, messages, tools)
+		}
+	} else {
+		payload, err = protocolPayload(operation, scope.ModelID, v.MaxTokens, stream, messages, tools)
+	}
 	if err != nil {
 		result.Outcome = "PROTOCOL_INPUT_UNSUPPORTED"
 		return result, 422
@@ -650,7 +677,9 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		}
 		return nil
 	}
-	if operation == "CHAT_COMPLETIONS" {
+	if operation == "CUSTOM" {
+		err = readCustom(resp.Body, custom, stream, consume)
+	} else if operation == "CHAT_COMPLETIONS" {
 		if !stream {
 			raw, e := readBounded(resp.Body, 1<<20)
 			if e != nil {

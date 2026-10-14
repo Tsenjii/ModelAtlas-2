@@ -110,3 +110,12 @@ Settings 可逐項啟用背景 metadata/catalog 同步（預設關閉；間隔 1
 預設 Go soft memory limit 為 192 MiB，可透過 `GOMEMLIMIT` 調整；SQLite cache 2 MiB、暫存排序寫檔，`MODELATLAS_MAX_FLIGHTS=2..4` 可調整並行。Soft limit 不等於行程 RSS hard cap；100,000 retained samples + 4 real TLS streams 的 CI footprint 才是具體量測。SQL percentiles 計算完整 history；chart 最近 400 筆、列表 `limit=1..200&offset=N`，對話 history 永久保存。每次推論的原始上下文最多 1024 訊息／32 MiB，超過會提示開新對話，沒有刪除既有內容。
 
 Safe export v2 包含 definitions／aliases／notes／settings／recipes／knowledge／connector，讀取 v1/v2。Restored credentials 禁用需再輸入 Key；研究來源／背景／通知不自動啟用，知識提案需重建 evidence、connector 需重新測試。完整 SQLite 與 master key 要在服務停止後分開安全保存，才能保留全部聊天／research／raw telemetry；設定匯出只作可攜定義。
+
+
+原生 Gemini 語音使用獨立 `GEMINI_SPEECH` 端點與確認的 AUDIO_OUTPUT，手動選 CURRENT 或 LEGACY，不依模型名稱換協定。支援單聲音與 CURRENT 雙人對話；原生 WAV 或 mono s16le PCM（依回報取樣率包 WAV）均需完整內容驗證，取消和 4 MiB 上限沿用媒體入口。CURRENT wire 依 [Google 官方 TTS 文件](https://ai.google.dev/gemini-api/docs/generate-content/speech-generation) 2026-10-14 查核。沒有持有人 Gemini Key 的真外部語音實測；TLS 和 Browser fixture 僅驗 production transport、播放與下載。
+
+CUSTOM 在 Provider 詳情新增不可變端點，以 `custom_protocol` 的 JSON request 模板＋`response_fields` JSON Pointer 映射回應。允許完整值 `$MODEL`、`$MESSAGES`、`$SYSTEM`、`$TOOLS`、`$MAX_TOKENS`、`$STREAM`；訊息、附件與工具格式沿用 Chat Completions。必須帶 model/messages/max_tokens，實際使用 system/tools 時必須有其 placeholder；最多 16 KiB、8 層，不執行腳本、不插入 auth。串流為 SSE（需明確完成欄位或 done_sentinel），工具 delta 含 index；非串流為一份完整 JSON。修改要新增端點，設定隨 safe backup 匯出，舊對話保持原協定。
+
+Playground 的「對話設定」保存該段系統指示、1..32768 回應 Token 上限和串流選項。手動設定不影響 App Assistant 固定系統指示；工具定義亦逐段保存。
+
+完整 RAM 實測使用 `MODELATLAS_FOOTPRINT_TEST=1 MODELATLAS_FOOTPRINT_OUT=footprint.json go test -run TestStandaloneProcessFootprint -v -count=1 -timeout=3m`：編譯 stripped standalone binary、十萬筆完整歷史統計、4 個 TLS chats、持久研究／65 個 Catalog models、4 個同時 2048×2048 圖片解碼、4 個同時 4 MiB 原生語音結果。以服務 PID 的 VmRSS/VmHWM 記錄每阶段，fixture/test runner/browser 不算入服务 RAM；需要可讀取子行程 `/proc` 的 Linux，Work 本機限制不冒充數字。

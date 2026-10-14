@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -10,10 +11,11 @@ import (
 )
 
 type EndpointProfile struct {
-	ProviderID string `json:"provider_id"`
-	ID         string `json:"id"`
-	Operation  string `json:"operation"`
-	URL        string `json:"url"`
+	ProviderID string          `json:"provider_id"`
+	ID         string          `json:"id"`
+	Operation  string          `json:"operation"`
+	URL        string          `json:"url"`
+	Custom     *CustomProtocol `json:"custom_protocol,omitempty"`
 }
 
 func (s *Server) operation(ctx context.Context, v Selection) string {
@@ -68,6 +70,23 @@ func (s *Server) addEndpoint(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid endpoint profile", 400)
 		return
 	}
+	if v.Operation == "CUSTOM" && !validCustom(v.Custom) || v.Operation != "CUSTOM" && v.Custom != nil {
+		http.Error(w, "custom operation requires a valid declarative protocol", 400)
+		return
+	}
+	if v.Custom != nil {
+		secrets, e := s.knownSecrets(r.Context())
+		if e != nil {
+			http.Error(w, "vault unavailable", 503)
+			return
+		}
+		for _, secret := range secrets {
+			if jsonContainsSecret(v.Custom, secret) {
+				http.Error(w, "secret found in protocol metadata", 422)
+				return
+			}
+		}
+	}
 	if _, builtin := endpointNames[v.ID]; builtin {
 		http.Error(w, "profile ID conflicts with built-in endpoint", 409)
 		return
@@ -90,14 +109,30 @@ func (s *Server) addEndpoint(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if _, err = s.Store.DB.ExecContext(r.Context(), "INSERT INTO endpoint_profiles VALUES(?,?,?,?)", v.ProviderID, v.ID, v.Operation, v.URL); err != nil {
+	tx, err := s.Store.DB.BeginTx(r.Context(), nil)
+	if err != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(r.Context(), "INSERT INTO endpoint_profiles VALUES(?,?,?,?)", v.ProviderID, v.ID, v.Operation, v.URL); err != nil {
 		http.Error(w, "immutable endpoint profile exists", 409)
+		return
+	}
+	if v.Custom != nil {
+		if saveCustom(r.Context(), tx, v.ProviderID, v.ID, v.Custom) != nil {
+			http.Error(w, "invalid custom definition", 400)
+			return
+		}
+	}
+	if tx.Commit() != nil {
+		http.Error(w, "database error", 500)
 		return
 	}
 	jsonOK(w, 201, v)
 }
 func (s *Server) listEndpoints(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,id,operation,url FROM endpoint_profiles UNION SELECT provider_id,endpoint_id,operation,url FROM endpoint_bindings ORDER BY provider_id,id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT e.provider_id,e.id,e.operation,e.url,COALESCE(c.config_json,'') FROM (SELECT provider_id,id,operation,url FROM endpoint_profiles UNION SELECT provider_id,endpoint_id,operation,url FROM endpoint_bindings) e LEFT JOIN custom_protocols c ON c.provider_id=e.provider_id AND c.endpoint_id=e.id ORDER BY e.provider_id,e.id")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -106,7 +141,12 @@ func (s *Server) listEndpoints(w http.ResponseWriter, r *http.Request) {
 	out := []EndpointProfile{}
 	for rows.Next() {
 		var v EndpointProfile
-		if rows.Scan(&v.ProviderID, &v.ID, &v.Operation, &v.URL) == nil {
+		var raw string
+		if rows.Scan(&v.ProviderID, &v.ID, &v.Operation, &v.URL, &raw) == nil {
+			if raw != "" {
+				v.Custom = new(CustomProtocol)
+				_ = json.Unmarshal([]byte(raw), v.Custom)
+			}
 			out = append(out, v)
 		}
 	}

@@ -349,3 +349,60 @@ func TestBrowserOriginWorkflow(t *testing.T) {
 	}
 	t.Log(string(out))
 }
+
+func TestBrowserProtocolAndSpeechWorkflow(t *testing.T) {
+	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
+		t.Skip("enable in Browser CI")
+	}
+	var voices, customCalls atomic.Int32
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer top-secret-example-key" {
+			t.Error("Browser protocol credential mismatch")
+		}
+		var body map[string]any
+		if json.NewDecoder(r.Body).Decode(&body) != nil {
+			t.Error("protocol request not JSON")
+			return
+		}
+		if r.URL.Path == "/v1/models/m:generateContent" {
+			voices.Add(1)
+			config := object(body["generationConfig"])
+			speech := object(config["speechConfig"])
+			if voice := object(speech["voiceConfig"]); voice["prebuiltVoiceConfig"] != nil {
+				json.NewEncoder(w).Encode(speechFixture(validTestWAV()[44:], "audio/L16;codec=pcm;rate=24000"))
+			} else {
+				json.NewEncoder(w).Encode(speechFixture(validTestWAV(), "audio/wav"))
+			}
+			return
+		}
+		if r.URL.Path == "/mapped" {
+			customCalls.Add(1)
+			if body["target"] != "m" || body["instruction"] != "Browser 繁中系統指示" || body["limit"] != float64(777) || body["streaming"] != false {
+				t.Error("Browser settings not sent to exact custom endpoint")
+			}
+			json.NewEncoder(w).Encode(map[string]any{"result": map[string]any{"text": "自訂協定完成"}, "state": "stop", "usage": map[string]int{"in": 0, "out": 0}})
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = up.Client()
+	scope := seed(t, s, up.URL+"/v1")
+	scope.Endpoint = "GEMINI_SPEECH"
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", scope), 201)
+	confirmCaps(t, s, scope, []string{"AUDIO_OUTPUT"})
+	app := httptest.NewServer(s.Handler())
+	defer app.Close()
+	cfg, _ := json.Marshal(customForTest())
+	cmd := exec.Command("node", "e2e/protocols.cjs", app.URL, up.URL+"/mapped")
+	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token, "MODELATLAS_CUSTOM="+string(cfg))
+	out, e := cmd.CombinedOutput()
+	if e != nil {
+		t.Fatalf("Protocol Browser: %v\n%s", e, out)
+	}
+	if voices.Load() != 3 || customCalls.Load() != 1 {
+		t.Fatalf("missing real HTTP voices=%d custom=%d", voices.Load(), customCalls.Load())
+	}
+	t.Log(string(out))
+}

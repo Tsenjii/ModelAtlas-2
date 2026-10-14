@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"net"
 	"net/http"
@@ -17,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -33,7 +38,47 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 	if out, e := build.CombinedOutput(); e != nil {
 		t.Fatalf("build: %v %s", e, out)
 	}
+	// Four megapixels exercise real decode allocations even when compression
+	// is efficient. Speech separately exercises the full four-MiB byte cap.
+	img := image.NewRGBA(image.Rect(0, 0, 2048, 2048))
+	for y := 0; y < 2048; y++ {
+		for x := 0; x < 2048; x++ {
+			img.SetRGBA(x, y, color.RGBA{uint8(x), uint8(y), uint8((x + y) % 256), 255})
+		}
+	}
+	var encodedImage bytes.Buffer
+	if png.Encode(&encodedImage, img) != nil {
+		t.Fatal("profile PNG")
+	}
+	imagePayload, _ := json.Marshal(map[string]any{"data": []any{map[string]any{"b64_json": base64.StdEncoding.EncodeToString(encodedImage.Bytes())}}})
+	pcm := make([]byte, maxAttachment-44)
+	speechPayload, _ := json.Marshal(speechFixture(pcm, "audio/L16;codec=pcm;rate=24000"))
+	var catalogHTTP, mediaHTTP atomic.Int32
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer top-secret-example-key" {
+			t.Error("profile wrong credential")
+			http.Error(w, "auth", 401)
+			return
+		}
+		if r.URL.Path == "/v1/models" {
+			catalogHTTP.Add(1)
+			models := []any{map[string]any{"id": "m"}}
+			for i := 0; i < 64; i++ {
+				models = append(models, map[string]any{"id": fmt.Sprintf("profile-%d", i)})
+			}
+			json.NewEncoder(w).Encode(map[string]any{"data": models})
+			return
+		}
+		if r.URL.Path == "/v1/images/generations" {
+			mediaHTTP.Add(1)
+			w.Write(imagePayload)
+			return
+		}
+		if r.URL.Path == "/v1/models/m:generateContent" {
+			mediaHTTP.Add(1)
+			w.Write(speechPayload)
+			return
+		}
 		if r.URL.Path == "/v1/chat/completions" {
 			w.Header().Set("Content-Type", "text/event-stream")
 			fmt.Fprint(w, "data: {\"choices\":[{\"delta\":{\"content\":\"profile reply\"}}]}\n\n")
@@ -52,6 +97,14 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 	s := testServer(t)
 	v := seed(t, s, up.URL+"/v1")
 	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	imageScope, speechScope := v, v
+	imageScope.Endpoint = "IMAGES_GENERATION"
+	speechScope.Endpoint = "GEMINI_SPEECH"
+	for _, scope := range []Selection{imageScope, speechScope} {
+		requireCode(t, req(t, s, "POST", "/api/v1/my-models", scope), 201)
+	}
+	confirmCaps(t, s, imageScope, []string{"IMAGE_GENERATION"})
+	confirmCaps(t, s, speechScope, []string{"AUDIO_OUTPUT"})
 	tx, e := s.Store.DB.Begin()
 	if e != nil {
 		t.Fatal(e)
@@ -122,7 +175,7 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 		}
 		defer response.Body.Close()
 		b, e := io.ReadAll(response.Body)
-		if response.StatusCode != 200 {
+		if !oneOfVersion(response.StatusCode, 200, 201) {
 			return nil, fmt.Errorf("%s status %d", path, response.StatusCode)
 		}
 		return b, e
@@ -194,10 +247,88 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
+	chatRSS, chatPeak := memory()
+	options, _ := json.Marshal(ResearchOptions{Selections: []Selection{v}, Budget: 150, ProbeBudget: 1, MinimalInference: true})
+	started, e := do("/research/start", string(options))
+	if e != nil {
+		t.Fatal(e)
+	}
+	var run map[string]any
+	json.Unmarshal(started, &run)
+	runID := str(run["id"])
+	if runID == "" {
+		t.Fatal("no real research run")
+	}
+	deadline = time.Now().Add(30 * time.Second)
+	for {
+		raw, e := do("/research/tasks?run_id="+url.QueryEscape(runID), "")
+		if e != nil {
+			t.Fatal(e)
+		}
+		var tasks []ResearchTask
+		if json.Unmarshal(raw, &tasks) != nil {
+			t.Fatal("research tasks")
+		}
+		done := len(tasks) > 1
+		for _, task := range tasks {
+			if !oneOf(task.Status, "SUCCESS", "FAILED", "SKIPPED", "CANCELLED") {
+				done = false
+			}
+		}
+		if done {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("real research did not complete")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if catalogHTTP.Load() < 1 {
+		t.Fatal("research did not fetch provider")
+	}
+	researchRSS, researchPeak := memory()
+	mediaProfile := func(scope Selection) (int64, int64) {
+		errs := make(chan error, 4)
+		var wg sync.WaitGroup
+		for i := 0; i < 4; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				v := MediaRequest{Selection: scope, Prompt: "profile media", RequestID: newID()}
+				if scope.Endpoint == "GEMINI_SPEECH" {
+					v.Voice = "Kore"
+					v.Format = "wav"
+					v.SpeechDialect = "LEGACY"
+				}
+				body, _ := json.Marshal(v)
+				raw, e := do("/infer/media", string(body))
+				if e == nil {
+					var result MediaResponse
+					if json.Unmarshal(raw, &result) != nil || result.Outcome != "SUCCESS" || scopeKey(result.Selection) != scopeKey(scope) || len(result.Data) != 1 {
+						e = fmt.Errorf("media not complete")
+					}
+				}
+				errs <- e
+			}()
+		}
+		wg.Wait()
+		close(errs)
+		for e := range errs {
+			if e != nil {
+				t.Fatal(e)
+			}
+		}
+		return memory()
+	}
+	imageRSS, imagePeak := mediaProfile(imageScope)
+	speechRSS, speechPeak := mediaProfile(speechScope)
+	if mediaHTTP.Load() != 8 {
+		t.Fatal("missing actual media work")
+	}
 	warm, hwm := memory()
 	info, _ := os.Stat(binary)
 	dbInfo, _ := os.Stat(dbPath)
-	report := map[string]any{"profile": "100000 retained samples, complete SQL percentiles and 4 simultaneous real TLS streaming requests", "binary_bytes": info.Size(), "idle_rss_bytes": idle, "warm_rss_bytes": warm, "peak_rss_bytes": hwm, "sqlite_bytes": dbInfo.Size(), "gomemlimit_bytes": 192 << 20}
+	report := map[string]any{"profile": "100000 retained samples/full SQL percentiles; 4 TLS chats; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each", "binary_bytes": info.Size(), "idle_rss_bytes": idle, "warm_rss_bytes": warm, "peak_rss_bytes": hwm, "sqlite_bytes": dbInfo.Size(), "gomemlimit_bytes": 192 << 20, "chat_rss_bytes": chatRSS, "chat_peak_bytes": chatPeak, "research_rss_bytes": researchRSS, "research_peak_bytes": researchPeak, "image_rss_bytes": imageRSS, "image_peak_bytes": imagePeak, "speech_rss_bytes": speechRSS, "speech_peak_bytes": speechPeak, "catalog_http": catalogHTTP.Load(), "media_http": mediaHTTP.Load(), "image_pixels_each": 2048 * 2048, "speech_bytes_each": maxAttachment, "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser"}
 	raw, _ := json.MarshalIndent(report, "", "  ")
 	t.Log(string(raw))
 	if path := os.Getenv("MODELATLAS_FOOTPRINT_OUT"); path != "" {

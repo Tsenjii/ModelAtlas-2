@@ -375,37 +375,24 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 			return nil, errors.New("missing selection")
 		}
 		v := *input.Selection
-		p, e := s.provider(ctx, v.ProviderID)
+		snapshot, e := s.discoverSnapshot(ctx, syncRequest{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: v.CredentialID})
 		if e != nil {
 			return nil, e
 		}
-		count, e := s.discover(ctx, syncRequest{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: v.CredentialID})
-		if e != nil {
-			return nil, e
-		}
-		cfg := s.config(ctx, p)
+		p, cfg := snapshot.Provider, snapshot.Config
 		site := cfg.Website
 		if site == "" {
 			site = p.BaseURL
 		}
-		rows, e := s.Store.DB.QueryContext(ctx, "SELECT id FROM models WHERE provider_id=? ORDER BY updated_at DESC LIMIT 50", p.ID)
-		if e != nil {
-			return nil, e
-		}
-		models := []string{}
-		for rows.Next() {
-			var m string
-			rows.Scan(&m)
-			models = append(models, m)
-		}
-		rows.Close()
 		ids := []string{}
-		for _, model := range models {
-			c, e := s.ensureCandidate(ctx, p.ID, model, run, site)
+		for _, entry := range snapshot.Entries {
+			c, e := s.ensureCandidate(ctx, p.ID, entry.ID, run, site)
 			if e != nil {
 				return nil, e
 			}
-			_, e = s.recordEvidence(ctx, c.ID, "PROVIDER_MODEL_CATALOG", p.BaseURL, "model exists in selected credential catalog", true, EvidenceDetails{RunID: run, SourceID: cfg.Adapter, Normalized: map[string]any{"selection": v, "model_id": model}, Confidence: 0.65, ParserVersion: "catalog-v1"})
+			modelScope := v
+			modelScope.ModelID = entry.ID
+			_, e = s.recordEvidence(ctx, c.ID, "PROVIDER_MODEL_CATALOG", p.BaseURL, "model exists in selected credential catalog", true, EvidenceDetails{RunID: run, SourceID: cfg.Adapter, Normalized: map[string]any{"selection": modelScope, "model_id": entry.ID, "origin": p.BaseURL, "credential_version": p.CredentialVersion}, Confidence: 0.65, ParserVersion: "catalog-v2-exact-response"})
 			if e != nil {
 				return nil, e
 			}
@@ -413,12 +400,15 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 			c.AccessMethod = "INFERENCE_READY"
 			c.AuthKind = cfg.AuthMode
 			c.LastChecked = now()
-			s.saveCandidateDetails(ctx, c.ID, c.CandidateDetails)
+			if e = s.saveCandidateDetails(ctx, c.ID, c.CandidateDetails); e != nil {
+				return nil, e
+			}
 			s.reconcileCandidate(ctx, c.ID)
 			ids = append(ids, c.ID)
 		}
 		facts := s.enrichWithoutCatalog(ctx, v)
-		return map[string]any{"candidate_ids": ids, "catalog_count": count, "intelligence": facts}, nil
+		return map[string]any{"candidate_ids": ids, "catalog_count": len(snapshot.Entries), "intelligence": facts}, nil
+
 	case "MINIMAL_INFERENCE":
 		if input.Selection == nil {
 			return nil, errors.New("missing selection")

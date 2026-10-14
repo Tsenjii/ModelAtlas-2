@@ -68,7 +68,7 @@ func (s *Server) setMetadata(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &m) {
 		return
 	}
-	if !validID(m.ProviderID) || !validID(m.ModelID) || !validStrings(m.Capabilities, capabilityNames, 24) || !validStrings(m.Modalities, []string{"TEXT_INPUT", "TEXT_OUTPUT", "IMAGE_INPUT", "IMAGE_OUTPUT", "AUDIO_INPUT", "AUDIO_OUTPUT", "FILE_INPUT"}, 7) || !validStrings(m.Endpoints, []string{"CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "IMAGES_GENERATION", "IMAGES_EDIT", "AUDIO", "EMBEDDINGS", "RERANK", "CUSTOM"}, 10) || !oneOf(m.Category, "CHAT_REASONING", "CODING", "IMAGE", "AUDIO", "EMBEDDING", "RERANK", "SAFETY", "OTHER") || len(m.Aliases) > 20 || len(m.Description) > 4096 || len(m.Vendor) > 120 || m.ContextTokens != nil && (*m.ContextTokens <= 0 || *m.ContextTokens > 16777216) {
+	if !validID(m.ProviderID) || !validID(m.ModelID) || !validStrings(m.Capabilities, capabilityNames, 24) || !validStrings(m.Modalities, []string{"TEXT_INPUT", "TEXT_OUTPUT", "IMAGE_INPUT", "IMAGE_OUTPUT", "AUDIO_INPUT", "AUDIO_OUTPUT", "FILE_INPUT"}, 7) || !validStrings(m.Endpoints, []string{"CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "IMAGES_GENERATION", "IMAGES_EDIT", "AUDIO", "EMBEDDINGS", "RERANK", "CUSTOM", "AUDIO_SPEECH", "GEMINI_SPEECH"}, 12) || !oneOf(m.Category, "CHAT_REASONING", "CODING", "IMAGE", "AUDIO", "EMBEDDING", "RERANK", "SAFETY", "OTHER") || len(m.Aliases) > 20 || len(m.Description) > 4096 || len(m.Vendor) > 120 || m.ContextTokens != nil && (*m.ContextTokens <= 0 || *m.ContextTokens > 16777216) {
 		http.Error(w, "invalid model metadata", 400)
 		return
 	}

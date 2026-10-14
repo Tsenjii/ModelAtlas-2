@@ -251,6 +251,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /models/sync", s.syncModels)
 	api.HandleFunc("GET /sessions", s.listSessions)
 	api.HandleFunc("POST /sessions", s.addSession)
+	api.HandleFunc("GET /sessions/settings", s.getSessionSettings)
+	api.HandleFunc("POST /sessions/settings", s.setSessionSettings)
 	api.HandleFunc("GET /messages", s.listMessages)
 	api.HandleFunc("POST /infer", s.infer)
 	api.HandleFunc("POST /infer/media", s.mediaInference)

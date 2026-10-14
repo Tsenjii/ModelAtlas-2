@@ -25,7 +25,7 @@ type ProviderConfig struct {
 	ProjectID       string            `json:"project_id,omitempty"`
 }
 
-var endpointNames = map[string]string{"CHAT_COMPLETIONS": "/chat/completions", "RESPONSES": "/responses", "ANTHROPIC_MESSAGES": "/messages", "GEMINI_NATIVE": "/models/{model}:streamGenerateContent", "MODELS": "/models", "IMAGES_GENERATION": "/images/generations", "IMAGES_EDIT": "/images/edits", "AUDIO": "/audio/transcriptions", "AUDIO_SPEECH": "/audio/speech", "EMBEDDINGS": "/embeddings", "RERANK": "/rerank"}
+var endpointNames = map[string]string{"CHAT_COMPLETIONS": "/chat/completions", "RESPONSES": "/responses", "ANTHROPIC_MESSAGES": "/messages", "GEMINI_NATIVE": "/models/{model}:streamGenerateContent", "MODELS": "/models", "IMAGES_GENERATION": "/images/generations", "IMAGES_EDIT": "/images/edits", "AUDIO": "/audio/transcriptions", "AUDIO_SPEECH": "/audio/speech", "GEMINI_SPEECH": "/models/{model}:generateContent", "CUSTOM": "/custom", "EMBEDDINGS": "/embeddings", "RERANK": "/rerank"}
 var fieldName = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 
 func safePath(path string) bool {
@@ -48,7 +48,7 @@ func safeConfig(c ProviderConfig) bool {
 	if c.RequiresCheckin && c.CheckinURL == "" {
 		return false
 	}
-	if len(c.Endpoints) > 12 || len(c.Headers) > 8 || len(c.AuthPrefix) > 32 || strings.ContainsAny(c.AuthPrefix, "\r\n\x00") {
+	if len(c.Endpoints) > 14 || len(c.Headers) > 8 || len(c.AuthPrefix) > 32 || strings.ContainsAny(c.AuthPrefix, "\r\n\x00") {
 		return false
 	}
 	for name, path := range c.Endpoints {

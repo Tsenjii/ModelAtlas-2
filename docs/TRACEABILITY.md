@@ -130,3 +130,6 @@ VPS-LIVE-RESEARCH-001 真實 opt-in已驗：`b7ecdaa`／Actions `38584572569`／
 | VPS-MULTI-ORIGIN-001 | `origins.go` / schema11 / shared credential auth / immutable endpoint bindings / selected PAT / connector snapshot / safe backup → sameProvider多URL、shared Review/Undo不搬Key；`origins_test.go` realTLS與`e2e/origins.cjs` | IMPLEMENTED；待新SHA CI |
 | VPS-AGENT-SOURCE-001 | static `save_research_source` / anonymous `onboard_provider` → public definition/durable runner/shared Review，public DNS-pinned client、noRawSecrets/noImplicitMembers；TLS/public boundary/registry regression | IMPLEMENTED；待新SHA CI |
 | VPS-GROUP-EPOCH-001 | certified explicit token group（origin＋currentmaterialversion＋freshness），matchingGroup／inference／offerguard、失敗來源留evidence/lead | IMPLEMENTED；待新SHA CI |
+
+
+多網址／Group epoch／Agent public source 片 `d3da38c50a90976de5eac95c764b7cac66f80ddb` 同 SHA 六項 SUCCESS：VPS `38590860925` test `115945054314`、amd64 `115945054916`、browser `115945054937`、arm64 `115945055188`；Android `38590861082` build `115945620723`、device `115945553268`。現在整合剩餘 Playground：原生 Gemini 語音 CURRENT／LEGACY／雙人 metadata、宣告式 CUSTOM 對話、逐段 system/max_tokens/streaming 設定；共用 scope／工具／取消／telemetry，Assistant 固定 system 不受手動設定覆寫。新增 TLS／Browser／safe backup 與全服務 heavy media RAM profile；本片待新 SHA CI，不把前片或未執行的 footprint 當驗收。

@@ -130,40 +130,54 @@ func geminiModels(s *Server, ctx context.Context, p Provider, c ProviderConfig, 
 	}
 	return out, nil
 }
+
+type catalogSnapshot struct {
+	Entries  []CatalogEntry
+	Provider Provider
+	Config   ProviderConfig
+}
+
 func (s *Server) discover(ctx context.Context, v syncRequest) (int, error) {
+	snapshot, e := s.discoverSnapshot(ctx, v)
+	if e != nil {
+		return 0, e
+	}
+	return len(snapshot.Entries), nil
+}
+func (s *Server) discoverSnapshot(ctx context.Context, v syncRequest) (*catalogSnapshot, error) {
 	p, key, err := s.endpointAuth(ctx, v.ProviderID, v.AccountID, v.CredentialID)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	ctx = withCredentialObservation(ctx, Selection{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: v.CredentialID}, p)
 	c := s.config(ctx, p)
 	adapter, ok := adapterRegistry[c.Adapter]
 	if !ok || adapter.Discover == nil {
-		return 0, errors.New("unsupported discovery")
+		return nil, errors.New("unsupported discovery")
 	}
 	entries, custom, err := s.connectorCatalog(ctx, v)
 	if !custom {
 		entries, err = adapter.Discover(s, ctx, p, c, key)
 	}
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	tx, err := s.Store.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer tx.Rollback()
 	for _, entry := range entries {
 		if _, err = tx.ExecContext(ctx, "INSERT INTO models(provider_id,id,display_name,price_state,quota_state,provenance,updated_at) VALUES(?,?,?,'UNKNOWN','UNKNOWN','PROVIDER_CATALOG',?) ON CONFLICT(provider_id,id) DO UPDATE SET display_name=excluded.display_name,provenance=excluded.provenance,updated_at=excluded.updated_at", p.ID, entry.ID, entry.Name, now()); err != nil {
-			return 0, err
+			return nil, err
 		}
 		raw, _ := json.Marshal(entry.Meta)
 		if _, err = tx.ExecContext(ctx, "INSERT INTO model_metadata VALUES(?,?,?,?) ON CONFLICT(provider_id,model_id) DO UPDATE SET canonical_id=excluded.canonical_id,metadata_json=excluded.metadata_json WHERE json_extract(model_metadata.metadata_json,'$.source')!='MANUAL'", p.ID, entry.ID, entry.Meta.CanonicalID, string(raw)); err != nil {
-			return 0, err
+			return nil, err
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		return 0, err
+		return nil, err
 	}
 	var group string
 	_ = s.Store.DB.QueryRowContext(ctx, "SELECT group_id FROM credential_context WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&group)
@@ -178,10 +192,10 @@ func (s *Server) discover(ctx context.Context, v syncRequest) (int, error) {
 			source = override
 		}
 		if err = s.observe(ctx, scope, "CATALOG", source, "SUCCESS", facts); err != nil {
-			return 0, err
+			return nil, err
 		}
 	}
-	return len(entries), nil
+	return &catalogSnapshot{Entries: entries, Provider: p, Config: c}, nil
 }
 func originPath(p Provider, path string) string {
 	u, _ := url.Parse(p.BaseURL)

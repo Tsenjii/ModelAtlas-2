@@ -22,25 +22,29 @@ import (
 
 type MediaRequest struct {
 	Selection
-	Prompt       string      `json:"prompt"`
-	Image        *Attachment `json:"image,omitempty"`
-	Audio        *Attachment `json:"audio,omitempty"`
-	Size         string      `json:"size,omitempty"`
-	RequestID    string      `json:"request_id,omitempty"`
-	Voice        string      `json:"voice,omitempty"`
-	Format       string      `json:"format,omitempty"`
-	Instructions string      `json:"instructions,omitempty"`
-	Speed        float64     `json:"speed,omitempty"`
-	Inputs       []string    `json:"inputs,omitempty"`
-	Documents    []string    `json:"documents,omitempty"`
-	Dimensions   int         `json:"dimensions,omitempty"`
-	TopN         int         `json:"top_n,omitempty"`
+	Prompt        string          `json:"prompt"`
+	Image         *Attachment     `json:"image,omitempty"`
+	Audio         *Attachment     `json:"audio,omitempty"`
+	Size          string          `json:"size,omitempty"`
+	RequestID     string          `json:"request_id,omitempty"`
+	Voice         string          `json:"voice,omitempty"`
+	Format        string          `json:"format,omitempty"`
+	Instructions  string          `json:"instructions,omitempty"`
+	Speed         float64         `json:"speed,omitempty"`
+	Inputs        []string        `json:"inputs,omitempty"`
+	Documents     []string        `json:"documents,omitempty"`
+	Dimensions    int             `json:"dimensions,omitempty"`
+	TopN          int             `json:"top_n,omitempty"`
+	SpeechDialect string          `json:"speech_dialect,omitempty"`
+	Speakers      []SpeechSpeaker `json:"speakers,omitempty"`
+	Turns         []SpeechTurn    `json:"turns,omitempty"`
 }
 type mediaWire struct {
-	URL    string `json:"url,omitempty"`
-	Base64 string `json:"b64_json,omitempty"`
-	MIME   string `json:"mime,omitempty"`
-	Format string `json:"format,omitempty"`
+	URL        string `json:"url,omitempty"`
+	Base64     string `json:"b64_json,omitempty"`
+	MIME       string `json:"mime,omitempty"`
+	Format     string `json:"format,omitempty"`
+	SampleRate int    `json:"sample_rate,omitempty"`
 }
 type MediaResponse struct {
 	Outcome   string         `json:"outcome"`
@@ -62,12 +66,12 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	operation := s.operation(r.Context(), v.Selection)
-	required := map[string]string{"IMAGES_GENERATION": "IMAGE_GENERATION", "IMAGES_EDIT": "IMAGE_EDITING", "AUDIO": "AUDIO_INPUT", "AUDIO_SPEECH": "AUDIO_OUTPUT", "EMBEDDINGS": "EMBEDDING", "RERANK": "RERANK"}[operation]
+	required := map[string]string{"IMAGES_GENERATION": "IMAGE_GENERATION", "IMAGES_EDIT": "IMAGE_EDITING", "AUDIO": "AUDIO_INPUT", "AUDIO_SPEECH": "AUDIO_OUTPUT", "GEMINI_SPEECH": "AUDIO_OUTPUT", "EMBEDDINGS": "EMBEDDING", "RERANK": "RERANK"}[operation]
 	if required == "" || !s.validateSelection(r.Context(), v.Selection) || !s.groupBound(r.Context(), v.Selection) || !oneOf(required, s.capabilities(r.Context(), v.Selection)...) {
 		http.Error(w, "selected media capability unavailable", 422)
 		return
 	}
-	if len(v.Prompt) > 32000 || !oneOf(operation, "AUDIO", "EMBEDDINGS") && strings.TrimSpace(v.Prompt) == "" || v.Size != "" && !oneOf(v.Size, "256x256", "512x512", "1024x1024", "1024x1536", "1536x1024", "auto") || v.RequestID != "" && !validID(v.RequestID) {
+	if len(v.Prompt) > 32000 || !oneOf(operation, "AUDIO", "EMBEDDINGS", "GEMINI_SPEECH") && strings.TrimSpace(v.Prompt) == "" || v.Size != "" && !oneOf(v.Size, "256x256", "512x512", "1024x1024", "1024x1536", "1536x1024", "auto") || v.RequestID != "" && !validID(v.RequestID) {
 		http.Error(w, "invalid media parameters", 400)
 		return
 	}
@@ -93,8 +97,17 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "invalid speech parameters", 400)
 			return
 		}
+	} else if operation == "GEMINI_SPEECH" {
+		if !validGeminiSpeech(v) {
+			http.Error(w, "invalid native speech parameters", 400)
+			return
+		}
 	} else if v.Voice != "" || v.Format != "" || v.Instructions != "" || v.Speed != 0 {
 		http.Error(w, "speech parameters require speech endpoint", 400)
+		return
+	}
+	if operation != "GEMINI_SPEECH" && (v.SpeechDialect != "" || len(v.Speakers) > 0 || len(v.Turns) > 0) {
+		http.Error(w, "native parameters require native speech endpoint", 400)
 		return
 	}
 	if v.RequestID == "" {
@@ -123,6 +136,19 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	for _, field := range p.AuthFields {
 		secrets = append(secrets, field.Secret)
 	}
+	known, e := s.knownSecrets(ctx)
+	if e != nil {
+		http.Error(w, "vault unavailable", 503)
+		return
+	}
+	secrets = append(secrets, known...)
+	content := map[string]any{"prompt": v.Prompt, "instructions": v.Instructions, "inputs": v.Inputs, "documents": v.Documents, "speakers": v.Speakers, "turns": v.Turns}
+	for _, secret := range secrets {
+		if jsonContainsSecret(content, secret) {
+			http.Error(w, "secret found in media content", 422)
+			return
+		}
+	}
 	cfg := s.config(ctx, p)
 	endpoint, err := s.requestEndpoint(ctx, p, cfg, v.Endpoint, v.ModelID)
 	if err != nil {
@@ -131,7 +157,9 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	}
 	body := &bytes.Buffer{}
 	contentType := "application/json"
-	if operation == "EMBEDDINGS" {
+	if operation == "GEMINI_SPEECH" {
+		_ = json.NewEncoder(body).Encode(geminiSpeechPayload(v))
+	} else if operation == "EMBEDDINGS" {
 		payload := map[string]any{"model": v.ModelID, "input": v.Inputs, "encoding_format": "float"}
 		if v.Dimensions != 0 {
 			payload["dimensions"] = v.Dimensions
@@ -253,6 +281,17 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	raw, err := readBounded(response.Body, 8<<20)
 	if err != nil {
 		result.Outcome = "PARSER"
+		return
+	}
+	if operation == "GEMINI_SPEECH" {
+		var ok bool
+		input, output, ok = parseGeminiSpeech(raw, v, &result, secrets)
+		if !ok {
+			result.Outcome = "PARSER"
+			return
+		}
+		result.Outcome = "SUCCESS"
+		responseStatus = 200
 		return
 	}
 	if operation == "AUDIO_SPEECH" {

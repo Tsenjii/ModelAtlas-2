@@ -10,7 +10,7 @@ import (
 )
 
 func conversationOperation(op string) bool {
-	return oneOf(op, "CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE")
+	return oneOf(op, "CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "CUSTOM")
 }
 func geminiEndpoint(raw string, stream bool) string {
 	if !stream {

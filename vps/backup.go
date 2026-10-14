@@ -9,6 +9,11 @@ import (
 
 type BackupDocument struct {
 	BackupExtras
+	CustomProtocols []struct {
+		ProviderID string `json:"provider_id"`
+		EndpointID string `json:"endpoint_id"`
+		Raw        string `json:"config_json"`
+	} `json:"custom_protocols,omitempty"`
 	Endpoints        []EndpointProfile `json:"endpoints,omitempty"`
 	EndpointBindings []struct {
 		ProviderID string `json:"provider_id"`
@@ -185,6 +190,24 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request) {
 		if _, err = tx.ExecContext(r.Context(), "INSERT INTO endpoint_profiles VALUES(?,?,?,?)", profile.ProviderID, profile.ID, profile.Operation, profile.URL); err != nil {
 			fail()
 			return
+		}
+	}
+	for _, definition := range b.CustomProtocols {
+		var cfg CustomProtocol
+		var op string
+		if json.Unmarshal([]byte(definition.Raw), &cfg) != nil || tx.QueryRowContext(r.Context(), "SELECT operation FROM endpoint_profiles WHERE provider_id=? AND id=?", definition.ProviderID, definition.EndpointID).Scan(&op) != nil || op != "CUSTOM" || saveCustom(r.Context(), tx, definition.ProviderID, definition.EndpointID, &cfg) != nil {
+			fail()
+			return
+		}
+	}
+	for _, profile := range b.Endpoints {
+		if profile.Operation == "CUSTOM" {
+			var n int
+			_ = tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM custom_protocols WHERE provider_id=? AND endpoint_id=?", profile.ProviderID, profile.ID).Scan(&n)
+			if n != 1 {
+				fail()
+				return
+			}
 		}
 	}
 	for _, binding := range b.EndpointBindings {

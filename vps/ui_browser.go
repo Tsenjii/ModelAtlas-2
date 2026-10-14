@@ -19,8 +19,8 @@ function scope(m){return Object.fromEntries(["provider_id","account_id","credent
 function key(m){return JSON.stringify(scope(m));}
 function connectionLabel(m){const account=accounts.find(a=>a.provider_id===m.provider_id&&a.id===m.account_id),credential=credentials.find(c=>c.provider_id===m.provider_id&&c.account_id===m.account_id&&c.id===m.credential_id);return (account?.label||m.account_id)+" / "+(credential?.label||m.credential_id)+(m.group?" / "+m.group:"");}
 function targetOperation(m){return endpointProfiles.find(p=>p.provider_id===m.provider_id&&p.id===m.endpoint)?.operation||m.endpoint;}
-function chatOperation(op){return ["CHAT_COMPLETIONS","RESPONSES","ANTHROPIC_MESSAGES","GEMINI_NATIVE"].includes(op);}
-const operationLabels={RESPONSES:"Responses 對話",ANTHROPIC_MESSAGES:"Claude 對話",GEMINI_NATIVE:"Gemini 對話",AUDIO_SPEECH:"語音生成",EMBEDDINGS:"文字向量",RERANK:"文件排序",CHAT_COMPLETIONS:"對話",IMAGES_GENERATION:"圖片生成",IMAGES_EDIT:"圖片編輯",AUDIO:"音訊轉寫"};
+function chatOperation(op){return ["CHAT_COMPLETIONS","RESPONSES","ANTHROPIC_MESSAGES","GEMINI_NATIVE","CUSTOM"].includes(op);}
+const operationLabels={RESPONSES:"Responses 對話",ANTHROPIC_MESSAGES:"Claude 對話",GEMINI_NATIVE:"Gemini 對話",AUDIO_SPEECH:"語音生成",GEMINI_SPEECH:"Gemini 語音",CUSTOM:"自訂對話",EMBEDDINGS:"文字向量",RERANK:"文件排序",CHAT_COMPLETIONS:"對話",IMAGES_GENERATION:"圖片生成",IMAGES_EDIT:"圖片編輯",AUDIO:"音訊轉寫"};
 function query(m){return new URLSearchParams(scope(m)).toString();}
 function item(target,title,detail,onClick){const n=el(onClick?"button":"div",undefined,"item");if(onClick){n.type="button";n.classList.add("item-button");n.addEventListener("click",onClick);}const a=el("strong",title);const b=el("small",detail);n.append(a,b);target.append(n);return n;}
 function action(target,label,callback,ghost=true){const b=el("button",label,ghost?"ghost":"");b.type="button";b.addEventListener("click",async()=>{b.disabled=true;try{await callback();}catch(e){notice(e.message,true);}finally{b.disabled=false;}});target.append(b);return b;}
