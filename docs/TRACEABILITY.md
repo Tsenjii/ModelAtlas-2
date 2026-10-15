@@ -165,7 +165,7 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 
 ## VPS 串流／閱讀與快捷操作切片（2026-10-15）
 
-基線 `5c616053496f37e1a0af44d3b9614bc6432c3800` 已同 SHA 六項全綠（VPS `38680781659`、Android `38680781661`）。本片獨立驗收，不借基線結果；最新 HEAD／run／job／Browser DOM 指標以 PR #20 checks／body 為準，同 SHA 六項全成功才 ACCEPTED。Android source 未改，無 merge／無目標主機部署。
+基線 `5c616053496f37e1a0af44d3b9614bc6432c3800` 已同 SHA 六項全綠（VPS `38680781659`、Android `38680781661`）。本片獨立驗收，不借基線結果；最新 HEAD／run／job／Browser DOM 指標以 PR #20 checks／body 為準，同 SHA 六項全成功才 ACCEPTED。Android 僅含下述必要初始化修復，main／產品phase不變，無 merge／無目標主機部署。
 
 | Requirement | 正式 caller／驗證 | 驗收條件／review |
 |---|---|---|
@@ -174,3 +174,6 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 | VPS-CHAT-COMPOSER-001 | 真 start 後可草擬下一則；global shortcuts／IME／repeat／busy／modal guards、Escape → existing explicit cancel API／fetch abort | 生成中不重複送出、不切 scope；draft 完成後仍保留；IME／Shift+Enter／Ctrl／Meta 測試，modal Escape 不停模型，下一次 Escape 真關上游並保留 CANCELLED；共2次模型 HTTP |
 
 設計參考與原生 API 官方連結在 `vps/CHAT_UX.md`；實作自行撰寫，無第三方 source 複製／新 production dependency。測試 fixture 只提供合成資料與分階段 barrier，全部 inference 經正式 Handler／engine／vault scope／SQLite；不是攔截假前端回應。服務 RAM 仍跑原有擴充 standalone profile，不把 DOM 指標當成 RSS 改善。
+
+
+| ANDROID-VM-INIT-001 | `AtlasViewModel` observers 在全部 instance fields 完成後才啟動，兩個原 init body／相對順序完整保留；h5 四次 Main.immediate 建構、已存 membership／certified endpoint、exact operation／不charge／不新增inference或membership | 修復 `979a8a6`／Android `38685239940` device `116258469234` 的真 NPE；不加delay／drop emission／catch吞錯，h4 原斷言保留。新 HEAD 需完整同 SHA 六項 CI |

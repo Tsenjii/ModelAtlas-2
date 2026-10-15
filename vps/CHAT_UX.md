@@ -34,3 +34,12 @@
 DOM 指標寫到 Browser artifact 的 `chat-stream-metrics.json`；VPS RAM 仍由既有完整 standalone workload 檢查，不能把瀏覽器 DOM writes 減少冒充服務 RSS 下降。
 
 上一批35張功能截圖來自 `5c61605`／VPS run `38680781659`／Browser job `116244605214`，均為合成測試資料。本片新增聊天閱讀／完成畫面與 DOM 指標，依本片正式 Browser artifact 補圖並標明 SHA。本片須同 SHA 六項 CI 全部成功才驗收，確切 SHA／run／job／指標以 PR #20 最新 checks／body 為準，不借用舊截圖或舊 CI；未 merge／未部署。
+
+
+## Android gate 的必要初始化修復
+
+`979a8a6` 的 VPS 四項及十個 Browser workflows 全過，第一批2,000 Provider deltas實測9次DOM寫入／0次全文替換，3,000 deltas的18,250字元／107則完整匯出正確；服務擴充 RAM profile峰值393,846,784 bytes（375.60 MiB）。這是該code SHA的測量，不外推到未測版本。
+
+Android build通過，但 run `38685239940`／job `116258469234` 的既有 h4 測試暴露真初始化競態：membership collector 在 `Main.immediate` 同步執行 `requestMyModelRefresh`，讀取後方尚未初始化的 `newApiCertifiedOperations` Set。這次必要修復將兩個 observers init 移到所有 instance fields後，原內容與相對順序逐位元核對相同，保留初始 emission／session預算／cancellation。沒有以重跑、delay、drop或吞錯掩蓋。
+
+新增 h5 真裝置情境：已存 membership及certified endpoint，四次在Main建構／清理VM，驗精確operation、無charge、無inference／membership新增。既有h4及其他斷言不改。修復僅在VPS分支的必要相容性範圍，沒有改Android main或宣稱Android產品phase完成；修復後新HEAD另跑完整六項gate。
