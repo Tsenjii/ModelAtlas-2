@@ -1,6 +1,6 @@
 package main
 
-const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts + jsStreaming + jsWorkspace
+const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsDetailWorkspace + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts + jsStreaming + jsWorkspace
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);
@@ -28,7 +28,7 @@ function show(tab){if(!["playground","providers","models","settings"].includes(t
 function bubble(role,text){$("chat").querySelector(".empty-state")?.remove();const {article,content}=messageNode(role,text,{rich:false,copy:role==="user"});$("chat").append(article);chatChanged();return content;}
 function finishBubble(content,sampleID){const source=content.textContent;renderMarkdown(content,source);const actions=el("div",undefined,"message-actions");action(actions,"複製訊息",()=>copyMessage(source));requestLink(actions,sampleID);content.parentElement.append(actions);chatChanged();}
 let detailVersion=0;
-function modal(title){detailVersion++;$("detail-title").textContent=title;$("detail-content").replaceChildren();if(!$("detail").open)$("detail").showModal();return $("detail-content");}
+function modal(title){detailVersion++;$("detail-title").textContent=title;$("detail-content").replaceChildren();$("detail-content").removeAttribute("aria-busy");delete $("detail").dataset.kind;$("detail").scrollTop=0;if(!$("detail").open)$("detail").showModal();return $("detail-content");}
 function field(parent,label,type="text",value=""){const wrap=el("label",label),input=el(type==="textarea"?"textarea":"input");if(type!=="textarea")input.type=type;input.value=value;wrap.append(input);parent.append(wrap);return input;}
 function factsView(parent,title,facts){const d=el("details"),summary=el("summary",title),pre=el("pre",JSON.stringify(facts,null,2));d.append(summary,pre);parent.append(d);}
 `

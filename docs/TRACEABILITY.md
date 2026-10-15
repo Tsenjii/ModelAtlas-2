@@ -196,3 +196,17 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 | VPS-CHAT-SESSION-RESET-001 | `newConversation` 成功時同步清 UI／新標題／新段預設與閱讀狀態，`chatChanged(force)` 立即隱藏舊 jump；chat-experience 真保存舊system/777→立即new→空system/512/true、舊設定完整保留，原 immediate hidden 斷言不改 | 修復5613943／38694380170 的跨session舊閱讀控制瞬現；history DB不刪／不加模型HTTP；新HEAD同SHA六項gate |
 
 Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38694380099) build `116287408298`＋完整device `116287407961` 同SHA SUCCESS；新UI HEAD仍需獨立驗收，不能以舊綠燈代替。
+
+
+## VPS 詳情工作區與非同步操作（2026-10-15，候選）
+
+以 `c609cf2` 同 SHA 六項全綠為起點；此表不改 Android phase 的驗收。
+
+| ID | 正式 caller／行為 | 驗證與狀態 |
+|---|---|---|
+| VPS-DETAIL-NAV | `ui_js_detail_workspace.go`／`ui_js_details.go`，模型及 Provider 各四分區，真 aria tablist／左右／Home／End；Provider 僅列該站已加入模型，端點保存後即更新清單 | 第十二個 `TestBrowserDetailWorkspaceWorkflow`；待新 HEAD 六項 CI＋實圖 |
+| VPS-DETAIL-READ | 明確 loading／error／retry；同模型時間窗只更新實測區，保留 metadata／notes／capability 草稿；每次讀取有本視窗及 request 序號 guard | 真 Handler／SQLite，首讀503後重試、阻塞1h後7d先返回、有效自訂範圍、無效範圍HTTP前拒絕 |
+| VPS-DETAIL-SOURCE | nominal／effective 明確分開且精確字串；last-good／latest／Provider／Account／external／pools 來源獨立；My Uptime 樣本與視窗、p50/p90/p95／60s observed獨立，不假造Unknown | 三有效＋一取消樣本，7d66.7%、自訂50.0%、他模型無樣本；失敗不清有效價格，保留全部四紀錄 |
+| VPS-DETAIL-ACTION | 同scope metadata／caps／Key啟停仍真API；晚完成 lifecycle、preview 或 Catalog add 不重開／關掉新的詳情；Key rotate 後刷新當前投影 | 真 mutation 先提交後阻塞回應，換模型後釋放；原十一 Browser assertion 全保留，只調整新分區入口；待同SHA全部綠燈 |
+
+產品接線、截圖來源及限制見 `vps/DETAIL_UI.md`。Exact SHA／Actions runs／jobs／footprint 由 PR #20 最新 body 記錄；沒有最新六項 SUCCESS 不標 ACCEPTED。

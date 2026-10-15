@@ -720,7 +720,7 @@ const homeHTML = `<!doctype html>
 </button>
 </nav>
 </div>
-<dialog id="detail">
+<dialog id="detail" aria-labelledby="detail-title">
 <div class="dialog-bar">
 <h2 id="detail-title">
 </h2>
