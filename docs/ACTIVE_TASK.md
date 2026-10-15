@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **VPS 當前唯一切片：Provider 表單與保存回饋。** 使用者「可以」授權繼續；以 `03307f1e9046f45af2ab52458a8762cd9f987079` 同SHA六項SUCCESS為基線（VPS `38735387218`／Android `38735387179`，十三Browser與實圖已驗收）。main仍`5009e0c8`／`38408176782` SUCCESS。帳戶／Key／端點／rotate／config原地更新、跨表單草稿與展開保留、form內JSON／HTTP錯誤、pending重複提交guard、同名Key帳戶scope、晚完成mutation guard；新增第十四個真Browser，不改schema／Android／API語意。詳見`vps/PROVIDER_FORMS_UI.md`；新HEAD六項同SHA與實圖通過前PR #20維持Draft，下方Catalog候選為歷史紀錄。
 - **Catalog 實圖收尾：** `f8a7370`／VPS `38734782608` 十三Browser全過（含原management及真封存fixture）。實圖確認200%原生select會截短網址；補可展開完整帳戶／Key／Group／用途／URL，真文字Range不相交檢查，Catalog總覽截圖收合已驗證篩選區。仍為本片修復，最新HEAD重新六項CI；未借f8的部分綠燈驗收。
 - **Catalog 首輪回歸修正：** `4eaf16e`／VPS `38734249142` Go race／vet／footprint／雙架構成功，原11個Browser成功；management因新舊分區同名「篩選模型」產生strict locator歧義，新第13流程fixture的UPDATE未建立封存state而初始化不符。改Catalog標題「篩選 Catalog」，fixture改走真`/models/lifecycle`建立封存；保留原1個active target及全部斷言，不加等待或force click。新HEAD仍重跑六項。
 - **VPS 當前唯一切片：Catalog 探索與連線加入。** 基線 `62ac7908e58f6e66daddb5b5fb241d42cd054d7a` 已由 VPS `38711778298` 四項及 Android `38711778305` build/device 同SHA SUCCESS 驗收，十二Browser與實圖已通過。main仍`5009e0c8`／`38408176782`全綠。本片改善型錄搜尋／篩選／已加入狀態、Key／origin-bound endpoint選擇、缺設定引導、可見錯誤重試、manual draft與晚回應guard；新增第十三個真Browser。詳見`vps/CATALOG_UI.md`。新HEAD六項CI與實圖通過前為候選，PR #20維持Draft；下方詳情片候選紀錄為歷史。

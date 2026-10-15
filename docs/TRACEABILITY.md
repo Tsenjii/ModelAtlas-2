@@ -216,3 +216,13 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 - Caller：`ui_js_catalog.go`由正式`refresh`／`bindCatalog`接線；Provider空態直達同Provider Catalog；manual form與Catalog共用安全Key／origin-bound endpoint選擇。
 - 真實驗證：`catalog_experience_test.go`／`e2e/catalog-experience.cjs`，第十三Browser；108候選、100列分頁、metadata-only篩選、精確membership、缺Key／端點真CTA、503重試、真commit晚回應、手動B-origin與草稿、歷史不刪、零推論。
 - 本機race／vet及同SHA六項CI、實圖驗收與RAM以本片PR #20證據為準；不把外部模型派工或舊基線當CI。外部DeepSeek匿名401、Muse官方OpenCode CLI403均無任務成果，沒有將其標為審查通過。
+
+## VPS Provider 表單與保存回饋（2026-10-15 候選）
+
+| ID | 正式 caller／驗證 | 驗收條件 |
+|---|---|---|
+| VPS-PROVIDER-DRAFT-001 | `ui_js_details.go` 原六表單 → 帳戶／Key／toggle／endpoint／rotate／config 真 API → 局部 projection 更新；第十四 Browser 保留六原始 form nodes／草稿／disclosure／選取 | 不重建 dialog；只清自己已保存的敏感欄位；新帳戶更新選項，其他草稿可編輯；舊十三 Browser 全斷言保留 |
+| VPS-PROVIDER-FEEDBACK-001 | `ui_js_provider_forms.go` → inline status／alert、generic JSON error、pending controls／WeakSet；真503重試與SQLite commit後延遲 | 錯誤 viewport 可見；非法JSON零POST／無secret片段；重複requestSubmit零額外寫入；stale config不能重開Q |
+| VPS-PROVIDER-KEY-SCOPE-001 | rotation selector → 穩定Provider×Account×Credential值＋完整帳戶／Key／Group label；A/B同Key ID fixture → 真vaultrotate | 只改B ciphertext與兩版本，A ciphertext／零版本不變；membership／telemetry完整、零Provider HTTP；375／1280／dark／200%幾何與實圖 |
+
+基線03307f1六項已綠；本片仍以 PR #20 最新 HEAD 的完整六項／十四Browser／實圖與原expanded workload為準。無merge／目標VPS部署，產品語意及Android phase不變。
