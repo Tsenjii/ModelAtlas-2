@@ -7,7 +7,7 @@
 - Go 1.26、純 Go SQLite driver、單一 Linux binary（AMD64 / ARM64），沒有常駐 Node.js、沒有 Java Runtime。
 - SQLite WAL + 單連線順序化 + FK + 交易；Provider、Account、Credential、Catalog、My Models、Sessions、Messages、Telemetry、研究 Candidate/Evidence/Run、行動審核與版本化 Recipe 皆落地。
 - 單一明確 Provider × Account × Credential × Model × Group × Endpoint scope；不自動換 Key、不 Fallback、不提供無授權的 API Gateway。
-- AES-256-GCM 加密 API Key，master key **僅環境變數**；資料庫不寫 plaintext key，GET API 不回傳 key。管理端 HTTP Basic/Bearer 使用長隨機密碼，服務強制 loopback 監聽。
+- AES-256-GCM 加密 API Key，master key **僅環境變數**；資料庫不寫 plaintext key，GET API 不回傳 key。管理端 HTTP Basic/Bearer 使用長隨機密碼，預設強制 loopback 監聽；明確啟用的平台模式須符合隔離的 HTTPS ingress 契約。
 - Web UI 僅 Playground／Providers／Models 三個底部分頁，設定在右上角；繁中、teal、深淺色、48px 觸控與窄螢幕適配。
 
 ## 目前可用功能
@@ -34,6 +34,8 @@ CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o modelatlas-vps .
 ```
 
 ## VPS 部署（Debian / Ubuntu，systemd）
+
+Infrlo 等 Git 平台的 build／run 命令、`PORT`、私密環境變數與持久資料要求，見 [PLATFORM_DEPLOY.md](PLATFORM_DEPLOY.md)。平台模式為明確 opt-in；沒有聲稱已在 Infrlo 實測部署。
 
 1. 從 GitHub Actions `VPS Go Build and Integration` 下載對應 Linux AMD64／ARM64 artifact；也可以自行 `go build`。
 2. 使用 VPS 內安全的方式建立 root-only `/etc/modelatlas/modelatlas.env`，例如：

@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **VPS 當前唯一切片：Git 平台部署相容性。** 使用者部署 Infrlo 並要求自行查核；以 `98bedbf0bd9689217c34f433a61d4be1bc437acd` 同 SHA 六項 SUCCESS 為基線（VPS `38753924366`、Android `38753924418`，十四 Browser／99 實圖已驗收），本輪重新查核 main `5009e0c8`／`38408176782` build/device SUCCESS。新增可直接使用的 build/run 腳本、明確 opt-in 平台 `PORT`／HTTPS origin／固定 master key／絕對 DB 設定與入口 guard、啟動失敗非零退出及 SIGTERM 收尾；真獨立程序＋HTTPS proxy＋SQLite/vault reopen 驗證。官方 Infrlo README 未提供 runtime／ingress／volume 契約，控制台在本環境顯示 Site Unavailable，不能冒充平台已確認／已遠端部署。詳見 `vps/PLATFORM_DEPLOY.md`；新 HEAD 六項 CI 全綠前為候選，下方 Provider 候選列為歷史。
 - **Provider 錯誤遮擋實圖修復：** `fe65c24`／VPS `38753014920` 四項與十四Browser成功（含設定固定競態回歸）；99張實圖人工檢查發現Key JSON錯誤可能被sticky dialog-bar遮住。錯誤改捲到可見中央，新增account／Key JSON／Key503／config全部須在sticky標題下且dialog內的幾何斷言；375／1280／200%直接透過真invalid JSON submit拍錯誤，不用測試捲動代替產品行為。原斷言與workload不減，新HEAD重新六項與實圖；不以fe65的部分結果驗收最新HEAD。
 - **設定草稿競態（本片必要回歸修復）：** `db21a33`／VPS `38751952139` Provider第十四流程與其他十二流程全過，既有workspace抓到timezone草稿UTC被慢`loadStatus`改回Asia/Taipei。改正式設定表單逐欄dirty guard、狀態讀取不再晚寫form、保存revision保護下一份草稿；同workflow加入真status回應／真settings commit後延遲barrier，原草稿斷言保留，再驗換頁／重開／保存中編輯、SQLite仍只存當次UTC與OFF預設。新HEAD仍六項同SHAgate，沒有以重跑掩蓋競態。
 - **Provider 選單 a11y 回歸修復：** `cdc7b0b`／VPS `38750457348` 原十三Browser全過、Go／footprint／雙架構成功，新第十四流程精確選單label查找失敗；`705883d`／`38751411611`的更嚴格完整陣列差異證實空locator，實圖則有兩個選項。原因為包住select的label混入option文字；為帳戶／認證／用途／rotation補固定aria-label，原嚴格完整選項與scope斷言保留。晚回應測試另等待原真form完成finally後才驗證Q未被替換。不是加等待或force click掩蓋失敗；新HEAD重新六項gate。

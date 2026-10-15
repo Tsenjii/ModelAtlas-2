@@ -228,3 +228,12 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 基線03307f1六項已綠；本片仍以 PR #20 最新 HEAD 的完整六項／十四Browser／實圖與原expanded workload為準。無merge／目標VPS部署，產品語意及Android phase不變。
 
 | VPS-SETTINGS-DRAFT-RACE-001 | `refresh`／`loadStatus` → 逐欄dirty guard；`settings-form` save以revision確認是否仍同一稿；workspace真Handler回應／settings commit後延遲 | 修復db21a33／38751952139的舊workspace UTC→Asia/Taipei競態，原斷言保留；固定barrier驗晚status／重開保留UTC，保存途中下一稿Asia/Tokyo仍留UI，SQLite僅UTC、一次POST、背景／通知仍OFF。新HEAD全部六項gate |
+
+## VPS Git 平台部署相容性（2026-10-15 候選）
+
+| ID | 正式 caller／驗證 | 驗收條件 |
+|---|---|---|
+| VPS-DEPLOY-001 | repository-root `deploy/build.sh` → pure-Go binary → `deploy/run.sh` exec → `runApplication`；`deployment_test.go` 實際執行兩命令 | Go 1.26+；平台 opt-in 才讀 PORT／public bind；一般模式保留 loopback，非法設定與 bind 失敗非零退出；SIGTERM 正常關閉 HTTP／worker／SQLite |
+| VPS-DEPLOY-HTTPS-001 | `deploymentConfig.handler` 包住正式 `Server.Handler`；真 TLS reverse proxy 保留 Host／覆寫 X-Forwarded-Proto | Host／Origin／HTTPS 前置拒絕仍保留原管理認證；healthz 只曝既有健康資料；固定 master key、絕對 DB，真 API mutation 後兩程序 reopen／vault decrypt，無 secret log／GET |
+
+新 HEAD 須完整同 SHA 六項 CI；具體證據由 PR #20 body 保存。Infrlo 控制台在此環境不可讀，官方公開 README 無 Go／ingress／persistent volume 契約；不將本機代理測試、512 MB／2 GB 宣傳數字當作目標平台驗收，不標已部署。

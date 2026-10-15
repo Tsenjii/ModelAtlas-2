@@ -10,9 +10,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -335,59 +335,50 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 }
 func main() {
 	initializeMemoryLimit()
-	token := os.Getenv("MODELATLAS_ADMIN_TOKEN")
-	if len(token) < 24 {
-		log.Fatal("MODELATLAS_ADMIN_TOKEN must be at least 24 characters")
+	if err := runApplication(); err != nil {
+		log.Fatal(err)
 	}
-	var key []byte
-	if v := os.Getenv("MODELATLAS_MASTER_KEY"); v != "" {
-		var err error
-		key, err = base64.StdEncoding.DecodeString(v)
-		if err != nil || len(key) != 32 {
-			log.Fatal("MODELATLAS_MASTER_KEY must be base64 of exactly 32 bytes")
-		}
-	}
-	addr := os.Getenv("MODELATLAS_LISTEN")
-	if addr == "" {
-		addr = "127.0.0.1:8787"
-	}
-	host, _, err := net.SplitHostPort(addr)
+}
+
+func runApplication() error {
+	config, err := readDeploymentConfig(os.Getenv)
 	if err != nil {
-		log.Fatal("invalid MODELATLAS_LISTEN")
+		return err
 	}
-	ip := net.ParseIP(host)
-	if ip == nil || !ip.IsLoopback() {
-		log.Fatal("refuse public listener: place a TLS reverse proxy in front of loopback")
-	}
-	path := os.Getenv("MODELATLAS_DB")
-	if path == "" {
-		path = "./data/modelatlas.db"
-	}
-	store, err := OpenStore(path)
+	store, err := OpenStore(config.db)
 	if err != nil {
-		log.Fatal("database initialization failed: ", err)
+		return fmt.Errorf("database initialization failed: %w", err)
 	}
 	defer store.Close()
 	client := &http.Client{Timeout: 120 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	srv := &Server{Store: store, Token: token, Key: key, Client: client, AutoSync: true, MaxFlights: configuredFlights()}
+	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: true, MaxFlights: configuredFlights()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	workerDone := make(chan struct{})
 	go func() { defer close(workerDone); srv.worker(ctx) }()
-	server := &http.Server{Addr: addr, Handler: srv.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 130 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 1 << 16}
-	log.Printf("ModelAtlas VPS listening on %s", addr)
+	server := &http.Server{Addr: config.addr, Handler: config.handler(srv.Handler()), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 130 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 1 << 16}
+	if config.publicOrigin != "" {
+		log.Print("Platform mode requires an isolated HTTPS reverse proxy that overwrites X-Forwarded-Proto")
+	}
+	log.Printf("ModelAtlas VPS listening on %s", config.addr)
+	shutdownDone := make(chan struct{})
 	go func() {
+		defer close(shutdownDone)
 		<-ctx.Done()
 		shutdown, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
-		_ = server.Shutdown(shutdown)
+		if server.Shutdown(shutdown) != nil {
+			_ = server.Close()
+		}
 	}()
-	if err = server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		stop()
-		log.Printf("HTTP server stopped: %v", err)
-	}
+	err = server.ListenAndServe()
 	stop()
+	<-shutdownDone
 	<-workerDone
+	if err != nil && err != http.ErrServerClosed {
+		return fmt.Errorf("HTTP server stopped: %w", err)
+	}
+	return nil
 }
 
 func (s *Server) flightLimit() int {
