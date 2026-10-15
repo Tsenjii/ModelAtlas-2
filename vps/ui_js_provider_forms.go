@@ -6,7 +6,7 @@ function providerFeedback(parent,message,bad=false){
  let node=providerFeedbackNodes.get(parent);
  if(!node){node=el("div",undefined,"detail-state");node.dataset.providerFeedback="true";parent.prepend(node);providerFeedbackNodes.set(parent,node);}
  node.hidden=!message;node.classList.toggle("detail-state-error",bad);node.setAttribute("role",bad?"alert":"status");node.replaceChildren();if(message)node.append(el("p",message));
- if(bad&&!parent.closest(".detail-panel")?.hidden)node.scrollIntoView({block:"nearest"});
+ if(bad&&!parent.closest(".detail-panel")?.hidden)node.scrollIntoView({block:"center"});
 }
 async function providerRun(parent,ticket,work,feedback=parent){
  if(providerPending.has(parent)||!detailCurrent(ticket))return;

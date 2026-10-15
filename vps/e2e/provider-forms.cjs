@@ -14,6 +14,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
  const input=(id,label)=>form(id).getByLabel(label,{exact:true});
  const pendingDone=id=>page.waitForFunction(id=>!document.querySelector('#provider-'+id+'-form').hasAttribute('aria-busy'),id);
  const feedback=(id,role='status')=>form(id).locator('[data-provider-feedback][role='+role+']');
+ const assertErrorVisible=async id=>assert(await feedback(id,'alert').evaluate(n=>{const r=n.getBoundingClientRect(),d=document.querySelector('#detail').getBoundingClientRect(),bar=document.querySelector('#detail .dialog-bar').getBoundingClientRect();return r.top>=bar.bottom&&r.bottom<=d.bottom-1;}),id+' error is clipped or covered by the sticky heading');
  const shot=async name=>{
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),name+' page overflow');
   assert(await page.locator('#detail').evaluate(n=>n.scrollWidth<=n.clientWidth),name+' dialog overflow');
@@ -55,7 +56,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   }
   await form('account').getByRole('button',{name:'新增帳戶',exact:true}).click();await feedback('account','alert').waitFor();await pendingDone('account');
   assert((await feedback('account','alert').textContent()).includes('synthetic account interruption'));assert.equal(await input('account','顯示名稱').inputValue(),'新專案帳戶');await assertDrafts();
-  assert(await feedback('account','alert').evaluate(n=>{const a=n.getBoundingClientRect(),d=document.querySelector('#detail').getBoundingClientRect();return a.top>=d.top&&a.bottom<=d.bottom;}));await shot('account-retry-375-light');
+  assert(await feedback('account','alert').evaluate(n=>{const a=n.getBoundingClientRect(),d=document.querySelector('#detail').getBoundingClientRect();return a.top>=d.top&&a.bottom<=d.bottom;}));await assertErrorVisible('account');await shot('account-retry-375-light');
   await form('account').getByRole('button',{name:'新增帳戶',exact:true}).click();
   await page.waitForFunction(async()=>(await(await fetch('/__provider_forms_fixture/state')).json()).account_ready);
   assert.equal(await form('account').getAttribute('aria-busy'),'true');assert(await input('account','顯示名稱').isDisabled());
@@ -66,9 +67,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await input('key','額外認證欄位 JSON（選填）').fill('[{"secret":"synthetic-auth-field"');
   await form('key').getByRole('button',{name:'保存 Key',exact:true}).click();await feedback('key','alert').waitFor();await pendingDone('key');
   assert.equal((await fixture('state')).credentials,0,'invalid JSON reached server');assert.equal(await feedback('key','alert').textContent(),'JSON 格式不正確，請檢查後重試。');
-  assert(!(await feedback('key','alert').textContent()).includes('synthetic-auth-field'));assert.equal(await input('key','API Key / PAT').inputValue(),'synthetic-new-key');await shot('key-json-error-375-light');
+  assert(!(await feedback('key','alert').textContent()).includes('synthetic-auth-field'));assert.equal(await input('key','API Key / PAT').inputValue(),'synthetic-new-key');await assertErrorVisible('key');await shot('key-json-error-375-light');
   await input('key','額外認證欄位 JSON（選填）').fill(fields);await form('key').getByRole('button',{name:'保存 Key',exact:true}).click();
-  await feedback('key','alert').filter({hasText:'synthetic key interruption'}).waitFor();await pendingDone('key');assert.equal(await input('key','API Key / PAT').inputValue(),'synthetic-new-key');assert.equal(await input('key','額外認證欄位 JSON（選填）').inputValue(),fields);
+  await feedback('key','alert').filter({hasText:'synthetic key interruption'}).waitFor();await pendingDone('key');assert.equal(await input('key','API Key / PAT').inputValue(),'synthetic-new-key');assert.equal(await input('key','額外認證欄位 JSON（選填）').inputValue(),fields);await assertErrorVisible('key');
   await form('key').getByRole('button',{name:'保存 Key',exact:true}).click();await feedback('key').filter({hasText:'Key 已保存'}).waitFor();await pendingDone('key');await assertDrafts();
   assert.equal(await input('key','API Key / PAT').inputValue(),'');assert.equal(await input('key','額外認證欄位 JSON（選填）').inputValue(),'');assert.equal(await input('rotate','新的 Key').inputValue(),'synthetic-b-rotated');
   await form('rotate').getByRole('button',{name:'確認更新 / 還原',exact:true}).click();await feedback('rotate').filter({hasText:'Key 已更新，原版本與歷史仍保留'}).waitFor();await pendingDone('rotate');
@@ -77,12 +78,12 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   assert((await page.locator('#detail-provider-endpoints .cards').textContent()).includes(process.argv[3]));
   await tab('settings');const valid=await input('config','設定 JSON').inputValue();await input('config','設定 JSON').fill('{ invalid');
   await form('config').getByRole('button',{name:'儲存 Provider 設定',exact:true}).click();await feedback('config','alert').waitFor();await pendingDone('config');assert.equal((await fixture('state'))['providers/config'],0);
-  assert.equal(await feedback('config','alert').textContent(),'JSON 格式不正確，請檢查後重試。');await input('config','設定 JSON').fill(valid);await assertDrafts();
+  assert.equal(await feedback('config','alert').textContent(),'JSON 格式不正確，請檢查後重試。');await assertErrorVisible('config');await input('config','設定 JSON').fill(valid);await assertDrafts();
   for(const [width,font,scheme]of [[375,'','light'],[1280,'','dark'],[375,'200%','dark']]){
    await page.setViewportSize({width,height:900});await page.emulateMedia({colorScheme:scheme});await page.evaluate(font=>document.documentElement.style.fontSize=font,font);
    await tab('keys');await input('rotate','選擇 Key').scrollIntoViewIfNeeded();await shot('rotation-'+width+(font?'-large':'')+'-'+scheme);
    await tab('endpoints');await form('endpoint').getByRole('button',{name:'新增端點',exact:true}).scrollIntoViewIfNeeded();await shot('endpoint-saved-'+width+(font?'-large':'')+'-'+scheme);
-   await tab('settings');await feedback('config','alert').scrollIntoViewIfNeeded();await shot('config-error-'+width+(font?'-large':'')+'-'+scheme);
+   await tab('settings');await input('config','設定 JSON').fill('{ invalid');await form('config').getByRole('button',{name:'儲存 Provider 設定',exact:true}).click();await feedback('config','alert').waitFor();await pendingDone('config');await assertErrorVisible('config');await shot('config-error-'+width+(font?'-large':'')+'-'+scheme);await input('config','設定 JSON').fill(valid);
   }
   await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));await page.setViewportSize({width:375,height:900});await page.emulateMedia({colorScheme:'light'});
   await page.evaluate(()=>window.pendingProviderForm=document.querySelector('#provider-config-form'));

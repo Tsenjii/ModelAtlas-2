@@ -23,3 +23,5 @@
 首輪 `cdc7b0b`／`38750457348` 原十三Browser成功，新流程的label locator未命中；診斷 `705883d`／`38751411611`保留完整精確陣列比對，actual=[]而實圖有選項，定位至select的label text。修production固定可存取名稱，維持完整選項、scope與原十三斷言，不增加timeout／force click。最新候選仍完整重新驗收。
 
 `db21a33`／VPS `38751952139` 新Provider流程4.87秒全過，舊workspace則抓到慢`loadStatus`把未保存UTC覆成Asia/Taipei。這是本片gate的必要回歸修復：狀態載入不再於非同步結束後重填form，正式`refresh`只更新未編輯欄位；保存以revision保護等待期間的新稿。workspace加入真status response與真settings commit後延遲，固定檢查跨tab／重開／晚回應仍保留、下一稿Asia/Tokyo不被保存完成覆蓋、DB僅當次UTC／一次POST，背景與通知仍OFF。原流程斷言與timeout不變，最新HEAD仍完整六項及實圖驗收。
+
+`fe65c24`／`38753014920` 四項與十四Browser成功後，99張實圖檢查發現Key JSON錯誤會落在sticky標題後面；將正式錯誤定位改為可見中央，補每個錯誤都須在dialog-bar下方及dialog底部內的實際幾何驗證。config的375／1280／200%錯誤畫面直接重新觸發非法JSON保存，使用正式error定位，不用測試捲動替代；仍零POST。最新候選重新跑六項及實圖，舊綠燈不外推。
