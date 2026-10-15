@@ -33,16 +33,16 @@ async function providerDetail(p,initial="overview"){
 async function modelDetail(m,window=settings.performance_window||"7d",initial="overview"){
  const selection=scope(m),box=modal(modelDisplayName(m)),ticket=detailVersion;$("detail").dataset.kind="model";
  detailHero(box,/IMAGE/.test(targetOperation(m))?"image":/AUDIO|SPEECH/.test(targetOperation(m))?"audio":"models",providers.find(p=>p.id===m.provider_id)?.name||m.provider_id,connectionLabel(m));
- const tools=el("div",undefined,"actions detail-primary-actions");box.append(tools);
- const tabs=detailTabs(box,"model",[["overview","概覽"],["performance","實測紀錄"],["pricing","價格與來源"],["settings","設定"]],initial),panels=tabs.panels;
+ const tools=el("div",undefined,"actions detail-primary-actions");
+ const tabs=detailTabs(box,"model",[["overview","概覽"],["performance","實測紀錄"],["pricing","價格與來源"],["settings","設定"]],initial),panels=tabs.panels;panels.overview.append(tools);
  const pending=Object.values(panels).map(panel=>detailState(panel,"正在讀取模型詳情…"));box.setAttribute("aria-busy","true");let currentWindow=()=>window;
  const reopen=async()=>{if(detailCurrent(ticket))await modelDetail(myModels.find(v=>key(v)===key(selection))||m,currentWindow(),tabs.current());};
  const useButton=action(tools,"使用此模型",async()=>{$("detail").close();show("playground");workspace("playground","work-chat");$("target").value=key(m);await newConversation();},false);useButton.prepend(icon("play"));
  useButton.disabled=busy||!operationLabels[targetOperation(m)]||m.state!=="ACTIVE"||!m.enabled;useButton.title=useButton.disabled?"此連線尚不可在 Playground 使用":"";
  const testButton=action(tools,"測試",async()=>{const r=await submit("/models/test",selection);notice(r.outcome);await refresh();await reopen();});testButton.disabled=!chatOperation(targetOperation(m));testButton.title=testButton.disabled?"此操作請在 Playground 手動發送":"";
  action(tools,"同步資料",async()=>{const r=await submit("/intelligence/sync",selection);notice(Object.values(r).includes("PARTIAL")?"部分來源尚無資料":"已同步");await refresh();await reopen();});
- const overview=detailSection(panels.overview,"連線資訊");detailRows(overview,[["模型 ID",m.model_id],["端點類型",operationLabels[targetOperation(m)]||targetOperation(m)],["端點 ID",m.endpoint],["Group",m.group||"預設 Group"],["連線狀態",m.enabled?"已啟用":"未啟用"],["顯示狀態",{ACTIVE:"顯示中",HIDDEN:"已隱藏",ARCHIVED:"已封存"}[m.state]||m.state],["價格狀態",{FREE_NOW:"FREE NOW",PAID:"付費",PARTIALLY_FREE:"部分免費",UNKNOWN:"尚未確認"}[m.price_state]||"尚未確認"]]);
- const collection=el("div",undefined,"actions");overview.append(collection);
+ const overview=detailSection(panels.overview,"連線資訊");detailRows(overview,[["模型 ID",m.model_id],["端點類型",operationLabels[targetOperation(m)]||targetOperation(m)],["Group",m.group||"預設 Group"],["連線狀態",m.enabled?"已啟用":"未啟用"],["顯示狀態",{ACTIVE:"顯示中",HIDDEN:"已隱藏",ARCHIVED:"已封存"}[m.state]||m.state],["價格狀態",{FREE_NOW:"FREE NOW",PAID:"付費",PARTIALLY_FREE:"部分免費",UNKNOWN:"尚未確認"}[m.price_state]||"尚未確認"]]);
+ factsView(overview,"連線識別資料",selection);const collection=el("div",undefined,"actions");overview.append(collection);
  action(collection,m.favorite?"取消最愛":"加入最愛",async()=>{await submit("/models/lifecycle",{...selection,state:m.state,favorite:!m.favorite,watchlist:m.watchlist});await refresh();await reopen();});
  action(collection,m.watchlist?"取消追蹤":"追蹤",async()=>{await submit("/models/lifecycle",{...selection,state:m.state,favorite:m.favorite,watchlist:!m.watchlist});await refresh();await reopen();});
  action(collection,"查看此連線的請求",()=>requestHistory({selection}));
@@ -53,8 +53,8 @@ async function modelDetail(m,window=settings.performance_window||"7d",initial="o
  const identity=detailSection(panels.overview,"模型與能力");detailRows(identity,[["Canonical ID",value.metadata.canonical_id],["類別",value.metadata.primary_category],["已確認能力",value.capabilities.length?value.capabilities.join(" · "):"尚未確認"],["Context tokens",value.metadata.context_tokens]]);
  const providerData=detailSection(panels.performance,"站方與外部參考","各來源獨立保存，不與我的實測混算。");
  factsView(providerData,"站方資料（Provider-wide）",value.provider_facts||{});factsView(providerData,"LMSpeed 外部參考",value.external);
- detailQuote(panels.pricing,"站方標價（與此 Key 實際計費分開）",m.offer?.nominal_price||m.offer?.price);
- detailQuote(panels.pricing,"已確認的 Key / Group 費率",m.offer?.effective_price);
+ detailQuote(panels.pricing,"站方標價",m.offer?.nominal_price||m.offer?.price,"與這個 Key 的實際費率分開。");
+ detailQuote(panels.pricing,"已確認的實際費率",m.offer?.effective_price,"僅適用這個 Key / Group。");
  const pools=detailSection(panels.pricing,"額度與資源池","依帳戶、Key 與 Group 分開保存，不平均多個資源池。");factsView(pools,"帳戶 / Key 資源池（不平均）",value.resource_pools||[]);
  detailObservations(panels.pricing,"這個 Key / Group 的最近有效資料",value.last_good);detailObservations(panels.pricing,"最近同步狀態",value.latest);
  detailObservations(panels.pricing,"站方資料（Provider-wide）",value.provider_facts);detailObservations(panels.pricing,"帳戶資料",value.account_facts);

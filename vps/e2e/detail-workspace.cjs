@@ -16,7 +16,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),name+' document overflow');
   assert(await page.locator('#detail').evaluate(n=>n.scrollWidth<=n.clientWidth),name+' detail overflow');
   assert(await page.locator('#detail').evaluate(n=>{const a=n.querySelector('.dialog-bar h2').getBoundingClientRect(),b=n.querySelector('#detail-close').getBoundingClientRect();return a.right<=b.left+1;}),name+' heading covers close button');
-  await page.screenshot({path:'e2e/screenshots/detail-'+name+'.png',fullPage:true,animations:'disabled'});
+  assert(await page.locator('#detail .detail-primary-actions:visible').count()===0||await page.locator('#detail-model-overview').isVisible(),name+' model actions crowded another tab');
+  await page.screenshot({path:'e2e/screenshots/detail-'+name+'.png',fullPage:false,animations:'disabled'});
  };
  try{
   await page.goto(process.argv[2]);await page.waitForFunction(()=>document.querySelector('#target').options.length===2);

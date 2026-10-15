@@ -32,8 +32,8 @@ function detailState(parent,message,bad=false,retry){
 }
 const detailSourceNames={MANUAL:"手動確認",MY_KEY_LOCAL:"我的實測",NEW_API_OFFICIAL:"New API 站方",LMSPEED:"LMSpeed 外部參考"};
 function detailSource(source){return detailSourceNames[source]||source||"來源未提供";}
-function detailQuote(parent,title,quote){
- const section=detailSection(parent,title),legs=quote?.legs||quote?.facts?.price;
+function detailQuote(parent,title,quote,description){
+ const section=detailSection(parent,title,description),legs=quote?.legs||quote?.facts?.price;
  if(!legs){section.append(el("p","尚無已確認資料","section-description"));return;}
  const rows=[],tokenUnit=legs.unit==="USD/1K tokens";
  if(tokenUnit)for(const [key,label]of [["input","輸入"],["output","輸出"],["cache","快取"]])rows.push([label,legs[key]===null||legs[key]===undefined?null:legs[key]+" USD / 1K tokens"]);
