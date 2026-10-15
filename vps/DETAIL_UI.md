@@ -5,7 +5,7 @@
 ## 操作與資料
 
 - 模型詳情分「概覽／實測紀錄／價格與來源／設定」。主要使用／測試／同步入口在概覽，其他分區不重複佔用手機高度；最愛、追蹤及請求紀錄在概覽，分類／別名／備註／能力與可恢復的隱藏封存在設定。以 Catalog 同 Provider×model ID 的顯示名稱呈現，原 ID、Key／Account／Group／Endpoint 仍可辨識。
-- Provider 分「概覽／帳戶與 Key／端點／設定」。概覽直接進入該 Provider 的已加入模型，不把 Catalog 候選當成收藏；Key／PAT／多 origin／新增帳戶、immutable endpoints／CUSTOM、進階設定與 Provider Review 全保留。端點新增後原地更新已保存清單，不清其他草稿；Key rotate 後刷新投影以遵守 credential epoch。
+- Provider 分「概覽／帳戶與 Key／端點／設定」。概覽直接進入該 Provider 的已加入模型，不把 Catalog 候選當成收藏；Key／PAT／多 origin／新增帳戶、immutable endpoints／CUSTOM、進階設定與 Provider Review 全保留。端點新增後原地更新已保存清單，不清其他草稿；Key rotate 後刷新投影以遵守 credential epoch。模型能力／分類保存後使用真 API 回傳值即時更新概覽的識別／能力區，不重建其他表單。
 - 原生 tablist 單選與 roving tabindex，左右／Home／End 切換，非活動 panel hidden；切換不重新建立表單。Native dialog 有可讀名稱、48px 關閉與焦點圈；Teal、三主導航、右上設定不變。沒有外部圖片／字型／新 production dependencies。
 - 實測顯示同 scope 的樣本數、時間窗、取消排除、少量樣本提示、TTFT／TPS／latency p50，分位數及最近60秒觀測在展開區；後者不冒充官方限額。不同模型／來源不借用資料。
 - nominal 與已確認 effective 費率各有可讀欄位、單位、來源與時間，精確 decimal 字串不改成浮點貨幣；缺資料明示。零固定費只在 `fixed_absent` 明確成立時顯示。last-good／latest／站方／帳戶／外部／resource pools 各自保留來源及可展開原始資料，多個 pool 不平均。
@@ -21,6 +21,6 @@
 
 `detail_workspace_test.go` 啟動真 Handler／vault／SQLite、兩個已加入模型及一個 Catalog-only 候選。以測試外層故障／延遲包裝真 API response，**不替換產品 API 或預造成功 JSON**：首讀503後真重試、1h真結果延遲到7d之後、lifecycle實際commit後延遲回應，驗新內容不被舊結果覆蓋。
 
-第十二個 `e2e/detail-workspace.cjs` 同時驗證：分區／鍵盤、未儲存 notes／alias／capability 跨時間窗保留、非法日期零讀取、真自訂查詢、3有效＋1取消樣本的66.7%／50.0%、另模型無借用樣本、nominal/effective零價格與failed不抹last-good、分類／能力真保存、Key真停用／啟用、Provider只列My Models、375／1280px、深淺色／200%大字／detail內部與標題幾何，及每個可見dt／dd文字Range不相交。最後斷言零Provider HTTP、兩個members及四筆telemetry完整保留。測試輸入皆合成資料，不拿fixture價格或健康當真Provider事實。
+第十二個 `e2e/detail-workspace.cjs` 同時驗證：分區／鍵盤、未儲存 notes／alias／capability 跨時間窗保留、非法日期零讀取、真自訂查詢、3有效＋1取消樣本的66.7%／50.0%、另模型無借用樣本、nominal/effective零價格與failed不抹last-good、分類／能力真保存及概覽即時更新、不丟其他notes草稿、Key真停用／啟用、Provider只列My Models、375／1280px、深淺色／200%大字／detail內部與標題幾何，及每個可見dt／dd文字Range不相交。最後斷言零Provider HTTP、兩個members及四筆telemetry完整保留。測試輸入皆合成資料，不拿fixture價格或健康當真Provider事實。
 
 原十一 Browser workflows 保留原斷言，只改真分區入口。首輪 `a7e9273` 的第十二流程與其他十流程成功，management 舊 notes 存取漏切設定而 timeout；補真入口、原 Review／confirm／Undo 斷言不變，不加 timeout 或 force click。實圖修整主要操作位置與價格短標題，再以新 HEAD 重驗。`cdbb36d`／38709934831四項及十二Browser成功，人工大字檢視仍發現固定窄欄label與value相擠；改用隨字級intrinsic grid自動上下排列、推論Key繁中label，新增真文字Range不相交斷言，仍以新HEAD全部六項驗收。Go race／vet／JS syntax 本機已過；每個新 HEAD 仍必須 VPS test／browser／amd64／arm64 及 Android build／device-tests 六項同 SHA SUCCESS，並檢查實際截圖。Exact SHA／runs／jobs／artifacts／standalone RAM 以 PR #20 最新 body 為準；未完成之前維持候選，不挪用基線的綠燈或RAM。原 expanded workload 不縮減，沒有新 Kilo 消耗、merge 或目標 VPS 部署證據。
