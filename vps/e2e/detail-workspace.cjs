@@ -17,6 +17,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   assert(await page.locator('#detail').evaluate(n=>n.scrollWidth<=n.clientWidth),name+' detail overflow');
   assert(await page.locator('#detail').evaluate(n=>{const a=n.querySelector('.dialog-bar h2').getBoundingClientRect(),b=n.querySelector('#detail-close').getBoundingClientRect();return a.right<=b.left+1;}),name+' heading covers close button');
   assert(await page.locator('#detail .detail-primary-actions:visible').count()===0||await page.locator('#detail-model-overview').isVisible(),name+' model actions crowded another tab');
+  assert(await page.locator('#detail .detail-rows>div:visible').evaluateAll(rows=>rows.every(row=>{
+   const label=document.createRange(),value=document.createRange();label.selectNodeContents(row.querySelector('dt'));value.selectNodeContents(row.querySelector('dd'));
+   return [...label.getClientRects()].every(a=>[...value.getClientRects()].every(b=>a.right<=b.left+1||b.right<=a.left+1||a.bottom<=b.top+1||b.bottom<=a.top+1));
+  })),name+' field label overlaps its value');
   await page.screenshot({path:'e2e/screenshots/detail-'+name+'.png',fullPage:false,animations:'disabled'});
  };
  try{

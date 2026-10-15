@@ -11,7 +11,7 @@ async function providerDetail(p,initial="overview"){
  const tools=el("div",undefined,"actions");panels.overview.append(tools);
  if(p.config.website){const a=el("a","開啟官網","link-button");a.href=p.config.website;a.target="_blank";a.rel="noopener noreferrer";a.prepend(icon("external"));tools.append(a);}
  if(p.config.requires_daily_checkin){const a=el("a","前往簽到","link-button");a.href=p.config.checkin_url;a.target="_blank";a.rel="noopener noreferrer";tools.append(a);action(tools,"今天已簽到",async()=>{await submit("/checkins",{provider_id:p.id,timezone:settings.timezone||"Asia/Taipei"});notice("已記錄今日簽到");});}
- detailRows(panels.overview,[["主要網址",p.base_url],["帳戶",accounts.filter(a=>a.provider_id===p.id).length],["Inference Key",rows.filter(c=>c.role==="INFERENCE").length],["我的模型",members.length]]);
+ detailRows(panels.overview,[["主要網址",p.base_url],["帳戶",accounts.filter(a=>a.provider_id===p.id).length],["推論 Key",rows.filter(c=>c.role==="INFERENCE").length],["我的模型",members.length]]);
  const modelList=detailSection(panels.overview,"我的模型"),list=el("div",undefined,"cards");modelList.append(list);
  if(members.length){for(const m of members)collectionItem(list,/IMAGE/.test(targetOperation(m))?"image":/AUDIO|SPEECH/.test(targetOperation(m))?"audio":"models",modelDisplayName(m),connectionLabel(m)+" · "+(operationLabels[targetOperation(m)]||targetOperation(m)),()=>modelDetail(m));}
  else workspaceEmpty(list,"尚未加入模型","Catalog 中的候選不會自動加入。","models","探索模型",()=>{$("detail").close();show("models");workspace("models","models-catalog",true);});

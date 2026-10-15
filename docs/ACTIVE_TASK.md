@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **詳情大字實圖修復：** `cdbb36d`／VPS `38709934831` 四項及十二 Browser 全部 SUCCESS；人工檢視200%供應商欄位時抓到長 label 超出固定窄欄，與值相擠。改用隨字級／空間自動換行成上下排列的 intrinsic grid、繁中推論 Key label，新增每個可見 dt／dd 真文字 Range 相交檢查。不是下個功能 slice，為本片視覺／a11y修復；新HEAD仍六項gate。
 - **本片回歸／視覺收尾：** `a7e9273`／VPS `38709192566` Go race／vet／footprint／雙架構 SUCCESS，新增第十二個詳情 Browser 與其他十流程成功；舊 management flow 在概覽尋找已移至設定的備註，補走真分區入口，保留原 notes Review／confirm／Undo 全部斷言。實圖也將主要操作只留概覽、其他分區少一整段重複控制、縮短價格標題，raw endpoint ID 收進識別資料。新 HEAD 仍重新六項 gate，不借部分綠燈。
 - **VPS 當前唯一切片：詳情工作區與非同步操作正確性。** 使用者「繼續搞」；以已六項全綠 `c609cf2d65d7c598b5806dd2011ca8e75a45b819` 為基線（VPS `38695626679` 四項；Android `38695626675` build/device SUCCESS）。重新確認 main 仍 `5009e0c8`／`38408176782` SUCCESS。模型與 Provider 詳情分區、可讀價格／來源／分位數、原地時間窗更新與草稿保留、錯誤重試、晚回應／已關閉詳情 guard；原 schema、HTTP scope、Review／Undo、歷史與全部 V1 不變。新增第十二個真 Browser flow；本機 race／vet／JS syntax 已過，**新 HEAD 仍須六項同 SHA CI＋實圖檢查**；PR #20 期間保持 Draft。詳見 `vps/DETAIL_UI.md`；下列較早 slice 失敗與候選為歷史紀錄。
 - **前片已驗收：** `c609cf2` 的工作區／聊天／清單／外觀及新對話同步 reset，十一 Browser 全過；Android gate 兩個必要 regression repair 亦由同 SHA 全套驗證，無需重做。前片 standalone idle 25.21 MiB／peak 376.48 MiB，不含 OS；新片 RAM 仍取本片 Actions workload，不把樣式改動推論為 RSS 降低。沒有 merge／目標 VPS 部署。
