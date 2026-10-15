@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **大字導覽幾何回歸：** `f4b9194`／VPS `38692212749` 前十 Browser 全過，新增第十一 flow 精確抓到 375px／200% 英文 nav label 超過各自 button；保留單字完整，改用有界 responsive 字級與比例 flex／緊湊間距，48px touch 不減；原幾何斷言維持。新 HEAD 重新跑六項。
 - **本片視覺 QA 收尾：** `87df330`／VPS `38691391871` 四項與十一 Browser 全綠，真 screenshot 發現 desktop 不同內容卡片高度置中導致頂端不齊、200% 品牌／底 nav 文字拆行，及啟動成功 toast 遮住內容；只作本片樣式／啟動提示修整，新增幾何回歸斷言，仍需新 HEAD 六項全綠，不拿 `87df330` 部分驗收代替。
 - **本片回歸處理：** 候選 `6b2e74e`／VPS `38690238103` 發現空 DB 沒 target 時 `loadChat` 提早返回，第一個 Provider CTA 沒顯示；工具／對話設定選單會遮傳送。補空態正式入口、選單完成／focusout／可用空間定位與大字頁面 reflow。Go connector 原測試以整份 facts JSON 搜尋 `999`，會誤判 provenance URL／隨機 TLS port；以真 `/v999/v1` TLS 路徑已穩定重現原斷言 false-positive，改為 exact scope SQL＋JSON rpd=0／tpd=1000000／origin／scope_kind，原 last-good／failed／Undo／Catalog 斷言全保留，不重跑掩蓋。新 HEAD 仍重驗六項。
 - **VPS 2026-10-15 頁面重整切片（使用者明確要求改善外觀與功能）：** 基線 `5522c7f67545f7ee8ec11eac4fa77e26519540bf` 同 SHA 六項 SUCCESS：VPS `38686585333`／Android `38686585247`；main `5009e0c8`／`38408176782` 重新確認成功。保留 teal、三主分頁與全部 V1，以原生 HTML/CSS/SVG 重整工作區、卡片、聊天 composer／對話工具、設定分類。新增可鍵盤操作的互斥 tabs、模型快速篩選／完整重設／選取後批次操作、空狀態真入口、Catalog 同 provider/id 顯示名稱、瀏覽器外觀偏好。切換工作區不改 scope／不丟草稿／不自動推論，詳見 `vps/WORKSPACE_UI.md`。目前為本輪候選，必須最新 PR HEAD 六項 checks＋十一個真 Browser 全過並檢查實圖後驗收；下方是已完成歷史，不代表本片已通過。
