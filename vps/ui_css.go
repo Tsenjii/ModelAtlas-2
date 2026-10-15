@@ -47,6 +47,7 @@ dialog{max-width:760px;width:calc(100% - 32px);max-height:88dvh;padding:24px;bor
 .catalog-resultbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin:4px 0 12px}
 .catalog-resultbar p{margin:0;color:var(--muted);font-size:.875rem}
 .catalog-connection-state{margin:12px 0;overflow-wrap:anywhere}
+.catalog-selection-summary{margin:12px 0}.catalog-selection-summary>summary{min-height:48px;cursor:pointer;padding-block:12px}.catalog-selection-summary .detail-rows{margin-bottom:12px}
 #catalog .model-id{overflow-wrap:anywhere}
 #catalog-manual{margin-top:20px}
 `

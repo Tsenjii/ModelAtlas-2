@@ -7,7 +7,7 @@
 - 搜尋名稱、ID、Canonical ID、別名、Vendor 與供應商名稱，採既有正規化與有界近似搜尋。索引、排序與 membership 索引每次正式 refresh 更新；輸入不發 API，不重排全部資料。單次呈現100列，有正確符合總數與顯示更多；改篩選回到100列。
 - 供應商、型錄類別、型錄標示能力與加入狀態各自篩選；能力不冒充 Key 認證。加入計數來自真 My Models，含 hidden／archived，但不表示可用或免費。清除 Catalog 不改我的模型篩選、聊天草稿或手動表單。
 - 加入前明確選 Provider×Account×Credential×Group×Model×Endpoint。Key ID 以三元組穩定辨識，刷新不因 metadata JSON 改變而跳回第一把。端點必須同 Provider、同 Key base URL origin 且為推論 operation；保留 server 的 immutable endpoint／origin／epoch 防線。
-- 缺 Key 或匹配端點時停用加入，有直達帳戶／Key 或端點設定的入口。已加入的**同一完整 scope**改為開啟真模型詳情；其他 Key 的 membership 不阻止明確加入新連線。封存／隱藏不自動恢復，不重建或刪歷史。
+- 新增可展開的完整連線摘要，帳戶／Key／Group／用途與完整URL使用既有可換行欄位，避免200%大字的原生select截字隱藏scope。缺 Key 或匹配端點時停用加入，有直達帳戶／Key 或端點設定的入口。已加入的**同一完整 scope**改為開啟真模型詳情；其他 Key 的 membership 不阻止明確加入新連線。封存／隱藏不自動恢復，不重建或刪歷史。
 - 手動加入收在原生 disclosure，提供真端點選擇；在 `/models` 寫入前驗完整選擇，再明確 `/my-models`。已有 scope 不重複 POST；跨刷新保留選擇與輸入。若型錄已存而 membership 失敗，如實顯示部分完成。
 
 ## 非同步與錯誤

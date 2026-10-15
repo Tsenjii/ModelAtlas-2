@@ -56,10 +56,12 @@ function catalogDetail(m){
  const select=el("select"),label=el("label","使用的 Key"),endpoint=el("select"),endpointLabel=el("label","端點");select.setAttribute("aria-label","使用的 Key");endpoint.setAttribute("aria-label","端點");
  for(const c of catalogCredentialIndex.values())if(c.provider_id===m.provider_id)option(select,credentialChoiceID(c),credentialChoiceLabel(c));
  label.append(select);endpointLabel.append(endpoint);box.append(label,endpointLabel);
- const state=el("div",undefined,"catalog-connection-state"),button=el("button","加入 My Models");button.type="button";box.append(state,button);let adding=false;
+ const state=el("div",undefined,"catalog-connection-state"),selectionSummary=el("details",undefined,"catalog-selection-summary"),selectionRows=el("div"),button=el("button","加入 My Models");selectionSummary.append(el("summary","查看完整連線與網址"),selectionRows);button.type="button";box.append(state,selectionSummary,button);let adding=false;
  const update=()=>{
   const c=catalogCredentialIndex.get(select.value);state.replaceChildren();
-  const selected=c&&endpoint.value?catalogSelection(c,m.id,endpoint.value):null,existing=selected&&catalogScopeIndex.get(key(selected));
+  const selected=c&&endpoint.value?catalogSelection(c,m.id,endpoint.value):null,existing=selected&&catalogScopeIndex.get(key(selected)),profile=c&&inferenceEndpoints(c).find(ep=>ep.id===endpoint.value);
+  selectionRows.replaceChildren();selectionSummary.hidden=!profile;
+  if(profile)detailRows(selectionRows,[["帳戶",accounts.find(a=>a.provider_id===c.provider_id&&a.id===c.account_id)?.label||c.account_id],["Key",c.label],["Group",c.group||"預設 Group"],["用途",operationLabels[profile.operation]||profile.operation],["網址",profile.url]]);
   if(!c||!endpoint.value)connectionSetup(state,c,p);
   else if(existing)state.append(el("p","此連線已加入 · "+({ACTIVE:"使用中",HIDDEN:"已隱藏",ARCHIVED:"已封存"}[existing.state]||existing.state)+"。開啟詳情可管理狀態。"));
   else state.append(el("p","加入後會同步可取得的模型資料；不會自動發送推論。","section-description"));
