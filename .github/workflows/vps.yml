@@ -1,0 +1,120 @@
+name: VPS Go Build and Integration
+
+on:
+  pull_request:
+    paths:
+      - "vps/**"
+      - ".github/workflows/vps.yml"
+      - "docs/ACTIVE_TASK.md"
+      - "docs/TRACEABILITY.md"
+  push:
+    branches: [main]
+    paths:
+      - "vps/**"
+      - ".github/workflows/vps.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vps-go-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vps-test:
+    name: vps-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - name: Resolve pinned SQLite dependency
+        run: go mod download
+      - name: Unit and HTTP integration tests
+        run: go test -mod=readonly -race -count=1 ./...
+      - name: Vet
+        run: go vet -mod=readonly ./...
+      - name: Measure standalone resource footprint
+        run: MODELATLAS_FOOTPRINT_TEST=1 MODELATLAS_FOOTPRINT_OUT=footprint.json go test -mod=readonly -v -run TestStandaloneProcessFootprint -count=1 -timeout=3m
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelatlas-vps-footprint
+          path: vps/footprint.json
+          if-no-files-found: error
+      - name: Smoke Linux runtime
+        run: |
+          CGO_ENABLED=0 go build -trimpath -o /tmp/modelatlas-vps .
+          MODELATLAS_ADMIN_TOKEN=example-admin-token-long-enough-for-ci MODELATLAS_DB=/tmp/modelatlas-ci.sqlite MODELATLAS_LISTEN=127.0.0.1:17887 /tmp/modelatlas-vps &
+          pid=$!
+          trap 'kill $pid || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:17887/healthz >/tmp/vps-health.json; then break; fi
+            sleep 1
+          done
+          grep -q '"status":"ok"' /tmp/vps-health.json
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17887/api/v1/status)
+          test "$code" = "401"
+          curl -fsS -u "admin:example-admin-token-long-enough-for-ci" http://127.0.0.1:17887/api/v1/status
+  vps-linux:
+    name: vps-linux-${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    defaults:
+      run:
+        working-directory: vps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - name: Build
+        run: |
+          go mod download
+          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o modelatlas-vps-linux-${{ matrix.arch }} .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelatlas-vps-linux-${{ matrix.arch }}
+          path: vps/modelatlas-vps-linux-${{ matrix.arch }}
+          if-no-files-found: error
+
+  vps-browser:
+    name: vps-browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache-dependency-path: vps/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: vps/e2e/package-lock.json
+      - name: Install browser test dependencies
+        working-directory: vps/e2e
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Browser production flow and responsive UI
+        working-directory: vps
+        env:
+          MODELATLAS_BROWSER_TEST: "1"
+          PLAYWRIGHT_MODULE: "playwright"
+        run: go test -mod=readonly -race -v -run TestBrowser -count=1 -timeout=5m
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-vps-browser
+          path: vps/e2e/screenshots/
+          if-no-files-found: warn

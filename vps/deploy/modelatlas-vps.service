@@ -1,0 +1,32 @@
+[Unit]
+Description=ModelAtlas VPS (Go + SQLite)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=modelatlas
+Group=modelatlas
+WorkingDirectory=/var/lib/modelatlas
+Environment=MODELATLAS_DB=/var/lib/modelatlas/atlas.sqlite
+Environment=MODELATLAS_LISTEN=127.0.0.1:8787
+Environment=GOMEMLIMIT=192MiB
+Environment=MODELATLAS_MAX_FLIGHTS=4
+EnvironmentFile=/etc/modelatlas/modelatlas.env
+ExecStart=/opt/modelatlas/modelatlas-vps
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=20s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/modelatlas
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

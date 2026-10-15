@@ -1,0 +1,67 @@
+{
+  "code_sha": "57ef23e96c335413003b497b06cd99b7b8838b6e",
+  "vps_workflow_run": 38631190515,
+  "android_workflow_run": 38631190578,
+  "jobs": [
+    {
+      "name": "vps-test",
+      "id": 116082947267,
+      "conclusion": "success"
+    },
+    {
+      "name": "vps-browser",
+      "id": 116082947583,
+      "conclusion": "success"
+    },
+    {
+      "name": "vps-linux-amd64",
+      "id": 116082947725,
+      "conclusion": "success"
+    },
+    {
+      "name": "vps-linux-arm64",
+      "id": 116082947595,
+      "conclusion": "success"
+    },
+    {
+      "name": "build",
+      "id": 116083047901,
+      "conclusion": "success"
+    },
+    {
+      "name": "device-tests",
+      "id": 116083048486,
+      "conclusion": "success"
+    }
+  ],
+  "browser_workflows": 9,
+  "browser_artifact_id": 11925724015,
+  "browser_artifact_sha256": "7067477b6d9489978eba1ded1d2cc25b1320f9980e8fcdd28032295a8a41a4ca",
+  "screenshots_visually_reviewed": [
+    "conversation-rich-375-light.png",
+    "conversation-rich-375-large-dark.png",
+    "conversation-library-375-dark.png",
+    "request-history-375-dark.png",
+    "request-receipt-375-large-dark.png",
+    "request-receipt-1024-dark.png"
+  ],
+  "review": "Self-review of final production diff and actual Actions browser artifacts; no independent external reviewer.",
+  "main_sha": "5009e0c8a733f1863adcf9a5b8ef8c450da76d3d",
+  "main_workflow_run": 38408176782,
+  "main_jobs": [
+    {
+      "name": "build",
+      "id": 115333198754,
+      "conclusion": "success"
+    },
+    {
+      "name": "device-tests",
+      "id": 115333198701,
+      "conclusion": "success"
+    }
+  ],
+  "schema_version": 16,
+  "deployed": false,
+  "merged": false,
+  "final_documentation_head": "Verify all six jobs on the latest PR #20 HEAD independently; these records certify the code SHA above."
+}
