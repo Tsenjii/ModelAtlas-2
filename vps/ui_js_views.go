@@ -3,10 +3,10 @@ package main
 const jsViews = `
 async function refresh(){
  const version=++refreshVersion,values=await Promise.all([api("/providers"),api("/accounts"),api("/credentials"),apiPages("/models"),apiPages("/my-models?all=true"),api("/settings"),api("/endpoints")]);if(version!==refreshVersion)return;
- [providers,accounts,credentials,models,myModels,settings,endpointProfiles]=values;modelCatalogIndex=new Map(models.map(m=>[JSON.stringify([m.provider_id,m.id]),m]));modelFilterOptions();renderProviders();renderModels();renderCatalog();assistantTargets();
+ [providers,accounts,credentials,models,myModels,settings,endpointProfiles]=values;modelCatalogIndex=new Map(models.map(m=>[JSON.stringify([m.provider_id,m.id]),m]));modelFilterOptions();catalogIndexes();renderProviders();renderModels();renderCatalog();assistantTargets();
  const oldTarget=$("target").value;$("target").replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled&&operationLabels[targetOperation(m)]).forEach(m=>option($("target"),key(m),modelDisplayName(m)+" · "+operationLabels[targetOperation(m)]+" · "+(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" / "+connectionLabel(m)));if([...$("target").options].some(o=>o.value===oldTarget))$("target").value=oldTarget;
  const target=$("target").value;await sessionSelectRefresh();if(version!==refreshVersion)return;
- if(oldTarget!==target)resetMediaDraft();updatePlayground();$("manual-target").replaceChildren();credentials.filter(c=>c.enabled&&c.role==="INFERENCE").forEach(c=>option($("manual-target"),JSON.stringify(c),c.provider_id+" / "+c.account_id+" / "+c.label));
+ if(oldTarget!==target)resetMediaDraft();updatePlayground();
  if(!busy)await loadChat();
 }
 function renderProviders(){
@@ -32,7 +32,6 @@ function renderModels(){
  if(!matching.length){const any=myModels.some(m=>m.state==="ACTIVE"),filtered=modelFilterIDs.some(id=>{const n=$(id);return n.type==="checkbox"?n.checked:n.value!==(filterDefaults[id]||"");});workspaceEmpty(box,filtered?"沒有符合的模型":any?"目前沒有可顯示的模型":"打造你的模型收藏",filtered?"調整搜尋或篩選條件，再找一次。":"從 Catalog 選擇模型，或手動加入連線。","models",filtered?"清除搜尋與篩選":"探索模型",()=>{if(filtered)resetModelFilters();else workspace("models","models-catalog",true);});}
  const old=$("model-provider").value;$("model-provider").replaceChildren();option($("model-provider"),"","全部");providers.forEach(p=>option($("model-provider"),p.id,p.name));$("model-provider").value=old;modelFilterStatus(matching.length);
 }
-function renderCatalog(){const box=$("catalog"),q=$("catalog-search").value.toLowerCase();box.replaceChildren();models.filter(m=>(m.id+" "+m.display_name).toLowerCase().includes(q)).slice(0,catalogDisplayLimit).forEach(m=>item(box,m.display_name,m.provider_id+" · "+m.id,()=>catalogDetail(m)));$("catalog-more").hidden=models.filter(m=>(m.id+" "+m.display_name).toLowerCase().includes(q)).length<=catalogDisplayLimit;if(!box.children.length)item(box,"Catalog 尚無資料","到 Provider 詳情同步，或手動加入。");}
 let chatHistorySession="",chatHistoryStamp=null;
 async function loadChat(){
  if(busy)return;

@@ -210,3 +210,9 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | VPS-DETAIL-ACTION | 同scope metadata／caps／Key啟停仍真API；晚完成 lifecycle、preview 或 Catalog add 不重開／關掉新的詳情；Key rotate 後刷新當前投影 | 真 mutation 先提交後阻塞回應，換模型後釋放；原十一 Browser assertion 全保留，只調整新分區入口；待同SHA全部綠燈 |
 
 產品接線、截圖來源及限制見 `vps/DETAIL_UI.md`。Exact SHA／Actions runs／jobs／footprint 由 PR #20 最新 body 記錄；沒有最新六項 SUCCESS 不標 ACCEPTED。
+
+## VPS Catalog 探索與加入（2026-10-15候選）
+
+- Caller：`ui_js_catalog.go`由正式`refresh`／`bindCatalog`接線；Provider空態直達同Provider Catalog；manual form與Catalog共用安全Key／origin-bound endpoint選擇。
+- 真實驗證：`catalog_experience_test.go`／`e2e/catalog-experience.cjs`，第十三Browser；108候選、100列分頁、metadata-only篩選、精確membership、缺Key／端點真CTA、503重試、真commit晚回應、手動B-origin與草稿、歷史不刪、零推論。
+- 本機race／vet及同SHA六項CI、實圖驗收與RAM以本片PR #20證據為準；不把外部模型派工或舊基線當CI。外部DeepSeek匿名401、Muse官方OpenCode CLI403均無任務成果，沒有將其標為審查通過。
