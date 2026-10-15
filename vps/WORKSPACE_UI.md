@@ -1,6 +1,6 @@
 # VPS 工作區與頁面重整
 
-使用者 2026-10-15 明確要求繼續改善外觀、頁面與功能。以同 SHA 六項全綠 `5522c7f` 為基線；此片不改已驗收 V1 的後端規則、schema 或 Android source。
+使用者 2026-10-15 明確要求繼續改善外觀、頁面與功能。以同 SHA 六項全綠 `5522c7f` 為基線；此片不改已驗收 V1 的後端規則、schema 或 Android production；末尾必要 gate repair 僅修 instrumentation harness。
 
 ## 產品行為
 
@@ -30,3 +30,5 @@ Tablist／tab／tabpanel 一一 aria-controls／labelledby，單一 selected／r
 `87df330` 的 VPS 四項與十一 Browser 全部成功後，視覺 QA 補正桌面卡片等高頂齊、200% header wrap／底 nav 完整單字、初始成功 toast 不遮內容，Provider adapter 用可理解名稱；新增 brand／nav／desktop card 幾何斷言。為同片視覺收尾，最新 code 仍須完整六項 gate。
 
 `f4b9194`／38692212749 原十 Browser 通過，新大字 nav 幾何斷言抓到單字仍超出 button；375px 的三個英文標籤採有界 responsive 字級與比例空間，仍保留完整單字、至少48px target，原幾何斷言不調低。
+
+`0e7acf6` 的 VPS 四項／十一 Browser 全綠，53張實圖已檢視；Android同SHA build綠但 CredentialRollbackFlowTest.enablePathUnchanged 的15秒等待失敗。harness 原非Main caller與busy idle-loop 改成真Main及單純StateFlow等待，保持15秒與T1–T5全部斷言，補四輪Room／vault／投影對照與不洩漏secret的phase診斷。Android production不變；不重跑冒充、最新HEAD仍須完整六項。

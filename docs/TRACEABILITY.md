@@ -190,3 +190,5 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 | VPS-APPEARANCE-001 | `appearance` → 原有 teal tokens、系統／淺／深 theme，localStorage 僅非敏感外觀偏好，storage 不可用仍可切換 | IMPLEMENTED；瀏覽器 reload 保留 explicit theme／恢復 system，無 server setting／排程／通知變更，原 OFF defaults 與 safe backup 測試保留 |
 
 不增加 production dependency／migration／模型 HTTP；新增 Browser 使用合成名稱與 samples，絕不冒充真 Provider 能力與服務績效。Android 僅沿用基線的 init-order 修復，本片不改 Android source／phase；未 merge／未部署。
+
+| ANDROID-ROLLBACK-HARNESS-001 | `CredentialRollbackFlowTest` 真Main建構／清除／操作、state.first掛起等待取代busy idle loop、AtomicBoolean fixture flag、四輪enable/disable的Room／vault／blocked／兩個投影一致性、safe timeout階段診斷 | 修復本片gate遇到的 `0e7acf6`／Android38692621025 device116281827382 15秒timeout；不改production、不增加timeout／skip／重試，不刪T1–T5斷言；新HEAD完整六項待驗 |
