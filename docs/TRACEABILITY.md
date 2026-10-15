@@ -192,3 +192,7 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 不增加 production dependency／migration／模型 HTTP；新增 Browser 使用合成名稱與 samples，絕不冒充真 Provider 能力與服務績效。Android 僅沿用基線的 init-order 修復，本片不改 Android source／phase；未 merge／未部署。
 
 | ANDROID-ROLLBACK-HARNESS-001 | `CredentialRollbackFlowTest` 真Main建構／清除／操作、state.first掛起等待取代busy idle loop、AtomicBoolean fixture flag、四輪enable/disable的Room／vault／blocked／兩個投影一致性、safe timeout階段診斷 | 修復本片gate遇到的 `0e7acf6`／Android38692621025 device116281827382 15秒timeout；不改production、不增加timeout／skip／重試，不刪T1–T5斷言；新HEAD完整六項待驗 |
+
+| VPS-CHAT-SESSION-RESET-001 | `newConversation` 成功時同步清 UI／新標題／新段預設與閱讀狀態，`chatChanged(force)` 立即隱藏舊 jump；chat-experience 真保存舊system/777→立即new→空system/512/true、舊設定完整保留，原 immediate hidden 斷言不改 | 修復5613943／38694380170 的跨session舊閱讀控制瞬現；history DB不刪／不加模型HTTP；新HEAD同SHA六項gate |
+
+Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38694380099) build `116287408298`＋完整device `116287407961` 同SHA SUCCESS；新UI HEAD仍需獨立驗收，不能以舊綠燈代替。

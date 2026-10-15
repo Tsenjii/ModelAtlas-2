@@ -32,3 +32,7 @@ Tablist／tab／tabpanel 一一 aria-controls／labelledby，單一 selected／r
 `f4b9194`／38692212749 原十 Browser 通過，新大字 nav 幾何斷言抓到單字仍超出 button；375px 的三個英文標籤採有界 responsive 字級與比例空間，仍保留完整單字、至少48px target，原幾何斷言不調低。
 
 `0e7acf6` 的 VPS 四項／十一 Browser 全綠，53張實圖已檢視；Android同SHA build綠但 CredentialRollbackFlowTest.enablePathUnchanged 的15秒等待失敗。harness 原非Main caller與busy idle-loop 改成真Main及單純StateFlow等待，保持15秒與T1–T5全部斷言，補四輪Room／vault／投影對照與不洩漏secret的phase診斷。Android production不變；不重跑冒充、最新HEAD仍須完整六項。
+
+`5613943`／38694380170 的原 chat-experience 嚴格即時斷言抓到 new session ID 已發布、舊 jump-to-latest 尚待 history HTTP／RAF 才隱藏。newConversation 在成功時同步清舊 UI／標題並 reset follow；force follow 同步隱藏控制，完整舊歷史不刪。原斷言保留，不換成長等待或重跑掩蓋。
+
+newConversation 同步發布新 session 時一併套用 server 相同的新對話預設（空 system／512 tokens／streaming），避免 history HTTP 返回前可見欄位繼承舊對話。原 chat-experience 以真設定 API 保存舊system／777，立即新建並驗空值／512／true、舊設定仍完整保留；原模型 HTTP 件數與 cancel 斷言不變。Android harness在5613943的38694380099已build＋完整device成功；新UI HEAD仍獨立六項gate。

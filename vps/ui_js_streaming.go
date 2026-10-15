@@ -30,7 +30,7 @@ function pauseChatFollow(){
  chatFollowing=false;if(chatScrollFrame!==null)cancelAnimationFrame(chatScrollFrame);chatScrollFrame=null;chatFollowButton();
 }
 function chatChanged(force=false,unread=true){
- if(force){chatFollowing=true;chatUnread=false;}
+ if(force){chatFollowing=true;chatUnread=false;chatFollowButton();}
  if(!chatFollowing){if(unread)chatUnread=true;chatFollowButton();return;}
  if(chatScrollFrame!==null)return;
  chatScrollFrame=requestAnimationFrame(()=>{

@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **新對話 reset 時序回歸：** `5613943`／VPS `38694380170` 的 chat-experience 在 Meta+Shift+O 後，session ID 已換但舊「回到最新」仍短暫可見；其他十 Browser 通過。修正式 newConversation 成功後同步清 UI／新標題與閱讀狀態，force follow 立即隱藏按鈕，新段立即採空 system／512／streaming 預設；歷史與舊設定不刪。保留原 immediate hidden 斷言，新增真舊設定保存／立即重設／保留檢查，不改長等待或重跑。Android harness `5613943` 已由 `38694380099` build `116287408298`＋device `116287407961` 同 SHA SUCCESS 驗證；新 UI HEAD 仍須六項 gate，不借前片綠燈。
 - **Android gate harness repair（本片必要回歸）：** `0e7acf6` VPS `38692621075` 四項／十一 Browser 全綠，Android `38692621025` build綠、device `116281827382` 的 `CredentialRollbackFlowTest.enablePathUnchanged` 15秒逾時（其餘無失敗、5個既有API29 skip）。保留該失敗報告；查到 harness 在非Main建立／清除VM與呼叫UI操作，且反覆 busy-loop `waitForIdleSync`。改真Main caller／單純 `state.first` 掛起等待、原15秒上限／原T1–T5全部斷言，IO測試旗標用AtomicBoolean，新增四輪真Room＋vault＋blocked/projection對照。只改 instrumentation harness，不改Android production／產品phase；新HEAD仍須六項CI，不將0e部分綠燈或重跑當完整驗收。
 - **大字導覽幾何回歸：** `f4b9194`／VPS `38692212749` 前十 Browser 全過，新增第十一 flow 精確抓到 375px／200% 英文 nav label 超過各自 button；保留單字完整，改用有界 responsive 字級與比例 flex／緊湊間距，48px touch 不減；原幾何斷言維持。新 HEAD 重新跑六項。
 - **本片視覺 QA 收尾：** `87df330`／VPS `38691391871` 四項與十一 Browser 全綠，真 screenshot 發現 desktop 不同內容卡片高度置中導致頂端不齊、200% 品牌／底 nav 文字拆行，及啟動成功 toast 遮住內容；只作本片樣式／啟動提示修整，新增幾何回歸斷言，仍需新 HEAD 六項全綠，不拿 `87df330` 部分驗收代替。
