@@ -85,9 +85,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
    await tab('settings');await feedback('config','alert').scrollIntoViewIfNeeded();await shot('config-error-'+width+(font?'-large':'')+'-'+scheme);
   }
   await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));await page.setViewportSize({width:375,height:900});await page.emulateMedia({colorScheme:'light'});
+  await page.evaluate(()=>window.pendingProviderForm=document.querySelector('#provider-config-form'));
   await form('config').getByRole('button',{name:'儲存 Provider 設定',exact:true}).click();await page.waitForFunction(async()=>(await(await fetch('/__provider_forms_fixture/state')).json()).config_ready);
   await form('config').evaluate(n=>n.requestSubmit());assert.equal((await fixture('state'))['providers/config'],1);await close();await open('Q');
-  await fixture('release-config');await page.waitForFunction(()=>providers.find(p=>p.id==='p').config.notes==='表單保存驗證');
+  await fixture('release-config');await page.waitForFunction(()=>!window.pendingProviderForm.hasAttribute('aria-busy'));assert.equal(await page.evaluate(()=>providers.find(p=>p.id==='p').config.notes),'表單保存驗證');
   assert.equal(await page.locator('#detail-title').textContent(),'Q','late config save reopened previous Provider');assert.equal(await page.locator('#detail [data-provider-feedback]').count(),0,'late save wrote into new dialog');
   await close();await open('P');await tab('settings');await expand('config');assert.equal(JSON.parse(await input('config','設定 JSON').inputValue()).notes,'表單保存驗證');
   const state=await fixture('state');assert.equal(state.provider_calls,0);assert.deepEqual(external,[]);assert.deepEqual(errors,[]);

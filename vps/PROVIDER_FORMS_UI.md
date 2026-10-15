@@ -9,6 +9,7 @@
 - 每個表單內有 `role=status`／`role=alert`。錯誤捲到可見處，不依賴 dialog 外 toast。JSON 格式錯誤使用固定繁中提示，不顯示原生 parser 可能帶出的認證片段。提交已成功但後續刷新失敗時，訊息明說已保存。
 - 處理中的表單停用自身控制項並標示 `aria-busy`，WeakSet 防止程式化 `requestSubmit()` 重複送出。其他表單仍能編輯。Key 啟停暫時鎖定同清單，回饋保存在不會被替換的 section。
 - 更新／還原 Key 以 Provider×Account×Credential 穩定識別值選取，顯示 Provider／帳戶／Key／Group，避免同名或同 ID Key 選錯帳戶。新增帳戶後更新選項但保留原選擇。
+- 帳戶／認證／用途／rotation select 有固定 `aria-label`，與可見欄名一致；不讓包住控制項的 label 連帶加入所有 option 文字。參考原生 label／aria-label 對應的 [Playwright 官方定位規則](https://playwright.dev/docs/locators#locate-by-label)。
 - 所有回饋及局部更新都檢查 dialog generation；晚完成的真 commit 仍刷新全域資料，但不重開舊 Provider、不關閉或污染新視窗。Provider 編輯的 Review／confirm／Undo 沿用原路徑。
 
 ## 驗證
@@ -18,3 +19,5 @@
 流程檢查六個原始 form node／展開狀態與其他草稿跨操作保留、原帳戶選取、帳戶與 Key 503 手動重試、非法 auth/config JSON 零 POST 且沒有認證片段、處理中重複 submit 零額外寫入與其他欄位可編輯、只清該表單敏感欄位、B帳戶 rotate 不改 A 的 ciphertext／版本、保存端點即更新清單、晚完成設定不能重開已換到的 Q。SQLite 最後需三帳戶／三Key／一membership／保留一telemetry、A零新增版本與B兩版本、零 Provider HTTP。375／1280px、深淺色／200% 實圖檢查 page/dialog overflow 與 dt/dd 文字 Range 不相交。原十三 Browser 的全部斷言保留。
 
 最新 HEAD 仍須 Go race／vet、VPS 四項與 Android 兩項同 SHA 全成功及實圖 review 才驗收。exact SHA／runs／jobs／artifact／expanded standalone RAM 以 PR #20 最新 body 為準；不借基線綠燈或其 RAM。測試全部是合成資料，不是外部 Provider 可用性證明。沒有 merge／目標 VPS 部署。
+
+首輪 `cdc7b0b`／`38750457348` 原十三Browser成功，新流程的label locator未命中；診斷 `705883d`／`38751411611`保留完整精確陣列比對，actual=[]而實圖有選項，定位至select的label text。修production固定可存取名稱，維持完整選項、scope與原十三斷言，不增加timeout／force click。最新候選仍完整重新驗收。
