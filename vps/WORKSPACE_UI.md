@@ -26,3 +26,5 @@ Tablist／tab／tabpanel 一一 aria-controls／labelledby，單一 selected／r
 最新候選必須 VPS test／browser／amd64／arm64 與 Android build／device-tests 六項同 SHA SUCCESS。Exact SHA／runs／jobs／實測數據與截圖 artifact 由 PR #20 最新 body 保存；未通過之前只稱候選。無 merge／無目標 VPS 部署證據。
 
 第一候選 `6b2e74e`／VPS `38690238103` 真 Browser 有三個失敗：空 DB 的早退與選單遮住傳送（工具／自訂協定）。修正式 caller，選單有完成／focusout、依 nav 前的空間自動限高／翻向；不使用 force click。Go connector false-positive 以 `/v999/v1` 真 TLS 穩定重現，JSON 正確仍被全字串 `999` 誤殺；修正為更嚴格的 exact scope 查詢與 decoded rpd／tpd／origin／scope_kind。原失敗證據保留，新 HEAD 全六項 gate。
+
+`87df330` 的 VPS 四項與十一 Browser 全部成功後，視覺 QA 補正桌面卡片等高頂齊、200% header wrap／底 nav 完整單字、初始成功 toast 不遮內容，Provider adapter 用可理解名稱；新增 brand／nav／desktop card 幾何斷言。為同片視覺收尾，最新 code 仍須完整六項 gate。

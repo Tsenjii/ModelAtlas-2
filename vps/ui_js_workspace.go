@@ -23,6 +23,7 @@ function chatEmpty(hasSession){
  else if($("target").value)action(box,"建立新對話",newConversation,false);
  else action(box,providers.length?"探索可用模型":"加入第一個 Provider",()=>{show(providers.length?"models":"providers");workspace(providers.length?"models":"providers",providers.length?"models-catalog":"providers-new",true);},false);
 }
+const adapterLabels={GENERIC:"OpenAI 相容",NEW_API:"New API",NVIDIA_NIM_HOSTED:"NVIDIA NIM",NVIDIA_NIM_SELF_HOSTED:"NIM 自架服務",AMD_SHARED:"AMD Token Factory",AMD_DEDICATED:"AMD 獨立服務",OPENROUTER_FREE:"OpenRouter Free",GEMINI_FREE:"Gemini",GROQ_FREE:"Groq"};
 function collectionItem(parent,kind,title,description,callback){const button=item(parent,title,description,callback);button.classList.add("identity-item");const body=el("div",undefined,"identity-body");while(button.firstChild)body.append(button.firstChild);const avatar=el("span",undefined,"identity-avatar");avatar.append(icon(kind));const arrow=icon("arrow");arrow.classList.add("item-arrow");button.append(avatar,body,arrow);return {button,body};}
 let modelCatalogIndex=new Map();
 function modelRecord(m){return modelCatalogIndex.get(JSON.stringify([m.provider_id,m.model_id]));}
@@ -47,7 +48,7 @@ function bindWorkspace(){
  $("model-select").addEventListener("click",()=>{modelSelectionMode=!modelSelectionMode;if(!modelSelectionMode)selectedCompare.clear();updateModelSelection();});$("model-selection-clear").addEventListener("click",()=>{selectedCompare.clear();renderModels();});$("model-filter-reset").addEventListener("click",resetModelFilters);
  document.querySelectorAll("[data-model-quick]").forEach(b=>b.addEventListener("click",()=>{$("model-favorites").value=b.dataset.modelQuick==="favorite"?"favorite":"";$("model-price").value=b.dataset.modelQuick==="free"?"FREE_NOW":"";modelDisplayLimit=100;renderModels();}));
  $("model-scope").addEventListener("change",()=>{if($("model-scope").value==="GLOBAL"){modelSelectionMode=false;selectedCompare.clear();renderModels();}});
- let appearance="system";try{appearance=localStorage.getItem("modelatlas.appearance")||"system";}catch(e){}applyAppearance(appearance);$("appearance").addEventListener("change",()=>{const value=$("appearance").value;applyAppearance(value);try{localStorage.setItem("modelatlas.appearance",value);}catch(e){}notice("顯示外觀已更新");});
+ let appearance="system";try{appearance=localStorage.getItem("modelatlas.appearance")||"system";}catch(e){}applyAppearance(appearance);$("appearance").addEventListener("change",()=>{const value=$("appearance").value;applyAppearance(value);try{localStorage.setItem("modelatlas.appearance",value);}catch(e){}});
  $("prompt").addEventListener("input",()=>{const input=$("prompt");input.style.height="auto";input.style.height=Math.min(input.scrollHeight,200)+"px";});
  const menu=$("conversation-more");$("chat-tools-close").addEventListener("click",()=>{menu.open=false;menu.querySelector("summary").focus({preventScroll:true});});
  const fitMenu=()=>{if(!menu.open)return;const bounds=menu.querySelector("summary").getBoundingClientRect(),navTop=document.querySelector(".bottom-nav").getBoundingClientRect().top,below=Math.max(0,navTop-bounds.bottom-12),above=Math.max(0,bounds.top-16),up=below<240&&above>below,pop=menu.querySelector(".conversation-menu");pop.classList.toggle("menu-above",up);pop.style.maxHeight=Math.max(100,Math.min(520,up?above:below))+"px";};
