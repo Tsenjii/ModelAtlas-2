@@ -127,6 +127,8 @@ Playground 的「對話設定」保存該段系統指示、1..32768 回應 Token
 
 Playground「對話紀錄」可全文搜尋、置頂、命名、封存／恢復、下載完整 JSON／Markdown。封存保留全部資料；原始附件仍僅在當次服務記憶體，export 明列 metadata-only。長對話可分批讀取／完整匯出，超過32MiB／1024則的送出會要求新對話，從不靜默刪除歷史。
 
+回應串流使用分批追加；往上閱讀會暫停跟隨，按「回到最新」恢復。生成中可以先寫下一則草稿，仍需待目前請求結束後明確傳送。`Ctrl／⌘ + Enter` 傳送、`Ctrl／⌘ + K` 搜尋對話、`Ctrl／⌘ + Shift + O` 新對話、`Esc` 停止目前回應（modal 開啟時先關閉 modal）；IME 組字不觸發。完整行為、參考專案及測試見 [CHAT_UX.md](CHAT_UX.md)。
+
 訊息「請求詳情」與「請求紀錄」顯示當次用量、費率／額度快照與篩選／NDJSON匯出。手動重試最後失敗請求不會重複新增使用者訊息；歷次HTTP仍各有telemetry。Models「手動價格」未勾明確確認時只是manual quote，Catalog zero也只是nominal；不等於Key免費。所有estimate與Provider-reported charge清楚分开。
 
 最新 code `57ef23e` 擴充 standalone workload 實測待機 **25.36 MiB**、全程峰值 **406.36 MiB**，通過服務 ≤512 MiB 目標；原始值與 run/artifact/hash 見 [footprint-expanded.json](verification/20261015/footprint-expanded.json)。預設仍 192 MiB soft Go limit、4 flights，保留全功能／原始歷史；OS 和反向代理另計，尚無目標主機量測。Schema16 不供較舊 binary 直接開啟，更新前一致備份 SQLite 及獨立 master key。

@@ -161,3 +161,16 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 本輪自行 diff review 與實際截圖 review 已完成；沒有獨立外部 reviewer。九個 Browser workflows 全過，artifact `11925724015` digest `7067477b6d9489978eba1ded1d2cc25b1320f9980e8fcdd28032295a8a41a4ca`；expanded footprint artifact `11926546113` digest `050c01c61e50ed7b365d83f871551d72987719f018a7b505206b31dc36f4d933`。精簡數據／job／已檢視畫面索引在 `vps/verification/20261015/`。
 
 含新收據 engine 的真匿名 Kilo Provider research：code `a39fa2a`、Actions `38629907160`／job `116078568504`，20.06s SUCCESS，6 Kilo HTTP＋7 public HTTP、3 candidates／4 evidence／3 SUCCESS tasks。Groq／OpenRouter 200，Cerebras 307 不跟隨並保留 FAILED；不是 recurring-free／Taiwan／strength／identity eligibility 證明。Marker 已關閉。最後文件 HEAD 的六項 CI 另依 PR #20 最新 checks／body，不把 code SHA 結果外推；無 merge／無使用者主機部署。
+
+
+## VPS 串流／閱讀與快捷操作切片（2026-10-15）
+
+基線 `5c616053496f37e1a0af44d3b9614bc6432c3800` 已同 SHA 六項全綠（VPS `38680781659`、Android `38680781661`）。本片獨立驗收，不借基線結果；最新 HEAD／run／job／Browser DOM 指標以 PR #20 checks／body 為準，同 SHA 六項全成功才 ACCEPTED。Android source 未改，無 merge／無目標主機部署。
+
+| Requirement | 正式 caller／驗證 | 驗收條件／review |
+|---|---|---|
+| VPS-STREAM-DOM-001 | `sendChat`／`streamText` → common `/infer` SSE；原生 frame／timer batching、appendData、終止 flush／reader cleanup；`chat_experience_test.go`／`e2e/chat-experience.cjs` 3,000 真 TLS deltas | 第一個2,000 delta burst DOM writes <500、完整文字替換=0；clipboard／107則 JSON export 與完整原文相等；不裁字、不加入 framework、不增加模型 HTTP |
+| VPS-CHAT-READING-001 | `bindChatExperience`／`chatChanged`／`olderMessages`／`loadChat` → 調整 scroll follow、明確回最新、ResizeObserver／keyboard／touch；真 Browser 上讀後再接1,000 deltas | 閱讀位置不變；初次／換對話到最新；未變 metadata refresh 保留原訊息 node／較早頁面；375／1024／深色／200% screenshot，隱藏頁面有 timer／最終 flush |
+| VPS-CHAT-COMPOSER-001 | 真 start 後可草擬下一則；global shortcuts／IME／repeat／busy／modal guards、Escape → existing explicit cancel API／fetch abort | 生成中不重複送出、不切 scope；draft 完成後仍保留；IME／Shift+Enter／Ctrl／Meta 測試，modal Escape 不停模型，下一次 Escape 真關上游並保留 CANCELLED；共2次模型 HTTP |
+
+設計參考與原生 API 官方連結在 `vps/CHAT_UX.md`；實作自行撰寫，無第三方 source 複製／新 production dependency。測試 fixture 只提供合成資料與分階段 barrier，全部 inference 經正式 Handler／engine／vault scope／SQLite；不是攔截假前端回應。服務 RAM 仍跑原有擴充 standalone profile，不把 DOM 指標當成 RSS 改善。

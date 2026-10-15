@@ -1,6 +1,6 @@
 package main
 
-const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts
+const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts + jsStreaming
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);
@@ -25,8 +25,8 @@ function query(m){return new URLSearchParams(scope(m)).toString();}
 function item(target,title,detail,onClick){const n=el(onClick?"button":"div",undefined,"item");if(onClick){n.type="button";n.classList.add("item-button");n.addEventListener("click",onClick);}const a=el("strong",title);const b=el("small",detail);n.append(a,b);target.append(n);return n;}
 function action(target,label,callback,ghost=true){const b=el("button",label,ghost?"ghost":"");b.type="button";b.addEventListener("click",async()=>{b.disabled=true;try{await callback();}catch(e){notice(e.message,true);}finally{b.disabled=false;}});target.append(b);return b;}
 function show(tab){document.querySelectorAll(".pane").forEach(n=>n.hidden=n.id!==tab);document.querySelectorAll(".bottom-nav button").forEach(b=>{b.classList.toggle("active",b.dataset.tab===tab);if(b.dataset.tab===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});if(tab==="settings")loadStatus();}
-function bubble(role,text){const {article,content}=messageNode(role,text,{rich:false,copy:role==="user"});$("chat").append(article);$("chat").scrollTop=$("chat").scrollHeight;return content;}
-function finishBubble(content,sampleID){const source=content.textContent;renderMarkdown(content,source);const actions=el("div",undefined,"message-actions");action(actions,"複製訊息",()=>copyMessage(source));requestLink(actions,sampleID);content.parentElement.append(actions);}
+function bubble(role,text){const {article,content}=messageNode(role,text,{rich:false,copy:role==="user"});$("chat").append(article);chatChanged();return content;}
+function finishBubble(content,sampleID){const source=content.textContent;renderMarkdown(content,source);const actions=el("div",undefined,"message-actions");action(actions,"複製訊息",()=>copyMessage(source));requestLink(actions,sampleID);content.parentElement.append(actions);chatChanged();}
 let detailVersion=0;
 function modal(title){detailVersion++;$("detail-title").textContent=title;$("detail-content").replaceChildren();if(!$("detail").open)$("detail").showModal();return $("detail-content");}
 function field(parent,label,type="text",value=""){const wrap=el("label",label),input=el(type==="textarea"?"textarea":"input");if(type!=="textarea")input.type=type;input.value=value;wrap.append(input);parent.append(wrap);return input;}

@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **VPS 2026-10-15 串流體驗切片：** 使用者授權繼續優化並參考其他專案；以已同 SHA 六項全綠的 `5c616053496f37e1a0af44d3b9614bc6432c3800` 為基線（VPS `38680781659`／Android `38680781661`）。參考 assistant-ui 閱讀位置與 Open WebUI 串流效能，實作原生 DOM batching／閱讀暫停跟隨與回最新／保留未變歷史 DOM／生成中草稿／IME-safe 快捷鍵與真 cancel；無新 production dependency／migration。`vps/CHAT_UX.md` 保存目標、caller、參考及驗收；新增第十個正式 Browser flow，以3,000 Provider deltas＋真 TLS／SQLite 檢查完整文字、DOM writes、閱讀位置、draft、clipboard／107則匯出、鍵盤與 socket cancel。此片驗收需 PR #20 本片 HEAD 的六項 checks 全綠，確切 SHA／run／指標以 PR body 為準；不能借下方舊基線冒充。
 - **VPS 最新已驗收 code：** `57ef23e96c335413003b497b06cd99b7b8838b6e`，完整 V1＋對話管理／安全 Markdown／請求收據／明確重試／完整匯出。VPS `38631190515` 四項與 Android `38631190578` 兩項同 SHA SUCCESS；九個正式 Browser workflows 通過。擴充 standalone workload 峰值 **406.36 MiB**，待機 **25.36 MiB**；Kilo 真研究 `38629907160` 成功。交付見 `vps/DELIVERY.md`；最後文件 HEAD 仍查 PR #20 六項 checks。下方較早 VPS 進度為歷史紀錄，不能代替本條。未 merge／未部署，Android source 未改。
 - **Android MODE：PLAY-004 繼續剩餘多模態切片**；Audio Input 已由 PR #18 合併並驗收。**VPS MODE：獨立 branch `feature/vps-rebuild-20261014` / PR #20**，不得誤當 Android 的 full-green slice；VPS 仍須另行全部測試。
 - **最新 VERIFIED main FULL GREEN：** `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`，來自已合併 [PR #18](https://github.com/Tsenjii/ModelAtlas-2/pull/18) Audio Input；[main CI 38408176782](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38408176782) **build SUCCESS + device-tests SUCCESS（同 HEAD SHA）**。此 main HEAD 的 FEATURE FREEZE=OFF；下一次任何 main 紅燈即再上鎖。
