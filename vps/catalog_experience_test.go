@@ -55,9 +55,10 @@ func TestBrowserCatalogExperienceWorkflow(t *testing.T) {
 	archived := v
 	archived.ModelID = "archived"
 	requireCode(t, req(t, s, "POST", "/api/v1/my-models", archived), 201)
-	if _, err := s.Store.DB.Exec("UPDATE membership_state SET state='ARCHIVED' WHERE scope_key=?", scopeKey(archived)); err != nil {
-		t.Fatal(err)
-	}
+	requireCode(t, req(t, s, "POST", "/api/v1/models/lifecycle", struct {
+		Selection
+		State string `json:"state"`
+	}{archived, "ARCHIVED"}), 200)
 	if _, err := s.Store.DB.Exec("INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,input_tokens,output_tokens,details_json,created_at) VALUES('retained','p','a','c','archived','','CHAT_COMPLETIONS','CHAT_COMPLETIONS','PLAYGROUND','SUCCESS',0,1,'{}',?)", now()); err != nil {
 		t.Fatal(err)
 	}

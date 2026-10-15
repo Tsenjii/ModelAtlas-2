@@ -431,7 +431,7 @@ const homeHTML = `<!doctype html>
 <label>搜尋 Catalog<input id="catalog-search" type="search" placeholder="名稱、ID、別名或供應商"></label>
 <label>供應商<select id="catalog-provider"><option value="">全部供應商</option></select></label>
 </div>
-<details class="catalog-filters"><summary>篩選模型</summary>
+<details class="catalog-filters"><summary>篩選 Catalog</summary>
 <div class="catalog-filter-grid">
 <label>型錄類別<select id="catalog-category"><option value="">全部類別</option><option value="CHAT_REASONING">對話與推理</option><option value="CODING">程式開發</option><option value="IMAGE">圖像</option><option value="AUDIO">音訊</option><option value="EMBEDDING">向量</option><option value="RERANK">排序</option><option value="SAFETY">安全</option><option value="OTHER">其他</option></select></label>
 <label>型錄標示能力<select id="catalog-capability"><option value="">全部能力</option><option>REASONING</option><option>CODING</option><option>TOOL_CALLING</option><option>VISION</option><option>FILES</option><option>AUDIO_INPUT</option><option>AUDIO_OUTPUT</option><option>IMAGE_GENERATION</option><option>EMBEDDING</option><option>RERANK</option></select></label>
