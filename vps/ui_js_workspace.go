@@ -49,6 +49,10 @@ function bindWorkspace(){
  $("model-scope").addEventListener("change",()=>{if($("model-scope").value==="GLOBAL"){modelSelectionMode=false;selectedCompare.clear();renderModels();}});
  let appearance="system";try{appearance=localStorage.getItem("modelatlas.appearance")||"system";}catch(e){}applyAppearance(appearance);$("appearance").addEventListener("change",()=>{const value=$("appearance").value;applyAppearance(value);try{localStorage.setItem("modelatlas.appearance",value);}catch(e){}notice("顯示外觀已更新");});
  $("prompt").addEventListener("input",()=>{const input=$("prompt");input.style.height="auto";input.style.height=Math.min(input.scrollHeight,200)+"px";});
- document.addEventListener("click",event=>{const menu=$("conversation-more");if(menu.open&&!menu.contains(event.target))menu.open=false;});
+ const menu=$("conversation-more");$("chat-tools-close").addEventListener("click",()=>{menu.open=false;menu.querySelector("summary").focus({preventScroll:true});});
+ const fitMenu=()=>{if(!menu.open)return;const bounds=menu.querySelector("summary").getBoundingClientRect(),navTop=document.querySelector(".bottom-nav").getBoundingClientRect().top,below=Math.max(0,navTop-bounds.bottom-12),above=Math.max(0,bounds.top-16),up=below<240&&above>below,pop=menu.querySelector(".conversation-menu");pop.classList.toggle("menu-above",up);pop.style.maxHeight=Math.max(100,Math.min(520,up?above:below))+"px";};
+ menu.addEventListener("toggle",fitMenu);window.addEventListener("resize",fitMenu);if("ResizeObserver" in window)new ResizeObserver(fitMenu).observe(document.documentElement);
+ menu.addEventListener("focusout",event=>{if(event.relatedTarget&&!menu.contains(event.relatedTarget))menu.open=false;});
+ document.addEventListener("click",event=>{if(menu.open&&!menu.contains(event.target))menu.open=false;});
 }
 `

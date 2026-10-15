@@ -35,7 +35,9 @@ function renderModels(){
 function renderCatalog(){const box=$("catalog"),q=$("catalog-search").value.toLowerCase();box.replaceChildren();models.filter(m=>(m.id+" "+m.display_name).toLowerCase().includes(q)).slice(0,catalogDisplayLimit).forEach(m=>item(box,m.display_name,m.provider_id+" · "+m.id,()=>catalogDetail(m)));$("catalog-more").hidden=models.filter(m=>(m.id+" "+m.display_name).toLowerCase().includes(q)).length<=catalogDisplayLimit;if(!box.children.length)item(box,"Catalog 尚無資料","到 Provider 詳情同步，或手動加入。");}
 let chatHistorySession="",chatHistoryStamp=null;
 async function loadChat(){
- if(!chatOperation(selectedOperation())||busy)return;
+ if(busy)return;
+ if(!$("target").value){chatEmpty(false);chatHistorySession="";chatHistoryStamp=null;chatHistoryReady();return;}
+ if(!chatOperation(selectedOperation()))return;
  const version=++loadVersion,id=$("session").value;
  if(!id){chatEmpty(false);chatHistorySession="";chatHistoryStamp=null;chatHistoryReady();return;}
  try{

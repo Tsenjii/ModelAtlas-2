@@ -70,7 +70,7 @@ const homeHTML = `<!doctype html>
 <span class="sr-only">對話工具與設定</span>
 </summary>
 <div class="conversation-menu">
-<h3>對話工具</h3>
+<div class="conversation-menu-heading"><h3>對話工具</h3><button id="chat-tools-close" type="button" class="ghost" aria-label="關閉工具">完成</button></div>
 <div class="actions">
 <button id="conversation-manage" type="button" class="ghost">整理對話</button>
 <button id="conversation-requests" type="button" class="ghost">請求紀錄</button>

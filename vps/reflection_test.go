@@ -129,7 +129,7 @@ func TestDeclarativeConnectorRealTestActivationSyncCatalogAndRollback(t *testing
 		}
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/v1/models":
+		case "/v999/v1/models":
 			w.Write([]byte(`{"data":[{"id":"m"}]}`))
 		case "/metadata":
 			if failed.Load() {
@@ -146,7 +146,7 @@ func TestDeclarativeConnectorRealTestActivationSyncCatalogAndRollback(t *testing
 	defer up.Close()
 	s := testServer(t)
 	s.Client = up.Client()
-	selection := seed(t, s, up.URL+"/v1")
+	selection := seed(t, s, up.URL+"/v999/v1")
 	requireCode(t, req(t, s, "POST", "/api/v1/my-models", selection), 201)
 	cfg := ConnectorConfig{Kind: "QUOTA", Path: "/metadata", Role: "INFERENCE", Scope: "MODEL_KEY_GROUP", Root: "/data", Unit: "REQUESTS", Fields: map[string]string{"model_id": "/model", "group": "/group", "rpd": "/quota/rpd", "tpd": "/quota/tpd"}}
 	proposal := ConnectorVersion{ProviderID: "p", Name: "quota", Config: cfg, Reason: "Real scoped structured metadata mapping."}
@@ -164,11 +164,16 @@ func TestDeclarativeConnectorRealTestActivationSyncCatalogAndRollback(t *testing
 	requireCode(t, r, 200)
 	var activation map[string]string
 	json.Unmarshal(r.Body.Bytes(), &activation)
-	requireCode(t, req(t, s, "POST", "/api/v1/intelligence/sync", selection), 200)
+	sync := req(t, s, "POST", "/api/v1/intelligence/sync", selection)
+	requireCode(t, sync, 200)
 	var facts string
-	s.Store.DB.QueryRow("SELECT facts_json FROM observations WHERE kind='QUOTA' AND source=? AND status='SUCCESS'", "DECLARATIVE_PROVIDER_META:"+v.ID).Scan(&facts)
-	if !strings.Contains(facts, `"rpd":"0"`) || strings.Contains(facts, "999") {
-		t.Fatal("production connector used wrong model/group")
+	queryErr := s.Store.DB.QueryRow("SELECT facts_json FROM observations WHERE kind='QUOTA' AND scope_key=? AND source=? AND status='SUCCESS'", scopeKey(selection), "DECLARATIVE_PROVIDER_META:"+v.ID).Scan(&facts)
+	var quota map[string]any
+	jsonErr := json.Unmarshal([]byte(facts), &quota)
+	// A valid origin can contain 999 (including an ephemeral TLS port). Assert
+	// actual scoped fields, not a substring of the entire JSON document.
+	if queryErr != nil || jsonErr != nil || quota["rpd"] != "0" || quota["tpd"] != "1000000" || quota["scope_kind"] != "MODEL_KEY_GROUP" || quota["origin"] != up.URL+"/v999/v1" {
+		t.Fatalf("production connector used wrong model/group: query=%v json=%v facts=%s response=%s", queryErr, jsonErr, facts, sync.Body.String())
 	}
 	failed.Store(true)
 	requireCode(t, req(t, s, "POST", "/api/v1/intelligence/sync", selection), 200)
