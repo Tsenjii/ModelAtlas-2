@@ -81,7 +81,7 @@ function detailPerformance(parent,m,initial,local,ticket){
   finally{if(id===serial)metrics.removeAttribute("aria-busy");}
  };
  select.addEventListener("change",()=>{if(select.value==="custom"){range.open=true;start.focus();return;}load(select.value);});
- form.addEventListener("submit",e=>{e.preventDefault();const from=new Date(start.value).getTime(),to=new Date(end.value).getTime();if(!Number.isFinite(from)||!Number.isFinite(to)||from<0||to<=from||to>Date.now()){notice("結束時間須晚於開始，且不能超過現在",true);return;}select.value="custom";load("custom&start="+from+"&end="+to);});
+ form.addEventListener("submit",e=>{e.preventDefault();const from=new Date(start.value).getTime(),to=new Date(end.value).getTime();if(!Number.isFinite(from)||!Number.isFinite(to)||from<0||to<=from||to>Date.now()){serial++;metrics.removeAttribute("aria-busy");status.replaceChildren();const error=detailState(status,"結束時間須晚於開始，且不能超過現在",true);error.scrollIntoView({block:"nearest"});return;}select.value="custom";load("custom&start="+from+"&end="+to);});
  return ()=>current;
 }
 `

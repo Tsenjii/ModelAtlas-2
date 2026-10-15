@@ -48,7 +48,7 @@ async function modelDetail(m,window=settings.performance_window||"7d",initial="o
  action(collection,"查看此連線的請求",()=>requestHistory({selection}));
  let value;
  try{value=await api("/models/detail?"+query(m)+"&window="+window);if(!detailCurrent(ticket))return;pending.forEach(n=>n.remove());box.removeAttribute("aria-busy");}
- catch(e){if(!detailCurrent(ticket))return;pending.forEach(n=>n.remove());box.removeAttribute("aria-busy");for(const panel of Object.values(panels))detailState(panel,"無法讀取模型詳情。"+e.message,true,()=>modelDetail(m,window,tabs.current()));return;}
+ catch(e){if(!detailCurrent(ticket))return;pending.forEach(n=>n.remove());box.removeAttribute("aria-busy");for(const panel of Object.values(panels)){const error=detailState(panel,"無法讀取模型詳情。"+e.message,true,()=>modelDetail(m,window,tabs.current()));panel.prepend(error);}return;}
  currentWindow=detailPerformance(panels.performance,m,window,value.local,ticket);
  const identity=detailSection(panels.overview,"模型與能力"),renderIdentity=()=>{identity.replaceChildren(el("h3","模型與能力"));detailRows(identity,[["Canonical ID",value.metadata.canonical_id],["類別",value.metadata.primary_category],["已確認能力",value.capabilities.length?value.capabilities.join(" · "):"尚未確認"],["上下文長度",value.metadata.context_tokens]]);};renderIdentity();
  const providerData=detailSection(panels.performance,"站方與外部參考","各來源獨立保存，不與我的實測混算。");

@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **錯誤可見性修復：** `4e48a09`／VPS `38710997731` 四項及十二Browser全過，standalone idle25.52／peak408.11MiB。實圖抓到初次讀取失敗訊息被append在概覽內容末尾；改prepend到各分區頂端，日期驗證也在表單內用role=alert顯示並捲到可見處，不倚賴dialog外的notice。新增兩個實際viewport可見斷言，新HEAD六項重驗；4e的Android未借作新HEAD驗收。
 - **詳情反應性收尾：** 能力／分類保存後原概覽仍持有舊 snapshot；改用真 mutation 回傳值只更新識別／能力區，不重建或清除其他表單。Browser 直接確認 VISION、canonical／category 即時更新與 notes 草稿仍保留。屬本片 UI correctness repair，新 HEAD 重新六項 gate。
 - **詳情大字實圖修復：** `cdbb36d`／VPS `38709934831` 四項及十二 Browser 全部 SUCCESS；人工檢視200%供應商欄位時抓到長 label 超出固定窄欄，與值相擠。改用隨字級／空間自動換行成上下排列的 intrinsic grid、繁中推論 Key label，新增每個可見 dt／dd 真文字 Range 相交檢查。不是下個功能 slice，為本片視覺／a11y修復；新HEAD仍六項gate。
 - **本片回歸／視覺收尾：** `a7e9273`／VPS `38709192566` Go race／vet／footprint／雙架構 SUCCESS，新增第十二個詳情 Browser 與其他十流程成功；舊 management flow 在概覽尋找已移至設定的備註，補走真分區入口，保留原 notes Review／confirm／Undo 全部斷言。實圖也將主要操作只留概覽、其他分區少一整段重複控制、縮短價格標題，raw endpoint ID 收進識別資料。新 HEAD 仍重新六項 gate，不借部分綠燈。

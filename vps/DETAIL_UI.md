@@ -12,14 +12,14 @@
 
 ## 非同步正確性
 
-- 初次詳情載入在每個分區有 loading；讀取失敗有明確 error 與真重試，不留下空白視窗。
+- 初次詳情載入在每個分區有 loading；讀取失敗在分區頂端有明確 error 與真重試，不留下空白視窗，也不把錯誤藏在長內容末尾。
 - 切換效能時間窗只讀取並更新實測區，notes／metadata／capabilities 草稿和自訂日期不重設。舊請求晚返回時，需同 dialog generation＋最新讀取序號才能更新。讀取失敗保留上次有效結果並明說，使用者可重試。
-- 自訂範圍驗證完整時間、開始早於結束、結束不晚於現在；非法範圍在 HTTP 前拒絕，server 原驗證仍保留。
+- 自訂範圍驗證完整時間、開始早於結束、結束不晚於現在；非法範圍在 HTTP 前拒絕，表單內role=alert並捲到可見處；不倚賴dialog外提示。server 原驗證仍保留。
 - API mutation 照常只提交原 selection；完成後只在原詳情仍開啟且 generation 相同時重新顯示。使用者已關閉或換模型，舊 mutation／preview 不搶回或關閉新視窗。沒有自動推論／重試／路由。
 
 ## 驗證與限制
 
-`detail_workspace_test.go` 啟動真 Handler／vault／SQLite、兩個已加入模型及一個 Catalog-only 候選。以測試外層故障／延遲包裝真 API response，**不替換產品 API 或預造成功 JSON**：首讀503後真重試、1h真結果延遲到7d之後、lifecycle實際commit後延遲回應，驗新內容不被舊結果覆蓋。
+`detail_workspace_test.go` 啟動真 Handler／vault／SQLite、兩個已加入模型及一個 Catalog-only 候選。以測試外層故障／延遲包裝真 API response，**不替換產品 API 或預造成功 JSON**：首讀503後真重試及錯誤／日期驗證的實際viewport可見性、1h真結果延遲到7d之後、lifecycle實際commit後延遲回應，驗新內容不被舊結果覆蓋。
 
 第十二個 `e2e/detail-workspace.cjs` 同時驗證：分區／鍵盤、未儲存 notes／alias／capability 跨時間窗保留、非法日期零讀取、真自訂查詢、3有效＋1取消樣本的66.7%／50.0%、另模型無借用樣本、nominal/effective零價格與failed不抹last-good、分類／能力真保存及概覽即時更新、不丟其他notes草稿、Key真停用／啟用、Provider只列My Models、375／1280px、深淺色／200%大字／detail內部與標題幾何，及每個可見dt／dd文字Range不相交。最後斷言零Provider HTTP、兩個members及四筆telemetry完整保留。測試輸入皆合成資料，不拿fixture價格或健康當真Provider事實。
 
