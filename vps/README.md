@@ -132,3 +132,5 @@ Playground「對話紀錄」可全文搜尋、置頂、命名、封存／恢復�
 訊息「請求詳情」與「請求紀錄」顯示當次用量、費率／額度快照與篩選／NDJSON匯出。手動重試最後失敗請求不會重複新增使用者訊息；歷次HTTP仍各有telemetry。Models「手動價格」未勾明確確認時只是manual quote，Catalog zero也只是nominal；不等於Key免費。所有estimate與Provider-reported charge清楚分开。
 
 最新 code `57ef23e` 擴充 standalone workload 實測待機 **25.36 MiB**、全程峰值 **406.36 MiB**，通過服務 ≤512 MiB 目標；原始值與 run/artifact/hash 見 [footprint-expanded.json](verification/20261015/footprint-expanded.json)。預設仍 192 MiB soft Go limit、4 flights，保留全功能／原始歷史；OS 和反向代理另計，尚無目標主機量測。Schema16 不供較舊 binary 直接開啟，更新前一致備份 SQLite 及獨立 master key。
+
+頁面分類、外觀偏好與這輪 UI 交接見 [WORKSPACE_UI.md](WORKSPACE_UI.md)。完整 V1 功能與資料語意保留，最新候選仍需完整六項 CI。

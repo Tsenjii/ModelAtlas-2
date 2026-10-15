@@ -5,7 +5,7 @@ fs.mkdirSync('e2e/screenshots',{recursive:true});
  const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:375,height:812},httpCredentials:{username:'admin',password:process.env.MODELATLAS_TEST_TOKEN}}),page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  try{
-  await page.goto(process.argv[2]);await page.getByRole('button',{name:'Models',exact:true}).click();await page.getByText('研究知識與擷取規則',{exact:true}).click();
+  await page.goto(process.argv[2]);await page.getByRole('button',{name:'Models',exact:true}).click();await page.getByRole('tab',{name:'我的模型',exact:true}).click();await page.getByRole('tab',{name:'研究知識',exact:true}).click();
   await page.locator('#knowledge-list .item-button').first().waitFor();await page.locator('#knowledge-list .item-button').filter({hasText:'SOURCE_RELIABILITY'}).click();
   await page.getByLabel('修訂資料 JSON',{exact:true}).fill(JSON.stringify({source_id:'source',weight:2,confidence:'TENTATIVE'}));await page.getByLabel('修訂理由',{exact:true}).fill('Browser evidence-based source priority.');
   await page.getByRole('button',{name:'保存新版本',exact:true}).click();await page.getByText('知識新版本已保存',{exact:true}).waitFor();

@@ -177,3 +177,16 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 
 
 | ANDROID-VM-INIT-001 | `AtlasViewModel` observers 在全部 instance fields 完成後才啟動，兩個原 init body／相對順序完整保留；h5 四次 Main.immediate 建構、已存 membership／certified endpoint、exact operation／不charge／不新增inference或membership | 修復 `979a8a6`／Android `38685239940` device `116258469234` 的真 NPE；不加delay／drop emission／catch吞錯，h4 原斷言保留。新 HEAD 需完整同 SHA 六項 CI |
+
+
+## VPS 工作區與頁面重整（2026-10-15）
+
+基線 `5522c7f`／VPS `38686585333`＋Android `38686585247` 同 SHA 六項全綠。本片 production／review／畫面證據見 `vps/WORKSPACE_UI.md`，最新 HEAD 六項 gate 以 PR #20 checks／body 為準，不能借基線全綠。
+
+| Requirement | 正式 caller／回歸 | 驗收條件 |
+|---|---|---|
+| VPS-WORKSPACE-UI-001 | `ui.go`／`ui_css.go`／`ui_js_workspace.go` → 三主分頁內的互斥 tabs、原生 icon／dialog／popover、清單與設定分類；`workspace_test.go`／`e2e/workspace.cjs`＋原十 Browser | IMPLEMENTED，待新 SHA 全六 CI／十一 Browser；375／1280／dark／200% 真截圖；arrow/Home/End、aria selected、native Esc、草稿與 session 保留 |
+| VPS-COLLECTION-UX-001 | 真 My Models／Catalog／provider data → 名稱 index、圖示、同來源已知 metrics、快速 FREE／最愛、完整 filter reset、選取時批次工具列、Global 精確匹配分頁與真空狀態入口 | IMPLEMENTED；Unknown 不當零／Free，My Models 與 Catalog 不混；新 Browser 選取／清除／filter／source guard，原 compare／Review／confirm／Undo 全保留 |
+| VPS-APPEARANCE-001 | `appearance` → 原有 teal tokens、系統／淺／深 theme，localStorage 僅非敏感外觀偏好，storage 不可用仍可切換 | IMPLEMENTED；瀏覽器 reload 保留 explicit theme／恢復 system，無 server setting／排程／通知變更，原 OFF defaults 與 safe backup 測試保留 |
+
+不增加 production dependency／migration／模型 HTTP；新增 Browser 使用合成名稱與 samples，絕不冒充真 Provider 能力與服務績效。Android 僅沿用基線的 init-order 修復，本片不改 Android source／phase；未 merge／未部署。

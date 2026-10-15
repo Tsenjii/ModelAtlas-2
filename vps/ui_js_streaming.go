@@ -69,9 +69,10 @@ function bindChatExperience(){
  document.addEventListener("keydown",event=>{
   if(event.isComposing||event.keyCode===229||event.repeat||document.querySelector("dialog[open]"))return;
   const command=(event.ctrlKey||event.metaKey)&&!event.altKey,key=event.key.toLowerCase();
+  if(key==="escape"&&$("conversation-more").open){event.preventDefault();$("conversation-more").open=false;$("conversation-more").querySelector("summary").focus({preventScroll:true});return;}
   const run=fn=>Promise.resolve().then(fn).catch(error=>notice(error.message,true));
-  if(command&&key==="k"&&!event.shiftKey){event.preventDefault();if(busy){notice("請先等待目前請求完成");return;}show("playground");run(conversationLibrary);return;}
-  if(command&&key==="o"&&event.shiftKey){event.preventDefault();if(busy){notice("請先等待目前請求完成");return;}show("playground");run(newConversation);return;}
+  if(command&&key==="k"&&!event.shiftKey){event.preventDefault();if(busy){notice("請先等待目前請求完成");return;}show("playground");workspace("playground","work-chat");run(conversationLibrary);return;}
+  if(command&&key==="o"&&event.shiftKey){event.preventDefault();if(busy){notice("請先等待目前請求完成");return;}show("playground");workspace("playground","work-chat");run(newConversation);return;}
   if($("playground").hidden||$("chat-ui").hidden)return;
   if(command&&key==="enter"&&!event.shiftKey&&event.target===$("prompt")){event.preventDefault();if(!busy)run(sendChat);return;}
   if(key==="escape"&&busy&&!$("stop").hidden){event.preventDefault();run(stopRequest);}

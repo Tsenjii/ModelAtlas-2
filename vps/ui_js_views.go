@@ -3,24 +3,41 @@ package main
 const jsViews = `
 async function refresh(){
  const version=++refreshVersion,values=await Promise.all([api("/providers"),api("/accounts"),api("/credentials"),apiPages("/models"),apiPages("/my-models?all=true"),api("/settings"),api("/endpoints")]);if(version!==refreshVersion)return;
- [providers,accounts,credentials,models,myModels,settings,endpointProfiles]=values;modelFilterOptions();renderProviders();renderModels();renderCatalog();assistantTargets();
- const oldTarget=$("target").value;$("target").replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled&&operationLabels[targetOperation(m)]).forEach(m=>option($("target"),key(m),m.metadata.model_id+" · "+operationLabels[targetOperation(m)]+" · "+(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" / "+connectionLabel(m)));if([...$("target").options].some(o=>o.value===oldTarget))$("target").value=oldTarget;
+ [providers,accounts,credentials,models,myModels,settings,endpointProfiles]=values;modelCatalogIndex=new Map(models.map(m=>[JSON.stringify([m.provider_id,m.id]),m]));modelFilterOptions();renderProviders();renderModels();renderCatalog();assistantTargets();
+ const oldTarget=$("target").value;$("target").replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled&&operationLabels[targetOperation(m)]).forEach(m=>option($("target"),key(m),modelDisplayName(m)+" · "+operationLabels[targetOperation(m)]+" · "+(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" / "+connectionLabel(m)));if([...$("target").options].some(o=>o.value===oldTarget))$("target").value=oldTarget;
  const target=$("target").value;await sessionSelectRefresh();if(version!==refreshVersion)return;
  if(oldTarget!==target)resetMediaDraft();updatePlayground();$("manual-target").replaceChildren();credentials.filter(c=>c.enabled&&c.role==="INFERENCE").forEach(c=>option($("manual-target"),JSON.stringify(c),c.provider_id+" / "+c.account_id+" / "+c.label));
  if(!busy)await loadChat();
 }
-function renderProviders(){const q=$("provider-search").value.toLowerCase(),box=$("provider-list");box.replaceChildren();providers.slice().sort((a,b)=>{if($("provider-sort").value!=="smart")return a.name.localeCompare(b.name);const x=providerRanking(a),y=providerRanking(b);return x===null||y===null?(x===y?0:x===null?1:-1):y-x;}).filter(p=>(p.name+" "+p.base_url).toLowerCase().includes(q)).forEach(p=>{const count=myModels.filter(m=>m.provider_id===p.id&&m.state==="ACTIVE").length;item(box,p.name,(p.description||p.config?.adapter||"OpenAI 相容")+" · "+count+" 個模型",()=>providerDetail(p));});if(!box.children.length)item(box,"尚無 Provider","展開下方表單，加入第一個連線。");}
-function renderModels(){const q=$("model-search").value.toLowerCase(),filter=$("model-provider").value,state=$("model-lifecycle").value,box=$("my-models");box.replaceChildren();
- const matching=myModels.filter(modelPasses).sort(compareModelSort);$("model-more").hidden=matching.length<=modelDisplayLimit;matching.slice(0,modelDisplayLimit).forEach(m=>{const row=el("div",undefined,"model-row"),check=el("input");check.type="checkbox";check.disabled=false;check.title="勾選進行管理；比較僅限可用的文字對話";check.checked=selectedCompare.has(key(m));check.setAttribute("aria-label","比較 "+m.model_id+" · "+m.provider_id);check.addEventListener("change",()=>{if(check.checked)selectedCompare.set(key(m),scope(m));else selectedCompare.delete(key(m));});row.append(check);item(row,(m.favorite?"★ ":"")+m.model_id,(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" · "+(operationLabels[targetOperation(m)]||targetOperation(m))+" · "+(m.group||credentials.find(c=>c.id===m.credential_id&&c.provider_id===m.provider_id&&c.account_id===m.account_id)?.label||"預設 Group")+(m.price_state==="FREE_NOW"?" · FREE NOW":"")+(m.performance?.success_rate!==null&&m.performance?.success_rate!==undefined?" · "+(m.performance.success_rate*100).toFixed(0)+"% ("+m.performance.samples+" 次)":"")+(m.enabled?"":" · 連線未就緒"),()=>modelDetail(m));box.append(row);});if(!box.children.length)item(box,"尚無模型","從 Catalog 選擇，或手動加入模型。");
- if($("model-scope").value==="GLOBAL"){box.replaceChildren();models.filter(m=>modelPasses(catalogOffer(m))).sort((a,b)=>compareModelSort(catalogOffer(a),catalogOffer(b))).slice(0,modelDisplayLimit).forEach(m=>item(box,m.display_name,m.provider_id+" · Catalog",()=>catalogDetail(m)));$("model-more").hidden=models.length<=modelDisplayLimit;}
- const old=$("model-provider").value;$("model-provider").replaceChildren();option($("model-provider"),"","全部");providers.forEach(p=>option($("model-provider"),p.id,p.name));$("model-provider").value=old;
+function renderProviders(){
+ const q=$("provider-search").value.toLowerCase(),box=$("provider-list");box.replaceChildren();
+ const rows=providers.slice().sort((a,b)=>{if($("provider-sort").value!=="smart")return a.name.localeCompare(b.name);const x=providerRanking(a),y=providerRanking(b);return x===null||y===null?(x===y?0:x===null?1:-1):y-x;}).filter(p=>(p.name+" "+p.base_url).toLowerCase().includes(q));
+ $("provider-result-count").textContent=rows.length+" 個供應商";
+ rows.forEach(p=>{const count=myModels.filter(m=>m.provider_id===p.id&&m.state==="ACTIVE").length,{body}=collectionItem(box,"provider",p.name,p.description||p.config?.adapter||"OpenAI 相容",()=>providerDetail(p));let host=p.base_url;try{host=new URL(p.base_url).host;}catch(e){}body.append(el("small",host));const metrics=el("div",undefined,"metric-line");metricChip(metrics,"模型",String(count));metricChip(metrics,"帳戶",String(accounts.filter(a=>a.provider_id===p.id).length));metricChip(metrics,"已啟用 Key",String(credentials.filter(c=>c.provider_id===p.id&&c.enabled&&c.role==="INFERENCE").length));body.append(metrics);});
+ if(!rows.length)workspaceEmpty(box,providers.length?"沒有符合的供應商":"連接你的第一個 Provider",providers.length?"換個名稱或網址搜尋。":"加入 API 連線後，就能探索模型、開始對話。","provider",providers.length?"清除搜尋":"新增連線",()=>{if(providers.length){$("provider-search").value="";renderProviders();}else workspace("providers","providers-new",true);});
+}
+function renderModels(){
+ const box=$("my-models"),global=$("model-scope").value==="GLOBAL";box.replaceChildren();
+ const matching=(global?models.map(catalogOffer):myModels).filter(modelPasses).sort(compareModelSort);$("model-more").hidden=matching.length<=modelDisplayLimit;
+ matching.slice(0,modelDisplayLimit).forEach(m=>{
+  if(global){const original=modelRecord(m);collectionItem(box,"models",original.display_name,original.provider_id+" · Catalog",()=>catalogDetail(original));return;}
+  const row=el("div",undefined,"model-row"),check=el("input");check.type="checkbox";check.title="勾選進行管理；比較僅限可用的文字對話";check.checked=selectedCompare.has(key(m));check.setAttribute("aria-label","比較 "+m.model_id+" · "+m.provider_id);check.addEventListener("change",()=>{if(check.checked)selectedCompare.set(key(m),scope(m));else selectedCompare.delete(key(m));updateModelSelection();});const hit=el("label",undefined,"model-select-check");hit.append(check);row.append(hit);
+  const op=targetOperation(m),kind=/IMAGE/.test(op)?"image":/AUDIO|SPEECH/.test(op)?"audio":"models",provider=providers.find(p=>p.id===m.provider_id)?.name||m.provider_id,credential=credentials.find(c=>c.id===m.credential_id&&c.provider_id===m.provider_id&&c.account_id===m.account_id),{body}=collectionItem(row,kind,modelDisplayName(m),provider+" · "+(operationLabels[op]||op)+" · "+(m.group||credential?.label||"預設 Group"),()=>modelDetail(m));
+  if(modelDisplayName(m)!==m.model_id)body.append(el("small",m.model_id,"model-id"));
+  if(m.favorite){const star=icon("star");star.classList.add("favorite-mark");star.setAttribute("aria-label","已加入最愛");star.removeAttribute("aria-hidden");body.querySelector("strong").prepend(star);}
+  if(m.price_state==="FREE_NOW")body.append(el("span","FREE NOW","state-chip"));
+  if(!m.enabled)body.append(el("small","連線未就緒"));
+  const metric=modelMetrics(m),metrics=el("div",undefined,"metric-line");if(metric.source==="我的實測"&&m.performance?.success_rate!==null&&m.performance?.success_rate!==undefined)metricChip(metrics,"上線率",(m.performance.success_rate*100).toFixed(0)+"%");if(metric.ttft!==null)metricChip(metrics,"TTFT",Math.round(metric.ttft)+" ms");if(metric.tps!==null)metricChip(metrics,"TPS",Number(metric.tps.toFixed(1)).toString());if(metrics.children.length){body.append(metrics,el("div",metric.source+(metric.source==="我的實測"&&Number.isInteger(m.performance?.samples)?" · "+m.performance.samples+" 次請求":""),"source-line"));}box.append(row);
+ });
+ if(!matching.length){const any=myModels.some(m=>m.state==="ACTIVE"),filtered=modelFilterIDs.some(id=>{const n=$(id);return n.type==="checkbox"?n.checked:n.value!==(filterDefaults[id]||"");});workspaceEmpty(box,filtered?"沒有符合的模型":any?"目前沒有可顯示的模型":"打造你的模型收藏",filtered?"調整搜尋或篩選條件，再找一次。":"從 Catalog 選擇模型，或手動加入連線。","models",filtered?"清除搜尋與篩選":"探索模型",()=>{if(filtered)resetModelFilters();else workspace("models","models-catalog",true);});}
+ const old=$("model-provider").value;$("model-provider").replaceChildren();option($("model-provider"),"","全部");providers.forEach(p=>option($("model-provider"),p.id,p.name));$("model-provider").value=old;modelFilterStatus(matching.length);
 }
 function renderCatalog(){const box=$("catalog"),q=$("catalog-search").value.toLowerCase();box.replaceChildren();models.filter(m=>(m.id+" "+m.display_name).toLowerCase().includes(q)).slice(0,catalogDisplayLimit).forEach(m=>item(box,m.display_name,m.provider_id+" · "+m.id,()=>catalogDetail(m)));$("catalog-more").hidden=models.filter(m=>(m.id+" "+m.display_name).toLowerCase().includes(q)).length<=catalogDisplayLimit;if(!box.children.length)item(box,"Catalog 尚無資料","到 Provider 詳情同步，或手動加入。");}
 let chatHistorySession="",chatHistoryStamp=null;
 async function loadChat(){
  if(!chatOperation(selectedOperation())||busy)return;
  const version=++loadVersion,id=$("session").value;
- if(!id){$("chat").replaceChildren();item($("chat"),"準備開始","選擇模型，再建立新對話。");chatHistorySession="";chatHistoryStamp=null;chatHistoryReady();return;}
+ if(!id){chatEmpty(false);chatHistorySession="";chatHistoryStamp=null;chatHistoryReady();return;}
  try{
   const [history,options]=await Promise.all([api("/messages?session_id="+encodeURIComponent(id)),api("/sessions/settings?session_id="+encodeURIComponent(id))]);
   if(version!==loadVersion||id!==$("session").value||busy)return;
@@ -31,7 +48,7 @@ async function loadChat(){
   const reading=chatHistorySession===id?chatReadPosition():null;
   chatHistorySession=id;chatHistoryStamp=stamp;$("chat").replaceChildren();
   if(history.length===100){const more=action($("chat"),"讀取更早訊息",()=>olderMessages(id,100,more));more.classList.add("history-more");}
-  if(!history.length)item($("chat"),"新對話","輸入訊息開始聊天。");
+  if(!history.length)chatEmpty(true);
   pendingTools=[];const unresolved=new Map();
   history.forEach(m=>{(m.tool_calls||[]).forEach(c=>unresolved.set(c.id,c));if(m.tool_call_id)unresolved.delete(m.tool_call_id);historyMessage($("chat"),m);});
   pendingTools=[...unresolved.values()];renderToolResults();if(reading)restoreChatReadPosition(reading);else chatHistoryReady();
