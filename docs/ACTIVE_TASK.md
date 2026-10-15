@@ -1,8 +1,9 @@
 # ModelAtlas Public — ACTIVE TASK
 
-更新：2026-10-14（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
+更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **VPS 最新已驗收 code：** `57ef23e96c335413003b497b06cd99b7b8838b6e`，完整 V1＋對話管理／安全 Markdown／請求收據／明確重試／完整匯出。VPS `38631190515` 四項與 Android `38631190578` 兩項同 SHA SUCCESS；九個正式 Browser workflows 通過。擴充 standalone workload 峰值 **406.36 MiB**，待機 **25.36 MiB**；Kilo 真研究 `38629907160` 成功。交付見 `vps/DELIVERY.md`；最後文件 HEAD 仍查 PR #20 六項 checks。下方較早 VPS 進度為歷史紀錄，不能代替本條。未 merge／未部署，Android source 未改。
 - **Android MODE：PLAY-004 繼續剩餘多模態切片**；Audio Input 已由 PR #18 合併並驗收。**VPS MODE：獨立 branch `feature/vps-rebuild-20261014` / PR #20**，不得誤當 Android 的 full-green slice；VPS 仍須另行全部測試。
 - **最新 VERIFIED main FULL GREEN：** `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`，來自已合併 [PR #18](https://github.com/Tsenjii/ModelAtlas-2/pull/18) Audio Input；[main CI 38408176782](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38408176782) **build SUCCESS + device-tests SUCCESS（同 HEAD SHA）**。此 main HEAD 的 FEATURE FREEZE=OFF；下一次任何 main 紅燈即再上鎖。
 - **PLAY-004 新對話 [#14](https://github.com/Tsenjii/ModelAtlas-2/issues/14) ACCEPTED：** [PR #16](https://github.com/Tsenjii/ModelAtlas-2/pull/16)／main `069b541a` [CI 38397137563](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38397137563) build/device 全綠。只清當前選定 scope 的 UI/wire history、draft/picker；telemetry、samples、quota、他連線不可刪。
@@ -116,4 +117,6 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 
 對話擴充 code `d3e1c84140306e80644a9f9acbf6d159035cd6c9` 已同 SHA 六項 SUCCESS：VPS 38621092030 test116048490678、arm64116048491082、amd64116048491368、browser116048491381；Android38621091550 build116049206203/device116049206550。八個正式 Browser workflows 均過，standalone 原媒體 profile 峰值164,564,992 bytes（156.94MiB）。
 
-當前整合片：schema16 請求／訊息連結、immutable 當次 pricing/quota before/after、完整用量與 actual/nominal/effective estimate 分離、scoped request detail／50列UI／完整NDJSON匯出、手動 stale-safe retry 不重複 user message；修正 Catalog nominal 0 不推成 Key FREE，人工明確確認及經測試／Review的 per-key/group connector 才可提供 effective pricing；通知使用新 proof basis。Raw attachment 與 header-name secrets guards、長 JSON 不逐 Key 重建、export 每批讀取後釋放 DB、快照選定rowset以避免新資料／狀態變更造成重複漏列。新增31MiB×4真正wire、11000消息／10萬請求完整export的standalone 512MiB目標驗證；保留原4 chats／研究65models／4圖片／4語音，沒有縮減工作量。候選待新HEAD六項與實測，不當驗收。
+請求續片已驗收：schema16 請求／訊息連結、immutable 當次 pricing/quota before/after、完整用量與 actual/nominal/effective estimate 分離、scoped request detail／50列 UI／完整 NDJSON 匯出、手動 stale-safe retry 不重複 user message；修正 Catalog nominal 0 不推成 Key FREE，人工明確確認及經測試／Review 的 per-key/group connector 才可提供 effective pricing；通知使用新 proof basis。Raw attachment 與 header-name secrets guards、長 JSON 不逐 Key 重建、export 每批讀取後釋放 DB、快照選定 rowset 避免新增／狀態變更造成重複漏列。完整匯出由 sequence index／rowid 前進，修復 11,000 訊息 OFFSET 重掃逾時，未放寬 timeout 或縮減工作量。
+
+`57ef23e` 同 SHA 六項 SUCCESS：VPS `38631190515` test `116082947267`、browser `116082947583`、arm64 `116082947595`、amd64 `116082947725`；Android `38631190578` build `116083047901`、device `116083048486`。實測 31 MiB×4 完整 wire、11,000 訊息／100,008 請求完整匯出，加原四 chats／研究65 models／四圖片／四語音，服務峰值 426,102,784 bytes（406.36 MiB）、待機 26,591,232（25.36 MiB），192 MiB 僅 Go soft limit；OS 另計。已自行 diff／實際截圖 review；證據見 `vps/verification/20261015/`。Kilo 含新 engine 的真研究 `a39fa2a`／`38629907160`／`116078568504` 20.06s 成功，6 inference＋7 public HTTP、3 candidates／4 evidence，非 eligibility 證明。最後文件 HEAD 以 PR #20 最新六項 checks／body 驗收後恢復 Ready；本輪不擴新功能片，不合併／部署。

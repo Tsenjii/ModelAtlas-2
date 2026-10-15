@@ -142,3 +142,22 @@ VPS-LIVE-RESEARCH-001 真實 opt-in已驗：`b7ecdaa`／Actions `38584572569`／
 Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97,619,968、peak 162,525,184 bytes（155 MiB），binary 13,439,138；完整保留10萬samples，4 chats／65 Catalog／4 simultaneous 4MiPixels images／4 simultaneous 4MiB audio。Live Kilo `38612880443` 真成功 41.19s、6 inference HTTP＋7 public HTTP、3 candidates/4 evidence/3 SUCCESS tasks；Groq/OpenRouter200，Cerebras307 FAILED線索也保留，不當eligibility。
 
 末尾交付提交含資料與文件、200% decorative mark overflow 修整及 screenshot transition 固定；必須再查此新 HEAD 的六項 gate，不以 code 基線代替文件 HEAD。
+
+
+## VPS 對話／請求完整體驗驗收（2026-10-15）
+
+以下僅屬 VPS；Android source 仍 `5009e0c8`，Android PLAY-004／P8–P10 的驗收狀態不變。最新 code **`57ef23e96c335413003b497b06cd99b7b8838b6e`** 同 SHA 六項 SUCCESS：[VPS 38631190515](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38631190515) test `116082947267`、browser `116082947583`、amd64 `116082947725`、arm64 `116082947595`；[Android 38631190578](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/38631190578) build `116083047901`、device `116083048486`。
+
+| Requirement | Production caller／測試 | Review 與結果 |
+|---|---|---|
+| VPS-CONVERSATION-001 | `conversations.go`／`history_export.go` → `/sessions,update,export` → `ui_js_conversations.go`；`conversations_test.go` 1,100 則完整歷史、revision／busy guard、archive／restore／secrets；正式 Browser 真搜尋／管理／下載 | ACCEPTED；只查手動對話、不自動加入 My Models、不刪資料；完整匯出採 sequence index／rowid cursor、每批釋放 DB，修復大量 OFFSET 重掃逾時 |
+| VPS-MARKDOWN-001 | DOM-only renderer → chat／older／read-only；Browser 真 TLS Markdown、整段訊息與程式碼 clipboard、HTML／危險 URL／remote requests guards，375／1024／深淺／200% | ACCEPTED；解析有界，超限保留純文字，不使用 innerHTML／執行腳本／抓遠端圖 |
+| VPS-REQUEST-RECEIPT-001 | common chat／Test／Compare／Assistant／media → `startRequestRecord`／`completeReceipt`／message links → `/telemetry/detail` 與 `ui_js_receipts.go`；真 TLS／Browser actual vs estimate、零／未知、rotation／before-after／cache | ACCEPTED；價格依當次 material epoch／origin／scope／時間凍結，站方實際／nominal／effective estimate 分開，缺值不杜撰，不額外發 billing HTTP |
+| VPS-EFFECTIVE-PRICE-001 | `offer_summary.go`／`pricing.go`／`intelligence.go`／`connectors.go`／`background.go` → Models FREE／manual price／connector Review／notifications；TLS＋Browser zero 未確認／明確確認的 reactive regression | ACCEPTED；Catalog nominal zero 不轉 Key FREE；effective 只收同 Key／Group 的確認證據，connector 需 INFERENCE／真測試／Review；通知全 OFF 預設不變 |
+| VPS-REQUEST-RETRY-001 | explicit `/infer retry_id` → latest failed same manual session／scope／lineage → shared engine；TLS 兩次失敗後成功、stale／success 零 HTTP；Browser 429→明確重試→成功／reload | ACCEPTED；只一次 user input、三個獨立 attempts、不可隱式 fallback；archived／busy／撤銷能力仍拒絕 |
+| VPS-REQUEST-EXPORT-001 | `/telemetry` scoped filters／50-row UI → `/telemetry/export` full NDJSON；SQLite TEMP rowset snapshot／rowid pages；501+／concurrent mutation tests＋100,008 standalone export | ACCEPTED；固定選取集合、不漏／不重複、結尾件數完整；只清暫存索引，永久 raw history 不動；串流錯誤中止下載 |
+| VPS-RESOURCE-EXPANDED-001 | `footprint_test.go` 真 stripped binary／PID RSS：100k samples、4 chats、4×31 MiB 完整 TLS context、11k 訊息／100,008 請求匯出、65 Catalog、4×4 MiPixels 圖片、4×4 MiB PCM→WAV | ACCEPTED；保持原 workload／timeout，峰值 426,102,784 bytes（406.36 MiB）≤512 MiB，待機 25.36 MiB；192 MiB 只是 soft limit，OS／target VPS 未量測 |
+
+本輪自行 diff review 與實際截圖 review 已完成；沒有獨立外部 reviewer。九個 Browser workflows 全過，artifact `11925724015` digest `7067477b6d9489978eba1ded1d2cc25b1320f9980e8fcdd28032295a8a41a4ca`；expanded footprint artifact `11926546113` digest `050c01c61e50ed7b365d83f871551d72987719f018a7b505206b31dc36f4d933`。精簡數據／job／已檢視畫面索引在 `vps/verification/20261015/`。
+
+含新收據 engine 的真匿名 Kilo Provider research：code `a39fa2a`、Actions `38629907160`／job `116078568504`，20.06s SUCCESS，6 Kilo HTTP＋7 public HTTP、3 candidates／4 evidence／3 SUCCESS tasks。Groq／OpenRouter 200，Cerebras 307 不跟隨並保留 FAILED；不是 recurring-free／Taiwan／strength／identity eligibility 證明。Marker 已關閉。最後文件 HEAD 的六項 CI 另依 PR #20 最新 checks／body，不把 code SHA 結果外推；無 merge／無使用者主機部署。

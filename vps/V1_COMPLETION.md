@@ -8,8 +8,9 @@
 | 研究執行 | 持久佇列、逐步 probe、預算、取消／重啟恢復、來源與語言、完整漏斗、動態 AA top-4 | 已驗 `fa7c291` 六項 CI |
 | App Assistant | 選擇任意已加入的模型、safe refs 與工具、實際讀取／研究／測試／新增／修改、共享 Review、confirm / undo / action log | 已驗 `69652c9` 六項 CI |
 | Reflection | 每輪成效、可測試的提案、版本化知識、有限權重與 recipe、可逆啟用／回復；禁止改程式或安全政策 | 已驗 `293bd516` 六項 CI |
-| 模型與管理 | 完整篩選／排序、notes / tags、背景同步與規則通知、匯出研究知識 | 已驗 `ce2ca91` 六項 CI |
-| 輕量與交付 | 單一 Go binary / SQLite、bounded HTTP / worker / memory、真 Browser、race / vet、雙架構、同 SHA Android CI | 已驗 `ce2ca91` 六項 CI，RAM 155 MiB peak |
+| 模型與管理 | 完整篩選／排序、notes / tags、背景同步與規則通知、匯出研究知識；FREE 採確認的 effective evidence | 已驗 `57ef23e` 六項 CI |
+| 對話與請求管理 | 搜尋／命名／置頂／封存／完整匯出、安全 Markdown、當次用量／價格／額度、明確重試 | 已驗 `57ef23e` 六項 CI、九個 Browser workflows |
+| 輕量與交付 | 單一 Go binary / SQLite、有界執行、全量 SQL／分批匯出、race / vet、雙架構、同 SHA Android CI | 已驗 `57ef23e` 六項 CI，擴充 workload RAM 406.36 MiB peak |
 
 沿用既有功能，不重寫 Android；使用者金鑰僅由 privileged HTTP layer 使用。所有來源、失敗、歷史永久保留；Unknown 不推成 0 或 Free。未接真 caller 的功能不得寫完成。測試中的自建 TLS Provider 只驗 protocol / production flow，不冒充使用者帳號或外部實測。
 
@@ -68,7 +69,7 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 交付首輪 `eba1549` VPS test/雙架構成功、既有六個 Browser 成功，新增 Browser 截圖注入 inline style 被原有 CSP 正確拒絕（run 38615340166）；改用 browser context 的原生 `reducedMotion=reduce`，不修改 CSP、不跳過 assertions、不重試本機 Chromium。新 HEAD 六項 gate 重新驗證。
 
 
-## V1 後續體驗擴充（2026-10-15，待新 SHA gate）
+## V1 後續體驗擴充（2026-10-15，已驗收）
 
 - `/sessions`：只查手動 Playground 對話；精確 scope、全文 literal search、ACTIVE／ARCHIVED／ALL，依置頂與近期活動排序，最多200列一頁，UI 紀錄每頁50。
 - `/sessions/update`：命名、置頂、可恢復封存、revision stale guard、生成中拒絕變更；保留獨立變更歷史，從不刪訊息或成員。
@@ -78,7 +79,7 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 - RAM 目標依最新需求：512 MiB 優先，1 GiB 可接受；production 無 Node／瀏覽器。
 
 
-## 請求收據與計費正確性續片（待新 SHA gate）
+## 請求收據與計費正確性續片（已驗收）
 
 - 每個真 chat／Test／Compare／Assistant／media request 在 HTTP 前保存 RUNNING 和當次證據快照。停止／失敗／重啟仍保留；訊息連到 sample，原始內容不進 telemetry。
 - pricing 引用 observedAt／Source／精確 Scope／原 HTTP material epoch／origin；fresh ≤24h，原始證據永久保留。Catalog nominal、手動標價、已明確確認的 Key effective rates、站方實際回報扣款分開；未知 cache/write／native billing basis 不杜撰成本。OpenRouter `usage.cost` 的 USD 語意只在精確官方 origin 使用，其他 origin 回報單位 UNKNOWN。官方來源：<https://openrouter.ai/docs/cookbook/administration/usage-accounting>、<https://openrouter.ai/support/>（2026-10-14 查核）；沒有额外 billing HTTP。
@@ -87,3 +88,7 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 - 明確 `retry_id` 只用最後一筆失敗／停止／中斷請求，在同 session/current selected scope 用目前設定重試；不追加重複 user input，全部 attempt 與 ancestry 保留。過期／成功／busy／archived／capability revoked 仍拒發。
 - 精確零與 Unknown 使用 TLS／完整 HTTP integration 與正式 Browser驗證；包含價格中途改變、憑證rotation、cache extra、native-exclusive usage不誤減cache、header及raw attachment secret、501+ rows／concurrent export／完整較早歷史。
 - 新 standalone workload：原測試不減，增加4路各31MiB原始context全部由TLS讀取後一起完成、11000訊息完整下載、100008請求export。這是服務PID RSS；目標512MiB，192MiB只是soft Go limit，使用者整台VPS／OS尚未量測。
+
+本輪最終 code `57ef23e96c335413003b497b06cd99b7b8838b6e`：VPS `38631190515` 四項及 Android `38631190578` 兩項同 SHA SUCCESS，九個 Browser workflows 全過。第一次大量匯出發現 OFFSET 重掃逾時，已新增 schema16 sequence index／rowid cursor，保留完整 workload、原 timeout 及斷言。實際畫面與自行 diff review 已完成，沒有獨立外部 reviewer。服務待機 25.36 MiB，擴充 profile 全程峰值 **406.36 MiB**；舊 155 MiB 是較小 profile，不混為同條件數字。
+
+Kilo 真研究 `a39fa2a`／Actions `38629907160`／job `116078568504` 20.06s SUCCESS：6 inference HTTP／7 public HTTP、3 candidates／4 evidence／3 SUCCESS tasks。Groq／OpenRouter 200；Cerebras 307 如實保留。精簡證據、所有功能及安裝／限制集中在 `DELIVERY.md` 與 `verification/20261015/`。末尾文件 HEAD 另驗 PR #20 最新六項 gate，不借 code SHA 的結果；未 merge／未遠端部署。
