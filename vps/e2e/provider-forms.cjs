@@ -43,7 +43,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   const fields='[{"name":"X-Project-Token","secret":"synthetic-auth-field"}]';await input('key','額外認證欄位 JSON（選填）').fill(fields);
   await input('account','顯示名稱').fill('新專案帳戶');await input('rotate','新的 Key').fill('synthetic-b-rotated');
   const choices=await input('rotate','選擇 Key').locator('option').allTextContents();
-  assert(choices.includes('P / A / C / 預設 Group'));assert(choices.includes('P / B / C / 研發'));
+  assert.deepEqual(choices,['P / A / C / 預設 Group','P / B / C / 研發']);
   await input('rotate','選擇 Key').selectOption(JSON.stringify(['p','b','c']));
   await page.locator('#detail form').evaluateAll(forms=>forms.forEach(f=>f.dataset.retention='original'));
   const aCard=()=>page.locator('#detail-provider-keys .cards > .item').filter({hasText:'A · 推論'});
