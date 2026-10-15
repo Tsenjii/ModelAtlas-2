@@ -21,3 +21,5 @@
 最新 HEAD 仍須 Go race／vet、VPS 四項與 Android 兩項同 SHA 全成功及實圖 review 才驗收。exact SHA／runs／jobs／artifact／expanded standalone RAM 以 PR #20 最新 body 為準；不借基線綠燈或其 RAM。測試全部是合成資料，不是外部 Provider 可用性證明。沒有 merge／目標 VPS 部署。
 
 首輪 `cdc7b0b`／`38750457348` 原十三Browser成功，新流程的label locator未命中；診斷 `705883d`／`38751411611`保留完整精確陣列比對，actual=[]而實圖有選項，定位至select的label text。修production固定可存取名稱，維持完整選項、scope與原十三斷言，不增加timeout／force click。最新候選仍完整重新驗收。
+
+`db21a33`／VPS `38751952139` 新Provider流程4.87秒全過，舊workspace則抓到慢`loadStatus`把未保存UTC覆成Asia/Taipei。這是本片gate的必要回歸修復：狀態載入不再於非同步結束後重填form，正式`refresh`只更新未編輯欄位；保存以revision保護等待期間的新稿。workspace加入真status response與真settings commit後延遲，固定檢查跨tab／重開／晚回應仍保留、下一稿Asia/Tokyo不被保存完成覆蓋、DB僅當次UTC／一次POST，背景與通知仍OFF。原流程斷言與timeout不變，最新HEAD仍完整六項及實圖驗收。

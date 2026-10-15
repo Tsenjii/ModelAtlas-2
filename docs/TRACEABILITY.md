@@ -226,3 +226,5 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | VPS-PROVIDER-KEY-SCOPE-001 | rotation selector → 穩定Provider×Account×Credential值＋完整帳戶／Key／Group label；A/B同Key ID fixture → 真vaultrotate | 只改B ciphertext與兩版本，A ciphertext／零版本不變；membership／telemetry完整、零Provider HTTP；375／1280／dark／200%幾何與實圖 |
 
 基線03307f1六項已綠；本片仍以 PR #20 最新 HEAD 的完整六項／十四Browser／實圖與原expanded workload為準。無merge／目標VPS部署，產品語意及Android phase不變。
+
+| VPS-SETTINGS-DRAFT-RACE-001 | `refresh`／`loadStatus` → 逐欄dirty guard；`settings-form` save以revision確認是否仍同一稿；workspace真Handler回應／settings commit後延遲 | 修復db21a33／38751952139的舊workspace UTC→Asia/Taipei競態，原斷言保留；固定barrier驗晚status／重開保留UTC，保存途中下一稿Asia/Tokyo仍留UI，SQLite僅UTC、一次POST、背景／通知仍OFF。新HEAD全部六項gate |

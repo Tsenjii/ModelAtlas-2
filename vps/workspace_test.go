@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"sync"
 	"sync/atomic"
 	"testing"
 )
@@ -46,8 +47,63 @@ func TestBrowserWorkspaceWorkflow(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
-	app := httptest.NewServer(s.Handler())
-	defer app.Close()
+	var holdStatus, holdSave, statusReady, saveReady atomic.Bool
+	holdStatus.Store(true)
+	holdSave.Store(true)
+	statusRelease, saveRelease := make(chan struct{}), make(chan struct{})
+	var releaseStatus, releaseSave sync.Once
+	var settingWrites atomic.Int32
+	handler := s.Handler()
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/__workspace_fixture/state":
+			jsonOK(w, 200, map[string]any{"status": statusReady.Load(), "save": saveReady.Load(), "writes": settingWrites.Load()})
+			return
+		case "/__workspace_fixture/release-status":
+			releaseStatus.Do(func() { close(statusRelease) })
+			jsonOK(w, 200, map[string]bool{"released": true})
+			return
+		case "/__workspace_fixture/release-save":
+			releaseSave.Do(func() { close(saveRelease) })
+			jsonOK(w, 200, map[string]bool{"released": true})
+			return
+		}
+		var release <-chan struct{}
+		if r.Method == "GET" && r.URL.Path == "/api/v1/status" && holdStatus.Swap(false) {
+			release = statusRelease
+		} else if r.Method == "POST" && r.URL.Path == "/api/v1/settings" {
+			settingWrites.Add(1)
+			if holdSave.Swap(false) {
+				release = saveRelease
+			}
+		}
+		if release == nil {
+			handler.ServeHTTP(w, r)
+			return
+		}
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, r)
+		if release == statusRelease {
+			statusReady.Store(true)
+		} else {
+			saveReady.Store(true)
+		}
+		select {
+		case <-release:
+		case <-r.Context().Done():
+			return
+		}
+		for name, values := range recorder.Header() {
+			w.Header()[name] = values
+		}
+		w.WriteHeader(recorder.Code)
+		w.Write(recorder.Body.Bytes())
+	}))
+	defer func() {
+		releaseStatus.Do(func() { close(statusRelease) })
+		releaseSave.Do(func() { close(saveRelease) })
+		app.Close()
+	}()
 	empty := testServer(t)
 	blank := httptest.NewServer(empty.Handler())
 	defer blank.Close()
@@ -64,6 +120,10 @@ func TestBrowserWorkspaceWorkflow(t *testing.T) {
 	s.Store.DB.QueryRow("SELECT COUNT(*) FROM my_models").Scan(&members)
 	if members != 3 {
 		t.Fatalf("workspace navigation changed membership: %d", members)
+	}
+	var timezone string
+	if err := s.Store.DB.QueryRow("SELECT value_json FROM settings WHERE key='timezone'").Scan(&timezone); err != nil || timezone != `"UTC"` || settingWrites.Load() != 1 {
+		t.Fatalf("settings saved a later draft or duplicate: timezone=%s writes=%d err=%v", timezone, settingWrites.Load(), err)
 	}
 	t.Log(string(out))
 }
