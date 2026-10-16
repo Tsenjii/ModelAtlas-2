@@ -66,5 +66,9 @@ jobs:
             macos/qa/**/ui/FAILURE.txt
             macos/qa/**/process-footprint.json
             macos/qa/**/swift-tests.log
+            macos/qa/**/swift-test-build.log
+            macos/qa/**/trust-fixture.log
+            macos/qa/**/*.diagnostics.log
+            macos/qa/**/stack-*.log
             macos/qa/**/app-launch.log
           if-no-files-found: warn

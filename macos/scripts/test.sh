@@ -32,14 +32,19 @@ for i in $(seq 1 100); do
     sleep 0.1
 done
 fingerprint=$(openssl x509 -in "$qa/fixture/ca.pem" -noout -fingerprint -sha1 | cut -d= -f2 | tr -d :)
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$qa/fixture/ca.pem"
+echo 'Native stage: trust disposable local TLS fixture'
+python3 "$mac_dir/scripts/run-bounded.py" 45 "$qa/trust-fixture.log" sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$qa/fixture/ca.pem"
 trusted=1
 export MODELATLAS_ENGINE_PATH="$app/Contents/MacOS/ModelAtlasEngine"
 export MODELATLAS_FIXTURE_URL
 MODELATLAS_FIXTURE_URL=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["url"])' "$qa/fixture/fixture.json")
 export MODELATLAS_PLAIN_FIXTURE_URL
 MODELATLAS_PLAIN_FIXTURE_URL=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["plain"])' "$qa/fixture/fixture.json")
-swift test --package-path "$mac_dir" --parallel 2>&1 | tee "$qa/swift-tests.log"
+echo 'Native stage: build test bundle'
+python3 "$mac_dir/scripts/run-bounded.py" 480 "$qa/swift-test-build.log" swift build --package-path "$mac_dir" --build-tests
+echo 'Native stage: run packaged engine and Keychain tests'
+python3 "$mac_dir/scripts/run-bounded.py" 300 "$qa/swift-tests.log" swift test --package-path "$mac_dir" --skip-build --parallel
+echo 'Native stage: launch actual SwiftUI app and measure process footprint'
 python3 - "$app" "$qa" "$MODELATLAS_FIXTURE_URL" <<'PY'
 import json,pathlib,subprocess,sys,time
 app,qa,fixture=sys.argv[1:]

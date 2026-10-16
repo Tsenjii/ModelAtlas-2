@@ -4,6 +4,9 @@ import Security
 import XCTest
 
 final class AtlasCoreTests: XCTestCase {
+    private func progress(_ message: String) {
+        FileHandle.standardError.write(Data(("Native integration: " + message + "\n").utf8))
+    }
     func testToolCallIDCanRepeatAfterAnEarlierCompletedTurn() throws {
         let old = try JSONValue.parse("{\"role\":\"assistant\",\"tool_calls\":[{\"id\":\"call_1\",\"function\":{\"name\":\"old\"}}]}")
         let result = try JSONValue.parse("{\"role\":\"tool\",\"tool_call_id\":\"call_1\",\"content\":\"old result\"}")
@@ -52,9 +55,12 @@ final class AtlasCoreTests: XCTestCase {
     func testKeychainPersistsAndNeverReplacesMissingDatabaseKey() throws {
         let service = "dev.modelatlas.ci." + UUID().uuidString
         defer { SecItemDelete([kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service] as CFDictionary) }
+        progress("Keychain begin")
         let vault = KeychainVault(service: service)
         XCTAssertThrowsError(try vault.loadOrCreate(databaseExists: true))
+        progress("Keychain create")
         let first = try vault.loadOrCreate(databaseExists: false)
+        progress("Keychain reopen")
         let second = try vault.loadOrCreate(databaseExists: true)
         XCTAssertEqual(first.token, second.token); XCTAssertEqual(first.masterKey, second.masterKey)
         XCTAssertEqual(Data(base64Encoded: first.masterKey)?.count, 32)
@@ -71,6 +77,7 @@ final class AtlasCoreTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let secrets = EngineSecrets(token: "mac-integration-admin-token-12345", masterKey: Data(repeating: 17, count: 32).base64EncodedString())
         let engine = EngineController(directory: directory)
+        progress("packaged engine start")
         let api = try await engine.start(executable: URL(fileURLWithPath: path), secrets: secrets)
         do {
             let (_, response) = try await URLSession.shared.data(from: api.baseURL.appendingPathComponent("api/v1/status"))
@@ -80,6 +87,7 @@ final class AtlasCoreTests: XCTestCase {
                 _ = try await api.call("/accounts", method: "POST", body: .object(["id": .string(account), "provider_id": .string("p"), "label": .string(account)]))
                 _ = try await api.call("/credentials", method: "POST", body: .object(["id": .string("same"), "provider_id": .string("p"), "account_id": .string(account), "secret": .string(account == "a" ? "native-fixture-provider-key" : "fixture-other-account-key")]))
             }
+            progress("TLS Catalog sync")
             _ = try await api.call("/models/sync", method: "POST", body: .object(["provider_id": .string("p"), "account_id": .string("a"), "credential_id": .string("same")]))
             let before = try await api.get("/my-models").requiredArray(); XCTAssertTrue(before.isEmpty)
             var scope: JSONValue = .object(["provider_id": .string("p"), "account_id": .string("a"), "credential_id": .string("same"), "model_id": .string("native-fixture-chat"), "group": .string(""), "endpoint": .string("CHAT_COMPLETIONS")])
@@ -89,6 +97,7 @@ final class AtlasCoreTests: XCTestCase {
             let conversation = try await api.call("/sessions", method: "POST", body: scope)
             let id = conversation["id"].string
             var text = "", terminal = ""
+            progress("real SSE chat")
             try await api.stream("/infer", body: .object(["session_id": .string(id), "prompt": .string("原生聊天測試")])) { event in
                 if event.name == "delta" { text += event.value["text"].string }
                 if ["done", "error"].contains(event.name) { terminal = event.name }
@@ -121,12 +130,15 @@ final class AtlasCoreTests: XCTestCase {
             XCTAssertTrue(began)
             _ = try await api.call("/infer/cancel", method: "POST", body: .object(["session_id": slow["id"]]))
             try await stream.value; XCTAssertTrue(cancelled)
+            progress("cancel complete; stopping engine")
             let child = try XCTUnwrap(engine.process)
             await engine.stop(); XCTAssertFalse(child.isRunning)
+            progress("reopen persistent database")
             let reopened = try await engine.start(executable: URL(fileURLWithPath: path), secrets: secrets)
             let history = try await reopened.get("/messages", query: [URLQueryItem(name: "session_id", value: id)]).requiredArray()
             XCTAssertEqual(history.count, 2)
             _ = try await reopened.call("/models/sync", method: "POST", body: .object(["provider_id": .string("p"), "account_id": .string("a"), "credential_id": .string("same")]))
+            progress("duplicate writer rejection")
             let duplicate = EngineController(directory: directory)
             do { _ = try await duplicate.start(executable: URL(fileURLWithPath: path), secrets: secrets); XCTFail("Second writer was accepted") } catch { XCTAssertTrue(engine.process?.isRunning == true) }
             await duplicate.stop()
