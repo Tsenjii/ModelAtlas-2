@@ -1,5 +1,15 @@
 # ModelAtlas Public — TRACEABILITY
 
+## Mac 原生入口（2026-10-17 候選，獨立於 Android／VPS 驗收）
+
+| ID | 正式 caller／測試 | 驗收條件 |
+|---|---|---|
+| MAC-NATIVE-001 | SwiftUI `ModelAtlasApp` → `RootView`／Playground／Providers／Models／Settings／Research／Assistant → `AtlasStore` → `AtlasClient` → bundled production engine；原生視窗smoke與六實圖 | Universal arm64／x86_64，macOS12部署目標；同一artifact在兩種Mac架構執行，不用WebView／mock transport，不能以Linux交叉編譯稱Mac執行 |
+| MAC-LIFETIME-001 | `EngineController` → `desktop` config → OS動態loopback listener／0600 readiness／stdin EOF → HTTP／worker／SQLite收尾 | 真Go程序測試＋兩Mac程序restart／writer拒絕；App無常駐daemon，不繼承PORT對外開埠；保持原平台／本機模式認證 |
+| MAC-SECRET-SCOPE-001 | `KeychainVault` → Security.framework／SecRandom、完整`ModelScope`、禁redirect/cookie/cache/proxy的native client | 真Keychain roundtrip／missing-vault拒絕重生、A/B同KeyID隔離、SSE與實際cancel／history／vault reopen、Unknown不當0／Free、預設背景通知OFF |
+
+候選須同SHA九項CI（Mac build／arm64 test／Intel test＋原VPS四項＋Android兩項），實際PNG人工review後才驗收；exact SHA／run／artifact由Mac PR body保存。Apple Developer ID／公證、macOS12實機與部分進階專用表單不在本片已驗範圍，詳`macos/README.md`。
+
 > 此檔是公開 repo 新起點的粗粒度驗收銜接；**不是**原 private repo 85 項逐項驗收 ledger 的完整轉儲。原始完整 ledger 保留於 private repo。後續 public slices 的 acceptance 逐項追加，未經新 repo 完整 CI 不得標 accepted。
 
 | Phase | 來源 Private Ledger（僅歷史參考） | 公開版驗收 |

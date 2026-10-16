@@ -1,0 +1,37 @@
+#!/bin/bash
+set -euo pipefail
+mac_dir=$(cd "$(dirname "$0")/.." && pwd)
+repo_dir=$(cd "$mac_dir/.." && pwd)
+dist="$mac_dir/dist"
+app="$dist/ModelAtlas.app"
+export MACOSX_DEPLOYMENT_TARGET=12.0
+swift build --package-path "$mac_dir" -c release --arch arm64 --arch x86_64
+bin_dir=$(swift build --package-path "$mac_dir" -c release --arch arm64 --arch x86_64 --show-bin-path)
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$dist/engine-build"
+cp "$mac_dir/Resources/Info.plist" "$app/Contents/Info.plist"
+cp "$bin_dir/ModelAtlas" "$app/Contents/MacOS/ModelAtlas"
+for arch in arm64 amd64; do
+    (cd "$repo_dir/vps" && CGO_ENABLED=0 GOOS=darwin GOARCH="$arch" go build -mod=readonly -trimpath -ldflags="-s -w" -o "$dist/engine-build/$arch" .)
+done
+lipo -create "$dist/engine-build/arm64" "$dist/engine-build/amd64" -output "$app/Contents/MacOS/ModelAtlasEngine"
+iconset="$dist/AppIcon.iconset"
+mkdir -p "$iconset"
+swift "$mac_dir/scripts/icon.swift" "$dist/icon.png"
+for size in 16 32 128 256 512; do
+    sips -z "$size" "$size" "$dist/icon.png" --out "$iconset/icon_${size}x${size}.png" >/dev/null
+    double=$((size * 2))
+    sips -z "$double" "$double" "$dist/icon.png" --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
+done
+iconutil -c icns "$iconset" -o "$app/Contents/Resources/AppIcon.icns"
+chmod 755 "$app/Contents/MacOS/ModelAtlas" "$app/Contents/MacOS/ModelAtlasEngine"
+codesign --force --sign - --timestamp=none "$app/Contents/MacOS/ModelAtlasEngine"
+codesign --force --sign - --timestamp=none --options runtime "$app"
+codesign --verify --deep --strict "$app"
+lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/ModelAtlas"
+lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/ModelAtlasEngine"
+ditto -c -k --sequesterRsrc --keepParent "$app" "$dist/ModelAtlas-macOS-Universal.zip"
+mkdir -p "$dist/dmg-root"
+ditto "$app" "$dist/dmg-root/ModelAtlas.app"
+ln -sfn /Applications "$dist/dmg-root/Applications"
+hdiutil create -volname ModelAtlas -srcfolder "$dist/dmg-root" -ov -format UDZO "$dist/ModelAtlas-macOS-Universal.dmg"
+(cd "$dist" && shasum -a 256 ModelAtlas-macOS-Universal.zip ModelAtlas-macOS-Universal.dmg > SHA256SUMS.txt)
