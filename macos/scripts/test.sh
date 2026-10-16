@@ -25,9 +25,14 @@ cleanup() {
     kill "$fixture_pid" 2>/dev/null || true
     wait "$fixture_pid" 2>/dev/null || true
     if [ "$trusted" = 1 ]; then
-        echo 'Native stage: remove disposable fixture trust and certificate'
-        python3 "$mac_dir/scripts/run-bounded.py" 30 "$qa/remove-fixture-trust.log" sudo security remove-trusted-cert -d "$qa/fixture/ca.pem" || cleanup_failed=1
+        echo 'Native stage: revoke disposable fixture trust and delete its exact certificate'
+        # remove-trusted-cert can open SecurityAgent in headless macOS runners
+        # (actions/runner-images#12116). Deny the exact fresh CA instead, then
+        # delete only its certificate; never change authorizationdb / TLS checks.
+        python3 "$mac_dir/scripts/run-bounded.py" 30 "$qa/revoke-fixture-trust.log" sudo security add-trusted-cert -d -r deny -k /Library/Keychains/System.keychain "$qa/fixture/ca.pem" || cleanup_failed=1
+        python3 "$mac_dir/scripts/run-bounded.py" 45 "$qa/verify-fixture-denied.log" swift "$mac_dir/scripts/verify-revoked.swift" "$qa/fixture/ca.pem" || cleanup_failed=1
         python3 "$mac_dir/scripts/run-bounded.py" 30 "$qa/remove-fixture-cert.log" sudo security delete-certificate -Z "$fingerprint" /Library/Keychains/System.keychain || cleanup_failed=1
+        python3 "$mac_dir/scripts/run-bounded.py" 45 "$qa/verify-fixture-revoked.log" swift "$mac_dir/scripts/verify-revoked.swift" "$qa/fixture/ca.pem" --after-delete || cleanup_failed=1
     fi
     if [ "$original_status" != 0 ]; then exit "$original_status"; fi
     exit "$cleanup_failed"

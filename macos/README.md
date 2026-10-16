@@ -49,7 +49,7 @@ SwiftPM 也可直接用 Xcode 開啟 `macos/Package.swift` 查看原生程式碼
 - `AtlasCoreTests`：完整 scope 區分、SSE Unicode／multiline／bounds、Keychain 真存取、只有 loopback origin、禁 redirect／截斷 SSE 不冒充完成。
 - 兩架構測試同一份已建置 Universal artifact；native client → packaged production engine → 真 TLS fixture，驗 catalog≠membership、A/B同Key ID隔離、串流／完整歷史／實際cancel、備份下載、停機與固定金鑰 reopen、第二 writer拒絕、預設OFF。不是 mock transport。
 - 實際啟動 `.app` 的 SwiftUI 視窗，以同一 store／API 寫入合成資料、完成 TLS chat，再拍三工作區、深淺色與窄視窗六張PNG。這是實際原生視窗 capture＋store caller 驗證，**不是 XCUI 全點擊覆蓋**。
-- CI native integration 暫時信任一張每輪新產生、24小時到期的本機 fixture CA，結束撤銷／移除；只在可丟棄 CI 或明確 `MODELATLAS_ALLOW_TEST_CERT=1` 執行。正常App不安裝憑證，也不改TLS驗證。
+- CI native integration 暫時信任一張每輪新產生、24小時到期的本機 fixture CA。結束將**這張 CA 明確設為 Deny**、按完整 fingerprint 刪除憑證，並用 Apple Security API 確認 exact admin Deny 與離線 OS trust 拒絕；任一步失敗 gate 失敗。這避開 [GitHub runner 已知 remove-trusted-cert 卡住問題](https://github.com/actions/runner-images/issues/12116)，不改 authorizationdb／不關 TLS 驗證。Deny-only trust record 留在可丟棄 runner 至 VM 銷毀；只供可丟棄 CI，或明確 `MODELATLAS_ALLOW_TEST_CERT=1` 的開發測試。正常App不安裝憑證，也不改TLS驗證。
 - `process-footprint.json` 用 `ps RSS` 記錄該次原生 App＋其自帶引擎的啟動／TLS chat／六畫面 capture，排除 fixture與test runner；不冒充完整VPS expanded workload或RSS硬上限。
 - Linux Go新增 `TestDesktopDynamicLoopbackAndParentPipeLifetime`，真 binary 驗實際埠／0600 ready／401／parent EOF退出／ready移除／DB lock釋放，既有完整Go／VPS Browser／Android gate仍全部保留。
 
