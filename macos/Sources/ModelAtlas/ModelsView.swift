@@ -88,38 +88,8 @@ struct CatalogView: View {
     private var filtered: [JSONValue] { items.filter { (providerID == nil || $0["provider_id"].string == providerID) && (search.isEmpty || ($0["id"].string + " " + $0["display_name"].string + " " + $0["metadata"].pretty).localizedCaseInsensitiveContains(search)) } }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            AtlasCard {
-                Text("加入使用的連線").font(.headline)
-                Picker("帳戶與 Key", selection: $credentialChoice) {
-                    Text("選擇帳戶與 Key").tag("")
-                    ForEach(availableKeys, id: \.self) { item in
-                        Text(store.providerName(item["provider_id"].string) + " · " + (store.accounts.first { $0["provider_id"].string == item["provider_id"].string && $0["id"].string == item["account_id"].string }?["label"].string ?? item["account_id"].string) + " · " + item["label"].string + " · " + item["group"].string).tag(identity(item))
-                    }
-                }
-                Picker("用途與端點", selection: $endpoint) {
-                    ForEach(endpointOptions, id: \.self) { Text($0).tag($0) }
-                    ForEach(store.endpoints.filter { $0["provider_id"].string == key?["provider_id"].string }, id: \.self) { Text($0["operation"].string + " · " + $0["url"].string).tag($0["id"].string) }
-                }
-                if availableKeys.isEmpty { Text("先在供應商詳情加入並啟用推論 Key。").foregroundStyle(.secondary) }
-                HStack {
-                    ActionButton(title: "同步這個 Key 的 Catalog") {
-                        guard let key else { throw AtlasError.http(422) }
-                        _ = try await store.mutate("/models/sync", body: .object(["provider_id": key["provider_id"], "account_id": key["account_id"], "credential_id": key["id"]])); await load()
-                    }.disabled(key == nil)
-                    Spacer()
-                    Button("重新載入") { Task { await load() } }.disabled(loading)
-                }
-            }
-            DisclosureGroup("手動加入模型") {
-                VStack(alignment: .leading, spacing: 12) {
-                    FormField(title: "模型 ID", text: $manualID); FormField(title: "顯示名稱", text: $manualName)
-                    ActionButton(title: "加入 My Models") {
-                        guard let key else { throw AtlasError.http(422) }
-                        _ = try await store.mutate("/models", body: .object(["provider_id": key["provider_id"], "id": .string(manualID), "display_name": .string(manualName.isEmpty ? manualID : manualName)]))
-                        try await add(manualID, provider: key["provider_id"].string); manualID = ""; manualName = ""; await load()
-                    }.disabled(key == nil || manualID.isEmpty)
-                }.padding(.top, 12)
-            }
+            connectionCard
+            manualForm
             TextField("搜尋完整 Catalog、別名與模型名稱", text: $search).textFieldStyle(.roundedBorder)
             if loading { ProgressView("讀取 Catalog…") }
             if let problem { Text(problem).foregroundStyle(.red) }
@@ -137,6 +107,48 @@ struct CatalogView: View {
             if filtered.count > shown { Button("顯示更多（共 \(filtered.count) 個）") { shown += 100 } }
             if items.isEmpty && !loading { Text("尚無 Catalog。可同步模型清單，或直接手動加入模型 ID。").foregroundStyle(.secondary).padding(.vertical, 20) }
         }.task { await load() }
+    }
+    private var connectionCard: some View {
+            AtlasCard {
+                Text("加入使用的連線").font(.headline)
+                Picker("帳戶與 Key", selection: $credentialChoice) {
+                    Text("選擇帳戶與 Key").tag("")
+                    ForEach(availableKeys, id: \.self) { item in
+                        Text(credentialLabel(item)).tag(identity(item))
+                    }
+                }
+                Picker("用途與端點", selection: $endpoint) {
+                    ForEach(endpointOptions, id: \.self) { Text($0).tag($0) }
+                    ForEach(store.endpoints.filter { $0["provider_id"].string == key?["provider_id"].string }, id: \.self) { Text($0["operation"].string + " · " + $0["url"].string).tag($0["id"].string) }
+                }
+                if availableKeys.isEmpty { Text("先在供應商詳情加入並啟用推論 Key。").foregroundStyle(.secondary) }
+                HStack {
+                    ActionButton(title: "同步這個 Key 的 Catalog") {
+                        guard let key else { throw AtlasError.http(422) }
+                        _ = try await store.mutate("/models/sync", body: .object(["provider_id": key["provider_id"], "account_id": key["account_id"], "credential_id": key["id"]])); await load()
+                    }.disabled(key == nil)
+                    Spacer()
+                    Button("重新載入") { Task { await load() } }.disabled(loading)
+                }
+            }
+    }
+    private var manualForm: some View {
+            DisclosureGroup("手動加入模型") {
+                VStack(alignment: .leading, spacing: 12) {
+                    FormField(title: "模型 ID", text: $manualID); FormField(title: "顯示名稱", text: $manualName)
+                    ActionButton(title: "加入 My Models") {
+                        guard let key else { throw AtlasError.http(422) }
+                        _ = try await store.mutate("/models", body: .object(["provider_id": key["provider_id"], "id": .string(manualID), "display_name": .string(manualName.isEmpty ? manualID : manualName)]))
+                        try await add(manualID, provider: key["provider_id"].string); manualID = ""; manualName = ""; await load()
+                    }.disabled(key == nil || manualID.isEmpty)
+                }.padding(.top, 12)
+            }
+    }
+    private func credentialLabel(_ item: JSONValue) -> String {
+        let provider = store.providerName(item["provider_id"].string)
+        let account = store.accounts.first { $0["provider_id"].string == item["provider_id"].string && $0["id"].string == item["account_id"].string }
+        let accountName = account?["label"].string ?? item["account_id"].string
+        return [provider, accountName, item["label"].string, item["group"].string].joined(separator: " · ")
     }
     private func identity(_ value: JSONValue) -> String { JSONValue.array([value["provider_id"], value["account_id"], value["id"]]).pretty }
     private func scope(_ id: String, key: JSONValue) -> JSONValue { .object(["provider_id": key["provider_id"], "account_id": key["account_id"], "credential_id": key["id"], "model_id": .string(id), "group": key["group"], "endpoint": .string(endpoint)]) }
@@ -237,9 +249,9 @@ struct ModelDetailView: View {
             AtlasCard {
                 DisclosureGroup("分類、別名與手動資料") {
                     JSONEditor(title: "模型分類與別名", text: $metadataText)
-                    ActionButton(title: "保存模型資訊") { guard let value = try? JSONValue.parse(metadataText) else { throw AtlasError.invalidJSON }; _ = try await store.mutate("/models/metadata", body: value); await load() }
+                    ActionButton(title: "保存模型資訊") { guard var value = try? JSONValue.parse(metadataText) else { throw AtlasError.invalidJSON }; value["provider_id"] = .string(scope.providerID); value["model_id"] = .string(scope.modelID); _ = try await store.mutate("/models/metadata", body: value); await load() }
                     JSONEditor(title: "手動價格／額度標註", text: $factsText)
-                    ActionButton(title: "保存手動標註") { guard let facts = try? JSONValue.parse(factsText) else { throw AtlasError.invalidJSON }; var body = scope.json; for (key, value) in facts.fields { body[key] = value }; _ = try await store.mutate("/models/facts", body: body); await load() }
+                    ActionButton(title: "保存手動標註") { guard let facts = try? JSONValue.parse(factsText) else { throw AtlasError.invalidJSON }; var body = scope.json; for (key, value) in facts.fields { guard !scope.json.fields.keys.contains(key) else { throw AtlasError.invalidJSON }; body[key] = value }; _ = try await store.mutate("/models/facts", body: body); await load() }
                 }
             }
         }

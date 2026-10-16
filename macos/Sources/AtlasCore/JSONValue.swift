@@ -88,3 +88,16 @@ public enum AtlasError: Error, LocalizedError {
         }
     }
 }
+
+public enum ConversationTools {
+    public static func pending(in messages: [JSONValue]) -> [JSONValue] {
+        var calls: [String: JSONValue] = [:]
+        for message in messages {
+            if message["role"].string == "assistant" {
+                for call in message["tool_calls"].array { calls[call["id"].string] = call }
+            }
+            if message["role"].string == "tool" { calls.removeValue(forKey: message["tool_call_id"].string) }
+        }
+        return calls.values.sorted { ($0["index"].numeric ?? 0, $0["id"].string) < ($1["index"].numeric ?? 0, $1["id"].string) }
+    }
+}

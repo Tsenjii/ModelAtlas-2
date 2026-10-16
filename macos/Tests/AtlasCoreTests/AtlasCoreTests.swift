@@ -4,6 +4,14 @@ import Security
 import XCTest
 
 final class AtlasCoreTests: XCTestCase {
+    func testToolCallIDCanRepeatAfterAnEarlierCompletedTurn() throws {
+        let old = try JSONValue.parse("{\"role\":\"assistant\",\"tool_calls\":[{\"id\":\"call_1\",\"function\":{\"name\":\"old\"}}]}")
+        let result = try JSONValue.parse("{\"role\":\"tool\",\"tool_call_id\":\"call_1\",\"content\":\"old result\"}")
+        let current = try JSONValue.parse("{\"role\":\"assistant\",\"tool_calls\":[{\"id\":\"call_1\",\"function\":{\"name\":\"new\"}}]}")
+        let pending = ConversationTools.pending(in: [old, result, current])
+        XCTAssertEqual(pending.count, 1); XCTAssertEqual(pending[0]["function"]["name"].string, "new")
+        XCTAssertTrue(ConversationTools.pending(in: [old, result]).isEmpty)
+    }
     func testSSEMultilineUnicodeCommentsAndBounds() throws {
         var decoder = EventDecoder()
         XCTAssertNil(try decoder.consume(": heartbeat"))

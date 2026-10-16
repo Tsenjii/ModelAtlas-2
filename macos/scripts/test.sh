@@ -56,7 +56,7 @@ with (pathlib.Path(qa)/'app-launch.log').open('w') as log:
                 ids=json.loads(pid_file.read_text())
                 values=[]
                 for key in ['app_pid','engine_pid']:
-                    result=subprocess.run(['ps','-o','rss=','-p',str(ids[key])],capture_output=True,text=True)
+                    result=subprocess.run(['ps','-o','rss=','-p',str(int(ids[key]))],capture_output=True,text=True)
                     values.append(int(result.stdout.strip() or 0)*1024)
                 peaks['app_rss_bytes']=max(peaks['app_rss_bytes'],values[0])
                 peaks['engine_rss_bytes']=max(peaks['engine_rss_bytes'],values[1])
@@ -69,6 +69,7 @@ with (pathlib.Path(qa)/'app-launch.log').open('w') as log:
     finally:
         if process.poll() is None: process.kill(); process.wait()
     (pathlib.Path(qa)/'process-footprint.json').write_text(json.dumps(peaks,indent=2))
+    assert peaks['app_rss_bytes']>0 and peaks['engine_rss_bytes']>0 and peaks['samples']>=3,peaks
 report=out/'native-smoke.json'
 assert report.exists(), (out/'FAILURE.txt').read_text() if (out/'FAILURE.txt').exists() else 'native app did not finish smoke'
 value=json.loads(report.read_text())

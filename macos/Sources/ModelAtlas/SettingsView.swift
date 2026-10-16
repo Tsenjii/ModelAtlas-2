@@ -2,6 +2,7 @@ import AppKit
 import AtlasCore
 import SwiftUI
 import UserNotifications
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject var store: AtlasStore
@@ -21,6 +22,8 @@ struct SettingsView: View {
     @State private var offset = 0
     @State private var detail: JSONValue?
     @State private var hasMore = false
+    @State private var rules: JSONValue = .object([:])
+    @State private var quotaThreshold = "100"
     var body: some View {
         VStack(spacing: 0) {
             HStack { Text("設定與資料").font(.title2.weight(.semibold)); Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.cancelAction) }.padding(25)
@@ -49,6 +52,7 @@ struct SettingsView: View {
             timezone = store.settings["timezone"].string; performance = store.settings["performance_window"].string
             notifications = store.settings["notifications"].boolean; background = store.settings["background"]["enabled"].boolean
             interval = store.settings["background"]["interval_minutes"].display; maxScopes = store.settings["background"]["max_scopes"].display
+            rules = store.settings["notification_rules"]; quotaThreshold = rules["quota_remaining_below"].display
             await loadRequests()
             if let api = store.api { notificationRecords = (try? await api.get("/notifications").requiredArray()) ?? [] }
         }
@@ -66,13 +70,21 @@ struct SettingsView: View {
                 Toggle("背景資料同步", isOn: $background)
                 HStack { FormField(title: "同步間隔（分鐘，15–10080）", text: $interval); FormField(title: "每輪連線數（1–10）", text: $maxScopes) }
                 Toggle("通知總開關", isOn: $notifications)
+                DisclosureGroup("個別通知規則") {
+                    ForEach(["became_free", "quota_low", "checkin_pending", "favorite_recovered", "price_changed", "outage", "recovery"], id: \.self) { key in
+                        Toggle(["became_free": "模型變為免費", "quota_low": "額度不足", "checkin_pending": "待簽到", "favorite_recovered": "收藏模型恢復", "price_changed": "價格變動", "outage": "服務異常", "recovery": "服務恢復"][key]!, isOn: Binding(get: { rules[key].boolean }, set: { rules[key] = .bool($0) })).toggleStyle(.checkbox)
+                    }
+                    FormField(title: "額度提醒門檻", text: $quotaThreshold)
+                }
                 ActionButton(title: "儲存偏好") {
-                    guard let minutes = Int(interval), let scopes = Int(maxScopes) else { throw AtlasError.invalidJSON }
+                    guard let minutes = Int(interval), let scopes = Int(maxScopes), let threshold = Int(quotaThreshold) else { throw AtlasError.invalidJSON }
+                    var selectedRules = rules; selectedRules["quota_remaining_below"] = .number(Double(threshold))
+                    let submitted: JSONValue = .object(["timezone": .string(timezone), "performance_window": .string(performance), "notifications": .bool(notifications), "notification_rules": selectedRules, "background": .object(["enabled": .bool(background), "interval_minutes": .number(Double(minutes)), "max_scopes": .number(Double(scopes))])])
                     if notifications && !store.settings["notifications"].boolean {
                         let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
                         guard granted else { throw AtlasError.http(403) }
                     }
-                    _ = try await store.mutate("/settings", body: .object(["timezone": .string(timezone), "performance_window": .string(performance), "notifications": .bool(notifications), "background": .object(["enabled": .bool(background), "interval_minutes": .number(Double(minutes)), "max_scopes": .number(Double(scopes))])]))
+                    _ = try await store.mutate("/settings", body: submitted)
                 }
             }
         }
@@ -91,7 +103,7 @@ struct SettingsView: View {
                 HStack {
                     Button("匯出設定…") { Task { await store.export("/backup", filename: "ModelAtlas-Settings.json") } }
                     Button("選擇設定檔…") {
-                        let panel = NSOpenPanel(); panel.allowedFileTypes = ["json"]; panel.allowsMultipleSelection = false
+                        let panel = NSOpenPanel(); panel.allowedContentTypes = [.json]; panel.allowsMultipleSelection = false
                         if panel.runModal() == .OK, let url = panel.url {
                             do {
                                 let attributes = try url.resourceValues(forKeys: [.fileSizeKey])

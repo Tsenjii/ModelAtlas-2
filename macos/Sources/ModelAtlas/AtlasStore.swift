@@ -2,6 +2,7 @@ import AppKit
 import AtlasCore
 import Combine
 import Foundation
+import UniformTypeIdentifiers
 
 enum Workspace: String, CaseIterable, Identifiable {
     case playground = "Playground", providers = "Providers", models = "Models"
@@ -40,6 +41,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var messageHasMore = false
     @Published var toolResults: [String: String] = [:]
     var stagedTools: [String: JSONValue] = [:]
+    private var resultDrafts: [String: [String: String]] = [:]
     @Published var sessionSearch = ""
     @Published var archiveView = false
     @Published var sessionHasMore = false
@@ -122,12 +124,18 @@ enum Workspace: String, CaseIterable, Identifiable {
         guard revision == historyRevision else { return }
         sessions = more ? sessions + page : page; sessionHasMore = page.count == 100
         if let updated = sessions.first(where: { $0["id"].string == sessionID }) { currentSession = updated }
+        else if let id = sessionID {
+            let exact = try await api.get("/sessions", query: [URLQueryItem(name: "session_id", value: id), URLQueryItem(name: "state", value: "ALL")]).requiredArray()
+            if sessionID == id, let found = exact.first { currentSession = found }
+        }
     }
     func selectSession(_ session: JSONValue) async {
         guard !generating else { return }
         if let sessionID { drafts[sessionID] = draft } else { drafts["new"] = draft }
+        resultDrafts[sessionID ?? "new"] = toolResults
         let id = session["id"].string
         sessionID = id; currentSession = session; scopeID = ModelScope(session).id; draft = drafts[id] ?? ""
+        toolResults = resultDrafts[id] ?? [:]
         attachments = []; mediaResult = nil; streamingText = ""; reasoning = ""
         await loadMessages()
     }
@@ -145,7 +153,9 @@ enum Workspace: String, CaseIterable, Identifiable {
     func newConversation() {
         guard !generating else { return }
         if let sessionID { drafts[sessionID] = draft }
+        resultDrafts[sessionID ?? "new"] = toolResults
         sessionID = nil; currentSession = nil; messages = []; draft = drafts["new"] ?? ""; attachments = []
+        toolResults = [:]
         mediaResult = nil; streamingText = ""; reasoning = ""; messageHasMore = false; messageOffset = 0
         workspace = .playground
     }
@@ -199,6 +209,7 @@ enum Workspace: String, CaseIterable, Identifiable {
                     if let submittedTools { body["tools"] = submittedTools; stagedTools[id] = submittedTools }
                     if retry == nil && !toolContinuation { messages.append(.object(["id": .string("pending-user"), "role": .string("user"), "content": .string(prompt)])) }
                     try await api.stream("/infer", body: body) { event in
+                        if event.name == "start" && toolContinuation { for result in submittedResults { self.toolResults.removeValue(forKey: result["call_id"].string) } }
                         if event.name == "delta" { self.pendingText += event.value["text"].string }
                         if event.name == "reasoning" { self.pendingReasoning += event.value["text"].string }
                         if event.name == "error" { self.problem = "請求結束：" + event.value["category"].string }
@@ -218,13 +229,7 @@ enum Workspace: String, CaseIterable, Identifiable {
         if !pendingReasoning.isEmpty { reasoning += pendingReasoning; pendingReasoning = "" }
     }
     var pendingToolCalls: [JSONValue] {
-        var calls: [JSONValue] = []
-        var completed: Set<String> = []
-        for message in messages {
-            if message["role"].string == "assistant" { calls += message["tool_calls"].array }
-            if message["role"].string == "tool" { completed.insert(message["tool_call_id"].string) }
-        }
-        return calls.filter { !completed.contains($0["id"].string) }
+        ConversationTools.pending(in: messages)
     }
     func cancel() async {
         guard let api, generating else { return }
@@ -237,14 +242,17 @@ enum Workspace: String, CaseIterable, Identifiable {
 
     func pickAttachments() {
         let panel = NSOpenPanel(); panel.allowsMultipleSelection = true
-        panel.allowedFileTypes = ["png", "jpg", "jpeg", "webp", "pdf", "wav", "mp3"]
+        panel.allowedContentTypes = ["png", "jpg", "jpeg", "webp", "pdf", "wav", "mp3"].compactMap { UTType(filenameExtension: $0) }
         guard panel.runModal() == .OK else { return }
         do {
             var additions = attachments
             for url in panel.urls {
                 let attributes = try url.resourceValues(forKeys: [.fileSizeKey])
                 guard let size = attributes.fileSize, size > 0, size <= 4 << 20 else { throw AtlasError.http(413) }
-                let data = try Data(contentsOf: url)
+                let handle = try FileHandle(forReadingFrom: url)
+                let data = try handle.read(upToCount: (4 << 20) + 1) ?? Data()
+                try handle.close()
+                guard !data.isEmpty, data.count <= 4 << 20 else { throw AtlasError.http(413) }
                 let ext = url.pathExtension.lowercased()
                 let mime = ["png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "pdf": "application/pdf", "wav": "audio/wav", "mp3": "audio/mpeg"][ext]!
                 let kind = ext == "pdf" ? "pdf" : ["wav", "mp3"].contains(ext) ? "audio" : "image"

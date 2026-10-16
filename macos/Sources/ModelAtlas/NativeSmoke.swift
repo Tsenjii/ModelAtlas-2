@@ -9,7 +9,7 @@ import SwiftUI
         let manager = FileManager.default
         do {
             try manager.createDirectory(at: output, withIntermediateDirectories: true)
-            guard store.ready, let api = store.api else { throw AtlasError.engineUnavailable }
+            guard store.ready, store.api != nil else { throw AtlasError.engineUnavailable }
             let identities: JSONValue = .object(["app_pid": .number(Double(ProcessInfo.processInfo.processIdentifier)), "engine_pid": .number(Double(store.engine.process?.processIdentifier ?? 0))])
             try JSONEncoder().encode(identities).write(to: output.appendingPathComponent("measurement-pids.json"), options: .atomic)
             let args = ProcessInfo.processInfo.arguments
