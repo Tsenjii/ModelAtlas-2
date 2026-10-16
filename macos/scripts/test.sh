@@ -19,12 +19,18 @@ go build -o "$qa/provider-fixture" "$mac_dir/Fixtures/provider.go"
 fixture_pid=$!
 trusted=0
 cleanup() {
+    original_status=$?
+    trap - EXIT
+    cleanup_failed=0
     kill "$fixture_pid" 2>/dev/null || true
     wait "$fixture_pid" 2>/dev/null || true
     if [ "$trusted" = 1 ]; then
-        sudo security remove-trusted-cert -d "$qa/fixture/ca.pem" || true
-        sudo security delete-certificate -Z "$fingerprint" /Library/Keychains/System.keychain || true
+        echo 'Native stage: remove disposable fixture trust and certificate'
+        python3 "$mac_dir/scripts/run-bounded.py" 30 "$qa/remove-fixture-trust.log" sudo security remove-trusted-cert -d "$qa/fixture/ca.pem" || cleanup_failed=1
+        python3 "$mac_dir/scripts/run-bounded.py" 30 "$qa/remove-fixture-cert.log" sudo security delete-certificate -Z "$fingerprint" /Library/Keychains/System.keychain || cleanup_failed=1
     fi
+    if [ "$original_status" != 0 ]; then exit "$original_status"; fi
+    exit "$cleanup_failed"
 }
 trap cleanup EXIT
 for i in $(seq 1 100); do
@@ -51,7 +57,9 @@ app,qa,fixture=sys.argv[1:]
 out=pathlib.Path(qa)/'ui'
 out.mkdir(parents=True,exist_ok=True)
 with (pathlib.Path(qa)/'app-launch.log').open('w') as log:
-    process=subprocess.Popen([str(pathlib.Path(app)/'Contents/MacOS/ModelAtlas'),'--smoke-dir',str(out),'--fixture-url',fixture],stdout=log,stderr=log)
+    command=[str(pathlib.Path(app)/'Contents/MacOS/ModelAtlas'),'--smoke-dir',str(out),'--fixture-url',fixture]
+    if pathlib.Path(qa).name=='x86_64': command.append('--smoke-close-window')
+    process=subprocess.Popen(command,stdout=log,stderr=log)
     deadline=time.monotonic()+120
     peaks={'app_rss_bytes':0,'engine_rss_bytes':0,'combined_rss_bytes':0,'samples':0,'method':'ps RSS of the standalone native app and its bundled engine; excludes fixtures/test runners; startup, TLS chat and six native window captures'}
     try:
@@ -73,8 +81,11 @@ with (pathlib.Path(qa)/'app-launch.log').open('w') as log:
         assert process.returncode==0,process.returncode
     finally:
         if process.poll() is None: process.kill(); process.wait()
-    (pathlib.Path(qa)/'process-footprint.json').write_text(json.dumps(peaks,indent=2))
+        (pathlib.Path(qa)/'process-footprint.json').write_text(json.dumps(peaks,indent=2))
     assert peaks['app_rss_bytes']>0 and peaks['engine_rss_bytes']>0 and peaks['samples']>=3,peaks
+    ids=json.loads((out/'measurement-pids.json').read_text())
+    child=subprocess.run(['ps','-o','pid=','-p',str(int(ids['engine_pid']))],capture_output=True,text=True)
+    assert not child.stdout.strip(),'App exited but its owned engine is still running'
 report=out/'native-smoke.json'
 assert report.exists(), (out/'FAILURE.txt').read_text() if (out/'FAILURE.txt').exists() else 'native app did not finish smoke'
 value=json.loads(report.read_text())

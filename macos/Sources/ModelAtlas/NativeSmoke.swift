@@ -48,8 +48,12 @@ import SwiftUI
             let message = "Native smoke failed: " + error.localizedDescription
             try? Data(message.utf8).write(to: output.appendingPathComponent("FAILURE.txt"), options: .atomic)
         }
-        await store.shutdown()
-        NSApp.terminate(nil)
+        // Leave the SwiftUI .task before entering AppKit termination. Exercise
+        // the same delegate-owned drain used by normal Quit / last-window close.
+        DispatchQueue.main.async {
+            if ProcessInfo.processInfo.arguments.contains("--smoke-close-window"), let window = NSApp.windows.first(where: \.isVisible) { window.performClose(nil) }
+            else { NSApp.terminate(nil) }
+        }
     }
     private static func capture(_ window: NSWindow, to url: URL) async throws {
         try await Task.sleep(nanoseconds: 450_000_000)

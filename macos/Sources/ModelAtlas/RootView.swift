@@ -49,6 +49,10 @@ struct RootView: View {
         .sheet(item: $store.detailModel) { ModelDetailView(store: store, model: $0) }
         .sheet(isPresented: $store.settingsOpen) { SettingsView(store: store) }
         .sheet(isPresented: $store.assistantOpen) { AssistantView(store: store) }
+        .disabled(store.closing)
+        .overlay {
+            if store.closing { ProgressView("正在儲存並關閉本機工作區…").padding(24).background(.regularMaterial).cornerRadius(14) }
+        }
     }
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 20) {

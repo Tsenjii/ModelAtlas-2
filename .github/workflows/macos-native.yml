@@ -68,6 +68,7 @@ jobs:
             macos/qa/**/swift-tests.log
             macos/qa/**/swift-test-build.log
             macos/qa/**/trust-fixture.log
+            macos/qa/**/remove-fixture-*.log
             macos/qa/**/*.diagnostics.log
             macos/qa/**/stack-*.log
             macos/qa/**/app-launch.log

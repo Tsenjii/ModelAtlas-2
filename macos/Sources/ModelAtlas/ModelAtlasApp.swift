@@ -4,13 +4,22 @@ import SwiftUI
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     var store: AtlasStore?
-    private var stopping = false
+    private enum QuitPhase: Equatable { case idle, draining, finished }
+    private var quitPhase = QuitPhase.idle
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard let store, !stopping else { return .terminateNow }
-        stopping = true
-        Task { await store.shutdown(); sender.reply(toApplicationShouldTerminate: true) }
-        return .terminateLater
+        guard let store else { return .terminateNow }
+        if quitPhase == .finished { return .terminateNow }
+        guard quitPhase == .idle else { return .terminateCancel }
+        quitPhase = .draining
+        // Keep the normal run loop alive while Swift concurrency drains the
+        // engine. Reissue termination only after shutdown has completed.
+        Task { @MainActor in
+            await store.shutdown()
+            quitPhase = .finished
+            DispatchQueue.main.async { sender.terminate(nil) }
+        }
+        return .terminateCancel
     }
     func applicationDidFinishLaunching(_ notification: Notification) { NSApp.activate(ignoringOtherApps: true) }
 }

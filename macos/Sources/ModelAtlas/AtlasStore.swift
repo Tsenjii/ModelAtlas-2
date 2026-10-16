@@ -14,6 +14,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var workspace: Workspace = .playground
     @Published var ready = false
     @Published var booting = false
+    @Published var closing = false
     @Published var problem: String?
     @Published var notice: String?
     @Published var providers: [JSONValue] = []
@@ -76,7 +77,7 @@ enum Workspace: String, CaseIterable, Identifiable {
         return endpoints.first { $0["provider_id"].string == value["provider_id"].string && $0["id"].string == id }?["operation"].string ?? id
     }
     func bootstrap(smoke: Bool = false) async {
-        guard !booting && !ready else { return }
+        guard !booting && !ready && !closing else { return }
         booting = true; problem = nil
         defer { booting = false }
         do {
@@ -163,13 +164,13 @@ enum Workspace: String, CaseIterable, Identifiable {
         guard !generating else { return }; newConversation(); scopeID = ModelScope(value).id; detailModel = nil
     }
     func mutate(_ path: String, body: JSONValue, method: String = "POST") async throws -> JSONValue {
-        guard let api else { throw AtlasError.engineUnavailable }
+        guard let api, !closing else { throw AtlasError.engineUnavailable }
         let value = try await api.call(path, method: method, body: body)
         do { try await reload() } catch { problem = "已保存，但列表暫時無法更新。請重新整理。" }
         return value
     }
     func send(retry: String? = nil, toolContinuation: Bool = false) {
-        guard let api, !generating, let scope = selectedScope, retry != nil || toolContinuation || !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard let api, !closing, !generating, let scope = selectedScope, retry != nil || toolContinuation || !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         let prompt = draft, files = attachments, beforeIDs = Set(messages.map { $0["id"].string })
         generating = true; problem = nil; mediaResult = nil; pendingText = ""; pendingReasoning = ""
         streamingText = ""; reasoning = ""
@@ -238,7 +239,7 @@ enum Workspace: String, CaseIterable, Identifiable {
             _ = try await api.call("/infer/cancel", method: "POST", body: body)
         } catch { problem = error.localizedDescription }
     }
-    func shutdown() async { operation?.cancel(); await engine.stop() }
+    func shutdown() async { closing = true; operation?.cancel(); await engine.stop(); ready = false }
 
     func pickAttachments() {
         let panel = NSOpenPanel(); panel.allowsMultipleSelection = true

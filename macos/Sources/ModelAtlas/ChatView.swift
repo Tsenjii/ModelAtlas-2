@@ -142,8 +142,11 @@ struct ChatView: View {
                     }
                 }
             }
-            TextEditor(text: $store.draft).font(.body).frame(minHeight: 68, maxHeight: 135).padding(4)
-                .accessibilityLabel("訊息草稿").accessibilityIdentifier("chat-composer")
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $store.draft).font(.body).frame(minHeight: 68, maxHeight: 100).padding(4)
+                    .accessibilityLabel("訊息草稿").accessibilityIdentifier("chat-composer")
+                if store.draft.isEmpty { Text(store.generating ? "先寫下一則訊息…" : "輸入訊息…  ⌘↵ 傳送").font(.body).foregroundStyle(.tertiary).padding(.horizontal, 10).padding(.top, 12).allowsHitTesting(false) }
+            }
             HStack {
                 Button { store.pickAttachments() } label: { Label("附件", systemImage: "paperclip") }.disabled(store.generating)
                 Text("圖片、PDF、WAV、MP3 · 每份 4 MiB").font(.caption2).foregroundStyle(.secondary)
