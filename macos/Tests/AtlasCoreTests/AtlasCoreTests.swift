@@ -22,6 +22,23 @@ final class AtlasCoreTests: XCTestCase {
         XCTAssertEqual(event.name, "delta"); XCTAssertEqual(event.value["text"].string, "原生 Mac ✨")
         XCTAssertThrowsError(try decoder.consume("data: " + String(repeating: "a", count: 1_048_577)))
     }
+    func testSSEByteFramingRetainsEmptyLinesAndBoundsWireInput() throws {
+        for separator in ["\n", "\r\n", "\r"] {
+            var framer = EventFramer(), events: [StreamEvent] = []
+            let wire = [": 心跳", "event: delta", "data: {\"text\":\"繁中 ✨\"}", "", "event: done", "data: {}", "", ""].joined(separator: separator)
+            for byte in wire.utf8 { if let event = try framer.consume(byte) { events.append(event) } }
+            XCTAssertEqual(events.map(\.name), ["delta", "done"])
+            XCTAssertEqual(events.first?.value["text"].string, "繁中 ✨")
+        }
+        var tooLong = EventFramer()
+        for _ in 0..<1_048_576 { _ = try tooLong.consume(65) }
+        XCTAssertThrowsError(try tooLong.consume(65))
+        var invalidUTF8 = EventFramer()
+        _ = try invalidUTF8.consume(255)
+        XCTAssertThrowsError(try invalidUTF8.consume(10))
+        var emptyData = EventDecoder()
+        XCTAssertThrowsError(try (0..<200_000).forEach { _ in _ = try emptyData.consume("data:") })
+    }
     func testScopeNeverCollapsesSameKeyIDsAcrossAccountsOrEndpoints() throws {
         let a = try JSONValue.parse("{\"provider_id\":\"p\",\"account_id\":\"a\",\"credential_id\":\"same\",\"model_id\":\"m\",\"group\":\"free\",\"endpoint\":\"CHAT_COMPLETIONS\"}")
         var b = a; b["account_id"] = .string("b")

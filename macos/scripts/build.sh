@@ -27,8 +27,8 @@ chmod 755 "$app/Contents/MacOS/ModelAtlas" "$app/Contents/MacOS/ModelAtlasEngine
 codesign --force --sign - --timestamp=none "$app/Contents/MacOS/ModelAtlasEngine"
 codesign --force --sign - --timestamp=none --options runtime "$app"
 codesign --verify --deep --strict "$app"
-lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/ModelAtlas"
-lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/ModelAtlasEngine"
+lipo "$app/Contents/MacOS/ModelAtlas" -verify_arch arm64 x86_64
+lipo "$app/Contents/MacOS/ModelAtlasEngine" -verify_arch arm64 x86_64
 ditto -c -k --sequesterRsrc --keepParent "$app" "$dist/ModelAtlas-macOS-Universal.zip"
 mkdir -p "$dist/dmg-root"
 ditto "$app" "$dist/dmg-root/ModelAtlas.app"

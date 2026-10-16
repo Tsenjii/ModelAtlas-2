@@ -191,10 +191,10 @@ struct ProviderDetailView: View {
     }
     private var accountsContent: some View {
         VStack(spacing: 18) {
-            ForEach(providerAccounts, id: \.self) { account in
+            ForEach(providerAccounts, id: \.id) { account in
                 AtlasCard {
                     Label(account["label"].string, systemImage: "person.crop.circle").font(.headline)
-                    ForEach(store.credentials.filter { $0["provider_id"].string == id && $0["account_id"].string == account["id"].string }, id: \.self) { credential in
+                    ForEach(store.credentials.filter { $0["provider_id"].string == id && $0["account_id"].string == account["id"].string }, id: \.id) { credential in
                         CredentialRow(store: store, credential: credential)
                     }
                 }
@@ -203,7 +203,9 @@ struct ProviderDetailView: View {
                 Text("新增帳戶").font(.headline)
                 FormField(title: "帳戶名稱", text: $accountLabel)
                 ActionButton(title: "加入帳戶") {
-                    _ = try await store.mutate("/accounts", body: .object(["id": .string(UUID().uuidString.lowercased()), "provider_id": .string(id), "label": .string(accountLabel)])); accountLabel = ""
+                    let submitted = accountLabel
+                    _ = try await store.mutate("/accounts", body: .object(["id": .string(UUID().uuidString.lowercased()), "provider_id": .string(id), "label": .string(submitted)]))
+                    if accountLabel == submitted { accountLabel = "" }
                 }
             }
             AtlasCard {
@@ -214,9 +216,10 @@ struct ProviderDetailView: View {
                 FormField(title: "秘密值", text: $secret, secure: true)
                 DisclosureGroup("額外認證欄位") { JSONEditor(title: "Header／Query 秘密欄位", text: $authFields) }
                 ActionButton(title: "儲存 Key") {
+                    let submitted = [accountID, keyLabel, secret, group, role, authFields]
                     guard let fields = try? JSONValue.parse(authFields), case .array = fields else { throw AtlasError.invalidJSON }
                     _ = try await store.mutate("/credentials", body: .object(["id": .string(UUID().uuidString.lowercased()), "provider_id": .string(id), "account_id": .string(accountID), "label": .string(keyLabel), "secret": .string(secret), "group": .string(group), "role": .string(role), "auth_fields": fields]))
-                    secret = ""; authFields = "[]"; keyLabel = ""
+                    if submitted == [accountID, keyLabel, secret, group, role, authFields] { secret = ""; authFields = "[]"; keyLabel = "" }
                 }.disabled(accountID.isEmpty)
             }
         }
@@ -231,9 +234,11 @@ struct ProviderDetailView: View {
                 FormField(title: "完整 HTTPS URL（與供應商相同 origin）", text: $endpointURL)
                 if endpointType == "CUSTOM" { JSONEditor(title: "宣告式 CUSTOM 協定", text: $custom) }
                 ActionButton(title: "加入端點") {
+                    let submitted = [endpointID, endpointURL, endpointType, custom]
                     var value: JSONValue = .object(["provider_id": .string(id), "id": .string(endpointID), "operation": .string(endpointType), "url": .string(endpointURL)])
                     if endpointType == "CUSTOM" { guard let definition = try? JSONValue.parse(custom) else { throw AtlasError.invalidJSON }; value["custom_protocol"] = definition }
-                    _ = try await store.mutate("/endpoints", body: value); endpointID = ""; endpointURL = ""
+                    _ = try await store.mutate("/endpoints", body: value)
+                    if submitted == [endpointID, endpointURL, endpointType, custom] { endpointID = ""; endpointURL = "" }
                 }
             }
         }
@@ -309,9 +314,11 @@ struct CredentialRow: View {
                 FormField(title: "新的秘密值", text: $secret, secure: true)
                 FormField(title: "或恢復指定版本（留空代表儲存新 Key）", text: $version)
                 ActionButton(title: "確認更新這個帳戶的 Key") {
+                    let submitted = [secret, version]
                     var value: JSONValue = .object(["provider_id": credential["provider_id"], "account_id": credential["account_id"], "credential_id": credential["id"], "confirm": .bool(true), "secret": .string(secret)])
                     if !version.isEmpty { guard let number = Int(version), number > 0 else { throw AtlasError.invalidJSON }; value["version"] = .number(Double(number)); value["secret"] = .string("") }
-                    _ = try await store.mutate("/credentials/rotate", body: value); secret = ""; rotating = false
+                    _ = try await store.mutate("/credentials/rotate", body: value)
+                    if submitted == [secret, version] { secret = ""; version = ""; rotating = false }
                 }
             }
         }.padding(.vertical, 6)

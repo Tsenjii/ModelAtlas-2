@@ -189,11 +189,12 @@ struct ModelDetailView: View {
     @State private var factsText = "{}"
     @State private var loadRevision = 0
     private var scope: ModelScope { ModelScope(model) }
+    private var usableModel: JSONValue? { store.activeModels.first { ModelScope($0) == scope } }
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 5) { Text(scope.modelID).font(.title2.weight(.bold)); Text(store.scopeTitle(model)).font(.caption).foregroundStyle(.secondary); Text(store.operationName(model)).font(.caption).foregroundStyle(atlasAccent) }
-                Spacer(); Button("使用此模型") { store.chooseModel(model); dismiss() }.buttonStyle(.borderedProminent).disabled(store.generating || state != "ACTIVE")
+                Spacer(); Button("使用此模型") { if let usableModel { store.chooseModel(usableModel); dismiss() } }.buttonStyle(.borderedProminent).disabled(store.generating || usableModel == nil)
                 Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(25)
             Picker("詳情", selection: $tab) { ForEach(["概覽", "價格與額度", "效能", "歷史", "設定"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)

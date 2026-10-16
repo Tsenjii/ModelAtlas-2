@@ -116,7 +116,7 @@ struct JSONTree: View {
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
     private func label(_ key: String) -> String {
-        ["provider_id": "供應商", "account_id": "帳戶", "credential_id": "認證", "model_id": "模型", "group": "群組", "endpoint": "端點", "source": "來源", "observed_at": "觀測時間", "state": "狀態", "status": "狀態", "price_state": "價格狀態", "success_rate": "我的上線率", "samples": "樣本數", "p50": "中位數", "p90": "第90百分位", "p95": "第95百分位", "ttft_ms": "首 Token（ms）", "latency_ms": "總延遲（ms）", "tps": "生成速度（Token/s）", "notes": "備註", "capabilities": "已確認能力", "metadata": "模型資訊", "latest": "最新觀測", "last_good": "最後有效資料", "external": "外部資料", "local": "本機實測", "provider_facts": "站方資料", "account_facts": "帳戶資料", "resource_pools": "額度資源池", "history": "歷史", "reason": "原因", "confidence": "信心", "outcome": "結果", "created_at": "建立時間"][key] ?? key
+        ["provider_id": "供應商", "account_id": "帳戶", "credential_id": "認證", "model_id": "模型", "group": "群組", "endpoint": "端點", "source": "來源", "observed_at": "觀測時間", "state": "狀態", "status": "狀態", "price_state": "價格狀態", "success_rate": "成功率", "samples": "樣本數", "p50": "中位數", "p90": "第90百分位", "p95": "第95百分位", "ttft_ms": "首 Token（ms）", "latency_ms": "總延遲（ms）", "tps": "生成速度（Token/s）", "notes": "備註", "capabilities": "已確認能力", "metadata": "模型資訊", "latest": "最新觀測", "last_good": "最後有效資料", "external": "外部資料", "local": "本機實測", "provider_facts": "站方資料", "account_facts": "帳戶資料", "resource_pools": "額度資源池", "history": "歷史", "reason": "原因", "confidence": "信心", "outcome": "結果", "created_at": "建立時間"][key] ?? key
     }
 }
 

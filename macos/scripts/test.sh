@@ -12,8 +12,8 @@ fi
 ditto -x -k "$mac_dir/dist/ModelAtlas-macOS-Universal.zip" "$qa/app"
 app="$qa/app/ModelAtlas.app"
 codesign --verify --deep --strict "$app"
-lipo -verify_arch "$arch" "$app/Contents/MacOS/ModelAtlas"
-lipo -verify_arch "$arch" "$app/Contents/MacOS/ModelAtlasEngine"
+lipo "$app/Contents/MacOS/ModelAtlas" -verify_arch "$arch"
+lipo "$app/Contents/MacOS/ModelAtlasEngine" -verify_arch "$arch"
 go build -o "$qa/provider-fixture" "$mac_dir/Fixtures/provider.go"
 "$qa/provider-fixture" "$qa/fixture" >"$qa/fixture.log" 2>&1 &
 fixture_pid=$!

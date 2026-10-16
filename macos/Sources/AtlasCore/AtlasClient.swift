@@ -20,16 +20,37 @@ public struct EventDecoder {
             guard let value = try? JSONValue.parse(lines.joined(separator: "\n")) else { throw AtlasError.invalidResponse }
             return StreamEvent(name: name, value: value)
         }
+        size += line.utf8.count + 1
+        guard size <= 1_048_576 else { throw AtlasError.invalidResponse }
         guard !line.hasPrefix(":") else { return nil }
         let pieces = line.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
         var content = pieces.count > 1 ? String(pieces[1]) : ""
         if content.hasPrefix(" ") { content.removeFirst() }
         if pieces[0] == "event" { name = content }
         if pieces[0] == "data" {
-            size += content.utf8.count
-            guard size <= 1_048_576 else { throw AtlasError.invalidResponse }
             lines.append(content)
         }
+        return nil
+    }
+}
+
+// Frame bytes ourselves so empty event delimiters, split UTF-8 sequences, and
+// CR/LF/CRLF all survive. Bound a line before allocating an unbounded String.
+public struct EventFramer {
+    private var decoder = EventDecoder()
+    private var line: [UInt8] = []
+    private var afterCR = false
+    public init() {}
+    public mutating func consume(_ byte: UInt8) throws -> StreamEvent? {
+        if byte == 10, afterCR { afterCR = false; return nil }
+        afterCR = byte == 13
+        if byte == 10 || byte == 13 {
+            guard let value = String(bytes: line, encoding: .utf8) else { throw AtlasError.invalidResponse }
+            line.removeAll(keepingCapacity: true)
+            return try decoder.consume(value)
+        }
+        guard line.count < 1_048_576 else { throw AtlasError.invalidResponse }
+        line.append(byte)
         return nil
     }
 }
@@ -92,10 +113,10 @@ public final class AtlasClient: @unchecked Sendable {
         let (bytes, response) = try await session.bytes(for: request)
         try check(response)
         guard (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Type")?.hasPrefix("text/event-stream") == true else { throw AtlasError.invalidResponse }
-        var decoder = EventDecoder(), terminal = false
-        for try await line in bytes.lines {
+        var decoder = EventFramer(), terminal = false
+        for try await byte in bytes {
             try Task.checkCancellation()
-            if let event = try decoder.consume(line) {
+            if let event = try decoder.consume(byte) {
                 await receive(event)
                 if event.name == "done" || event.name == "error" { terminal = true }
             }
