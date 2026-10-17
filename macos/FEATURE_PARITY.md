@@ -49,3 +49,6 @@ Unknown 不當 0／Free；Catalog 不等於 My Models。所有操作維持 Provi
 
 
 原生Review實圖另修：MODEL_BATCH原先只看到收起的items，雖保留完整快照但不方便確認。現在直接列出每個完整scope的模型、帳戶／Key／群組與前後狀態，收藏／追蹤變更也可見；原始快照仍可展開。不完整或對不上scope的批次禁止確認，真API驗證畫面使用的scope集合及ACTIVE→HIDDEN內容。原84圖／confirm／undo／ABA stale與跨帳戶guard全部保留。
+
+
+深色模型清單實圖仍見macOS小型自動Picker以淺色field繪製；高頻來源／排序改為原生Menu內的單選Picker，保留全部選項與Binding，按鈕底色跟隨工作區。批次Review同時快取本次rows供顯示，避免每列重建整份scope配對。原84圖及所有功能驗證不減。

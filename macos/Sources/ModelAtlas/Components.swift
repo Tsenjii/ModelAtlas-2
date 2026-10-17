@@ -205,6 +205,24 @@ struct AtlasFilterChip: View {
     }
 }
 
+struct AtlasChoiceMenu: View {
+    let title: String
+    @Binding var selection: String
+    let items: [AtlasTab]
+    var body: some View {
+        Menu {
+            Picker(title, selection: $selection) {
+                ForEach(items) { Text($0.title).tag($0.id) }
+            }.pickerStyle(.inline)
+        } label: {
+            Text(items.first(where: { $0.id == selection })?.title ?? title)
+                .font(.system(size: 11, weight: .medium)).frame(maxWidth: .infinity, alignment: .leading)
+        }.menuStyle(.borderlessButton).padding(.horizontal, 9).padding(.vertical, 6)
+            .background(atlasInset).cornerRadius(6)
+            .accessibilityLabel(title)
+    }
+}
+
 struct AtlasIconButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.system(size: 13)).frame(width: 29, height: 29)

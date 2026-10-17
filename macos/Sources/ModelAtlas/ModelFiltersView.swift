@@ -44,8 +44,8 @@ struct ModelFiltersView: View {
             HStack(spacing: 12) {
                 AtlasFilterChip(title: expanded ? "收起篩選" : "進階篩選", icon: "line.3.horizontal.decrease", selected: expanded) { expanded.toggle() }
                 Spacer(minLength: 0)
-                Picker("資料來源", selection: $filters.source) { Text("我的實測").tag("local"); Text("供應商回報").tag("provider"); Text("外部參考").tag("external") }.labelsHidden().frame(width: 120)
-                Picker("排序", selection: $filters.sort) { ForEach(["smart", "name", "recent", "new", "strength", "tps", "ttft", "latency", "quota", "price"], id: \.self) { Text(["smart":"綜合排序", "name":"依名稱", "recent":"最近使用", "new":"最近加入", "strength":"模型強度", "tps":"生成速度", "ttft":"首字延遲", "latency":"總延遲", "quota":"可用額度", "price":"輸入價格"][$0]!).tag($0) } }.labelsHidden().frame(width: 130)
+                AtlasChoiceMenu(title: "資料來源", selection: $filters.source, items: [AtlasTab("local", "我的實測"), AtlasTab("provider", "供應商回報"), AtlasTab("external", "外部參考")]).frame(width: 125)
+                AtlasChoiceMenu(title: "排序", selection: $filters.sort, items: [AtlasTab("smart", "綜合排序"), AtlasTab("name", "依名稱"), AtlasTab("recent", "最近使用"), AtlasTab("new", "最近加入"), AtlasTab("strength", "模型強度"), AtlasTab("tps", "生成速度"), AtlasTab("ttft", "首字延遲"), AtlasTab("latency", "總延遲"), AtlasTab("quota", "可用額度"), AtlasTab("price", "輸入價格")]).frame(width: 130)
             }.controlSize(.small)
     }
     private func filterTitle(_ value: String) -> String {

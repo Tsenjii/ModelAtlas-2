@@ -72,12 +72,13 @@ struct ActionReviewView: View {
         }.padding(24).frame(width: 760, height: 660).background(atlasCanvas)
     }
     private var batchSummary: some View {
-        AtlasCard {
-            HStack { Text("將更新 \(model.batchChanges.count) 個模型連線").font(.headline); Spacer(); Text("變更前 → 變更後").font(.caption).foregroundStyle(.secondary) }
+        let changes = model.batchChanges
+        return AtlasCard {
+            HStack { Text("將更新 \(changes.count) 個模型連線").font(.headline); Spacer(); Text("變更前 → 變更後").font(.caption).foregroundStyle(.secondary) }
             if !model.batchComplete { Text("變更資料不完整，請重新預覽後再套用。").foregroundStyle(.red) }
-            ForEach(model.batchChanges) { change in
+            ForEach(changes) { change in
                 ModelActionRow(store: store, change: change)
-                if change.id != model.batchChanges.last?.id { Divider() }
+                if change.id != changes.last?.id { Divider() }
             }
         }
     }
@@ -87,25 +88,25 @@ private struct ModelActionRow: View {
     @ObservedObject var store: AtlasStore
     let change: ModelActionChange
     var body: some View {
-                VStack(alignment: .leading, spacing: 9) {
-                    HStack(alignment: .top, spacing: 14) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(modelTitle(change.scope)).font(.system(size: 13, weight: .semibold))
-                            Text(store.scopeTitle(change.scope.json)).font(.caption).foregroundStyle(.secondary)
-                            Text(change.scope.endpoint).font(.caption2).foregroundStyle(.tertiary)
-                        }.frame(maxWidth: .infinity, alignment: .leading)
-                        HStack(spacing: 9) {
-                            SmallBadge(text: stateTitle(change.before["state"].string))
-                            Image(systemName: "arrow.right").font(.caption).foregroundStyle(.tertiary)
-                            SmallBadge(text: stateTitle(change.after["state"].string), color: atlasAccent)
-                        }
-                    }
-                    ForEach(["favorite", "watchlist"], id: \.self) { key in
-                        if change.before[key] != change.after[key] {
-                            Text((key == "favorite" ? "收藏" : "追蹤") + "：" + (change.before[key].boolean ? "開啟" : "關閉") + " → " + (change.after[key].boolean ? "開啟" : "關閉")).font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                }.padding(.vertical, 7)
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(modelTitle(change.scope)).font(.system(size: 13, weight: .semibold))
+                    Text(store.scopeTitle(change.scope.json)).font(.caption).foregroundStyle(.secondary)
+                    Text(change.scope.endpoint).font(.caption2).foregroundStyle(.tertiary)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 9) {
+                    SmallBadge(text: stateTitle(change.before["state"].string))
+                    Image(systemName: "arrow.right").font(.caption).foregroundStyle(.tertiary)
+                    SmallBadge(text: stateTitle(change.after["state"].string), color: atlasAccent)
+                }
+            }
+            ForEach(["favorite", "watchlist"], id: \.self) { key in
+                if change.before[key] != change.after[key] {
+                    Text((key == "favorite" ? "收藏" : "追蹤") + "：" + (change.before[key].boolean ? "開啟" : "關閉") + " → " + (change.after[key].boolean ? "開啟" : "關閉")).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }.padding(.vertical, 7)
     }
     private func modelTitle(_ scope: ModelScope) -> String {
         store.myModels.first(where: { ModelScope($0) == scope }).map { ModelSearchEntry(model: $0, context: "", operation: "").title } ?? scope.modelID
