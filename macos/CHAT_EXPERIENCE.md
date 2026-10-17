@@ -34,3 +34,5 @@
 `9ebdb87`／Mac39016888123 arm64已通過新舊model時序、15核心及18圖；人工實圖確認附件使聊天區變矮時，浮動回最新與code複製控制可能重疊。按鈕移到ScrollView外的獨立底部操作列；不改閱讀state／原捲動幾何／按鈕ID／18圖或字流斷言。新HEAD完整九項與36圖再驗。
 
 `516feb5`／Mac39017461887三項、VPS39017461857四項及Android39017461923 build成功；device當時仍執行。36圖review確認閱讀位置與底部操作列，但Intel收據截在task開始前而空白。初始nil資料亦顯示讀取提示；已取得真API資料的card才加入原生receipt-loaded marker，smoke以exact sample_id等到card出現才capture（原waitFor 4秒上限不變）。marker不攔截輸入、不把內容寫入報告；原正式API精確scope／結果檢查、18圖與所有guards保留。新HEAD九項與36圖重新驗收。
+
+`0eaebd7`／Mac39018040678 arm6415核心及18圖完整成功，Intel15核心成功後在寬泛stream-does-not-steal-reading-position stage失敗；診斷clip_y／visible_y／retained_offset皆0、following=false、1104字、generating=true、無problem。該stage涵數個條件，不能斷言原因為真畫面跳動。驗證前後統一取document-relative offset（與正式coordinator及前置頂端guard一致），仍要求<3px；保存baseline／after純數值，拆開字流增加／暫停／位置／完成／全文SHA256／native blocks checkpoint，500ms／25秒與全部18圖不變。VPS39018040684四項及Android39018040670兩項全成功；新HEAD仍完整九項與36圖。

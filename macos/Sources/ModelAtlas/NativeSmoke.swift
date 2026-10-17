@@ -6,7 +6,9 @@ import SwiftUI
 // Opt-in acceptance harness. It uses a separate temporary data directory and a
 // real TLS fixture; normal launches never seed data or run any inference.
 @MainActor enum NativeSmoke {
+    private static var readingMeasurements: [String: Double] = [:]
     static func run(store: AtlasStore, output: URL) async {
+        readingMeasurements = [:]
         let manager = FileManager.default
         var stage = "bootstrap"
         do {
@@ -118,6 +120,7 @@ import SwiftUI
             // Fixed stage labels only: never dump a store, request, credential,
             // prompt or conversation to the public CI failure report.
             var diagnostics: JSONValue = .object(["stage": .string(stage), "generating": .bool(store.generating), "stream_characters": .number(Double(store.streamingText.count)), "message_count": .number(Double(store.messages.count)), "has_problem": .bool(store.problem != nil), "following": .bool(store.chatReading.following), "at_latest": .bool(store.chatReading.atLatest)])
+            for (key, value) in readingMeasurements { diagnostics[key] = .number(value) }
             if let root = NSApp.windows.first(where: \.isVisible)?.contentView,
                let probe = findView(in: root, identifier: "chat-scroll-probe"), let scroll = probe.enclosingScrollView, let document = scroll.documentView {
                 diagnostics["document_height"] = .number(Double(document.bounds.height))
@@ -173,23 +176,37 @@ import SwiftUI
         nativeProbe.setFollowing(store.chatReading.following)
         guard !nativeProbe.following, (nativeProbe.readingOffset ?? .infinity) < 3 else { throw AtlasError.invalidResponse }
         try await waitFor { !store.chatReading.following && !store.chatReading.atLatest && transcriptOffset(scroll) < 3 }
-        let readingPosition = scroll.contentView.bounds.minY, textCount = store.streamingText.count
-        checkpoint("stream-does-not-steal-reading-position")
+        // Compare content-relative positions on both sides. The clip view's
+        // raw coordinates can change while its document is being laid out.
+        let readingPosition = transcriptOffset(scroll), textCount = store.streamingText.count
+        readingMeasurements = ["baseline_content_offset": Double(readingPosition), "baseline_clip_y": Double(scroll.contentView.bounds.minY), "baseline_visible_y": Double(scroll.documentVisibleRect.minY), "baseline_document_y": Double(document.bounds.minY), "baseline_characters": Double(textCount)]
+        checkpoint("release-rich-fixture")
         guard let releaseURL = URL(string: fixture + "/fixture/release-rich") else { throw AtlasError.invalidEndpoint }
         var release = URLRequest(url: releaseURL); release.httpMethod = "POST"
         let (_, releaseResponse) = try await URLSession.shared.data(for: release)
         guard (releaseResponse as? HTTPURLResponse)?.statusCode == 204 else { throw AtlasError.invalidResponse }
         try await Task.sleep(nanoseconds: 500_000_000)
-        guard store.streamingText.count > textCount, !store.chatReading.following,
-              abs(scroll.contentView.bounds.minY - readingPosition) < 3 else { throw AtlasError.invalidResponse }
+        readingMeasurements["after_content_offset"] = Double(transcriptOffset(scroll))
+        readingMeasurements["after_clip_y"] = Double(scroll.contentView.bounds.minY)
+        readingMeasurements["after_characters"] = Double(store.streamingText.count)
+        checkpoint("stream-advances-after-release")
+        guard store.streamingText.count > textCount else { throw AtlasError.invalidResponse }
+        checkpoint("stream-stays-paused")
+        guard !store.chatReading.following else { throw AtlasError.invalidResponse }
+        checkpoint("stream-holds-content-reading-offset")
+        guard abs(transcriptOffset(scroll) - readingPosition) < 3 else { throw AtlasError.invalidResponse }
+        checkpoint("finish-rich-stream")
         let finish = Date().addingTimeInterval(25)
         while store.generating && Date() < finish { try await Task.sleep(nanoseconds: 30_000_000) }
+        checkpoint("completed-rich-history")
         guard !store.generating, !store.chatReading.following,
               let answer = store.messages.last, answer["role"].string == "assistant" else { throw AtlasError.invalidResponse }
         let answerText = answer["content"].string
         let digest = SHA256.hash(data: Data(answerText.utf8)).map { String(format: "%02x", $0) }.joined()
+        checkpoint("complete-rich-text-sha256")
         guard digest == fixtureState["sha256"].string, Double(answerText.count) == fixtureState["expected_characters"].numeric else { throw AtlasError.invalidResponse }
         let blocks = MessageMarkup.parse(answer["content"].string)
+        checkpoint("native-code-and-table-blocks")
         guard blocks.contains(where: { if case .code = $0 { return true }; return false }),
               blocks.contains(where: { if case .table = $0 { return true }; return false }) else { throw AtlasError.invalidResponse }
         checkpoint("resume-latest")

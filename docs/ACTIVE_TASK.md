@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **MAC-CHAT-003 Intel驗證座標／診斷：** `0eaebd7`／Mac39018040678 arm64完整18圖及15核心成功，Intel15核心成功後在寬泛stream-does-not-steal-reading-position stage失敗；固定診斷clip_y=visible_y=retained_offset=0、following=false、1104字且generating=true／無problem。該stage同時涵後續字流、raw clip座標、25秒完成、全文hash及parse，不能據此宣稱真閱讀跳動。位置oracle統一使用同一document-relative offset（與正式coordinator及前置頂端guard相同），仍<3px；新增baseline／after純數值與逐條checkpoint，保留500ms／25秒／完整1249字SHA256／全部18圖。VPS39018040684四項與Android39018040670 build/device全SUCCESS，不能代替新HEAD。新HEAD九項與36圖重驗。
 - **MAC-CHAT-003 收據初始狀態／真畫面就緒：** `516feb5`／Mac39017461887三項、VPS39017461857四項、Android39017461923 build已SUCCESS，device當時仍執行；36圖review確認捲動及操作遮擋修復，但Intel收據capture發生於task啟動前而只見空白。初始nil狀態改顯示讀取提示；只在真API資料card出現時建立不攔截輸入的原生marker，smoke要求exact sample_id marker出現才capture，保留原4秒ready上限／18圖／精確scope API檢查及全部guards。不是加固定sleep或虛構收據；新HEAD九項與36圖重驗。
 - **MAC-CHAT-003 操作遮擋實圖修復：** `9ebdb87`／Mac39016888123的arm64新舊model時序／18圖及15核心已成功；VPS39016888066四項、Android39016888138 build成功，其餘當時仍執行。實圖發現附件縮短聊天區時，浮動「回到最新」會與code複製控制重疊；改放ScrollView外獨立底部操作列，保留原閱讀狀態／NSScrollView幾何／按鈕ID與全部18圖斷言。這是同片必要UI修復，新HEAD重新九項與36圖，不拿前一片部分綠燈驗收。
 - **MAC-CHAT-003 實圖時序修復：** `8fb4d0a` 同 SHA 九項已成功（Mac39015983459／VPS39015983596／Android39015983539），兩架構各16圖與原15項核心全過；人工review發現arm64的再次上捲被帶回長段落。原生user通知與非同步model回寫之間，SwiftUI仍可能送舊following=true；coordinator只把「model值改變」當指令，避免同值舊update撤銷live-scroll。新增真probe套用舊model值後仍停在頂端的斷言，並要求capture後實際offset仍<3px；保留原16圖，再加深淺表格兩張，各18／共36圖。舊九綠不能驗收此新HEAD，仍需完整九項與實圖review。
