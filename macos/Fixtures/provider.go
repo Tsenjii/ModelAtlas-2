@@ -58,9 +58,11 @@ func main() {
 	richContinue := make(chan struct{})
 	var releaseRich sync.Once
 	var richPaused atomic.Bool
+	var richSent atomic.Int64
+	var richFinished atomic.Bool
 	mux.HandleFunc("/fixture/rich-state", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{"paused": richPaused.Load(), "expected_characters": len([]rune(richReply)), "sha256": fmt.Sprintf("%x", sha256.Sum256([]byte(richReply)))})
+		json.NewEncoder(w).Encode(map[string]any{"paused": richPaused.Load(), "sent_characters": richSent.Load(), "finished": richFinished.Load(), "expected_characters": len([]rune(richReply)), "sha256": fmt.Sprintf("%x", sha256.Sum256([]byte(richReply)))})
 	})
 	mux.HandleFunc("/fixture/release-rich", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -122,6 +124,7 @@ func main() {
 			chunk, _ := json.Marshal(map[string]any{"model": body.Model, "choices": []any{map[string]any{"delta": map[string]string{"content": string(rune)}}}})
 			fmt.Fprintf(w, "data: %s\n\n", chunk)
 			f.Flush()
+			if body.Model == "native-fixture-code" { richSent.Store(int64(index + 1)) }
 			if body.Model == "native-fixture-code" {
 				// Small, evenly paced bursts avoid per-rune timer granularity
 				// deciding when the two architectures reach the handshake.
@@ -134,6 +137,7 @@ func main() {
 		}
 		fmt.Fprint(w, "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":48,\"total_tokens\":60}}\n\ndata: [DONE]\n\n")
 		f.Flush()
+		if body.Model == "native-fixture-code" { richFinished.Store(true) }
 	})
 	secure := httptest.NewUnstartedServer(mux)
 	secure.TLS = &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12}

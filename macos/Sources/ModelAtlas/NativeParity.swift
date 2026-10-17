@@ -299,6 +299,16 @@ import SwiftUI
         try await wait { scroll.bounds.height >= 29 && scroll.bounds.height <= 32 }
         window.makeFirstResponder(nil); store.focusComposer()
         try await wait { window.firstResponder === editor }
+        let wrapping = String(repeating: "寬度變更與中文自動換行 ", count: 16)
+        editor.insertText(wrapping, replacementRange: NSRange(location: NSNotFound, length: 0))
+        try await wait { store.draft == wrapping && scroll.bounds.height > 35 && scroll.bounds.height < 140 }
+        let wideHeight = scroll.bounds.height
+        window.setContentSize(NSSize(width: 920, height: 800))
+        try await wait { scroll.bounds.height > wideHeight + 8 && scroll.bounds.height <= 145 }
+        window.setContentSize(NSSize(width: 1200, height: 800))
+        try await wait { abs(scroll.bounds.height - wideHeight) < 2 }
+        store.draft = ""
+        try await wait { editor.string.isEmpty && scroll.bounds.height <= 32 }
         let scope = store.selectedScope, history = store.messages
         let longText = (1...20).map { "第\($0)行：這是原生多行編輯、自然換行與捲動驗收。" }.joined(separator: "\n")
         editor.insertText(longText, replacementRange: NSRange(location: NSNotFound, length: 0))

@@ -143,6 +143,17 @@ import SwiftUI
             // Fixed stage labels only: never dump a store, request, credential,
             // prompt or conversation to the public CI failure report.
             var diagnostics: JSONValue = .object(["stage": .string(stage), "generating": .bool(store.generating), "stream_characters": .number(Double(store.streamingText.count)), "message_count": .number(Double(store.messages.count)), "has_problem": .bool(store.problem != nil), "following": .bool(store.chatReading.following), "at_latest": .bool(store.chatReading.atLatest)])
+            let args = ProcessInfo.processInfo.arguments
+            if let at = args.firstIndex(of: "--fixture-url"), args.count > at + 1,
+               let url = URL(string: args[at + 1] + "/fixture/rich-state") {
+                var request = URLRequest(url: url); request.timeoutInterval = 3
+                if let (data, _) = try? await URLSession.shared.data(for: request),
+                   let progress = try? JSONDecoder().decode(JSONValue.self, from: data) {
+                    diagnostics["fixture_sent_characters"] = progress["sent_characters"]
+                    diagnostics["fixture_finished"] = progress["finished"]
+                    diagnostics["fixture_paused"] = progress["paused"]
+                }
+            }
             for (key, value) in readingMeasurements { diagnostics[key] = .number(value) }
             if let root = NSApp.windows.first(where: \.isVisible)?.contentView,
                let probe = findView(in: root, identifier: "chat-scroll-probe"), let scroll = probe.enclosingScrollView, let document = scroll.documentView {
@@ -219,8 +230,10 @@ import SwiftUI
         checkpoint("stream-holds-content-reading-offset")
         guard abs(transcriptOffset(scroll) - readingPosition) < 3 else { throw AtlasError.invalidResponse }
         checkpoint("finish-rich-stream")
+        let finishStarted = Date()
         let finish = Date().addingTimeInterval(25)
         while store.generating && Date() < finish { try await Task.sleep(nanoseconds: 30_000_000) }
+        readingMeasurements["finish_elapsed_ms"] = Date().timeIntervalSince(finishStarted) * 1000
         checkpoint("completed-rich-history")
         guard !store.generating, !store.chatReading.following,
               let answer = store.messages.last, answer["role"].string == "assistant" else { throw AtlasError.invalidResponse }
@@ -228,6 +241,12 @@ import SwiftUI
         let digest = SHA256.hash(data: Data(answerText.utf8)).map { String(format: "%02x", $0) }.joined()
         checkpoint("complete-rich-text-sha256")
         guard digest == fixtureState["sha256"].string, Double(answerText.count) == fixtureState["expected_characters"].numeric else { throw AtlasError.invalidResponse }
+        var progressRequest = URLRequest(url: stateURL); progressRequest.timeoutInterval = 3
+        let (progressData, _) = try await URLSession.shared.data(for: progressRequest)
+        let progress = try JSONDecoder().decode(JSONValue.self, from: progressData)
+        readingMeasurements["fixture_sent_characters"] = progress["sent_characters"].numeric
+        readingMeasurements["fixture_finished"] = progress["finished"].boolean ? 1 : 0
+        try JSONEncoder().encode(readingMeasurements).write(to: output.appendingPathComponent("rich-stream.diagnostics.log"), options: .atomic)
         let blocks = MessageMarkup.parse(answer["content"].string)
         checkpoint("native-code-and-table-blocks")
         guard blocks.contains(where: { if case .code = $0 { return true }; return false }),

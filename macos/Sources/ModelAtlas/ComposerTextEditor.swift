@@ -44,6 +44,8 @@ struct ComposerTextEditor: NSViewRepresentable {
     @MainActor final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ComposerTextEditor
         private var lastHeight: CGFloat = 30
+        private var measuredText: String?
+        private var measuredWidth: CGFloat = 0
         private var heightRevision = 0
         private var focusedRequest = 0
         private var pendingFocus: Int?
@@ -54,9 +56,26 @@ struct ComposerTextEditor: NSViewRepresentable {
             if let scroll = editor.enclosingScrollView { refresh(scroll) }
         }
         func refresh(_ scroll: NSScrollView) {
-            guard let editor = scroll.documentView as? NSTextView,
-                  let layout = editor.layoutManager, let container = editor.textContainer,
-                  editor.bounds.width > 20 else { return }
+            guard let editor = scroll.documentView as? NSTextView, editor.bounds.width > 20 else { return }
+            measure(editor)
+            let request = parent.focusRequest
+            guard request > focusedRequest, pendingFocus != request else { return }
+            pendingFocus = request
+            DispatchQueue.main.async { [weak self, weak scroll] in
+                guard let self else { return }; self.pendingFocus = nil
+                guard self.parent.focusRequest == request, let scroll,
+                      let window = scroll.window, window.attachedSheet == nil,
+                      let editor = scroll.documentView as? NSTextView else { return }
+                if let current = window.firstResponder as? NSTextView, current.hasMarkedText() { return }
+                if window.makeFirstResponder(editor) { self.focusedRequest = request }
+            }
+        }
+        private func measure(_ editor: NSTextView) {
+            // Transcript updates share the window layout pass. Recalculate the
+            // input only when its own text or available width changes.
+            guard measuredText != editor.string || abs(measuredWidth - editor.bounds.width) > 0.5,
+                  let layout = editor.layoutManager, let container = editor.textContainer else { return }
+            measuredText = editor.string; measuredWidth = editor.bounds.width
             layout.ensureLayout(for: container)
             let extra = layout.extraLineFragmentTextContainer === container ? layout.extraLineFragmentRect.maxY : 0
             let content = max(layout.usedRect(for: container).maxY, extra)
@@ -68,17 +87,6 @@ struct ComposerTextEditor: NSViewRepresentable {
                     guard let self, self.heightRevision == revision else { return }
                     self.parent.onHeightChange(height)
                 }
-            }
-            let request = parent.focusRequest
-            guard request > focusedRequest, pendingFocus != request else { return }
-            pendingFocus = request
-            DispatchQueue.main.async { [weak self, weak scroll] in
-                guard let self else { return }; self.pendingFocus = nil
-                guard self.parent.focusRequest == request, let scroll,
-                      let window = scroll.window, window.attachedSheet == nil,
-                      let editor = scroll.documentView as? NSTextView else { return }
-                if let current = window.firstResponder as? NSTextView, current.hasMarkedText() { return }
-                if window.makeFirstResponder(editor) { self.focusedRequest = request }
             }
         }
     }

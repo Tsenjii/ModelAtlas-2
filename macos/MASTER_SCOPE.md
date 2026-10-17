@@ -41,4 +41,6 @@
 
 首候選765247d九項同SHA已SUCCESS，兩架構29核心／45圖PASS；圖審發現首頁側欄還在搜尋的瞬間。Capture改等待真實sessionsLoading結束；選檔入口與新捷徑補上closing／modal guard。Provider免費篩選改每輪建立ID集合、同一body重用清單結果，避免逐Provider掃完整模型池，數量明確標模型連線。新HEAD保留全部90圖與條件，重新九項驗收。
 
+816a399的arm64完整通過，Intel29核心通過後在原長串流25秒完成界線失敗（仍generating、902字、閱讀offset保持0、無API錯誤）。不刪字數／SHA256／時間／閱讀斷言，也不盲目重跑。輸入區排版只在自己的文字或寬度改變時測量，避免每次聊天視窗排版都重算；補真正的窄／寬窗自然換行與縮回驗證。fixture／失敗診斷另記已發字數與完成布林，PASS診斷記耗時，不記對話或秘密；新HEAD重新全九項。
+
 設計參考僅用官方來源：[Apple macOS HIG](https://developer.apple.com/design/human-interface-guidelines/designing-for-macos)、[Bear](https://bear.app/)、[Magpie](https://github.com/yetone/magpie)。參考內容優先與原生資訊層級，不複製品牌資產或程式碼。
