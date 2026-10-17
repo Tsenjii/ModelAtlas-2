@@ -141,7 +141,10 @@ private struct ModelLibraryRow: View {
 struct CatalogView: View {
     @ObservedObject var store: AtlasStore
     let providerID: String?
-    @State private var catalogProvider = "", catalogCategory = "", catalogCapability = "", membership = ""
+    @State private var catalogProvider = ""
+    @State private var catalogCategory = ""
+    @State private var catalogCapability = ""
+    @State private var membership = ""
     @State private var catalogDetail: JSONValue?
     @State private var items: [JSONValue] = []
     @State private var search = ""

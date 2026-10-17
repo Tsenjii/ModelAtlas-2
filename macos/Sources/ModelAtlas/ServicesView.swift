@@ -3,7 +3,9 @@ import SwiftUI
 
 struct ServicesView: View {
     @ObservedObject var store: AtlasStore
-    @State private var service = "LMSPEED", secret = "", locale = "zh"
+    @State private var service = "LMSPEED"
+    @State private var secret = ""
+    @State private var locale = "zh"
     @State private var notice: String?
     @State private var aa: JSONValue = .object([:])
     @State private var models: [JSONValue] = []

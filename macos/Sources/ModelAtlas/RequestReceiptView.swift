@@ -16,7 +16,7 @@ struct RequestReceiptView: View {
                     Text("這次請求的用量、效能與當時的價格快照").foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("下載 JSON…") { Task { await store.export("/telemetry/detail", query: [URLQueryItem(name: "id", value: sampleID)], filename: "ModelAtlas-Request.json") }
+                Button("下載 JSON…") { Task { await store.export("/telemetry/detail", query: [URLQueryItem(name: "id", value: sampleID)], filename: "ModelAtlas-Request.json") } }
                 Button("完成") { store.requestReceipt = nil }.keyboardShortcut(.cancelAction)
             }
             Divider()

@@ -4,16 +4,30 @@ import SwiftUI
 struct ResearchView: View {
     @ObservedObject var store: AtlasStore
     @State private var dashboard: JSONValue = .object([:])
-    @State private var sources: [JSONValue] = [], runs: [JSONValue] = [], candidates: [JSONValue] = [], recipes: [JSONValue] = []
+    @State private var sources: [JSONValue] = []
+    @State private var runs: [JSONValue] = []
+    @State private var candidates: [JSONValue] = []
+    @State private var recipes: [JSONValue] = []
     @State private var aa: JSONValue = .object([:])
     @State private var selected: Set<String> = []
-    @State private var budget = "20", probes = "0", target = ""
-    @State private var minimalInference = false, useLMSpeed = false, useSearch = false, refreshAA = false
-    @State private var tab = "執行", candidateState = "", search = ""
-    @State private var recipeProvider = "", recipeReason = "", recipeText = "{}"
+    @State private var budget = "20"
+    @State private var probes = "0"
+    @State private var target = ""
+    @State private var minimalInference = false
+    @State private var useLMSpeed = false
+    @State private var useSearch = false
+    @State private var refreshAA = false
+    @State private var tab = "執行"
+    @State private var candidateState = ""
+    @State private var search = ""
+    @State private var recipeProvider = ""
+    @State private var recipeReason = ""
+    @State private var recipeText = "{}"
     @State private var problem: String?
     @State private var loading = false
-    @State private var candidateDetail: JSONValue?, runDetail: JSONValue?, sourceDetail: JSONValue?
+    @State private var candidateDetail: JSONValue?
+    @State private var runDetail: JSONValue?
+    @State private var sourceDetail: JSONValue?
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { Text("全球研究").font(.title3.weight(.semibold)); Spacer(); Button("重新載入") { Task { await load() } }.disabled(loading) }

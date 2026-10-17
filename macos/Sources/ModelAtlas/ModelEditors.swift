@@ -6,7 +6,8 @@ struct ModelInformationEditor: View {
     let scope: ModelScope
     let metadata: JSONValue
     @State private var value: JSONValue = .object([:])
-    @State private var aliases = "", context = ""
+    @State private var aliases = ""
+    @State private var context = ""
     @State private var saved = false
     @State private var initialized = false
     var body: some View {
@@ -38,9 +39,16 @@ struct ModelInformationEditor: View {
 struct ModelFactsEditor: View {
     @ObservedObject var store: AtlasStore
     let scope: ModelScope
-    @State private var input = "", output = "", cache = "", fixed = "", note = ""
-    @State private var unit = "USD/1K tokens", scopeKind = "MODEL", slice = ""
-    @State private var absent = false, effective = false
+    @State private var input = ""
+    @State private var output = ""
+    @State private var cache = ""
+    @State private var fixed = ""
+    @State private var note = ""
+    @State private var unit = "USD/1K tokens"
+    @State private var scopeKind = "MODEL"
+    @State private var slice = ""
+    @State private var absent = false
+    @State private var effective = false
     @State private var quota: [String: String] = [:]
     @State private var notice: String?
     var body: some View {

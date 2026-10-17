@@ -49,7 +49,8 @@ struct NotesEditor: View {
     @ObservedObject var store: AtlasStore
     let subject: JSONValue
     let initial: JSONValue
-    @State private var notes = "", tags = ""
+    @State private var notes = ""
+    @State private var tags = ""
     @State private var review: ActionReviewController?
     var body: some View {
         AtlasCard {

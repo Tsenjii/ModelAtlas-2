@@ -25,7 +25,9 @@ struct SecretFieldsEditor: View {
 struct ProviderIdentityEditor: View {
     @ObservedObject var store: AtlasStore
     let provider: JSONValue
-    @State private var name = "", url = "", description = ""
+    @State private var name = ""
+    @State private var url = ""
+    @State private var description = ""
     @State private var review: ActionReviewController?
     var body: some View {
         AtlasCard {
@@ -46,7 +48,9 @@ struct CredentialMetadataEditor: View {
     @ObservedObject var store: AtlasStore
     let credential: JSONValue
     @Environment(\.dismiss) private var dismiss
-    @State private var label = "", note = "", priority = "0"
+    @State private var label = ""
+    @State private var note = ""
+    @State private var priority = "0"
     @State private var enabled = false
     @State private var review: ActionReviewController?
     var body: some View {

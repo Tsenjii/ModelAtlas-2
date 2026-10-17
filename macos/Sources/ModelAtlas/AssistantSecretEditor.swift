@@ -5,7 +5,10 @@ struct AssistantSecretEditor: View {
     @ObservedObject var store: AtlasStore
     let saved: (JSONValue) -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var url = "", label = "", role = "INFERENCE", secret = ""
+    @State private var url = ""
+    @State private var label = ""
+    @State private var role = "INFERENCE"
+    @State private var secret = ""
     @State private var fields: [SecretFieldDraft] = []
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {

@@ -4,10 +4,13 @@ import SwiftUI
 struct RequestHistoryView: View {
     @ObservedObject var store: AtlasStore
     var scope: ModelScope? = nil
-    @State private var search = "", outcome = "", scopeID = ""
+    @State private var search = ""
+    @State private var outcome = ""
+    @State private var scopeID = ""
     @State private var records: [JSONValue] = []
     @State private var detail: JSONValue?
-    @State private var loading = false, more = false
+    @State private var loading = false
+    @State private var more = false
     @State private var problem: String?
     @State private var revision = 0
     private var selectedScope: ModelScope? { scope ?? store.myModels.first(where: { ModelScope($0).id == scopeID }).map(ModelScope.init) }

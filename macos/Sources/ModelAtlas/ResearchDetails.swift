@@ -5,8 +5,14 @@ struct ResearchSourceEditor: View {
     @ObservedObject var store: AtlasStore
     let initial: JSONValue
     @Environment(\.dismiss) private var dismiss
-    @State private var name = "", url = "", kind = "HTML", language = "zh", provider = "", root = ""
-    @State private var official = false, enabled = false
+    @State private var name = ""
+    @State private var url = ""
+    @State private var kind = "HTML"
+    @State private var language = "zh"
+    @State private var provider = ""
+    @State private var root = ""
+    @State private var official = false
+    @State private var enabled = false
     @State private var mappings: [FieldMapping] = []
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -34,7 +40,8 @@ struct ResearchRunView: View {
     let run: JSONValue
     @Environment(\.dismiss) private var dismiss
     @State private var tasks: [JSONValue] = []
-    @State private var additional = "0", probes = "0"
+    @State private var additional = "0"
+    @State private var probes = "0"
     @State private var retry = false
     @State private var problem: String?
     var body: some View {
@@ -70,8 +77,12 @@ struct CandidateDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var evidence: [JSONValue] = []
     @State private var selected: Set<String> = []
-    @State private var taiwan = "UNKNOWN", strength = "UNKNOWN", access = "UNKNOWN", reason = ""
-    @State private var problem: String?, notice: String?
+    @State private var taiwan = "UNKNOWN"
+    @State private var strength = "UNKNOWN"
+    @State private var access = "UNKNOWN"
+    @State private var reason = ""
+    @State private var problem: String?
+    @State private var notice: String?
     @State private var adding = false
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {

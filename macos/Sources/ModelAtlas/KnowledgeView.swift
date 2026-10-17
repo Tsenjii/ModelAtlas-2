@@ -33,8 +33,11 @@ import SwiftUI
 
 struct KnowledgeView: View {
     @ObservedObject var store: AtlasStore
-    @State private var tab = "知識", query = ""
-    @State private var knowledge: [JSONValue] = [], connectors: [JSONValue] = [], reflections: [JSONValue] = []
+    @State private var tab = "知識"
+    @State private var query = ""
+    @State private var knowledge: [JSONValue] = []
+    @State private var connectors: [JSONValue] = []
+    @State private var reflections: [JSONValue] = []
     @State private var problem: String?
     @State private var selected: JSONValue?
     @State private var editor: JSONValue?
@@ -153,7 +156,11 @@ struct KnowledgeEditor: View {
     @ObservedObject var store: AtlasStore
     var initial: JSONValue? = nil
     @Environment(\.dismiss) private var dismiss
-    @State private var kind = "SOURCE_RELIABILITY", subject = "", evidence = "", reason = "", data = "{}"
+    @State private var kind = "SOURCE_RELIABILITY"
+    @State private var subject = ""
+    @State private var evidence = ""
+    @State private var reason = ""
+    @State private var data = "{}"
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { Text("知識版本提案").font(.title2.weight(.semibold)); Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction) }

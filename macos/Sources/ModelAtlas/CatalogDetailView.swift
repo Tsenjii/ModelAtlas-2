@@ -2,7 +2,7 @@ import AtlasCore
 import SwiftUI
 
 func credentialIdentity(_ key: JSONValue) -> String { JSONValue.array([key["provider_id"], key["account_id"], key["id"]]).pretty }
-func availableEndpoints(store: AtlasStore, key: JSONValue?) -> [JSONValue] {
+@MainActor func availableEndpoints(store: AtlasStore, key: JSONValue?) -> [JSONValue] {
     guard let key, let provider = store.providers.first(where: { $0["id"] == key["provider_id"] }) else { return [] }
     let base = key["base_url"].string.isEmpty ? provider["base_url"].string : key["base_url"].string
     func origin(_ text: String) -> String? { guard let u = URL(string: text), let host = u.host, u.scheme == "https" else { return nil }; return "https://" + host.lowercased() + ":" + String(u.port ?? 443) }
@@ -15,7 +15,8 @@ struct CatalogDetailView: View {
     @ObservedObject var store: AtlasStore
     let model: JSONValue
     @Environment(\.dismiss) private var dismiss
-    @State private var keyID = "", endpoint = ""
+    @State private var keyID = ""
+    @State private var endpoint = ""
     @State private var member: JSONValue?
     private var keys: [JSONValue] { store.credentials.filter { $0["provider_id"] == model["provider_id"] && $0["enabled"].boolean && $0["role"].string == "INFERENCE" } }
     private var key: JSONValue? { keys.first { credentialIdentity($0) == keyID } }

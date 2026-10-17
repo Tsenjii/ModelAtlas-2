@@ -10,7 +10,7 @@ struct ProvidersView: View {
     @State private var sort = "name"
     private var filtered: [JSONValue] {
         store.providers.filter { search.isEmpty || ($0["name"].string + " " + $0["base_url"].string + " " + $0["description"].string).localizedCaseInsensitiveContains(search) }.sorted { a, b in
-            if sort == "smart" { let filters = ModelFilters(); func score(_ p: JSONValue) -> Double? { let scores = store.activeModels.filter { $0["provider_id"] == p["id"] }.compactMap { filters.ranking($0, weights: store.settings["ranking_weights"]).score }; return scores.isEmpty ? nil : scores.reduce(0, +) / Double(scores.count) }; let x = score(a), y = score(b); if x != y { return (x ?? -1) > (y ?? -1) } }
+            if sort == "smart" { let filters = ModelFilters(); @MainActor func score(_ p: JSONValue) -> Double? { let scores = store.activeModels.filter { $0["provider_id"] == p["id"] }.compactMap { filters.ranking($0, weights: store.settings["ranking_weights"]).score }; return scores.isEmpty ? nil : scores.reduce(0, +) / Double(scores.count) }; let x = score(a), y = score(b); if x != y { return (x ?? -1) > (y ?? -1) } }
             return a["name"].string.localizedStandardCompare(b["name"].string) == .orderedAscending
         }
     }
@@ -189,8 +189,12 @@ struct ProviderDetailView: View {
     @State private var customHeaders = "{}"
     @State private var customPaths = "{}"
     @State private var authFields: [SecretFieldDraft] = []
-    @State private var keyOrigin = "", keyAuth = "", keyNote = "", keyPriority = "0"
-    @State private var performanceModel = "", performanceHours = "168"
+    @State private var keyOrigin = ""
+    @State private var keyAuth = ""
+    @State private var keyNote = ""
+    @State private var keyPriority = "0"
+    @State private var performanceModel = ""
+    @State private var performanceHours = "168"
     @State private var snapshots: JSONValue = .array([])
     @State private var dataCredential = ""
     private var id: String { provider["id"].string }

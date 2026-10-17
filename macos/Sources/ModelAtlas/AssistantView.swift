@@ -6,7 +6,9 @@ struct AssistantView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var scopeID = ""
     @State private var configuredID = ""
-    @State private var refs: [JSONValue] = [], reviews: [JSONValue] = [], tools: [JSONValue] = []
+    @State private var refs: [JSONValue] = []
+    @State private var reviews: [JSONValue] = []
+    @State private var tools: [JSONValue] = []
     @State private var secretEditor = false
     @State private var reviewController: ActionReviewController?
     @State private var onboarding: JSONValue?
