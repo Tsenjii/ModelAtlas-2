@@ -299,3 +299,5 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | Kios案例研究 | docs/KIOSAPI_RESEARCH.md 保存一手來源與驗證缺口；不因免費群組公告、第三方標籤或模型名稱宣稱selected-key FREE／主結果資格 | RESEARCH ONLY；無已認證連線或台灣實測結論 |
 
 這片功能不代表完整Master Spec已完成；Compare並列、Provider批量管理／簽到摘要、完整研究／Assistant／Reflection情境仍需後續完成與驗收。
+
+MAC-INTELLIGENCE-008同片回歸：5cd93e7 Intel長串流25秒失敗，上游1249字finished而App1083字、offset0。AtlasClient串流改bounded StreamDelivery（128 wire events／2MiB）、相鄰純text合併／metadata與control保序、finish／cancel drain；新增3 StreamDeliveryTests，核心合計38每架構，原100圖與時間／hash／reading斷言不減。新HEAD重新九項，舊八綠不代替。

@@ -3,6 +3,7 @@ import Foundation
 public struct StreamEvent: Sendable {
     public let name: String
     public let value: JSONValue
+    public init(name: String, value: JSONValue) { self.name = name; self.value = value }
 }
 
 // A bounded SSE decoder shared by the native chat and Assistant. It retains
@@ -114,14 +115,24 @@ public final class AtlasClient: @unchecked Sendable {
         try check(response)
         guard (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Type")?.hasPrefix("text/event-stream") == true else { throw AtlasError.invalidResponse }
         var decoder = EventFramer(), terminal = false
-        for try await byte in bytes {
-            try Task.checkCancellation()
-            if let event = try decoder.consume(byte) {
-                await receive(event)
-                if event.name == "done" || event.name == "error" { terminal = true }
+        let delivery = StreamDelivery(receive: receive)
+        do {
+            for try await byte in bytes {
+                try Task.checkCancellation()
+                if let event = try decoder.consume(byte) {
+                    if !(try delivery.enqueue(event)) {
+                        await delivery.finish()
+                        try Task.checkCancellation()
+                        guard try delivery.enqueue(event) else { throw AtlasError.invalidResponse }
+                    }
+                    if event.name == "done" || event.name == "error" { terminal = true }
+                }
             }
+            await delivery.finish()
+            guard terminal else { throw AtlasError.invalidResponse }
+        } catch {
+            delivery.cancel(); await delivery.finish(); throw error
         }
-        guard terminal else { throw AtlasError.invalidResponse }
     }
     public func download(_ path: String, query: [URLQueryItem] = [], to destination: URL) async throws {
         let (temporary, response) = try await session.download(for: request(path, query: query))

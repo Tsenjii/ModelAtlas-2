@@ -18,10 +18,17 @@ Models 任一已加入連線 → 模型詳情：概覽／價格／額度／效�
 
 6項 `ModelIntelligenceTests` 覆蓋錯帳戶 response、missing／exact zero／精確 decimal、來源／單位／扣款／version 分軌、資源池範圍、取消／未知 chart gaps、last-good與站方分離。Go 原1000樣本測試新增圖點原值／null guard；新測試驗 scoped half-open window、cancel、同Key另一account、非串流TTFT、known zero與non-numeric TPS。
 
-NativeParity 保留原25 smoke＋20 parity圖與所有條件，增加5張正式 ModelDetailView 截圖：價格、額度、效能、觀測歷史、另一帳戶價格未知。使用真 API 寫兩種 quota pools、兩次價格、原 TLS 真 inference telemetry，驗 custom time、scope、零額外 inference／草稿與歷史不變。每架構35核心／50實圖，合計100圖；原120秒上限不變。
+NativeParity 保留原25 smoke＋20 parity圖與所有條件，增加5張正式 ModelDetailView 截圖：價格、額度、效能、觀測歷史、另一帳戶價格未知。使用真 API 寫兩種 quota pools、兩次價格、原 TLS 真 inference telemetry，驗 custom time、scope、零額外 inference／草稿與歷史不變。每架構38核心／50實圖，合計100圖；原120秒上限不變。
 
 ## 仍需後續完成
 
 Provider 原生全量 inventory／多Key／簽到／stale 操作、Compare可讀並列、完整 Research／Assistant／Reflection 情境仍待後續。站方既有 groups 能讀成分組摘要，但其專用 series_schema 的全量互動圖與外部多單位轉換仍未擴稱完成。價格／觀測200筆以上的獨立分頁與全部新互動的XCUI點擊覆蓋亦不宣稱已完成。
 
 KiosAPI 的公開研究與實測缺口見 `../docs/KIOSAPI_RESEARCH.md`；這裡的合成畫面不是 KiosAPI 帳戶或外部站點驗證。
+
+
+## 同片串流回歸修復
+
+5cd93e7 的 arm64原35核心／50圖通過，VPS四項與Android build/device通過；Intel原35核心通過後在既有 rich-stream 25秒完成界線失敗。固定數字診斷確認上游已送完1249字／finished=true，App只顯示1083字、仍generating且無problem，閱讀offset保持0。不是放寬測試或盲重跑。
+
+AtlasClient 原本每個 SSE event 都 await MainActor callback，畫面排版較慢時網路解析跟著逐token等待。改為最多128 wire events／2MiB的 bounded delivery queue，只合併相鄰且只有text欄位的delta／reasoning；control／metadata／Unicode／順序保留。背壓時等待已排程的UI delivery，不丟內容，結束／取消／錯誤均等待delivery完成，避免舊callback污染下一次請求。新增3核心測試涵4096碎片、128事件／byte背壓、control／metadata順序、取消與返回前全部送達。原25秒、全文SHA256、閱讀位置、120秒與100實圖要求全部保留，新HEAD重新九項驗收。
