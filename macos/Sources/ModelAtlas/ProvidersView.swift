@@ -7,8 +7,12 @@ let endpointOptions = ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "G
 struct ProvidersView: View {
     @ObservedObject var store: AtlasStore
     @State private var search = ""
+    @State private var sort = "name"
     private var filtered: [JSONValue] {
-        store.providers.filter { search.isEmpty || ($0["name"].string + " " + $0["base_url"].string + " " + $0["description"].string).localizedCaseInsensitiveContains(search) }
+        store.providers.filter { search.isEmpty || ($0["name"].string + " " + $0["base_url"].string + " " + $0["description"].string).localizedCaseInsensitiveContains(search) }.sorted { a, b in
+            if sort == "smart" { let filters = ModelFilters(); func score(_ p: JSONValue) -> Double? { let scores = store.activeModels.filter { $0["provider_id"] == p["id"] }.compactMap { filters.ranking($0, weights: store.settings["ranking_weights"]).score }; return scores.isEmpty ? nil : scores.reduce(0, +) / Double(scores.count) }; let x = score(a), y = score(b); if x != y { return (x ?? -1) > (y ?? -1) } }
+            return a["name"].string.localizedStandardCompare(b["name"].string) == .orderedAscending
+        }
     }
     var body: some View {
         ScrollView {
@@ -19,7 +23,7 @@ struct ProvidersView: View {
                     Button { store.newProviderOpen = true } label: { Label("新增供應商", systemImage: "plus") }
                         .buttonStyle(.borderedProminent).controlSize(.large)
                 }
-                SearchField(placeholder: "搜尋供應商、網址或描述", text: $search)
+                HStack { SearchField(placeholder: "搜尋供應商、網址或描述", text: $search); Picker("排序", selection: $sort) { Text("名稱").tag("name"); Text("我的模型綜合評分").tag("smart") }.frame(width: 220) }
                 if store.providers.isEmpty {
                     EmptyCard(icon: "server.rack", title: "接上第一個供應商", detail: "貼上 Base URL 與 Key，檢查結果後再加入。", action: "新增供應商") { store.newProviderOpen = true }.frame(height: 350)
                 } else if filtered.isEmpty {
@@ -66,6 +70,8 @@ private struct ProviderRow: View {
 
 struct AddProviderView: View {
     @ObservedObject var store: AtlasStore
+    var seed: JSONValue? = nil
+    var resumedReview: JSONValue? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var url = ""
@@ -114,7 +120,9 @@ struct AddProviderView: View {
                             }.disabled(selected.isEmpty)
                         }
                     } else {
-                        Picker("新增方式", selection: $mode) { Text("快速新增").tag("QUICK"); Text("進階新增").tag("ADVANCED") }.pickerStyle(.segmented)
+                        Picker("新增方式", selection: $mode) { Text("快速新增").tag("QUICK"); Text("進階新增").tag("ADVANCED"); Text("批次匯入").tag("BATCH") }.pickerStyle(.segmented)
+                        if mode == "BATCH" { BatchImportView(store: store) { review = $0; selected = [] } }
+                        else {
                         FormField(title: "供應商名稱", text: $name)
                         FormField(title: "API Base URL", text: $url)
                         HStack { FormField(title: "帳戶名稱", text: $account); FormField(title: "群組（選填）", text: $group) }
@@ -142,6 +150,7 @@ struct AddProviderView: View {
                             // Discovery never silently opts the entire catalog into My Models.
                             selected = Set(ids.filter { result["models"].array.map(\.string).contains($0) })
                         }
+                        }
                         if !existing.isEmpty {
                             DisclosureGroup("繼續尚未完成的加入流程") {
                                 ForEach(existing.filter { $0["status"].string != "COMMITTED" }, id: \.self) { item in
@@ -153,7 +162,7 @@ struct AddProviderView: View {
                 }.padding(28)
             }
         }.frame(width: 680, height: 720)
-        .task { if let api = store.api { existing = (try? await api.get("/onboarding").requiredArray()) ?? [] } }
+        .task { if let api = store.api { existing = (try? await api.get("/onboarding").requiredArray()) ?? [] }; if let resumedReview { review = resumedReview; selected = [] }; if let seed { url = seed["base_url"].string; name = URL(string: url)?.host ?? ""; models = seed["model_id"].string == "UNKNOWN" ? "" : seed["model_id"].string } }
     }
 }
 
@@ -179,7 +188,9 @@ struct ProviderDetailView: View {
     @State private var configuration: JSONValue = .object([:])
     @State private var customHeaders = "{}"
     @State private var customPaths = "{}"
-    @State private var authFields = "[]"
+    @State private var authFields: [SecretFieldDraft] = []
+    @State private var keyOrigin = "", keyAuth = "", keyNote = "", keyPriority = "0"
+    @State private var performanceModel = "", performanceHours = "168"
     @State private var snapshots: JSONValue = .array([])
     @State private var dataCredential = ""
     private var id: String { provider["id"].string }
@@ -217,6 +228,7 @@ struct ProviderDetailView: View {
             ForEach(providerAccounts, id: \.id) { account in
                 AtlasCard {
                     Label(account["label"].string, systemImage: "person.crop.circle").font(.headline)
+                    HStack { ForEach([true, false], id: \.self) { enabled in ActionButton(title: enabled ? "啟用此帳戶全部 Key" : "停用此帳戶全部 Key") { let ids = store.credentials.filter { $0["provider_id"].string == id && $0["account_id"] == account["id"] }.map { $0["id"] }; guard !ids.isEmpty else { return }; _ = try await store.mutate("/credentials/toggle", body: .object(["provider_id": .string(id), "account_id": account["id"], "ids": .array(ids), "enabled": .bool(enabled)])) } } }
                     ForEach(store.credentials.filter { $0["provider_id"].string == id && $0["account_id"].string == account["id"].string }, id: \.id) { credential in
                         CredentialRow(store: store, credential: credential)
                     }
@@ -237,12 +249,18 @@ struct ProviderDetailView: View {
                 HStack { FormField(title: "Key 名稱", text: $keyLabel); FormField(title: "群組（選填）", text: $group) }
                 Picker("用途", selection: $role) { Text("模型推論").tag("INFERENCE"); Text("帳戶 PAT").tag("ACCOUNT_PAT") }
                 FormField(title: "秘密值", text: $secret, secure: true)
-                DisclosureGroup("額外認證欄位") { JSONEditor(title: "Header／Query 秘密欄位", text: $authFields) }
+                DisclosureGroup("來源與額外認證") {
+                    FormField(title: "綁定 Base URL（留空沿用目前供應商）", text: $keyOrigin)
+                    Picker("此 Key 認證方式", selection: $keyAuth) { Text("沿用供應商設定").tag(""); ForEach(["BEARER", "API_KEY", "CUSTOM_HEADER", "NONE"], id: \.self) { Text($0).tag($0) } }
+                    FormField(title: "備註", text: $keyNote); FormField(title: "優先序（0–1000）", text: $keyPriority)
+                    SecretFieldsEditor(rows: $authFields)
+                }
                 ActionButton(title: "儲存 Key") {
-                    let submitted = [accountID, keyLabel, secret, group, role, authFields]
-                    guard let fields = try? JSONValue.parse(authFields), case .array = fields else { throw AtlasError.invalidJSON }
-                    _ = try await store.mutate("/credentials", body: .object(["id": .string(UUID().uuidString.lowercased()), "provider_id": .string(id), "account_id": .string(accountID), "label": .string(keyLabel), "secret": .string(secret), "group": .string(group), "role": .string(role), "auth_fields": fields]))
-                    if submitted == [accountID, keyLabel, secret, group, role, authFields] { secret = ""; authFields = "[]"; keyLabel = "" }
+                    let submitted = [accountID, keyLabel, secret, group, role, keyOrigin, keyAuth, keyNote, keyPriority], fields = authFields
+                    guard let priority = Int(keyPriority), (0...1000).contains(priority) else { throw DraftProblem("優先序需為 0–1000 的整數。") }
+                    _ = try await store.mutate("/credentials", body: .object(["id": .string(UUID().uuidString.lowercased()), "provider_id": .string(id), "account_id": .string(accountID), "label": .string(keyLabel), "secret": .string(secret), "group": .string(group), "role": .string(role), "base_url": .string(keyOrigin), "auth_mode": .string(keyAuth), "note": .string(keyNote), "priority": .number(Double(priority)), "auth_fields": .array(fields.map(\.json))]))
+                    if submitted == [accountID, keyLabel, secret, group, role, keyOrigin, keyAuth, keyNote, keyPriority], fields == authFields { secret = ""; authFields = []; keyLabel = "" }
+
                 }.disabled(accountID.isEmpty)
             }
         }
@@ -267,18 +285,24 @@ struct ProviderDetailView: View {
         }
     }
     private var configContent: some View {
+        VStack(spacing: 18) {
+        ProviderIdentityEditor(store: store, provider: provider)
         AtlasCard {
             Text("供應商設定").font(.headline)
             FormField(title: "官方網站", text: $website)
             FormField(title: "備註", text: $notes)
             Toggle("需要每日簽到", isOn: $requiresCheckin)
             FormField(title: "簽到網址", text: $checkinURL)
+            Picker("Adapter", selection: configText("adapter")) { ForEach(adapterOptions, id: \.self) { Text($0).tag($0) } }
+            Picker("認證方式", selection: configText("auth_mode")) { ForEach(["BEARER", "API_KEY", "CUSTOM_HEADER", "NONE"], id: \.self) { Text($0).tag($0) } }
+            FormField(title: "認證 Header", text: configText("auth_header")); FormField(title: "認證 Query 參數", text: configText("auth_query")); FormField(title: "認證前綴", text: configText("auth_prefix")); FormField(title: "Project ID", text: configText("project_id"))
             DisclosureGroup("進階路徑與 Header") { JSONEditor(title: "端點路徑", text: $customPaths); JSONEditor(title: "非秘密 Header", text: $customHeaders) }
             ActionButton(title: "儲存設定") {
                 guard let paths = try? JSONValue.parse(customPaths), let headers = try? JSONValue.parse(customHeaders), case .object = paths, case .object = headers else { throw AtlasError.invalidJSON }
-                var value = configuration
+                let submitted = configuration
+                var value = submitted
                 value["website"] = .string(website); value["notes"] = .string(notes); value["requires_daily_checkin"] = .bool(requiresCheckin); value["checkin_url"] = .string(checkinURL); value["headers"] = headers; value["endpoints"] = paths
-                _ = try await store.mutate("/providers/config", body: .object(["provider_id": .string(id), "config": value])); configuration = value
+                _ = try await store.mutate("/providers/config", body: .object(["provider_id": .string(id), "config": value])); if configuration == submitted { configuration = value }
             }
             if requiresCheckin {
                 HStack {
@@ -287,7 +311,9 @@ struct ProviderDetailView: View {
                 }
             }
         }
+        }
     }
+    private func configText(_ key: String) -> Binding<String> { Binding(get: { configuration[key].string }, set: { configuration[key] = .string($0) }) }
     private var providerData: some View {
         AtlasCard {
             Text("New API 結構化資料").font(.headline)
@@ -299,13 +325,16 @@ struct ProviderDetailView: View {
                     Text(credential["label"].string + " · " + credential["role"].string + " · " + credential["group"].string).tag(credential["id"].string)
                 }
             }
-            ForEach(["status", "notice", "pricing", "summary", "account", "token"], id: \.self) { operation in
-                ActionButton(title: ["status": "讀取站方狀態", "notice": "讀取公告", "pricing": "讀取價格", "summary": "讀取站方效能", "account": "讀取帳戶用量", "token": "讀取 Key 額度"][operation]!) {
+            HStack { FormField(title: "站方效能模型 ID", text: $performanceModel); FormField(title: "時間窗（1–720 小時）", text: $performanceHours) }
+            ForEach(["status", "notice", "pricing", "summary", "performance", "account", "token"], id: \.self) { operation in
+                ActionButton(title: ["status": "讀取站方狀態", "notice": "讀取公告", "pricing": "讀取價格", "summary": "讀取站方效能摘要", "performance": "讀取指定模型站方效能", "account": "讀取帳戶用量", "token": "讀取 Key 額度"][operation]!) {
                     guard let api = store.api else { return }
                     let wantPAT = operation == "account"
                     let credential = store.credentials.first { $0["provider_id"].string == id && $0["account_id"].string == accountID && $0["id"].string == dataCredential && $0["enabled"].boolean }
                     if ["account", "token"].contains(operation) && credential?["role"].string != (wantPAT ? "ACCOUNT_PAT" : "INFERENCE") { throw AtlasError.http(422) }
-                    var body: JSONValue = .object(["provider_id": .string(id), "account_id": .string(accountID), "hours": .number(168)])
+                    guard let hours = Int(performanceHours), (1...720).contains(hours) else { throw DraftProblem("時間窗需為 1–720 小時。") }
+                    var body: JSONValue = .object(["provider_id": .string(id), "account_id": .string(accountID), "hours": .number(Double(hours))])
+                    if operation == "performance" { guard !performanceModel.isEmpty else { throw DraftProblem("請先填入模型 ID。") }; body["model_id"] = .string(performanceModel) }
                     if let credential { body["credential_id"] = credential["id"] }
                     snapshots = try await api.call("/newapi/" + operation, method: "POST", body: body)
                 }
@@ -319,6 +348,7 @@ struct CredentialRow: View {
     @ObservedObject var store: AtlasStore
     let credential: JSONValue
     @State private var rotating = false
+    @State private var editing = false
     @State private var secret = ""
     @State private var version = ""
     var body: some View {
@@ -331,6 +361,7 @@ struct CredentialRow: View {
                 ActionButton(title: credential["enabled"].boolean ? "停用" : "啟用") {
                     _ = try await store.mutate("/credentials/toggle", body: .object(["provider_id": credential["provider_id"], "account_id": credential["account_id"], "ids": .array([credential["id"]]), "enabled": .bool(!credential["enabled"].boolean)]))
                 }
+                Button("編輯…") { editing = true }
                 Button("更新…") { rotating.toggle() }
             }
             if rotating {
@@ -345,5 +376,6 @@ struct CredentialRow: View {
                 }
             }
         }.padding(.vertical, 6)
+        .sheet(isPresented: $editing) { CredentialMetadataEditor(store: store, credential: credential).atlasModal(store) }
     }
 }

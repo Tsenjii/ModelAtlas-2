@@ -51,16 +51,8 @@ struct ChatView: View {
                 Spacer(minLength: 0)
                 if let model = store.selectedModel { Text(operationTitle(store.operationName(model))).font(.caption).foregroundStyle(.secondary) }
             }
-            if let model = store.selectedModel {
-                let operation = store.operationName(model)
-                if operation == "RERANK" { Text("待排序文件（每行一份）").font(.caption); TextEditor(text: $store.mediaDocuments).frame(height: 70) }
-                if ["AUDIO_SPEECH", "GEMINI_SPEECH"].contains(operation) {
-                    HStack {
-                        TextField("聲音名稱", text: $store.mediaVoice).textFieldStyle(.roundedBorder)
-                        if operation == "GEMINI_SPEECH" { Picker("協定", selection: $store.speechDialect) { Text("CURRENT").tag("CURRENT"); Text("LEGACY").tag("LEGACY") }.frame(width: 210) }
-                    }
-                }
-                if operation == "IMAGES_GENERATION" { Picker("圖片大小", selection: $store.imageSize) { ForEach(["256x256", "512x512", "1024x1024", "1024x1536", "1536x1024", "auto"], id: \.self) { Text($0).tag($0) } }.frame(width: 250) }
+            if let model = store.selectedModel, MediaDraft.operations.contains(store.operationName(model)) {
+                MediaOptionsView(draft: $store.mediaDraft, operation: store.operationName(model)).disabled(store.generating)
             }
             if !store.attachments.isEmpty { AttachmentTray(store: store) }
             ZStack(alignment: .topLeading) {
@@ -73,7 +65,7 @@ struct ChatView: View {
                 Spacer()
                 Text(store.attaching ? "正在加入附件…" : "拖入附件 · ⌘↵ 傳送").font(.caption2).foregroundStyle(.tertiary)
                 if store.generating { Button { Task { await store.cancel() } } label: { Label("停止", systemImage: "stop.fill") }.keyboardShortcut(.escape, modifiers: []).disabled(store.hasPresentedSheet) }
-                else { Button { store.send() } label: { Label("傳送", systemImage: "arrow.up") }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(store.attaching || store.hasPresentedSheet || store.selectedScope == nil || store.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).accessibilityIdentifier("chat-send") }
+                else { Button { store.send() } label: { Label("傳送", systemImage: "arrow.up") }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(store.attaching || store.hasPresentedSheet || !store.canSend).accessibilityIdentifier("chat-send") }
             }
         }.padding(14).background(atlasSurface).cornerRadius(14)
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(dropTargeted ? atlasAccent : Color.primary.opacity(0.1), lineWidth: dropTargeted ? 2 : 1))
@@ -127,25 +119,38 @@ struct MessageBubble: View {
 struct MediaResultView: View {
     let value: JSONValue
     @State private var player: AVAudioPlayer?
+    @State private var problem: String?
     var body: some View {
         AtlasCard {
-            Label("生成結果", systemImage: "sparkles").font(.headline)
+            HStack { Label(value["outcome"].string == "SUCCESS" ? "生成結果" : "請求結果", systemImage: "sparkles").font(.headline); Spacer(); SmallBadge(text: value["outcome"].string) }
+            if let problem { Text(problem).foregroundStyle(.red) }
             if !value["text"].string.isEmpty { Text(value["text"].string).textSelection(.enabled) }
             ForEach(value["data"].array, id: \.self) { item in
                 if let data = Data(base64Encoded: item["b64_json"].string) {
                     if item["mime"].string.hasPrefix("image/"), let image = NSImage(data: data) { Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 520).cornerRadius(12) }
                     HStack {
-                        if item["mime"].string.hasPrefix("audio/") { Button("播放／重播") { player = try? AVAudioPlayer(data: data); player?.play() } }
+                        if item["mime"].string.hasPrefix("audio/") { Button("播放／重播") { do { player = try AVAudioPlayer(data: data); guard player?.play() == true else { throw DraftProblem("這個音訊格式無法在本機播放，請儲存後使用其他播放器。") }; problem = nil } catch { problem = error.localizedDescription } }; Button("停止播放") { player?.stop() } }
                         Button("儲存結果…") {
-                            let panel = NSSavePanel(); panel.nameFieldStringValue = item["mime"].string.hasPrefix("image/") ? "ModelAtlas.png" : "ModelAtlas.wav"
-                            if panel.runModal() == .OK, let url = panel.url { try? data.write(to: url, options: .atomic) }
+                            save(data, name: MediaDraft.filename(mime: item["mime"].string))
                         }
                     }
                 } else if !item["url"].string.isEmpty { Button("開啟供應商圖片") { openHTTPS(item["url"].string) } }
             }
             if !value["vectors"].array.isEmpty { DisclosureGroup("向量結果") { JSONTree(value: value["vectors"]) } }
             if !value["rankings"].array.isEmpty { JSONTree(value: value["rankings"]) }
-            Button("複製文字") { copyText(value["text"].string) }.disabled(value["text"].string.isEmpty)
+            HStack {
+                Button("複製文字") { copyText(value["text"].string) }.disabled(value["text"].string.isEmpty)
+                Button("儲存文字…") { save(Data(value["text"].string.utf8), name: "ModelAtlas-Transcript.txt") }.disabled(value["text"].string.isEmpty)
+                Button("下載完整 JSON…") { save(Data(value.pretty.utf8), name: "ModelAtlas-Result.json") }
+            }
+            DisclosureGroup("請求與來源") { JSONTree(value: value["selection"]); JSONTree(value: value["details"]) }
         }
     }
+    private func save(_ data: Data, name: String) {
+        let panel = NSSavePanel(); panel.nameFieldStringValue = name
+        if panel.runModal() == .OK, let url = panel.url {
+            do { try data.write(to: url, options: .atomic); problem = nil } catch { problem = "儲存失敗：" + error.localizedDescription }
+        }
+    }
+
 }

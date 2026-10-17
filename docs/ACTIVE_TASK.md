@@ -3,6 +3,8 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **2026-10-17 最新唯一工作：MAC-PARITY-006，Mac 對齊 Android／VPS 的既有功能。** 使用者要求「基本上要全部弄好」並先看實際 UI；已展示並保存 0.1.4 五張實際 App 圖（合成資料），明確說明功能尚未完全對齊。這項新指示取代先前只做小型 Mac 體驗切片的範圍；Android／VPS UI 暫存仍不整合。本片基線 Mac `10563e3ae8f518088903e34cbc29ac4a3c0faf4b` 九項同 SHA SUCCESS（Mac39024933012／VPS39024932950／Android39024932968）、50圖已驗收；本輪重查 main `5009e0c8`／38408176782 build/device SUCCESS、PR21 head/base 未變。以 `macos/FEATURE_PARITY.md` 列出功能、真實入口、寫入流程及驗收；未通過新 HEAD 九項與新原生 UI/流程驗證前為候選，不宣稱全面對齊、不 merge。
+
 - **MAC-FEEDBACK-005 實圖可讀性修整：** 候選 `3df9dcb`／Mac39024396342 Universal與arm64完整18核心／25圖PASS；實圖審閱確認深色footer的teal狀態字偏低對比。狀態／錯誤文字改用原生primary，色彩留在圖示；下一份未儲存採pencil而非已儲存check，避免含義混淆。原50圖、真401／retry／A-B隔離與全部guards不減，新HEAD重新九項驗收，不能借前HEAD部分結果交付。
 
 - **2026-10-17 目前唯一切片：MAC-FEEDBACK-005，原生對話設定。** 使用者「繼續」授權；基線 `d719bb9`／Mac39022862301、VPS39022862279、Android39022862284九項同SHA SUCCESS與42圖ACCEPTED。0.1.4（build5）修設定讀取失敗卡loading、Token誤報JSON、面板內retry／輸入保留／精確原session儲存／已儲存與下一稿回饋／modal捷徑guard。詳 `macos/SETTINGS_FEEDBACK.md`；新增3核心／4真sheet圖，原15核心與21圖全保留，每架構18核心25圖、總50圖。新HEAD九項與實圖通過前候選／PR #21 Draft；Android/VPS UI繼續暫存未推送，不改base／不merge。下方目前切片文字為歷史。

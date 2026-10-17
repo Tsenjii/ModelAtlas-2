@@ -5,6 +5,11 @@ struct AssistantView: View {
     @ObservedObject var store: AtlasStore
     @Environment(\.dismiss) private var dismiss
     @State private var scopeID = ""
+    @State private var configuredID = ""
+    @State private var refs: [JSONValue] = [], reviews: [JSONValue] = [], tools: [JSONValue] = []
+    @State private var secretEditor = false
+    @State private var reviewController: ActionReviewController?
+    @State private var onboarding: JSONValue?
     @State private var threadID = ""
     @State private var message = ""
     @State private var output = ""
@@ -20,28 +25,32 @@ struct AssistantView: View {
             HStack { Label("App Assistant", systemImage: "sparkles").font(.title2.weight(.semibold)); Spacer(); Button("關閉") { dismiss() }.disabled(busy).keyboardShortcut(.cancelAction) }
             Text("使用安全的連線參照研究與操作 App；變更先檢查，再由你確認。").foregroundStyle(.secondary)
             HStack {
-                Picker("Assistant 模型", selection: $scopeID) { Text("選擇已確認工具能力的模型").tag(""); ForEach(store.activeModels, id: \.self) { Text($0["model_id"].string + " · " + store.scopeTitle($0)).tag(ModelScope($0).id) } }.disabled(busy)
+                Picker("Assistant 模型", selection: $scopeID) { Text("選擇已確認工具能力的模型").tag(""); ForEach(assistantModels, id: \.self) { Text($0["model_id"].string + " · " + store.scopeTitle($0)).tag(ModelScope($0).id) } }.disabled(busy)
                 ActionButton(title: "設定模型") {
                     guard let model = store.activeModels.first(where: { ModelScope($0).id == scopeID }), let api = store.api else { throw AtlasError.http(422) }
-                    _ = try await api.call("/assistant/config", method: "POST", body: .object(["selection": ModelScope(model).json]))
+                    _ = try await api.call("/assistant/config", method: "POST", body: .object(["selection": ModelScope(model).json])); configuredID = ModelScope(model).id; threadID = ""; history = .array([]); output = ""; await load()
                 }.disabled(busy)
             }
-            Picker("對話", selection: $threadID) { Text("新的 Assistant 對話").tag(""); ForEach(threads, id: \.self) { Text($0["selection"]["model_id"].string + " · " + String($0["id"].string.prefix(8))).tag($0["id"].string) } }.disabled(busy).onChange(of: threadID) { _ in if !busy { Task { await loadHistory() } } }
+            Picker("對話", selection: $threadID) { Text("新的 Assistant 對話").tag(""); ForEach(threads.filter { ModelScope($0["selection"]).id == configuredID }, id: \.self) { Text($0["selection"]["model_id"].string + " · " + String($0["id"].string.prefix(8))).tag($0["id"].string) } }.disabled(busy).onChange(of: threadID) { _ in if !busy { Task { await loadHistory() } } }
             if let problem { Text(problem).foregroundStyle(.red) }
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    if history != .array([]) { JSONTree(value: history) }
-                    if !output.isEmpty { AtlasCard { Text(output).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) } }
-                    ForEach(actions, id: \.self) { action in
-                        if ["CONTROL_CHANGE", "ADD_MY_MODEL", "REMOVE_MY_MODEL"].contains(action["action"].string) {
-                            AtlasCard {
-                                HStack { Text(action["subject"].display).font(.headline); Spacer(); SmallBadge(text: action["state"].string, color: atlasAccent) }
-                                DisclosureGroup("變更內容") { Text("之前").font(.headline); JSONTree(value: action["before"]); Text("之後").font(.headline); JSONTree(value: action["after"]) }
-                                if action["state"].string == "PENDING" { ActionButton(title: "確認套用這項變更") { _ = try await store.mutate("/assistant/actions/confirm", body: .object(["id": action["id"], "confirm": .bool(true)])); await load() } }
-                                if action["state"].string == "CONFIRMED" { ActionButton(title: "復原這項變更") { _ = try await store.mutate("/assistant/actions/undo", body: .object(["id": action["id"], "confirm": .bool(true)])); await load() } }
-                            }
+                    ForEach(history.array, id: \.self) { run in
+                        AtlasCard { Label("你", systemImage: "person.crop.circle").font(.caption); Text(run["message"].string).textSelection(.enabled); Divider(); Label("Assistant", systemImage: "sparkles").font(.caption); ChatMarkdown(source: run["result"]["text"].string.isEmpty ? "工作狀態：" + run["status"].string : run["result"]["text"].string).equatable() }
+                    }
+                    if !output.isEmpty { AtlasCard { ChatMarkdown(source: output).equatable().frame(maxWidth: .infinity, alignment: .leading) } }
+                    ForEach(tools, id: \.self) { tool in AtlasCard { HStack { Text(tool["name"].string).font(.headline); Spacer(); SmallBadge(text: tool["status"].string) }; DisclosureGroup("工具結果") { JSONTree(value: tool["result"]) } } }
+                    DisclosureGroup("安全 Key 參照") {
+                        Button("安全輸入 Key／PAT…") { secretEditor = true }.disabled(busy)
+                        ForEach(refs, id: \.self) { ref in HStack { VStack(alignment: .leading) { Text(ref["label"].string); Text(ref["base_url"].string + " · " + ref["role"].string).font(.caption).foregroundStyle(.secondary) }; Spacer(); Button("加入這個參照") { message += "\n安全參照 " + ref["id"].string + "（" + ref["label"].string + "）" }.disabled(busy) } }
+                    }
+                    DisclosureGroup("待確認與操作紀錄") {
+                        ForEach(reviews.filter { $0["status"].string == "REVIEW" }, id: \.self) { row in Button("新增連線 · " + row["provider"]["name"].string) { onboarding = row }.disabled(busy) }
+                        ForEach(actions, id: \.self) { action in
+                            Button { if let api = store.api { reviewController = ActionReviewController(api: api, value: action) } } label: { HStack { Text(action["action"].string); Spacer(); SmallBadge(text: action["state"].string); Image(systemName: "chevron.right") }.padding(10) }.buttonStyle(.plain).disabled(busy)
                         }
                     }
+
                 }
             }
             Toggle("這輪允許最小模型測試", isOn: $allowTests).toggleStyle(.checkbox).disabled(busy)
@@ -49,33 +58,42 @@ struct AssistantView: View {
             HStack {
                 Spacer()
                 if busy { ActionButton(title: "停止 Assistant") { guard let api = store.api else { return }; _ = try await api.call("/assistant/cancel", method: "POST", body: .object(["thread_id": .string(threadID)])) } }
-                else { Button("傳送給 Assistant") { send() }.buttonStyle(.borderedProminent).controlSize(.large).disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
+                else { Button("傳送給 Assistant") { send() }.buttonStyle(.borderedProminent).controlSize(.large).disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || configuredID.isEmpty || scopeID != configuredID) }
             }
         }.padding(26).frame(width: 850, height: 740).task {
-            if let api = store.api, let config = try? await api.get("/assistant/config"), config["configured"].boolean { scopeID = ModelScope(config["selection"]).id }
+            if let api = store.api, let config = try? await api.get("/assistant/config"), config["configured"].boolean { scopeID = ModelScope(config["selection"]).id; configuredID = scopeID }
             await load()
         }
         .onDisappear { task?.cancel() }
+        .sheet(isPresented: $secretEditor, onDismiss: { Task { await load() } }) { AssistantSecretEditor(store: store) { ref in message += "\n安全參照 " + ref["id"].string + "（" + ref["label"].string + "）" }.atlasModal(store) }
+        .sheet(item: $reviewController, onDismiss: { Task { await load() } }) { ActionReviewView(store: store, model: $0).atlasModal(store) }
+        .sheet(item: $onboarding, onDismiss: { Task { await load() } }) { AddProviderView(store: store, resumedReview: $0).atlasModal(store) }
     }
+    private var assistantModels: [JSONValue] { store.activeModels.filter { ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "CUSTOM"].contains(store.operationName($0)) && !$0["capabilities"].array.filter { [.string("TOOL_CALLING"), .string("FUNCTION_CALLING")].contains($0) }.isEmpty } }
     private func send() {
         guard let api = store.api, !busy else { return }
-        let prompt = message; message = ""; output = ""; busy = true; problem = nil
+        let prompt = message; message = ""; output = ""; tools = []; busy = true; problem = nil
         task = Task {
             defer { busy = false; task = nil }
             do {
                 try await api.stream("/assistant/run", body: .object(["thread_id": .string(threadID), "message": .string(prompt), "allow_tests": .bool(allowTests)])) { event in
                     if event.name == "thread" { threadID = event.value["id"].string }
-                    if event.name == "done" { output = event.value["text"].string }
-                    if event.name == "tool" { output += "\n" + event.value["name"].string + " · " + event.value["status"].string }
+                    if event.name == "delta" { output += event.value["text"].string }
+                    if event.name == "done", !event.value["text"].string.isEmpty { output = event.value["text"].string }
+                    if event.name == "tool" {
+                        let callID = event.value["call_id"]
+                        if callID != .null, let index = tools.firstIndex(where: { $0["call_id"] == callID }) { tools[index] = event.value } else { tools.append(event.value) }
+                        if !store.generating, let selected = store.activeModels.first(where: { ModelScope($0) == ModelScope(event.value["result"]["ui_selection"]) }) { store.chooseModel(selected) }
+                    }
                     if event.name == "error" { problem = "Assistant：" + event.value["category"].string }
                 }
-                await load(); await loadHistory(); await store.refresh()
+                await load(); await loadHistory(); await store.refresh(); if problem == nil { output = "" }
             } catch { problem = error.localizedDescription; if message.isEmpty { message = prompt } }
         }
     }
     private func load() async {
         guard let api = store.api else { return }
-        do { async let t = api.get("/assistant/threads"), a = api.get("/assistant/actions"); let values = try await (t, a); threads = try values.0.requiredArray(); actions = try values.1.requiredArray() }
+        do { async let t = api.get("/assistant/threads"), a = api.get("/assistant/actions"), r = api.get("/assistant/secrets"), o = api.get("/onboarding"); let values = try await (t, a, r, o); threads = try values.0.requiredArray(); actions = try values.1.requiredArray(); refs = try values.2.requiredArray(); reviews = try values.3.requiredArray() }
         catch { problem = error.localizedDescription }
     }
     private func loadHistory() async {

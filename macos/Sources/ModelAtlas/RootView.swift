@@ -44,6 +44,7 @@ struct RootView: View {
                 Button { store.settingsOpen = true } label: { Image(systemName: "gearshape") }.help("設定（⌘,）")
             }
         }
+        .sheet(item: $store.controlReview) { ActionReviewView(store: store, model: $0) }
         .sheet(isPresented: $store.newProviderOpen) { AddProviderView(store: store) }
         .sheet(item: $store.detailProvider) { ProviderDetailView(store: store, provider: $0) }
         .sheet(item: $store.detailModel) { ModelDetailView(store: store, model: $0) }

@@ -184,3 +184,15 @@ struct JSONEditor: View {
         }
     }
 }
+
+private struct AtlasModalGuard: ViewModifier {
+    @ObservedObject var store: AtlasStore
+    @State private var counted = false
+    func body(content: Content) -> some View {
+        content.onAppear { if !counted { counted = true; store.additionalSheets += 1 } }
+            .onDisappear { if counted { counted = false; store.additionalSheets = max(0, store.additionalSheets - 1) } }
+    }
+}
+extension View {
+    func atlasModal(_ store: AtlasStore) -> some View { modifier(AtlasModalGuard(store: store)) }
+}

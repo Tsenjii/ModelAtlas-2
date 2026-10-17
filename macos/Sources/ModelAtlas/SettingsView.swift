@@ -27,21 +27,23 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack { Text("設定與資料").font(.title2.weight(.semibold)); Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.cancelAction) }.padding(25)
-            Picker("設定分區", selection: $tab) { ForEach(["一般", "資料", "研究", "請求紀錄", "通知"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
+            Picker("設定分區", selection: $tab) { ForEach(["一般", "服務", "資料", "研究", "請求紀錄", "通知"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
             Divider()
-            if tab == "研究" { ResearchView(store: store) }
+            if tab == "研究" { ScrollView { ResearchView(store: store).padding(24) } }
             else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         if tab == "一般" { general }
+                        if tab == "服務" { ServicesView(store: store) }
                         if tab == "資料" { data }
-                        if tab == "請求紀錄" { requests }
+                        if tab == "請求紀錄" { RequestHistoryView(store: store) }
                         if tab == "通知" {
                             AtlasCard {
                                 Text("通知紀錄").font(.headline)
                                 Text("通知預設關閉；啟用後僅在 App 執行期間投遞本機通知。").foregroundStyle(.secondary)
                                 ActionButton(title: "重新載入") { guard let api = store.api else { return }; notificationRecords = try await api.get("/notifications").requiredArray() }
-                                JSONTree(value: .array(notificationRecords))
+                                ActionButton(title: "標示全部為已讀") { guard let api = store.api else { return }; let ids = notificationRecords.filter { $0["seen_at"] == .null }.map { $0["id"] }; _ = try await api.call("/notifications/seen", method: "POST", body: .object(["ids": .array(ids)])); notificationRecords = try await api.get("/notifications").requiredArray() }
+                                ForEach(notificationRecords, id: \.self) { row in VStack(alignment: .leading, spacing: 6) { HStack { Text(row["kind"].string).font(.headline); if row["seen_at"] == .null { SmallBadge(text: "未讀", color: atlasAccent) }; Spacer() }; Text(row["body"].string).textSelection(.enabled) }; Divider() }
                             }
                         }
                     }.padding(24)
@@ -53,7 +55,6 @@ struct SettingsView: View {
             notifications = store.settings["notifications"].boolean; background = store.settings["background"]["enabled"].boolean
             interval = store.settings["background"]["interval_minutes"].display; maxScopes = store.settings["background"]["max_scopes"].display
             rules = store.settings["notification_rules"]; quotaThreshold = rules["quota_remaining_below"].display
-            await loadRequests()
             if let api = store.api { notificationRecords = (try? await api.get("/notifications").requiredArray()) ?? [] }
         }
     }
@@ -121,36 +122,7 @@ struct SettingsView: View {
             }
         }
     }
-    private var requests: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Picker("結果", selection: $filter) { Text("全部結果").tag(""); Text("成功").tag("SUCCESS"); Text("失敗").tag("FAILED"); Text("取消").tag("CANCELLED") }.onChange(of: filter) { _ in Task { await loadRequests() } }
-                Spacer()
-                Button("匯出全部 NDJSON…") { Task { await store.export("/telemetry/export", query: filter.isEmpty ? [] : [URLQueryItem(name: "outcome", value: filter)], filename: "ModelAtlas-Requests.ndjson") } }
-            }
-            if let detail { AtlasCard { HStack { Text("請求收據").font(.headline); Spacer(); Button("關閉收據") { self.detail = nil } }; JSONTree(value: detail) } }
-            ForEach(records, id: \.self) { item in
-                Button {
-                    Task { do { detail = try await store.api?.get("/telemetry/detail", query: [URLQueryItem(name: "id", value: item["id"].string)]) } catch { store.problem = error.localizedDescription } }
-                } label: {
-                    AtlasCard { HStack { VStack(alignment: .leading, spacing: 5) { Text(item["model_id"].string).font(.headline); Text(store.providerName(item["provider_id"].string)).font(.caption).foregroundStyle(.secondary) }; Spacer(); SmallBadge(text: item["outcome"].string, color: item["outcome"].string == "SUCCESS" ? atlasAccent : .secondary); Text(item["created_at"].numeric.map { Date(timeIntervalSince1970: $0 / 1000).formatted(date: .abbreviated, time: .shortened) } ?? "") } }
-                }.buttonStyle(.plain)
-            }
-            if hasMore { Button("載入更多請求") { Task { await loadRequests(more: true) } } }
-            if records.isEmpty { Text("還沒有請求紀錄。").foregroundStyle(.secondary) }
-        }
-    }
-    private func loadRequests(more: Bool = false) async {
-        guard let api = store.api else { return }
-        let next = more ? records.count : 0, requestedFilter = filter
-        do {
-            var query = [URLQueryItem(name: "limit", value: "100"), URLQueryItem(name: "offset", value: String(next))]
-            if !filter.isEmpty { query.append(URLQueryItem(name: "outcome", value: filter)) }
-            let page = try await api.get("/telemetry", query: query).requiredArray()
-            guard filter == requestedFilter else { return }
-            records = more ? records + page : page; hasMore = page.count == 100
-        } catch { store.problem = error.localizedDescription }
-    }
+
 }
 
 extension AtlasStore {

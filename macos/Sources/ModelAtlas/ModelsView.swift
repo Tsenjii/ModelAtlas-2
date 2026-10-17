@@ -5,8 +5,10 @@ struct ModelsView: View {
     @ObservedObject var store: AtlasStore
     @State private var tab = "My Models"
     @State private var search = ""
-    @State private var category = "ALL"
-    @State private var favorites = false
+    @State private var modelFilters = ModelFilters()
+    @State private var selecting = false
+    @State private var shown = 100
+    @State private var comparePrompt = "Reply OK."
     @State private var compareSelection: Set<ModelScope> = []
     @State private var comparison: JSONValue?
     var body: some View {
@@ -17,27 +19,30 @@ struct ModelsView: View {
                     Spacer()
                     Button { store.modelPickerOpen = true } label: { Label("選擇模型", systemImage: "magnifyingglass") }.help("選擇模型（⌘K）").disabled(store.generating)
                 }
-                Picker("模型庫", selection: $tab) { Text("My Models").tag("My Models"); Text("Catalog").tag("Catalog"); Text("隱藏與封存").tag("Hidden") }.pickerStyle(.segmented).frame(maxWidth: 420)
+                Picker("模型庫", selection: $tab) { Text("My Models").tag("My Models"); Text("Catalog").tag("Catalog"); Text("隱藏與封存").tag("Hidden"); Text("全球研究").tag("Research"); Text("知識與擷取").tag("Knowledge") }.pickerStyle(.segmented)
                 if tab == "Catalog" { CatalogView(store: store, providerID: nil) }
+                else if tab == "Research" { ResearchView(store: store) }
+                else if tab == "Knowledge" { KnowledgeView(store: store) }
                 else {
                     filters
                     if filtered.isEmpty {
                         EmptyCard(icon: search.isEmpty ? "square.stack.3d.up" : "magnifyingglass", title: "沒有符合的模型", detail: "調整篩選條件，或從 Catalog 加入要用的模型。", action: "探索 Catalog") { tab = "Catalog" }.frame(height: 300)
                     } else {
                         VStack(spacing: 0) {
-                            ForEach(filtered) { entry in
+                            ForEach(filtered.prefix(shown)) { entry in
                                 HStack(spacing: 0) {
-                                    if tab != "Hidden" {
+                                    if selecting {
                                         Toggle("比較 " + entry.title, isOn: Binding(get: { compareSelection.contains(entry.scope) }, set: { if $0 { compareSelection.insert(entry.scope) } else { compareSelection.remove(entry.scope) } }))
                                             .labelsHidden().toggleStyle(.checkbox).padding(.leading, 16).padding(.trailing, 2)
                                     }
                                     Button { store.detailModel = entry.model } label: { ModelLibraryRow(store: store, entry: entry) }.buttonStyle(AtlasRowButtonStyle())
                                 }
-                                if entry.id != filtered.last?.id { Divider().padding(.leading, tab == "Hidden" ? 60 : 88) }
+                                if entry.id != filtered.last?.id { Divider().padding(.leading, selecting ? 88 : 60) }
                             }
                         }.background(atlasSurface).cornerRadius(13)
                             .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.primary.opacity(0.07)))
                     }
+                    if filtered.count > shown { Button("顯示更多（共 \(filtered.count) 個）") { shown += 100 } }
                     if !compareSelection.isEmpty { compareBar }
                     if let comparison { AtlasCard { Text("本次即時比較").font(.headline); JSONTree(value: comparison) } }
                     Text("效能來自這個連線的本機請求；詳細來源與歷史可在模型內查看。").font(.caption).foregroundStyle(.secondary)
@@ -49,40 +54,46 @@ struct ModelsView: View {
         VStack(alignment: .leading, spacing: 10) {
             SearchField(placeholder: "搜尋模型、帳戶、Key 或群組", text: $search)
             HStack {
-                Picker("類別", selection: $category) {
-                    Text("所有類別").tag("ALL")
-                    ForEach(["CHAT_REASONING", "CODING", "IMAGE", "AUDIO", "EMBEDDING", "RERANK", "OTHER"], id: \.self) { Text(categoryTitle($0)).tag($0) }
-                }.labelsHidden().frame(width: 145)
-                Toggle("只看收藏", isOn: $favorites).toggleStyle(.checkbox).font(.callout)
+                Button("全部") { modelFilters.favorite = ""; modelFilters.price = "" }
+                Button("最愛") { modelFilters.favorite = "favorite"; modelFilters.price = "" }
+                Button("FREE NOW") { modelFilters.price = "FREE_NOW"; modelFilters.favorite = "" }
                 Spacer()
-                if !search.isEmpty || favorites || category != "ALL" { Button("重設") { search = ""; favorites = false; category = "ALL" }.buttonStyle(.plain).foregroundStyle(atlasAccent) }
+                Button(selecting ? "完成選取" : "選取") { selecting.toggle(); if !selecting { compareSelection = [] } }
+                Button("重設篩選") { search = ""; modelFilters = ModelFilters(); shown = 100 }
                 Text("\(filtered.count) 個連線").font(.caption).foregroundStyle(.secondary)
             }
+            ModelFiltersView(store: store, filters: $modelFilters)
         }
     }
     private var compareBar: some View {
-        HStack(spacing: 12) {
-            Text("已選 \(compareSelection.count) 個連線").font(.callout)
-            Spacer()
-            Text("會送出實際請求").font(.caption).foregroundStyle(.secondary)
-            Button("清除") { compareSelection = [] }
-            ActionButton(title: "即時比較") {
-                guard let api = store.api else { return }
-                comparison = try await api.call("/models/compare", method: "POST", body: .object(["selections": .array(compareSelection.sorted { $0.id < $1.id }.map(\.json)), "prompt": .string("Reply OK.")]))
-                await store.refresh()
-            }.disabled(!(2...4).contains(compareSelection.count))
-        }.padding(12).background(atlasAccent.opacity(0.06)).cornerRadius(10)
-    }
-    private var filtered: [ModelSearchEntry] {
-        store.modelEntries(store.myModels).filter {
-            let state = $0.model["state"].string
-            return (tab == "Hidden" ? state != "ACTIVE" : state == "ACTIVE") && $0.matches(search)
-                && (!favorites || $0.model["favorite"].boolean) && (category == "ALL" || $0.model["metadata"]["primary_category"].string == category)
+        AtlasCard {
+            HStack { Text("已選 \(compareSelection.count) 個連線").font(.headline); Spacer(); Button("清除選取") { compareSelection = [] } }
+            FormField(title: "比較使用的提示詞", text: $comparePrompt)
+            HStack {
+                ActionButton(title: "即時比較（實際請求）") {
+                    guard let api = store.api else { return }
+                    comparison = try await api.call("/models/compare", method: "POST", body: .object(["selections": .array(compareSelection.sorted { $0.id < $1.id }.map(\.json)), "prompt": .string(comparePrompt)]))
+                    await store.refresh()
+                }.disabled(!(2...4).contains(compareSelection.count))
+                Spacer()
+                ForEach(["HIDDEN", "ARCHIVED", "ACTIVE"], id: \.self) { state in
+                    ActionButton(title: ["HIDDEN":"預覽隱藏", "ARCHIVED":"預覽封存", "ACTIVE":"預覽恢復"][state]!) {
+                        guard let api = store.api else { return }
+                        let value = try await api.call("/assistant/actions/preview", method: "POST", body: .object(["kind": .string("MODEL_BATCH"), "selections": .array(compareSelection.sorted { $0.id < $1.id }.map(\.json)), "patch": .object(["state": .string(state)])]))
+                        store.controlReview = ActionReviewController(api: api, value: value)
+                    }.disabled(!(2...100).contains(compareSelection.count))
+                }
+            }
         }
     }
-    private func categoryTitle(_ value: String) -> String {
-        ["CHAT_REASONING": "對話與推理", "CODING": "程式設計", "IMAGE": "圖片", "AUDIO": "音訊", "EMBEDDING": "向量", "RERANK": "重新排序", "OTHER": "其他"][value] ?? value
+    private var filtered: [ModelSearchEntry] {
+        let models = store.modelEntries(store.myModels).filter {
+            let state = $0.model["state"].string
+            return (tab == "Hidden" ? state != "ACTIVE" : state == "ACTIVE") && $0.matches(search) && modelFilters.matches($0.model)
+        }.map(\.model)
+        return store.modelEntries(modelFilters.ordered(models, weights: store.settings["ranking_weights"]))
     }
+
 }
 
 private struct ModelLibraryRow: View {
@@ -130,6 +141,8 @@ private struct ModelLibraryRow: View {
 struct CatalogView: View {
     @ObservedObject var store: AtlasStore
     let providerID: String?
+    @State private var catalogProvider = "", catalogCategory = "", catalogCapability = "", membership = ""
+    @State private var catalogDetail: JSONValue?
     @State private var items: [JSONValue] = []
     @State private var search = ""
     @State private var credentialChoice = ""
@@ -141,12 +154,25 @@ struct CatalogView: View {
     @State private var shown = 100
     private var availableKeys: [JSONValue] { store.credentials.filter { (providerID == nil || $0["provider_id"].string == providerID) && $0["role"].string == "INFERENCE" && $0["enabled"].boolean } }
     private var key: JSONValue? { availableKeys.first { identity($0) == credentialChoice } }
-    private var filtered: [JSONValue] { items.filter { (providerID == nil || $0["provider_id"].string == providerID) && (search.isEmpty || ($0["id"].string + " " + $0["display_name"].string + " " + $0["metadata"].pretty).localizedCaseInsensitiveContains(search)) } }
+    private var filtered: [JSONValue] { items.filter { item in
+        let joined = store.myModels.contains { $0["provider_id"] == item["provider_id"] && $0["model_id"] == item["id"] }
+        var model = item; model["model_id"] = item["id"]
+        let match = ModelSearchEntry(model: model, context: store.providerName(item["provider_id"].string), operation: "").matches(search)
+        return (providerID == nil || item["provider_id"].string == providerID) && (catalogProvider.isEmpty || item["provider_id"].string == catalogProvider) && match && (catalogCategory.isEmpty || item["metadata"]["primary_category"].string == catalogCategory) && (catalogCapability.isEmpty || item["metadata"]["capabilities"].array.contains(.string(catalogCapability))) && (membership.isEmpty || (membership == "joined" ? joined : !joined))
+    }.sorted { ($0["display_name"].string + $0["provider_id"].string + $0["id"].string).localizedStandardCompare($1["display_name"].string + $1["provider_id"].string + $1["id"].string) == .orderedAscending } }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             connectionCard
             manualForm
             TextField("搜尋完整 Catalog、別名與模型名稱", text: $search).textFieldStyle(.roundedBorder)
+            DisclosureGroup("篩選 Catalog") {
+                Picker("供應商", selection: $catalogProvider) { Text("全部供應商").tag(""); ForEach(store.providers) { Text($0["name"].string).tag($0.id) } }.disabled(providerID != nil)
+                Picker("類別", selection: $catalogCategory) { Text("全部").tag(""); ForEach(["CHAT_REASONING", "CODING", "IMAGE", "AUDIO", "EMBEDDING", "RERANK", "SAFETY", "OTHER"], id: \.self) { Text($0).tag($0) } }
+                Picker("能力", selection: $catalogCapability) { Text("全部").tag(""); ForEach(["VISION", "FILES", "AUDIO_INPUT", "AUDIO_OUTPUT", "IMAGE_GENERATION", "IMAGE_EDITING", "CODING", "REASONING", "TOOL_CALLING", "EMBEDDING", "RERANK"], id: \.self) { Text($0).tag($0) } }
+                Picker("加入狀態", selection: $membership) { Text("全部").tag(""); Text("已加入").tag("joined"); Text("尚未加入").tag("unjoined") }
+            }
+            HStack { Text("顯示 \(min(shown, filtered.count)) / \(filtered.count) 個模型").font(.caption).foregroundStyle(.secondary); Spacer(); Button("重設篩選") { search = ""; catalogProvider = ""; catalogCategory = ""; catalogCapability = ""; membership = ""; shown = 100 } }
             if loading { ProgressView("讀取 Catalog…") }
             if let problem { Text(problem).foregroundStyle(.red) }
             ForEach(filtered.prefix(shown), id: \.self) { model in
@@ -154,6 +180,7 @@ struct CatalogView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 5) { Text(model["display_name"].string).font(.headline); Text(model["id"].string + " · " + store.providerName(model["provider_id"].string)).font(.caption).foregroundStyle(.secondary).textSelection(.enabled) }
                         Spacer()
+                        Button("詳細資料") { catalogDetail = model }
                         if let key, joined(model, key: key) { SmallBadge(text: "已加入", color: atlasAccent) }
                         else { ActionButton(title: "加入") { try await add(model["id"].string, provider: model["provider_id"].string) }.disabled(key == nil || key?["provider_id"].string != model["provider_id"].string) }
                     }
@@ -163,6 +190,8 @@ struct CatalogView: View {
             if filtered.count > shown { Button("顯示更多（共 \(filtered.count) 個）") { shown += 100 } }
             if items.isEmpty && !loading { Text("尚無 Catalog。可同步模型清單，或直接手動加入模型 ID。").foregroundStyle(.secondary).padding(.vertical, 20) }
         }.task { await load() }
+        .sheet(item: $catalogDetail) { CatalogDetailView(store: store, model: $0).atlasModal(store) }
+        .onChange(of: credentialChoice) { _ in endpoint = availableEndpoints(store: store, key: key).first?["id"].string ?? "" }
     }
     private var connectionCard: some View {
             AtlasCard {
@@ -174,8 +203,7 @@ struct CatalogView: View {
                     }
                 }
                 Picker("用途與端點", selection: $endpoint) {
-                    ForEach(endpointOptions, id: \.self) { Text($0).tag($0) }
-                    ForEach(store.endpoints.filter { $0["provider_id"].string == key?["provider_id"].string }, id: \.self) { Text($0["operation"].string + " · " + $0["url"].string).tag($0["id"].string) }
+                    ForEach(availableEndpoints(store: store, key: key), id: \.self) { Text($0["operation"].string + " · " + $0["url"].string).tag($0["id"].string) }
                 }
                 if availableKeys.isEmpty { Text("先在供應商詳情加入並啟用推論 Key。").foregroundStyle(.secondary) }
                 HStack {
@@ -210,7 +238,7 @@ struct CatalogView: View {
     private func scope(_ id: String, key: JSONValue) -> JSONValue { .object(["provider_id": key["provider_id"], "account_id": key["account_id"], "credential_id": key["id"], "model_id": .string(id), "group": key["group"], "endpoint": .string(endpoint)]) }
     private func joined(_ model: JSONValue, key: JSONValue) -> Bool { store.myModels.contains { ModelScope($0) == ModelScope(scope(model["id"].string, key: key)) && $0["state"].string == "ACTIVE" } }
     private func add(_ id: String, provider: String) async throws {
-        guard let key, key["provider_id"].string == provider else { throw AtlasError.http(422) }
+        guard let key, key["provider_id"].string == provider, availableEndpoints(store: store, key: key).contains(where: { $0["id"].string == endpoint }) else { throw DraftProblem("請選擇同一來源的 Key 與端點。") }
         _ = try await store.mutate("/my-models", body: scope(id, key: key))
     }
     private func load() async {
@@ -244,6 +272,8 @@ struct ModelDetailView: View {
     @State private var metadataText = "{}"
     @State private var factsText = "{}"
     @State private var loadRevision = 0
+    @State private var customStart = Date().addingTimeInterval(-7 * 86400)
+    @State private var customEnd = Date()
     private var scope: ModelScope { ModelScope(model) }
     private var usableModel: JSONValue? { store.activeModels.first { ModelScope($0) == scope } }
     var body: some View {
@@ -260,7 +290,7 @@ struct ModelDetailView: View {
                     if let problem { Text(problem).foregroundStyle(.red) }
                     if tab == "概覽" {
                         AtlasCard { Text("模型資訊").font(.headline); JSONTree(value: detail["metadata"]); Text("已確認能力").font(.headline); Text(detail["capabilities"].array.map(\.string).joined(separator: " · ")).foregroundStyle(.secondary) }
-                        AtlasCard { HStack { Text("本機手動測試").font(.headline); Spacer(); ActionButton(title: "測試這個連線") { guard let api = store.api else { return }; testResult = try await api.call("/models/test", method: "POST", body: scope.json); await store.refresh(); await load() } }; if let testResult { JSONTree(value: testResult) } }
+                        AtlasCard { HStack { Text("本機手動測試").font(.headline); Spacer(); ActionButton(title: "同步資料") { _ = try await store.mutate("/intelligence/sync", body: scope.json); await load() }; ActionButton(title: "測試這個連線") { guard let api = store.api else { return }; testResult = try await api.call("/models/test", method: "POST", body: scope.json); await store.refresh(); await load() } }; if let testResult { JSONTree(value: testResult) } }
                     }
                     if tab == "價格與額度" {
                         AtlasCard { Text("最後有效觀測").font(.headline); Text("標價、實際扣款與免費機制分開保存。").foregroundStyle(.secondary); JSONTree(value: detail["last_good"]) }
@@ -268,12 +298,13 @@ struct ModelDetailView: View {
                         AtlasCard { Text("帳戶資料").font(.headline); JSONTree(value: detail["account_facts"]) }
                     }
                     if tab == "效能" {
-                        Picker("時間窗", selection: $window) { ForEach(["1h", "24h", "7d", "30d", "all"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented)
+                        Picker("時間窗", selection: $window) { ForEach(["1h", "24h", "7d", "30d", "all", "custom"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented)
+                        if window == "custom" { HStack { DatePicker("開始", selection: $customStart); DatePicker("結束", selection: $customEnd); Button("套用") { Task { await load() } } } }
                         AtlasCard { Text("我的 Key · 本機實測").font(.headline); JSONTree(value: detail["local"]) }
                         AtlasCard { Text("供應商回報").font(.headline); JSONTree(value: detail["provider_facts"]) }
                         AtlasCard { Text("外部參考").font(.headline); JSONTree(value: detail["external"]) }
                     }
-                    if tab == "歷史" { AtlasCard { Text("最新觀測與保留歷史").font(.headline); JSONTree(value: detail["latest"]); Divider(); JSONTree(value: detail["history"]) } }
+                    if tab == "歷史" { RequestHistoryView(store: store, scope: scope); AtlasCard { Text("最新觀測與保留歷史").font(.headline); JSONTree(value: detail["latest"]); Divider(); JSONTree(value: detail["history"]) } }
                     if tab == "設定" { settingsContent }
                 }.padding(24)
             }
@@ -303,20 +334,21 @@ struct ModelDetailView: View {
                 }
                 ActionButton(title: "確認並保存能力") { var body = scope.json; body["confirm"] = .bool(true); body["capabilities"] = .array(capabilities.sorted().map(JSONValue.string)); _ = try await store.mutate("/models/capabilities", body: body); await load() }
             }
-            AtlasCard {
-                DisclosureGroup("分類、別名與手動資料") {
-                    JSONEditor(title: "模型分類與別名", text: $metadataText)
-                    ActionButton(title: "保存模型資訊") { guard var value = try? JSONValue.parse(metadataText) else { throw AtlasError.invalidJSON }; value["provider_id"] = .string(scope.providerID); value["model_id"] = .string(scope.modelID); _ = try await store.mutate("/models/metadata", body: value); await load() }
-                    JSONEditor(title: "手動價格／額度標註", text: $factsText)
-                    ActionButton(title: "保存手動標註") { guard let facts = try? JSONValue.parse(factsText) else { throw AtlasError.invalidJSON }; var body = scope.json; for (key, value) in facts.fields { guard !scope.json.fields.keys.contains(key) else { throw AtlasError.invalidJSON }; body[key] = value }; _ = try await store.mutate("/models/facts", body: body); await load() }
-                }
-            }
+            ModelInformationEditor(store: store, scope: scope, metadata: detail["metadata"])
+            NotesEditor(store: store, subject: .object(["selection": scope.json]), initial: model["offer"])
+            ModelFactsEditor(store: store, scope: scope)
+
         }
     }
     private func load() async {
         guard let api = store.api else { return }; loadRevision += 1; let revision = loadRevision
         do {
-            let value = try await api.get("/models/detail", query: scope.query + [URLQueryItem(name: "window", value: window)])
+            var query = scope.query + [URLQueryItem(name: "window", value: window)]
+            if window == "custom" {
+                guard customEnd > customStart, customEnd <= Date() else { throw DraftProblem("結束時間需晚於開始時間，且不能超過現在。") }
+                query += [URLQueryItem(name: "start", value: String(Int64(customStart.timeIntervalSince1970 * 1000))), URLQueryItem(name: "end", value: String(Int64(customEnd.timeIntervalSince1970 * 1000)))]
+            }
+            let value = try await api.get("/models/detail", query: query)
             guard loadRevision == revision else { return }; detail = value; problem = nil
         } catch { if loadRevision == revision { problem = error.localizedDescription } }
     }

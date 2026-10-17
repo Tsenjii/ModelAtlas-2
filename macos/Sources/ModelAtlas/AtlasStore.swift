@@ -15,6 +15,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var ready = false
     @Published var booting = false
     @Published var closing = false
+    @Published var additionalSheets = 0
     @Published var problem: String?
     @Published var notice: String?
     @Published var providers: [JSONValue] = []
@@ -34,10 +35,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var streamingText = ""
     @Published var reasoning = ""
     @Published var mediaResult: JSONValue?
-    @Published var mediaDocuments = ""
-    @Published var mediaVoice = "Kore"
-    @Published var speechDialect = "CURRENT"
-    @Published var imageSize = "1024x1024"
+    @Published var mediaDraft = MediaDraft()
     @Published var messageOffset = 0
     @Published var messageHasMore = false
     @Published var toolResults: [String: String] = [:]
@@ -53,6 +51,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var newProviderOpen = false
     @Published var detailProvider: JSONValue?
     @Published var detailModel: JSONValue?
+    @Published var controlReview: ActionReviewController?
     @Published var assistantOpen = false
     @Published var modelPickerOpen = false
     @Published var chatReading = ChatReadingState()
@@ -70,7 +69,7 @@ enum Workspace: String, CaseIterable, Identifiable {
 
     init(directory: URL? = nil) { engine = EngineController(directory: directory) }
     var hasPresentedSheet: Bool {
-        settingsOpen || newProviderOpen || detailProvider != nil || detailModel != nil || assistantOpen || modelPickerOpen || requestReceipt != nil || chatSettings != nil
+        additionalSheets > 0 || controlReview != nil || settingsOpen || newProviderOpen || detailProvider != nil || detailModel != nil || assistantOpen || modelPickerOpen || requestReceipt != nil || chatSettings != nil
     }
     var activeModels: [JSONValue] { myModels.filter { $0["state"].string == "ACTIVE" && $0["enabled"].boolean } }
     var selectedModel: JSONValue? { myModels.first { ModelScope($0).id == scopeID } }
@@ -207,10 +206,15 @@ enum Workspace: String, CaseIterable, Identifiable {
         do { try await reload() } catch { problem = "已保存，但列表暫時無法更新。請重新整理。" }
         return value
     }
+    var canSend: Bool {
+        guard selectedScope != nil else { return false }
+        return mediaDraft.hasInput(operation: selectedModel.map(operationName) ?? "", prompt: draft, files: attachments)
+    }
     func send(retry: String? = nil, toolContinuation: Bool = false) {
-        guard let api, !closing, !generating, !attaching, let scope = selectedScope, retry != nil || toolContinuation || !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard let api, !closing, !generating, !attaching, let scope = selectedScope, retry != nil || toolContinuation || canSend else { return }
         let prompt = draft, files = attachments, beforeIDs = Set(messages.map { $0["id"].string })
         let requestFiles = files.map(LocalAttachment.requestValue)
+        let options = mediaDraft
         chatReading.resume()
         generating = true; problem = nil; mediaResult = nil; pendingText = ""; pendingReasoning = ""
         streamingText = ""; reasoning = ""
@@ -224,17 +228,9 @@ enum Workspace: String, CaseIterable, Identifiable {
             }
             defer { ticker.cancel(); flush(); generating = false; activeMediaID = nil; operation = nil; streamingText = ""; reasoning = "" }
             do {
-                if ["IMAGES_GENERATION", "IMAGES_EDIT", "AUDIO", "AUDIO_SPEECH", "GEMINI_SPEECH", "EMBEDDINGS", "RERANK"].contains(op) {
+                if MediaDraft.operations.contains(op) {
                     let id = UUID().uuidString.lowercased(); activeMediaID = id
-                    var body = scope.json
-                    body["prompt"] = .string(prompt); body["request_id"] = .string(id)
-                    if op == "IMAGES_GENERATION" { body["size"] = .string(imageSize) }
-                    if op == "IMAGES_EDIT" { body["image"] = requestFiles.first { $0["kind"].string == "image" } ?? .null }
-                    if op == "AUDIO" { body["audio"] = requestFiles.first { $0["kind"].string == "audio" } ?? .null }
-                    if op == "AUDIO_SPEECH" { body["voice"] = .string(mediaVoice); body["format"] = .string("wav") }
-                    if op == "GEMINI_SPEECH" { body["voice"] = .string(mediaVoice); body["speech_dialect"] = .string(speechDialect) }
-                    if op == "EMBEDDINGS" { body["inputs"] = .array(prompt.components(separatedBy: "\n").filter { !$0.isEmpty }.map(JSONValue.string)) }
-                    if op == "RERANK" { body["documents"] = .array(mediaDocuments.components(separatedBy: "\n").filter { !$0.isEmpty }.map(JSONValue.string)) }
+                    let body = try options.request(scope: scope, operation: op, prompt: prompt, files: requestFiles, requestID: id)
                     mediaResult = try await api.call("/infer/media", method: "POST", body: body)
                 } else {
                     if sessionID == nil {
