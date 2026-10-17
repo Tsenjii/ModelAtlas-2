@@ -13,6 +13,7 @@ import (
 
 type deploymentConfig struct {
 	addr, db, token, publicOrigin string
+	desktopReady                  string
 	key                           []byte
 }
 
@@ -32,10 +33,16 @@ func readDeploymentConfig(getenv func(string) string) (deploymentConfig, error) 
 		}
 	}
 	mode := getenv("MODELATLAS_DEPLOYMENT")
-	if mode != "" && mode != "local" && mode != "platform" {
-		return c, errors.New("MODELATLAS_DEPLOYMENT must be local or platform")
+	if mode != "" && mode != "local" && mode != "platform" && mode != "desktop" {
+		return c, errors.New("MODELATLAS_DEPLOYMENT must be local, platform or desktop")
 	}
-	if mode == "platform" {
+	if mode == "desktop" {
+		c.desktopReady = getenv("MODELATLAS_DESKTOP_READY")
+		if !filepath.IsAbs(c.desktopReady) || !filepath.IsAbs(c.db) || len(c.key) != 32 || c.addr != "" || getenv("MODELATLAS_PUBLIC_ORIGIN") != "" {
+			return c, errors.New("desktop mode requires absolute database/readiness paths, a fixed master key, and no listener or public origin override")
+		}
+		c.addr = "127.0.0.1:0"
+	} else if mode == "platform" {
 		origin, err := url.Parse(getenv("MODELATLAS_PUBLIC_ORIGIN"))
 		if err != nil || origin.Scheme != "https" || origin.Hostname() == "" || origin.User != nil || (origin.Path != "" && origin.Path != "/") || origin.RawQuery != "" || origin.ForceQuery || origin.Fragment != "" || origin.Opaque != "" {
 			return c, errors.New("platform mode requires MODELATLAS_PUBLIC_ORIGIN as an HTTPS origin without credentials, path, query or fragment")
@@ -72,7 +79,7 @@ func readDeploymentConfig(getenv func(string) string) (deploymentConfig, error) 
 		}
 	}
 	host, port, err := net.SplitHostPort(c.addr)
-	if err != nil || !validListenPort(port) {
+	if err != nil || !validListenPort(port) && !(mode == "desktop" && port == "0") {
 		return c, errors.New("invalid MODELATLAS_LISTEN: require numeric IP and port 1..65535")
 	}
 	ip := net.ParseIP(host)
