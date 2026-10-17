@@ -97,8 +97,21 @@ struct RootView: View {
         VStack(alignment: .leading, spacing: 10) {
             Divider().padding(.vertical, 4)
             HStack { Text("對話").font(.caption.weight(.semibold)).foregroundStyle(.secondary); Spacer(); Button { store.newConversation() } label: { Image(systemName: "square.and.pencil") }.buttonStyle(.plain).disabled(store.generating).help("新增對話（⌘N）") }.padding(.horizontal, 10)
-            SearchField(placeholder: "搜尋對話", text: $store.sessionSearch).onSubmit { Task { try? await store.loadSessions() } }
-            Toggle("已封存", isOn: $store.archiveView).font(.caption).toggleStyle(.checkbox).onChange(of: store.archiveView) { _ in Task { try? await store.loadSessions() } }
+            SearchField(placeholder: "搜尋對話", text: $store.sessionSearch)
+            Toggle("已封存", isOn: $store.archiveView).font(.caption).toggleStyle(.checkbox)
+            if store.sessionsLoading { ProgressView("搜尋中…").controlSize(.small).font(.caption) }
+            if let problem = store.sessionListProblem {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(problem).font(.caption).foregroundStyle(.secondary)
+                    Button("重試") { Task { await store.searchSessions() } }
+                }.padding(.horizontal, 10)
+            } else if !store.sessionsLoading && store.sessions.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(store.sessionSearch.isEmpty ? (store.archiveView ? "尚無已封存對話" : "尚無對話") : "沒有符合的對話")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if !store.sessionSearch.isEmpty { Button("清除搜尋") { store.sessionSearch = "" } }
+                }.padding(10)
+            }
             ScrollView {
                 LazyVStack(spacing: 4) {
                     ForEach(store.sessions, id: \.self) { item in
@@ -110,10 +123,15 @@ struct RootView: View {
                                 .background(store.sessionID == item["id"].string ? Color.primary.opacity(0.055) : Color.clear).cornerRadius(9)
                         }.buttonStyle(.plain).disabled(store.generating)
                     }
-                    if store.sessionHasMore { Button("載入更多對話") { Task { try? await store.loadSessions(more: true) } } }
+                    if store.sessionHasMore {
+                        Button("載入更多對話") { Task {
+                            do { try await store.loadSessions(more: true); store.sessionListProblem = nil }
+                            catch { store.sessionListProblem = error.localizedDescription }
+                        } }.disabled(store.sessionsLoading)
+                    }
                 }
             }
-        }
+        }.task(id: "\(store.archiveView):\(store.sessionSearch)") { await store.searchSessions() }
     }
 }
 

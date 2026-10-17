@@ -250,3 +250,13 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 
 新 HEAD 須完整同 SHA 六項 CI；具體證據由 PR #20 body 保存。Infrlo 控制台在此環境不可讀，官方公開 README 無 Go／ingress／persistent volume 契約；不將本機代理測試、512 MB／2 GB 宣傳數字當作目標平台驗收，不標已部署。
 
+
+
+## MAC-USABILITY-004 — 2026-10-17
+
+| Requirement | Production caller / tests | 狀態 |
+| --- | --- | --- |
+| MAC-USABILITY-004 / conversation search | `RootView` task(id: query/state) → `AtlasStore.searchSessions` debounce/cancellation → real `/sessions`；`NativeSmoke.verifySessionSearch` 無 Enter 即出結果、archive/clear、current scope/history/draft 不變 | CANDIDATE，新 HEAD 九項同 SHA + 原生42圖 |
+| MAC-USABILITY-004 / model picker | `ModelPickerView` reset/count/eligible providers/duplicate name IDs + revalidate exact active scope；原鍵盤/IME與新增filtered/empty實圖 | CANDIDATE；原18圖保留，兩架構各21圖 |
+
+基線 `a00b038` 九項與36圖 ACCEPTED；Android/VPS新UI已依使用者指示暫存，沒有整合。詳 `macos/USABILITY.md`，最終驗收由最新PR #21 body記錄。

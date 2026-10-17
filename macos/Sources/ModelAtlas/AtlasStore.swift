@@ -46,6 +46,8 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var sessionSearch = ""
     @Published var archiveView = false
     @Published var sessionHasMore = false
+    @Published var sessionsLoading = false
+    @Published var sessionListProblem: String?
     @Published var settingsOpen = false
     @Published var newProviderOpen = false
     @Published var detailProvider: JSONValue?
@@ -60,6 +62,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     private var drafts: [String: String] = [:]
     private var loadRevision = 0
     private var historyRevision = 0
+    private var searchRevision = 0
     private var operation: Task<Void, Never>?
     private var pendingText = "", pendingReasoning = ""
     private var activeMediaID: String?
@@ -129,12 +132,25 @@ enum Workspace: String, CaseIterable, Identifiable {
         let offset = more ? sessions.count : 0
         let page = try await api.get("/sessions", query: [URLQueryItem(name: "q", value: sessionSearch),
             URLQueryItem(name: "state", value: archiveView ? "ARCHIVED" : "ACTIVE"), URLQueryItem(name: "limit", value: "100"), URLQueryItem(name: "offset", value: String(offset))]).requiredArray()
+        try Task.checkCancellation()
         guard revision == historyRevision else { return }
         sessions = more ? sessions + page : page; sessionHasMore = page.count == 100
         if let updated = sessions.first(where: { $0["id"].string == sessionID }) { currentSession = updated }
         else if let id = sessionID {
             let exact = try await api.get("/sessions", query: [URLQueryItem(name: "session_id", value: id), URLQueryItem(name: "state", value: "ALL")]).requiredArray()
             if sessionID == id, let found = exact.first { currentSession = found }
+        }
+    }
+    func searchSessions() async {
+        searchRevision += 1; let revision = searchRevision
+        sessionsLoading = true; sessionListProblem = nil
+        defer { if revision == searchRevision { sessionsLoading = false } }
+        do {
+            try await Task.sleep(nanoseconds: 250_000_000)
+            try await loadSessions()
+        } catch is CancellationError { }
+        catch {
+            if revision == searchRevision && !Task.isCancelled { sessionListProblem = error.localizedDescription }
         }
     }
     func selectSession(_ session: JSONValue) async {

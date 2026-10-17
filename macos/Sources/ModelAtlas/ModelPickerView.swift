@@ -11,6 +11,12 @@ struct ModelPickerView: View {
     @State private var scrollTarget: String?
     private var entryIDs: [String] { entries.map(\.id) }
     private var highlighted: ModelSearchEntry? { entries.first { $0.id == cursor.highlightedID } }
+    private var hasFilters: Bool { !search.isEmpty || favorites || !providerID.isEmpty }
+    private var availableProviders: [JSONValue] {
+        let ids = Set(store.activeModels.map { $0["provider_id"].string })
+        return store.providers.filter { ids.contains($0["id"].string) }
+            .sorted { ($0["name"].string, $0.id) < ($1["name"].string, $1.id) }
+    }
     private var entries: [ModelSearchEntry] {
         store.modelEntries(store.activeModels).filter {
             $0.matches(search) && (!favorites || $0.model["favorite"].boolean) && (providerID.isEmpty || $0.scope.providerID == providerID)
@@ -50,7 +56,9 @@ struct ModelPickerView: View {
             Spacer()
             Picker("供應商", selection: $providerID) {
                 Text("所有供應商").tag("")
-                ForEach(store.providers) { Text($0["name"].string).tag($0["id"].string) }
+                ForEach(availableProviders) { provider in
+                    Text(providerLabel(provider)).tag(provider["id"].string)
+                }
             }.labelsHidden().frame(maxWidth: 210)
         }.padding(.horizontal, 20).padding(.bottom, 14)
     }
@@ -78,19 +86,29 @@ struct ModelPickerView: View {
                   detail: store.activeModels.isEmpty ? "到 Models 的 Catalog 加入要使用的模型。" : "試試模型名稱、帳戶或群組，或清除篩選。",
                   action: store.activeModels.isEmpty ? "前往 Models" : "清除篩選") {
             if store.activeModels.isEmpty { store.workspace = .models; dismiss() }
-            else { search = ""; favorites = false; providerID = "" }
+            else { resetFilters() }
         }.frame(minHeight: 250)
     }
     private var footer: some View {
         HStack {
-            Text("\(entries.count) 個連線").foregroundStyle(.secondary)
+            Text("\(entries.count) / \(store.activeModels.count) 個連線").foregroundStyle(.secondary)
+            if hasFilters { Button("清除篩選", action: resetFilters).accessibilityIdentifier("model-picker-reset") }
             Spacer()
             Text("↑↓ 選擇 · ↵ 使用 · esc 關閉").foregroundStyle(.secondary)
             Button("使用模型", action: chooseHighlighted).buttonStyle(.borderedProminent)
                 .disabled(highlighted == nil || store.generating)
         }.font(.caption).padding(.horizontal, 20).padding(.vertical, 12)
     }
-    private func choose(_ entry: ModelSearchEntry) { store.chooseModel(entry.model); dismiss() }
+    private func resetFilters() { search = ""; favorites = false; providerID = "" }
+    private func providerLabel(_ provider: JSONValue) -> String {
+        let name = provider["name"].string
+        return availableProviders.filter { $0["name"].string == name }.count > 1 ? name + " · " + provider.id : name
+    }
+    private func choose(_ entry: ModelSearchEntry) {
+        guard !store.generating, !store.closing,
+              store.activeModels.contains(where: { ModelScope($0).id == entry.id }) else { return }
+        store.chooseModel(entry.model); dismiss()
+    }
     private func chooseHighlighted() { if let highlighted { choose(highlighted) } }
     private func move(_ step: Int) { cursor.move(by: step, in: entryIDs); scrollTarget = cursor.highlightedID }
 }
@@ -112,6 +130,7 @@ private struct ModelPickerRow: View {
                 }
             }.padding(.horizontal, 20).padding(.vertical, 13).frame(maxWidth: .infinity, alignment: .leading)
         }.buttonStyle(AtlasRowButtonStyle())
+            .disabled(store.generating || store.closing)
             .background(highlighted ? atlasAccent.opacity(0.085) : Color.clear)
             .accessibilityAddTraits(highlighted ? .isSelected : [])
             .help(entry.scope.modelID + " · " + store.scopeTitle(entry.model) + " · " + entry.scope.endpoint)

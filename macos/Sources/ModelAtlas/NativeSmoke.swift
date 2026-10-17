@@ -55,6 +55,8 @@ import SwiftUI
             stage = "restore-existing-draft-and-history"
             await store.selectSession(conversation)
             guard store.draft == "這則既有對話的草稿必須保留", store.selectedScope == ModelScope(chat), store.messages.count == 2 else { throw AtlasError.invalidResponse }
+            stage = "live-session-search-retains-current-conversation"
+            try await verifySessionSearch(store: store, conversation: conversation)
             // Multiple same-model / same-key IDs make scope collisions and long
             // labels visible in real UI. These are isolated synthetic fixtures.
             stage = "seed-distinct-account-and-provider"
@@ -103,6 +105,25 @@ import SwiftUI
             try await capture(window, to: output.appendingPathComponent("08-model-picker-light.png"), sheet: true)
             store.modelPickerOpen = false
             try await Task.sleep(nanoseconds: 450_000_000)
+            stage = "filtered-picker-native-captures"
+            let (pickerWindow, pickerField, pickerEditor) = try await openPicker(store)
+            pickerEditor.selectAll(nil)
+            pickerEditor.insertText("native-fixture-chat review-team", replacementRange: NSRange(location: NSNotFound, length: 0))
+            try await capture(window, to: output.appendingPathComponent("19-model-picker-filtered-light.png"), sheet: true)
+            guard pickerField.stringValue == "native-fixture-chat review-team", store.sessionID == conversation["id"].string,
+                  store.draft == "這則既有對話的草稿必須保留" else { throw AtlasError.invalidResponse }
+            pickerEditor.selectAll(nil)
+            pickerEditor.insertText("no-matching-fixture-connection", replacementRange: NSRange(location: NSNotFound, length: 0))
+            try await capture(window, to: output.appendingPathComponent("20-model-picker-empty-light.png"), sheet: true)
+            try press(36, "\r", in: pickerWindow)
+            guard store.modelPickerOpen, store.sessionID == conversation["id"].string else { throw AtlasError.invalidResponse }
+            try press(53, "\u{1b}", in: pickerWindow)
+            try await waitFor { !store.modelPickerOpen }
+            store.sessionSearch = "no-matching-fixture-conversation"
+            try await waitFor { !store.sessionsLoading && store.sessions.isEmpty }
+            try await capture(window, to: output.appendingPathComponent("21-conversation-search-empty-light.png"))
+            store.sessionSearch = ""
+            try await waitFor { !store.sessionsLoading && store.sessions.contains { $0["id"].string == conversation["id"].string } }
             store.workspace = .models
             try await capture(window, to: output.appendingPathComponent("09-models-compact.png"))
             store.workspace = .providers
@@ -114,7 +135,7 @@ import SwiftUI
             try await Task.sleep(nanoseconds: 450_000_000)
             stage = "chat-reading-markdown-attachments-receipt"
             try await verifyChatExperience(store: store, code: code, window: window, output: output, fixture: fixture) { stage = "chat-experience-" + $0 }
-            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(18), "chat_reading_guards": .bool(true), "attachment_guards": .bool(true), "request_receipt": .bool(true), "native_markdown": .bool(true)])
+            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "live_session_search": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(21), "chat_reading_guards": .bool(true), "attachment_guards": .bool(true), "request_receipt": .bool(true), "native_markdown": .bool(true)])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-smoke.json"), options: .atomic)
         } catch {
             // Fixed stage labels only: never dump a store, request, credential,
@@ -311,6 +332,23 @@ import SwiftUI
         guard let document = scroll.documentView else { return .infinity }
         let visible = scroll.documentVisibleRect
         return max(0, document.isFlipped ? visible.minY - document.bounds.minY : document.bounds.maxY - visible.maxY)
+    }
+    private static func verifySessionSearch(store: AtlasStore, conversation: JSONValue) async throws {
+        let id = conversation["id"].string, scope = store.selectedScope, draft = store.draft, messages = store.messages
+        // Drive the same bound state as typing; the RootView task must load the
+        // real API without an Enter key or explicit test-side loadSessions.
+        store.sessionSearch = "no-matching-fixture-conversation"
+        try await waitFor { !store.sessionsLoading && store.sessions.isEmpty }
+        guard store.sessionID == id, store.selectedScope == scope, store.draft == draft,
+              store.messages == messages, store.sessionListProblem == nil else { throw AtlasError.invalidResponse }
+        store.sessionSearch = "native-fixture-chat"
+        try await waitFor { !store.sessionsLoading && store.sessions.contains { $0["id"].string == id } }
+        store.archiveView = true
+        try await waitFor { !store.sessionsLoading && store.sessions.isEmpty }
+        guard store.sessionID == id, store.messages == messages, store.draft == draft else { throw AtlasError.invalidResponse }
+        store.archiveView = false; store.sessionSearch = ""
+        try await waitFor { !store.sessionsLoading && store.sessions.contains { $0["id"].string == id } }
+        guard store.selectedScope == scope, store.draft == draft, store.messages == messages else { throw AtlasError.invalidResponse }
     }
     private static func findView(in view: NSView, identifier: String) -> NSView? {
         if view.identifier?.rawValue == identifier { return view }
