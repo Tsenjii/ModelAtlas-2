@@ -3,6 +3,8 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **2026-10-18 MAC-DESKTOP-007（唯一 live，0.2.1 build7候選）：** 使用者再次提供完整Master Spec，強調它只是產品大綱，不能縮為聊天App或把既有跨平台對齊稱全需求完成。完整定位／範圍／已確認的原生UX缺口見 `macos/MASTER_SCOPE.md`。沿用設定頁風格、縮薄自動增高輸入、鍵盤聚焦／附件／側欄、已知FREE與連線管理。基線 `dac3d26852d9ecc24a07af05a2ed4e53e5b1fc3f`／Mac39045582072、VPS39045582067、Android39045582076九項SUCCESS，29核心每架構、84圖已審閱；僅為MAC-PARITY-006驗收。保留全部原測試並加3圖，共45／架構、90圖；新HEAD九項／實圖通過前PR21為Draft，不merge、不改base，不改Android/VPS UI或引擎DB。main `5009e0c8`／38408176782 build/device本輪重查SUCCESS。
+
 - **2026-10-17 MAC-PARITY-006 最新 UI 修訂：** 使用者認為原介面不佳，要求對齊 Magpie 與現代原生 Mac 視覺。沿用三工作區／teal與同一原生元件，重做側欄、清單、頁籤、選模、聊天輸入與設定；完整Android／VPS功能對齊仍保留。新增原生首頁與設定深淺色4圖，原25＋13不減，合計42／架構、84圖。最新舊候選974886a新增API流程已走完，PNG計數被fixture輸入檔影響，修正為獨立輸入資料夾並補CI上傳新增圖／report。新HEAD必須重新九項全綠與84圖實看，PR21仍Draft。
 
 - **2026-10-17 最新唯一工作：MAC-PARITY-006，Mac 對齊 Android／VPS 的既有功能。** 使用者要求「基本上要全部弄好」並先看實際 UI；已展示並保存 0.1.4 五張實際 App 圖（合成資料），明確說明功能尚未完全對齊。這項新指示取代先前只做小型 Mac 體驗切片的範圍；Android／VPS UI 暫存仍不整合。本片基線 Mac `10563e3ae8f518088903e34cbc29ac4a3c0faf4b` 九項同 SHA SUCCESS（Mac39024933012／VPS39024932950／Android39024932968）、50圖已驗收；本輪重查 main `5009e0c8`／38408176782 build/device SUCCESS、PR21 head/base 未變。以 `macos/FEATURE_PARITY.md` 列出功能、真實入口、寫入流程及驗收；未通過新 HEAD 九項與新原生 UI/流程驗證前為候選，不宣稱全面對齊、不 merge。

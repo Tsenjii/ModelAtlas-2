@@ -12,6 +12,8 @@ enum Workspace: String, CaseIterable, Identifiable {
 
 @MainActor final class AtlasStore: ObservableObject {
     @Published var workspace: Workspace = .playground
+    @Published var sidebarVisible = true
+    @Published var composerFocusRequest = 0
     @Published var ready = false
     @Published var booting = false
     @Published var closing = false
@@ -191,6 +193,11 @@ enum Workspace: String, CaseIterable, Identifiable {
     func openChatSettings() {
         guard !generating, !closing, let session = selectedSession else { return }
         chatSettings = ChatSettingsController(session: session)
+    }
+    func focusComposer() {
+        guard ready, !closing, !hasPresentedSheet else { return }
+        workspace = .playground
+        composerFocusRequest += 1
     }
     func newConversation() {
         guard !generating else { return }

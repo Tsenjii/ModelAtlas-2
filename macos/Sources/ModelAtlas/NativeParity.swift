@@ -182,15 +182,25 @@ import SwiftUI
             let counts = try await fixtureJSON(fixture + "/fixture/parity-state")
             for name in ["speech", "native-current", "native-legacy", "native-dual", "transcription", "embeddings", "rerank", "images", "image-edit", "connector"] { try require((counts[name].numeric ?? 0) > 0) }
             try require(counts["invalid"].numeric == nil)
+            stage = "effective-price-not-borrowed-across-accounts"
+            var price = ModelScope(chat).json
+            price["price"] = .object(["input": .string("0"), "output": .string("0"), "fixed": .null, "fixed_absent": .bool(true), "cache": .string("0.01"), "unit": .string("USD/1K tokens")])
+            price["confirmed_effective_price"] = .bool(true)
+            price["note"] = .string("隔離合成價格，僅供原生管理介面驗收")
+            _ = try await store.mutate("/models/facts", body: price)
+            try require(store.myModels.first(where: { ModelScope($0) == ModelScope(chat) })?["price_state"].string == "FREE_NOW")
+            try require(store.myModels.first(where: { ModelScope($0) == ModelScope(foreign) })?["price_state"].string == "UNKNOWN")
+            store.workspace = .models
+            try await captureWorkspace(store, output, "20-models-known-free-light", dark: false)
             stage = "modern-native-workspace-captures"
             store.newConversation(); store.chooseModel(chat); store.draft = ""; store.workspace = .playground
             try await captureWorkspace(store, output, "14-welcome-light", dark: false)
             stage = "native-composer-multiline-ime-and-draft-reset"
-            try await verifyComposer(store)
+            try await verifyComposer(store, output: output)
             try await captureWorkspace(store, output, "15-welcome-dark", dark: true)
             try await capture(SettingsView(store: store), output, "16-settings-light", dark: false)
             try await capture(SettingsView(store: store), output, "17-settings-dark", dark: true)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(17), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "wire_counts": counts])
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(20), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
@@ -265,7 +275,7 @@ import SwiftUI
         guard let data = bitmap.representation(using: .png, properties: [:]), data.count > 10_000 else { throw AtlasError.invalidResponse }
         try data.write(to: output.appendingPathComponent(name + ".png"))
     }
-    private static func verifyComposer(_ store: AtlasStore) async throws {
+    private static func verifyComposer(_ store: AtlasStore, output: URL) async throws {
         guard let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }),
               let editor = find(window.contentView, "chat-composer") as? NSTextView,
               window.makeFirstResponder(editor) else { throw AtlasError.invalidResponse }
@@ -284,6 +294,31 @@ import SwiftUI
         store.draft = ""
         try await wait { editor.string.isEmpty }
         try require(editor.undoManager?.canUndo != true && !store.generating && store.sessionID == nil)
+        guard let scroll = editor.enclosingScrollView else { throw AtlasError.invalidResponse }
+        try await wait { scroll.bounds.height >= 29 && scroll.bounds.height <= 32 }
+        window.makeFirstResponder(nil); store.focusComposer()
+        try await wait { window.firstResponder === editor }
+        let scope = store.selectedScope, history = store.messages
+        let longText = (1...20).map { "第\($0)行：這是原生多行編輯、自然換行與捲動驗收。" }.joined(separator: "\n")
+        editor.insertText(longText, replacementRange: NSRange(location: NSNotFound, length: 0))
+        try await wait { store.draft == longText && scroll.bounds.height >= 130 && scroll.bounds.height <= 145 }
+        editor.scrollRangeToVisible(NSRange(location: (longText as NSString).length, length: 0))
+        try require(scroll.contentView.bounds.origin.y > 0)
+        try await captureWorkspace(store, output, "18-composer-multiline-light", dark: false)
+        try await wait { contains(window.contentView, "workspace-sidebar") }
+        store.sidebarVisible = false
+        try await wait { !contains(window.contentView, "workspace-sidebar") }
+        try require(store.draft == longText && store.selectedScope == scope && store.messages == history)
+        try await captureWorkspace(store, output, "19-sidebar-hidden-dark", dark: true)
+        store.sidebarVisible = true
+        try await wait { contains(window.contentView, "workspace-sidebar") }
+        store.draft = ""
+        try await wait {
+            guard let current = find(window.contentView, "chat-composer") as? NSTextView,
+                  let currentScroll = current.enclosingScrollView else { return false }
+            return current.string.isEmpty && currentScroll.bounds.height >= 29 && currentScroll.bounds.height <= 32
+        }
+        try require(store.selectedScope == scope && store.messages == history && !store.generating)
     }
     private static func wait(_ condition: () -> Bool) async throws {
         let end = Date().addingTimeInterval(4)

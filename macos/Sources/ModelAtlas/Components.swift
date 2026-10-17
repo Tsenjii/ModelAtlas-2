@@ -36,12 +36,11 @@ struct EmptyCard: View {
     var action: String? = nil
     var run: () -> Void = {}
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: icon).font(.system(size: 29, weight: .light)).foregroundStyle(atlasTextAccent)
-                .frame(width: 64, height: 64).background(atlasAccent.opacity(0.07)).cornerRadius(19)
-            Text(title).font(.title2.weight(.semibold))
-            Text(detail).foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 390)
-            if let action { Button(action, action: run).buttonStyle(.borderedProminent).controlSize(.large) }
+        VStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 24, weight: .regular)).foregroundStyle(.secondary)
+            Text(title).font(.system(size: 17, weight: .semibold))
+            Text(detail).font(.system(size: 12)).foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 390)
+            if let action { Button(action, action: run).buttonStyle(AtlasActionStyle(prominent: true)) }
         }.padding(40).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -50,7 +49,7 @@ struct PageHeading: View {
     let eyebrow: String, title: String, subtitle: String
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(.system(size: 25, weight: .bold))
+            Text(title).font(.system(size: 20, weight: .semibold))
             Text(subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
         }
     }
@@ -75,10 +74,9 @@ struct SearchField: View {
 struct ModelMark: View {
     let name: String
     var body: some View {
-        Text(String(name.prefix(1)).uppercased()).font(.system(size: 16, weight: .semibold, design: .rounded))
-            .foregroundStyle(atlasTextAccent).frame(width: 36, height: 36)
-            .background(atlasAccent.opacity(0.07)).cornerRadius(10)
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(atlasAccent.opacity(0.09), lineWidth: 0.5))
+        Text(String(name.prefix(1)).uppercased()).font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(atlasTextAccent).frame(width: 30, height: 30)
+            .background(atlasAccent.opacity(0.06)).cornerRadius(7)
     }
 }
 

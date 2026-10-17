@@ -60,8 +60,13 @@ import SwiftUI
                 Button("Models") { store.workspace = .models }.keyboardShortcut("3").disabled(store.hasPresentedSheet)
                 Divider()
                 Button("選擇模型…") { store.modelPickerOpen = true }.keyboardShortcut("k").disabled(!store.ready || store.generating || store.hasPresentedSheet)
+                Button("輸入訊息") { store.focusComposer() }.keyboardShortcut("l").disabled(!store.ready || store.closing || store.hasPresentedSheet)
+                Button("加入附件…") { store.pickAttachments() }.keyboardShortcut("o").disabled(!store.ready || store.workspace != .playground || store.generating || store.attaching || store.hasPresentedSheet)
                 Button("重新整理") { Task { await store.refresh() } }.keyboardShortcut("r").disabled(!store.ready || store.hasPresentedSheet)
                 Button("新增供應商…") { store.newProviderOpen = true }.keyboardShortcut("n", modifiers: [.command, .shift]).disabled(!store.ready || store.hasPresentedSheet)
+            }
+            CommandMenu("顯示") {
+                Toggle("顯示側邊欄", isOn: $store.sidebarVisible).keyboardShortcut("s", modifiers: [.command, .control]).disabled(store.hasPresentedSheet)
             }
         }
     }

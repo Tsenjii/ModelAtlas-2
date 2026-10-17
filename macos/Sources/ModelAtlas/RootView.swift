@@ -7,7 +7,7 @@ struct RootView: View {
     @AppStorage("appearance") private var appearance = "system"
     var body: some View {
         HSplitView {
-            sidebar.frame(minWidth: 212, idealWidth: 228, maxWidth: 260)
+            if store.sidebarVisible { sidebar.frame(minWidth: 200, idealWidth: 216, maxWidth: 260).background(AtlasLoadedMarker(name: "workspace-sidebar")) }
             VStack(spacing: 0) {
                 if let problem = store.problem {
                     HStack(alignment: .top) {
@@ -18,7 +18,7 @@ struct RootView: View {
                     }.font(.callout).padding(14).background(Color.red.opacity(0.07))
                 }
                 if !store.ready {
-                    if store.booting { VStack(spacing: 18) { ProgressView(); Text("正在準備你的工作區…").foregroundStyle(.secondary) }.frame(maxWidth: .infinity, maxHeight: .infinity) }
+                    if store.booting { VStack(spacing: 18) { ProgressView(); Text("正在開啟工作區…").foregroundStyle(.secondary) }.frame(maxWidth: .infinity, maxHeight: .infinity) }
                     else { EmptyCard(icon: "externaldrive", title: "本機工作區", detail: "模型、對話與研究資料保存在這台 Mac。", action: "啟動") { Task { await store.bootstrap() } } }
                 } else {
                     switch store.workspace {
@@ -36,9 +36,12 @@ struct RootView: View {
         })
         .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button { store.sidebarVisible.toggle() } label: { Image(systemName: "sidebar.left") }.help("顯示或隱藏側邊欄（⌃⌘S）").disabled(store.hasPresentedSheet)
+            }
             ToolbarItemGroup(placement: .automatic) {
                 Button { Task { await store.refresh() } } label: { Image(systemName: "arrow.clockwise") }.help("重新整理（⌘R）").disabled(!store.ready)
-                Button { store.assistantOpen = true } label: { Label("Assistant", systemImage: "sparkles") }.disabled(!store.ready)
+                Button { store.assistantOpen = true } label: { Label("Assistant", systemImage: "cpu") }.help("App Assistant").disabled(!store.ready)
                 Button { store.settingsOpen = true } label: { Image(systemName: "gearshape") }.help("設定（⌘,）")
             }
         }
@@ -62,15 +65,15 @@ struct RootView: View {
         }
     }
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                Image(systemName: "square.stack.3d.up.fill").font(.system(size: 17, weight: .medium)).foregroundStyle(atlasTextAccent)
-                    .frame(width: 32, height: 32).background(atlasAccent.opacity(0.08)).cornerRadius(10)
+                Image(systemName: "square.stack.3d.up.fill").font(.system(size: 15, weight: .medium)).foregroundStyle(atlasTextAccent)
+                    .frame(width: 26, height: 26)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("ModelAtlas").font(.system(size: 15, weight: .semibold))
-                    Text("你的 AI 工作區").font(.system(size: 10)).foregroundStyle(.secondary)
+                    Text("ModelAtlas").font(.system(size: 13, weight: .semibold))
+                    Text("模型與供應商").font(.system(size: 10)).foregroundStyle(.secondary)
                 }
-            }.padding(.horizontal, 9).padding(.top, 12).padding(.bottom, 7)
+            }.padding(.horizontal, 9).padding(.top, 5).padding(.bottom, 3)
             Text("工作區").font(.system(size: 10, weight: .medium)).foregroundStyle(.tertiary).padding(.horizontal, 12)
             VStack(spacing: 3) {
                 ForEach(Workspace.allCases) { section in

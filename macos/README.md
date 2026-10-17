@@ -2,6 +2,12 @@
 
 SwiftUI／AppKit 原生介面，加上內建 Go／SQLite 本機引擎。沒有 WebView、Electron、常駐 Node 或外部 VPS 前置要求。與 Android／VPS 同 repo 分支維護；不把新 Mac 介面當成 Android phase 已完成。
 
+## 完整產品範圍與0.2.1候選
+
+ModelAtlas是全球免費強模型API Intelligence＋Provider Manager＋Playground＋App Control Assistant。使用者原始文件是需求大綱；既有Android／VPS功能對齊及CI全綠不代表整份大綱全部完成。已接線的入口、尚缺的原生管理體驗與驗收界線見 [MASTER_SCOPE.md](MASTER_SCOPE.md)。
+
+0.2.1（build7）候選收斂介面裝飾、保留設定頁風格、輸入自動增高／縮回、原生鍵盤操作、已知價格主列與Provider免費連線篩選。保留29核心及原42圖，新增3圖後45／架構、90圖；驗收仍以PR21最新同SHA結果為準。
+
 ## 0.2.0 功能對齊候選
 
 此版對齊 Android main `5009e0c8` 與 VPS `026f58ba` 的既有功能聯集。完整差異、正式 caller 與驗收入口見 [FEATURE_PARITY.md](FEATURE_PARITY.md)。實作狀態不能代替最新 HEAD 的九項 CI 與原生實圖驗收；目前正式接受版本與候選結果以 PR #21 最新 body 為準。

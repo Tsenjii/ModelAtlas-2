@@ -8,8 +8,12 @@ struct ProvidersView: View {
     @ObservedObject var store: AtlasStore
     @State private var search = ""
     @State private var sort = "name"
+    @State private var freeOnly = false
+    private func freeConnections(_ provider: JSONValue) -> Int {
+        store.activeModels.filter { $0["provider_id"] == provider["id"] && $0["price_state"].string == "FREE_NOW" }.count
+    }
     private var filtered: [JSONValue] {
-        store.providers.filter { search.isEmpty || ($0["name"].string + " " + $0["base_url"].string + " " + $0["description"].string).localizedCaseInsensitiveContains(search) }.sorted { a, b in
+        store.providers.filter { (!freeOnly || freeConnections($0) > 0) && (search.isEmpty || ($0["name"].string + " " + $0["base_url"].string + " " + $0["description"].string).localizedCaseInsensitiveContains(search)) }.sorted { a, b in
             if sort == "smart" { let filters = ModelFilters(); @MainActor func score(_ p: JSONValue) -> Double? { let scores = store.activeModels.filter { $0["provider_id"] == p["id"] }.compactMap { filters.ranking($0, weights: store.settings["ranking_weights"]).score }; return scores.isEmpty ? nil : scores.reduce(0, +) / Double(scores.count) }; let x = score(a), y = score(b); if x != y { return (x ?? -1) > (y ?? -1) } }
             return a["name"].string.localizedStandardCompare(b["name"].string) == .orderedAscending
         }
@@ -23,11 +27,17 @@ struct ProvidersView: View {
                     Button { store.newProviderOpen = true } label: { Label("新增供應商", systemImage: "plus") }
                         .buttonStyle(AtlasActionStyle(prominent: true))
                 }
-                HStack(spacing: 14) { SearchField(placeholder: "搜尋供應商、網址或描述", text: $search); Picker("排序", selection: $sort) { Text("依名稱").tag("name"); Text("依模型評分").tag("smart") }.labelsHidden().frame(width: 130) }
+                HStack(spacing: 12) { SearchField(placeholder: "搜尋供應商、網址或描述", text: $search); AtlasChoiceMenu(title: "排序", selection: $sort, items: [AtlasTab("name", "依名稱"), AtlasTab("smart", "依模型評分")]).frame(width: 130) }
+                HStack(spacing: 6) {
+                    AtlasFilterChip(title: "全部", selected: !freeOnly) { freeOnly = false }
+                    AtlasFilterChip(title: "有免費連線", icon: "gift", selected: freeOnly) { freeOnly = true }
+                    Spacer()
+                    Text("\(filtered.count) 個供應商").font(.caption).foregroundStyle(.secondary)
+                }
                 if store.providers.isEmpty {
                     EmptyCard(icon: "server.rack", title: "接上第一個供應商", detail: "貼上 Base URL 與 Key，檢查結果後再加入。", action: "新增供應商") { store.newProviderOpen = true }.frame(height: 350)
                 } else if filtered.isEmpty {
-                    EmptyCard(icon: "magnifyingglass", title: "沒有符合的供應商", detail: "試試其他名稱或網址。", action: "清除搜尋") { search = "" }.frame(height: 280)
+                    EmptyCard(icon: "magnifyingglass", title: "沒有符合的供應商", detail: freeOnly ? "只顯示已有 FREE NOW 連線的供應商；價格未確認不會當成免費。" : "試試其他名稱或網址。", action: "清除篩選") { search = ""; freeOnly = false }.frame(height: 280)
                 } else {
                     VStack(spacing: 0) {
                         ForEach(filtered) { provider in
@@ -36,9 +46,8 @@ struct ProvidersView: View {
                         }
                     }.background(atlasSurface).cornerRadius(12)
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(atlasHairline, lineWidth: 0.5))
-                    Label("選擇供應商，管理帳戶、Key 與模型。", systemImage: "info.circle").font(.system(size: 11)).foregroundStyle(.tertiary)
                 }
-            }.padding(28).frame(maxWidth: 1150).frame(maxWidth: .infinity)
+            }.padding(24).frame(maxWidth: 1150).frame(maxWidth: .infinity)
         }
     }
 }
@@ -51,7 +60,7 @@ private struct ProviderRow: View {
         Button { store.detailProvider = provider } label: {
             HStack(spacing: 12) {
                 Image(systemName: "server.rack").font(.system(size: 16, weight: .medium)).foregroundStyle(atlasTextAccent)
-                    .frame(width: 38, height: 38).background(atlasAccent.opacity(0.07)).cornerRadius(10)
+                    .frame(width: 30, height: 30).background(atlasAccent.opacity(0.06)).cornerRadius(7)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(provider["name"].string).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                     Text(provider["base_url"].string).font(.caption).foregroundStyle(.secondary).lineLimit(1)
@@ -61,9 +70,11 @@ private struct ProviderRow: View {
                 VStack(alignment: .trailing, spacing: 5) {
                     Text("\(store.accounts.filter { $0["provider_id"].string == providerID }.count) 帳戶 · \(store.credentials.filter { $0["provider_id"].string == providerID && $0["enabled"].boolean }.count) 啟用 Key").font(.caption).foregroundStyle(.secondary)
                     SmallBadge(text: "\(store.activeModels.filter { $0["provider_id"].string == providerID }.count) 個模型", color: atlasAccent)
+                    let count = store.activeModels.filter { $0["provider_id"].string == providerID && $0["price_state"].string == "FREE_NOW" }.count
+                    if count > 0 { Text("\(count) 條免費連線").font(.system(size: 10)).foregroundStyle(atlasTextAccent) }
                 }
                 Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
-            }.padding(18).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+            }.padding(.horizontal, 16).padding(.vertical, 13).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
         }.buttonStyle(AtlasRowButtonStyle()).help(provider["name"].string + " · " + provider["base_url"].string)
     }
 }

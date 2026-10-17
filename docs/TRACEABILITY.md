@@ -281,3 +281,10 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | 研究／知識／外部服務 | ResearchRequest／ResearchDetails／KnowledgeView／VersionController／Services → 正式來源、候選／證據、判讀、預算／控制、versions、connectors、integrations API；NativeParity真擷取測試→啟用→intelligence caller→復原、證據知識版本／stale／復原、實際佇列pause/resume/cancel及無推論預算、加密Key及安全Assistant參照 | caller不是只讀JSON；高階知識／CUSTOM資料保留與VPS同範圍的JSON定義。驗收查PR #21最新exact SHA/run/artifact |
 
 對照基線 Android `5009e0c8`、VPS `026f58ba`；不據此聲稱 Android 本身 P8–P10／PLAY-004 整體已驗收，不 merge、不啟用未經使用者選擇的背景或外部推論。歷史失敗與修復均保留於 `macos/FEATURE_PARITY.md`。
+
+
+## MAC-DESKTOP-007 — 2026-10-18 候選
+
+完整產品定位與原文Part I–IV對照見 `macos/MASTER_SCOPE.md`；MAC-PARITY-006的既有功能聯集驗收不代表整份Master Spec已完成。已確認原生缺口包含完整可讀quota pools／價格與效能history charts、Compare並列結果與部分管理摘要，保持PARTIAL。
+
+`ComposerTextEditor`依AppKit排版30–144pt、原生捲動／clear shrink／IME／Undo；`AtlasStore.focusComposer`→⌘L、⌘O選檔、側欄toggle保留scope/draft/history；`ModelsView`顯示引擎已知price_state與cache另計、Provider依已知免費連線篩選。保留29核心／25原smoke／17parity圖，增3圖及真AppKit adaptive/focus/sidebar／exact-account effective-price guard，合計90圖。新HEAD九項同SHA／圖審前不ACCEPTED，不改Android P8–P10狀態。

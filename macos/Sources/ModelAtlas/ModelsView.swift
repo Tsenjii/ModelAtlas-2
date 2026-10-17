@@ -37,6 +37,11 @@ struct ModelsView: View {
                                             .labelsHidden().toggleStyle(.checkbox).padding(.leading, 16).padding(.trailing, 2)
                                     }
                                     Button { store.detailModel = entry.model } label: { ModelLibraryRow(store: store, entry: entry, performanceSource: modelFilters.source) }.buttonStyle(AtlasRowButtonStyle())
+                                        .contextMenu {
+                                            Button("在 Playground 使用") { store.chooseModel(entry.model) }.disabled(store.generating || !entry.model["enabled"].boolean)
+                                            Button("複製模型 ID") { copyText(entry.scope.modelID) }
+                                            Button("複製連線摘要") { copyText(entry.scope.modelID + " · " + store.scopeTitle(entry.model) + " · " + store.endpointLabel(entry.model)) }
+                                        }
                                 }
                                 if entry.id != entries.prefix(shown).last?.id { Divider().padding(.leading, selecting ? 88 : 60) }
                             }
@@ -48,7 +53,7 @@ struct ModelsView: View {
                     if let comparison { AtlasCard { Text("本次即時比較").font(.headline); JSONTree(value: comparison) } }
                     Text("目前以" + ["local":"我的實測", "provider":"供應商回報", "external":"外部參考"][modelFilters.source, default: "我的實測"] + "篩選與排序；各來源分開保存。").font(.caption).foregroundStyle(.secondary)
                 }
-            }.padding(28).frame(maxWidth: 1150).frame(maxWidth: .infinity)
+            }.padding(24).frame(maxWidth: 1150).frame(maxWidth: .infinity)
         }
     }
     private var filters: some View {
@@ -111,7 +116,7 @@ private struct ModelLibraryRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             ModelMark(name: entry.title).padding(.top, 2)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Text(entry.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                     if entry.model["favorite"].boolean { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.orange) }
@@ -121,10 +126,24 @@ private struct ModelLibraryRow: View {
                     Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
                 }
                 Text(store.scopeTitle(entry.model) + " · " + store.endpointLabel(entry.model)).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                if let label = priceLabel {
+                    Text(label).font(.system(size: 10, weight: .medium)).foregroundStyle(entry.model["price_state"].string == "FREE_NOW" ? atlasTextAccent : Color.secondary)
+                }
                 metrics
             }
-        }.padding(.horizontal, 17).padding(.vertical, 15).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }.padding(.horizontal, 16).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
             .help(entry.scope.modelID + " · " + store.scopeTitle(entry.model) + " · " + entry.scope.endpoint)
+    }
+    private var priceLabel: String? {
+        switch entry.model["price_state"].string {
+        case "FREE_NOW":
+            let cache = entry.model["offer"]["effective_price"]["legs"]["cache"]
+            if let value = cache.numeric ?? Double(cache.string), value.isFinite, value > 0 { return "FREE NOW · Cache 另計費" }
+            return "FREE NOW"
+        case "PAID": return "付費"
+        case "PARTIALLY_FREE": return "部分免費"
+        default: return nil
+        }
     }
     private var metrics: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -144,8 +163,8 @@ private struct ModelLibraryRow: View {
                     if let tps = performance["tps"]["mean"].numeric { Text(String(format: "平均 TPS %.1f", tps)) }
                 }.font(.caption.monospacedDigit()).foregroundStyle(.primary)
                 Text("\(performance["samples"].display) 筆樣本 · \(windowLabel) · \(samples < 20 ? "樣本較少" : "本機實測")")
-                    .font(.system(size: 10)).foregroundStyle(.tertiary)
-            } else { Text("尚無本機樣本").font(.caption).foregroundStyle(.tertiary) }
+                    .font(.system(size: 10)).foregroundStyle(.secondary)
+            } else { Text("尚無本機樣本").font(.caption).foregroundStyle(.secondary) }
         }
     }
     private func sourceMetric(_ name: String) -> Double? { var filters = ModelFilters(); filters.source = performanceSource; return filters.metric(entry.model, name) }
