@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -45,6 +46,16 @@ func main() {
 	spy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { redirected.Add(1); io.WriteString(w, `{}`) }))
 	defer spy.Close()
 	mux := http.NewServeMux()
+	richContinue := make(chan struct{})
+	var releaseRich sync.Once
+	mux.HandleFunc("/fixture/release-rich", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method required", 405)
+			return
+		}
+		releaseRich.Do(func() { close(richContinue) })
+		w.WriteHeader(http.StatusNoContent)
+	})
 	mux.HandleFunc("/v1/models", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer native-fixture-provider-key" {
 			http.Error(w, "fixture auth required", 401)
@@ -84,7 +95,14 @@ func main() {
 			cancelled.Add(1)
 			return
 		}
-		for _, rune := range reply {
+		for index, rune := range []rune(reply) {
+			if body.Model == "native-fixture-code" && index == 900 {
+				select {
+				case <-richContinue:
+				case <-r.Context().Done():
+					return
+				}
+			}
 			chunk, _ := json.Marshal(map[string]any{"model": body.Model, "choices": []any{map[string]any{"delta": map[string]string{"content": string(rune)}}}})
 			fmt.Fprintf(w, "data: %s\n\n", chunk)
 			f.Flush()

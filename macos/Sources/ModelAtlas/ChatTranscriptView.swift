@@ -4,7 +4,6 @@ import SwiftUI
 struct ChatTranscriptView: View {
     @ObservedObject var store: AtlasStore
     var body: some View {
-                ScrollViewReader { reader in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 26) {
                             if store.messageHasMore { Button("載入更早的訊息") { store.chatReading.pause(); Task { await store.loadMessages(older: true) } }.frame(maxWidth: .infinity) }
@@ -32,21 +31,14 @@ struct ChatTranscriptView: View {
                             if let media = store.mediaResult { MediaResultView(value: media) }
                             Color.clear.frame(height: 1).id("chat-bottom")
                         }.padding(26).frame(maxWidth: 880).frame(maxWidth: .infinity)
-                            .background(ChatScrollProbe { distance, user in store.observeChatScroll(distance: distance, userScroll: user) })
+                            .background(ChatScrollProbe(following: store.chatReading.following) { distance, user in store.observeChatScroll(distance: distance, userScroll: user) })
                     }
-                    .onChange(of: store.streamingText) { _ in if store.chatReading.following { reader.scrollTo("chat-bottom", anchor: .bottom) } }
-                    .onChange(of: store.reasoning) { _ in if store.chatReading.following { reader.scrollTo("chat-bottom", anchor: .bottom) } }
-                    .onChange(of: store.messages.last?["id"].string) { _ in if store.chatReading.following { reader.scrollTo("chat-bottom", anchor: .bottom) } }
-                    .onChange(of: store.chatReading.following) { following in if following { reader.scrollTo("chat-bottom", anchor: .bottom) } }
-                    .onChange(of: store.sessionID) { _ in store.chatReading.reset(); reader.scrollTo("chat-bottom", anchor: .bottom) }
-                    .onAppear { reader.scrollTo("chat-bottom", anchor: .bottom) }
                     .overlay(alignment: .bottomTrailing) {
                         if !store.chatReading.following && !store.chatReading.atLatest {
-                            Button { store.chatReading.resume(); reader.scrollTo("chat-bottom", anchor: .bottom) } label: {
+                            Button { store.chatReading.resume() } label: {
                                 Label("回到最新", systemImage: "arrow.down")
                             }.buttonStyle(.bordered).padding(18).accessibilityIdentifier("chat-return-latest")
                         }
                     }
-                }
     }
 }

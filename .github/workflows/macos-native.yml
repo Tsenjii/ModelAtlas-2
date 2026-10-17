@@ -64,6 +64,7 @@ jobs:
             macos/qa/**/ui/*.png
             macos/qa/**/ui/native-smoke.json
             macos/qa/**/ui/FAILURE.txt
+            macos/qa/**/ui/failure-state.json
             macos/qa/**/process-footprint.json
             macos/qa/**/swift-tests.log
             macos/qa/**/swift-test-build.log

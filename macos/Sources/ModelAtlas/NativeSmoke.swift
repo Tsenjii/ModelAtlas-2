@@ -110,12 +110,22 @@ import SwiftUI
             store.newProviderOpen = false
             try await Task.sleep(nanoseconds: 450_000_000)
             stage = "chat-reading-markdown-attachments-receipt"
-            try await verifyChatExperience(store: store, code: code, window: window, output: output) { stage = "chat-experience-" + $0 }
+            try await verifyChatExperience(store: store, code: code, window: window, output: output, fixture: fixture) { stage = "chat-experience-" + $0 }
             let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(16), "chat_reading_guards": .bool(true), "attachment_guards": .bool(true), "request_receipt": .bool(true), "native_markdown": .bool(true)])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-smoke.json"), options: .atomic)
         } catch {
             // Fixed stage labels only: never dump a store, request, credential,
             // prompt or conversation to the public CI failure report.
+            var diagnostics: JSONValue = .object(["stage": .string(stage), "generating": .bool(store.generating), "stream_characters": .number(Double(store.streamingText.count)), "message_count": .number(Double(store.messages.count)), "has_problem": .bool(store.problem != nil), "following": .bool(store.chatReading.following), "at_latest": .bool(store.chatReading.atLatest)])
+            if let root = NSApp.windows.first(where: \.isVisible)?.contentView,
+               let probe = findView(in: root, identifier: "chat-scroll-probe"), let scroll = probe.enclosingScrollView, let document = scroll.documentView {
+                diagnostics["document_height"] = .number(Double(document.bounds.height))
+                diagnostics["document_flipped"] = .bool(document.isFlipped)
+                diagnostics["clip_y"] = .number(Double(scroll.contentView.bounds.minY))
+                diagnostics["clip_height"] = .number(Double(scroll.contentView.bounds.height))
+                diagnostics["visible_y"] = .number(Double(scroll.documentVisibleRect.minY))
+            }
+            try? JSONEncoder().encode(diagnostics).write(to: output.appendingPathComponent("failure-state.json"), options: .atomic)
             let message = "Native smoke failed at " + stage + ": " + error.localizedDescription
             try? Data(message.utf8).write(to: output.appendingPathComponent("FAILURE.txt"), options: .atomic)
         }
@@ -126,13 +136,14 @@ import SwiftUI
             else { NSApp.terminate(nil) }
         }
     }
-    private static func verifyChatExperience(store: AtlasStore, code: JSONValue, window: NSWindow, output: URL, checkpoint: (String) -> Void) async throws {
+    private static func verifyChatExperience(store: AtlasStore, code: JSONValue, window: NSWindow, output: URL, fixture: String, checkpoint: (String) -> Void) async throws {
         checkpoint("start-real-rich-stream")
         store.chooseModel(code); store.draft = "請示範原生 Markdown、Swift 程式碼及比較表。"
         store.send()
         let streamDeadline = Date().addingTimeInterval(15)
-        while store.generating && store.streamingText.count < 650 && Date() < streamDeadline { try await Task.sleep(nanoseconds: 30_000_000) }
-        guard store.generating, store.streamingText.count >= 650 else { throw AtlasError.invalidResponse }
+        while store.generating && store.streamingText.count < 900 && Date() < streamDeadline { try await Task.sleep(nanoseconds: 30_000_000) }
+        guard store.generating else { checkpoint("rich-stream-ended-before-release"); throw AtlasError.invalidResponse }
+        guard store.streamingText.count >= 900 else { checkpoint("rich-stream-threshold"); throw AtlasError.invalidResponse }
         checkpoint("find-real-scroll-view")
         guard let root = window.contentView, let probe = findView(in: root, identifier: "chat-scroll-probe"), let scroll = probe.enclosingScrollView,
               let document = scroll.documentView, document.bounds.height > scroll.contentView.bounds.height + 100 else { throw AtlasError.invalidResponse }
@@ -146,6 +157,10 @@ import SwiftUI
         try await waitFor { !store.chatReading.following && !store.chatReading.atLatest }
         let readingPosition = scroll.contentView.bounds.minY, textCount = store.streamingText.count
         checkpoint("stream-does-not-steal-reading-position")
+        guard let releaseURL = URL(string: fixture + "/fixture/release-rich") else { throw AtlasError.invalidEndpoint }
+        var release = URLRequest(url: releaseURL); release.httpMethod = "POST"
+        let (_, releaseResponse) = try await URLSession.shared.data(for: release)
+        guard (releaseResponse as? HTTPURLResponse)?.statusCode == 204 else { throw AtlasError.invalidResponse }
         try await Task.sleep(nanoseconds: 500_000_000)
         guard store.streamingText.count > textCount, !store.chatReading.following,
               abs(scroll.contentView.bounds.minY - readingPosition) < 3 else { throw AtlasError.invalidResponse }
