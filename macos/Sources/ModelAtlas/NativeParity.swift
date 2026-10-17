@@ -268,6 +268,7 @@ import SwiftUI
         UserDefaults.standard.set(dark ? "dark" : "light", forKey: "appearance")
         window.setContentSize(NSSize(width: 1200, height: 800)); window.center(); window.makeKeyAndOrderFront(nil)
         try await Task.sleep(nanoseconds: 450_000_000)
+        if store.workspace == .playground { try await wait { !store.sessionsLoading } }
         guard let root = window.contentView?.superview else { throw AtlasError.invalidResponse }
         root.layoutSubtreeIfNeeded(); root.displayIfNeeded()
         guard let bitmap = root.bitmapImageRepForCachingDisplay(in: root.bounds) else { throw AtlasError.invalidResponse }

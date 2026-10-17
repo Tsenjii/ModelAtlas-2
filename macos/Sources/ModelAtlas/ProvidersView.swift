@@ -9,16 +9,16 @@ struct ProvidersView: View {
     @State private var search = ""
     @State private var sort = "name"
     @State private var freeOnly = false
-    private func freeConnections(_ provider: JSONValue) -> Int {
-        store.activeModels.filter { $0["provider_id"] == provider["id"] && $0["price_state"].string == "FREE_NOW" }.count
-    }
     private var filtered: [JSONValue] {
-        store.providers.filter { (!freeOnly || freeConnections($0) > 0) && (search.isEmpty || ($0["name"].string + " " + $0["base_url"].string + " " + $0["description"].string).localizedCaseInsensitiveContains(search)) }.sorted { a, b in
+        let freeProviders = Set(store.activeModels.filter { $0["price_state"].string == "FREE_NOW" }.map { $0["provider_id"].string })
+        return store.providers.filter { (!freeOnly || freeProviders.contains($0.id)) && (search.isEmpty || ($0["name"].string + " " + $0["base_url"].string + " " + $0["description"].string).localizedCaseInsensitiveContains(search)) }.sorted { a, b in
             if sort == "smart" { let filters = ModelFilters(); @MainActor func score(_ p: JSONValue) -> Double? { let scores = store.activeModels.filter { $0["provider_id"] == p["id"] }.compactMap { filters.ranking($0, weights: store.settings["ranking_weights"]).score }; return scores.isEmpty ? nil : scores.reduce(0, +) / Double(scores.count) }; let x = score(a), y = score(b); if x != y { return (x ?? -1) > (y ?? -1) } }
             return a["name"].string.localizedStandardCompare(b["name"].string) == .orderedAscending
         }
     }
     var body: some View {
+        let entries = filtered
+        let freeCounts = Dictionary(grouping: store.activeModels.filter { $0["price_state"].string == "FREE_NOW" }, by: { $0["provider_id"].string }).mapValues { $0.count }
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(alignment: .center) {
@@ -32,17 +32,17 @@ struct ProvidersView: View {
                     AtlasFilterChip(title: "全部", selected: !freeOnly) { freeOnly = false }
                     AtlasFilterChip(title: "有免費連線", icon: "gift", selected: freeOnly) { freeOnly = true }
                     Spacer()
-                    Text("\(filtered.count) 個供應商").font(.caption).foregroundStyle(.secondary)
+                    Text("\(entries.count) 個供應商").font(.caption).foregroundStyle(.secondary)
                 }
                 if store.providers.isEmpty {
                     EmptyCard(icon: "server.rack", title: "接上第一個供應商", detail: "貼上 Base URL 與 Key，檢查結果後再加入。", action: "新增供應商") { store.newProviderOpen = true }.frame(height: 350)
-                } else if filtered.isEmpty {
+                } else if entries.isEmpty {
                     EmptyCard(icon: "magnifyingglass", title: "沒有符合的供應商", detail: freeOnly ? "只顯示已有 FREE NOW 連線的供應商；價格未確認不會當成免費。" : "試試其他名稱或網址。", action: "清除篩選") { search = ""; freeOnly = false }.frame(height: 280)
                 } else {
                     VStack(spacing: 0) {
-                        ForEach(filtered) { provider in
-                            ProviderRow(store: store, provider: provider)
-                            if provider.id != filtered.last?.id { Divider().padding(.leading, 64) }
+                        ForEach(entries) { provider in
+                            ProviderRow(store: store, provider: provider, freeCount: freeCounts[provider.id] ?? 0)
+                            if provider.id != entries.last?.id { Divider().padding(.leading, 64) }
                         }
                     }.background(atlasSurface).cornerRadius(12)
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(atlasHairline, lineWidth: 0.5))
@@ -55,6 +55,7 @@ struct ProvidersView: View {
 private struct ProviderRow: View {
     @ObservedObject var store: AtlasStore
     let provider: JSONValue
+    let freeCount: Int
     private var providerID: String { provider["id"].string }
     var body: some View {
         Button { store.detailProvider = provider } label: {
@@ -69,9 +70,8 @@ private struct ProviderRow: View {
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 5) {
                     Text("\(store.accounts.filter { $0["provider_id"].string == providerID }.count) 帳戶 · \(store.credentials.filter { $0["provider_id"].string == providerID && $0["enabled"].boolean }.count) 啟用 Key").font(.caption).foregroundStyle(.secondary)
-                    SmallBadge(text: "\(store.activeModels.filter { $0["provider_id"].string == providerID }.count) 個模型", color: atlasAccent)
-                    let count = store.activeModels.filter { $0["provider_id"].string == providerID && $0["price_state"].string == "FREE_NOW" }.count
-                    if count > 0 { Text("\(count) 條免費連線").font(.system(size: 10)).foregroundStyle(atlasTextAccent) }
+                    SmallBadge(text: "\(store.activeModels.filter { $0["provider_id"].string == providerID }.count) 條模型連線", color: atlasAccent)
+                    if freeCount > 0 { Text("\(freeCount) 條免費連線").font(.system(size: 10)).foregroundStyle(atlasTextAccent) }
                 }
                 Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
             }.padding(.horizontal, 16).padding(.vertical, 13).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())

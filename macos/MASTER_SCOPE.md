@@ -39,4 +39,6 @@
 
 驗證保留29核心與原25＋17圖，另增長文輸入、隱藏側欄與exact-account已知免費三圖，共45／架構、90圖。新HEAD全部九項與實圖前為候選。這一片完成也不改上表未完成／未逐項驗收狀態。
 
+首候選765247d九項同SHA已SUCCESS，兩架構29核心／45圖PASS；圖審發現首頁側欄還在搜尋的瞬間。Capture改等待真實sessionsLoading結束；選檔入口與新捷徑補上closing／modal guard。Provider免費篩選改每輪建立ID集合、同一body重用清單結果，避免逐Provider掃完整模型池，數量明確標模型連線。新HEAD保留全部90圖與條件，重新九項驗收。
+
 設計參考僅用官方來源：[Apple macOS HIG](https://developer.apple.com/design/human-interface-guidelines/designing-for-macos)、[Bear](https://bear.app/)、[Magpie](https://github.com/yetone/magpie)。參考內容優先與原生資訊層級，不複製品牌資產或程式碼。

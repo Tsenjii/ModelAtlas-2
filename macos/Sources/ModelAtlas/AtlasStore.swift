@@ -295,6 +295,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     func shutdown() async { closing = true; operation?.cancel(); await engine.stop(); ready = false }
 
     func pickAttachments() {
+        guard ready, !closing, !generating, !attaching, !hasPresentedSheet else { return }
         let panel = NSOpenPanel(); panel.allowsMultipleSelection = true
         panel.allowedContentTypes = ["png", "jpg", "jpeg", "webp", "pdf", "wav", "mp3"].compactMap { UTType(filenameExtension: $0) }
         guard panel.runModal() == .OK else { return }
