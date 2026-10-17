@@ -312,10 +312,15 @@ struct ModelDetailView: View {
     @State private var metadataText = "{}"
     @State private var factsText = "{}"
     @State private var loadRevision = 0
+    @State private var loading = true
     @State private var customStart = Date().addingTimeInterval(-7 * 86400)
     @State private var customEnd = Date()
     private var scope: ModelScope { ModelScope(model) }
     private var usableModel: JSONValue? { store.activeModels.first { ModelScope($0) == scope } }
+    private var intelligence: ModelIntelligence { ModelIntelligence(detail: detail, scope: scope) }
+    init(store: AtlasStore, model: JSONValue, initialTab: String = "概覽") {
+        self.store = store; self.model = model; _tab = State(initialValue: initialTab)
+    }
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -323,28 +328,25 @@ struct ModelDetailView: View {
                 Spacer(); Button("使用此模型") { if let usableModel { store.chooseModel(usableModel); dismiss() } }.buttonStyle(.borderedProminent).disabled(store.generating || usableModel == nil)
                 Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(25)
-            Picker("詳情", selection: $tab) { ForEach(["概覽", "價格與額度", "效能", "歷史", "設定"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
+            Picker("詳情", selection: $tab) { ForEach(["概覽", "價格", "額度", "效能", "歷史", "設定"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    if let problem { Text(problem).foregroundStyle(.red) }
+                    if loading { ProgressView("讀取模型資料…").controlSize(.small) }
+                    if let problem { HStack { Text(problem).foregroundStyle(.red); Spacer(); Button("重試") { Task { await load() } } } }
+                    if !loading && problem == nil && intelligence.matchesSelection { AtlasLoadedMarker(name: "model-intelligence-loaded-" + tab).frame(height: 0) }
                     if tab == "概覽" {
                         AtlasCard { Text("模型資訊").font(.headline); JSONTree(value: detail["metadata"]); Text("已確認能力").font(.headline); Text(detail["capabilities"].array.map(\.string).joined(separator: " · ")).foregroundStyle(.secondary) }
                         AtlasCard { HStack { Text("本機手動測試").font(.headline); Spacer(); ActionButton(title: "同步資料") { _ = try await store.mutate("/intelligence/sync", body: scope.json); await load() }; ActionButton(title: "測試這個連線") { guard let api = store.api else { return }; testResult = try await api.call("/models/test", method: "POST", body: scope.json); await store.refresh(); await load() } }; if let testResult { JSONTree(value: testResult) } }
                     }
-                    if tab == "價格與額度" {
-                        AtlasCard { Text("最後有效觀測").font(.headline); Text("標價、實際扣款與免費機制分開保存。").foregroundStyle(.secondary); JSONTree(value: detail["last_good"]) }
-                        AtlasCard { Text("額度資源池").font(.headline); JSONTree(value: detail["resource_pools"]) }
-                        AtlasCard { Text("帳戶資料").font(.headline); JSONTree(value: detail["account_facts"]) }
-                    }
+                    if tab == "價格" { ModelPricingPanel(intelligence: intelligence, priceState: usableModel?["price_state"].string ?? model["price_state"].string) }
+                    if tab == "額度" { ModelQuotaPanel(intelligence: intelligence); DisclosureGroup("帳戶來源紀錄") { JSONTree(value: detail["account_facts"]) } }
                     if tab == "效能" {
                         Picker("時間窗", selection: $window) { ForEach(["1h", "24h", "7d", "30d", "all", "custom"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented)
                         if window == "custom" { HStack { DatePicker("開始", selection: $customStart); DatePicker("結束", selection: $customEnd); Button("套用") { Task { await load() } } } }
-                        AtlasCard { Text("我的 Key · 本機實測").font(.headline); JSONTree(value: detail["local"]) }
-                        AtlasCard { Text("供應商回報").font(.headline); JSONTree(value: detail["provider_facts"]) }
-                        AtlasCard { Text("外部參考").font(.headline); JSONTree(value: detail["external"]) }
+                        ModelPerformancePanel(intelligence: intelligence)
                     }
-                    if tab == "歷史" { RequestHistoryView(store: store, scope: scope); AtlasCard { Text("最新觀測與保留歷史").font(.headline); JSONTree(value: detail["latest"]); Divider(); JSONTree(value: detail["history"]) } }
+                    if tab == "歷史" { ModelObservationHistory(intelligence: intelligence); RequestHistoryView(store: store, scope: scope) }
                     if tab == "設定" { settingsContent }
                 }.padding(24)
             }
@@ -381,7 +383,9 @@ struct ModelDetailView: View {
         }
     }
     private func load() async {
-        guard let api = store.api else { return }; loadRevision += 1; let revision = loadRevision
+        guard let api = store.api else { loading = false; return }; loadRevision += 1; let revision = loadRevision
+        loading = true
+        defer { if loadRevision == revision { loading = false } }
         do {
             var query = scope.query + [URLQueryItem(name: "window", value: window)]
             if window == "custom" {
@@ -389,7 +393,9 @@ struct ModelDetailView: View {
                 query += [URLQueryItem(name: "start", value: String(Int64(customStart.timeIntervalSince1970 * 1000))), URLQueryItem(name: "end", value: String(Int64(customEnd.timeIntervalSince1970 * 1000)))]
             }
             let value = try await api.get("/models/detail", query: query)
-            guard loadRevision == revision else { return }; detail = value; problem = nil
+            guard loadRevision == revision else { return }
+            guard ModelScope(value["selection"]) == scope else { throw AtlasError.invalidResponse }
+            detail = value; problem = nil
         } catch { if loadRevision == revision { problem = error.localizedDescription } }
     }
 }

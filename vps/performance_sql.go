@@ -65,14 +65,17 @@ func (s *Server) performanceSQL(ctx context.Context, v Selection, start, end int
 	}
 	if detail {
 		history := []map[string]any{}
-		rows, e := tx.QueryContext(ctx, "SELECT created_at,outcome,status_code FROM telemetry WHERE "+completed+" ORDER BY rowid DESC LIMIT 400", args...)
+		rows, e := tx.QueryContext(ctx, "SELECT created_at,outcome,status_code,ttft_ms,latency_ms,"+numericTPS+" FROM telemetry WHERE "+completed+" ORDER BY rowid DESC LIMIT 400", args...)
 		if e == nil {
 			for rows.Next() {
 				var at int64
 				var outcome string
 				var status sql.NullInt64
-				rows.Scan(&at, &outcome, &status)
-				history = append(history, map[string]any{"at": at, "outcome": outcome, "http_status": nullable(status)})
+				var ttft, latency, tps sql.NullFloat64
+				if rows.Scan(&at, &outcome, &status, &ttft, &latency, &tps) != nil {
+					continue
+				}
+				history = append(history, map[string]any{"at": at, "outcome": outcome, "http_status": nullable(status), "ttft_ms": plotMetric(ttft), "latency_ms": plotMetric(latency), "tps": plotMetric(tps)})
 			}
 			rows.Close()
 		}
@@ -84,6 +87,13 @@ func (s *Server) performanceSQL(ctx context.Context, v Selection, start, end int
 		out["history_limit"] = 400
 	}
 	return out
+}
+
+func plotMetric(value sql.NullFloat64) any {
+	if !value.Valid || math.IsNaN(value.Float64) || math.IsInf(value.Float64, 0) || value.Float64 < 0 {
+		return nil
+	}
+	return value.Float64
 }
 func sqlDistribution(ctx context.Context, q *sql.Tx, where string, args []any, expression string, detail bool) any {
 	base := "SELECT " + expression + " AS n FROM telemetry WHERE " + where

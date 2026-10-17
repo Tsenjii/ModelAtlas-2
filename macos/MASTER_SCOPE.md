@@ -31,7 +31,7 @@
 | 47：future extensions | 保留原架構邊界 | 依原文不實作routing、fallback、自動Key輪替、對外gateway；本機私有loopback是內建引擎IPC，不是向使用者提供API gateway |
 | 48–50：工程流程、P1–P10、A–H產品驗收 | 既有CI、`TRACEABILITY.md`、各slice真caller／fixture／原生截圖 | 九項CI與原生圖是必要條件；仍須產品requirement逐項證據，不可宣稱大綱整體完成 |
 
-## 本輪唯一切片：MAC-DESKTOP-007
+## 先前切片：MAC-DESKTOP-007（0.2.1已驗收）
 
 沿用既有SwiftUI／AppKit、teal與使用者喜歡的側欄式設定；不改引擎／DB／Android／VPS UI。管理主畫面收斂成原生分組列與一致字級。Playground移除口號／提示卡，改呈現實際選定模型與帳戶Key摘要；輸入區30pt起依AppKit真排版增高到144pt，超出可捲，清空後縮回；保留IME、Undo、附件與舊對話草稿。
 
@@ -44,3 +44,8 @@
 816a399的arm64完整通過，Intel29核心通過後在原長串流25秒完成界線失敗（仍generating、902字、閱讀offset保持0、無API錯誤）。不刪字數／SHA256／時間／閱讀斷言，也不盲目重跑。輸入區排版只在自己的文字或寬度改變時測量，避免每次聊天視窗排版都重算；補真正的窄／寬窗自然換行與縮回驗證。fixture／失敗診斷另記已發字數與完成布林，PASS診斷記耗時，不記對話或秘密；新HEAD重新全九項。
 
 設計參考僅用官方來源：[Apple macOS HIG](https://developer.apple.com/design/human-interface-guidelines/designing-for-macos)、[Bear](https://bear.app/)、[Magpie](https://github.com/yetone/magpie)。參考內容優先與原生資訊層級，不複製品牌資產或程式碼。
+
+
+## 目前功能切片：MAC-INTELLIGENCE-008
+
+依使用者要求繼續完整管理功能，先補價格／獨立額度池／本機趨勢與觀測歷史的原生讀取介面；詳細production caller、資料界線及驗證見 `INTELLIGENCE.md`，Kios案例研究見 `../docs/KIOSAPI_RESEARCH.md`。0.3.0 build8為新候選，待同HEAD九項與100實圖。這項新增不把上表其餘完整情境、Compare並列與Provider管理等缺口改成完成。

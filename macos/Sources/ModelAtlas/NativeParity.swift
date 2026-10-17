@@ -183,6 +183,10 @@ import SwiftUI
             for name in ["speech", "native-current", "native-legacy", "native-dual", "transcription", "embeddings", "rerank", "images", "image-edit", "connector"] { try require((counts[name].numeric ?? 0) > 0) }
             try require(counts["invalid"].numeric == nil)
             stage = "effective-price-not-borrowed-across-accounts"
+            var nominal = ModelScope(chat).json
+            nominal["price"] = .object(["input": .string("0.125"), "output": .string("0.25"), "fixed_absent": .bool(true), "unit": .string("USD/1K tokens")])
+            nominal["note"] = .string("較早的合成標價；未確認實際扣款")
+            _ = try await api.call("/models/facts", method: "POST", body: nominal)
             var price = ModelScope(chat).json
             price["price"] = .object(["input": .string("0"), "output": .string("0"), "fixed": .null, "fixed_absent": .bool(true), "cache": .string("0.01"), "unit": .string("USD/1K tokens")])
             price["confirmed_effective_price"] = .bool(true)
@@ -200,12 +204,43 @@ import SwiftUI
             try await captureWorkspace(store, output, "15-welcome-dark", dark: true)
             try await capture(SettingsView(store: store), output, "16-settings-light", dark: false)
             try await capture(SettingsView(store: store), output, "17-settings-dark", dark: true)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(20), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "wire_counts": counts])
+            stage = "scoped-native-intelligence-prices-pools-trends-history"
+            try await verifyIntelligence(store, chat: chat, foreign: foreign, output: output, fixture: fixture)
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(25), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
     }
     private static func require(_ value: @autoclosure () -> Bool) throws { guard value() else { throw AtlasError.invalidResponse } }
+    private static func verifyIntelligence(_ store: AtlasStore, chat: JSONValue, foreign: JSONValue, output: URL, fixture: String) async throws {
+        guard let api = store.api else { throw AtlasError.engineUnavailable }
+        let scope = ModelScope(chat), beforeMessages = store.messages, beforeDraft = store.draft, beforeModel = store.selectedModel
+        let beforeWire = try await fixtureJSON(fixture + "/fixture/parity-state")
+        var quota = scope.json
+        quota["quota"] = .object(["rpd": .number(200), "tpd": .number(2_000_000), "remaining": .null])
+        quota["scope_kind"] = .string("CREDENTIAL"); quota["slice"] = .string("STANDARD_INTERACTIVE"); quota["note"] = .string("合成每日上限；剩餘額度未知")
+        _ = try await api.call("/models/facts", method: "POST", body: quota)
+        quota["quota"] = .object(["rpm": .number(30), "tpm": .null]); quota["scope_kind"] = .string("GROUP"); quota["slice"] = .string(""); quota["note"] = .string("另一個合成限流池，不與每日額度相加")
+        _ = try await api.call("/models/facts", method: "POST", body: quota)
+        let raw = try await api.get("/models/detail", query: scope.query + [URLQueryItem(name: "window", value: "7d")])
+        let detail = ModelIntelligence(detail: raw, scope: scope)
+        try require(detail.matchesSelection && detail.pools.count >= 2 && detail.history.count >= 3)
+        try require(detail.pools.contains { $0.facts["values"]["rpd"].numeric == 200 && $0.facts["values"]["remaining"] == .null })
+        try require(detail.pools.contains { $0.facts["values"]["rpm"].numeric == 30 && $0.facts["values"]["tpm"] == .null })
+        try require(detail.priceTracks.contains { $0.legKey == "price" && $0.observations.count >= 2 } && detail.lastGood.contains { $0.facts["effective_charge"]["cache"].string == "0.01" })
+        try require(!detail.samples.isEmpty && detail.samples.contains { $0.tps != nil && $0.ttft != nil })
+        let otherRaw = try await api.get("/models/detail", query: ModelScope(foreign).query)
+        let other = ModelIntelligence(detail: otherRaw, scope: ModelScope(foreign))
+        try require(other.lastGood.allSatisfy { $0.facts["price"] == .null && $0.facts["effective_charge"] == .null } && other.pools.isEmpty && other.samples.isEmpty)
+        let custom = try await api.get("/models/detail", query: scope.query + [URLQueryItem(name: "window", value: "custom"), URLQueryItem(name: "start", value: "0"), URLQueryItem(name: "end", value: String(Int64(Date().timeIntervalSince1970 * 1000)))])
+        try require(ModelIntelligence(detail: custom, scope: scope).samples.count == detail.samples.count)
+        for (tab, name, dark) in [("價格", "21-model-pricing-light", false), ("額度", "22-model-quota-dark", true), ("效能", "23-model-performance-light", false), ("歷史", "24-model-observations-dark", true)] {
+            try await capture(ModelDetailView(store: store, model: chat, initialTab: tab), output, name, dark: dark, marker: "model-intelligence-loaded-" + tab)
+        }
+        try await capture(ModelDetailView(store: store, model: foreign, initialTab: "價格"), output, "25-model-unknown-account-light", dark: false, marker: "model-intelligence-loaded-價格")
+        let afterWire = try await fixtureJSON(fixture + "/fixture/parity-state")
+        try require(beforeWire == afterWire && store.messages == beforeMessages && store.draft == beforeDraft && store.selectedModel == beforeModel)
+    }
     private static func completed(_ store: AtlasStore) async throws {
         let end = Date().addingTimeInterval(25)
         while store.generating, Date() < end { try await Task.sleep(nanoseconds: 20_000_000) }

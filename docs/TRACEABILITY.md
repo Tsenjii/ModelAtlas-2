@@ -288,3 +288,14 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 完整產品定位與原文Part I–IV對照見 `macos/MASTER_SCOPE.md`；MAC-PARITY-006的既有功能聯集驗收不代表整份Master Spec已完成。已確認原生缺口包含完整可讀quota pools／價格與效能history charts、Compare並列結果與部分管理摘要，保持PARTIAL。
 
 `ComposerTextEditor`依AppKit排版30–144pt、原生捲動／clear shrink／IME／Undo；`AtlasStore.focusComposer`→⌘L、⌘O選檔、側欄toggle保留scope/draft/history；`ModelsView`顯示引擎已知price_state與cache另計、Provider依已知免費連線篩選。保留29核心／25原smoke／17parity圖，增3圖及真AppKit adaptive/focus/sidebar／exact-account effective-price guard，合計90圖。新HEAD九項同SHA／圖審前不ACCEPTED，不改Android P8–P10狀態。
+
+
+## MAC-INTELLIGENCE-008：原生模型 Intelligence 功能
+
+| 需求 | Production caller 與驗證 | 狀態 |
+|---|---|---|
+| 模型價格／額度／來源／歷史 | Models → ModelDetailView → ModelIntelligence → ModelPricingPanel／ModelQuotaPanel／ModelObservationHistory；同一正式detail API、可展開原始evidence；6項核心含跨帳戶／群組／端點／單位／版本／Unknown／last-good | CANDIDATE；新HEAD九項與100實圖待驗收 |
+| 個人效能趨勢 | performanceSQL bounded400個原樣本指標 → ModelPerformancePanel原生Path／資料表；全量統計、rolling60s、cancel與missing值不變；Go新scoped-window/non-streaming guard＋原1000樣本保留guard；NativeParity真TLS歷史／custom窗／無額外inference | CANDIDATE |
+| Kios案例研究 | docs/KIOSAPI_RESEARCH.md 保存一手來源與驗證缺口；不因免費群組公告、第三方標籤或模型名稱宣稱selected-key FREE／主結果資格 | RESEARCH ONLY；無已認證連線或台灣實測結論 |
+
+這片功能不代表完整Master Spec已完成；Compare並列、Provider批量管理／簽到摘要、完整研究／Assistant／Reflection情境仍需後續完成與驗收。

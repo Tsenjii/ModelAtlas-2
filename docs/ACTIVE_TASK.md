@@ -3,6 +3,8 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **2026-10-18 MAC-INTELLIGENCE-008（唯一 live，0.3.0 build8候選）：** 依使用者大綱繼續功能；以 KiosAPI 為供應商研究案例，不 hard-code 站名、免費結論或額度。基線 `f3700796a9ca732e29c26a2ae967d8a023e2fec4`／Mac39051465343、VPS39051465473、Android39051465453九項SUCCESS、雙架構各29核心／45圖，90圖已檢視，0.2.1已交付。此片把模型價格、獨立額度池、本機請求趨勢／分布／錯誤、觀測歷史接成原生可讀介面；來源、完整scope、單位、Unknown與last-good不混。正式performance API的bounded400點補原有TTFT／TPS／latency，全部統計仍用完整資料，沒有migration／背景probe。保留原29核心／45圖，加6核心／5圖，共35核心／50圖每架構。新HEAD全九項／100實圖前候選，PR21 Draft，不merge／不改base。完整Master Spec仍PARTIAL；詳 `macos/INTELLIGENCE.md`、`macos/MASTER_SCOPE.md`、`docs/KIOSAPI_RESEARCH.md`。main本輪重查5009e0c8／38408176782 build/device SUCCESS。
+
 - **2026-10-18 MAC-DESKTOP-007（唯一 live，0.2.1 build7候選）：** 使用者再次提供完整Master Spec，強調它只是產品大綱，不能縮為聊天App或把既有跨平台對齊稱全需求完成。完整定位／範圍／已確認的原生UX缺口見 `macos/MASTER_SCOPE.md`。沿用設定頁風格、縮薄自動增高輸入、鍵盤聚焦／附件／側欄、已知FREE與連線管理。基線 `dac3d26852d9ecc24a07af05a2ed4e53e5b1fc3f`／Mac39045582072、VPS39045582067、Android39045582076九項SUCCESS，29核心每架構、84圖已審閱；僅為MAC-PARITY-006驗收。保留全部原測試並加3圖，共45／架構、90圖；新HEAD九項／實圖通過前PR21為Draft，不merge、不改base，不改Android/VPS UI或引擎DB。main `5009e0c8`／38408176782 build/device本輪重查SUCCESS。
 
 - **2026-10-17 MAC-PARITY-006 最新 UI 修訂：** 使用者認為原介面不佳，要求對齊 Magpie 與現代原生 Mac 視覺。沿用三工作區／teal與同一原生元件，重做側欄、清單、頁籤、選模、聊天輸入與設定；完整Android／VPS功能對齊仍保留。新增原生首頁與設定深淺色4圖，原25＋13不減，合計42／架構、84圖。最新舊候選974886a新增API流程已走完，PNG計數被fixture輸入檔影響，修正為獨立輸入資料夾並補CI上傳新增圖／report。新HEAD必須重新九項全綠與84圖實看，PR21仍Draft。

@@ -78,3 +78,6 @@ SwiftPM 也可直接用 Xcode 開啟 `macos/Package.swift` 查看原生程式碼
 
 Mac 唯一 live slice／未驗收狀態見 `docs/ACTIVE_TASK.md`，正式 caller → 測試見 `docs/TRACEABILITY.md`；最新 PR body 保存 exact code SHA、全部九項 jobs、artifact、實圖 review 與限制。不要將缺 Apple 公證、未跑 macOS12 寫成已完成。
 
+
+
+目前候選為0.3.0（build8），新增原生模型價格／額度／效能趨勢／觀測歷史，詳 `INTELLIGENCE.md`；完整Master Spec仍PARTIAL。已交付0.2.1 `f3700796`九項全綠與90實圖僅驗收MAC-DESKTOP-007。
