@@ -15,7 +15,7 @@
 - `ChatExperienceTests`：原文code／短長fence／未關fence／CRLF、pipe與非法table／長內容、HTML保留、閱讀state、檔案type／header／size／duplicate／remote URL拒絕與原子批次。
 - 保留前片全部十一XCTest及store／keyboard／IME／scope／TLS／cancel／Keychain／lifetime guards。
 - `NativeSmoke` 在獨立真engine／TLS fixture跑長回應，上捲後實際NSScrollView位置在後續字流維持、回最新、原生code／table內容、精確message request scope、正式附件caller與重複拒絕、原始歷史未改。
-- 長fixture在900字後等待明確release，閱讀位置固定後才繼續字流；沒有縮減長回應或位置斷言。捲動驗證使用真NSScrollView及live-scroll通知，未宣稱硬體觸控板／XCUI全點擊覆蓋。拖放走正式NSItemProvider／DropDelegate，回歸目前驗共用檔案caller，未宣稱Finder端到端drag coverage。
+- 長fixture以每8字20ms的小批次送出，在900字後等待明確release，閱讀位置固定後才繼續字流；沒有縮減長回應或位置斷言。捲動驗證使用真NSScrollView及live-scroll通知，未宣稱硬體觸控板／XCUI全點擊覆蓋。拖放走正式NSItemProvider／DropDelegate，回歸目前驗共用檔案caller，未宣稱Finder端到端drag coverage。
 - 保留原十一圖，追加rich chat深淺／exact receipt sheet／attachment tray／窄窗rich chat，兩架構各16圖、共32圖必須review。新HEAD九項CI全綠才可驗收，SHA／run／artifact／失敗由PR #21最新body保存。
 - 版本0.1.2 build3；原未Apple公證／macOS12實機／部分進階表單限制不變。沒有新增DB migration、production dependency、模型HTTP探測或Android／VPS UI改動。
 

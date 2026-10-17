@@ -106,7 +106,15 @@ func main() {
 			chunk, _ := json.Marshal(map[string]any{"model": body.Model, "choices": []any{map[string]any{"delta": map[string]string{"content": string(rune)}}}})
 			fmt.Fprintf(w, "data: %s\n\n", chunk)
 			f.Flush()
-			time.Sleep(3 * time.Millisecond)
+			if body.Model == "native-fixture-code" {
+				// Small, evenly paced bursts avoid per-rune timer granularity
+				// deciding when the two architectures reach the handshake.
+				if index%8 == 7 {
+					time.Sleep(20 * time.Millisecond)
+				}
+			} else {
+				time.Sleep(3 * time.Millisecond)
+			}
 		}
 		fmt.Fprint(w, "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":48,\"total_tokens\":60}}\n\ndata: [DONE]\n\n")
 		f.Flush()
