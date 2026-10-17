@@ -24,3 +24,10 @@ MAC-PARITY-006，2026-10-17。對照目前 Android main `5009e0c8` 與 VPS `026f
 | 偏好、背景與通知、備份、完整匯出 | 已接線，原生資料管理可改善 | Settings → settings、notifications、backup | 保留並回歸 |
 
 Unknown 不當 0／Free；Catalog 不等於 My Models。所有操作維持 Provider×Account×Credential×Model×Group×Endpoint；新增 UI 使用同一隨附引擎，沒有路由／fallback／gateway。不自動開啟背景工作或產生外部付費測試。實際 API 與原生畫面驗收完成後補 exact SHA/run/artifact。
+
+## 本片驗證入口（候選）
+
+- `ParityTests` 十一項 core 回歸：空文字音訊、strict attachment、語音格式／快照、雙人協定／邊界、向量參數、Unknown 數值／單位、完整帳戶 Key 篩選、排序與覆蓋率、connector 對照與 PAT、批次待確認定義。原18項不減，合計29項。
+- `NativeParity` 第二個獨立 App／DB／120秒階段，不擴大原測試上限：真 packaged engine→TLS fixture 檢查 current/legacy/雙人、voice/speed/instructions、空文字 multipart、dimensions/top_n、圖片與編輯；批次 exact-account confirm/undo、ABA stale 拒絕、connector 真測試→啟用→intelligence caller→復原、證據支持的知識版本／stale／復原、人工判讀、服務金鑰及 Assistant 安全參照、原對話不變與完整匯出。
+- 原25實圖保留，再加13張實際 production View，兩架構總76圖。資料載入畫面等待真 ready marker；不以初始空畫面作驗收。測試資料全為隔離合成資料，不冒充外部服務可用性。
+- 首候選 `a01de9c`／Mac39037663731 首輪編譯發現新表單 wrapper 多重宣告與收據按鈕括號錯誤，已修正；`9502b3f`／Mac39037990751 剩 Catalog 詳情大型 ViewBuilder 超過 type-check 時限，拆為明確子 View。這些失敗保留，新 HEAD 重新九項同 SHA；不得稱先前已驗收。

@@ -3,16 +3,19 @@ import SwiftUI
 
 struct ServicesView: View {
     @ObservedObject var store: AtlasStore
+    @State private var loaded = false
     @State private var service = "LMSPEED"
     @State private var secret = ""
     @State private var locale = "zh"
     @State private var notice: String?
+    @State private var problem: String?
     @State private var aa: JSONValue = .object([:])
     @State private var models: [JSONValue] = []
     @State private var history: JSONValue = .array([])
     @State private var query = ""
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
+            if let problem { Text(problem).foregroundStyle(.red) }
             AtlasCard {
                 Label("研究與外部資料服務", systemImage: "network").font(.headline)
                 Picker("服務", selection: $service) { Text("LMSpeed").tag("LMSPEED"); Text("Artificial Analysis").tag("AA"); Text("Brave Search").tag("BRAVE_SEARCH") }
@@ -38,12 +41,12 @@ struct ServicesView: View {
             }
             AARankingCard(value: aa) { guard let api = store.api else { return }; _ = try await api.call("/research/aa/sync", method: "POST", body: .object([:])); await load() }
             AtlasCard { Text("資料同步歷史").font(.headline); JSONTree(value: history) }
-        }.task { await load() }
+        }.background(Group { if loaded { AtlasLoadedMarker(name: "services-loaded") } }).task { await load() }
     }
     private func load() async {
         guard let api = store.api else { return }
-        do { async let a = api.get("/research/aa"), m = api.get("/lmspeed/models"), h = api.get("/intelligence/history"); let result = try await (a, m, h); aa = result.0; models = try result.1.requiredArray(); history = result.2 }
-        catch { notice = error.localizedDescription }
+        do { async let a = api.get("/research/aa"), m = api.get("/lmspeed/models"), h = api.get("/intelligence/history"); let result = try await (a, m, h); aa = result.0; models = try result.1.requiredArray(); history = result.2; loaded = true; problem = nil }
+        catch { problem = error.localizedDescription }
     }
 }
 

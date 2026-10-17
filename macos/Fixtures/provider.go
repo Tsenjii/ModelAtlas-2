@@ -1,6 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/binary"
+	"image"
+	"image/color"
+	"image/png"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -48,6 +54,7 @@ func main() {
 	defer spy.Close()
 	richReply := "## 原生 Mac，也能舒服地寫程式\n\n清楚的排版讓**重點**、程式碼與比較資料更容易閱讀。這些內容來自隔離的 TLS 合成測試。\n\n```swift\nstruct Workspace {\n    let name = \"ModelAtlas\"\n    let local = true\n\n    func greeting() -> String {\n        \"你好，\\(name)\"\n    }\n}\n```\n\n### 工作區比較\n\n| 工作區 | 用途 | 資料來源 |\n| --- | --- | --- |\n| Playground | 對話與寫程式 | 本機請求 |\n| Providers | 管理連線 | 使用者設定 |\n| Models | 搜尋與比較 | 各自保留來源 |\n\n> 上捲閱讀時，新的回應會繼續接收，畫面留在你正在看的位置。\n\n- 程式碼可直接複製。\n- 表格可水平捲動。\n- 附件可以拖入輸入區。\n\n" + strings.Repeat("這是較長的原生閱讀測試段落。串流持續接收，歷史仍完整保存；向上閱讀不會被新文字拉回底部。\n\n", 18)
 	mux := http.NewServeMux()
+	installParityRoutes(mux)
 	richContinue := make(chan struct{})
 	var releaseRich sync.Once
 	var richPaused atomic.Bool
@@ -150,4 +157,81 @@ func main() {
 		panic(err)
 	}
 	select {}
+}
+
+
+// The parity harness asserts real wire options without retaining prompts or keys.
+func installParityRoutes(mux *http.ServeMux) {
+	var counts sync.Map
+	record := func(name string) { value, _ := counts.LoadOrStore(name, new(atomic.Int64)); value.(*atomic.Int64).Add(1) }
+	wav := make([]byte, 52)
+	copy(wav, "RIFF"); binary.LittleEndian.PutUint32(wav[4:], 44); copy(wav[8:], "WAVEfmt ")
+	binary.LittleEndian.PutUint32(wav[16:], 16); binary.LittleEndian.PutUint16(wav[20:], 1); binary.LittleEndian.PutUint16(wav[22:], 1)
+	binary.LittleEndian.PutUint32(wav[24:], 24000); binary.LittleEndian.PutUint32(wav[28:], 48000); binary.LittleEndian.PutUint16(wav[32:], 2); binary.LittleEndian.PutUint16(wav[34:], 16)
+	copy(wav[36:], "data"); binary.LittleEndian.PutUint32(wav[40:], 8)
+	bitmap := image.NewRGBA(image.Rect(0, 0, 160, 120))
+	for y := 0; y < 120; y++ { for x := 0; x < 160; x++ { bitmap.SetRGBA(x, y, color.RGBA{uint8(x), 130, uint8(y + 50), 255}) } }
+	var raster bytes.Buffer; _ = png.Encode(&raster, bitmap)
+	mux.HandleFunc("/fixture/parity-state", func(w http.ResponseWriter, r *http.Request) {
+		out := map[string]int64{}; counts.Range(func(k, v any) bool { out[k.(string)] = v.(*atomic.Int64).Load(); return true }); json.NewEncoder(w).Encode(out)
+	})
+	mux.HandleFunc("/fixture/parity.wav", func(w http.ResponseWriter, r *http.Request) { w.Header().Set("Content-Type", "audio/wav"); w.Write(wav) })
+	mux.HandleFunc("/fixture/parity.png", func(w http.ResponseWriter, r *http.Request) { w.Header().Set("Content-Type", "image/png"); w.Write(raster.Bytes()) })
+	auth := func(w http.ResponseWriter, r *http.Request) bool { if r.Header.Get("Authorization") != "Bearer native-fixture-provider-key" { record("invalid"); http.Error(w, "fixture auth required", 401); return false }; return true }
+	object := func(v any) map[string]any { m, _ := v.(map[string]any); return m }
+	for _, path := range []string{"/v1/audio/speech", "/v1/embeddings", "/v1/rerank", "/v1/images/generations"} {
+		path := path
+		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+			if !auth(w, r) { return }
+			var body map[string]any
+			if json.NewDecoder(r.Body).Decode(&body) != nil { record("invalid"); http.Error(w, "invalid fixture body", 400); return }
+			w.Header().Set("Content-Type", "application/json")
+			switch path {
+			case "/v1/audio/speech":
+				if body["voice"] != "alloy" || body["speed"] != 1.75 || body["response_format"] != "wav" || body["instructions"] != "親切" { record("invalid"); http.Error(w, "speech option mismatch", 400); return }
+				record("speech"); w.Header().Set("Content-Type", "audio/wav"); w.Write(wav)
+			case "/v1/embeddings":
+				inputs, _ := body["input"].([]any)
+				if len(inputs) != 2 || body["dimensions"] != float64(3) { record("invalid"); http.Error(w, "vector option mismatch", 400); return }
+				record("embeddings"); json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"index": 0, "embedding": []float64{0, 0.5, 1}}, map[string]any{"index": 1, "embedding": []float64{1, 0.5, 0}}}, "usage": map[string]int{"prompt_tokens": 0, "total_tokens": 0}})
+			case "/v1/rerank":
+				documents, _ := body["documents"].([]any)
+				if len(documents) != 2 || body["top_n"] != float64(1) { record("invalid"); http.Error(w, "rerank option mismatch", 400); return }
+				record("rerank"); io.WriteString(w, `{"results":[{"index":1,"relevance_score":0.9}]}`)
+			case "/v1/images/generations":
+				if body["size"] != "1024x1024" { record("invalid"); http.Error(w, "image size mismatch", 400); return }
+				record("images"); json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"b64_json": base64.StdEncoding.EncodeToString(raster.Bytes())}}})
+			}
+		})
+	}
+	for _, path := range []string{"/v1/audio/transcriptions", "/v1/images/edits"} {
+		path := path
+		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+			if !auth(w, r) { return }
+			if r.ParseMultipartForm(8 << 20) != nil { record("invalid"); http.Error(w, "multipart required", 400); return }
+			defer r.MultipartForm.RemoveAll()
+			field := "file"; if path == "/v1/images/edits" { field = "image" }
+			file, _, err := r.FormFile(field); if err != nil { record("invalid"); http.Error(w, "file required", 400); return }; defer file.Close()
+			raw, err := io.ReadAll(io.LimitReader(file, 4 << 20)); if err != nil || len(raw) == 0 { record("invalid"); http.Error(w, "empty file", 400); return }
+			w.Header().Set("Content-Type", "application/json")
+			if path == "/v1/audio/transcriptions" { if r.FormValue("prompt") != "" { record("invalid"); http.Error(w, "transcription must allow empty prompt", 400); return }; record("transcription"); io.WriteString(w, `{"text":"這是只含音訊附件的真實轉寫測試。"}`) } else { record("image-edit"); json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"b64_json": base64.StdEncoding.EncodeToString(raster.Bytes())}}}) }
+		})
+	}
+	mux.HandleFunc("/v1/models/", func(w http.ResponseWriter, r *http.Request) {
+		if !auth(w, r) { return }; var body map[string]any
+		if !strings.HasSuffix(r.URL.Path, ":generateContent") || json.NewDecoder(r.Body).Decode(&body) != nil { record("invalid"); http.Error(w, "native speech required", 400); return }
+		config := object(body["generationConfig"]); speech := object(config["speechConfig"]); label := "native-current"
+		if multi := object(speech["multiSpeakerVoiceConfig"]); len(multi) > 0 {
+			voices, _ := multi["speakerVoiceConfigs"].([]any); contents, _ := body["contents"].([]any)
+			if len(voices) != 2 || len(contents) != 1 { record("invalid"); http.Error(w, "dual speakers missing", 400); return }
+			parts, _ := object(contents[0])["parts"].([]any)
+			if len(parts) != 2 || object(object(parts[0])["speech_metadata"])["speaker"] != "Joe" || object(object(parts[1])["speech_metadata"])["speaker"] != "Jane" { record("invalid"); http.Error(w, "dual turns mismatch", 400); return }; label = "native-dual"
+		} else if voice := object(speech["voiceConfig"]); voice["prebuiltVoiceConfig"] != nil { label = "native-legacy" } else if voice["voice"] != "Kore" { record("invalid"); http.Error(w, "native voice mismatch", 400); return }
+		record(label)
+		json.NewEncoder(w).Encode(map[string]any{"candidates": []any{map[string]any{"finishReason": "STOP", "content": map[string]any{"parts": []any{map[string]any{"inlineData": map[string]any{"mimeType": "audio/L16;codec=pcm;rate=24000", "data": base64.StdEncoding.EncodeToString(wav[44:])}}}}}}, "usageMetadata": map[string]int{"promptTokenCount": 0, "candidatesTokenCount": 0, "totalTokenCount": 0}})
+	})
+	mux.HandleFunc("/v1/quota/", func(w http.ResponseWriter, r *http.Request) {
+		if !auth(w, r) { return }; record("connector")
+		json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"model": strings.TrimPrefix(r.URL.Path, "/v1/quota/"), "group": "", "limits": map[string]int{"rpd": 120, "tpd": 2000000}}}})
+	})
 }

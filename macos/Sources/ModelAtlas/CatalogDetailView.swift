@@ -25,27 +25,61 @@ struct CatalogDetailView: View {
         return .object(["provider_id": key["provider_id"], "account_id": key["account_id"], "credential_id": key["id"], "model_id": model["id"], "group": key["group"], "endpoint": .string(endpoint)])
     }
     private var members: [JSONValue] { store.myModels.filter { $0["provider_id"] == model["provider_id"] && $0["model_id"] == model["id"] } }
+    private var existing: JSONValue? { guard let selection else { return nil }; return members.first { ModelScope($0) == ModelScope(selection) } }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack { VStack(alignment: .leading, spacing: 5) { Text(model["display_name"].string.isEmpty ? model["id"].string : model["display_name"].string).font(.title2.weight(.semibold)); Text(store.providerName(model["provider_id"].string)).foregroundStyle(.secondary) }; Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction) }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    AtlasCard { HStack { Text(model["id"].string).textSelection(.enabled); Spacer(); Button("複製 ID") { copyText(model["id"].string) } }; Text(model["metadata"]["description"].string); DisclosureGroup("分類與來源") { JSONTree(value: model["metadata"]) } }
-                    AtlasCard {
-                        Text("選擇加入的連線").font(.headline)
-                        Picker("帳戶與 Key", selection: $keyID) { Text("選擇連線").tag(""); ForEach(keys, id: \.self) { Text($0["account_id"].string + " · " + $0["label"].string + " · " + $0["group"].string + " · " + $0["base_url"].string).tag(credentialIdentity($0)) } }
-                        Picker("用途與端點", selection: $endpoint) { Text("選擇端點").tag(""); ForEach(availableEndpoints(store: store, key: key), id: \.self) { Text(operationTitle($0["operation"].string) + " · " + $0["url"].string).tag($0["id"].string) } }
-                        ActionButton(title: selection.flatMap { selected in members.first { ModelScope($0) == ModelScope(selected) } } == nil ? "加入 My Models" : "恢復／開啟這個連線") {
-                            guard let selection else { throw DraftProblem("請選擇這個供應商的 Key 與同來源端點。") }
-                            _ = try await store.mutate("/my-models", body: selection)
-                        }.disabled(selection == nil)
-                        if keys.isEmpty { Text("先在供應商詳情新增或啟用推論 Key。").foregroundStyle(.secondary) }
-                    }
-                    if !members.isEmpty { AtlasCard { Text("已加入的連線").font(.headline); ForEach(members, id: \.self) { row in Button { member = row } label: { HStack { Text(store.scopeTitle(row)); Spacer(); SmallBadge(text: row["state"].string); Text(row["endpoint"].string).font(.caption) } }.buttonStyle(.plain) } } }
-                }
-            }
+            heading
+            ScrollView { VStack(alignment: .leading, spacing: 18) { overview; joinForm; joinedConnections } }
         }.padding(24).frame(width: 790, height: 690)
         .onChange(of: keyID) { _ in endpoint = availableEndpoints(store: store, key: key).first?["id"].string ?? "" }
         .sheet(item: $member) { ModelDetailView(store: store, model: $0).atlasModal(store) }
+    }
+    private var heading: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(model["display_name"].string.isEmpty ? model["id"].string : model["display_name"].string).font(.title2.weight(.semibold))
+                Text(store.providerName(model["provider_id"].string)).foregroundStyle(.secondary)
+            }
+            Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction)
+        }
+    }
+    private var overview: some View {
+        AtlasCard {
+            HStack { Text(model["id"].string).textSelection(.enabled); Spacer(); Button("複製 ID") { copyText(model["id"].string) } }
+            Text(model["metadata"]["description"].string)
+            DisclosureGroup("分類與來源") { JSONTree(value: model["metadata"]) }
+        }
+    }
+    private var joinForm: some View {
+        AtlasCard {
+            Text("選擇加入的連線").font(.headline)
+            keyPicker
+            Picker("用途與端點", selection: $endpoint) {
+                Text("選擇端點").tag("")
+                ForEach(availableEndpoints(store: store, key: key), id: \.self) { entry in Text(operationTitle(entry["operation"].string) + " · " + entry["url"].string).tag(entry["id"].string) }
+            }
+            ActionButton(title: existing == nil ? "加入 My Models" : "恢復／開啟這個連線") {
+                guard let selection else { throw DraftProblem("請選擇這個供應商的 Key 與同來源端點。") }
+                _ = try await store.mutate("/my-models", body: selection)
+            }.disabled(selection == nil)
+            if keys.isEmpty { Text("先在供應商詳情新增或啟用推論 Key。").foregroundStyle(.secondary) }
+        }
+    }
+    private var keyPicker: some View {
+        Picker("帳戶與 Key", selection: $keyID) {
+            Text("選擇連線").tag("")
+            ForEach(keys, id: \.self) { entry in Text(keyLabel(entry)).tag(credentialIdentity(entry)) }
+        }
+    }
+    private func keyLabel(_ entry: JSONValue) -> String { [entry["account_id"].string, entry["label"].string, entry["group"].string, entry["base_url"].string].joined(separator: " · ") }
+    @ViewBuilder private var joinedConnections: some View {
+        if !members.isEmpty {
+            AtlasCard {
+                Text("已加入的連線").font(.headline)
+                ForEach(members, id: \.self) { row in
+                    Button { member = row } label: { HStack { Text(store.scopeTitle(row)); Spacer(); SmallBadge(text: row["state"].string); Text(row["endpoint"].string).font(.caption) } }.buttonStyle(.plain)
+                }
+            }
+        }
     }
 }

@@ -115,7 +115,7 @@ struct CandidateDetailView: View {
                     else if !candidate["base_url"].string.isEmpty { Button("以這份資料新增供應商…") { adding = true } }
                 }
             }
-        }.padding(24).frame(width: 800, height: 730).task { taiwan = candidate["taiwan"].string; strength = candidate["strength"].string; access = candidate["access_method"].string.isEmpty ? "UNKNOWN" : candidate["access_method"].string; await load() }
+        }.padding(24).frame(width: 800, height: 730).background(Group { if !evidence.isEmpty { AtlasLoadedMarker(name: "candidate-loaded") } }).task { taiwan = candidate["taiwan"].string; strength = candidate["strength"].string; access = candidate["access_method"].string.isEmpty ? "UNKNOWN" : candidate["access_method"].string; await load() }
         .sheet(isPresented: $adding) { AddProviderView(store: store, seed: candidate).atlasModal(store) }
     }
     private func load() async { guard let api = store.api else { return }; do { evidence = try await api.get("/research/evidence", query: [URLQueryItem(name: "candidate_id", value: candidate["id"].string)]).requiredArray(); problem = nil } catch { problem = error.localizedDescription } }

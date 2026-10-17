@@ -36,3 +36,10 @@ public struct ConnectorDraft: Equatable, Sendable {
     }
     public static func ids(_ text: String) -> [JSONValue] { text.split(whereSeparator: { $0 == "," || $0.isNewline }).map { .string($0.trimmingCharacters(in: .whitespacesAndNewlines)) }.filter { $0 != .string("") } }
 }
+
+public enum ResearchRequest {
+    public static func body(sources: [String], selections: [ModelScope], budget: String, probes: String, minimal: Bool, search: Bool, lmspeed: Bool, aa: Bool) throws -> JSONValue {
+        guard let http = Int(budget), (1...200).contains(http), let inference = Int(probes), (0...10).contains(inference), !minimal || inference > 0, sources.count <= 32, selections.count <= 32 else { throw DraftProblem("HTTP 預算需為 1–200；啟用推論驗證時請明確設定 1–10 次。") }
+        return .object(["source_ids": .array(sources.map(JSONValue.string)), "selections": .array(selections.map(\.json)), "budget": .number(Double(http)), "probe_budget": .number(minimal ? Double(inference) : 0), "minimal_inference": .bool(minimal), "search": .bool(search), "lmspeed_seeds": .bool(lmspeed), "refresh_aa": .bool(aa)])
+    }
+}

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ResearchView: View {
     @ObservedObject var store: AtlasStore
+    @State private var loaded = false
     @State private var dashboard: JSONValue = .object([:])
     @State private var sources: [JSONValue] = []
     @State private var runs: [JSONValue] = []
@@ -11,7 +12,7 @@ struct ResearchView: View {
     @State private var aa: JSONValue = .object([:])
     @State private var selected: Set<String> = []
     @State private var budget = "20"
-    @State private var probes = "0"
+    @State private var probes = "2"
     @State private var target = ""
     @State private var minimalInference = false
     @State private var useLMSpeed = false
@@ -39,6 +40,7 @@ struct ResearchView: View {
             if tab == "AA 排名" { AARankingCard(value: aa) { guard let api = store.api else { return }; _ = try await api.call("/research/aa/sync", method: "POST", body: .object([:])); await load() } }
             if tab == "Recipes" { recipeEditor }
         }
+        .background(Group { if loaded { AtlasLoadedMarker(name: "research-loaded") } })
         .task { await load(); while !Task.isCancelled { do { try await Task.sleep(nanoseconds: 3_000_000_000); if runs.contains(where: { ["QUEUED", "RUNNING"].contains($0["status"].string) }) { await load() } } catch { return } } }
         .sheet(item: $candidateDetail, onDismiss: { Task { await load() } }) { CandidateDetailView(store: store, candidate: $0).atlasModal(store) }
         .sheet(item: $runDetail, onDismiss: { Task { await load() } }) { ResearchRunView(store: store, run: $0).atlasModal(store) }
@@ -56,15 +58,16 @@ struct ResearchView: View {
                 Text("開始一輪研究").font(.headline)
                 ForEach(sources.filter { $0["enabled"].boolean }, id: \.self) { source in Toggle(source["name"].string + " · " + source["language"].string, isOn: Binding(get: { selected.contains(source["id"].string) }, set: { if $0 { selected.insert(source["id"].string) } else { selected.remove(source["id"].string) } })).toggleStyle(.checkbox) }
                 Picker("查詢我的連線", selection: $target) { Text("不查我的 Key").tag(""); ForEach(store.activeModels.filter { ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "CUSTOM"].contains(store.operationName($0)) }, id: \.self) { Text($0["model_id"].string + " · " + store.scopeTitle($0)).tag(ModelScope($0).id) } }
-                HStack { FormField(title: "HTTP 預算（1–200）", text: $budget); FormField(title: "推論預算（0–10）", text: $probes).disabled(!minimalInference) }
+                HStack { FormField(title: "HTTP 預算（1–200）", text: $budget); FormField(title: "推論預算（1–10）", text: $probes).disabled(!minimalInference) }
                 Toggle("使用 Brave 公開搜尋", isOn: $useSearch)
                 Toggle("加入 LMSpeed 公開候選", isOn: $useLMSpeed)
                 Toggle("更新 AA 動態排名", isOn: $refreshAA)
                 Toggle("允許最小推論驗證", isOn: $minimalInference)
                 ActionButton(title: "開始研究") {
-                    guard let api = store.api, let n = Int(budget), (1...200).contains(n), let p = Int(probes), (0...10).contains(p) else { throw DraftProblem("HTTP 預算需為 1–200；推論預算需為 0–10。") }
-                    let selections = store.activeModels.first(where: { ModelScope($0).id == target }).map { [ModelScope($0).json] } ?? []
-                    _ = try await api.call("/research/start", method: "POST", body: .object(["source_ids": .array(selected.sorted().map(JSONValue.string)), "budget": .number(Double(n)), "minimal_inference": .bool(minimalInference), "probe_budget": .number(minimalInference ? Double(p) : 0), "lmspeed_seeds": .bool(useLMSpeed), "search": .bool(useSearch), "refresh_aa": .bool(refreshAA), "selections": .array(selections)])); await load()
+                    guard let api = store.api else { return }
+                    let selections = store.activeModels.first(where: { ModelScope($0).id == target }).map { [ModelScope($0)] } ?? []
+                    let body = try ResearchRequest.body(sources: selected.sorted(), selections: selections, budget: budget, probes: probes, minimal: minimalInference, search: useSearch, lmspeed: useLMSpeed, aa: refreshAA)
+                    _ = try await api.call("/research/start", method: "POST", body: body); await load()
                 }
             }
             ForEach(runs, id: \.self) { run in
@@ -122,7 +125,7 @@ struct ResearchView: View {
         do {
             let result = try await api.get("/research/dashboard")
             dashboard = result; sources = result["sources"].array; runs = result["runs"].array; candidates = result["candidates"].array
-            async let a = api.get("/research/aa"), p = api.get("/recipes"); let extras = try await (a, p); aa = extras.0; recipes = try extras.1.requiredArray(); problem = nil
+            async let a = api.get("/research/aa"), p = api.get("/recipes"); let extras = try await (a, p); aa = extras.0; recipes = try extras.1.requiredArray(); problem = nil; loaded = true
         } catch { if !Task.isCancelled { problem = error.localizedDescription } }
     }
 }

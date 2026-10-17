@@ -103,3 +103,6 @@ assert len(list(out.glob('*.png')))==25
 print(json.dumps(value,ensure_ascii=False))
 PY
 
+
+echo 'Native stage: separate full feature parity process and new native captures'
+python3 "$mac_dir/scripts/parity-test.py" "$app" "$qa" "$MODELATLAS_FIXTURE_URL"

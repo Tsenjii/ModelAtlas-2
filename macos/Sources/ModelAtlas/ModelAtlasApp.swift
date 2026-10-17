@@ -43,7 +43,10 @@ import SwiftUI
                 .task {
                     delegate.store = store
                     await store.bootstrap(smoke: smokeDirectory != nil)
-                    if let smokeDirectory { await NativeSmoke.run(store: store, output: smokeDirectory) }
+                    if let smokeDirectory {
+                        if ProcessInfo.processInfo.arguments.contains("--parity-smoke") { await NativeParity.run(store: store, output: smokeDirectory) }
+                        else { await NativeSmoke.run(store: store, output: smokeDirectory) }
+                    }
                     else { await store.observeNotifications() }
                 }
         }

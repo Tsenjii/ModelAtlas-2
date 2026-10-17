@@ -196,3 +196,10 @@ private struct AtlasModalGuard: ViewModifier {
 extension View {
     func atlasModal(_ store: AtlasStore) -> some View { modifier(AtlasModalGuard(store: store)) }
 }
+
+struct AtlasLoadedMarker: NSViewRepresentable {
+    let name: String
+    func makeNSView(context: Context) -> Marker { let view = Marker(); view.identifier = NSUserInterfaceItemIdentifier(name); return view }
+    func updateNSView(_ view: Marker, context: Context) { view.identifier = NSUserInterfaceItemIdentifier(name) }
+    final class Marker: NSView { override func hitTest(_ point: NSPoint) -> NSView? { nil } }
+}

@@ -20,6 +20,25 @@ public struct ModelSearchEntry: Identifiable, Sendable {
     public func matches(_ query: String) -> Bool {
         Self.fold(query).split(whereSeparator: { $0.isWhitespace }).allSatisfy { searchable.contains($0) }
     }
+    public func matchesFuzzy(_ query: String) -> Bool {
+        if matches(query) { return true }
+        func normalized(_ text: String) -> String { Self.fold(text).filter { $0.isLetter || $0.isNumber } }
+        let target = normalized(query)
+        guard target.count >= 4, target.count <= 128 else { return false }
+        let values = [scope.modelID, title, model["metadata"]["canonical_id"].string] + model["metadata"]["aliases"].array.map(\.string) + model["offer"]["tags"].array.map(\.string)
+        return values.map(normalized).contains { value in
+            if value.contains(target) { return true }
+            guard abs(value.count - target.count) <= 2, value.count <= 128 else { return false }
+            let left = Array(value), right = Array(target)
+            var row = Array(0...right.count)
+            for (i, character) in left.enumerated() {
+                var next = [i + 1]
+                for j in right.indices { next.append(min(next[j] + 1, row[j + 1] + 1, row[j] + (character == right[j] ? 0 : 1))) }
+                row = next
+            }
+            return row.last! <= 2
+        }
+    }
     private static func fold(_ value: String) -> String {
         value.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: Locale(identifier: "en_US_POSIX"))
     }

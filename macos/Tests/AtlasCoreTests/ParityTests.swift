@@ -94,4 +94,21 @@ final class ParityTests: XCTestCase {
         draft.url = "https://user:secret@example.com"; XCTAssertThrowsError(try draft.request())
         draft.url = "https://example.com"; draft.auth = "NONE"; XCTAssertEqual(try draft.request()["credentials"], .array([]))
     }
+    func testLibraryFuzzySearchKeepsAliasesAndTagsWithoutIndexingSecrets() {
+        var value = model("atlas-reasoning-v2")
+        value["metadata"] = .object(["aliases": .array([.string("Café Writer")]), "secret": .string("must-not-be-indexed")])
+        value["offer"] = .object(["tags": .array([.string("research team")])])
+        let entry = ModelSearchEntry(model: value, context: "work", operation: "chat")
+        XCTAssertTrue(entry.matchesFuzzy("cafe wrter"))
+        XCTAssertTrue(entry.matchesFuzzy("researchteam"))
+        XCTAssertFalse(entry.matchesFuzzy("must-not-be-indexed"))
+        XCTAssertFalse(entry.matchesFuzzy("atlas-reasoning-v8-foreign-account"))
+    }
+    func testResearchInferenceBudgetIsExplicitAndDisabledMeansZero() throws {
+        let body = try ResearchRequest.body(sources: ["source"], selections: [scope], budget: "20", probes: "2", minimal: false, search: true, lmspeed: true, aa: true)
+        XCTAssertEqual(body["probe_budget"], .number(0)); XCTAssertEqual(body["selections"], .array([scope.json]))
+        XCTAssertEqual(body["search"], .bool(true)); XCTAssertEqual(body["lmspeed_seeds"], .bool(true)); XCTAssertEqual(body["refresh_aa"], .bool(true))
+        XCTAssertThrowsError(try ResearchRequest.body(sources: [], selections: [], budget: "20", probes: "0", minimal: true, search: false, lmspeed: false, aa: false))
+        XCTAssertThrowsError(try ResearchRequest.body(sources: [], selections: [], budget: "201", probes: "2", minimal: true, search: false, lmspeed: false, aa: false))
+    }
 }

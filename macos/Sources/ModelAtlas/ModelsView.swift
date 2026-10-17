@@ -12,6 +12,7 @@ struct ModelsView: View {
     @State private var compareSelection: Set<ModelScope> = []
     @State private var comparison: JSONValue?
     var body: some View {
+        let entries = filtered
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
@@ -29,7 +30,7 @@ struct ModelsView: View {
                         EmptyCard(icon: search.isEmpty ? "square.stack.3d.up" : "magnifyingglass", title: "沒有符合的模型", detail: "調整篩選條件，或從 Catalog 加入要用的模型。", action: "探索 Catalog") { tab = "Catalog" }.frame(height: 300)
                     } else {
                         VStack(spacing: 0) {
-                            ForEach(filtered.prefix(shown)) { entry in
+                            ForEach(entries.prefix(shown)) { entry in
                                 HStack(spacing: 0) {
                                     if selecting {
                                         Toggle("比較 " + entry.title, isOn: Binding(get: { compareSelection.contains(entry.scope) }, set: { if $0 { compareSelection.insert(entry.scope) } else { compareSelection.remove(entry.scope) } }))
@@ -37,7 +38,7 @@ struct ModelsView: View {
                                     }
                                     Button { store.detailModel = entry.model } label: { ModelLibraryRow(store: store, entry: entry) }.buttonStyle(AtlasRowButtonStyle())
                                 }
-                                if entry.id != filtered.last?.id { Divider().padding(.leading, selecting ? 88 : 60) }
+                                if entry.id != entries.prefix(shown).last?.id { Divider().padding(.leading, selecting ? 88 : 60) }
                             }
                         }.background(atlasSurface).cornerRadius(13)
                             .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.primary.opacity(0.07)))
@@ -89,7 +90,7 @@ struct ModelsView: View {
     private var filtered: [ModelSearchEntry] {
         let models = store.modelEntries(store.myModels).filter {
             let state = $0.model["state"].string
-            return (tab == "Hidden" ? state != "ACTIVE" : state == "ACTIVE") && $0.matches(search) && modelFilters.matches($0.model)
+            return (tab == "Hidden" ? state != "ACTIVE" : state == "ACTIVE") && $0.matchesFuzzy(search) && modelFilters.matches($0.model)
         }.map(\.model)
         return store.modelEntries(modelFilters.ordered(models, weights: store.settings["ranking_weights"]))
     }
@@ -160,7 +161,7 @@ struct CatalogView: View {
     private var filtered: [JSONValue] { items.filter { item in
         let joined = store.myModels.contains { $0["provider_id"] == item["provider_id"] && $0["model_id"] == item["id"] }
         var model = item; model["model_id"] = item["id"]
-        let match = ModelSearchEntry(model: model, context: store.providerName(item["provider_id"].string), operation: "").matches(search)
+        let match = ModelSearchEntry(model: model, context: store.providerName(item["provider_id"].string), operation: "").matchesFuzzy(search)
         return (providerID == nil || item["provider_id"].string == providerID) && (catalogProvider.isEmpty || item["provider_id"].string == catalogProvider) && match && (catalogCategory.isEmpty || item["metadata"]["primary_category"].string == catalogCategory) && (catalogCapability.isEmpty || item["metadata"]["capabilities"].array.contains(.string(catalogCapability))) && (membership.isEmpty || (membership == "joined" ? joined : !joined))
     }.sorted { ($0["display_name"].string + $0["provider_id"].string + $0["id"].string).localizedStandardCompare($1["display_name"].string + $1["provider_id"].string + $1["id"].string) == .orderedAscending } }
 

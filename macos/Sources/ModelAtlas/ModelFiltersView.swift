@@ -4,8 +4,10 @@ import SwiftUI
 struct ModelFiltersView: View {
     @ObservedObject var store: AtlasStore
     @Binding var filters: ModelFilters
+    @State private var expanded: Bool
+    init(store: AtlasStore, filters: Binding<ModelFilters>, expanded: Bool = false) { self.store = store; _filters = filters; _expanded = State(initialValue: expanded) }
     var body: some View {
-        DisclosureGroup("篩選與排序") {
+        DisclosureGroup("篩選與排序", isExpanded: $expanded) {
             VStack(alignment: .leading, spacing: 14) {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), alignment: .leading)], alignment: .leading, spacing: 14) {
                     Picker("供應商", selection: $filters.provider) { Text("全部供應商").tag(""); ForEach(store.providers) { Text($0["name"].string + " · " + $0.id).tag($0.id) } }

@@ -59,7 +59,7 @@ struct AssistantView: View {
             TextEditor(text: $message).frame(height: 90).padding(8).overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.2))).accessibilityLabel("Assistant 訊息")
             HStack {
                 Spacer()
-                if busy { ActionButton(title: "停止 Assistant") { guard let api = store.api else { return }; _ = try await api.call("/assistant/cancel", method: "POST", body: .object(["thread_id": .string(threadID)])) } }
+                if busy { ActionButton(title: "停止 Assistant") { defer { task?.cancel() }; if let api = store.api, !threadID.isEmpty { _ = try await api.call("/assistant/cancel", method: "POST", body: .object(["thread_id": .string(threadID)])) } } }
                 else { Button("傳送給 Assistant") { send() }.buttonStyle(.borderedProminent).controlSize(.large).disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || configuredID.isEmpty || scopeID != configuredID) }
             }
         }.padding(26).frame(width: 850, height: 740).task {
@@ -73,7 +73,7 @@ struct AssistantView: View {
     }
     private var assistantModels: [JSONValue] { store.activeModels.filter { ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "CUSTOM"].contains(store.operationName($0)) && !$0["capabilities"].array.filter { [.string("TOOL_CALLING"), .string("FUNCTION_CALLING")].contains($0) }.isEmpty } }
     private func send() {
-        guard let api = store.api, !busy else { return }
+        guard let api = store.api, !busy, !configuredID.isEmpty, scopeID == configuredID else { return }
         let prompt = message; message = ""; output = ""; tools = []; busy = true; problem = nil
         task = Task {
             defer { busy = false; task = nil }

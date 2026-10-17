@@ -33,6 +33,7 @@ import SwiftUI
 
 struct KnowledgeView: View {
     @ObservedObject var store: AtlasStore
+    @State private var loaded = false
     @State private var tab = "知識"
     @State private var query = ""
     @State private var knowledge: [JSONValue] = []
@@ -41,6 +42,7 @@ struct KnowledgeView: View {
     @State private var problem: String?
     @State private var selected: JSONValue?
     @State private var editor: JSONValue?
+    init(store: AtlasStore, initialTab: String = "知識") { self.store = store; _tab = State(initialValue: initialTab) }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { Text("研究知識與擷取規則").font(.title3.weight(.semibold)); Spacer(); Button("重新載入") { Task { await load() } }; Button("新增" + tab) { editor = .object(["editor": .string(tab)]) } .disabled(tab == "反思") }
@@ -57,7 +59,7 @@ struct KnowledgeView: View {
                 }.buttonStyle(.plain)
             }
             if rows.isEmpty { EmptyCard(icon: "books.vertical", title: "尚無" + tab, detail: "完成研究後可查看反思，或依據已保存的證據建立提案。").frame(minHeight: 220) }
-        }.task { await load() }
+        }.background(Group { if loaded { AtlasLoadedMarker(name: "knowledge-loaded") } }).task { await load() }
         .sheet(item: $selected, onDismiss: { Task { await load() } }) { row in
             if tab == "反思" { FactSheet(title: "研究反思", value: row).atlasModal(store) }
             else if let api = store.api { VersionDetailView(store: store, controller: VersionController(api: api, value: row, connector: tab == "擷取規則")).atlasModal(store) }
@@ -71,7 +73,7 @@ struct KnowledgeView: View {
     private func title(_ row: JSONValue) -> String { tab == "反思" ? "研究反思 · " + row["report"]["status"].string : (tab == "擷取規則" ? row["name"].string : row["kind"].string + " · " + row["subject"].string) + " · v" + row["version"].display }
     private func load() async {
         guard let api = store.api else { return }
-        do { async let k = api.get("/research/knowledge"), c = api.get("/connectors"), r = api.get("/research/reflections"); let data = try await (k, c, r); knowledge = try data.0.requiredArray(); connectors = try data.1.requiredArray(); reflections = try data.2.requiredArray(); problem = nil }
+        do { async let k = api.get("/research/knowledge"), c = api.get("/connectors"), r = api.get("/research/reflections"); let data = try await (k, c, r); knowledge = try data.0.requiredArray(); connectors = try data.1.requiredArray(); reflections = try data.2.requiredArray(); problem = nil; loaded = true }
         catch { problem = error.localizedDescription }
     }
 }
