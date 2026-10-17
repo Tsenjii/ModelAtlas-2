@@ -51,6 +51,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var detailProvider: JSONValue?
     @Published var detailModel: JSONValue?
     @Published var assistantOpen = false
+    @Published var modelPickerOpen = false
     let engine: EngineController
     var api: AtlasClient?
     private var drafts: [String: String] = [:]
@@ -75,6 +76,9 @@ enum Workspace: String, CaseIterable, Identifiable {
     func operationName(_ value: JSONValue) -> String {
         let id = value["endpoint"].string
         return endpoints.first { $0["provider_id"].string == value["provider_id"].string && $0["id"].string == id }?["operation"].string ?? id
+    }
+    func modelEntries(_ models: [JSONValue]) -> [ModelSearchEntry] {
+        models.map { ModelSearchEntry(model: $0, context: scopeTitle($0), operation: operationTitle(operationName($0))) }
     }
     func bootstrap(smoke: Bool = false) async {
         guard !booting && !ready && !closing else { return }
@@ -161,7 +165,12 @@ enum Workspace: String, CaseIterable, Identifiable {
         workspace = .playground
     }
     func chooseModel(_ value: JSONValue) {
-        guard !generating else { return }; newConversation(); scopeID = ModelScope(value).id; detailModel = nil
+        let id = ModelScope(value).id
+        guard !generating, !closing, activeModels.contains(where: { ModelScope($0).id == id }) else { return }
+        // Switching an unsent model must keep its draft and attachments. Existing
+        // conversations keep their immutable scope and open a separate draft.
+        if sessionID != nil { newConversation() }
+        scopeID = id; detailModel = nil; modelPickerOpen = false; workspace = .playground
     }
     func mutate(_ path: String, body: JSONValue, method: String = "POST") async throws -> JSONValue {
         guard let api, !closing else { throw AtlasError.engineUnavailable }

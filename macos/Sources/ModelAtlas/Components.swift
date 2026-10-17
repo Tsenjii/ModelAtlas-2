@@ -34,12 +34,55 @@ struct EmptyCard: View {
 struct PageHeading: View {
     let eyebrow: String, title: String, subtitle: String
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(eyebrow.uppercased()).font(.caption.weight(.semibold)).tracking(1.8).foregroundStyle(atlasAccent)
-            Text(title).font(.system(size: 30, weight: .bold, design: .rounded))
-            Text(subtitle).foregroundStyle(.secondary)
-        }.padding(.bottom, 8)
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title).font(.system(size: 23, weight: .semibold))
+            Text(subtitle).font(.callout).foregroundStyle(.secondary)
+        }
     }
+}
+
+struct SearchField: View {
+    let placeholder: String
+    @Binding var text: String
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField(placeholder, text: $text).textFieldStyle(.plain).accessibilityLabel(placeholder)
+            if !text.isEmpty {
+                Button { text = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                    .buttonStyle(.plain).help("清除搜尋")
+            }
+        }.padding(.horizontal, 11).padding(.vertical, 9).background(atlasSurface).cornerRadius(9)
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.primary.opacity(0.1)))
+    }
+}
+
+struct ModelMark: View {
+    let name: String
+    var body: some View {
+        Text(String(name.prefix(1)).uppercased()).font(.system(size: 15, weight: .semibold, design: .rounded))
+            .foregroundStyle(atlasAccent).frame(width: 32, height: 32)
+            .background(atlasAccent.opacity(0.09)).cornerRadius(9)
+    }
+}
+
+struct AtlasRowButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { Row(configuration: configuration) }
+    private struct Row: View {
+        let configuration: ButtonStyleConfiguration
+        @State private var hovering = false
+        var body: some View {
+            configuration.label.contentShape(Rectangle())
+                .background(atlasAccent.opacity(configuration.isPressed ? 0.12 : hovering ? 0.055 : 0))
+                .onHover { hovering = $0 }
+        }
+    }
+}
+
+func operationTitle(_ operation: String) -> String {
+    ["CHAT_COMPLETIONS": "對話", "RESPONSES": "回應", "ANTHROPIC_MESSAGES": "對話", "GEMINI_NATIVE": "對話",
+     "IMAGES_GENERATION": "圖片生成", "IMAGES_EDIT": "圖片編輯", "AUDIO": "音訊轉寫",
+     "AUDIO_SPEECH": "語音生成", "GEMINI_SPEECH": "語音生成", "EMBEDDINGS": "向量", "RERANK": "重新排序"][operation] ?? operation
 }
 
 struct FormField: View {

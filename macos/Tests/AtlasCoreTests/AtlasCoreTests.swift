@@ -52,6 +52,20 @@ final class AtlasCoreTests: XCTestCase {
         XCTAssertEqual(JSONValue.null.display, "尚無資料")
         XCTAssertNotEqual(JSONValue.null.display, JSONValue.number(0).display)
     }
+    func testModelSearchMatchesAllTermsWithoutIndexingSecretsOrCollapsingScopes() throws {
+        let a = try JSONValue.parse("{\"provider_id\":\"p\",\"account_id\":\"a\",\"credential_id\":\"same\",\"model_id\":\"coding-v1\",\"group\":\"work\",\"endpoint\":\"CHAT_COMPLETIONS\",\"metadata\":{\"display_name\":\"Café Coding\",\"aliases\":[\"writer\"],\"secret\":\"must-not-be-searchable\"}}")
+        var b = a; b["account_id"] = .string("b"); b["endpoint"] = .string("RESPONSES")
+        let first = ModelSearchEntry(model: a, context: "Provider · 工作帳戶 · 專案 Key", operation: "對話")
+        let second = ModelSearchEntry(model: b, context: "Provider · 個人帳戶", operation: "回應")
+        XCTAssertTrue(first.matches("  CAFE  工作帳戶 writer  "))
+        XCTAssertTrue(first.matches("ＣＯＤＩＮＧ work chat_completions"))
+        XCTAssertFalse(first.matches("個人帳戶"))
+        XCTAssertFalse(first.matches("must-not-be-searchable"))
+        XCTAssertTrue(second.matches("個人帳戶 responses"))
+        XCTAssertNotEqual(first.id, second.id)
+        XCTAssertEqual([first, second].filter { $0.matches("same") }.count, 2)
+        XCTAssertEqual(first.scope, ModelScope(a))
+    }
     func testKeychainPersistsAndNeverReplacesMissingDatabaseKey() throws {
         let service = "dev.modelatlas.ci." + UUID().uuidString
         defer { SecItemDelete([kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service] as CFDictionary) }

@@ -7,37 +7,60 @@ let endpointOptions = ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "G
 struct ProvidersView: View {
     @ObservedObject var store: AtlasStore
     @State private var search = ""
+    private var filtered: [JSONValue] {
+        store.providers.filter { search.isEmpty || ($0["name"].string + " " + $0["base_url"].string + " " + $0["description"].string).localizedCaseInsensitiveContains(search) }
+    }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                HStack(alignment: .top) {
-                    PageHeading(eyebrow: "Connections", title: "所有連線，各就其位。", subtitle: "獨立管理帳戶、Key 與群組，保留每一次使用紀錄。")
+                HStack(alignment: .center) {
+                    PageHeading(eyebrow: "Connections", title: "供應商", subtitle: "\(store.providers.count) 個供應商 · \(store.accounts.count) 個帳戶")
                     Spacer()
-                    Button { store.newProviderOpen = true } label: { Label("新增供應商", systemImage: "plus") }.buttonStyle(.borderedProminent).controlSize(.large)
+                    Button { store.newProviderOpen = true } label: { Label("新增供應商", systemImage: "plus") }
+                        .buttonStyle(.borderedProminent).controlSize(.large)
                 }
-                TextField("搜尋名稱或網址", text: $search).textFieldStyle(.roundedBorder).frame(maxWidth: 380)
-                if store.providers.isEmpty { EmptyCard(icon: "server.rack", title: "接上第一個供應商", detail: "貼上 Base URL 與 Key，檢查結果後再加入。", action: "新增供應商") { store.newProviderOpen = true }.frame(height: 350) }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: 16)], alignment: .leading, spacing: 16) {
-                    ForEach(store.providers.filter { search.isEmpty || ($0["name"].string + $0["base_url"].string).localizedCaseInsensitiveContains(search) }, id: \.self) { provider in
-                        Button { store.detailProvider = provider } label: {
-                            AtlasCard {
-                                HStack {
-                                    Image(systemName: "server.rack").font(.title2).foregroundStyle(atlasAccent).frame(width: 48, height: 48).background(atlasAccent.opacity(0.09)).cornerRadius(12)
-                                    VStack(alignment: .leading, spacing: 4) { Text(provider["name"].string).font(.headline); Text(provider["config"]["adapter"].string).font(.caption).foregroundStyle(.secondary) }
-                                    Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
-                                }
-                                Text(provider["description"].string.isEmpty ? provider["base_url"].string : provider["description"].string).foregroundStyle(.secondary).lineLimit(2).frame(height: 36, alignment: .top)
-                                HStack {
-                                    let id = provider["id"].string
-                                    SmallBadge(text: "\(store.accounts.filter { $0["provider_id"].string == id }.count) 帳戶")
-                                    SmallBadge(text: "\(store.credentials.filter { $0["provider_id"].string == id && $0["enabled"].boolean }.count) 個啟用 Key", color: atlasAccent)
-                                }
-                            }
-                        }.buttonStyle(.plain)
-                    }
+                SearchField(placeholder: "搜尋供應商、網址或描述", text: $search)
+                if store.providers.isEmpty {
+                    EmptyCard(icon: "server.rack", title: "接上第一個供應商", detail: "貼上 Base URL 與 Key，檢查結果後再加入。", action: "新增供應商") { store.newProviderOpen = true }.frame(height: 350)
+                } else if filtered.isEmpty {
+                    EmptyCard(icon: "magnifyingglass", title: "沒有符合的供應商", detail: "試試其他名稱或網址。", action: "清除搜尋") { search = "" }.frame(height: 280)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(filtered) { provider in
+                            ProviderRow(store: store, provider: provider)
+                            if provider.id != filtered.last?.id { Divider().padding(.leading, 64) }
+                        }
+                    }.background(atlasSurface).cornerRadius(13)
+                        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.primary.opacity(0.07)))
+                    Text("選擇供應商以管理帳戶、Key、Catalog 與端點。").font(.caption).foregroundStyle(.secondary)
                 }
-            }.padding(30).frame(maxWidth: 1300).frame(maxWidth: .infinity)
+            }.padding(24).frame(maxWidth: 1150).frame(maxWidth: .infinity)
         }
+    }
+}
+
+private struct ProviderRow: View {
+    @ObservedObject var store: AtlasStore
+    let provider: JSONValue
+    private var providerID: String { provider["id"].string }
+    var body: some View {
+        Button { store.detailProvider = provider } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "server.rack").font(.system(size: 16, weight: .medium)).foregroundStyle(atlasAccent)
+                    .frame(width: 32, height: 36).background(atlasAccent.opacity(0.09)).cornerRadius(9)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(provider["name"].string).font(.body.weight(.semibold)).lineLimit(1)
+                    Text(provider["base_url"].string).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    if !provider["description"].string.isEmpty { Text(provider["description"].string).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+                }
+                Spacer(minLength: 8)
+                VStack(alignment: .trailing, spacing: 5) {
+                    Text("\(store.accounts.filter { $0["provider_id"].string == providerID }.count) 帳戶 · \(store.credentials.filter { $0["provider_id"].string == providerID && $0["enabled"].boolean }.count) 啟用 Key").font(.caption).foregroundStyle(.secondary)
+                    Text("\(store.activeModels.filter { $0["provider_id"].string == providerID }.count) 個模型連線").font(.caption).foregroundStyle(atlasAccent)
+                }
+                Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
+            }.padding(16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }.buttonStyle(AtlasRowButtonStyle()).help(provider["name"].string + " · " + provider["base_url"].string)
     }
 }
 

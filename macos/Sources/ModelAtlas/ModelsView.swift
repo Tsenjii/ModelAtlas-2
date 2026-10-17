@@ -6,69 +6,125 @@ struct ModelsView: View {
     @State private var tab = "My Models"
     @State private var search = ""
     @State private var category = "ALL"
+    @State private var favorites = false
     @State private var compareSelection: Set<ModelScope> = []
     @State private var comparison: JSONValue?
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                PageHeading(eyebrow: "Model Library", title: "只留下，你想用的模型。", subtitle: "Catalog、你的連線與歷史各自保存，價格和可用性各有依據。")
-                Picker("模型庫", selection: $tab) { Text("My Models").tag("My Models"); Text("探索 Catalog").tag("Catalog"); Text("隱藏與封存").tag("Hidden") }.pickerStyle(.segmented).frame(maxWidth: 500)
+            VStack(alignment: .leading, spacing: 18) {
+                HStack {
+                    PageHeading(eyebrow: "Model Library", title: "模型", subtitle: "\(store.activeModels.count) 個可用連線 · \(store.myModels.filter { $0["favorite"].boolean }.count) 個收藏")
+                    Spacer()
+                    Button { store.modelPickerOpen = true } label: { Label("選擇模型", systemImage: "magnifyingglass") }.help("選擇模型（⌘K）").disabled(store.generating)
+                }
+                Picker("模型庫", selection: $tab) { Text("My Models").tag("My Models"); Text("Catalog").tag("Catalog"); Text("隱藏與封存").tag("Hidden") }.pickerStyle(.segmented).frame(maxWidth: 420)
                 if tab == "Catalog" { CatalogView(store: store, providerID: nil) }
                 else {
-                    HStack {
-                        TextField("搜尋模型、名稱、別名或供應商", text: $search).textFieldStyle(.roundedBorder)
-                        Picker("類別", selection: $category) { Text("所有類別").tag("ALL"); ForEach(["CHAT_REASONING", "CODING", "IMAGE", "AUDIO", "EMBEDDING", "RERANK", "OTHER"], id: \.self) { Text($0).tag($0) } }.frame(width: 220)
-                    }
-                    if filtered.isEmpty { EmptyCard(icon: "square.stack.3d.up", title: tab == "Hidden" ? "沒有隱藏或封存模型" : "建立你的模型庫", detail: "從 Catalog 主動加入模型，或手動輸入模型 ID。", action: "探索 Catalog") { tab = "Catalog" }.frame(height: 330) }
-                    ForEach(filtered, id: \.self) { model in
-                        HStack(spacing: 14) {
-                            if tab != "Hidden" { Toggle("選擇比較", isOn: Binding(get: { compareSelection.contains(ModelScope(model)) }, set: { if $0 { compareSelection.insert(ModelScope(model)) } else { compareSelection.remove(ModelScope(model)) } })).labelsHidden().toggleStyle(.checkbox) }
-                            Button { store.detailModel = model } label: {
-                                AtlasCard {
-                                    HStack(spacing: 14) {
-                                        Text(String((model["metadata"]["vendor"].string.isEmpty ? model["model_id"].string : model["metadata"]["vendor"].string).prefix(1)).uppercased()).font(.title2.weight(.semibold)).frame(width: 46, height: 46).foregroundStyle(atlasAccent).background(atlasAccent.opacity(0.1)).cornerRadius(13)
-                                        VStack(alignment: .leading, spacing: 5) { Text(model["model_id"].string).font(.headline).lineLimit(2); Text(store.scopeTitle(model)).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
-                                        Spacer()
-                                        if model["favorite"].boolean { Image(systemName: "star.fill").foregroundStyle(.orange) }
-                                        SmallBadge(text: model["price_state"].string == "FREE_NOW" ? "FREE NOW" : model["price_state"].string == "UNKNOWN" ? "價格待確認" : model["price_state"].string, color: model["price_state"].string == "FREE_NOW" ? atlasAccent : .secondary)
-                                        Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                    filters
+                    if filtered.isEmpty {
+                        EmptyCard(icon: search.isEmpty ? "square.stack.3d.up" : "magnifyingglass", title: "沒有符合的模型", detail: "調整篩選條件，或從 Catalog 加入要用的模型。", action: "探索 Catalog") { tab = "Catalog" }.frame(height: 300)
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(filtered) { entry in
+                                HStack(spacing: 0) {
+                                    if tab != "Hidden" {
+                                        Toggle("比較 " + entry.title, isOn: Binding(get: { compareSelection.contains(entry.scope) }, set: { if $0 { compareSelection.insert(entry.scope) } else { compareSelection.remove(entry.scope) } }))
+                                            .labelsHidden().toggleStyle(.checkbox).padding(.leading, 16).padding(.trailing, 2)
                                     }
-                                    HStack(spacing: 22) {
-                                        metric("我的上線率", value: model["performance"]["success_rate"].numeric.map { String(format: "%.1f%%", $0 * 100) } ?? "—")
-                                        metric("TTFT", value: model["performance"]["ttft"]["p50"].numeric.map { String(format: "%.0f ms", $0) } ?? "—")
-                                        metric("TPS", value: model["performance"]["tps"]["p50"].numeric.map { String(format: "%.1f", $0) } ?? "—")
-                                        metric("本機樣本", value: model["performance"]["samples"].display)
-                                    }
+                                    Button { store.detailModel = entry.model } label: { ModelLibraryRow(store: store, entry: entry) }.buttonStyle(AtlasRowButtonStyle())
                                 }
-                            }.buttonStyle(.plain)
-                        }
+                                if entry.id != filtered.last?.id { Divider().padding(.leading, tab == "Hidden" ? 60 : 88) }
+                            }
+                        }.background(atlasSurface).cornerRadius(13)
+                            .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.primary.opacity(0.07)))
                     }
-                    if !compareSelection.isEmpty {
-                        HStack {
-                            Text("已選 \(compareSelection.count) 個連線").foregroundStyle(.secondary)
-                            Spacer()
-                            Button("清除") { compareSelection = [] }
-                            ActionButton(title: "Compare Live") {
-                                guard let api = store.api else { return }
-                                comparison = try await api.call("/models/compare", method: "POST", body: .object(["selections": .array(compareSelection.sorted { $0.id < $1.id }.map(\.json)), "prompt": .string("Reply OK.")]))
-                                await store.refresh()
-                            }.disabled(!(2...4).contains(compareSelection.count))
-                        }
-                    }
+                    if !compareSelection.isEmpty { compareBar }
                     if let comparison { AtlasCard { Text("本次即時比較").font(.headline); JSONTree(value: comparison) } }
+                    Text("效能來自這個連線的本機請求；詳細來源與歷史可在模型內查看。").font(.caption).foregroundStyle(.secondary)
                 }
-            }.padding(30).frame(maxWidth: 1250).frame(maxWidth: .infinity)
+            }.padding(24).frame(maxWidth: 1150).frame(maxWidth: .infinity)
         }
     }
-    private var filtered: [JSONValue] {
-        store.myModels.filter {
-            let state = $0["state"].string
-            let visible = tab == "Hidden" ? state != "ACTIVE" : state == "ACTIVE"
-            let matches = search.isEmpty || ($0["model_id"].string + " " + $0["metadata"].pretty + " " + store.providerName($0["provider_id"].string)).localizedCaseInsensitiveContains(search)
-            return visible && matches && (category == "ALL" || $0["metadata"]["primary_category"].string == category)
+    private var filters: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SearchField(placeholder: "搜尋模型、帳戶、Key 或群組", text: $search)
+            HStack {
+                Picker("類別", selection: $category) {
+                    Text("所有類別").tag("ALL")
+                    ForEach(["CHAT_REASONING", "CODING", "IMAGE", "AUDIO", "EMBEDDING", "RERANK", "OTHER"], id: \.self) { Text(categoryTitle($0)).tag($0) }
+                }.labelsHidden().frame(width: 145)
+                Toggle("只看收藏", isOn: $favorites).toggleStyle(.checkbox).font(.callout)
+                Spacer()
+                if !search.isEmpty || favorites || category != "ALL" { Button("重設") { search = ""; favorites = false; category = "ALL" }.buttonStyle(.plain).foregroundStyle(atlasAccent) }
+                Text("\(filtered.count) 個連線").font(.caption).foregroundStyle(.secondary)
+            }
         }
     }
-    private func metric(_ title: String, value: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(title).font(.caption2).foregroundStyle(.secondary); Text(value).font(.callout.monospacedDigit()) } }
+    private var compareBar: some View {
+        HStack(spacing: 12) {
+            Text("已選 \(compareSelection.count) 個連線").font(.callout)
+            Spacer()
+            Text("會送出實際請求").font(.caption).foregroundStyle(.secondary)
+            Button("清除") { compareSelection = [] }
+            ActionButton(title: "即時比較") {
+                guard let api = store.api else { return }
+                comparison = try await api.call("/models/compare", method: "POST", body: .object(["selections": .array(compareSelection.sorted { $0.id < $1.id }.map(\.json)), "prompt": .string("Reply OK.")]))
+                await store.refresh()
+            }.disabled(!(2...4).contains(compareSelection.count))
+        }.padding(12).background(atlasAccent.opacity(0.06)).cornerRadius(10)
+    }
+    private var filtered: [ModelSearchEntry] {
+        store.modelEntries(store.myModels).filter {
+            let state = $0.model["state"].string
+            return (tab == "Hidden" ? state != "ACTIVE" : state == "ACTIVE") && $0.matches(search)
+                && (!favorites || $0.model["favorite"].boolean) && (category == "ALL" || $0.model["metadata"]["primary_category"].string == category)
+        }
+    }
+    private func categoryTitle(_ value: String) -> String {
+        ["CHAT_REASONING": "對話與推理", "CODING": "程式設計", "IMAGE": "圖片", "AUDIO": "音訊", "EMBEDDING": "向量", "RERANK": "重新排序", "OTHER": "其他"][value] ?? value
+    }
+}
+
+private struct ModelLibraryRow: View {
+    @ObservedObject var store: AtlasStore
+    let entry: ModelSearchEntry
+    private var performance: JSONValue { entry.model["performance"] }
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            ModelMark(name: entry.title).padding(.top, 2)
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 8) {
+                    Text(entry.title).font(.body.weight(.semibold)).lineLimit(1)
+                    if entry.model["favorite"].boolean { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.orange) }
+                    if !entry.model["enabled"].boolean { SmallBadge(text: "已停用") }
+                    Spacer(minLength: 4)
+                    Text(operationTitle(store.operationName(entry.model))).font(.caption).foregroundStyle(atlasAccent)
+                    Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
+                }
+                Text(store.scopeTitle(entry.model) + " · " + entry.scope.endpoint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                metrics
+            }
+        }.padding(16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+            .help(entry.scope.modelID + " · " + store.scopeTitle(entry.model) + " · " + entry.scope.endpoint)
+    }
+    private var metrics: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            if let samples = performance["samples"].numeric, samples > 0 {
+                HStack(spacing: 16) {
+                    Text("我的上線率 " + (performance["success_rate"].numeric.map { String(format: "%.1f%%", $0 * 100) } ?? "—"))
+                    if let ttft = performance["ttft"]["mean"].numeric { Text(String(format: "平均 TTFT %.0f ms", ttft)) }
+                    if let tps = performance["tps"]["mean"].numeric { Text(String(format: "平均 TPS %.1f", tps)) }
+                }.font(.caption.monospacedDigit()).foregroundStyle(.primary)
+                Text("\(performance["samples"].display) 筆本機樣本 · \(windowLabel) · \(samples < 20 ? "樣本較少" : "僅代表此時間窗")")
+                    .font(.caption2).foregroundStyle(.secondary)
+            } else { Text("尚無本機樣本").font(.caption).foregroundStyle(.tertiary) }
+        }
+    }
+    private var windowLabel: String {
+        guard let milliseconds = performance["window_ms"].numeric, milliseconds > 0 else { return "時間窗未提供" }
+        let hours = milliseconds / 3_600_000
+        return hours >= 24 ? String(format: "近 %.0f 天", hours / 24) : String(format: "近 %.0f 小時", hours)
+    }
 }
 
 struct CatalogView: View {

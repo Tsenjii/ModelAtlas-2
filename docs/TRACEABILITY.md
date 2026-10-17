@@ -4,7 +4,8 @@
 
 | ID | 正式 caller／測試 | 驗收條件 |
 |---|---|---|
-| MAC-NATIVE-001 | SwiftUI `ModelAtlasApp` → `RootView`／Playground／Providers／Models／Settings／Research／Assistant → `AtlasStore` → `AtlasClient` → bundled production engine；原生視窗smoke與六實圖 | Universal arm64／x86_64，macOS12部署目標；同一artifact在兩種Mac架構執行，不用WebView／mock transport，不能以Linux交叉編譯稱Mac執行 |
+| MAC-NATIVE-001 | SwiftUI `ModelAtlasApp` → `RootView`／Playground／Providers／Models／Settings／Research／Assistant → `AtlasStore` → `AtlasClient` → bundled production engine；原生視窗smoke與十一實圖 | Universal arm64／x86_64，macOS12部署目標；同一artifact在兩種Mac架構執行，不用WebView／mock transport，不能以Linux交叉編譯稱Mac執行 |
+| MAC-UI-002 | `ModelPickerView`／⌘K／緊湊三工作區 → `ModelSearchEntry`／`AtlasStore.chooseModel` → 原 full-scope API；真單元＋native store caller／十一實圖 | 搜尋全部詞、全半形／大小寫／別名；同 model/key 跨帳戶／provider 不合併；未送草稿／附件保留，舊對話草稿恢復；非法未加入 scope 拒選。雙架構同 artifact／全部九項同 SHA gate 與 22 PNG review 前 PENDING，詳 `macos/UI_REVIEW.md` |
 | MAC-LIFETIME-001 | `EngineController` → `desktop` config → OS動態loopback listener／0600 readiness／stdin EOF → HTTP／worker／SQLite收尾 | 真Go程序測試＋兩Mac程序restart／writer拒絕；App無常駐daemon，不繼承PORT對外開埠；保持原平台／本機模式認證 |
 | MAC-SECRET-SCOPE-001 | `KeychainVault` → Security.framework／SecRandom、完整`ModelScope`、禁redirect/cookie/cache/proxy的native client | 真Keychain roundtrip／missing-vault拒絕重生、A/B同KeyID隔離、SSE與實際cancel／history／vault reopen、Unknown不當0／Free、預設背景通知OFF |
 

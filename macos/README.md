@@ -12,10 +12,10 @@ GitHub Actions `macOS Native App` 產出 `ModelAtlas-macOS-Universal.dmg`、`.zi
 
 ## 已接線的原生工作區
 
-- Playground：完整選定 Provider×Account×Key×Model×Group×Endpoint，真 SSE 文字／reasoning、停止、可持續輸入下一稿、永久對話、搜尋／置頂／命名／封存／恢復／分頁與完整 JSON／Markdown 匯出；系統指示、Token 上限、串流與工具定義／工具結果接續。
+- Playground：⌘K 搜尋式模型選擇，依模型／供應商／帳戶／Key label／群組／端點搜尋、收藏與供應商篩選；切換未送模型保留草稿／附件，舊對話 scope 不改。完整選定 Provider×Account×Key×Model×Group×Endpoint，真 SSE 文字／reasoning、停止、可持續輸入下一稿、永久對話、搜尋／置頂／命名／封存／恢復／分頁與完整 JSON／Markdown 匯出；系統指示、Token 上限、串流與工具定義／工具結果接續。
 - 圖片／PDF／WAV／MP3 選檔與每種4MiB限制，沿用引擎 signature／能力再次驗證；影像生成／編輯、轉寫、語音、embedding／rerank 走同一正式媒體入口，原生圖片預覽、音訊播放、結果儲存，不自動抓遠端圖片。
 - Providers：Quick／Advanced → 真檢查／可恢復 Review → 明確選模型確認；帳戶、Key／PAT、群組、啟停、rotate／版本恢復、額外加密認證欄位、immutable endpoints／CUSTOM 宣告式協定、網站／備註／簽到設定與 New API 資料查詢。
-- Models：My Models 與 Catalog 分開，搜尋／分類、完整 Catalog 搜尋與分批顯示、手動加入、精確 Key／端點連線、即時比較、模型詳情、來源／時間窗／保留歷史、能力確認、分類／別名／手動資料與收藏／觀察／隱藏／封存。
+- Models：緊湊完整連線列，真實平均 TTFT／TPS、我的上線率附本機樣本數與時間窗；少量樣本提示僅為介面提示，不是統計信賴區間。My Models 與 Catalog 分開，搜尋／分類、完整 Catalog 搜尋與分批顯示、手動加入、精確 Key／端點連線、即時比較、模型詳情、來源／時間窗／保留歷史、能力確認、分類／別名／手動資料與收藏／觀察／隱藏／封存。
 - Settings：原生外觀、時區、背景同步與通知偏好、通知紀錄與本機投遞、請求分頁／收據／完整 NDJSON、可攜設定匯出與明確匯入。
 - 研究：來源管理、明確選來源／本輪預算／最小推論 opt-in、啟動／暫停／恢復／停止、完整候選漏斗、反思／知識檢視、Recipe 新版本與切回舊版本。
 - Assistant：選定已確認工具能力的模型，真結構化工具 runner、獨立歷史、停止、變更前後 Review／確認／Undo；raw Key／PAT 仍只經本機 privileged API 使用。
@@ -48,9 +48,9 @@ SwiftPM 也可直接用 Xcode 開啟 `macos/Package.swift` 查看原生程式碼
 
 - `AtlasCoreTests`：完整 scope 區分、SSE Unicode／multiline／bounds、Keychain 真存取、只有 loopback origin、禁 redirect／截斷 SSE 不冒充完成。
 - 兩架構測試同一份已建置 Universal artifact；native client → packaged production engine → 真 TLS fixture，驗 catalog≠membership、A/B同Key ID隔離、串流／完整歷史／實際cancel、備份下載、停機與固定金鑰 reopen、第二 writer拒絕、預設OFF。不是 mock transport。
-- 實際啟動 `.app` 的 SwiftUI 視窗，以同一 store／API 寫入合成資料、完成 TLS chat，再拍三工作區、深淺色與窄視窗六張PNG。這是實際原生視窗 capture＋store caller 驗證，**不是 XCUI 全點擊覆蓋**。
+- 實際啟動 `.app` 的 SwiftUI 視窗，以同一 store／API 寫入合成資料、完成 TLS chat，再拍三工作區、深淺色、窄視窗與選模／新增供應商 sheet 十一張PNG；正式 store caller 另驗未送草稿／附件保留、舊對話草稿恢復、重複模型與 Key ID 的完整 scope 搜尋及非法 scope 拒選。這是實際原生視窗 capture＋store caller 驗證，**不是 XCUI 全點擊覆蓋**。
 - CI native integration 暫時信任一張每輪新產生、24小時到期的本機 fixture CA。結束將**這張 CA 明確設為 Deny**、按完整 fingerprint 刪除憑證，並用 Apple Security API 確認 exact admin Deny 與離線 OS trust 拒絕；任一步失敗 gate 失敗。這避開 [GitHub runner 已知 remove-trusted-cert 卡住問題](https://github.com/actions/runner-images/issues/12116)，不改 authorizationdb／不關 TLS 驗證。Deny-only trust record 留在可丟棄 runner 至 VM 銷毀；只供可丟棄 CI，或明確 `MODELATLAS_ALLOW_TEST_CERT=1` 的開發測試。正常App不安裝憑證，也不改TLS驗證。
-- `process-footprint.json` 用 `ps RSS` 記錄該次原生 App＋其自帶引擎的啟動／TLS chat／六畫面 capture，排除 fixture與test runner；不冒充完整VPS expanded workload或RSS硬上限。
+- `process-footprint.json` 用 `ps RSS` 記錄該次原生 App＋其自帶引擎的啟動／TLS chat／十一畫面 capture，排除 fixture與test runner；不冒充完整VPS expanded workload或RSS硬上限。
 - Linux Go新增 `TestDesktopDynamicLoopbackAndParentPipeLifetime`，真 binary 驗實際埠／0600 ready／401／parent EOF退出／ready移除／DB lock釋放，既有完整Go／VPS Browser／Android gate仍全部保留。
 
 Mac 唯一 live slice／未驗收狀態見 `docs/ACTIVE_TASK.md`，正式 caller → 測試見 `docs/TRACEABILITY.md`；最新 PR body 保存 exact code SHA、全部九項 jobs、artifact、實圖 review 與限制。不要將缺 Apple 公證、未跑 macOS12 或後續專用表單寫成已完成。

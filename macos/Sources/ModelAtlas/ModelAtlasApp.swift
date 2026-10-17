@@ -56,6 +56,7 @@ import SwiftUI
                 Button("Providers") { store.workspace = .providers }.keyboardShortcut("2")
                 Button("Models") { store.workspace = .models }.keyboardShortcut("3")
                 Divider()
+                Button("選擇模型…") { store.modelPickerOpen = true }.keyboardShortcut("k").disabled(!store.ready || store.generating)
                 Button("重新整理") { Task { await store.refresh() } }.keyboardShortcut("r").disabled(!store.ready)
                 Button("新增供應商…") { store.newProviderOpen = true }.keyboardShortcut("n", modifiers: [.command, .shift]).disabled(!store.ready)
             }

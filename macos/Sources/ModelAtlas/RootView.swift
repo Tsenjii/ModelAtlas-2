@@ -7,7 +7,7 @@ struct RootView: View {
     @AppStorage("appearance") private var appearance = "system"
     var body: some View {
         HSplitView {
-            sidebar.frame(minWidth: 210, idealWidth: 235, maxWidth: 285)
+            sidebar.frame(minWidth: 205, idealWidth: 218, maxWidth: 260)
             VStack(spacing: 0) {
                 if let problem = store.problem {
                     HStack(alignment: .top) {
@@ -49,26 +49,37 @@ struct RootView: View {
         .sheet(item: $store.detailModel) { ModelDetailView(store: store, model: $0) }
         .sheet(isPresented: $store.settingsOpen) { SettingsView(store: store) }
         .sheet(isPresented: $store.assistantOpen) { AssistantView(store: store) }
+        .sheet(isPresented: $store.modelPickerOpen) { ModelPickerView(store: store) }
         .disabled(store.closing)
         .overlay {
             if store.closing { ProgressView("正在儲存並關閉本機工作區…").padding(24).background(.regularMaterial).cornerRadius(14) }
         }
     }
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 12) {
-                Image(systemName: "hexagon.fill").font(.system(size: 27)).foregroundStyle(atlasAccent)
-                VStack(alignment: .leading, spacing: 2) { Text("ModelAtlas").font(.title3.weight(.bold)); Text("你的模型工作區").font(.caption).foregroundStyle(.secondary) }
-            }.padding(.horizontal, 12).padding(.top, 18)
-            VStack(spacing: 5) {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 10) {
+                Image(systemName: "hexagon.fill").font(.system(size: 23)).foregroundStyle(atlasAccent)
+                Text("ModelAtlas").font(.system(size: 17, weight: .semibold))
+            }.padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 4)
+            VStack(spacing: 4) {
                 ForEach(Workspace.allCases) { section in
                     Button { store.workspace = section } label: {
-                        Label(section.rawValue, systemImage: section.symbol).font(.body.weight(.medium))
-                            .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading).padding(.horizontal, 14)
-                            .background(store.workspace == section ? atlasAccent.opacity(0.12) : Color.clear).cornerRadius(11)
+                        HStack {
+                            Label(section.rawValue, systemImage: section.symbol).font(.body.weight(.medium))
+                            Spacer(minLength: 4)
+                            if section == .providers { Text("\(store.providers.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
+                            if section == .models { Text("\(store.activeModels.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
+                        }.frame(maxWidth: .infinity, minHeight: 38, alignment: .leading).padding(.horizontal, 12)
+                            .background(store.workspace == section ? atlasAccent.opacity(0.11) : Color.clear).cornerRadius(8)
                             .foregroundStyle(store.workspace == section ? atlasAccent : Color.primary)
                     }.buttonStyle(.plain).accessibilityIdentifier("nav-" + section.rawValue)
                 }
+            }
+            if store.ready {
+                Button { store.modelPickerOpen = true } label: {
+                    HStack { Label("選擇模型", systemImage: "magnifyingglass"); Spacer(); Text("⌘K").foregroundStyle(.secondary) }
+                        .font(.caption).padding(.horizontal, 12).padding(.vertical, 9).contentShape(Rectangle())
+                }.buttonStyle(.plain).foregroundStyle(.secondary).disabled(store.generating)
             }
             if store.workspace == .playground && store.ready { conversationList }
             Spacer(minLength: 0)
@@ -76,14 +87,14 @@ struct RootView: View {
                 Circle().fill(store.ready ? atlasAccent : Color.secondary).frame(width: 7, height: 7)
                 Text(store.ready ? "本機工作區" : "尚未啟動").font(.caption).foregroundStyle(.secondary)
                 Spacer()
-            }.padding(14).background(Color.primary.opacity(0.025)).cornerRadius(10)
+            }.padding(.horizontal, 12).padding(.vertical, 10)
         }.padding(12).background(.ultraThinMaterial)
     }
     private var conversationList: some View {
         VStack(alignment: .leading, spacing: 10) {
             Divider().padding(.vertical, 4)
             HStack { Text("對話").font(.caption.weight(.semibold)).foregroundStyle(.secondary); Spacer(); Button { store.newConversation() } label: { Image(systemName: "square.and.pencil") }.buttonStyle(.plain).disabled(store.generating).help("新增對話（⌘N）") }.padding(.horizontal, 10)
-            TextField("搜尋所有對話", text: $store.sessionSearch).textFieldStyle(.roundedBorder).onSubmit { Task { try? await store.loadSessions() } }
+            SearchField(placeholder: "搜尋對話", text: $store.sessionSearch).onSubmit { Task { try? await store.loadSessions() } }
             Toggle("已封存", isOn: $store.archiveView).font(.caption).toggleStyle(.checkbox).onChange(of: store.archiveView) { _ in Task { try? await store.loadSessions() } }
             ScrollView {
                 LazyVStack(spacing: 4) {
