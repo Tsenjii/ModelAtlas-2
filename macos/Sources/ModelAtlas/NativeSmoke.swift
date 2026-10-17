@@ -112,7 +112,7 @@ import SwiftUI
             try await Task.sleep(nanoseconds: 450_000_000)
             stage = "chat-reading-markdown-attachments-receipt"
             try await verifyChatExperience(store: store, code: code, window: window, output: output, fixture: fixture) { stage = "chat-experience-" + $0 }
-            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(16), "chat_reading_guards": .bool(true), "attachment_guards": .bool(true), "request_receipt": .bool(true), "native_markdown": .bool(true)])
+            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(18), "chat_reading_guards": .bool(true), "attachment_guards": .bool(true), "request_receipt": .bool(true), "native_markdown": .bool(true)])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-smoke.json"), options: .atomic)
         } catch {
             // Fixed stage labels only: never dump a store, request, credential,
@@ -168,7 +168,11 @@ import SwiftUI
         scroll.reflectScrolledClipView(scroll.contentView)
         center.post(name: NSScrollView.didLiveScrollNotification, object: scroll)
         center.post(name: NSScrollView.didEndLiveScrollNotification, object: scroll)
-        try await waitFor { !store.chatReading.following && !store.chatReading.atLatest }
+        checkpoint("user-scroll-survives-stale-model-update")
+        guard let nativeProbe = probe as? ChatScrollProbe.ProbeView else { throw AtlasError.invalidResponse }
+        nativeProbe.setFollowing(store.chatReading.following)
+        guard !nativeProbe.following, (nativeProbe.readingOffset ?? .infinity) < 3 else { throw AtlasError.invalidResponse }
+        try await waitFor { !store.chatReading.following && !store.chatReading.atLatest && transcriptOffset(scroll) < 3 }
         let readingPosition = scroll.contentView.bounds.minY, textCount = store.streamingText.count
         checkpoint("stream-does-not-steal-reading-position")
         guard let releaseURL = URL(string: fixture + "/fixture/release-rich") else { throw AtlasError.invalidEndpoint }
@@ -199,11 +203,16 @@ import SwiftUI
         scroll.reflectScrolledClipView(scroll.contentView)
         center.post(name: NSScrollView.didLiveScrollNotification, object: scroll)
         center.post(name: NSScrollView.didEndLiveScrollNotification, object: scroll)
+        nativeProbe.setFollowing(store.chatReading.following)
+        guard !nativeProbe.following, (nativeProbe.readingOffset ?? .infinity) < 3 else { throw AtlasError.invalidResponse }
+        try await waitFor { !store.chatReading.following && !store.chatReading.atLatest && transcriptOffset(scroll) < 3 }
         UserDefaults.standard.set("light", forKey: "appearance")
         checkpoint("capture-rich-light")
         try await capture(window, to: output.appendingPathComponent("12-chat-markdown-light.png"))
+        guard transcriptOffset(scroll) < 3 else { throw AtlasError.invalidResponse }
         UserDefaults.standard.set("dark", forKey: "appearance")
         try await capture(window, to: output.appendingPathComponent("13-chat-markdown-dark.png"))
+        guard transcriptOffset(scroll) < 3 else { throw AtlasError.invalidResponse }
         checkpoint("exact-message-request-receipt")
         let sample = answer["sample_id"].string
         guard !sample.isEmpty, let api = store.api else { throw AtlasError.invalidResponse }
@@ -230,6 +239,25 @@ import SwiftUI
         store.attachments = []
         window.setContentSize(NSSize(width: 920, height: 650))
         try await capture(window, to: output.appendingPathComponent("16-chat-markdown-compact.png"))
+        checkpoint("capture-native-table")
+        window.setContentSize(NSSize(width: 1200, height: 780))
+        UserDefaults.standard.set("light", forKey: "appearance")
+        // Move the real viewport below the code block for table/quote review.
+        // The original sixteen window/sheet captures remain mandatory.
+        document.layoutSubtreeIfNeeded()
+        center.post(name: NSScrollView.willStartLiveScrollNotification, object: scroll)
+        let tableOffset: CGFloat = 400
+        let tableY = document.isFlipped ? document.bounds.minY + tableOffset : document.bounds.maxY - scroll.contentView.bounds.height - tableOffset
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: tableY))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        center.post(name: NSScrollView.didLiveScrollNotification, object: scroll)
+        center.post(name: NSScrollView.didEndLiveScrollNotification, object: scroll)
+        try await waitFor { abs(transcriptOffset(scroll) - tableOffset) < 3 }
+        try await capture(window, to: output.appendingPathComponent("17-chat-table-light.png"))
+        guard abs(transcriptOffset(scroll) - tableOffset) < 3 else { throw AtlasError.invalidResponse }
+        UserDefaults.standard.set("dark", forKey: "appearance")
+        try await capture(window, to: output.appendingPathComponent("18-chat-table-dark.png"))
+        guard abs(transcriptOffset(scroll) - tableOffset) < 3 else { throw AtlasError.invalidResponse }
         checkpoint("new-conversation-resets-reading")
         store.newConversation()
         guard store.chatReading == ChatReadingState(), store.messages.isEmpty else { throw AtlasError.invalidResponse }
@@ -256,6 +284,11 @@ import SwiftUI
         guard let saved = sessions.first(where: { $0["id"].string == receipt["session_id"].string }) else { throw AtlasError.invalidResponse }
         await store.selectSession(saved)
         guard store.messages.last?["content"].string == answer["content"].string, store.messages.count == 2 else { throw AtlasError.invalidResponse }
+    }
+    private static func transcriptOffset(_ scroll: NSScrollView) -> CGFloat {
+        guard let document = scroll.documentView else { return .infinity }
+        let visible = scroll.documentVisibleRect
+        return max(0, document.isFlipped ? visible.minY - document.bounds.minY : document.bounds.maxY - visible.maxY)
     }
     private static func findView(in view: NSView, identifier: String) -> NSView? {
         if view.identifier?.rawValue == identifier { return view }

@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **MAC-CHAT-003 實圖時序修復：** `8fb4d0a` 同 SHA 九項已成功（Mac39015983459／VPS39015983596／Android39015983539），兩架構各16圖與原15項核心全過；人工review發現arm64的再次上捲被帶回長段落。原生user通知與非同步model回寫之間，SwiftUI仍可能送舊following=true；coordinator只把「model值改變」當指令，避免同值舊update撤銷live-scroll。新增真probe套用舊model值後仍停在頂端的斷言，並要求capture後實際offset仍<3px；保留原16圖，再加深淺表格兩張，各18／共36圖。舊九綠不能驗收此新HEAD，仍需完整九項與實圖review。
 - **MAC-CHAT-003 真視窗閱讀位置修復：** `41eacb5`／Mac39015462610 arm64已過15項核心／prefix650／fixture900握手，後續字流guard抓到clip_y從閱讀位置0被layout帶回678（following=false、1113字、無problem）。coordinator記住live-scroll確定的距頂端offset，內容frame／clip更新時保留該位置；明確resume才解除並到實際底部。不是放寬<3px位置／字流／SHA256／32圖／scope斷言；新HEAD九項重驗。VPS39015462593四項已SUCCESS，不能代替此修復HEAD。
 - **MAC-CHAT-003 fixture與安全緩衝界線：** `7331726`／Mac39014935266 arm64診斷為上游900字barrier、native885字、generating=true、problem=false、following與at_latest皆true。根因是正式streamGuard保留secret跨chunk安全尾端；不得移除／縮短guard。保留原650字client觀測，再查fixture自己的paused確認上游900字到位，release後要求完整1249字與SHA256原文相同；位置、回最新、32圖與原全部斷言不減。新HEAD與附件wire修復同片重驗九項。
 - **MAC-CHAT-003 附件wire correctness：** code review確認native tray的size_bytes被直接傳至正式Attachment strict decoder會遭拒；改原生requestValue明確投影kind／filename／mime／data四欄，顯示metadata保留本機，engine的DisallowUnknownFields不放寬。單元驗allowlist／原始bytes；native smoke新增精確scope FILES確認後真PDF store.send→engine→TLS fixture→兩則history，再回原rich session驗舊內容。原本32圖／reading／keyboard／scope全部斷言保留。仍是同片修復，新HEAD九項重驗。

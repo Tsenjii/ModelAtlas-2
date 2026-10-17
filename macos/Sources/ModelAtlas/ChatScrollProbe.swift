@@ -21,11 +21,17 @@ struct ChatScrollProbe: NSViewRepresentable {
         var observe: ((Double, Bool) -> Void)?
         private(set) var following = true
         private(set) var readingOffset: CGFloat?
+        private var modelFollowing: Bool?
         private weak var scroll: NSScrollView?
         private var tokens: [NSObjectProtocol] = []
         private var live = false, scheduled = false
         private var generation = 0
         func setFollowing(_ value: Bool) {
+            // A view update can still carry the model value from before the
+            // user's live-scroll notification. Only a changed model value is
+            // a command; an unchanged value must not undo that native input.
+            guard value != modelFollowing else { return }
+            modelFollowing = value
             guard value != following else { return }
             following = value
             if value { readingOffset = nil } else { rememberReadingPosition() }

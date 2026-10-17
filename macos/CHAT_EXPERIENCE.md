@@ -16,7 +16,7 @@
 - 保留前片全部十一XCTest及store／keyboard／IME／scope／TLS／cancel／Keychain／lifetime guards。
 - `NativeSmoke` 在獨立真engine／TLS fixture跑長回應，上捲後實際NSScrollView位置在後續字流維持、回最新、原生code／table內容、精確message request scope、正式附件caller與重複拒絕，再確認精確scope的FILES能力，以真正store.send→strict decoder→TLS fixture完成PDF推論，驗兩則訊息與附件metadata；最後恢復原rich對話且原始歷史未改。
 - 長fixture以每8字20ms的小批次送出，在900字後等待明確release，閱讀位置固定後才繼續字流；沒有縮減長回應或位置斷言。捲動驗證使用真NSScrollView及live-scroll通知，未宣稱硬體觸控板／XCUI全點擊覆蓋。拖放走正式NSItemProvider／DropDelegate，回歸目前驗共用檔案caller，未宣稱Finder端到端drag coverage。
-- 保留原十一圖，追加rich chat深淺／exact receipt sheet／attachment tray／窄窗rich chat，兩架構各16圖、共32圖必須review。新HEAD九項CI全綠才可驗收，SHA／run／artifact／失敗由PR #21最新body保存。
+- 保留原十一圖，追加rich chat深淺／exact receipt sheet／attachment tray／窄窗rich chat，保留這16圖，再加表格深淺兩圖；兩架構各18圖、共36圖必須review。新HEAD九項CI全綠才可驗收，SHA／run／artifact／失敗由PR #21最新body保存。
 - 版本0.1.2 build3；原未Apple公證／macOS12實機／部分進階表單限制不變。沒有新增DB migration、production dependency、模型HTTP探測或Android／VPS UI改動。
 
 ## 首輪失敗保留
@@ -28,3 +28,5 @@
 `7331726`／Mac39014935266的arm64固定診斷為provider在900字barrier等待，但native收到885字、generating=true、無problem且已在最新。正式streamGuard刻意保留可能跨chunk命中secret的尾端，不可移除此安全緩衝；測試保持原650字client觀測門檻，再查fixture自己的paused狀態確認900字barrier，release後要求完整SHA256及1249字原文相符。不是放寬字流或history／位置驗證。
 
 `41eacb5`／Mac39015462610 arm64已通過prefix／paused握手，真視窗在後續字流把clip_y從手動閱讀位置0帶回678；generating=true、1113字、following=false。原生coordinator現在保存live-scroll確定的「距文件頂端閱讀offset」，內容frame或clip bounds更新後恢復該offset，明確resume才解除並到實際底部。保留<3px位置斷言、全部字流、全文SHA256與完整歷史；failure-state另記純數值reading offset。
+
+`8fb4d0a` 同SHA九項成功（Mac39015983459、VPS39015983596、Android39015983539），兩架構15項核心／16圖全過。實圖review另發現arm64再次上捲未停在頂端：user live-scroll與非同步model回寫之間，舊值true的view update可能覆蓋native暫停。`setFollowing`記錄上次收到的model值，只有值改變才視為指令，同值舊update不能撤銷使用者動作。native smoke直接重放該舊model update，要求probe仍暫停且offset<3px；兩張原code截圖完成後仍須<3px。原16圖保留，追加表格深淺兩張；新HEAD九項與36圖重新驗收。

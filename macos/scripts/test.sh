@@ -66,7 +66,7 @@ with (pathlib.Path(qa)/'app-launch.log').open('w') as log:
     if pathlib.Path(qa).name=='x86_64': command.append('--smoke-close-window')
     process=subprocess.Popen(command,stdout=log,stderr=log)
     deadline=time.monotonic()+120
-    peaks={'app_rss_bytes':0,'engine_rss_bytes':0,'combined_rss_bytes':0,'samples':0,'method':'ps RSS of the standalone native app and its bundled engine; excludes fixtures/test runners; startup, TLS chat, scoped draft/search guards and sixteen native window/sheet captures'}
+    peaks={'app_rss_bytes':0,'engine_rss_bytes':0,'combined_rss_bytes':0,'samples':0,'method':'ps RSS of the standalone native app and its bundled engine; excludes fixtures/test runners; startup, TLS chat, scoped draft/search guards and eighteen native window/sheet captures'}
     try:
         while process.poll() is None and time.monotonic()<deadline:
             pid_file=out/'measurement-pids.json'
@@ -94,12 +94,12 @@ with (pathlib.Path(qa)/'app-launch.log').open('w') as log:
 report=out/'native-smoke.json'
 assert report.exists(), (out/'FAILURE.txt').read_text() if (out/'FAILURE.txt').exists() else 'native app did not finish smoke'
 value=json.loads(report.read_text())
-assert value['result']=='PASS' and value['real_tls_chat'] and value['screenshots']==16,value
+assert value['result']=='PASS' and value['real_tls_chat'] and value['screenshots']==18,value
 assert value['draft_scope_guards'] and value['search_scope_guards'],value
 assert value['keyboard_picker_guards'],value
 assert value['chat_reading_guards'] and value['attachment_guards'] and value['request_receipt'] and value['native_markdown'],value
 assert value['providers']==2 and value['models']==4 and value['messages']==2,value
-assert len(list(out.glob('*.png')))==16
+assert len(list(out.glob('*.png')))==18
 print(json.dumps(value,ensure_ascii=False))
 PY
 
