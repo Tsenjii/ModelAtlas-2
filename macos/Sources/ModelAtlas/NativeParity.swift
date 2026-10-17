@@ -86,6 +86,12 @@ import SwiftUI
             let selections = [ModelScope(chat).json, ModelScope(media["AUDIO_SPEECH"]!).json]
             let pending = try await api.call("/assistant/actions/preview", method: "POST", body: .object(["kind": .string("MODEL_BATCH"), "selections": .array(selections), "patch": .object(["state": .string("HIDDEN")])]))
             let review = ActionReviewController(api: api, value: pending)
+            try require(review.batchComplete && Set(review.batchChanges.map { $0.scope }) == Set(selections.map(ModelScope.init)))
+            try require(review.batchChanges.allSatisfy { $0.before["state"].string == "ACTIVE" && $0.after["state"].string == "HIDDEN" })
+            var incomplete = pending; incomplete["after"]["items"] = .array(Array(pending["after"]["items"].array.prefix(1)))
+            let incompleteReview = ActionReviewController(api: api, value: incomplete)
+            try require(!incompleteReview.batchComplete); await incompleteReview.apply()
+            try require(incompleteReview.value["state"].string == "PENDING")
             try await capture(ActionReviewView(store: store, model: review), output, "06-batch-review-light", dark: false)
             await review.apply(); try require(review.problem == nil && review.value["state"].string == "CONFIRMED")
             await store.refresh()

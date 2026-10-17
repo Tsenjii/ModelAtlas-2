@@ -46,3 +46,6 @@ Unknown 不當 0／Free；Catalog 不等於 My Models。所有操作維持 Provi
 
 
 `907622b`／Mac39042411074 Universal與arm64／Intel29核心＋42圖全PASS；VPS39042411104四項SUCCESS，Android39042411059當時仍執行。首輪實圖審查後：原生下拉選單與sheet未完整跟隨深色及teal，改同步NSApplication外觀並將tint套用至sheet；側欄採更淡原生中性色，聊天輸入區縮短，主清單以人類端點摘要取代內部操作常數，精確identity及help全文不改。Capture同時同步外觀偏好，避免設定圖顯示深色選項卻是淺色畫面，另驗實際NSApp appearance。原全部84圖／guards保留，新HEAD重新九項。
+
+
+原生Review實圖另修：MODEL_BATCH原先只看到收起的items，雖保留完整快照但不方便確認。現在直接列出每個完整scope的模型、帳戶／Key／群組與前後狀態，收藏／追蹤變更也可見；原始快照仍可展開。不完整或對不上scope的批次禁止確認，真API驗證畫面使用的scope集合及ACTIVE→HIDDEN內容。原84圖／confirm／undo／ABA stale與跨帳戶guard全部保留。
