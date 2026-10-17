@@ -7,6 +7,7 @@ import SwiftUI
 @MainActor enum NativeSmoke {
     static func run(store: AtlasStore, output: URL) async {
         let manager = FileManager.default
+        var stage = "bootstrap"
         do {
             try manager.createDirectory(at: output, withIntermediateDirectories: true)
             guard store.ready, store.api != nil else { throw AtlasError.engineUnavailable }
@@ -15,6 +16,7 @@ import SwiftUI
             let args = ProcessInfo.processInfo.arguments
             guard let at = args.firstIndex(of: "--fixture-url"), args.count > at + 1 else { throw AtlasError.invalidEndpoint }
             let fixture = args[at + 1]
+            stage = "seed-primary-scope"
             let provider: JSONValue = .object(["id": .string("native-fixture"), "name": .string("本機測試供應商"), "base_url": .string(fixture + "/v1"), "description": .string("原生 Mac 整合測試 · 合成資料"), "auth_mode": .string("BEARER")])
             _ = try await store.mutate("/providers", body: provider)
             _ = try await store.mutate("/accounts", body: .object(["id": .string("primary"), "provider_id": provider["id"], "label": .string("Mac 工作區")]))
@@ -23,28 +25,34 @@ import SwiftUI
             for id in ["native-fixture-chat", "native-fixture-code"] {
                 _ = try await store.mutate("/my-models", body: .object(["provider_id": provider["id"], "account_id": .string("primary"), "credential_id": .string("key"), "model_id": .string(id), "group": .string(""), "endpoint": .string("CHAT_COMPLETIONS")]))
             }
+            stage = "resolve-joined-models"
             guard let chat = store.activeModels.first(where: { $0["model_id"].string == "native-fixture-chat" }),
                   let code = store.activeModels.first(where: { $0["model_id"].string == "native-fixture-code" }) else { throw AtlasError.invalidResponse }
             store.draft = "切換模型仍保留的未送出草稿"
             store.attachments = [.object(["filename": .string("draft-only.pdf")])]
             let unsentFiles = store.attachments
+            stage = "unsent-draft-and-attachments"
             store.chooseModel(code)
             guard store.draft == "切換模型仍保留的未送出草稿", store.attachments == unsentFiles,
                   store.selectedScope == ModelScope(code), store.sessionID == nil else { throw AtlasError.invalidResponse }
             store.attachments = []; store.chooseModel(chat)
             store.workspace = .playground; store.draft = "請用繁體中文介紹這個原生 Mac 工作區。"
+            stage = "real-tls-chat"
             store.send()
             let deadline = Date().addingTimeInterval(25)
             while store.generating && Date() < deadline { try await Task.sleep(nanoseconds: 30_000_000) }
             guard !store.generating, store.messages.contains(where: { $0["role"].string == "assistant" && $0["content"].string.contains("原生 Mac") }) else { throw AtlasError.invalidResponse }
             guard let conversation = store.selectedSession else { throw AtlasError.invalidResponse }
+            stage = "existing-conversation-new-scope"
             store.draft = "這則既有對話的草稿必須保留"
             store.chooseModel(code)
             guard store.sessionID == nil, store.selectedScope == ModelScope(code), store.messages.isEmpty else { throw AtlasError.invalidResponse }
+            stage = "restore-existing-draft-and-history"
             await store.selectSession(conversation)
             guard store.draft == "這則既有對話的草稿必須保留", store.selectedScope == ModelScope(chat), store.messages.count == 2 else { throw AtlasError.invalidResponse }
             // Multiple same-model / same-key IDs make scope collisions and long
             // labels visible in real UI. These are isolated synthetic fixtures.
+            stage = "seed-distinct-account-and-provider"
             _ = try await store.mutate("/accounts", body: .object(["id": .string("review"), "provider_id": provider["id"], "label": .string("長名稱帳戶 · 團隊文件與程式審查")]))
             _ = try await store.mutate("/credentials", body: .object(["id": .string("key"), "provider_id": provider["id"], "account_id": .string("review"), "label": .string("專案用 Key"), "secret": .string("fixture-other-account-key")]))
             var otherScope = ModelScope(chat).json; otherScope["account_id"] = .string("review"); otherScope["group"] = .string("review-team")
@@ -57,12 +65,15 @@ import SwiftUI
             _ = try await store.mutate("/my-models", body: researchScope)
             var favorite = ModelScope(chat).json; favorite["favorite"] = .bool(true); favorite["state"] = .string("ACTIVE")
             _ = try await store.mutate("/models/lifecycle", body: favorite)
+            stage = "exact-search-and-usable-scopes"
             let matches = store.modelEntries(store.activeModels).filter { $0.matches("native-fixture-chat review-team") }
             guard matches.count == 1, matches.first?.scope == ModelScope(otherScope),
                   store.activeModels.filter({ $0["model_id"].string == "native-fixture-chat" }).count == 3 else { throw AtlasError.invalidResponse }
             var invalid = chat; invalid["account_id"] = .string("not-joined")
+            stage = "reject-unjoined-scope"
             store.chooseModel(invalid)
             guard store.sessionID == conversation["id"].string, store.draft == "這則既有對話的草稿必須保留" else { throw AtlasError.invalidResponse }
+            stage = "native-window-captures"
             guard let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }) else { throw AtlasError.invalidResponse }
             window.setContentSize(NSSize(width: 1200, height: 800)); window.center(); window.makeKeyAndOrderFront(nil)
             UserDefaults.standard.set("light", forKey: "appearance")
@@ -95,7 +106,9 @@ import SwiftUI
             let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(11)])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-smoke.json"), options: .atomic)
         } catch {
-            let message = "Native smoke failed: " + error.localizedDescription
+            // Fixed stage labels only: never dump a store, request, credential,
+            // prompt or conversation to the public CI failure report.
+            let message = "Native smoke failed at " + stage + ": " + error.localizedDescription
             try? Data(message.utf8).write(to: output.appendingPathComponent("FAILURE.txt"), options: .atomic)
         }
         // Leave the SwiftUI .task before entering AppKit termination. Exercise
@@ -115,3 +128,4 @@ import SwiftUI
         try data.write(to: url, options: .atomic)
     }
 }
+
