@@ -15,6 +15,8 @@
 
 ## 驗證與限制
 
+實圖收尾修復：My Models 現在以 Provider×Model 取得 catalog display_name，原完整 Account×Key×Group×Endpoint scope identity 不變。原生列表／選擇器優先顯示正式名稱，保留 legacy fallback 與原始模型 ID 搜尋；正式 API 連線驗證不同供應商同 ID 的名稱不互借。沒有加入型錄模型、改路由或變更資料庫。
+
 起點 `97f9c64` 的九項已全綠；本片必須在自己 HEAD 重新通過，結果／失敗／人工實圖 review／下載 artifact 保存於 PR #21 最新 body。不能把下列驗收設計當作完成證據。
 
 - `AtlasCoreTests` 新增全詞／width／case／accent／別名搜尋、禁止任意 secret 索引與完整 scope 不合併；原八項真 Keychain／engine／TLS／SSE／cancel 等測試全保留。

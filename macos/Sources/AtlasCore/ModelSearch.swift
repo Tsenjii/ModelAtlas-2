@@ -9,8 +9,9 @@ public struct ModelSearchEntry: Identifiable, Sendable {
     public var id: String { scope.id }
     public init(model: JSONValue, context: String, operation: String) {
         self.model = model; scope = ModelScope(model)
-        let name = model["metadata"]["display_name"].string
-        title = name.isEmpty ? scope.modelID : name
+        let name = model["display_name"].string.trimmingCharacters(in: .whitespacesAndNewlines)
+        let legacyName = model["metadata"]["display_name"].string.trimmingCharacters(in: .whitespacesAndNewlines)
+        title = !name.isEmpty ? name : !legacyName.isEmpty ? legacyName : scope.modelID
         let aliases = model["metadata"]["aliases"].array.map(\.string).joined(separator: " ")
         searchable = Self.fold([title, model["display_name"].string, model["metadata"]["canonical_id"].string, scope.providerID, scope.accountID, scope.credentialID, scope.modelID,
                                 scope.group, scope.endpoint, context, operation, aliases,

@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **Mac 原生實圖命名收尾：** `37b1c2e`／Mac `39004366387` Universal＋arm64＋Intel 全 SUCCESS，兩架構 keyboard／draft／scope／TLS／退出及各十一 PNG PASS，22 張實圖已檢視；VPS `39004366496` 四項 SUCCESS，Android `39004366506` build SUCCESS、device 尚在跑。實圖另發現 My Models API 未傳 catalog 的 display_name，而 native search 只讀不存在於正式 metadata 的該欄位；以 provider＋model 連接名稱（完整 Selection identity 不變），搜尋同時保留原始 model ID；native 真 API 另驗不同 Provider 同 ID 的自訂名稱不互借。這是同片 UI correctness repair；新 HEAD 必須重新九項同 SHA 與22張實圖，不能借37b的部分結果。
 - **Mac 選模元件編譯修復：** `a8b0f58`／`39004151864` 的 macos-build 在新增鍵盤狀態後於 `ModelPickerView.body` 遇 Swift 型別檢查時間上限。將 header／filters／results／empty／footer 與 row identity 拆成有明確邊界的小 View，不刪減 UI、鍵盤、IME 或測試斷言；App 顯示版本更新為 0.1.1（build 2）。新 HEAD 重新跑同 SHA 九項 gate 與雙架構十一實圖，不以其他平台的部分成功驗收 Mac。
 - **Mac 本輪修復與互動收尾：** 診斷 `34878ca`／Mac `39003829131` 的 arm64 smoke 精確失敗於 `exact-search-and-usable-scopes`；根因是 review-team membership 與 fixture Key 的空群組不符，正式 `groupBound` 正確拒絕。修正 fixture Key 綁定，不改產品隔離規則或減少斷言。同片補原生 NSSearchField／完整 scope cursor、方向鍵高亮與可見捲動、Enter 確認、空結果拒選、IME marked-text guard；新增 cursor 單元與真 AppKit field-editor key events、draft／附件 guard。新 HEAD 仍需原九項 CI、兩架構各十一實圖 review；未通過前為候選，不稱完成。
 - **Mac 原生 UI 整合診斷（本輪接續）：** `576b03b`／Mac `38996147977` Universal build 成功、兩架構九項 core tests 成功，但 actual SwiftUI smoke 在首次 capture 前以 generic `invalidResponse` 失敗；VPS `38996147939`／Android `38996147949` 同 SHA 均 SUCCESS。先加固定 checkpoint label，保留全部原斷言／十一實圖／九項 gate，不輸出 store、憑證、prompt 或對話內容。新候選仍 Draft，不能稱此片已驗收；定位後修正並在自己 SHA 重驗。

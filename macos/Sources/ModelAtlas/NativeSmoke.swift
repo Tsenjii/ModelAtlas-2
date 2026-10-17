@@ -67,6 +67,10 @@ import SwiftUI
             _ = try await store.mutate("/my-models", body: researchScope)
             var favorite = ModelScope(chat).json; favorite["favorite"] = .bool(true); favorite["state"] = .string("ACTIVE")
             _ = try await store.mutate("/models/lifecycle", body: favorite)
+            stage = "provider-scoped-display-name"
+            let named = store.modelEntries(store.activeModels).filter { $0.scope.providerID == "research-fixture" }
+            guard named.count == 1, named[0].title == "研究對話模型", named[0].matches("研究對話模型 native-fixture-chat"),
+                  store.modelEntries(store.activeModels).filter({ $0.scope.providerID == "native-fixture" }).allSatisfy({ $0.title == $0.scope.modelID }) else { throw AtlasError.invalidResponse }
             stage = "exact-search-and-usable-scopes"
             let matches = store.modelEntries(store.activeModels).filter { $0.matches("native-fixture-chat review-team") }
             guard matches.count == 1, matches.first?.scope == ModelScope(otherScope),

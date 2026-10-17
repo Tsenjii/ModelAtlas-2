@@ -94,6 +94,17 @@ final class AtlasCoreTests: XCTestCase {
         cursor.move(by: 1, in: []); XCTAssertNil(cursor.highlightedID)
         cursor.reconcile([ids[2]]); XCTAssertEqual(cursor.highlightedID, ids[2])
     }
+    func testDisplayNameUsesRealCatalogFieldWhileRawModelIDStaysSearchable() throws {
+        var model = try JSONValue.parse("{\"provider_id\":\"research\",\"account_id\":\"a\",\"credential_id\":\"key\",\"model_id\":\"raw-model-v1\",\"group\":\"\",\"endpoint\":\"CHAT_COMPLETIONS\",\"display_name\":\"  我的研究模型  \",\"metadata\":{\"display_name\":\"legacy-name\"}}")
+        let entry = ModelSearchEntry(model: model, context: "研究帳戶", operation: "對話")
+        XCTAssertEqual(entry.title, "我的研究模型")
+        XCTAssertTrue(entry.matches("我的研究模型 raw-model-v1 研究帳戶"))
+        XCTAssertEqual(entry.scope, ModelScope(model))
+        model["display_name"] = .string("  ")
+        XCTAssertEqual(ModelSearchEntry(model: model, context: "", operation: "").title, "legacy-name")
+        model["metadata"] = .object([:])
+        XCTAssertEqual(ModelSearchEntry(model: model, context: "", operation: "").title, "raw-model-v1")
+    }
     func testManagementClientOnlyAcceptsFixedLoopbackOrigins() throws {
         for raw in ["https://elsewhere.example", "http://localhost:8000", "http://0.0.0.0:8000", "http://127.0.0.1:8000/path", "http://a:b@127.0.0.1:8000"] {
             XCTAssertThrowsError(try AtlasClient(baseURL: URL(string: raw)!, token: "test"))
