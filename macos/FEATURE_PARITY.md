@@ -40,3 +40,6 @@ Unknown 不當 0／Free；Catalog 不等於 My Models。所有操作維持 Provi
 2026-10-17 最新 UI 指示：使用者明確要求接近 Magpie 與現代原生 Mac App。保留三工作區與 teal，重整原生側欄／對話篩選選單、文字層級與列表密度、搜尋與頁籤、透明 AppKit composer、起手提示、鍵盤選模高亮、側欄式設定及表單 chrome。官方 panel／picker／add 圖只作視覺參考，不引入 routing／gateway。所有既有 API caller 與 guards 保留，新增首頁與設定的深淺色實圖，合計42圖／架構、84圖。
 
 `974886a`／Mac39040938623 arm64已通過29核心、原25圖與完整新增API流程；最後截圖數量檢查把fixture輸入input.png一起算入而失敗。將輸入附件放入fixture-inputs子目錄，原13圖全部保留再加4圖；不調低斷言／放寬時間。CI artifact補上parity原生圖、完整report、footprint與app log，避免只上傳舊25圖。VPS39040938617四項及Android39040938643兩項SUCCESS不能代替新HEAD。
+
+
+`8df5a0d`／Mac39042204093 新原生composer在NSSize的Double／CGFloat多載間發生編譯歧義，改明確CGFloat。另補實際AppKit輸入區的多行中文輸入／marked-text不被外部更新取代／重設草稿清除舊Undo驗證；不靠store直寫冒充輸入。新HEAD仍須全部九項與84實圖。

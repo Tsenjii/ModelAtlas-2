@@ -18,8 +18,8 @@ struct ComposerTextEditor: NSViewRepresentable {
         editor.textContainerInset = NSSize(width: 4, height: 8)
         editor.isVerticallyResizable = true; editor.isHorizontallyResizable = false
         editor.autoresizingMask = [.width]
-        editor.minSize = .zero; editor.maxSize = NSSize(width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
-        editor.textContainer?.containerSize = NSSize(width: 0, height: .greatestFiniteMagnitude)
+        editor.minSize = .zero; editor.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        editor.textContainer?.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
         editor.textContainer?.widthTracksTextView = true
         editor.delegate = context.coordinator
         scroll.documentView = editor
@@ -31,6 +31,7 @@ struct ComposerTextEditor: NSViewRepresentable {
         if editor.string != text && !editor.hasMarkedText() {
             let selection = editor.selectedRange()
             editor.string = text
+            editor.undoManager?.removeAllActions()
             let length = (text as NSString).length
             editor.setSelectedRange(NSRange(location: min(selection.location, length), length: min(selection.length, max(0, length - min(selection.location, length)))))
         }

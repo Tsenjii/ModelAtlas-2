@@ -44,7 +44,7 @@ report = out / "native-parity.json"
 assert report.exists(), (out / "FAILURE.txt").read_text() if (out / "FAILURE.txt").exists() else "Native parity did not finish"
 value = json.loads(report.read_text())
 assert value["result"] == "PASS" and value["screenshots"] == 17, value
-for field in ["real_tls_media", "batch_confirm_undo", "stale_guards", "connector_caller", "knowledge_versions", "manual_evidence", "safe_references", "retained_history"]:
+for field in ["real_tls_media", "batch_confirm_undo", "stale_guards", "connector_caller", "knowledge_versions", "manual_evidence", "safe_references", "retained_history", "native_composer"]:
     assert value[field], field
 assert len(list(out.glob("*.png"))) == 17
 assert peaks["app_rss_bytes"] > 0 and peaks["engine_rss_bytes"] > 0 and peaks["samples"] >= 3

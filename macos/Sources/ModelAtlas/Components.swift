@@ -151,13 +151,14 @@ struct ActionButton: View {
 
 struct AtlasActionStyle: ButtonStyle {
     var prominent = false
+    @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.system(size: 12, weight: .medium))
             .padding(.horizontal, 12).padding(.vertical, 6)
             .foregroundStyle(prominent ? Color.white : Color.primary)
             .background(prominent ? atlasAccent : atlasSurface).cornerRadius(7)
             .overlay(RoundedRectangle(cornerRadius: 7).stroke(prominent ? Color.clear : atlasHairline, lineWidth: 0.5))
-            .opacity(configuration.isPressed ? 0.7 : 1)
+            .opacity(enabled ? (configuration.isPressed ? 0.7 : 1) : 0.45)
     }
 }
 

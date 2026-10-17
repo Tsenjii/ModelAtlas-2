@@ -179,10 +179,12 @@ import SwiftUI
             stage = "modern-native-workspace-captures"
             store.newConversation(); store.chooseModel(chat); store.draft = ""; store.workspace = .playground
             try await captureWorkspace(store, output, "14-welcome-light", dark: false)
+            stage = "native-composer-multiline-ime-and-draft-reset"
+            try await verifyComposer(store)
             try await captureWorkspace(store, output, "15-welcome-dark", dark: true)
             try await capture(SettingsView(store: store), output, "16-settings-light", dark: false)
             try await capture(SettingsView(store: store), output, "17-settings-dark", dark: true)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(17), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "wire_counts": counts])
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(17), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
@@ -253,6 +255,37 @@ import SwiftUI
         root.cacheDisplay(in: root.bounds, to: bitmap)
         guard let data = bitmap.representation(using: .png, properties: [:]), data.count > 10_000 else { throw AtlasError.invalidResponse }
         try data.write(to: output.appendingPathComponent(name + ".png"))
+    }
+    private static func verifyComposer(_ store: AtlasStore) async throws {
+        guard let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }),
+              let editor = find(window.contentView, "chat-composer") as? NSTextView,
+              window.makeFirstResponder(editor) else { throw AtlasError.invalidResponse }
+        editor.selectAll(nil); editor.insertText("第一行\n第二行", replacementRange: NSRange(location: NSNotFound, length: 0))
+        try await wait { store.draft == "第一行\n第二行" }
+        try require(editor.string == store.draft && store.canSend && !editor.drawsBackground)
+        editor.selectAll(nil)
+        editor.setMarkedText("注音候選", selectedRange: NSRange(location: 0, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+        try require(editor.hasMarkedText())
+        store.draft = "外部狀態更新不得取代組字"
+        try await Task.sleep(nanoseconds: 80_000_000)
+        try require(editor.hasMarkedText() && editor.string.contains("注音候選"))
+        editor.unmarkText(); editor.selectAll(nil)
+        editor.insertText("完成的中文\n保留換行", replacementRange: NSRange(location: NSNotFound, length: 0))
+        try await wait { store.draft == "完成的中文\n保留換行" }
+        store.draft = ""
+        try await wait { editor.string.isEmpty }
+        try require(editor.undoManager?.canUndo != true && !store.generating && store.sessionID == nil)
+    }
+    private static func wait(_ condition: () -> Bool) async throws {
+        let end = Date().addingTimeInterval(4)
+        while !condition(), Date() < end { try await Task.sleep(nanoseconds: 20_000_000) }
+        try require(condition())
+    }
+    private static func find(_ view: NSView?, _ name: String) -> NSView? {
+        guard let view else { return nil }
+        if view.identifier?.rawValue == name { return view }
+        for child in view.subviews { if let match = find(child, name) { return match } }
+        return nil
     }
     private static func contains(_ view: NSView?, _ marker: String) -> Bool { guard let view else { return false }; return view.identifier?.rawValue == marker || view.subviews.contains { contains($0, marker) } }
 }
