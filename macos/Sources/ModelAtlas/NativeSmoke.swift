@@ -57,6 +57,8 @@ import SwiftUI
             guard store.draft == "這則既有對話的草稿必須保留", store.selectedScope == ModelScope(chat), store.messages.count == 2 else { throw AtlasError.invalidResponse }
             stage = "live-session-search-retains-current-conversation"
             try await verifySessionSearch(store: store, conversation: conversation)
+            stage = "native-chat-settings-feedback"
+            try await verifyChatSettings(store: store, code: code, output: output) { stage = "native-settings-" + $0 }
             // Multiple same-model / same-key IDs make scope collisions and long
             // labels visible in real UI. These are isolated synthetic fixtures.
             stage = "seed-distinct-account-and-provider"
@@ -135,7 +137,7 @@ import SwiftUI
             try await Task.sleep(nanoseconds: 450_000_000)
             stage = "chat-reading-markdown-attachments-receipt"
             try await verifyChatExperience(store: store, code: code, window: window, output: output, fixture: fixture) { stage = "chat-experience-" + $0 }
-            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "live_session_search": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(21), "chat_reading_guards": .bool(true), "attachment_guards": .bool(true), "request_receipt": .bool(true), "native_markdown": .bool(true)])
+            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "live_session_search": .bool(true), "chat_settings_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(25), "chat_reading_guards": .bool(true), "attachment_guards": .bool(true), "request_receipt": .bool(true), "native_markdown": .bool(true)])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-smoke.json"), options: .atomic)
         } catch {
             // Fixed stage labels only: never dump a store, request, credential,
@@ -327,6 +329,59 @@ import SwiftUI
         guard let saved = sessions.first(where: { $0["id"].string == receipt["session_id"].string }) else { throw AtlasError.invalidResponse }
         await store.selectSession(saved)
         guard store.messages.last?["content"].string == answer["content"].string, store.messages.count == 2 else { throw AtlasError.invalidResponse }
+    }
+    private static func verifyChatSettings(store: AtlasStore, code: JSONValue, output: URL, checkpoint: (String) -> Void) async throws {
+        guard let api = store.api, let original = store.selectedSession,
+              let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }) else { throw AtlasError.invalidResponse }
+        let originalID = original["id"].string, originalDraft = store.draft, originalMessages = store.messages
+        store.openChatSettings()
+        guard let model = store.chatSettings, model.sessionID == originalID else { throw AtlasError.invalidResponse }
+        checkpoint("ready")
+        try await waitFor { model.loaded && !model.loading && window.attachedSheet != nil }
+        UserDefaults.standard.set("light", forKey: "appearance")
+        try await capture(window, to: output.appendingPathComponent("22-chat-settings-ready-light.png"), sheet: true)
+        checkpoint("real-401-and-retry")
+        let denied = try AtlasClient(baseURL: api.baseURL, token: "native-settings-invalid-token")
+        await model.load(api: denied, tools: nil)
+        guard !model.loading, !model.loaded, model.loadProblem != nil else { throw AtlasError.invalidResponse }
+        UserDefaults.standard.set("dark", forKey: "appearance")
+        try await capture(window, to: output.appendingPathComponent("24-chat-settings-read-error-dark.png"), sheet: true)
+        await model.load(api: api, tools: store.stagedTools[originalID])
+        guard model.loaded, model.loadProblem == nil else { throw AtlasError.invalidResponse }
+        checkpoint("invalid-token-never-writes")
+        let before = try await api.get("/sessions/settings", query: [URLQueryItem(name: "session_id", value: originalID)])
+        model.draft.maxTokens = "0"
+        await model.save(store: store)
+        let after = try await api.get("/sessions/settings", query: [URLQueryItem(name: "session_id", value: originalID)])
+        guard before == after, model.draft.maxTokens == "0", model.saveProblem == ChatSettingsValidation.tokenLimit.localizedDescription else { throw AtlasError.invalidResponse }
+        UserDefaults.standard.set("light", forKey: "appearance")
+        try await capture(window, to: output.appendingPathComponent("23-chat-settings-validation-light.png"), sheet: true)
+        checkpoint("exact-session-save-after-context-change")
+        let second = try await api.call("/sessions", method: "POST", body: ModelScope(code).json)
+        await store.selectSession(second)
+        model.draft.maxTokens = "777"; model.draft.system = "原對話設定 · 合成驗證"; model.draft.streaming = false
+        model.draft.title = "已儲存的原對話設定"
+        let submitted = model.draft
+        await model.save(store: store)
+        let saved = try await api.get("/sessions/settings", query: [URLQueryItem(name: "session_id", value: originalID)])
+        let untouched = try await api.get("/sessions/settings", query: [URLQueryItem(name: "session_id", value: second["id"].string)])
+        let exact = try await api.get("/sessions", query: [URLQueryItem(name: "session_id", value: originalID), URLQueryItem(name: "state", value: "ALL")]).requiredArray()
+        guard saved["max_tokens"].numeric == 777, saved["system"].string == submitted.system, !saved["streaming"].boolean,
+              untouched["max_tokens"].numeric == 512, untouched["system"].string.isEmpty,
+              exact.first?["title"].string == submitted.title, model.savedDraft == submitted, model.saveProblem == nil,
+              store.sessionID == second["id"].string else { throw AtlasError.invalidResponse }
+        checkpoint("next-draft-keeps-saved-feedback")
+        model.draft.maxTokens = "888"
+        guard model.hasUnsavedChanges, model.savedDraft != model.draft, store.chatSettings === model else { throw AtlasError.invalidResponse }
+        UserDefaults.standard.set("dark", forKey: "appearance")
+        try await capture(window, to: output.appendingPathComponent("25-chat-settings-next-draft-dark.png"), sheet: true)
+        store.chatSettings = nil
+        try await waitFor { window.attachedSheet == nil }
+        guard let restored = exact.first else { throw AtlasError.invalidResponse }
+        await store.selectSession(restored)
+        guard store.draft == originalDraft, store.messages == originalMessages, store.selectedScope == ModelScope(original),
+              store.problem == nil else { throw AtlasError.invalidResponse }
+        UserDefaults.standard.set("light", forKey: "appearance")
     }
     private static func transcriptOffset(_ scroll: NSScrollView) -> CGFloat {
         guard let document = scroll.documentView else { return .infinity }

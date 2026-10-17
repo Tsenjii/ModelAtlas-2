@@ -260,3 +260,13 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | MAC-USABILITY-004 / model picker | `ModelPickerView` reset/count/eligible providers/duplicate name IDs + revalidate exact active scope；原鍵盤/IME與新增filtered/empty實圖 | CANDIDATE；原18圖保留，兩架構各21圖 |
 
 基線 `a00b038` 九項與36圖 ACCEPTED；Android/VPS新UI已依使用者指示暫存，沒有整合。詳 `macos/USABILITY.md`，最終驗收由最新PR #21 body記錄。
+
+
+## MAC-FEEDBACK-005 — 2026-10-17
+
+| Requirement | Production caller / tests | 狀態 |
+| --- | --- | --- |
+| MAC-FEEDBACK-005 / settings | Chat menu → `AtlasStore.openChatSettings` → `ChatSettingsView/Controller` → 真sessions settings/update；`ChatSettingsDraft` / `ChatSettingsTests`；NativeSmoke真401/retry/invalid前後API相同/A與B隔離/下一稿與history保留 | CANDIDATE，新HEAD九項與50圖驗收 |
+| MAC-FEEDBACK-005 / modal actions | `ModelAtlasApp` commands及composer以`hasPresentedSheet`停用會切換context／傳送的快捷鍵；Store原scope與engine不變 | 本片原生code review＋原全部keyboard/IME regression |
+
+詳 `macos/SETTINGS_FEEDBACK.md`；0.1.3基線d719bb9已ACCEPTED，其他平台UI仍暫存，最終evidence由PR #21最新body保存。

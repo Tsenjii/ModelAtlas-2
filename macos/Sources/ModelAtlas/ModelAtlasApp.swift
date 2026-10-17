@@ -49,16 +49,16 @@ import SwiftUI
         }
         .windowToolbarStyle(.unified)
         .commands {
-            CommandGroup(replacing: .newItem) { Button("新增對話") { store.newConversation() }.keyboardShortcut("n").disabled(store.generating) }
-            CommandGroup(replacing: .appSettings) { Button("設定…") { store.settingsOpen = true }.keyboardShortcut(",") }
+            CommandGroup(replacing: .newItem) { Button("新增對話") { store.newConversation() }.keyboardShortcut("n").disabled(store.generating || store.hasPresentedSheet) }
+            CommandGroup(replacing: .appSettings) { Button("設定…") { store.settingsOpen = true }.keyboardShortcut(",").disabled(store.hasPresentedSheet) }
             CommandMenu("工作區") {
-                Button("Playground") { store.workspace = .playground }.keyboardShortcut("1")
-                Button("Providers") { store.workspace = .providers }.keyboardShortcut("2")
-                Button("Models") { store.workspace = .models }.keyboardShortcut("3")
+                Button("Playground") { store.workspace = .playground }.keyboardShortcut("1").disabled(store.hasPresentedSheet)
+                Button("Providers") { store.workspace = .providers }.keyboardShortcut("2").disabled(store.hasPresentedSheet)
+                Button("Models") { store.workspace = .models }.keyboardShortcut("3").disabled(store.hasPresentedSheet)
                 Divider()
-                Button("選擇模型…") { store.modelPickerOpen = true }.keyboardShortcut("k").disabled(!store.ready || store.generating)
-                Button("重新整理") { Task { await store.refresh() } }.keyboardShortcut("r").disabled(!store.ready)
-                Button("新增供應商…") { store.newProviderOpen = true }.keyboardShortcut("n", modifiers: [.command, .shift]).disabled(!store.ready)
+                Button("選擇模型…") { store.modelPickerOpen = true }.keyboardShortcut("k").disabled(!store.ready || store.generating || store.hasPresentedSheet)
+                Button("重新整理") { Task { await store.refresh() } }.keyboardShortcut("r").disabled(!store.ready || store.hasPresentedSheet)
+                Button("新增供應商…") { store.newProviderOpen = true }.keyboardShortcut("n", modifiers: [.command, .shift]).disabled(!store.ready || store.hasPresentedSheet)
             }
         }
     }

@@ -6,13 +6,6 @@ import SwiftUI
 struct ChatView: View {
     @ObservedObject var store: AtlasStore
     @State private var dropTargeted = false
-    @State private var options = false
-    @State private var system = ""
-    @State private var maxTokens = "512"
-    @State private var streaming = true
-    @State private var title = ""
-    @State private var toolsJSON = "[]"
-    @State private var optionsLoaded = false
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -27,9 +20,9 @@ struct ChatView: View {
                     if let session = store.selectedSession {
                         Button(session["pinned"].boolean ? "取消置頂" : "置頂對話") { update(session, key: "pinned", value: .bool(!session["pinned"].boolean)) }
                         Button(session["archived"].boolean ? "恢復對話" : "封存對話") { update(session, key: "archived", value: .bool(!session["archived"].boolean)) }
-                        Button("重新命名…") { title = session["title"].string; options = true }
+                        Button("重新命名…") { store.openChatSettings() }
                     }
-                    Button("對話設定…") { optionsLoaded = false; options = true }.disabled(store.sessionID == nil)
+                    Button("對話設定…") { store.openChatSettings() }.disabled(store.sessionID == nil)
                     Button("匯出完整 Markdown…") { export("markdown") }.disabled(store.sessionID == nil)
                     Button("匯出完整 JSON…") { export("json") }.disabled(store.sessionID == nil)
                 } label: { Image(systemName: "ellipsis.circle").font(.title3) }.menuStyle(.borderlessButton).frame(width: 26).disabled(store.generating)
@@ -43,36 +36,6 @@ struct ChatView: View {
                 ChatTranscriptView(store: store)
             }
             composer
-        }
-        .sheet(isPresented: $options) {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("對話設定").font(.title2.weight(.semibold))
-                if !optionsLoaded { ProgressView("讀取已保存設定…") }
-                Group {
-                FormField(title: "對話名稱", text: $title)
-                Text("系統指示").font(.headline)
-                TextEditor(text: $system).frame(height: 150).border(Color.secondary.opacity(0.15))
-                FormField(title: "回應 Token 上限（1–32768）", text: $maxTokens)
-                Toggle("串流回應", isOn: $streaming)
-                DisclosureGroup("工具定義") { JSONEditor(title: "Function tools", text: $toolsJSON) }
-                }.disabled(!optionsLoaded)
-                HStack {
-                    Button("取消") { options = false }.keyboardShortcut(.cancelAction)
-                    Spacer()
-                    ActionButton(title: "儲存", prominent: true) {
-                        guard let api = store.api, let id = store.sessionID, let tokens = Int(maxTokens), (1...32768).contains(tokens) else { throw AtlasError.invalidJSON }
-                        guard let tools = try? JSONValue.parse(toolsJSON), case .array = tools else { throw AtlasError.invalidJSON }
-                        let submitted = (system, maxTokens, streaming, title, toolsJSON)
-                        _ = try await api.call("/sessions/settings", method: "POST", body: .object(["session_id": .string(id), "system": .string(system), "max_tokens": .number(Double(tokens)), "streaming": .bool(streaming)]))
-                        store.stagedTools[id] = tools
-                        if let session = store.selectedSession, !submitted.3.isEmpty && submitted.3 != session["title"].string {
-                            _ = try await store.mutate("/sessions/update", body: .object(["session_id": .string(id), "revision": session["revision"], "title": .string(submitted.3)]))
-                        }
-                        if submitted == (system, maxTokens, streaming, title, toolsJSON) { options = false }
-                    }.disabled(!optionsLoaded)
-                }
-            }.padding(28).frame(width: 560)
-            .task { optionsLoaded = false; await loadOptions() }
         }
     }
     private var composer: some View {
@@ -109,8 +72,8 @@ struct ChatView: View {
                 Button { store.pickAttachments() } label: { Label("附件", systemImage: "paperclip") }.disabled(store.generating || store.attaching).help("也可拖入圖片、PDF、WAV、MP3 · 每份 4 MiB")
                 Spacer()
                 Text(store.attaching ? "正在加入附件…" : "拖入附件 · ⌘↵ 傳送").font(.caption2).foregroundStyle(.tertiary)
-                if store.generating { Button { Task { await store.cancel() } } label: { Label("停止", systemImage: "stop.fill") }.keyboardShortcut(.escape, modifiers: []) }
-                else { Button { store.send() } label: { Label("傳送", systemImage: "arrow.up") }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(store.attaching || store.selectedScope == nil || store.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).accessibilityIdentifier("chat-send") }
+                if store.generating { Button { Task { await store.cancel() } } label: { Label("停止", systemImage: "stop.fill") }.keyboardShortcut(.escape, modifiers: []).disabled(store.hasPresentedSheet) }
+                else { Button { store.send() } label: { Label("傳送", systemImage: "arrow.up") }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(store.attaching || store.hasPresentedSheet || store.selectedScope == nil || store.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).accessibilityIdentifier("chat-send") }
             }
         }.padding(14).background(atlasSurface).cornerRadius(14)
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(dropTargeted ? atlasAccent : Color.primary.opacity(0.1), lineWidth: dropTargeted ? 2 : 1))
@@ -119,18 +82,6 @@ struct ChatView: View {
             }
             .onDrop(of: ["public.file-url"], delegate: ComposerFileDrop(store: store, targeted: $dropTargeted))
             .padding(.horizontal, 24).padding(.bottom, 20).padding(.top, 10)
-    }
-    private func loadOptions() async {
-        guard let api = store.api, let id = store.sessionID else { return }
-        do {
-            let value = try await api.get("/sessions/settings", query: [URLQueryItem(name: "session_id", value: id)])
-            guard options && store.sessionID == id else { return }
-            system = value["system"].string; maxTokens = value["max_tokens"].display; streaming = value["streaming"].boolean
-            title = store.selectedSession?["title"].string ?? ""
-            toolsJSON = (store.stagedTools[id] ?? value["tools"]).pretty
-            if toolsJSON == "null" { toolsJSON = "[]" }
-            optionsLoaded = true
-        } catch { store.problem = error.localizedDescription }
     }
     private func update(_ session: JSONValue, key: String, value: JSONValue) {
         Task {

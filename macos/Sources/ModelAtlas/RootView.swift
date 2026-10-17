@@ -47,6 +47,7 @@ struct RootView: View {
         .sheet(isPresented: $store.newProviderOpen) { AddProviderView(store: store) }
         .sheet(item: $store.detailProvider) { ProviderDetailView(store: store, provider: $0) }
         .sheet(item: $store.detailModel) { ModelDetailView(store: store, model: $0) }
+        .sheet(item: $store.chatSettings) { ChatSettingsView(store: store, model: $0) }
         .sheet(isPresented: $store.settingsOpen) { SettingsView(store: store) }
         .sheet(isPresented: $store.assistantOpen) { AssistantView(store: store) }
         .sheet(isPresented: $store.modelPickerOpen) { ModelPickerView(store: store) }

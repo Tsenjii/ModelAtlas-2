@@ -48,6 +48,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var sessionHasMore = false
     @Published var sessionsLoading = false
     @Published var sessionListProblem: String?
+    @Published var chatSettings: ChatSettingsController?
     @Published var settingsOpen = false
     @Published var newProviderOpen = false
     @Published var detailProvider: JSONValue?
@@ -68,6 +69,9 @@ enum Workspace: String, CaseIterable, Identifiable {
     private var activeMediaID: String?
 
     init(directory: URL? = nil) { engine = EngineController(directory: directory) }
+    var hasPresentedSheet: Bool {
+        settingsOpen || newProviderOpen || detailProvider != nil || detailModel != nil || assistantOpen || modelPickerOpen || requestReceipt != nil || chatSettings != nil
+    }
     var activeModels: [JSONValue] { myModels.filter { $0["state"].string == "ACTIVE" && $0["enabled"].boolean } }
     var selectedModel: JSONValue? { myModels.first { ModelScope($0).id == scopeID } }
     var selectedScope: ModelScope? { currentSession.map(ModelScope.init) ?? selectedModel.map(ModelScope.init) }
@@ -174,6 +178,10 @@ enum Workspace: String, CaseIterable, Identifiable {
             messages = older ? result + messages : result
             messageHasMore = result.count == 100
         } catch { problem = error.localizedDescription }
+    }
+    func openChatSettings() {
+        guard !generating, !closing, let session = selectedSession else { return }
+        chatSettings = ChatSettingsController(session: session)
     }
     func newConversation() {
         guard !generating else { return }

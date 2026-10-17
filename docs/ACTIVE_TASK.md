@@ -3,6 +3,8 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **2026-10-17 目前唯一切片：MAC-FEEDBACK-005，原生對話設定。** 使用者「繼續」授權；基線 `d719bb9`／Mac39022862301、VPS39022862279、Android39022862284九項同SHA SUCCESS與42圖ACCEPTED。0.1.4（build5）修設定讀取失敗卡loading、Token誤報JSON、面板內retry／輸入保留／精確原session儲存／已儲存與下一稿回饋／modal捷徑guard。詳 `macos/SETTINGS_FEEDBACK.md`；新增3核心／4真sheet圖，原15核心與21圖全保留，每架構18核心25圖、總50圖。新HEAD九項與實圖通過前候選／PR #21 Draft；Android/VPS UI繼續暫存未推送，不改base／不merge。下方目前切片文字為歷史。
+
 - **2026-10-17 目前唯一切片：MAC-USABILITY-004，先完成可用的原生 Mac。** 使用者最新明確要求暫緩 Android／VPS 對齊；該工作保留在獨立未推送 worktree，不整合本分支。基線 `a00b03867671261160fea65f606722b4257ef3bf`／Mac39018824300、VPS39018824295、Android39018824303 九項同 SHA SUCCESS與36實圖已驗收。此片 0.1.3（build4）補上 Mac 對話即時搜尋／取消舊搜尋／空結果與重試、選模隨時清除篩選／filtered-total／同名供應商區分與 stale/busy 拒選；保留原聊天／附件／收據／退出 guards。原18圖全保留，加3圖，每架構21／共42圖。詳 `macos/USABILITY.md`。本提交仍候選，最新 HEAD 九項 CI 全綠與42實圖 review 前 PR #21 為 Draft；不改 base／不merge／不遠端部署。下方目前切片文字均為歷史。
 
 - **MAC-CHAT-003 Intel驗證座標／診斷：** `0eaebd7`／Mac39018040678 arm64完整18圖及15核心成功，Intel15核心成功後在寬泛stream-does-not-steal-reading-position stage失敗；固定診斷clip_y=visible_y=retained_offset=0、following=false、1104字且generating=true／無problem。該stage同時涵後續字流、raw clip座標、25秒完成、全文hash及parse，不能據此宣稱真閱讀跳動。位置oracle統一使用同一document-relative offset（與正式coordinator及前置頂端guard相同），仍<3px；新增baseline／after純數值與逐條checkpoint，保留500ms／25秒／完整1249字SHA256／全部18圖。VPS39018040684四項與Android39018040670 build/device全SUCCESS，不能代替新HEAD。新HEAD九項與36圖重驗。
