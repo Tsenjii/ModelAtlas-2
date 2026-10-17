@@ -100,7 +100,8 @@ struct RootView: View {
             Divider().padding(.vertical, 4)
             HStack { Text("對話").font(.caption.weight(.semibold)).foregroundStyle(.secondary); Spacer(); Button { store.newConversation() } label: { Image(systemName: "square.and.pencil") }.buttonStyle(.plain).disabled(store.generating).help("新增對話（⌘N）") }.padding(.horizontal, 10)
             SearchField(placeholder: "搜尋對話", text: $store.sessionSearch)
-            Toggle("已封存", isOn: $store.archiveView).font(.caption).toggleStyle(.checkbox)
+            HStack { Toggle("已封存", isOn: $store.archiveView).disabled(store.allSessionStates); Toggle("全部狀態", isOn: $store.allSessionStates) }.font(.caption).toggleStyle(.checkbox)
+            Toggle("僅目前模型連線", isOn: $store.sessionOnlyCurrentScope).font(.caption).toggleStyle(.checkbox)
             if store.sessionsLoading { ProgressView("搜尋中…").controlSize(.small).font(.caption) }
             if let problem = store.sessionListProblem {
                 VStack(alignment: .leading, spacing: 8) {
@@ -133,7 +134,7 @@ struct RootView: View {
                     }
                 }
             }
-        }.task(id: "\(store.archiveView):\(store.sessionSearch)") { await store.searchSessions() }
+        }.task(id: "\(store.archiveView):\(store.allSessionStates):\(store.sessionOnlyCurrentScope):\(store.sessionOnlyCurrentScope ? store.selectedScope?.id ?? "" : ""):\(store.sessionSearch)") { await store.searchSessions() }
     }
 }
 

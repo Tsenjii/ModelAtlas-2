@@ -26,13 +26,26 @@ import SwiftUI
             var media: [String: JSONValue] = [:]
             let paths = ["AUDIO":"/audio/transcriptions", "AUDIO_SPEECH":"/audio/speech", "GEMINI_SPEECH":"/models/{model}:generateContent", "EMBEDDINGS":"/embeddings", "RERANK":"/rerank", "IMAGES_GENERATION":"/images/generations", "IMAGES_EDIT":"/images/edits"]
             for operation in MediaDraft.operations {
-                _ = try await store.mutate("/endpoints", body: .object(["provider_id": .string("parity"), "id": .string(operation), "operation": .string(operation), "url": .string(fixture + "/v1" + paths[operation]!)]))
-                media[operation] = try await join(store, model: "parity-" + operation.lowercased(), operation: operation)
+                stage = "seed-profile-" + operation
+                let profileID = "qa-" + operation.lowercased()
+                _ = try await store.mutate("/endpoints", body: .object(["provider_id": .string("parity"), "id": .string(profileID), "operation": .string(operation), "url": .string(fixture + "/v1" + paths[operation]!)]))
+                media[operation] = try await join(store, model: "parity-" + operation.lowercased(), operation: operation, endpointID: profileID)
             }
             stage = "real-retained-chat-before-management"
             store.chooseModel(chat); store.draft = "原生功能驗收的對話"; store.send(); try await completed(store)
             try require(store.messages.count == 2 && store.problem == nil)
             let originalSession = store.selectedSession!, originalMessages = store.messages
+            stage = "session-library-all-archived-and-exact-scope"
+            store.workspace = .models
+            let otherSession = try await api.call("/sessions", method: "POST", body: foreign)
+            _ = try await api.call("/sessions/update", method: "POST", body: .object(["session_id": otherSession["id"], "revision": otherSession["revision"], "archived": .bool(true)]))
+            store.allSessionStates = true; store.sessionOnlyCurrentScope = false; try await store.loadSessions()
+            try require(store.sessions.contains { $0["id"] == otherSession["id"] })
+            store.sessionOnlyCurrentScope = true; try await store.loadSessions()
+            try require(!store.sessions.contains { $0["id"] == otherSession["id"] } && store.sessions.contains { $0["id"] == originalSession["id"] })
+            store.sessionOnlyCurrentScope = false; store.allSessionStates = false; store.archiveView = true; try await store.loadSessions()
+            try require(store.sessions.allSatisfy { $0["archived"].boolean } && store.sessionID == originalSession["id"].string && store.messages == originalMessages)
+            store.archiveView = false; try await store.loadSessions(); store.workspace = .playground
             stage = "native-speech-current-legacy-dual"
             var options = MediaDraft(); options.voice = "Kore"
             for dialect in ["CURRENT", "LEGACY"] {
@@ -172,9 +185,9 @@ import SwiftUI
         store.chooseModel(model); store.mediaDraft = options; store.draft = prompt; store.send(); try await completed(store)
         try require(store.problem == nil && store.mediaResult?["outcome"].string == "SUCCESS")
     }
-    private static func join(_ store: AtlasStore, model: String, operation: String) async throws -> JSONValue {
+    private static func join(_ store: AtlasStore, model: String, operation: String, endpointID: String? = nil) async throws -> JSONValue {
         _ = try await store.mutate("/models", body: .object(["provider_id": .string("parity"), "id": .string(model), "display_name": .string(model)]))
-        let scope: JSONValue = .object(["provider_id": .string("parity"), "account_id": .string("primary"), "credential_id": .string("same-key-id"), "model_id": .string(model), "group": .string(""), "endpoint": .string(operation)])
+        let scope: JSONValue = .object(["provider_id": .string("parity"), "account_id": .string("primary"), "credential_id": .string("same-key-id"), "model_id": .string(model), "group": .string(""), "endpoint": .string(endpointID ?? operation)])
         _ = try await store.mutate("/my-models", body: scope)
         let capability = ["CHAT_COMPLETIONS":"TOOL_CALLING", "AUDIO":"AUDIO_INPUT", "AUDIO_SPEECH":"AUDIO_OUTPUT", "GEMINI_SPEECH":"AUDIO_OUTPUT", "EMBEDDINGS":"EMBEDDING", "RERANK":"RERANK", "IMAGES_GENERATION":"IMAGE_GENERATION", "IMAGES_EDIT":"IMAGE_EDITING"][operation]!
         var confirmed = scope; confirmed["capabilities"] = .array([.string(capability)]); confirmed["confirm"] = .bool(true)

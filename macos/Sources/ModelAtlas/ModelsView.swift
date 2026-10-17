@@ -338,9 +338,9 @@ struct ModelDetailView: View {
                 }
                 ActionButton(title: "確認並保存能力") { var body = scope.json; body["confirm"] = .bool(true); body["capabilities"] = .array(capabilities.sorted().map(JSONValue.string)); _ = try await store.mutate("/models/capabilities", body: body); await load() }
             }
-            ModelInformationEditor(store: store, scope: scope, metadata: detail["metadata"])
+            ModelInformationEditor(store: store, scope: scope, metadata: detail["metadata"]) { await load() }
             NotesEditor(store: store, subject: .object(["selection": scope.json]), initial: model["offer"])
-            ModelFactsEditor(store: store, scope: scope)
+            ModelFactsEditor(store: store, scope: scope) { await load() }
 
         }
     }

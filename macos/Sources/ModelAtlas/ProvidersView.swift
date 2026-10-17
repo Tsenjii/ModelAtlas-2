@@ -85,6 +85,8 @@ struct AddProviderView: View {
     @State private var endpoint = "CHAT_COMPLETIONS"
     @State private var header = ""
     @State private var authPrefix = ""
+    @State private var authQuery = ""
+    @State private var addAuthFields: [SecretFieldDraft] = []
     @State private var website = ""
     @State private var review: JSONValue?
     @State private var selected: Set<String> = []
@@ -99,6 +101,7 @@ struct AddProviderView: View {
                         AtlasCard {
                             Text(review["provider"]["name"].string).font(.title3.weight(.semibold))
                             Text(review["provider"]["base_url"].string).foregroundStyle(.secondary).textSelection(.enabled)
+                            OnboardingScopeSummary(review: review)
                             SmallBadge(text: review["catalog_verified"].boolean ? "Catalog 已取得" : "Catalog 尚未驗證", color: review["catalog_verified"].boolean ? atlasAccent : .orange)
                             if !review["unknown_fields"].array.isEmpty { Text("待補資料：" + review["unknown_fields"].array.map(\.display).joined(separator: "、")).font(.callout).foregroundStyle(.secondary) }
                             ForEach(review["models"].array, id: \.self) { item in
@@ -110,46 +113,20 @@ struct AddProviderView: View {
                             Button("返回修改") { self.review = nil }
                             ActionButton(title: "重新檢查") {
                                 guard let api = store.api else { return }
-                                self.review = try await api.call("/onboarding/retry", method: "POST", body: .object(["id": review["id"]]))
+                                let updated = try await api.call("/onboarding/retry", method: "POST", body: .object(["id": review["id"]])); self.review = updated; selected.formIntersection(Set(updated["models"].array.map(\.string)))
                             }
                             Spacer()
                             ActionButton(title: "確認加入", prominent: true) {
                                 guard !selected.isEmpty else { throw AtlasError.http(400) }
                                 _ = try await store.mutate("/onboarding/confirm", body: .object(["id": review["id"], "confirm": .bool(true), "name": .string(review["provider"]["name"].string), "selected_model_ids": .array(selected.sorted().map(JSONValue.string))]))
-                                key = ""; dismiss()
+                                key = ""; addAuthFields = []; dismiss()
                             }.disabled(selected.isEmpty)
                         }
                     } else {
                         Picker("新增方式", selection: $mode) { Text("快速新增").tag("QUICK"); Text("進階新增").tag("ADVANCED"); Text("批次匯入").tag("BATCH") }.pickerStyle(.segmented)
                         if mode == "BATCH" { BatchImportView(store: store) { review = $0; selected = [] } }
                         else {
-                        FormField(title: "供應商名稱", text: $name)
-                        FormField(title: "API Base URL", text: $url)
-                        HStack { FormField(title: "帳戶名稱", text: $account); FormField(title: "群組（選填）", text: $group) }
-                        Picker("認證方式", selection: $auth) { ForEach(["BEARER", "API_KEY", "CUSTOM_HEADER", "NONE"], id: \.self) { Text($0 == "NONE" ? "不需 Key" : $0).tag($0) } }
-                        if auth != "NONE" { FormField(title: "API Key", text: $key, secure: true) }
-                        FormField(title: "要加入的模型 ID（逗號分隔）", text: $models)
-                        if mode == "ADVANCED" {
-                            Picker("供應商類型", selection: $adapter) { ForEach(adapterOptions, id: \.self) { Text($0).tag($0) } }
-                            Picker("模型用途", selection: $endpoint) { ForEach(endpointOptions, id: \.self) { Text($0).tag($0) } }
-                            FormField(title: "官方網站（選填）", text: $website)
-                            if auth == "CUSTOM_HEADER" || auth == "API_KEY" { FormField(title: "認證 Header 名稱", text: $header); FormField(title: "認證前綴（選填）", text: $authPrefix) }
-                        }
-                        ActionButton(title: "檢查連線並預覽", prominent: true) {
-                            guard let api = store.api else { return }
-                            let ids = models.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-                            var config: JSONValue = .object(["adapter": .string(adapter), "auth_mode": .string(auth), "website": .string(website)])
-                            if !header.isEmpty { config["auth_header"] = .string(header); config["auth_prefix"] = .string(authPrefix) }
-                            let body: JSONValue = .object([
-                                "mode": .string(mode), "provider": .object(["name": .string(name), "base_url": .string(url), "auth_mode": .string(auth), "config": config]),
-                                "account": .object(["label": .string(account)]), "group": .string(group), "endpoint": .string(endpoint), "model_ids": .array(ids.map(JSONValue.string)),
-                                "credentials": auth == "NONE" ? .array([]) : .array([.object(["label": .string("主要 Key"), "secret": .string(key), "group": .string(group), "role": .string("INFERENCE")])])
-                            ])
-                            let result = try await api.call("/onboarding/preview", method: "POST", body: body)
-                            review = result
-                            // Discovery never silently opts the entire catalog into My Models.
-                            selected = Set(ids.filter { result["models"].array.map(\.string).contains($0) })
-                        }
+                        manualEntry
                         }
                         if !existing.isEmpty {
                             DisclosureGroup("繼續尚未完成的加入流程") {
@@ -164,6 +141,40 @@ struct AddProviderView: View {
         }.frame(width: 680, height: 720)
         .task { if let api = store.api { existing = (try? await api.get("/onboarding").requiredArray()) ?? [] }; if let resumedReview { review = resumedReview; selected = [] }; if let seed { url = seed["base_url"].string; name = URL(string: url)?.host ?? ""; models = seed["model_id"].string == "UNKNOWN" ? "" : seed["model_id"].string } }
     }
+    private var manualEntry: some View {
+        VStack(alignment: .leading, spacing: 20) {
+                        FormField(title: "供應商名稱", text: $name)
+                        FormField(title: "API Base URL", text: $url)
+                        HStack { FormField(title: "帳戶名稱", text: $account); FormField(title: "群組（選填）", text: $group) }
+                        Picker("認證方式", selection: $auth) { ForEach(["BEARER", "API_KEY", "CUSTOM_HEADER", "NONE"], id: \.self) { Text($0 == "NONE" ? "不需 Key" : $0).tag($0) } }
+                        if auth != "NONE" { FormField(title: "API Key", text: $key, secure: true) }
+                        FormField(title: "要加入的模型 ID（逗號分隔）", text: $models)
+                        if mode == "ADVANCED" {
+                            Picker("供應商類型", selection: $adapter) { ForEach(adapterOptions, id: \.self) { Text($0).tag($0) } }
+                            Picker("模型用途", selection: $endpoint) { ForEach(endpointOptions, id: \.self) { Text($0).tag($0) } }
+                            FormField(title: "官方網站（選填）", text: $website)
+                            if auth == "CUSTOM_HEADER" || auth == "API_KEY" { FormField(title: "認證 Header 名稱", text: $header); FormField(title: "認證 Query 名稱（選填）", text: $authQuery); FormField(title: "認證前綴（選填）", text: $authPrefix) }
+                            if auth != "NONE" { DisclosureGroup("額外認證欄位") { SecretFieldsEditor(rows: $addAuthFields) } }
+                        }
+                        ActionButton(title: "檢查連線並預覽", prominent: true) {
+                            guard let api = store.api else { return }
+                            let ids = models.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+                            var config: JSONValue = .object(["adapter": .string(adapter), "auth_mode": .string(auth), "website": .string(website)])
+                            if !header.isEmpty { config["auth_header"] = .string(header); config["auth_prefix"] = .string(authPrefix) }
+                            if !authQuery.isEmpty { config["auth_query"] = .string(authQuery) }
+                            let body: JSONValue = .object([
+                                "mode": .string(mode), "provider": .object(["name": .string(name), "base_url": .string(url), "auth_mode": .string(auth), "config": config]),
+                                "account": .object(["label": .string(account)]), "group": .string(group), "endpoint": .string(endpoint), "model_ids": .array(ids.map(JSONValue.string)),
+                                "credentials": auth == "NONE" ? .array([]) : .array([.object(["label": .string("主要 Key"), "secret": .string(key), "group": .string(group), "role": .string("INFERENCE"), "auth_fields": .array(addAuthFields.map(\.json))])])
+                            ])
+                            let result = try await api.call("/onboarding/preview", method: "POST", body: body)
+                            review = result
+                            // Discovery never silently opts the entire catalog into My Models.
+                            selected = Set(ids.filter { result["models"].array.map(\.string).contains($0) })
+                        }
+        }
+    }
+
 }
 
 struct ProviderDetailView: View {
@@ -198,12 +209,13 @@ struct ProviderDetailView: View {
     @State private var snapshots: JSONValue = .array([])
     @State private var dataCredential = ""
     private var id: String { provider["id"].string }
+    private var currentProvider: JSONValue { store.providers.first { $0["id"].string == id } ?? provider }
     private var providerAccounts: [JSONValue] { store.accounts.filter { $0["provider_id"].string == id } }
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 14) {
                 Image(systemName: "server.rack").font(.largeTitle).foregroundStyle(atlasAccent)
-                VStack(alignment: .leading, spacing: 5) { Text(provider["name"].string).font(.title2.weight(.bold)); Text(provider["base_url"].string).foregroundStyle(.secondary).textSelection(.enabled) }
+                VStack(alignment: .leading, spacing: 5) { Text(currentProvider["name"].string).font(.title2.weight(.bold)); Text(currentProvider["base_url"].string).foregroundStyle(.secondary).textSelection(.enabled) }
                 Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(25)
             Picker("分區", selection: $tab) { ForEach(["帳戶與 Key", "Catalog", "端點", "設定", "站方資料"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
@@ -274,7 +286,8 @@ struct ProviderDetailView: View {
             ForEach(store.endpoints.filter { $0["provider_id"].string == id }, id: \.self) { item in AtlasCard { Label(item["operation"].string, systemImage: "point.3.connected.trianglepath.dotted"); Text(item["url"].string).textSelection(.enabled).foregroundStyle(.secondary); Text(item["id"].string).font(.caption).foregroundStyle(.secondary) } }
             AtlasCard {
                 Text("加入獨立端點").font(.headline)
-                FormField(title: "端點 ID", text: $endpointID)
+                FormField(title: "自訂端點 ID（例如 my-speech）", text: $endpointID)
+                Text("操作類型另行選擇；每個端點 ID 建立後會固定綁定來源。").font(.caption).foregroundStyle(.secondary)
                 Picker("用途", selection: $endpointType) { ForEach(endpointOptions + ["CUSTOM"], id: \.self) { Text($0).tag($0) } }
                 FormField(title: "完整 HTTPS URL（與供應商相同 origin）", text: $endpointURL)
                 if endpointType == "CUSTOM" { JSONEditor(title: "宣告式 CUSTOM 協定", text: $custom) }
@@ -298,7 +311,8 @@ struct ProviderDetailView: View {
             Toggle("需要每日簽到", isOn: $requiresCheckin)
             FormField(title: "簽到網址", text: $checkinURL)
             Picker("Adapter", selection: configText("adapter")) { ForEach(adapterOptions, id: \.self) { Text($0).tag($0) } }
-            Picker("認證方式", selection: configText("auth_mode")) { ForEach(["BEARER", "API_KEY", "CUSTOM_HEADER", "NONE"], id: \.self) { Text($0).tag($0) } }
+            Picker("認證方式", selection: configText("auth_mode")) { ForEach(["BEARER", "API_KEY", "CUSTOM_HEADER", "NONE"], id: \.self) { Text($0).tag($0) } }.disabled(true)
+            Text("連線認證方式於建立時固定；個別 Key 可指定自己的認證方式。").font(.caption).foregroundStyle(.secondary)
             FormField(title: "認證 Header", text: configText("auth_header")); FormField(title: "認證 Query 參數", text: configText("auth_query")); FormField(title: "認證前綴", text: configText("auth_prefix")); FormField(title: "Project ID", text: configText("project_id"))
             DisclosureGroup("進階路徑與 Header") { JSONEditor(title: "端點路徑", text: $customPaths); JSONEditor(title: "非秘密 Header", text: $customHeaders) }
             ActionButton(title: "儲存設定") {

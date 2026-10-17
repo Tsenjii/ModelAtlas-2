@@ -43,6 +43,8 @@ enum Workspace: String, CaseIterable, Identifiable {
     private var resultDrafts: [String: [String: String]] = [:]
     @Published var sessionSearch = ""
     @Published var archiveView = false
+    @Published var allSessionStates = false
+    @Published var sessionOnlyCurrentScope = false
     @Published var sessionHasMore = false
     @Published var sessionsLoading = false
     @Published var sessionListProblem: String?
@@ -133,8 +135,9 @@ enum Workspace: String, CaseIterable, Identifiable {
         guard let api else { return }
         historyRevision += 1; let revision = historyRevision
         let offset = more ? sessions.count : 0
-        let page = try await api.get("/sessions", query: [URLQueryItem(name: "q", value: sessionSearch),
-            URLQueryItem(name: "state", value: archiveView ? "ARCHIVED" : "ACTIVE"), URLQueryItem(name: "limit", value: "100"), URLQueryItem(name: "offset", value: String(offset))]).requiredArray()
+        var query = [URLQueryItem(name: "q", value: sessionSearch), URLQueryItem(name: "state", value: allSessionStates ? "ALL" : archiveView ? "ARCHIVED" : "ACTIVE"), URLQueryItem(name: "limit", value: "100"), URLQueryItem(name: "offset", value: String(offset))]
+        if sessionOnlyCurrentScope { guard let selectedScope else { sessions = []; sessionHasMore = false; return }; query += selectedScope.query }
+        let page = try await api.get("/sessions", query: query).requiredArray()
         try Task.checkCancellation()
         guard revision == historyRevision else { return }
         sessions = more ? sessions + page : page; sessionHasMore = page.count == 100

@@ -7,28 +7,39 @@ import SwiftUI
     @Published var busy = false
     @Published var problem: String?
     @Published var undoID: String?
+    @Published var notice: String?
+    @Published var needsReload = false
     init(api: AtlasClient, value: JSONValue, connector: Bool) { self.api = api; self.value = value; self.connector = connector }
     func reload() async throws {
         let values = try await api.get(connector ? "/connectors" : "/research/knowledge").requiredArray()
         guard let latest = values.first(where: { $0["id"] == value["id"] }) else { throw AtlasError.invalidResponse }; value = latest
     }
     func activate() async {
-        guard !busy else { return }; busy = true; problem = nil; defer { busy = false }
+        guard !busy, !needsReload else { return }; busy = true; problem = nil; defer { busy = false }
         do {
             let result = try await api.call(connector ? "/connectors/activate" : "/research/knowledge/activate", method: "POST", body: .object(["id": value["id"], "expected_active_id": .string(value["active_id"].string), "confirm": .bool(true)]))
-            undoID = result["action_id"].string; try await reload()
+            undoID = result["action_id"].string; value["active"] = .bool(true); notice = "這個版本已啟用"; await refreshAfterWrite()
         } catch { problem = error.localizedDescription }
     }
     func undo() async {
-        guard !busy, let undoID else { return }; busy = true; problem = nil; defer { busy = false }
-        do { _ = try await api.call("/versions/undo", method: "POST", body: .object(["id": .string(undoID), "confirm": .bool(true)])); self.undoID = nil; try await reload() }
+        guard !busy, !needsReload, let undoID else { return }; busy = true; problem = nil; defer { busy = false }
+        do { _ = try await api.call("/versions/undo", method: "POST", body: .object(["id": .string(undoID), "confirm": .bool(true)])); self.undoID = nil; value["active"] = .bool(false); notice = "這次啟用已復原"; await refreshAfterWrite() }
         catch { problem = error.localizedDescription }
     }
     func test(_ scope: ModelScope) async {
-        guard !busy, connector, scope.providerID == value["provider_id"].string else { return }; busy = true; problem = nil; defer { busy = false }
-        do { _ = try await api.call("/connectors/test", method: "POST", body: .object(["id": value["id"], "selection": scope.json])); try await reload() }
+        guard !busy, !needsReload, connector, scope.providerID == value["provider_id"].string else { return }; busy = true; problem = nil; defer { busy = false }
+        do { let result = try await api.call("/connectors/test", method: "POST", body: .object(["id": value["id"], "selection": scope.json])); value["status"] = result["status"]; value["test"] = result["test"]; notice = result["status"].string == "VALIDATED" ? "擷取測試已通過" : "測試未通過，原因已保存"; await refreshAfterWrite() }
         catch { problem = error.localizedDescription }
     }
+    func retryLoad() async {
+        guard !busy else { return }; busy = true; defer { busy = false }
+        do { try await reload(); needsReload = false; problem = nil } catch { problem = "資料尚未更新，請重試。" }
+    }
+    private func refreshAfterWrite() async {
+        do { try await reload(); needsReload = false }
+        catch { needsReload = true; problem = "操作已保存，但畫面暫時無法更新。請重新讀取後再進行下一項操作。" }
+    }
+
 }
 
 struct KnowledgeView: View {
@@ -94,17 +105,18 @@ struct VersionDetailView: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { Text(controller.connector ? controller.value["name"].string : controller.value["subject"].string).font(.title2.weight(.semibold)); Spacer(); Button("關閉") { dismiss() }.disabled(controller.busy).keyboardShortcut(.cancelAction) }
             HStack { SmallBadge(text: "v" + controller.value["version"].display); SmallBadge(text: controller.value["active"].boolean ? "已啟用" : controller.value["status"].string, color: atlasAccent); Spacer(); Button("修訂新版本") { editing = true }.disabled(controller.busy) }
-            if let problem = controller.problem { Text(problem).foregroundStyle(.red) }
+            if let notice = controller.notice { Text(notice).font(.callout) }
+            if let problem = controller.problem { Text(problem).foregroundStyle(.red); if controller.needsReload { Button("重新讀取") { Task { await controller.retryLoad() } }.disabled(controller.busy) } }
             ScrollView { VStack(alignment: .leading, spacing: 18) { Text(controller.value["reason"].string); JSONTree(value: controller.value[controller.connector ? "config" : "data"]); DisclosureGroup("證據與測試") { JSONTree(value: controller.value["evidence_ids"]); JSONTree(value: controller.value["test"]); Text("版本 ID：" + controller.value["id"].string).font(.caption).textSelection(.enabled) } } }
             if controller.connector {
                 Picker("測試使用的精確連線", selection: $scopeID) { Text("選擇連線").tag(""); ForEach(store.activeModels.filter { $0["provider_id"] == controller.value["provider_id"] }, id: \.self) { Text($0["model_id"].string + " · " + store.scopeTitle($0) + " · " + $0["endpoint"].string).tag(ModelScope($0).id) } }
-                Button("測試資料擷取") { if let model = store.activeModels.first(where: { ModelScope($0).id == scopeID }) { Task { await controller.test(ModelScope(model)) } } }.disabled(controller.busy || scopeID.isEmpty)
+                Button("測試資料擷取") { if let model = store.activeModels.first(where: { ModelScope($0).id == scopeID }) { Task { await controller.test(ModelScope(model)) } } }.disabled(controller.busy || controller.needsReload || scopeID.isEmpty)
             }
             HStack {
                 if controller.busy { ProgressView().controlSize(.small) }
                 if let _ = controller.undoID { Button("復原這次啟用") { Task { await controller.undo(); await store.refresh() } }.disabled(controller.busy) }
                 Spacer()
-                if !controller.value["active"].boolean { Button("確認啟用此版本") { Task { await controller.activate(); await store.refresh() } }.buttonStyle(.borderedProminent).disabled(controller.busy || (controller.connector && controller.value["status"].string != "VALIDATED")) }
+                if !controller.value["active"].boolean { Button("確認啟用此版本") { Task { await controller.activate(); await store.refresh() } }.buttonStyle(.borderedProminent).disabled(controller.busy || controller.needsReload || (controller.connector && controller.value["status"].string != "VALIDATED")) }
             }
         }.padding(24).frame(width: 780, height: 700)
         .sheet(isPresented: $editing) { Group { if controller.connector { ConnectorEditor(store: store, initial: controller.value) } else { KnowledgeEditor(store: store, initial: controller.value) } }.atlasModal(store) }
@@ -143,6 +155,12 @@ struct ConnectorEditor: View {
                     if draft.role == "ACCOUNT_PAT" { Picker("帳戶 PAT 參照", selection: $draft.pat) { Text("選擇同一帳戶／來源的 PAT").tag(""); ForEach(store.credentials.filter { $0["provider_id"].string == draft.provider && $0["role"].string == "ACCOUNT_PAT" }, id: \.self) { Text($0["account_id"].string + " · " + $0["label"].string).tag($0["id"].string) } } }
                     FormField(title: "清單 JSON Pointer（根節點可留空）", text: $draft.root)
                     MappingEditor(rows: $draft.mappings)
+                    Button("套用此類型的常用欄位") {
+                        let names = ["QUOTA":["model_id", "group", "rpd", "tpd"], "PRICING":["model_id", "group", "input", "output"], "BALANCE":["model_id", "group", "balance"], "USAGE":["model_id", "group", "requests", "tokens"], "PERFORMANCE":["model_id", "group", "tps", "ttft_ms", "success_rate", "sample_count"], "NOTICE":["model_id", "group", "notice"], "CATALOG":["model_id", "name"]][draft.kind] ?? []
+                        draft.mappings = names.map { FieldMapping(name: $0, pointer: "/" + $0) }
+                        if draft.kind == "PRICING" { draft.unit = "USD/1M tokens" }
+                        if draft.kind == "CATALOG" { draft.scope = "CATALOG"; draft.unit = "NONE" }
+                    }
                     Picker("單位", selection: $draft.unit) { ForEach(["REQUESTS", "TOKENS", "USD/1M tokens", "USD/1K tokens", "USD/token", "USD", "CREDITS", "MS", "TPS", "NONE"], id: \.self) { Text($0).tag($0) } }
                     if draft.kind == "PRICING" { Toggle("證據確認沒有固定請求費", isOn: $draft.fixedAbsent); Toggle("證據確認為這個推論 Key／Group 的實際費率", isOn: $draft.effective) }
                     FormField(title: "已保存證據 ID（逗號分隔，可選）", text: $draft.evidence)

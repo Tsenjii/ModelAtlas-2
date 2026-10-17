@@ -31,3 +31,5 @@ Unknown 不當 0／Free；Catalog 不等於 My Models。所有操作維持 Provi
 - `NativeParity` 第二個獨立 App／DB／120秒階段，不擴大原測試上限：真 packaged engine→TLS fixture 檢查 current/legacy/雙人、voice/speed/instructions、空文字 multipart、dimensions/top_n、圖片與編輯；批次 exact-account confirm/undo、ABA stale 拒絕、connector 真測試→啟用→intelligence caller→復原、證據支持的知識版本／stale／復原、人工判讀、服務金鑰及 Assistant 安全參照、原對話不變與完整匯出。
 - 原25實圖保留，再加13張實際 production View，兩架構總76圖。資料載入畫面等待真 ready marker；不以初始空畫面作驗收。測試資料全為隔離合成資料，不冒充外部服務可用性。
 - 首候選 `a01de9c`／Mac39037663731 首輪編譯發現新表單 wrapper 多重宣告與收據按鈕括號錯誤，已修正；`9502b3f`／Mac39037990751 剩 Catalog 詳情大型 ViewBuilder 超過 type-check 時限，拆為明確子 View。這些失敗保留，新 HEAD 重新九項同 SHA；不得稱先前已驗收。
+
+`94cd02e`／Mac39038944952 Universal編譯成功；arm64保留原native25圖及核心測試通過，新增parity在seed階段遭端點409阻擋。新增fixture誤以內建操作名稱作自訂端點ID，正式引擎正確拒絕；改為獨立qa-*不可變profile，不放寬引擎或刪斷言。新增對話ALL／archive／完整scope篩選驗證及模型資料保存後reactive詳情；新HEAD重新九項與76圖驗收。
