@@ -67,7 +67,7 @@ SwiftPM 也可直接用 Xcode 開啟 `macos/Package.swift` 查看原生程式碼
 - 實際啟動 `.app` 的 SwiftUI 視窗，以同一 store／API 寫入合成資料、完成 TLS chat，再拍三工作區、深淺色、窄視窗與選模／新增供應商 sheet 十一張PNG；正式 store caller 另驗未送草稿／附件保留、舊對話草稿恢復、重複模型與 Key ID 的完整 scope 搜尋及非法 scope 拒選。這是實際原生視窗 capture＋store caller 驗證，**不是 XCUI 全點擊覆蓋**。
 - CI native integration 暫時信任一張每輪新產生、24小時到期的本機 fixture CA。結束將**這張 CA 明確設為 Deny**、按完整 fingerprint 刪除憑證，並用 Apple Security API 確認 exact admin Deny 與離線 OS trust 拒絕；任一步失敗 gate 失敗。這避開 [GitHub runner 已知 remove-trusted-cert 卡住問題](https://github.com/actions/runner-images/issues/12116)，不改 authorizationdb／不關 TLS 驗證。Deny-only trust record 留在可丟棄 runner 至 VM 銷毀；只供可丟棄 CI，或明確 `MODELATLAS_ALLOW_TEST_CERT=1` 的開發測試。正常App不安裝憑證，也不改TLS驗證。
 - `process-footprint.json` 用 `ps RSS` 記錄該次原生 App＋其自帶引擎的啟動／TLS chat／原25畫面 capture，排除 fixture與test runner；不冒充完整VPS expanded workload或RSS硬上限。
-- `ParityTests` 增加11項有意義的核心回歸，原18項保留，共29項。`NativeParity` 在另一個獨立 App／DB、同一 packaged artifact 上使用真 TLS 媒體／scope／Review／版本／證據／研究預算與 Assistant 流程，另加13張圖；兩架構總76圖。第二階段有獨立120秒上限，不擴大原階段的斷言或時間限制；另記 `parity-footprint.json`，數值仍只代表指定工作負載。
+- `ParityTests` 增加11項有意義的核心回歸，原18項保留，共29項。`NativeParity` 在另一個獨立 App／DB、同一 packaged artifact 上使用真 TLS 媒體／scope／Review／版本／證據／研究預算與 Assistant 流程，另加17張圖（含新首頁與設定深淺色）；兩架構總84圖。第二階段有獨立120秒上限，不擴大原階段的斷言或時間限制；另記 `parity-footprint.json`，數值仍只代表指定工作負載。
 - Linux Go新增 `TestDesktopDynamicLoopbackAndParentPipeLifetime`，真 binary 驗實際埠／0600 ready／401／parent EOF退出／ready移除／DB lock釋放，既有完整Go／VPS Browser／Android gate仍全部保留。
 
 Mac 唯一 live slice／未驗收狀態見 `docs/ACTIVE_TASK.md`，正式 caller → 測試見 `docs/TRACEABILITY.md`；最新 PR body 保存 exact code SHA、全部九項 jobs、artifact、實圖 review 與限制。不要將缺 Apple 公證、未跑 macOS12 寫成已完成。

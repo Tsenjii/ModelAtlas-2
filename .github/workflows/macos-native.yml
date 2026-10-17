@@ -65,6 +65,11 @@ jobs:
             macos/qa/**/ui/native-smoke.json
             macos/qa/**/ui/FAILURE.txt
             macos/qa/**/ui/failure-state.json
+            macos/qa/**/parity-ui/*.png
+            macos/qa/**/parity-ui/native-parity.json
+            macos/qa/**/parity-ui/FAILURE.txt
+            macos/qa/**/parity-footprint.json
+            macos/qa/**/parity-app.log
             macos/qa/**/process-footprint.json
             macos/qa/**/swift-tests.log
             macos/qa/**/swift-test-build.log

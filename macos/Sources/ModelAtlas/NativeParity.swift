@@ -176,7 +176,13 @@ import SwiftUI
             let counts = try await fixtureJSON(fixture + "/fixture/parity-state")
             for name in ["speech", "native-current", "native-legacy", "native-dual", "transcription", "embeddings", "rerank", "images", "image-edit", "connector"] { try require((counts[name].numeric ?? 0) > 0) }
             try require(counts["invalid"].numeric == nil)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(13), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "wire_counts": counts])
+            stage = "modern-native-workspace-captures"
+            store.newConversation(); store.chooseModel(chat); store.draft = ""; store.workspace = .playground
+            try await captureWorkspace(store, output, "14-welcome-light", dark: false)
+            try await captureWorkspace(store, output, "15-welcome-dark", dark: true)
+            try await capture(SettingsView(store: store), output, "16-settings-light", dark: false)
+            try await capture(SettingsView(store: store), output, "17-settings-dark", dark: true)
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(17), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
@@ -210,7 +216,13 @@ import SwiftUI
         throw AtlasError.invalidResponse
     }
     private static func fixtureJSON(_ url: String) async throws -> JSONValue { let (data, response) = try await URLSession.shared.data(from: URL(string: url)!); try require((response as? HTTPURLResponse)?.statusCode == 200); return try JSONDecoder().decode(JSONValue.self, from: data) }
-    private static func fixtureFile(_ fixture: String, path: String, output: URL, name: String) async throws -> URL { let (data, response) = try await URLSession.shared.data(from: URL(string: fixture + path)!); try require((response as? HTTPURLResponse)?.statusCode == 200); let file = output.appendingPathComponent(name); try data.write(to: file); return file }
+    private static func fixtureFile(_ fixture: String, path: String, output: URL, name: String) async throws -> URL {
+        let (data, response) = try await URLSession.shared.data(from: URL(string: fixture + path)!)
+        try require((response as? HTTPURLResponse)?.statusCode == 200)
+        let inputs = output.appendingPathComponent("fixture-inputs", isDirectory: true)
+        try FileManager.default.createDirectory(at: inputs, withIntermediateDirectories: true)
+        let file = inputs.appendingPathComponent(name); try data.write(to: file); return file
+    }
     private static func mediaPreview(_ store: AtlasStore, operation: String) -> some View {
         ScrollView { VStack(alignment: .leading, spacing: 18) { Label(operationTitle(operation), systemImage: "sparkles").font(.title2.weight(.semibold)); Text("原生 App · 隔離 TLS 合成驗收").foregroundStyle(.secondary); MediaOptionsView(draft: Binding(get: { store.mediaDraft }, set: { store.mediaDraft = $0 }), operation: operation, expanded: true); if let result = store.mediaResult { MediaResultView(value: result) } }.padding(24) }.frame(width: 850, height: 740)
     }
@@ -229,6 +241,18 @@ import SwiftUI
         guard let root = window.contentView?.superview else { throw AtlasError.invalidResponse }; root.layoutSubtreeIfNeeded(); root.displayIfNeeded()
         guard let bitmap = root.bitmapImageRepForCachingDisplay(in: root.bounds) else { throw AtlasError.invalidResponse }; root.cacheDisplay(in: root.bounds, to: bitmap)
         guard let data = bitmap.representation(using: .png, properties: [:]), data.count > 10_000 else { throw AtlasError.invalidResponse }; try data.write(to: output.appendingPathComponent(name + ".png"))
+    }
+    private static func captureWorkspace(_ store: AtlasStore, _ output: URL, _ name: String, dark: Bool) async throws {
+        guard let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }) else { throw AtlasError.invalidResponse }
+        UserDefaults.standard.set(dark ? "dark" : "light", forKey: "appearance")
+        window.setContentSize(NSSize(width: 1200, height: 800)); window.center(); window.makeKeyAndOrderFront(nil)
+        try await Task.sleep(nanoseconds: 450_000_000)
+        guard let root = window.contentView?.superview else { throw AtlasError.invalidResponse }
+        root.layoutSubtreeIfNeeded(); root.displayIfNeeded()
+        guard let bitmap = root.bitmapImageRepForCachingDisplay(in: root.bounds) else { throw AtlasError.invalidResponse }
+        root.cacheDisplay(in: root.bounds, to: bitmap)
+        guard let data = bitmap.representation(using: .png, properties: [:]), data.count > 10_000 else { throw AtlasError.invalidResponse }
+        try data.write(to: output.appendingPathComponent(name + ".png"))
     }
     private static func contains(_ view: NSView?, _ marker: String) -> Bool { guard let view else { return false }; return view.identifier?.rawValue == marker || view.subviews.contains { contains($0, marker) } }
 }

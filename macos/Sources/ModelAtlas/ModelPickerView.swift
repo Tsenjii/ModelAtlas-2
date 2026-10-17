@@ -29,30 +29,32 @@ struct ModelPickerView: View {
         VStack(spacing: 0) {
             header
             ModelPickerSearchField(text: $search, move: move, submit: chooseHighlighted, cancel: { dismiss() })
-                .frame(height: 30).padding(.horizontal, 20).padding(.bottom, 12)
+                .frame(height: 32).padding(.horizontal, 20).padding(.bottom, 12)
             filters
             Divider()
             results
             Divider()
             footer
-        }.frame(width: 620, height: 550).background(atlasSurface)
+        }.frame(width: 620, height: 550).background(atlasCanvas)
             .onChange(of: entryIDs) { ids in cursor.reconcile(ids, preferredID: store.scopeID) }
     }
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("選擇模型").font(.title3.weight(.semibold))
+                Text("選擇模型").font(.system(size: 17, weight: .semibold))
                 Text(store.sessionID == nil ? "從已加入的連線中選擇。" : "選擇後開啟新對話；目前對話與草稿會保留。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Button("完成") { dismiss() }.keyboardShortcut(.cancelAction)
+            Button { dismiss() } label: { Image(systemName: "xmark").foregroundStyle(.secondary) }.buttonStyle(AtlasIconButtonStyle()).keyboardShortcut(.cancelAction).accessibilityLabel("關閉模型選擇")
         }.padding(20)
     }
     private var filters: some View {
         HStack {
-            Picker("顯示", selection: $favorites) { Text("全部").tag(false); Text("收藏").tag(true) }
-                .pickerStyle(.segmented).frame(width: 160)
+            HStack(spacing: 3) {
+                AtlasFilterChip(title: "全部模型", selected: !favorites) { favorites = false }
+                AtlasFilterChip(title: "收藏", icon: "star", selected: favorites) { favorites = true }
+            }
             Spacer()
             Picker("供應商", selection: $providerID) {
                 Text("所有供應商").tag("")
@@ -65,14 +67,13 @@ struct ModelPickerView: View {
     private var results: some View {
         ScrollViewReader { reader in
             ScrollView {
-                LazyVStack(spacing: 0) {
+                LazyVStack(spacing: 3) {
                     ForEach(entries) { entry in
                         ModelPickerRow(store: store, entry: entry, highlighted: cursor.highlightedID == entry.id) { choose(entry) }
                             .id(entry.id)
-                        Divider().padding(.leading, 64)
                     }
                     if entries.isEmpty { emptyResults }
-                }
+                }.padding(8)
             }
             .onChange(of: scrollTarget) { id in if let id { reader.scrollTo(id, anchor: .center) } }
             .onAppear {
@@ -128,20 +129,20 @@ private struct ModelPickerRow: View {
                 if entry.id == store.scopeID {
                     Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(atlasTextAccent)
                 }
-            }.padding(.horizontal, 20).padding(.vertical, 13).frame(maxWidth: .infinity, alignment: .leading)
+            }.padding(.horizontal, 12).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
         }.buttonStyle(AtlasRowButtonStyle())
             .disabled(store.generating || store.closing)
-            .background(highlighted ? atlasAccent.opacity(0.085) : Color.clear)
+            .background(highlighted ? atlasAccent.opacity(0.085) : Color.clear).cornerRadius(8)
             .accessibilityAddTraits(highlighted ? .isSelected : [])
             .help(entry.scope.modelID + " · " + store.scopeTitle(entry.model) + " · " + entry.scope.endpoint)
     }
     private var identity: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
-                Text(entry.title).font(.body.weight(.medium)).lineLimit(1)
+                Text(entry.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 if entry.model["favorite"].boolean { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.orange) }
             }
-            Text(store.scopeTitle(entry.model)).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+            Text(store.scopeTitle(entry.model)).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2)
             Text(operationTitle(store.operationName(entry.model)) + " · " + entry.scope.endpoint)
                 .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
         }

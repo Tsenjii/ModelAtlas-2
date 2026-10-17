@@ -11,7 +11,7 @@ root = pathlib.Path(qa)
 out = root / "parity-ui"
 out.mkdir(parents=True, exist_ok=True)
 peaks = {"app_rss_bytes": 0, "engine_rss_bytes": 0, "combined_rss_bytes": 0, "samples": 0,
-         "method": "ps RSS; separate packaged native app and owned engine; real TLS media, management, versions, evidence, safe refs and thirteen native captures"}
+         "method": "ps RSS; separate packaged native app and owned engine; real TLS media, management, versions, evidence, safe refs and seventeen native captures"}
 with (root / "parity-app.log").open("w") as log:
     process = subprocess.Popen([str(pathlib.Path(app) / "Contents/MacOS/ModelAtlas"), "--smoke-dir", str(out),
                                 "--fixture-url", fixture, "--parity-smoke"], stdout=log, stderr=log)
@@ -43,10 +43,10 @@ with (root / "parity-app.log").open("w") as log:
 report = out / "native-parity.json"
 assert report.exists(), (out / "FAILURE.txt").read_text() if (out / "FAILURE.txt").exists() else "Native parity did not finish"
 value = json.loads(report.read_text())
-assert value["result"] == "PASS" and value["screenshots"] == 13, value
+assert value["result"] == "PASS" and value["screenshots"] == 17, value
 for field in ["real_tls_media", "batch_confirm_undo", "stale_guards", "connector_caller", "knowledge_versions", "manual_evidence", "safe_references", "retained_history"]:
     assert value[field], field
-assert len(list(out.glob("*.png"))) == 13
+assert len(list(out.glob("*.png"))) == 17
 assert peaks["app_rss_bytes"] > 0 and peaks["engine_rss_bytes"] > 0 and peaks["samples"] >= 3
 ids = json.loads((out / "measurement-pids.json").read_text())
 child = subprocess.run(["ps", "-o", "pid=", "-p", str(int(ids["engine_pid"]))], capture_output=True, text=True)

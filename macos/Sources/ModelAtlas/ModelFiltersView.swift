@@ -7,8 +7,10 @@ struct ModelFiltersView: View {
     @State private var expanded: Bool
     init(store: AtlasStore, filters: Binding<ModelFilters>, expanded: Bool = false) { self.store = store; _filters = filters; _expanded = State(initialValue: expanded) }
     var body: some View {
-        DisclosureGroup("篩選與排序", isExpanded: $expanded) {
-            VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
+            filterToolbar
+            if expanded {
+            AtlasCard {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), alignment: .leading)], alignment: .leading, spacing: 14) {
                     Picker("供應商", selection: $filters.provider) { Text("全部供應商").tag(""); ForEach(store.providers) { Text($0["name"].string + " · " + $0.id).tag($0.id) } }
                     Picker("帳戶與 Key", selection: $filters.credential) {
@@ -21,8 +23,6 @@ struct ModelFiltersView: View {
                     choice("模態", value: $filters.modality, options: ["TEXT_INPUT", "TEXT_OUTPUT", "IMAGE_INPUT", "IMAGE_OUTPUT", "AUDIO_INPUT", "AUDIO_OUTPUT", "FILE_INPUT"])
                     choice("價格狀態", value: $filters.price, options: ["FREE_NOW", "PAID", "PARTIALLY_FREE", "UNKNOWN"])
                     Picker("收藏", selection: $filters.favorite) { Text("全部").tag(""); Text("最愛").tag("favorite"); Text("追蹤").tag("watchlist") }
-                    Picker("資料來源", selection: $filters.source) { Text("我的實測").tag("local"); Text("Provider 回報").tag("provider"); Text("External 參考").tag("external") }
-                    Picker("排序", selection: $filters.sort) { ForEach(["smart", "name", "recent", "new", "strength", "tps", "ttft", "latency", "quota", "price"], id: \.self) { Text(["smart":"綜合排序", "name":"名稱", "recent":"最近使用", "new":"最近加入", "strength":"模型強度", "tps":"TPS", "ttft":"TTFT", "latency":"延遲", "quota":"額度", "price":"輸入價格"][$0]!).tag($0) } }
                     Picker("變更", selection: $filters.change) { Text("全部").tag(""); Text("7 天內加入").tag("newly_added"); Text("價格變更").tag("price_changed"); Text("7 天內使用").tag("recently_used") }
                     FormField(title: "Vendor", text: $filters.vendor)
                 }
@@ -36,12 +36,24 @@ struct ModelFiltersView: View {
                 }
                 Toggle("只顯示已啟用且具備認證的連線", isOn: $filters.usable).toggleStyle(.checkbox)
                 RankingWeightsView(store: store)
-            }.padding(.top, 12)
+            }.controlSize(.regular)
+            }
         }.accessibilityIdentifier("model-advanced-filters")
+    }
+    private var filterToolbar: some View {
+            HStack(spacing: 12) {
+                AtlasFilterChip(title: expanded ? "收起篩選" : "進階篩選", icon: "line.3.horizontal.decrease", selected: expanded) { expanded.toggle() }
+                Spacer(minLength: 0)
+                Picker("資料來源", selection: $filters.source) { Text("我的實測").tag("local"); Text("供應商回報").tag("provider"); Text("外部參考").tag("external") }.labelsHidden().frame(width: 120)
+                Picker("排序", selection: $filters.sort) { ForEach(["smart", "name", "recent", "new", "strength", "tps", "ttft", "latency", "quota", "price"], id: \.self) { Text(["smart":"綜合排序", "name":"依名稱", "recent":"最近使用", "new":"最近加入", "strength":"模型強度", "tps":"生成速度", "ttft":"首字延遲", "latency":"總延遲", "quota":"可用額度", "price":"輸入價格"][$0]!).tag($0) } }.labelsHidden().frame(width: 130)
+            }.controlSize(.small)
+    }
+    private func filterTitle(_ value: String) -> String {
+        ["CHAT_REASONING":"對話與推理", "CODING":"程式碼", "IMAGE":"圖片", "AUDIO":"音訊", "EMBEDDING":"向量", "RERANK":"重新排序", "SAFETY":"安全", "OTHER":"其他", "VISION":"圖片理解", "FILES":"檔案理解", "AUDIO_INPUT":"音訊輸入", "AUDIO_OUTPUT":"音訊輸出", "IMAGE_GENERATION":"圖片生成", "IMAGE_EDITING":"圖片編輯", "REASONING":"推理", "TOOL_CALLING":"工具呼叫", "FUNCTION_CALLING":"函式呼叫", "STRUCTURED_OUTPUT":"結構化輸出", "JSON_MODE":"JSON 模式", "WEB_SEARCH":"網路搜尋", "COMPUTER_USE":"電腦操作", "LONG_CONTEXT":"長上下文", "TEXT_INPUT":"文字輸入", "TEXT_OUTPUT":"文字輸出", "IMAGE_INPUT":"圖片輸入", "IMAGE_OUTPUT":"圖片輸出", "FILE_INPUT":"檔案輸入", "FREE_NOW":"目前免費", "PAID":"付費", "PARTIALLY_FREE":"部分免費", "UNKNOWN":"尚未確認"][value] ?? value
     }
     private func keyLabel(_ key: JSONValue) -> String { [store.providerName(key["provider_id"].string), key["account_id"].string, key["label"].string].joined(separator: " · ") }
     private func choice(_ title: String, value: Binding<String>, options: [String]) -> some View {
-        Picker(title, selection: value) { Text("全部").tag(""); ForEach(options, id: \.self) { Text($0).tag($0) } }
+        Picker(title, selection: value) { Text("全部").tag(""); ForEach(options, id: \.self) { Text(filterTitle($0)).tag($0) } }
     }
 }
 

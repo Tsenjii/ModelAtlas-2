@@ -14,13 +14,13 @@ struct ModelsView: View {
     var body: some View {
         let entries = filtered
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 20) {
                 HStack {
                     PageHeading(eyebrow: "Model Library", title: "模型", subtitle: "\(store.activeModels.count) 個可用連線 · \(store.myModels.filter { $0["favorite"].boolean }.count) 個收藏")
                     Spacer()
-                    Button { store.modelPickerOpen = true } label: { Label("選擇模型", systemImage: "magnifyingglass") }.help("選擇模型（⌘K）").disabled(store.generating)
+                    Button { store.modelPickerOpen = true } label: { Label("選擇模型", systemImage: "magnifyingglass") }.buttonStyle(AtlasActionStyle()).help("選擇模型（⌘K）").disabled(store.generating)
                 }
-                Picker("模型庫", selection: $tab) { Text("My Models").tag("My Models"); Text("Catalog").tag("Catalog"); Text("隱藏與封存").tag("Hidden"); Text("全球研究").tag("Research"); Text("知識與擷取").tag("Knowledge") }.pickerStyle(.segmented)
+                AtlasTabs(selection: $tab, items: [AtlasTab("My Models", "我的模型", "square.stack"), AtlasTab("Catalog", "探索", "square.grid.2x2"), AtlasTab("Hidden", "已隱藏", "archivebox"), AtlasTab("Research", "全球研究", "globe"), AtlasTab("Knowledge", "知識", "books.vertical")])
                 if tab == "Catalog" { CatalogView(store: store, providerID: nil) }
                 else if tab == "Research" { ResearchView(store: store) }
                 else if tab == "Knowledge" { KnowledgeView(store: store) }
@@ -40,27 +40,27 @@ struct ModelsView: View {
                                 }
                                 if entry.id != entries.prefix(shown).last?.id { Divider().padding(.leading, selecting ? 88 : 60) }
                             }
-                        }.background(atlasSurface).cornerRadius(13)
-                            .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.primary.opacity(0.07)))
+                        }.background(atlasSurface).cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(atlasHairline, lineWidth: 0.5))
                     }
                     if filtered.count > shown { Button("顯示更多（共 \(filtered.count) 個）") { shown += 100 } }
                     if !compareSelection.isEmpty { compareBar }
                     if let comparison { AtlasCard { Text("本次即時比較").font(.headline); JSONTree(value: comparison) } }
                     Text("目前以" + ["local":"我的實測", "provider":"供應商回報", "external":"外部參考"][modelFilters.source, default: "我的實測"] + "篩選與排序；各來源分開保存。").font(.caption).foregroundStyle(.secondary)
                 }
-            }.padding(24).frame(maxWidth: 1150).frame(maxWidth: .infinity)
+            }.padding(28).frame(maxWidth: 1150).frame(maxWidth: .infinity)
         }
     }
     private var filters: some View {
         VStack(alignment: .leading, spacing: 10) {
             SearchField(placeholder: "搜尋模型、帳戶、Key 或群組", text: $search)
             HStack {
-                Button("全部") { modelFilters.favorite = ""; modelFilters.price = "" }
-                Button("最愛") { modelFilters.favorite = "favorite"; modelFilters.price = "" }
-                Button("FREE NOW") { modelFilters.price = "FREE_NOW"; modelFilters.favorite = "" }
+                AtlasFilterChip(title: "全部", selected: modelFilters.favorite.isEmpty && modelFilters.price.isEmpty) { modelFilters.favorite = ""; modelFilters.price = "" }
+                AtlasFilterChip(title: "收藏", icon: "star", selected: modelFilters.favorite == "favorite") { modelFilters.favorite = "favorite"; modelFilters.price = "" }
+                AtlasFilterChip(title: "目前免費", icon: "gift", selected: modelFilters.price == "FREE_NOW") { modelFilters.price = "FREE_NOW"; modelFilters.favorite = "" }
                 Spacer()
-                Button(selecting ? "完成選取" : "選取") { selecting.toggle(); if !selecting { compareSelection = [] } }
-                Button("重設篩選") { search = ""; modelFilters = ModelFilters(); shown = 100 }
+                Button(selecting ? "完成選取" : "選取") { selecting.toggle(); if !selecting { compareSelection = [] } }.buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.secondary)
+                Button { search = ""; modelFilters = ModelFilters(); shown = 100 } label: { Image(systemName: "arrow.counterclockwise") }.buttonStyle(.plain).foregroundStyle(.secondary).help("重設所有篩選")
                 Text("\(filtered.count) 個連線").font(.caption).foregroundStyle(.secondary)
             }
             ModelFiltersView(store: store, filters: $modelFilters)
@@ -109,21 +109,21 @@ private struct ModelLibraryRow: View {
     var performanceSource = "local"
     private var performance: JSONValue { entry.model["performance"] }
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             ModelMark(name: entry.title).padding(.top, 2)
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    Text(entry.title).font(.body.weight(.semibold)).lineLimit(1)
+                    Text(entry.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                     if entry.model["favorite"].boolean { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.orange) }
                     if !entry.model["enabled"].boolean { SmallBadge(text: "已停用") }
                     Spacer(minLength: 4)
-                    Text(operationTitle(store.operationName(entry.model))).font(.caption).foregroundStyle(atlasTextAccent)
+                    SmallBadge(text: operationTitle(store.operationName(entry.model)), color: atlasAccent)
                     Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
                 }
-                Text(store.scopeTitle(entry.model) + " · " + entry.scope.endpoint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                Text(store.scopeTitle(entry.model) + " · " + entry.scope.endpoint).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
                 metrics
             }
-        }.padding(16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }.padding(.horizontal, 17).padding(.vertical, 15).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
             .help(entry.scope.modelID + " · " + store.scopeTitle(entry.model) + " · " + entry.scope.endpoint)
     }
     private var metrics: some View {
@@ -143,8 +143,8 @@ private struct ModelLibraryRow: View {
                     if let ttft = performance["ttft"]["mean"].numeric { Text(String(format: "平均 TTFT %.0f ms", ttft)) }
                     if let tps = performance["tps"]["mean"].numeric { Text(String(format: "平均 TPS %.1f", tps)) }
                 }.font(.caption.monospacedDigit()).foregroundStyle(.primary)
-                Text("\(performance["samples"].display) 筆本機樣本 · \(windowLabel) · \(samples < 20 ? "樣本較少" : "僅代表此時間窗")")
-                    .font(.caption2).foregroundStyle(.secondary)
+                Text("\(performance["samples"].display) 筆樣本 · \(windowLabel) · \(samples < 20 ? "樣本較少" : "本機實測")")
+                    .font(.system(size: 10)).foregroundStyle(.tertiary)
             } else { Text("尚無本機樣本").font(.caption).foregroundStyle(.tertiary) }
         }
     }

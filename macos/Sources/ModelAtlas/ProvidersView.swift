@@ -21,9 +21,9 @@ struct ProvidersView: View {
                     PageHeading(eyebrow: "Connections", title: "供應商", subtitle: "\(store.providers.count) 個供應商 · \(store.accounts.count) 個帳戶")
                     Spacer()
                     Button { store.newProviderOpen = true } label: { Label("新增供應商", systemImage: "plus") }
-                        .buttonStyle(.borderedProminent).controlSize(.large)
+                        .buttonStyle(AtlasActionStyle(prominent: true))
                 }
-                HStack { SearchField(placeholder: "搜尋供應商、網址或描述", text: $search); Picker("排序", selection: $sort) { Text("名稱").tag("name"); Text("我的模型綜合評分").tag("smart") }.frame(width: 220) }
+                HStack(spacing: 14) { SearchField(placeholder: "搜尋供應商、網址或描述", text: $search); Picker("排序", selection: $sort) { Text("依名稱").tag("name"); Text("依模型評分").tag("smart") }.labelsHidden().frame(width: 130) }
                 if store.providers.isEmpty {
                     EmptyCard(icon: "server.rack", title: "接上第一個供應商", detail: "貼上 Base URL 與 Key，檢查結果後再加入。", action: "新增供應商") { store.newProviderOpen = true }.frame(height: 350)
                 } else if filtered.isEmpty {
@@ -34,11 +34,11 @@ struct ProvidersView: View {
                             ProviderRow(store: store, provider: provider)
                             if provider.id != filtered.last?.id { Divider().padding(.leading, 64) }
                         }
-                    }.background(atlasSurface).cornerRadius(13)
-                        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.primary.opacity(0.07)))
-                    Text("選擇供應商以管理帳戶、Key、Catalog 與端點。").font(.caption).foregroundStyle(.secondary)
+                    }.background(atlasSurface).cornerRadius(12)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(atlasHairline, lineWidth: 0.5))
+                    Label("選擇供應商，管理帳戶、Key 與模型。", systemImage: "info.circle").font(.system(size: 11)).foregroundStyle(.tertiary)
                 }
-            }.padding(24).frame(maxWidth: 1150).frame(maxWidth: .infinity)
+            }.padding(28).frame(maxWidth: 1150).frame(maxWidth: .infinity)
         }
     }
 }
@@ -51,19 +51,19 @@ private struct ProviderRow: View {
         Button { store.detailProvider = provider } label: {
             HStack(spacing: 12) {
                 Image(systemName: "server.rack").font(.system(size: 16, weight: .medium)).foregroundStyle(atlasTextAccent)
-                    .frame(width: 32, height: 36).background(atlasAccent.opacity(0.09)).cornerRadius(9)
+                    .frame(width: 38, height: 38).background(atlasAccent.opacity(0.07)).cornerRadius(10)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(provider["name"].string).font(.body.weight(.semibold)).lineLimit(1)
+                    Text(provider["name"].string).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                     Text(provider["base_url"].string).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     if !provider["description"].string.isEmpty { Text(provider["description"].string).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
                 }
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 5) {
                     Text("\(store.accounts.filter { $0["provider_id"].string == providerID }.count) 帳戶 · \(store.credentials.filter { $0["provider_id"].string == providerID && $0["enabled"].boolean }.count) 啟用 Key").font(.caption).foregroundStyle(.secondary)
-                    Text("\(store.activeModels.filter { $0["provider_id"].string == providerID }.count) 個模型連線").font(.caption).foregroundStyle(atlasTextAccent)
+                    SmallBadge(text: "\(store.activeModels.filter { $0["provider_id"].string == providerID }.count) 個模型", color: atlasAccent)
                 }
                 Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
-            }.padding(16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+            }.padding(18).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
         }.buttonStyle(AtlasRowButtonStyle()).help(provider["name"].string + " · " + provider["base_url"].string)
     }
 }
@@ -123,7 +123,7 @@ struct AddProviderView: View {
                             }.disabled(selected.isEmpty)
                         }
                     } else {
-                        Picker("新增方式", selection: $mode) { Text("快速新增").tag("QUICK"); Text("進階新增").tag("ADVANCED"); Text("批次匯入").tag("BATCH") }.pickerStyle(.segmented)
+                        AtlasTabs(selection: $mode, items: [AtlasTab("QUICK", "快速新增", "bolt"), AtlasTab("ADVANCED", "進階設定", "slider.horizontal.3"), AtlasTab("BATCH", "批次匯入", "square.and.arrow.down")])
                         if mode == "BATCH" { BatchImportView(store: store) { review = $0; selected = [] } }
                         else {
                         manualEntry

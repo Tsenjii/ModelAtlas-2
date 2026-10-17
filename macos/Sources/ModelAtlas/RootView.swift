@@ -7,7 +7,7 @@ struct RootView: View {
     @AppStorage("appearance") private var appearance = "system"
     var body: some View {
         HSplitView {
-            sidebar.frame(minWidth: 205, idealWidth: 218, maxWidth: 260)
+            sidebar.frame(minWidth: 212, idealWidth: 228, maxWidth: 260)
             VStack(spacing: 0) {
                 if let problem = store.problem {
                     HStack(alignment: .top) {
@@ -37,7 +37,7 @@ struct RootView: View {
         })
         .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
         .toolbar {
-            ToolbarItem(placement: .navigation) { Text(store.workspace.rawValue).font(.headline) }
+            ToolbarItem(placement: .navigation) { Text(store.workspace.rawValue).font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary) }
             ToolbarItemGroup(placement: .automatic) {
                 Button { Task { await store.refresh() } } label: { Image(systemName: "arrow.clockwise") }.help("重新整理（⌘R）").disabled(!store.ready)
                 Button { store.assistantOpen = true } label: { Label("Assistant", systemImage: "sparkles") }.disabled(!store.ready)
@@ -61,47 +61,72 @@ struct RootView: View {
         }
     }
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
-                Image(systemName: "hexagon.fill").font(.system(size: 23)).foregroundStyle(atlasTextAccent)
-                Text("ModelAtlas").font(.system(size: 17, weight: .semibold))
-            }.padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 4)
-            VStack(spacing: 4) {
+                Image(systemName: "square.stack.3d.up.fill").font(.system(size: 17, weight: .medium)).foregroundStyle(atlasTextAccent)
+                    .frame(width: 32, height: 32).background(atlasAccent.opacity(0.08)).cornerRadius(10)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("ModelAtlas").font(.system(size: 15, weight: .semibold))
+                    Text("你的 AI 工作區").font(.system(size: 10)).foregroundStyle(.secondary)
+                }
+            }.padding(.horizontal, 9).padding(.top, 12).padding(.bottom, 7)
+            Text("工作區").font(.system(size: 10, weight: .medium)).foregroundStyle(.tertiary).padding(.horizontal, 12)
+            VStack(spacing: 3) {
                 ForEach(Workspace.allCases) { section in
                     Button { store.workspace = section } label: {
-                        HStack {
-                            Label(section.rawValue, systemImage: section.symbol).font(.body.weight(.medium))
+                        HStack(spacing: 10) {
+                            Image(systemName: section.symbol).font(.system(size: 14, weight: .medium)).frame(width: 19)
+                                .foregroundStyle(store.workspace == section ? atlasTextAccent : Color.secondary)
+                            Text(section.rawValue).font(.system(size: 12, weight: store.workspace == section ? .semibold : .medium))
                             Spacer(minLength: 4)
-                            if section == .providers { Text("\(store.providers.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
-                            if section == .models { Text("\(store.activeModels.count)").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
-                        }.frame(maxWidth: .infinity, minHeight: 38, alignment: .leading).padding(.horizontal, 12)
-                            .background(store.workspace == section ? atlasAccent.opacity(0.11) : Color.clear).cornerRadius(8)
-                            .foregroundStyle(store.workspace == section ? atlasAccent : Color.primary)
+                            if section == .providers { sidebarCount(store.providers.count) }
+                            if section == .models { sidebarCount(store.activeModels.count) }
+                        }.frame(maxWidth: .infinity, minHeight: 35, alignment: .leading).padding(.horizontal, 11)
+                            .background(store.workspace == section ? atlasSurface.opacity(0.85) : Color.clear).cornerRadius(7)
+                            .overlay(RoundedRectangle(cornerRadius: 7).stroke(store.workspace == section ? atlasHairline : Color.clear, lineWidth: 0.5))
+                            .foregroundStyle(Color.primary)
                     }.buttonStyle(.plain).accessibilityIdentifier("nav-" + section.rawValue)
                 }
             }
             if store.ready {
                 Button { store.modelPickerOpen = true } label: {
-                    HStack { Label("選擇模型", systemImage: "magnifyingglass"); Spacer(); Text("⌘K").foregroundStyle(.secondary) }
-                        .font(.caption).padding(.horizontal, 12).padding(.vertical, 9).contentShape(Rectangle())
+                    HStack { Label("快速選擇模型", systemImage: "magnifyingglass"); Spacer(); Text("⌘K").font(.system(size: 10)).padding(3).background(Color.primary.opacity(0.035)).cornerRadius(4) }
+                        .font(.system(size: 11)).padding(.horizontal, 11).padding(.vertical, 8).contentShape(Rectangle())
                 }.buttonStyle(.plain).foregroundStyle(.secondary).disabled(store.generating)
             }
             if store.workspace == .playground && store.ready { conversationList }
             Spacer(minLength: 0)
+            Divider()
             HStack(spacing: 8) {
-                Circle().fill(store.ready ? atlasAccent : Color.secondary).frame(width: 7, height: 7)
-                Text(store.ready ? "本機工作區" : "尚未啟動").font(.caption).foregroundStyle(.secondary)
+                Image(systemName: "internaldrive").font(.system(size: 12)).foregroundStyle(.secondary)
+                Text(store.ready ? "本機工作區" : "尚未啟動").font(.system(size: 11)).foregroundStyle(.secondary)
                 Spacer()
-            }.padding(.horizontal, 12).padding(.vertical, 10)
-        }.padding(12).background(.ultraThinMaterial)
+                Circle().fill(store.ready ? atlasAccent : Color.secondary).frame(width: 5, height: 5)
+            }.padding(.horizontal, 11).padding(.bottom, 9)
+        }.padding(10).background(.ultraThinMaterial)
+    }
+    private func sidebarCount(_ count: Int) -> some View {
+        Text("\(count)").font(.system(size: 10).monospacedDigit()).foregroundStyle(.secondary)
+            .padding(.horizontal, 5).padding(.vertical, 2).background(Color.primary.opacity(0.035)).cornerRadius(4)
     }
     private var conversationList: some View {
         VStack(alignment: .leading, spacing: 10) {
             Divider().padding(.vertical, 4)
-            HStack { Text("對話").font(.caption.weight(.semibold)).foregroundStyle(.secondary); Spacer(); Button { store.newConversation() } label: { Image(systemName: "square.and.pencil") }.buttonStyle(.plain).disabled(store.generating).help("新增對話（⌘N）") }.padding(.horizontal, 10)
+            HStack {
+                Text("最近對話").font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary)
+                Spacer()
+                Menu {
+                    Toggle("已封存", isOn: $store.archiveView).disabled(store.allSessionStates)
+                    Toggle("全部狀態", isOn: $store.allSessionStates)
+                    Toggle("僅目前模型連線", isOn: $store.sessionOnlyCurrentScope)
+                } label: { Image(systemName: "line.3.horizontal.decrease") }.menuStyle(.borderlessButton).fixedSize().help("篩選對話")
+                Button { store.newConversation() } label: { Image(systemName: "square.and.pencil") }.buttonStyle(.plain).disabled(store.generating).help("新增對話（⌘N）")
+            }.padding(.horizontal, 10)
             SearchField(placeholder: "搜尋對話", text: $store.sessionSearch)
-            HStack { Toggle("已封存", isOn: $store.archiveView).disabled(store.allSessionStates); Toggle("全部狀態", isOn: $store.allSessionStates) }.font(.caption).toggleStyle(.checkbox)
-            Toggle("僅目前模型連線", isOn: $store.sessionOnlyCurrentScope).font(.caption).toggleStyle(.checkbox)
+            if store.archiveView || store.allSessionStates || store.sessionOnlyCurrentScope {
+                Text([store.allSessionStates ? "全部狀態" : store.archiveView ? "已封存" : "", store.sessionOnlyCurrentScope ? "目前連線" : ""].filter { !$0.isEmpty }.joined(separator: " · "))
+                    .font(.system(size: 10)).foregroundStyle(atlasTextAccent).padding(.horizontal, 10)
+            }
             if store.sessionsLoading { ProgressView("搜尋中…").controlSize(.small).font(.caption) }
             if let problem = store.sessionListProblem {
                 VStack(alignment: .leading, spacing: 8) {
@@ -120,11 +145,11 @@ struct RootView: View {
                     ForEach(store.sessions, id: \.self) { item in
                         Button { Task { await store.selectSession(item) } } label: {
                             VStack(alignment: .leading, spacing: 5) {
-                                HStack { if item["pinned"].boolean { Image(systemName: "pin.fill").font(.caption2) }; Text(item["title"].string).lineLimit(1) }
+                                HStack(spacing: 5) { if item["pinned"].boolean { Image(systemName: "pin.fill").font(.system(size: 9)).foregroundStyle(.secondary) }; Text(item["title"].string).font(.system(size: 12)).lineLimit(1) }
                                 Text(item["model_id"].string).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                            }.frame(maxWidth: .infinity, minHeight: 45, alignment: .leading).padding(10)
-                                .background(store.sessionID == item["id"].string ? Color.primary.opacity(0.055) : Color.clear).cornerRadius(9)
-                        }.buttonStyle(.plain).disabled(store.generating)
+                            }.frame(maxWidth: .infinity, minHeight: 36, alignment: .leading).padding(.horizontal, 11).padding(.vertical, 8)
+                                .background(store.sessionID == item["id"].string ? Color.primary.opacity(0.055) : Color.clear).cornerRadius(7)
+                        }.buttonStyle(AtlasRowButtonStyle()).disabled(store.generating)
                     }
                     if store.sessionHasMore {
                         Button("載入更多對話") { Task {

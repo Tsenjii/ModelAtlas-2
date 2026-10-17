@@ -26,13 +26,34 @@ struct SettingsView: View {
     @State private var quotaThreshold = "100"
     var body: some View {
         VStack(spacing: 0) {
-            HStack { Text("設定與資料").font(.title2.weight(.semibold)); Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.cancelAction) }.padding(25)
-            Picker("設定分區", selection: $tab) { ForEach(["一般", "服務", "資料", "研究", "請求紀錄", "通知"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
+            HStack { Text("設定").font(.system(size: 17, weight: .semibold)); Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.cancelAction) }.padding(.horizontal, 24).padding(.vertical, 18)
             Divider()
+            HStack(spacing: 0) {
+            settingsNavigation
+            Divider()
+            VStack(spacing: 0) {
+                settingsContent
+            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }.frame(width: 850, height: 740).background(atlasCanvas)
+        .task {
+            timezone = store.settings["timezone"].string; performance = store.settings["performance_window"].string
+            notifications = store.settings["notifications"].boolean; background = store.settings["background"]["enabled"].boolean
+            interval = store.settings["background"]["interval_minutes"].display; maxScopes = store.settings["background"]["max_scopes"].display
+            rules = store.settings["notification_rules"]; quotaThreshold = rules["quota_remaining_below"].display
+            if let api = store.api { notificationRecords = (try? await api.get("/notifications").requiredArray()) ?? [] }
+        }
+    }
+    private var settingsContent: some View {
+        Group {
             if tab == "研究" { ScrollView { ResearchView(store: store).padding(24) } }
             else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(tab).font(.system(size: 21, weight: .semibold))
+                            Text(settingsSubtitle).font(.system(size: 12)).foregroundStyle(.secondary)
+                        }.padding(.bottom, 2)
                         if tab == "一般" { general }
                         if tab == "服務" { ServicesView(store: store) }
                         if tab == "資料" { data }
@@ -49,14 +70,25 @@ struct SettingsView: View {
                     }.padding(24)
                 }
             }
-        }.frame(width: 850, height: 740)
-        .task {
-            timezone = store.settings["timezone"].string; performance = store.settings["performance_window"].string
-            notifications = store.settings["notifications"].boolean; background = store.settings["background"]["enabled"].boolean
-            interval = store.settings["background"]["interval_minutes"].display; maxScopes = store.settings["background"]["max_scopes"].display
-            rules = store.settings["notification_rules"]; quotaThreshold = rules["quota_remaining_below"].display
-            if let api = store.api { notificationRecords = (try? await api.get("/notifications").requiredArray()) ?? [] }
         }
+    }
+    private var settingsNavigation: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(["一般", "服務", "資料", "研究", "請求紀錄", "通知"], id: \.self) { item in
+                Button { tab = item } label: {
+                    HStack(spacing: 9) {
+                        Image(systemName: ["一般":"slider.horizontal.3", "服務":"key", "資料":"externaldrive", "研究":"globe", "請求紀錄":"clock", "通知":"bell"][item]!).frame(width: 17).foregroundStyle(tab == item ? atlasTextAccent : Color.secondary)
+                        Text(item).font(.system(size: 12, weight: tab == item ? .semibold : .regular))
+                        Spacer(minLength: 0)
+                    }.padding(.horizontal, 10).frame(height: 35).background(tab == item ? atlasSurface : Color.clear).cornerRadius(7)
+                }.buttonStyle(.plain)
+            }
+            Spacer()
+            Text("ModelAtlas").font(.system(size: 10)).foregroundStyle(.tertiary).padding(10)
+        }.padding(12).frame(width: 150).frame(maxHeight: .infinity).background(.ultraThinMaterial)
+    }
+    private var settingsSubtitle: String {
+        ["一般":"讓工作區依照你的習慣運作。", "服務":"管理外部服務與安全金鑰。", "資料":"備份、匯出與管理本機資料。", "請求紀錄":"查看每次請求的結果與精確來源。", "通知":"掌握模型與供應商的重要變化。"][tab] ?? "探索與驗證新的模型來源。"
     }
     private var general: some View {
         VStack(spacing: 20) {
