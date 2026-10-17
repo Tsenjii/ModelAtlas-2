@@ -4,6 +4,7 @@ import SwiftUI
 struct ChatTranscriptView: View {
     @ObservedObject var store: AtlasStore
     var body: some View {
+        VStack(spacing: 0) {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 26) {
                             if store.messageHasMore { Button("載入更早的訊息") { store.chatReading.pause(); Task { await store.loadMessages(older: true) } }.frame(maxWidth: .infinity) }
@@ -33,12 +34,14 @@ struct ChatTranscriptView: View {
                         }.padding(26).frame(maxWidth: 880).frame(maxWidth: .infinity)
                             .background(ChatScrollProbe(following: store.chatReading.following) { distance, user in store.observeChatScroll(distance: distance, userScroll: user) })
                     }
-                    .overlay(alignment: .bottomTrailing) {
-                        if !store.chatReading.following && !store.chatReading.atLatest {
+                    if !store.chatReading.following && !store.chatReading.atLatest {
+                        HStack {
+                            Spacer()
                             Button { store.chatReading.resume() } label: {
                                 Label("回到最新", systemImage: "arrow.down")
-                            }.buttonStyle(.bordered).padding(18).accessibilityIdentifier("chat-return-latest")
-                        }
+                            }.buttonStyle(.bordered).accessibilityIdentifier("chat-return-latest")
+                        }.padding(.horizontal, 26).padding(.vertical, 6)
                     }
+        }
     }
 }

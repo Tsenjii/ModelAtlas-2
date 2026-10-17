@@ -6,7 +6,7 @@
 
 - `MessageMarkup` 以 Foundation 解析有限的 native Markdown block grammar；標題、段落、引言、ordered／unordered list、分隔線、反引號／波浪號fence、pipe table。短fence不關閉外層長fence、未閉合code仍保留內容、escaped pipe與inline code pipe不拆欄。不是完整CommonMark／GFM實作；巢狀清單／數學式／語法上色尚未支援，原始文字仍可完整複製。
 - `ChatMarkdown`／`CodeBlockView`／`MarkdownTable` 直接用原生View顯示；程式碼可橫捲且複製原始code；表格可橫捲，深淺色使用system surface。只在完成的assistant內容解析，串流維持文字批次更新；Equatable隔離未變訊息的排版。HTML不執行、圖片不抓遠端，連結沿用Root HTTPS／userinfo guard。
-- `ChatScrollProbe` 僅操作／觀察這個聊天的NSScrollView，以已layout的document與clip bounds合併捲至最新，不依賴LazyVStack中尚未完成layout的ScrollViewReader目標。live-scroll明確改閱讀狀態，因文件增長而改bounds不能自動恢復／暫停follow；離開最新才顯示回最新。新對話／切換對話重設，訊息固定id不因全文內容重建身分。保留歷史載入與停止控制。
+- `ChatScrollProbe` 僅操作／觀察這個聊天的NSScrollView，以已layout的document與clip bounds合併捲至最新，不依賴LazyVStack中尚未完成layout的ScrollViewReader目標。live-scroll明確改閱讀狀態，因文件增長而改bounds不能自動恢復／暫停follow；離開最新才在ScrollView外的底部操作列顯示回最新，不浮蓋訊息或程式碼複製控制。新對話／切換對話重設，訊息固定id不因全文內容重建身分。保留歷史載入與停止控制。
 - `LocalAttachment` 共用選檔與拖放的原子批次。僅本機regular file、允許副檔名、每份非空≤4MiB、bounded read、header signature；每個image／pdf／audio最多一份，任一失敗原tray保留。讀取在非主執行緒，晚結果需原session／scope／原tray仍相符且非generating。`LocalAttachment.requestValue`只送正式Attachment解碼器允許的kind／filename／mime／data四欄；size_bytes等顯示metadata保留本機。正式engine再驗完整格式／能力／scope。尚無剪貼簿圖片輸入或附件重啟恢復。
 - 每個訊息的sample_id開啟`RequestReceiptView`，讀正式`/telemetry/detail?id=...`；顯示當次scope、結果、輸入／輸出tokens、TTFT／latency，缺值保留尚無資料；完整pricing／quota／來源留在展開區。錯誤可在sheet重試。
 
@@ -30,3 +30,5 @@
 `41eacb5`／Mac39015462610 arm64已通過prefix／paused握手，真視窗在後續字流把clip_y從手動閱讀位置0帶回678；generating=true、1113字、following=false。原生coordinator現在保存live-scroll確定的「距文件頂端閱讀offset」，內容frame或clip bounds更新後恢復該offset，明確resume才解除並到實際底部。保留<3px位置斷言、全部字流、全文SHA256與完整歷史；failure-state另記純數值reading offset。
 
 `8fb4d0a` 同SHA九項成功（Mac39015983459、VPS39015983596、Android39015983539），兩架構15項核心／16圖全過。實圖review另發現arm64再次上捲未停在頂端：user live-scroll與非同步model回寫之間，舊值true的view update可能覆蓋native暫停。`setFollowing`記錄上次收到的model值，只有值改變才視為指令，同值舊update不能撤銷使用者動作。native smoke直接重放該舊model update，要求probe仍暫停且offset<3px；兩張原code截圖完成後仍須<3px。原16圖保留，追加表格深淺兩張；新HEAD九項與36圖重新驗收。
+
+`9ebdb87`／Mac39016888123 arm64已通過新舊model時序、15核心及18圖；人工實圖確認附件使聊天區變矮時，浮動回最新與code複製控制可能重疊。按鈕移到ScrollView外的獨立底部操作列；不改閱讀state／原捲動幾何／按鈕ID／18圖或字流斷言。新HEAD完整九項與36圖再驗。
