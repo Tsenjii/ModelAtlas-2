@@ -36,7 +36,7 @@ struct ModelsView: View {
                                         Toggle("比較 " + entry.title, isOn: Binding(get: { compareSelection.contains(entry.scope) }, set: { if $0 { compareSelection.insert(entry.scope) } else { compareSelection.remove(entry.scope) } }))
                                             .labelsHidden().toggleStyle(.checkbox).padding(.leading, 16).padding(.trailing, 2)
                                     }
-                                    Button { store.detailModel = entry.model } label: { ModelLibraryRow(store: store, entry: entry) }.buttonStyle(AtlasRowButtonStyle())
+                                    Button { store.detailModel = entry.model } label: { ModelLibraryRow(store: store, entry: entry, performanceSource: modelFilters.source) }.buttonStyle(AtlasRowButtonStyle())
                                 }
                                 if entry.id != entries.prefix(shown).last?.id { Divider().padding(.leading, selecting ? 88 : 60) }
                             }
@@ -46,7 +46,7 @@ struct ModelsView: View {
                     if filtered.count > shown { Button("顯示更多（共 \(filtered.count) 個）") { shown += 100 } }
                     if !compareSelection.isEmpty { compareBar }
                     if let comparison { AtlasCard { Text("本次即時比較").font(.headline); JSONTree(value: comparison) } }
-                    Text("效能來自這個連線的本機請求；詳細來源與歷史可在模型內查看。").font(.caption).foregroundStyle(.secondary)
+                    Text("目前以" + ["local":"我的實測", "provider":"供應商回報", "external":"外部參考"][modelFilters.source, default: "我的實測"] + "篩選與排序；各來源分開保存。").font(.caption).foregroundStyle(.secondary)
                 }
             }.padding(24).frame(maxWidth: 1150).frame(maxWidth: .infinity)
         }
@@ -66,16 +66,22 @@ struct ModelsView: View {
             ModelFiltersView(store: store, filters: $modelFilters)
         }
     }
+    private var canCompare: Bool {
+        let rows = store.activeModels.filter { compareSelection.contains(ModelScope($0)) }
+        let ids = Set(rows.map { $0["metadata"]["canonical_id"].string })
+        return (2...4).contains(compareSelection.count) && rows.count == compareSelection.count && ids.count == 1 && !ids.contains("") && rows.allSatisfy { ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "CUSTOM"].contains(store.operationName($0)) } && comparePrompt.utf8.count <= 1000
+    }
     private var compareBar: some View {
         AtlasCard {
             HStack { Text("已選 \(compareSelection.count) 個連線").font(.headline); Spacer(); Button("清除選取") { compareSelection = [] } }
             FormField(title: "比較使用的提示詞", text: $comparePrompt)
+            Text("即時比較使用同一 Canonical 模型的 2–4 個可用連線；批次管理最多 100 個連線。").font(.caption).foregroundStyle(.secondary)
             HStack {
                 ActionButton(title: "即時比較（實際請求）") {
                     guard let api = store.api else { return }
                     comparison = try await api.call("/models/compare", method: "POST", body: .object(["selections": .array(compareSelection.sorted { $0.id < $1.id }.map(\.json)), "prompt": .string(comparePrompt)]))
                     await store.refresh()
-                }.disabled(!(2...4).contains(compareSelection.count))
+                }.disabled(!canCompare)
                 Spacer()
                 ForEach(["HIDDEN", "ARCHIVED", "ACTIVE"], id: \.self) { state in
                     ActionButton(title: ["HIDDEN":"預覽隱藏", "ARCHIVED":"預覽封存", "ACTIVE":"預覽恢復"][state]!) {
@@ -100,6 +106,7 @@ struct ModelsView: View {
 private struct ModelLibraryRow: View {
     @ObservedObject var store: AtlasStore
     let entry: ModelSearchEntry
+    var performanceSource = "local"
     private var performance: JSONValue { entry.model["performance"] }
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -110,7 +117,7 @@ private struct ModelLibraryRow: View {
                     if entry.model["favorite"].boolean { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.orange) }
                     if !entry.model["enabled"].boolean { SmallBadge(text: "已停用") }
                     Spacer(minLength: 4)
-                    Text(operationTitle(store.operationName(entry.model))).font(.caption).foregroundStyle(atlasAccent)
+                    Text(operationTitle(store.operationName(entry.model))).font(.caption).foregroundStyle(atlasTextAccent)
                     Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
                 }
                 Text(store.scopeTitle(entry.model) + " · " + entry.scope.endpoint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
@@ -121,7 +128,16 @@ private struct ModelLibraryRow: View {
     }
     private var metrics: some View {
         VStack(alignment: .leading, spacing: 5) {
-            if let samples = performance["samples"].numeric, samples > 0 {
+            if performanceSource != "local" {
+                let sourceName = performanceSource == "provider" ? "供應商回報" : "外部參考"
+                HStack(spacing: 14) {
+                    Text(sourceName)
+                    if let value = sourceMetric("tps") { Text(String(format: "TPS %.1f", value)) }
+                    if let value = sourceMetric("ttft") { Text(String(format: "TTFT %.0f ms", value)) }
+                    if let value = sourceMetric("latency") { Text(String(format: "延遲 %.0f ms", value)) }
+                }.font(.caption.monospacedDigit())
+                if sourceMetric("tps") == nil && sourceMetric("ttft") == nil && sourceMetric("latency") == nil { Text("這個來源尚無可用效能數值").font(.caption2).foregroundStyle(.secondary) }
+            } else if let samples = performance["samples"].numeric, samples > 0 {
                 HStack(spacing: 16) {
                     Text("我的上線率 " + (performance["success_rate"].numeric.map { String(format: "%.1f%%", $0 * 100) } ?? "—"))
                     if let ttft = performance["ttft"]["mean"].numeric { Text(String(format: "平均 TTFT %.0f ms", ttft)) }
@@ -132,6 +148,7 @@ private struct ModelLibraryRow: View {
             } else { Text("尚無本機樣本").font(.caption).foregroundStyle(.tertiary) }
         }
     }
+    private func sourceMetric(_ name: String) -> Double? { var filters = ModelFilters(); filters.source = performanceSource; return filters.metric(entry.model, name) }
     private var windowLabel: String {
         guard let milliseconds = performance["window_ms"].numeric, milliseconds > 0 else { return "時間窗未提供" }
         let hours = milliseconds / 3_600_000
@@ -283,7 +300,7 @@ struct ModelDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                VStack(alignment: .leading, spacing: 5) { Text(scope.modelID).font(.title2.weight(.bold)); Text(store.scopeTitle(model)).font(.caption).foregroundStyle(.secondary); Text(store.operationName(model)).font(.caption).foregroundStyle(atlasAccent) }
+                VStack(alignment: .leading, spacing: 5) { Text(scope.modelID).font(.title2.weight(.bold)); Text(store.scopeTitle(model)).font(.caption).foregroundStyle(.secondary); Text(store.operationName(model)).font(.caption).foregroundStyle(atlasTextAccent) }
                 Spacer(); Button("使用此模型") { if let usableModel { store.chooseModel(usableModel); dismiss() } }.buttonStyle(.borderedProminent).disabled(store.generating || usableModel == nil)
                 Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(25)

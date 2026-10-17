@@ -270,3 +270,14 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | MAC-FEEDBACK-005 / modal actions | `ModelAtlasApp` commands及composer以`hasPresentedSheet`停用會切換context／傳送的快捷鍵；Store原scope與engine不變 | 本片原生code review＋原全部keyboard/IME regression |
 
 詳 `macos/SETTINGS_FEEDBACK.md`；0.1.3基線d719bb9已ACCEPTED，其他平台UI仍暫存，最終evidence由PR #21最新body保存。
+
+
+## MAC-PARITY-006 — 2026-10-17
+
+| 範圍 | 正式 caller → 驗證 | 驗收 |
+|---|---|---|
+| 媒體完整選項與結果 | MediaOptionsView／MediaDraft／AtlasStore.send → infer/media → 真TLS fixture；空文字音訊、current/legacy/雙人、speech speed/format/instructions、dimensions/top_n、圖片生成與multipart編輯、完整下載 | 新HEAD候選；原18核心＋11新核心與原25圖＋13新圖／架構，九項同SHA及76圖review後接受 |
+| 管理與精確來源 | ModelFilters／CatalogDetail／原生ModelEditors／BatchImport／ProviderEditors → 既有正式API；NativeParity exact-account批次confirm/undo、ABA stale、原對話、ALL/archive/scope清單及匯出；原history/IME/keychain/lifetime全部保留 | 不把Catalog當My Models、Unknown當零、不同origin或account的同Key ID合併 |
+| 研究／知識／外部服務 | ResearchRequest／ResearchDetails／KnowledgeView／VersionController／Services → 正式來源、候選／證據、判讀、預算／控制、versions、connectors、integrations API；NativeParity真擷取測試→啟用→intelligence caller→復原、證據知識版本／stale／復原、實際佇列pause/resume/cancel及無推論預算、加密Key及安全Assistant參照 | caller不是只讀JSON；高階知識／CUSTOM資料保留與VPS同範圍的JSON定義。驗收查PR #21最新exact SHA/run/artifact |
+
+對照基線 Android `5009e0c8`、VPS `026f58ba`；不據此聲稱 Android 本身 P8–P10／PLAY-004 整體已驗收，不 merge、不啟用未經使用者選擇的背景或外部推論。歷史失敗與修復均保留於 `macos/FEATURE_PARITY.md`。

@@ -33,3 +33,5 @@ Unknown 不當 0／Free；Catalog 不等於 My Models。所有操作維持 Provi
 - 首候選 `a01de9c`／Mac39037663731 首輪編譯發現新表單 wrapper 多重宣告與收據按鈕括號錯誤，已修正；`9502b3f`／Mac39037990751 剩 Catalog 詳情大型 ViewBuilder 超過 type-check 時限，拆為明確子 View。這些失敗保留，新 HEAD 重新九項同 SHA；不得稱先前已驗收。
 
 `94cd02e`／Mac39038944952 Universal編譯成功；arm64保留原native25圖及核心測試通過，新增parity在seed階段遭端點409阻擋。新增fixture誤以內建操作名稱作自訂端點ID，正式引擎正確拒絕；改為獨立qa-*不可變profile，不放寬引擎或刪斷言。新增對話ALL／archive／完整scope篩選驗證及模型資料保存後reactive詳情；新HEAD重新九項與76圖驗收。
+
+`709d138`／Mac39039811715 Universal再度編譯成功；新增arm64已走完所有媒體wire、批次confirm/undo及stale guards，connector建立時422。fixture把需ASCII識別ID的規則填成人類中文名稱；改為quota-fixture，原生表單明確標示ID並提前給對應驗證訊息。補上深色細字對比、效能來源列與篩選一致，以及已保存／下一稿狀態；不移除測試。新HEAD重新全九項及76圖。

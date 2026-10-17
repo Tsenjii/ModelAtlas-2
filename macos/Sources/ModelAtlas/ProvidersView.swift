@@ -50,7 +50,7 @@ private struct ProviderRow: View {
     var body: some View {
         Button { store.detailProvider = provider } label: {
             HStack(spacing: 12) {
-                Image(systemName: "server.rack").font(.system(size: 16, weight: .medium)).foregroundStyle(atlasAccent)
+                Image(systemName: "server.rack").font(.system(size: 16, weight: .medium)).foregroundStyle(atlasTextAccent)
                     .frame(width: 32, height: 36).background(atlasAccent.opacity(0.09)).cornerRadius(9)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(provider["name"].string).font(.body.weight(.semibold)).lineLimit(1)
@@ -60,7 +60,7 @@ private struct ProviderRow: View {
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 5) {
                     Text("\(store.accounts.filter { $0["provider_id"].string == providerID }.count) 帳戶 · \(store.credentials.filter { $0["provider_id"].string == providerID && $0["enabled"].boolean }.count) 啟用 Key").font(.caption).foregroundStyle(.secondary)
-                    Text("\(store.activeModels.filter { $0["provider_id"].string == providerID }.count) 個模型連線").font(.caption).foregroundStyle(atlasAccent)
+                    Text("\(store.activeModels.filter { $0["provider_id"].string == providerID }.count) 個模型連線").font(.caption).foregroundStyle(atlasTextAccent)
                 }
                 Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
             }.padding(16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
@@ -214,7 +214,7 @@ struct ProviderDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 14) {
-                Image(systemName: "server.rack").font(.largeTitle).foregroundStyle(atlasAccent)
+                Image(systemName: "server.rack").font(.largeTitle).foregroundStyle(atlasTextAccent)
                 VStack(alignment: .leading, spacing: 5) { Text(currentProvider["name"].string).font(.title2.weight(.bold)); Text(currentProvider["base_url"].string).foregroundStyle(.secondary).textSelection(.enabled) }
                 Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(25)
@@ -230,6 +230,7 @@ struct ProviderDetailView: View {
                 }.padding(24)
             }
         }.frame(width: 820, height: 760)
+        .onChange(of: accountID) { _ in dataCredential = "" }
         .task {
             configuration = provider["config"]
             website = configuration["website"].string; notes = configuration["notes"].string
@@ -372,7 +373,7 @@ struct CredentialRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "key.fill").foregroundStyle(atlasAccent)
+                Image(systemName: "key.fill").foregroundStyle(atlasTextAccent)
                 VStack(alignment: .leading, spacing: 3) { Text(credential["label"].string.isEmpty ? credential["id"].string : credential["label"].string).font(.callout.weight(.semibold)); Text(credential["role"].string + " · " + (credential["group"].string.isEmpty ? "預設群組" : credential["group"].string)).font(.caption).foregroundStyle(.secondary) }
                 Spacer()
                 SmallBadge(text: credential["enabled"].boolean ? "已啟用" : "已停用", color: credential["enabled"].boolean ? atlasAccent : .secondary)

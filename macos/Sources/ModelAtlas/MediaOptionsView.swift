@@ -33,7 +33,7 @@ struct MediaOptionsView: View {
     private var speech: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                FormField(title: "聲音", text: $draft.voice)
+                if operation != "GEMINI_SPEECH" || !draft.dual { FormField(title: "聲音", text: $draft.voice) }
                 Picker("音訊格式", selection: $draft.format) { ForEach(operation == "GEMINI_SPEECH" ? ["wav", "pcm"] : ["mp3", "wav", "opus", "flac", "aac", "pcm"], id: \.self) { Text($0.uppercased()).tag($0) } }.frame(width: 180)
             }
             if operation == "AUDIO_SPEECH" { HStack { Text("語速"); Slider(value: $draft.speed, in: 0.25...4, step: 0.25); Text(String(format: "%.2f×", draft.speed)).monospacedDigit().frame(width: 55) } }
@@ -53,14 +53,14 @@ struct MediaOptionsView: View {
             ForEach($draft.turns) { $line in
                 VStack(alignment: .leading, spacing: 7) {
                     HStack {
-                        Picker("說話者", selection: $line.speaker) { Text(draft.firstName).tag(draft.firstName); Text(draft.secondName).tag(draft.secondName) }
+                        Picker("說話者", selection: Binding(get: { line.slot ?? (line.speaker == draft.secondName ? 1 : 0) }, set: { line.slot = $0 })) { Text(draft.firstName).tag(0); Text(draft.secondName).tag(1) }
                         FormField(title: "語氣（選填）", text: $line.style)
                         Button { draft.turns.removeAll { $0.id == line.id } } label: { Image(systemName: "minus.circle") }.help("移除這一段")
                     }
                     TextField("這一段要說的文字", text: $line.text).textFieldStyle(.roundedBorder)
                 }.padding(10).background(Color.primary.opacity(0.035)).cornerRadius(8)
             }
-            Button { draft.turns.append(SpeechLine(speaker: draft.turns.last?.speaker == draft.firstName ? draft.secondName : draft.firstName)) } label: { Label("加入一段", systemImage: "plus") }.disabled(draft.turns.count >= 64)
+            Button { draft.turns.append(SpeechLine(slot: draft.turns.last?.slot == 0 ? 1 : 0)) } label: { Label("加入一段", systemImage: "plus") }.disabled(draft.turns.count >= 64)
         }
     }
 }

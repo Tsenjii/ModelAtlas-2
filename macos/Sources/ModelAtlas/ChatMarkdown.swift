@@ -28,7 +28,7 @@ private struct MarkdownBlockView: View {
             }.fixedSize(horizontal: false, vertical: true)
         case .listItem(let marker, let text):
             HStack(alignment: .firstTextBaseline, spacing: 9) {
-                Text(marker).foregroundStyle(atlasAccent).frame(minWidth: 17, alignment: .trailing)
+                Text(marker).foregroundStyle(atlasTextAccent).frame(minWidth: 17, alignment: .trailing)
                 InlineMarkdown(source: text)
             }
         case .code(let language, let code): CodeBlockView(language: language, code: code)

@@ -63,7 +63,7 @@ struct RootView: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 10) {
-                Image(systemName: "hexagon.fill").font(.system(size: 23)).foregroundStyle(atlasAccent)
+                Image(systemName: "hexagon.fill").font(.system(size: 23)).foregroundStyle(atlasTextAccent)
                 Text("ModelAtlas").font(.system(size: 17, weight: .semibold))
             }.padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 4)
             VStack(spacing: 4) {

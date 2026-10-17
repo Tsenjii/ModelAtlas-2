@@ -118,7 +118,7 @@ struct SettingsView: View {
                     Text("\(backup["providers"].array.count) 個供應商 · \(backup["models"].array.count) 個模型定義").font(.callout)
                     ActionButton(title: "確認匯入設定") { _ = try await store.mutate("/backup/restore", body: .object(["confirm": .bool(true), "backup": backup])); self.backup = nil }
                 }
-                if let notice = store.notice { Text(notice).foregroundStyle(atlasAccent) }
+                if let notice = store.notice { Text(notice).foregroundStyle(atlasTextAccent) }
             }
         }
     }

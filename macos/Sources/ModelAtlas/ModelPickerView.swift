@@ -126,7 +126,7 @@ private struct ModelPickerRow: View {
                 identity
                 Spacer(minLength: 6)
                 if entry.id == store.scopeID {
-                    Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(atlasAccent)
+                    Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(atlasTextAccent)
                 }
             }.padding(.horizontal, 20).padding(.vertical, 13).frame(maxWidth: .infinity, alignment: .leading)
         }.buttonStyle(AtlasRowButtonStyle())

@@ -23,7 +23,7 @@ struct ChatTranscriptView: View {
                             }
                             if store.generating {
                                 VStack(alignment: .leading, spacing: 12) {
-                                    Label("ModelAtlas", systemImage: "sparkles").font(.caption.weight(.semibold)).foregroundStyle(atlasAccent)
+                                    Label("ModelAtlas", systemImage: "sparkles").font(.caption.weight(.semibold)).foregroundStyle(atlasTextAccent)
                                     if !store.reasoning.isEmpty { DisclosureGroup("思考過程") { Text(store.reasoning).foregroundStyle(.secondary).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) } }
                                     if store.streamingText.isEmpty { ProgressView().controlSize(.small) }
                                     else { Text(store.streamingText).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }

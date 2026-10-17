@@ -37,6 +37,11 @@ final class ParityTests: XCTestCase {
         draft.dialect = "LEGACY"; XCTAssertThrowsError(try draft.request(scope: scope, operation: "GEMINI_SPEECH", prompt: "", files: [], requestID: "r"))
         draft.dialect = "CURRENT"; draft.secondName = "Joe"; XCTAssertThrowsError(try draft.request(scope: scope, operation: "GEMINI_SPEECH", prompt: "", files: [], requestID: "r"))
         draft.secondName = "Jane"; draft.turns = [SpeechLine(speaker: "foreign", text: "hello")]; XCTAssertThrowsError(try draft.request(scope: scope, operation: "GEMINI_SPEECH", prompt: "", files: [], requestID: "r"))
+        draft.turns = [SpeechLine(text: "第一段", slot: 0), SpeechLine(text: "第二段", slot: 1)]
+        draft.firstName = "Alice"; draft.secondName = "Bob"
+        let renamed = try draft.request(scope: scope, operation: "GEMINI_SPEECH", prompt: "", files: [], requestID: "r")
+        XCTAssertEqual(renamed["turns"].array.map { $0["speaker"].string }, ["Alice", "Bob"])
+        draft.firstName = "中文名稱"; XCTAssertThrowsError(try draft.request(scope: scope, operation: "GEMINI_SPEECH", prompt: "", files: [], requestID: "r"))
     }
     func testVectorOptionsAreOperationSpecificAndBounded() throws {
         var draft = MediaDraft(); draft.dimensions = "3"; draft.documents = "A\nB"; draft.topN = "1"
@@ -82,6 +87,7 @@ final class ParityTests: XCTestCase {
         let request = try draft.request()
         XCTAssertEqual(request["config"]["pat_credential_id"], .string("pat-a")); XCTAssertEqual(request["config"]["scope"], .string("MODEL_KEY_GROUP"))
         draft.role = "INFERENCE"; XCTAssertEqual(try draft.request()["config"]["pat_credential_id"], .string(""))
+        draft.name = "中文規則"; XCTAssertThrowsError(try draft.request()); draft.name = "quota"
         draft.effective = true; XCTAssertThrowsError(try draft.request())
         draft.effective = false; draft.mappings.append(FieldMapping(name: "rpd", pointer: "/another")); XCTAssertThrowsError(try draft.request())
         draft.mappings = []; draft.path = "//foreign.example/quota"; XCTAssertThrowsError(try draft.request())

@@ -34,7 +34,8 @@ import SwiftUI
             stage = "real-retained-chat-before-management"
             store.chooseModel(chat); store.draft = "原生功能驗收的對話"; store.send(); try await completed(store)
             try require(store.messages.count == 2 && store.problem == nil)
-            let originalSession = store.selectedSession!, originalMessages = store.messages
+            guard let originalSession = store.selectedSession else { throw AtlasError.invalidResponse }
+            let originalMessages = store.messages
             stage = "session-library-all-archived-and-exact-scope"
             store.workspace = .models
             let otherSession = try await api.call("/sessions", method: "POST", body: foreign)
@@ -98,15 +99,20 @@ import SwiftUI
             stage = "native-model-filters"
             try await capture(ParityFiltersPreview(store: store), output, "05-model-filters-light", dark: false)
             stage = "connector-draft-test-activate-caller-undo"
-            var connectorDraft = ConnectorDraft(); connectorDraft.provider = "parity"; connectorDraft.name = "合成額度擷取"; connectorDraft.path = "/v1/quota/{model}"; connectorDraft.root = "/data"; connectorDraft.reason = "隔離 TLS 合成測試"
+            var connectorDraft = ConnectorDraft(); connectorDraft.provider = "parity"; connectorDraft.name = "quota-fixture"; connectorDraft.path = "/v1/quota/{model}"; connectorDraft.root = "/data"; connectorDraft.reason = "隔離 TLS 合成測試"
+            stage = "connector-save-draft"
             let proposed = try await api.call("/connectors", method: "POST", body: connectorDraft.request())
             let connector = VersionController(api: api, value: proposed, connector: true)
+            stage = "connector-real-test"
             await connector.test(ModelScope(chat)); try require(connector.problem == nil && connector.value["status"].string == "VALIDATED")
             try await capture(VersionDetailView(store: store, controller: connector), output, "08-connector-tested-light", dark: false)
+            stage = "connector-activate"
             await connector.activate(); try require(connector.problem == nil && connector.value["active"].boolean)
+            stage = "connector-intelligence-caller"
             _ = try await api.call("/intelligence/sync", method: "POST", body: ModelScope(chat).json)
             let synced = try await api.get("/models/detail", query: ModelScope(chat).query)
             try require(synced["history"].array.contains { $0["source"].string.hasPrefix("DECLARATIVE_PROVIDER_META:") })
+            stage = "connector-undo"
             await connector.undo(); try require(connector.problem == nil && !connector.value["active"].boolean)
             stage = "evidence-backed-knowledge-version-and-stale-guard"
             let source: JSONValue = .object(["id": .string("parity-source"), "name": .string("公開來源 · 合成定義"), "kind": .string("JSON"), "url": .string("https://example.com/models"), "language": .string("zh"), "enabled": .bool(false), "config": .object(["fields": .object(["model_id": .string("/id")])])])
@@ -129,8 +135,8 @@ import SwiftUI
             let proof = try await api.call("/research/evidence", method: "POST", body: .object(["candidate_id": candidate["id"], "source_type": .string("MANUAL"), "source_url": .string("https://example.com/models"), "claim": .string("隔離驗收用合成主張；不冒充外部服務實測。")]))
             _ = try await api.call("/research/review", method: "POST", body: .object(["candidate_id": candidate["id"], "taiwan": .string("UNKNOWN"), "strength": .string("UNKNOWN"), "access_method": .string("UNKNOWN"), "reason": .string("合成資料保留未知"), "evidence_ids": .array([proof["id"]]), "confirm": .bool(true)]))
             let refreshed = try await api.get("/research/candidates").requiredArray().first { $0["id"] == candidate["id"] }
-            try require(refreshed?["state"].string != "VERIFIED")
-            try await capture(CandidateDetailView(store: store, candidate: refreshed!), output, "10-candidate-evidence-light", dark: false, marker: "candidate-loaded")
+            guard let refreshed else { throw AtlasError.invalidResponse }; try require(refreshed["state"].string != "VERIFIED")
+            try await capture(CandidateDetailView(store: store, candidate: refreshed), output, "10-candidate-evidence-light", dark: false, marker: "candidate-loaded")
             stage = "research-budget-pause-resume-cancel-without-inference"
             let researchBody = try ResearchRequest.body(sources: [], selections: [ModelScope(chat), ModelScope(foreign)], budget: "1", probes: "0", minimal: false, search: false, lmspeed: false, aa: false)
             let run = try await api.call("/research/start", method: "POST", body: researchBody)

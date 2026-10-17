@@ -29,10 +29,16 @@ public struct ConnectorDraft: Equatable, Sendable {
     }
     public func request() throws -> JSONValue {
         guard !provider.isEmpty, !name.isEmpty, !reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw DraftProblem("請選擇供應商，並填入名稱與判斷理由。") }
+        guard Self.validIdentifier(name) else { throw DraftProblem("規則 ID 請使用英文字母、數字或 . _ - / :，最多 256 字元。") }
         guard path.hasPrefix("/"), !path.hasPrefix("//"), !path.contains(".."), !path.contains("?"), !path.contains("#") else { throw DraftProblem("端點需為相對於已綁定來源的唯讀 Path，例如 /v1/quota。") }
         guard !effective || (kind == "PRICING" && scope == "MODEL_KEY_GROUP" && role == "INFERENCE") else { throw DraftProblem("實際費率只適用推論 Key 的模型／群組價格證據。") }
+        guard (1...12).contains(mappings.count) else { throw DraftProblem("擷取規則需要 1–12 個欄位對照。") }
         let fields = try FieldMapping.json(mappings)
         return .object(["provider_id": .string(provider), "name": .string(name), "reason": .string(reason), "evidence_ids": .array(Self.ids(evidence)), "config": .object(["kind": .string(kind), "path": .string(path), "credential_role": .string(role), "pat_credential_id": .string(role == "ACCOUNT_PAT" ? pat : ""), "scope": .string(scope), "root_pointer": .string(root), "fields": fields, "unit": .string(unit), "fixed_charge_absent": .bool(fixedAbsent), "prices_are_effective": .bool(effective)])])
+    }
+    private static func validIdentifier(_ text: String) -> Bool {
+        let bytes = Array(text.utf8)
+        return (1...256).contains(bytes.count) && bytes.allSatisfy { (65...90).contains($0) || (97...122).contains($0) || (48...57).contains($0) || [UInt8(46), 95, 45, 47, 58].contains($0) }
     }
     public static func ids(_ text: String) -> [JSONValue] { text.split(whereSeparator: { $0 == "," || $0.isNewline }).map { .string($0.trimmingCharacters(in: .whitespacesAndNewlines)) }.filter { $0 != .string("") } }
 }

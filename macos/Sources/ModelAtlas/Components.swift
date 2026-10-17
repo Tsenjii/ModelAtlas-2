@@ -3,6 +3,11 @@ import AtlasCore
 import SwiftUI
 
 let atlasAccent = Color(red: 0.02, green: 0.51, blue: 0.47)
+let atlasTextAccent = Color(nsColor: NSColor(name: nil, dynamicProvider: { appearance in
+    appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        ? NSColor(srgbRed: 0.25, green: 0.78, blue: 0.70, alpha: 1)
+        : NSColor(srgbRed: 0.0, green: 0.44, blue: 0.41, alpha: 1)
+}))
 let atlasCanvas = Color(nsColor: .windowBackgroundColor)
 let atlasSurface = Color(nsColor: .controlBackgroundColor)
 
@@ -22,7 +27,7 @@ struct EmptyCard: View {
     var run: () -> Void = {}
     var body: some View {
         VStack(spacing: 18) {
-            Image(systemName: icon).font(.system(size: 34, weight: .light)).foregroundStyle(atlasAccent)
+            Image(systemName: icon).font(.system(size: 34, weight: .light)).foregroundStyle(atlasTextAccent)
                 .frame(width: 76, height: 76).background(atlasAccent.opacity(0.09)).cornerRadius(24)
             Text(title).font(.title2.weight(.semibold))
             Text(detail).foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 390)
@@ -61,7 +66,7 @@ struct ModelMark: View {
     let name: String
     var body: some View {
         Text(String(name.prefix(1)).uppercased()).font(.system(size: 15, weight: .semibold, design: .rounded))
-            .foregroundStyle(atlasAccent).frame(width: 32, height: 32)
+            .foregroundStyle(atlasTextAccent).frame(width: 32, height: 32)
             .background(atlasAccent.opacity(0.09)).cornerRadius(9)
     }
 }
@@ -103,7 +108,7 @@ struct SmallBadge: View {
     var color: Color = .secondary
     var body: some View {
         Text(text).font(.caption.weight(.medium)).padding(.horizontal, 9).padding(.vertical, 5)
-            .foregroundStyle(color).background(color.opacity(0.1)).cornerRadius(7)
+            .foregroundStyle(Color.primary).background(color.opacity(0.1)).cornerRadius(7)
     }
 }
 

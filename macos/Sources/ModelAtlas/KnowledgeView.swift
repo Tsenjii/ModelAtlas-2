@@ -125,11 +125,12 @@ struct VersionDetailView: View {
 
 struct MappingEditor: View {
     @Binding var rows: [FieldMapping]
+    var maximum = 20
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             Text("欄位對照").font(.headline)
             ForEach($rows) { $row in HStack { TextField("資料欄位", text: $row.name); TextField("JSON Pointer，例如 /limits/rpd", text: $row.pointer); Button { rows.removeAll { $0.id == row.id } } label: { Image(systemName: "minus.circle") }.help("移除欄位") }.textFieldStyle(.roundedBorder) }
-            Button { rows.append(FieldMapping()) } label: { Label("加入欄位", systemImage: "plus") }.disabled(rows.count >= 20)
+            Button { rows.append(FieldMapping()) } label: { Label("加入欄位", systemImage: "plus") }.disabled(rows.count >= maximum)
         }
     }
 }
@@ -145,7 +146,7 @@ struct ConnectorEditor: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     Picker("供應商", selection: $draft.provider) { Text("選擇供應商").tag(""); ForEach(store.providers) { Text($0["name"].string).tag($0.id) } }.disabled(initial != nil)
-                    FormField(title: "規則名稱", text: $draft.name).disabled(initial != nil)
+                    FormField(title: "規則 ID（英數字，例如 quota）", text: $draft.name).disabled(initial != nil)
                     Picker("資料種類", selection: $draft.kind) { ForEach(["QUOTA", "PRICING", "BALANCE", "USAGE", "PERFORMANCE", "NOTICE", "CATALOG"], id: \.self) { Text($0).tag($0) } }
                     FormField(title: "唯讀 GET Path", text: $draft.path)
                     HStack {
@@ -154,7 +155,7 @@ struct ConnectorEditor: View {
                     }
                     if draft.role == "ACCOUNT_PAT" { Picker("帳戶 PAT 參照", selection: $draft.pat) { Text("選擇同一帳戶／來源的 PAT").tag(""); ForEach(store.credentials.filter { $0["provider_id"].string == draft.provider && $0["role"].string == "ACCOUNT_PAT" }, id: \.self) { Text($0["account_id"].string + " · " + $0["label"].string).tag($0["id"].string) } } }
                     FormField(title: "清單 JSON Pointer（根節點可留空）", text: $draft.root)
-                    MappingEditor(rows: $draft.mappings)
+                    MappingEditor(rows: $draft.mappings, maximum: 12)
                     Button("套用此類型的常用欄位") {
                         let names = ["QUOTA":["model_id", "group", "rpd", "tpd"], "PRICING":["model_id", "group", "input", "output"], "BALANCE":["model_id", "group", "balance"], "USAGE":["model_id", "group", "requests", "tokens"], "PERFORMANCE":["model_id", "group", "tps", "ttft_ms", "success_rate", "sample_count"], "NOTICE":["model_id", "group", "notice"], "CATALOG":["model_id", "name"]][draft.kind] ?? []
                         draft.mappings = names.map { FieldMapping(name: $0, pointer: "/" + $0) }

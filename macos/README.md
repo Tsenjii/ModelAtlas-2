@@ -2,6 +2,10 @@
 
 SwiftUI／AppKit 原生介面，加上內建 Go／SQLite 本機引擎。沒有 WebView、Electron、常駐 Node 或外部 VPS 前置要求。與 Android／VPS 同 repo 分支維護；不把新 Mac 介面當成 Android phase 已完成。
 
+## 0.2.0 功能對齊候選
+
+此版對齊 Android main `5009e0c8` 與 VPS `026f58ba` 的既有功能聯集。完整差異、正式 caller 與驗收入口見 [FEATURE_PARITY.md](FEATURE_PARITY.md)。實作狀態不能代替最新 HEAD 的九項 CI 與原生實圖驗收；目前正式接受版本與候選結果以 PR #21 最新 body 為準。
+
 ## 安裝與版本
 
 GitHub Actions `macOS Native App` 產出 `ModelAtlas-macOS-Universal.dmg`、`.zip` 與 `SHA256SUMS.txt`。DMG 內將 ModelAtlas 拖入 Applications 即可；亦可解壓 ZIP 後移入 Applications。App 與內建引擎都含 arm64／x86_64，Apple Silicon 原生執行，不要求 Rosetta。
@@ -13,14 +17,14 @@ GitHub Actions `macOS Native App` 產出 `ModelAtlas-macOS-Universal.dmg`、`.zi
 ## 已接線的原生工作區
 
 - Playground：⌘K 搜尋式模型選擇，依模型／供應商／帳戶／Key label／群組／端點搜尋、收藏與供應商篩選；↑／↓ 高亮、Enter 確認、Esc 關閉，輸入法組字期間保留選字操作；切換未送模型保留草稿／附件，舊對話 scope 不改。完整選定 Provider×Account×Key×Model×Group×Endpoint，真 SSE 文字／reasoning、停止、可持續輸入下一稿、永久對話、搜尋／置頂／命名／封存／恢復／分頁與完整 JSON／Markdown 匯出；系統指示、Token 上限、串流與工具定義／工具結果接續。
-- 圖片／PDF／WAV／MP3 選檔與每種4MiB限制，沿用引擎 signature／能力再次驗證；影像生成／編輯、轉寫、語音、embedding／rerank 走同一正式媒體入口，原生圖片預覽、音訊播放、結果儲存，不自動抓遠端圖片。
-- Providers：Quick／Advanced → 真檢查／可恢復 Review → 明確選模型確認；帳戶、Key／PAT、群組、啟停、rotate／版本恢復、額外加密認證欄位、immutable endpoints／CUSTOM 宣告式協定、網站／備註／簽到設定與 New API 資料查詢。
-- Models：緊湊完整連線列，真實平均 TTFT／TPS、我的上線率附本機樣本數與時間窗；少量樣本提示僅為介面提示，不是統計信賴區間。My Models 與 Catalog 分開，搜尋／分類、完整 Catalog 搜尋與分批顯示、手動加入、精確 Key／端點連線、即時比較、模型詳情、來源／時間窗／保留歷史、能力確認、分類／別名／手動資料與收藏／觀察／隱藏／封存。
-- Settings：原生外觀、時區、背景同步與通知偏好、通知紀錄與本機投遞、請求分頁／收據／完整 NDJSON、可攜設定匯出與明確匯入。
-- 研究：來源管理、明確選來源／本輪預算／最小推論 opt-in、啟動／暫停／恢復／停止、完整候選漏斗、反思／知識檢視、Recipe 新版本與切回舊版本。
-- Assistant：選定已確認工具能力的模型，真結構化工具 runner、獨立歷史、停止、變更前後 Review／確認／Undo；raw Key／PAT 仍只經本機 privileged API 使用。
+- 圖片／PDF／WAV／MP3 選檔與每種4MiB限制，沿用引擎 signature／能力再次驗證；影像生成／編輯、轉寫、語音、embedding／rerank 走同一正式媒體入口，原生圖片預覽、音訊播放／停止、依真 MIME 儲存、文字及完整 JSON 下載。空文字音訊轉寫、語音格式／語速／說話方式、Gemini CURRENT／LEGACY／逐段雙人對話、向量維度／rerank 筆數均有原生控制，不自動抓遠端圖片。
+- Providers：Quick／Advanced／批次表單或檔案匯入 → 真檢查／可恢復 Review → 明確選模型確認；帳戶、Key／PAT、群組、啟停、rotate／版本恢復、個別 origin／認證方式、優先序與備註、原生秘密 Header／Query 欄位、immutable endpoints／CUSTOM 宣告式協定、網站／備註／簽到設定與 New API 資料查詢。
+- Models：緊湊完整連線列，真實平均 TTFT／TPS、我的上線率附本機樣本數與時間窗；少量樣本提示僅為介面提示，不是統計信賴區間。My Models 與 Catalog 分開，搜尋／分類、完整 Catalog 搜尋與分批顯示、手動加入、精確 Key／端點連線、即時比較、模型詳情、來源／時間窗／保留歷史、能力確認、原生分類／別名／手動價格／額度、notes／tags、完整篩選／排序／權重，以及批次隱藏／封存／恢復的 Review→confirm→Undo。效能可使用自訂起訖時間，來源篩選／排序與列上顯示一致，Unknown 不當 0。
+- Settings：Brave／AA／LMSpeed 加密服務金鑰、明確同步與獨立排名／外部資料，原生外觀、時區、背景同步與通知偏好、通知紀錄與本機投遞、請求分頁／收據／完整 NDJSON、可攜設定匯出與明確匯入。
+- 研究：來源管理、明確選來源／本輪預算／最小推論 opt-in、啟動／暫停／恢復／停止、完整候選漏斗、證據選擇與人工判讀、追加預算／失敗重試、反思、知識提案／修訂／啟用／復原；宣告式 connector 原生欄位對照→真測試→啟用→正式 intelligence caller→復原；Recipe 新版本與切回舊版本。
+- Assistant：選定已確認工具能力的模型，真結構化工具 runner、原生可讀歷史／即時工具結果、安全 Key 參照、停止、共用 onboarding 及全部可逆 action Review／確認／Undo；raw Key／PAT 仍只經本機 privileged API 使用。
 
-部分進階宣告式協定、欄位對應與手動 metadata 以原生 JSON 編輯器呈現；不是完整的視覺化設計器。Gemini 原生語音目前的原生表單提供 CURRENT／LEGACY 單聲音；雙人逐句編輯、完整 connector／knowledge proposal 管理與 research integrations 的 Mac 專用表單仍須後續獨立切片，底層原有能力未刪除。沒有一般遠端 VPS 連線模式；此版為獨立本機 App。
+常用來源／connector／分類／價格／額度採原生控制；任意知識資料、完整 CUSTOM 協定與進階 Header／Path 定義保留 JSON 編輯器，與 VPS 可表達範圍相同。沒有一般遠端 VPS 連線模式；Mac 為獨立本機 App。
 
 正式 UI 不塞假模型或假費率；CI 截圖是獨立目錄內的合成 fixture，不能當真供應商費率／可用性證據。所有「已驗證」須以最新 PR 同 SHA 的完整 CI／實圖 review 為準，不能只憑本節功能接線描述標 ACCEPTED。
 
@@ -62,8 +66,9 @@ SwiftPM 也可直接用 Xcode 開啟 `macos/Package.swift` 查看原生程式碼
 - 兩架構測試同一份已建置 Universal artifact；native client → packaged production engine → 真 TLS fixture，驗 catalog≠membership、A/B同Key ID隔離、串流／完整歷史／實際cancel、備份下載、停機與固定金鑰 reopen、第二 writer拒絕、預設OFF。不是 mock transport。
 - 實際啟動 `.app` 的 SwiftUI 視窗，以同一 store／API 寫入合成資料、完成 TLS chat，再拍三工作區、深淺色、窄視窗與選模／新增供應商 sheet 十一張PNG；正式 store caller 另驗未送草稿／附件保留、舊對話草稿恢復、重複模型與 Key ID 的完整 scope 搜尋及非法 scope 拒選。這是實際原生視窗 capture＋store caller 驗證，**不是 XCUI 全點擊覆蓋**。
 - CI native integration 暫時信任一張每輪新產生、24小時到期的本機 fixture CA。結束將**這張 CA 明確設為 Deny**、按完整 fingerprint 刪除憑證，並用 Apple Security API 確認 exact admin Deny 與離線 OS trust 拒絕；任一步失敗 gate 失敗。這避開 [GitHub runner 已知 remove-trusted-cert 卡住問題](https://github.com/actions/runner-images/issues/12116)，不改 authorizationdb／不關 TLS 驗證。Deny-only trust record 留在可丟棄 runner 至 VM 銷毀；只供可丟棄 CI，或明確 `MODELATLAS_ALLOW_TEST_CERT=1` 的開發測試。正常App不安裝憑證，也不改TLS驗證。
-- `process-footprint.json` 用 `ps RSS` 記錄該次原生 App＋其自帶引擎的啟動／TLS chat／十一畫面 capture，排除 fixture與test runner；不冒充完整VPS expanded workload或RSS硬上限。
+- `process-footprint.json` 用 `ps RSS` 記錄該次原生 App＋其自帶引擎的啟動／TLS chat／原25畫面 capture，排除 fixture與test runner；不冒充完整VPS expanded workload或RSS硬上限。
+- `ParityTests` 增加11項有意義的核心回歸，原18項保留，共29項。`NativeParity` 在另一個獨立 App／DB、同一 packaged artifact 上使用真 TLS 媒體／scope／Review／版本／證據／研究預算與 Assistant 流程，另加13張圖；兩架構總76圖。第二階段有獨立120秒上限，不擴大原階段的斷言或時間限制；另記 `parity-footprint.json`，數值仍只代表指定工作負載。
 - Linux Go新增 `TestDesktopDynamicLoopbackAndParentPipeLifetime`，真 binary 驗實際埠／0600 ready／401／parent EOF退出／ready移除／DB lock釋放，既有完整Go／VPS Browser／Android gate仍全部保留。
 
-Mac 唯一 live slice／未驗收狀態見 `docs/ACTIVE_TASK.md`，正式 caller → 測試見 `docs/TRACEABILITY.md`；最新 PR body 保存 exact code SHA、全部九項 jobs、artifact、實圖 review 與限制。不要將缺 Apple 公證、未跑 macOS12 或後續專用表單寫成已完成。
+Mac 唯一 live slice／未驗收狀態見 `docs/ACTIVE_TASK.md`，正式 caller → 測試見 `docs/TRACEABILITY.md`；最新 PR body 保存 exact code SHA、全部九項 jobs、artifact、實圖 review 與限制。不要將缺 Apple 公證、未跑 macOS12 寫成已完成。
 

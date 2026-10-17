@@ -43,7 +43,7 @@ struct ChatView: View {
             HStack {
                 Button { store.modelPickerOpen = true } label: {
                     HStack(spacing: 7) {
-                        Image(systemName: "cube").foregroundStyle(atlasAccent)
+                        Image(systemName: "cube").foregroundStyle(atlasTextAccent)
                         Text(store.selectedModel.map { ModelSearchEntry(model: $0, context: "", operation: "").title } ?? store.selectedScope?.modelID ?? "選擇模型").font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
                         Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                     }.padding(.horizontal, 10).padding(.vertical, 7).background(Color.primary.opacity(0.035)).cornerRadius(8)

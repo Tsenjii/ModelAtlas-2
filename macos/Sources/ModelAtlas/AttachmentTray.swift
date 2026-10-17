@@ -11,7 +11,7 @@ struct AttachmentTray: View {
                 ForEach(store.attachments, id: \.self) { file in
                     HStack(spacing: 9) {
                         Image(systemName: file["kind"].string == "image" ? "photo" : file["kind"].string == "pdf" ? "doc.richtext" : "waveform")
-                            .font(.system(size: 18)).foregroundStyle(atlasAccent)
+                            .font(.system(size: 18)).foregroundStyle(atlasTextAccent)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(file["filename"].string).lineLimit(1).truncationMode(.middle)
                             if let size = file["size_bytes"].numeric { Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)).foregroundStyle(.secondary) }
