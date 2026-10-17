@@ -26,3 +26,5 @@
 附件wire review另發現size_bytes是native顯示metadata，正式引擎Attachment採DisallowUnknownFields；以明確四欄request projection修復，未放寬解碼器，新增原生真PDF sender驗證。
 
 `7331726`／Mac39014935266的arm64固定診斷為provider在900字barrier等待，但native收到885字、generating=true、無problem且已在最新。正式streamGuard刻意保留可能跨chunk命中secret的尾端，不可移除此安全緩衝；測試保持原650字client觀測門檻，再查fixture自己的paused狀態確認900字barrier，release後要求完整SHA256及1249字原文相符。不是放寬字流或history／位置驗證。
+
+`41eacb5`／Mac39015462610 arm64已通過prefix／paused握手，真視窗在後續字流把clip_y從手動閱讀位置0帶回678；generating=true、1113字、following=false。原生coordinator現在保存live-scroll確定的「距文件頂端閱讀offset」，內容frame或clip bounds更新後恢復該offset，明確resume才解除並到實際底部。保留<3px位置斷言、全部字流、全文SHA256與完整歷史；failure-state另記純數值reading offset。

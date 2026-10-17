@@ -125,6 +125,7 @@ import SwiftUI
                 diagnostics["clip_y"] = .number(Double(scroll.contentView.bounds.minY))
                 diagnostics["clip_height"] = .number(Double(scroll.contentView.bounds.height))
                 diagnostics["visible_y"] = .number(Double(scroll.documentVisibleRect.minY))
+                if let offset = (probe as? ChatScrollProbe.ProbeView)?.readingOffset { diagnostics["retained_reading_offset"] = .number(Double(offset)) }
             }
             try? JSONEncoder().encode(diagnostics).write(to: output.appendingPathComponent("failure-state.json"), options: .atomic)
             let message = "Native smoke failed at " + stage + ": " + error.localizedDescription
