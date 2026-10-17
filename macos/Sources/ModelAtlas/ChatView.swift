@@ -5,7 +5,7 @@ import SwiftUI
 
 struct ChatView: View {
     @ObservedObject var store: AtlasStore
-    @State private var follow = true
+    @State private var dropTargeted = false
     @State private var options = false
     @State private var system = ""
     @State private var maxTokens = "512"
@@ -40,43 +40,7 @@ struct ChatView: View {
                           detail: store.activeModels.isEmpty ? "新增供應商，把想用的模型加入工作區。你的對話會保存在這台 Mac。" : "聊天、研究、寫程式，或選擇影像與音訊模型。",
                           action: store.activeModels.isEmpty ? "新增供應商" : nil) { store.newProviderOpen = true }
             } else {
-                ScrollViewReader { reader in
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 26) {
-                            if store.messageHasMore { Button("載入更早的訊息") { follow = false; Task { await store.loadMessages(older: true) } }.frame(maxWidth: .infinity) }
-                            ForEach(store.messages, id: \.self) { message in
-                                MessageBubble(message: message, store: store).id(message["id"].string)
-                            }
-                            if !store.pendingToolCalls.isEmpty && !store.generating {
-                                AtlasCard {
-                                    Text("工具結果").font(.headline)
-                                    ForEach(store.pendingToolCalls, id: \.self) { call in
-                                        Text(call["function"]["name"].string).font(.callout.weight(.semibold))
-                                        TextEditor(text: Binding(get: { store.toolResults[call["id"].string] ?? "" }, set: { store.toolResults[call["id"].string] = $0 })).frame(height: 90)
-                                    }
-                                    Button("送出全部工具結果並繼續") { store.send(toolContinuation: true) }.disabled(store.pendingToolCalls.contains { (store.toolResults[$0["id"].string] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
-                                }
-                            }
-                            if store.generating {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    Label("ModelAtlas", systemImage: "sparkles").font(.caption.weight(.semibold)).foregroundStyle(atlasAccent)
-                                    if !store.reasoning.isEmpty { DisclosureGroup("思考過程") { Text(store.reasoning).foregroundStyle(.secondary).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) } }
-                                    if store.streamingText.isEmpty { ProgressView().controlSize(.small) }
-                                    else { Text(store.streamingText).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
-                                }
-                            }
-                            if let media = store.mediaResult { MediaResultView(value: media) }
-                            Color.clear.frame(height: 1).id("chat-bottom")
-                        }.padding(26).frame(maxWidth: 880).frame(maxWidth: .infinity)
-                    }
-                    .onChange(of: store.streamingText) { _ in if follow { reader.scrollTo("chat-bottom", anchor: .bottom) } }
-                    .onChange(of: store.sessionID) { _ in follow = true; reader.scrollTo("chat-bottom", anchor: .bottom) }
-                    .overlay(alignment: .bottomTrailing) {
-                        Button { follow.toggle(); if follow { reader.scrollTo("chat-bottom", anchor: .bottom) } } label: {
-                            Label(follow ? "暫停跟隨" : "回到最新", systemImage: follow ? "pause" : "arrow.down")
-                        }.buttonStyle(.bordered).padding(18)
-                    }
-                }
+                ChatTranscriptView(store: store)
             }
             composer
         }
@@ -117,7 +81,7 @@ struct ChatView: View {
                 Button { store.modelPickerOpen = true } label: {
                     HStack(spacing: 7) {
                         Image(systemName: "cube").foregroundStyle(atlasAccent)
-                        Text(store.selectedScope?.modelID ?? "選擇模型").font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
+                        Text(store.selectedModel.map { ModelSearchEntry(model: $0, context: "", operation: "").title } ?? store.selectedScope?.modelID ?? "選擇模型").font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
                         Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                     }.padding(.horizontal, 10).padding(.vertical, 7).background(Color.primary.opacity(0.035)).cornerRadius(8)
                 }.buttonStyle(.plain).disabled(store.generating).help("選擇模型（⌘K）")
@@ -135,28 +99,25 @@ struct ChatView: View {
                 }
                 if operation == "IMAGES_GENERATION" { Picker("圖片大小", selection: $store.imageSize) { ForEach(["256x256", "512x512", "1024x1024", "1024x1536", "1536x1024", "auto"], id: \.self) { Text($0).tag($0) } }.frame(width: 250) }
             }
-            if !store.attachments.isEmpty {
-                HStack {
-                    ForEach(store.attachments, id: \.self) { file in
-                        HStack { Image(systemName: "paperclip"); Text(file["filename"].string).lineLimit(1); Button { store.attachments.removeAll { $0 == file } } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.plain) }
-                            .font(.caption).padding(8).background(atlasAccent.opacity(0.08)).cornerRadius(8)
-                    }
-                }
-            }
+            if !store.attachments.isEmpty { AttachmentTray(store: store) }
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $store.draft).font(.body).frame(minHeight: 62, maxHeight: 86).padding(4)
                     .accessibilityLabel("訊息草稿").accessibilityIdentifier("chat-composer")
                 if store.draft.isEmpty { Text(store.generating ? "先寫下一則訊息…" : "輸入訊息…  ⌘↵ 傳送").font(.body).foregroundStyle(.tertiary).padding(.horizontal, 10).padding(.top, 12).allowsHitTesting(false) }
             }
             HStack {
-                Button { store.pickAttachments() } label: { Label("附件", systemImage: "paperclip") }.disabled(store.generating).help("圖片、PDF、WAV、MP3 · 每份 4 MiB")
+                Button { store.pickAttachments() } label: { Label("附件", systemImage: "paperclip") }.disabled(store.generating || store.attaching).help("也可拖入圖片、PDF、WAV、MP3 · 每份 4 MiB")
                 Spacer()
-                Text("⌘↵ 傳送").font(.caption2).foregroundStyle(.tertiary)
+                Text(store.attaching ? "正在加入附件…" : "拖入附件 · ⌘↵ 傳送").font(.caption2).foregroundStyle(.tertiary)
                 if store.generating { Button { Task { await store.cancel() } } label: { Label("停止", systemImage: "stop.fill") }.keyboardShortcut(.escape, modifiers: []) }
-                else { Button { store.send() } label: { Label("傳送", systemImage: "arrow.up") }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(store.selectedScope == nil || store.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).accessibilityIdentifier("chat-send") }
+                else { Button { store.send() } label: { Label("傳送", systemImage: "arrow.up") }.buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: .command).disabled(store.attaching || store.selectedScope == nil || store.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).accessibilityIdentifier("chat-send") }
             }
         }.padding(14).background(atlasSurface).cornerRadius(14)
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.1)))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(dropTargeted ? atlasAccent : Color.primary.opacity(0.1), lineWidth: dropTargeted ? 2 : 1))
+            .overlay {
+                if dropTargeted { Label("放開以加入附件", systemImage: "arrow.down.doc").padding(14).background(.regularMaterial).cornerRadius(10).allowsHitTesting(false) }
+            }
+            .onDrop(of: ["public.file-url"], delegate: ComposerFileDrop(store: store, targeted: $dropTargeted))
             .padding(.horizontal, 24).padding(.bottom, 20).padding(.top, 10)
     }
     private func loadOptions() async {
@@ -194,12 +155,15 @@ struct MessageBubble: View {
                 Button { copyText(message["content"].string) } label: { Image(systemName: "doc.on.doc") }.buttonStyle(.plain).help("複製訊息")
                 if !message["sample_id"].string.isEmpty {
                     Menu("請求") {
-                        Button("查看請求收據…") { store.settingsOpen = true }
+                        Button("查看請求收據…") { store.requestReceipt = message["sample_id"].string }
                         if !["SUCCESS", "RUNNING", ""].contains(message["request_outcome"].string) { Button("重試這次請求") { store.send(retry: message["sample_id"].string) }.disabled(store.generating) }
                     }.menuStyle(.borderlessButton).frame(width: 55)
                 }
             }
-            Text((try? AttributedString(markdown: message["content"].string, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(message["content"].string)).textSelection(.enabled).lineSpacing(5).frame(maxWidth: .infinity, alignment: .leading)
+            Group {
+                if message["role"].string == "assistant" { ChatMarkdown(source: message["content"].string).equatable() }
+                else { Text(message["content"].string).textSelection(.enabled).lineSpacing(5).frame(maxWidth: .infinity, alignment: .leading) }
+            }
             if !message["attachments"].array.isEmpty {
                 ForEach(message["attachments"].array, id: \.self) { SmallBadge(text: $0["filename"].string) }
             }

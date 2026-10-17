@@ -109,7 +109,9 @@ import SwiftUI
             try await capture(window, to: output.appendingPathComponent("11-add-provider-light.png"), sheet: true)
             store.newProviderOpen = false
             try await Task.sleep(nanoseconds: 450_000_000)
-            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(11)])
+            stage = "chat-reading-markdown-attachments-receipt"
+            try await verifyChatExperience(store: store, code: code, window: window, output: output) { stage = "chat-experience-" + $0 }
+            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(16), "chat_reading_guards": .bool(true), "attachment_guards": .bool(true), "request_receipt": .bool(true), "native_markdown": .bool(true)])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-smoke.json"), options: .atomic)
         } catch {
             // Fixed stage labels only: never dump a store, request, credential,
@@ -123,6 +125,93 @@ import SwiftUI
             if ProcessInfo.processInfo.arguments.contains("--smoke-close-window"), let window = NSApp.windows.first(where: \.isVisible) { window.performClose(nil) }
             else { NSApp.terminate(nil) }
         }
+    }
+    private static func verifyChatExperience(store: AtlasStore, code: JSONValue, window: NSWindow, output: URL, checkpoint: (String) -> Void) async throws {
+        checkpoint("start-real-rich-stream")
+        store.chooseModel(code); store.draft = "請示範原生 Markdown、Swift 程式碼及比較表。"
+        store.send()
+        let streamDeadline = Date().addingTimeInterval(15)
+        while store.generating && store.streamingText.count < 650 && Date() < streamDeadline { try await Task.sleep(nanoseconds: 30_000_000) }
+        guard store.generating, store.streamingText.count >= 650 else { throw AtlasError.invalidResponse }
+        checkpoint("find-real-scroll-view")
+        guard let root = window.contentView, let probe = findView(in: root, identifier: "chat-scroll-probe"), let scroll = probe.enclosingScrollView,
+              let document = scroll.documentView, document.bounds.height > scroll.contentView.bounds.height + 100 else { throw AtlasError.invalidResponse }
+        checkpoint("pause-reading-with-live-scroll")
+        let center = NotificationCenter.default
+        center.post(name: NSScrollView.willStartLiveScrollNotification, object: scroll)
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: document.isFlipped ? 0 : max(0, document.bounds.height - scroll.contentView.bounds.height)))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        center.post(name: NSScrollView.didLiveScrollNotification, object: scroll)
+        center.post(name: NSScrollView.didEndLiveScrollNotification, object: scroll)
+        try await waitFor { !store.chatReading.following && !store.chatReading.atLatest }
+        let readingPosition = scroll.contentView.bounds.minY, textCount = store.streamingText.count
+        checkpoint("stream-does-not-steal-reading-position")
+        try await Task.sleep(nanoseconds: 500_000_000)
+        guard store.streamingText.count > textCount, !store.chatReading.following,
+              abs(scroll.contentView.bounds.minY - readingPosition) < 3 else { throw AtlasError.invalidResponse }
+        let finish = Date().addingTimeInterval(25)
+        while store.generating && Date() < finish { try await Task.sleep(nanoseconds: 30_000_000) }
+        guard !store.generating, !store.chatReading.following,
+              let answer = store.messages.last, answer["role"].string == "assistant" else { throw AtlasError.invalidResponse }
+        let blocks = MessageMarkup.parse(answer["content"].string)
+        guard blocks.contains(where: { if case .code = $0 { return true }; return false }),
+              blocks.contains(where: { if case .table = $0 { return true }; return false }) else { throw AtlasError.invalidResponse }
+        checkpoint("resume-latest")
+        store.chatReading.resume()
+        try await waitFor { store.chatReading.atLatest }
+        guard scroll.documentVisibleRect.height > 0 else { throw AtlasError.invalidResponse }
+        // Use the real scroll notifications again to inspect the start of the
+        // completed, natively rendered reply without changing stored content.
+        center.post(name: NSScrollView.willStartLiveScrollNotification, object: scroll)
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: document.isFlipped ? 0 : max(0, document.bounds.height - scroll.contentView.bounds.height)))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        center.post(name: NSScrollView.didLiveScrollNotification, object: scroll)
+        center.post(name: NSScrollView.didEndLiveScrollNotification, object: scroll)
+        UserDefaults.standard.set("light", forKey: "appearance")
+        checkpoint("capture-rich-light")
+        try await capture(window, to: output.appendingPathComponent("12-chat-markdown-light.png"))
+        UserDefaults.standard.set("dark", forKey: "appearance")
+        try await capture(window, to: output.appendingPathComponent("13-chat-markdown-dark.png"))
+        checkpoint("exact-message-request-receipt")
+        let sample = answer["sample_id"].string
+        guard !sample.isEmpty, let api = store.api else { throw AtlasError.invalidResponse }
+        let receipt = try await api.get("/telemetry/detail", query: [URLQueryItem(name: "id", value: sample)])
+        guard receipt["id"].string == sample, receipt["session_id"].string == store.sessionID,
+              ModelScope(receipt) == store.selectedScope, receipt["outcome"].string == "SUCCESS" else { throw AtlasError.invalidResponse }
+        store.requestReceipt = sample
+        try await capture(window, to: output.appendingPathComponent("14-chat-request-receipt.png"), sheet: true)
+        store.requestReceipt = nil
+        try await waitFor { window.attachedSheet == nil }
+        checkpoint("attachment-production-caller")
+        let file = output.appendingPathComponent("attachment-fixture.pdf")
+        try Data("%PDF-1.7\nNative attachment fixture".utf8).write(to: file)
+        let beforeDraft = store.draft, scope = store.selectedScope
+        await store.addAttachments([file])
+        guard store.attachments.count == 1, store.attachments[0]["filename"].string == file.lastPathComponent,
+              store.selectedScope == scope, store.draft == beforeDraft else { throw AtlasError.invalidResponse }
+        let beforeFiles = store.attachments
+        await store.addAttachments([file])
+        guard store.attachments == beforeFiles, store.problem == LocalAttachmentError.duplicate.localizedDescription else { throw AtlasError.invalidResponse }
+        store.problem = nil
+        try await capture(window, to: output.appendingPathComponent("15-chat-attachment-dark.png"))
+        store.attachments = []
+        window.setContentSize(NSSize(width: 920, height: 650))
+        try await capture(window, to: output.appendingPathComponent("16-chat-markdown-compact.png"))
+        try? FileManager.default.removeItem(at: file)
+        checkpoint("new-conversation-resets-reading")
+        store.newConversation()
+        guard store.chatReading == ChatReadingState(), store.messages.isEmpty else { throw AtlasError.invalidResponse }
+        // Keep final report's existing exact two-message assertion and verify
+        // that rendering and attachment validation never rewrote the history.
+        let sessions = try await api.get("/sessions", query: [URLQueryItem(name: "state", value: "ALL")]).requiredArray()
+        guard let saved = sessions.first(where: { $0["id"].string == receipt["session_id"].string }) else { throw AtlasError.invalidResponse }
+        await store.selectSession(saved)
+        guard store.messages.last?["content"].string == answer["content"].string, store.messages.count == 2 else { throw AtlasError.invalidResponse }
+    }
+    private static func findView(in view: NSView, identifier: String) -> NSView? {
+        if view.identifier?.rawValue == identifier { return view }
+        for child in view.subviews { if let result = findView(in: child, identifier: identifier) { return result } }
+        return nil
     }
     private static func verifyPickerKeyboard(store: AtlasStore, chat: JSONValue, code: JSONValue, files: [JSONValue], checkpoint: (String) -> Void) async throws {
         let draft = store.draft

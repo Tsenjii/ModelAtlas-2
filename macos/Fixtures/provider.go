@@ -17,6 +17,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -65,7 +66,10 @@ func main() {
 			http.Error(w, "bad fixture body", 400)
 			return
 		}
-		const reply = "這是原生 Mac 工作區。你的模型、對話和研究資料都保存在本機，並保留清楚的連線與來源。"
+		reply := "這是原生 Mac 工作區。你的模型、對話和研究資料都保存在本機，並保留清楚的連線與來源。"
+		if body.Model == "native-fixture-code" {
+			reply = "## 原生 Mac，也能舒服地寫程式\n\n清楚的排版讓**重點**、程式碼與比較資料更容易閱讀。這些內容來自隔離的 TLS 合成測試。\n\n```swift\nstruct Workspace {\n    let name = \"ModelAtlas\"\n    let local = true\n\n    func greeting() -> String {\n        \"你好，\\(name)\"\n    }\n}\n```\n\n### 工作區比較\n\n| 工作區 | 用途 | 資料來源 |\n| --- | --- | --- |\n| Playground | 對話與寫程式 | 本機請求 |\n| Providers | 管理連線 | 使用者設定 |\n| Models | 搜尋與比較 | 各自保留來源 |\n\n> 上捲閱讀時，新的回應會繼續接收，畫面留在你正在看的位置。\n\n- 程式碼可直接複製。\n- 表格可水平捲動。\n- 附件可以拖入輸入區。\n\n" + strings.Repeat("這是較長的原生閱讀測試段落。串流持續接收，歷史仍完整保存；向上閱讀不會被新文字拉回底部。\n\n", 18)
+		}
 		if !body.Stream {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]any{"model": body.Model, "choices": []any{map[string]any{"message": map[string]string{"content": reply}, "finish_reason": "stop"}}, "usage": map[string]int{"prompt_tokens": 12, "completion_tokens": 48, "total_tokens": 60}})

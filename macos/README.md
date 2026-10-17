@@ -24,6 +24,14 @@ GitHub Actions `macOS Native App` 產出 `ModelAtlas-macOS-Universal.dmg`、`.zi
 
 正式 UI 不塞假模型或假費率；CI 截圖是獨立目錄內的合成 fixture，不能當真供應商費率／可用性證據。所有「已驗證」須以最新 PR 同 SHA 的完整 CI／實圖 review 為準，不能只憑本節功能接線描述標 ACCEPTED。
 
+## 原生聊天閱讀續片（0.1.2 候選）
+
+原生 Markdown 支援標題、段落、清單、引言、分隔線、fenced code 與簡單 pipe table；程式碼保留原始縮排並獨立複製，寬表格水平捲動。未知語法保留為文字，沒有 HTML／JavaScript renderer／自動下載遠端圖片。串流中的文字維持輕量顯示，完成後套用區塊排版。
+
+聊天往上捲會暫停自動跟隨，回到最新或捲至底部恢復；新對話重設閱讀狀態。輸入區接受本機檔案拖放或選檔，每則最多圖片／PDF／音訊各一份，每份4MiB，整批失敗不取代既有附件；離開原對話／連線後的晚完成結果拒絕寫入。副檔名與magic header先驗，正式引擎仍驗完整格式／能力。訊息選單直接開啟該sample_id的當次請求收據，不以其他請求或估算零值代替。
+
+驗收設計與限制見 `CHAT_EXPERIENCE.md`；完成狀態只查最新 PR exact SHA／CI／實圖，不把候選描述當已通過。
+
 ## 資料、安全與生命週期
 
 `~/Library/Application Support/ModelAtlas/atlas.sqlite` 保存資料；目錄0700、SQLite／ready／log受限。master key與內部管理token由 `SecRandomCopyBytes` 產生，寫到 macOS Keychain 的 `dev.modelatlas.mac.engine`／`engine-v1`，不寫 UserDefaults／JSON／CLI參數／LLM。已有 DB 卻找不到原 Keychain 金鑰時拒絕重建，避免悄悄失去解密能力。

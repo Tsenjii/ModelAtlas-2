@@ -52,6 +52,9 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var detailModel: JSONValue?
     @Published var assistantOpen = false
     @Published var modelPickerOpen = false
+    @Published var chatReading = ChatReadingState()
+    @Published var requestReceipt: String?
+    @Published var attaching = false
     let engine: EngineController
     var api: AtlasClient?
     private var drafts: [String: String] = [:]
@@ -139,6 +142,7 @@ enum Workspace: String, CaseIterable, Identifiable {
         if let sessionID { drafts[sessionID] = draft } else { drafts["new"] = draft }
         resultDrafts[sessionID ?? "new"] = toolResults
         let id = session["id"].string
+        chatReading.reset()
         sessionID = id; currentSession = session; scopeID = ModelScope(session).id; draft = drafts[id] ?? ""
         toolResults = resultDrafts[id] ?? [:]
         attachments = []; mediaResult = nil; streamingText = ""; reasoning = ""
@@ -159,6 +163,7 @@ enum Workspace: String, CaseIterable, Identifiable {
         guard !generating else { return }
         if let sessionID { drafts[sessionID] = draft }
         resultDrafts[sessionID ?? "new"] = toolResults
+        chatReading.reset()
         sessionID = nil; currentSession = nil; messages = []; draft = drafts["new"] ?? ""; attachments = []
         toolResults = [:]
         mediaResult = nil; streamingText = ""; reasoning = ""; messageHasMore = false; messageOffset = 0
@@ -179,8 +184,9 @@ enum Workspace: String, CaseIterable, Identifiable {
         return value
     }
     func send(retry: String? = nil, toolContinuation: Bool = false) {
-        guard let api, !closing, !generating, let scope = selectedScope, retry != nil || toolContinuation || !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard let api, !closing, !generating, !attaching, let scope = selectedScope, retry != nil || toolContinuation || !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         let prompt = draft, files = attachments, beforeIDs = Set(messages.map { $0["id"].string })
+        chatReading.resume()
         generating = true; problem = nil; mediaResult = nil; pendingText = ""; pendingReasoning = ""
         streamingText = ""; reasoning = ""
         let submittedTools = stagedTools[sessionID ?? "new"]
@@ -254,23 +260,22 @@ enum Workspace: String, CaseIterable, Identifiable {
         let panel = NSOpenPanel(); panel.allowsMultipleSelection = true
         panel.allowedContentTypes = ["png", "jpg", "jpeg", "webp", "pdf", "wav", "mp3"].compactMap { UTType(filenameExtension: $0) }
         guard panel.runModal() == .OK else { return }
+        Task { await addAttachments(panel.urls) }
+    }
+    func addAttachments(_ urls: [URL]) async {
+        guard !generating, !attaching, !closing else { return }
+        let session = sessionID, scope = selectedScope, before = attachments
+        attaching = true
+        defer { attaching = false }
         do {
-            var additions = attachments
-            for url in panel.urls {
-                let attributes = try url.resourceValues(forKeys: [.fileSizeKey])
-                guard let size = attributes.fileSize, size > 0, size <= 4 << 20 else { throw AtlasError.http(413) }
-                let handle = try FileHandle(forReadingFrom: url)
-                let data = try handle.read(upToCount: (4 << 20) + 1) ?? Data()
-                try handle.close()
-                guard !data.isEmpty, data.count <= 4 << 20 else { throw AtlasError.http(413) }
-                let ext = url.pathExtension.lowercased()
-                let mime = ["png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "pdf": "application/pdf", "wav": "audio/wav", "mp3": "audio/mpeg"][ext]!
-                let kind = ext == "pdf" ? "pdf" : ["wav", "mp3"].contains(ext) ? "audio" : "image"
-                guard !additions.contains(where: { $0["kind"].string == kind }) else { throw AtlasError.http(422) }
-                additions.append(.object(["kind": .string(kind), "filename": .string(url.lastPathComponent), "mime": .string(mime), "data": .string(data.base64EncodedString())]))
-            }
-            attachments = additions
-        } catch { problem = error.localizedDescription }
+            let result = try await Task.detached(priority: .userInitiated) { try LocalAttachment.adding(urls, to: before) }.value
+            guard session == sessionID, scope == selectedScope, !generating, attachments == before else { return }
+            attachments = result
+        } catch { if session == sessionID, scope == selectedScope { problem = error.localizedDescription } }
+    }
+    func observeChatScroll(distance: Double, userScroll: Bool) {
+        var next = chatReading; next.observe(distance: distance, userScroll: userScroll)
+        if next != chatReading { chatReading = next }
     }
     func export(_ path: String, query: [URLQueryItem] = [], filename: String) async {
         guard let api else { return }

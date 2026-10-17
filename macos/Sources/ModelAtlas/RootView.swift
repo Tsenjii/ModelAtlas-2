@@ -50,6 +50,9 @@ struct RootView: View {
         .sheet(isPresented: $store.settingsOpen) { SettingsView(store: store) }
         .sheet(isPresented: $store.assistantOpen) { AssistantView(store: store) }
         .sheet(isPresented: $store.modelPickerOpen) { ModelPickerView(store: store) }
+        .sheet(isPresented: Binding(get: { store.requestReceipt != nil }, set: { if !$0 { store.requestReceipt = nil } })) {
+            if let id = store.requestReceipt { RequestReceiptView(store: store, sampleID: id) }
+        }
         .disabled(store.closing)
         .overlay {
             if store.closing { ProgressView("正在儲存並關閉本機工作區…").padding(24).background(.regularMaterial).cornerRadius(14) }
