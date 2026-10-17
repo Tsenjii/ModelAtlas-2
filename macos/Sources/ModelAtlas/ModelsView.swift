@@ -120,7 +120,7 @@ private struct ModelLibraryRow: View {
                     SmallBadge(text: operationTitle(store.operationName(entry.model)), color: atlasAccent)
                     Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
                 }
-                Text(store.scopeTitle(entry.model) + " · " + entry.scope.endpoint).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                Text(store.scopeTitle(entry.model) + " · " + store.endpointLabel(entry.model)).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
                 metrics
             }
         }.padding(.horizontal, 17).padding(.vertical, 15).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())

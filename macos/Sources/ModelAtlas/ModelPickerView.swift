@@ -35,7 +35,7 @@ struct ModelPickerView: View {
             results
             Divider()
             footer
-        }.frame(width: 620, height: 550).background(atlasCanvas)
+        }.frame(width: 620, height: 550).background(atlasCanvas).tint(atlasAccent)
             .onChange(of: entryIDs) { ids in cursor.reconcile(ids, preferredID: store.scopeID) }
     }
     private var header: some View {
@@ -143,7 +143,7 @@ private struct ModelPickerRow: View {
                 if entry.model["favorite"].boolean { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.orange) }
             }
             Text(store.scopeTitle(entry.model)).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2)
-            Text(operationTitle(store.operationName(entry.model)) + " · " + entry.scope.endpoint)
+            Text(operationTitle(store.operationName(entry.model)) + " · " + store.endpointLabel(entry.model))
                 .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
         }
     }

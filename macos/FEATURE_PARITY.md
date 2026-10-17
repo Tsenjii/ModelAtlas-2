@@ -43,3 +43,6 @@ Unknown 不當 0／Free；Catalog 不等於 My Models。所有操作維持 Provi
 
 
 `8df5a0d`／Mac39042204093 新原生composer在NSSize的Double／CGFloat多載間發生編譯歧義，改明確CGFloat。另補實際AppKit輸入區的多行中文輸入／marked-text不被外部更新取代／重設草稿清除舊Undo驗證；不靠store直寫冒充輸入。新HEAD仍須全部九項與84實圖。
+
+
+`907622b`／Mac39042411074 Universal與arm64／Intel29核心＋42圖全PASS；VPS39042411104四項SUCCESS，Android39042411059當時仍執行。首輪實圖審查後：原生下拉選單與sheet未完整跟隨深色及teal，改同步NSApplication外觀並將tint套用至sheet；側欄採更淡原生中性色，聊天輸入區縮短，主清單以人類端點摘要取代內部操作常數，精確identity及help全文不改。Capture同時同步外觀偏好，避免設定圖顯示深色選項卻是淺色畫面，另驗實際NSApp appearance。原全部84圖／guards保留，新HEAD重新九項。

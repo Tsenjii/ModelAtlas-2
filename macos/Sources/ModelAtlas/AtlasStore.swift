@@ -88,6 +88,13 @@ enum Workspace: String, CaseIterable, Identifiable {
         let id = value["endpoint"].string
         return endpoints.first { $0["provider_id"].string == value["provider_id"].string && $0["id"].string == id }?["operation"].string ?? id
     }
+    func endpointLabel(_ value: JSONValue) -> String {
+        let id = value["endpoint"].string
+        if id == operationName(value) { return "標準端點" }
+        guard let endpoint = endpoints.first(where: { $0["provider_id"] == value["provider_id"] && $0["id"].string == id }),
+              let url = URL(string: endpoint["url"].string), !url.path.isEmpty else { return id }
+        return url.path
+    }
     func modelEntries(_ models: [JSONValue]) -> [ModelSearchEntry] {
         models.map { ModelSearchEntry(model: $0, context: scopeTitle($0), operation: operationTitle(operationName($0))) }
     }

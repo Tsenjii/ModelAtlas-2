@@ -30,14 +30,12 @@ struct RootView: View {
             }.frame(minWidth: 600).background(atlasCanvas)
         }
         .frame(minWidth: 900, minHeight: 620)
-        .tint(atlasAccent)
         .environment(\.openURL, OpenURLAction { url in
             guard url.scheme == "https", url.user == nil, url.password == nil else { return .discarded }
             NSWorkspace.shared.open(url); return .handled
         })
         .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
         .toolbar {
-            ToolbarItem(placement: .navigation) { Text(store.workspace.rawValue).font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary) }
             ToolbarItemGroup(placement: .automatic) {
                 Button { Task { await store.refresh() } } label: { Image(systemName: "arrow.clockwise") }.help("重新整理（⌘R）").disabled(!store.ready)
                 Button { store.assistantOpen = true } label: { Label("Assistant", systemImage: "sparkles") }.disabled(!store.ready)
@@ -55,6 +53,9 @@ struct RootView: View {
         .sheet(isPresented: Binding(get: { store.requestReceipt != nil }, set: { if !$0 { store.requestReceipt = nil } })) {
             if let id = store.requestReceipt { RequestReceiptView(store: store, sampleID: id) }
         }
+        .tint(atlasAccent)
+        .onAppear { applyNativeAppearance(appearance) }
+        .onChange(of: appearance) { applyNativeAppearance($0) }
         .disabled(store.closing)
         .overlay {
             if store.closing { ProgressView("正在儲存並關閉本機工作區…").padding(24).background(.regularMaterial).cornerRadius(14) }
@@ -103,7 +104,10 @@ struct RootView: View {
                 Spacer()
                 Circle().fill(store.ready ? atlasAccent : Color.secondary).frame(width: 5, height: 5)
             }.padding(.horizontal, 11).padding(.bottom, 9)
-        }.padding(10).background(.ultraThinMaterial)
+        }.padding(10).background(atlasSidebar)
+    }
+    @MainActor private func applyNativeAppearance(_ mode: String) {
+        NSApp.appearance = mode == "system" ? nil : NSAppearance(named: mode == "dark" ? .darkAqua : .aqua)
     }
     private func sidebarCount(_ count: Int) -> some View {
         Text("\(count)").font(.system(size: 10).monospacedDigit()).foregroundStyle(.secondary)

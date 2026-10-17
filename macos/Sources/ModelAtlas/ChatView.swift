@@ -91,7 +91,7 @@ struct ChatView: View {
             }
             if !store.attachments.isEmpty { AttachmentTray(store: store) }
             ZStack(alignment: .topLeading) {
-                ComposerTextEditor(text: $store.draft).frame(minHeight: 62, maxHeight: 86)
+                ComposerTextEditor(text: $store.draft).frame(height: 68)
                     .accessibilityLabel("訊息草稿").accessibilityIdentifier("chat-composer")
                 if store.draft.isEmpty { Text(store.generating ? "先寫下一則訊息…" : "傳送訊息，讓想法繼續。").font(.system(size: 14)).foregroundStyle(.tertiary).padding(.horizontal, 8).padding(.top, 9).allowsHitTesting(false) }
             }

@@ -85,7 +85,7 @@ struct SettingsView: View {
             }
             Spacer()
             Text("ModelAtlas").font(.system(size: 10)).foregroundStyle(.tertiary).padding(10)
-        }.padding(12).frame(width: 150).frame(maxHeight: .infinity).background(.ultraThinMaterial)
+        }.padding(12).frame(width: 150).frame(maxHeight: .infinity).background(atlasSidebar)
     }
     private var settingsSubtitle: String {
         ["一般":"讓工作區依照你的習慣運作。", "服務":"管理外部服務與安全金鑰。", "資料":"備份、匯出與管理本機資料。", "請求紀錄":"查看每次請求的結果與精確來源。", "通知":"掌握模型與供應商的重要變化。"][tab] ?? "探索與驗證新的模型來源。"

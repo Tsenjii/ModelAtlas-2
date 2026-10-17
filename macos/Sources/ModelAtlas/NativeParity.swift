@@ -229,7 +229,9 @@ import SwiftUI
         ScrollView { VStack(alignment: .leading, spacing: 18) { Label(operationTitle(operation), systemImage: "sparkles").font(.title2.weight(.semibold)); Text("原生 App · 隔離 TLS 合成驗收").foregroundStyle(.secondary); MediaOptionsView(draft: Binding(get: { store.mediaDraft }, set: { store.mediaDraft = $0 }), operation: operation, expanded: true); if let result = store.mediaResult { MediaResultView(value: result) } }.padding(24) }.frame(width: 850, height: 740)
     }
     private static func capture<V: View>(_ view: V, _ output: URL, _ name: String, dark: Bool, marker: String? = nil) async throws {
+        UserDefaults.standard.set(dark ? "dark" : "light", forKey: "appearance")
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 760), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.title = "ModelAtlas · 原生功能驗收"
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: ScrollView { view.tint(atlasAccent).preferredColorScheme(dark ? .dark : .light) }.frame(width: 860, height: 760))
@@ -240,6 +242,7 @@ import SwiftUI
             try require(contains(window.contentView, marker))
         }
         try await Task.sleep(nanoseconds: 450_000_000)
+        try require(NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == (dark ? .darkAqua : .aqua))
         guard let root = window.contentView?.superview else { throw AtlasError.invalidResponse }; root.layoutSubtreeIfNeeded(); root.displayIfNeeded()
         guard let bitmap = root.bitmapImageRepForCachingDisplay(in: root.bounds) else { throw AtlasError.invalidResponse }; root.cacheDisplay(in: root.bounds, to: bitmap)
         guard let data = bitmap.representation(using: .png, properties: [:]), data.count > 10_000 else { throw AtlasError.invalidResponse }; try data.write(to: output.appendingPathComponent(name + ".png"))

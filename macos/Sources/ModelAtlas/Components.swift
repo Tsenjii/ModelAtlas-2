@@ -17,6 +17,7 @@ private func atlasColor(light: CGFloat, dark: CGFloat) -> Color {
 let atlasCanvas = atlasColor(light: 0.985, dark: 0.105)
 let atlasSurface = atlasColor(light: 1, dark: 0.14)
 let atlasInset = atlasColor(light: 0.955, dark: 0.18)
+let atlasSidebar = atlasColor(light: 0.96, dark: 0.125)
 let atlasHairline = Color.primary.opacity(0.085)
 
 struct AtlasCard<Content: View>: View {

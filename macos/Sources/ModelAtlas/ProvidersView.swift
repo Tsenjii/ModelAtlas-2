@@ -138,7 +138,7 @@ struct AddProviderView: View {
                     }
                 }.padding(28)
             }
-        }.frame(width: 680, height: 720)
+        }.frame(width: 680, height: 720).background(atlasCanvas)
         .task { if let api = store.api { existing = (try? await api.get("/onboarding").requiredArray()) ?? [] }; if let resumedReview { review = resumedReview; selected = [] }; if let seed { url = seed["base_url"].string; name = URL(string: url)?.host ?? ""; models = seed["model_id"].string == "UNKNOWN" ? "" : seed["model_id"].string } }
     }
     private var manualEntry: some View {
