@@ -220,6 +220,11 @@ import SwiftUI
         guard receipt["id"].string == sample, receipt["session_id"].string == store.sessionID,
               ModelScope(receipt) == store.selectedScope, receipt["outcome"].string == "SUCCESS" else { throw AtlasError.invalidResponse }
         store.requestReceipt = sample
+        checkpoint("wait-for-rendered-exact-receipt")
+        try await waitFor {
+            guard let sheet = window.attachedSheet, let content = sheet.contentView else { return false }
+            return findView(in: content, identifier: "receipt-loaded-" + sample) != nil
+        }
         try await capture(window, to: output.appendingPathComponent("14-chat-request-receipt.png"), sheet: true)
         store.requestReceipt = nil
         try await waitFor { window.attachedSheet == nil }

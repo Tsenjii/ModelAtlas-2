@@ -1,3 +1,4 @@
+import AppKit
 import AtlasCore
 import SwiftUI
 
@@ -20,7 +21,7 @@ struct RequestReceiptView: View {
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    if loading { ProgressView("讀取請求紀錄…").frame(maxWidth: .infinity) }
+                    if loading || (value == nil && problem == nil) { ProgressView("讀取請求紀錄…").frame(maxWidth: .infinity) }
                     else if let problem {
                         Text(problem).foregroundStyle(.red)
                         Button("重新讀取") { Task { await load() } }
@@ -55,11 +56,26 @@ struct RequestReceiptView: View {
             metric("輸出 Token", item["output_tokens"])
             metric("首 Token", item["ttft_ms"], suffix: " ms")
             metric("總延遲", item["latency_ms"], suffix: " ms")
-        }
+        }.background(ReceiptLoadedMarker(sampleID: sampleID))
         DisclosureGroup("價格、額度與完整原始收據") { JSONTree(value: value).padding(.top, 12) }
         Text("缺少數值表示尚無資料；價格與額度保留各自來源，不以零推算。").font(.caption).foregroundStyle(.secondary)
     }
     private func metric(_ title: String, _ value: JSONValue, suffix: String = "") -> some View {
         HStack { Text(title).foregroundStyle(.secondary); Spacer(); Text(value == .null ? "尚無資料" : value.display + suffix).monospacedDigit().textSelection(.enabled) }
+    }
+}
+
+/// Native integration anchor exists only when the loaded receipt card does.
+/// It never handles input or exposes receipt contents to the test report.
+private struct ReceiptLoadedMarker: NSViewRepresentable {
+    let sampleID: String
+    func makeNSView(context: Context) -> MarkerView {
+        let view = MarkerView(); view.identifier = NSUserInterfaceItemIdentifier("receipt-loaded-" + sampleID); return view
+    }
+    func updateNSView(_ view: MarkerView, context: Context) {
+        view.identifier = NSUserInterfaceItemIdentifier("receipt-loaded-" + sampleID)
+    }
+    final class MarkerView: NSView {
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }

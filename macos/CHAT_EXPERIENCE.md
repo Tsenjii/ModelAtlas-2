@@ -32,3 +32,5 @@
 `8fb4d0a` 同SHA九項成功（Mac39015983459、VPS39015983596、Android39015983539），兩架構15項核心／16圖全過。實圖review另發現arm64再次上捲未停在頂端：user live-scroll與非同步model回寫之間，舊值true的view update可能覆蓋native暫停。`setFollowing`記錄上次收到的model值，只有值改變才視為指令，同值舊update不能撤銷使用者動作。native smoke直接重放該舊model update，要求probe仍暫停且offset<3px；兩張原code截圖完成後仍須<3px。原16圖保留，追加表格深淺兩張；新HEAD九項與36圖重新驗收。
 
 `9ebdb87`／Mac39016888123 arm64已通過新舊model時序、15核心及18圖；人工實圖確認附件使聊天區變矮時，浮動回最新與code複製控制可能重疊。按鈕移到ScrollView外的獨立底部操作列；不改閱讀state／原捲動幾何／按鈕ID／18圖或字流斷言。新HEAD完整九項與36圖再驗。
+
+`516feb5`／Mac39017461887三項、VPS39017461857四項及Android39017461923 build成功；device當時仍執行。36圖review確認閱讀位置與底部操作列，但Intel收據截在task開始前而空白。初始nil資料亦顯示讀取提示；已取得真API資料的card才加入原生receipt-loaded marker，smoke以exact sample_id等到card出現才capture（原waitFor 4秒上限不變）。marker不攔截輸入、不把內容寫入報告；原正式API精確scope／結果檢查、18圖與所有guards保留。新HEAD九項與36圖重新驗收。
