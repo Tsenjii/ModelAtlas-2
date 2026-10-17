@@ -5,7 +5,7 @@
 | ID | 正式 caller／測試 | 驗收條件 |
 |---|---|---|
 | MAC-NATIVE-001 | SwiftUI `ModelAtlasApp` → `RootView`／Playground／Providers／Models／Settings／Research／Assistant → `AtlasStore` → `AtlasClient` → bundled production engine；原生視窗smoke與十一實圖 | Universal arm64／x86_64，macOS12部署目標；同一artifact在兩種Mac架構執行，不用WebView／mock transport，不能以Linux交叉編譯稱Mac執行 |
-| MAC-UI-002 | `ModelPickerView`／⌘K／緊湊三工作區 → `ModelSearchEntry`／`AtlasStore.chooseModel` → 原 full-scope API；真單元＋native store caller／十一實圖 | 搜尋全部詞、全半形／大小寫／別名；同 model/key 跨帳戶／provider 不合併；未送草稿／附件保留，舊對話草稿恢復；非法未加入 scope 拒選。雙架構同 artifact／全部九項同 SHA gate 與 22 PNG review 前 PENDING，詳 `macos/UI_REVIEW.md` |
+| MAC-UI-002 | `ModelPickerView`／⌘K／緊湊三工作區 → `ModelSearchEntry`／`AtlasStore.chooseModel` → 原 full-scope API；真單元＋native store caller／十一實圖 | 搜尋全部詞、全半形／大小寫／別名；AppKit ↑↓／Enter／Esc、完整 scope cursor、空結果拒選及 marked-text guard（真 field-editor key events＋單元測試）；同 model/key 跨帳戶／provider 不合併；未送草稿／附件保留，舊對話草稿恢復；非法未加入 scope 拒選。雙架構同 artifact／全部九項同 SHA gate 與 22 PNG review 前 PENDING，詳 `macos/UI_REVIEW.md` |
 | MAC-LIFETIME-001 | `EngineController` → `desktop` config → OS動態loopback listener／0600 readiness／stdin EOF → HTTP／worker／SQLite收尾 | 真Go程序測試＋兩Mac程序restart／writer拒絕；App無常駐daemon，不繼承PORT對外開埠；保持原平台／本機模式認證 |
 | MAC-SECRET-SCOPE-001 | `KeychainVault` → Security.framework／SecRandom、完整`ModelScope`、禁redirect/cookie/cache/proxy的native client | 真Keychain roundtrip／missing-vault拒絕重生、A/B同KeyID隔離、SSE與實際cancel／history／vault reopen、Unknown不當0／Free、預設背景通知OFF |
 
@@ -248,3 +248,4 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | VPS-DEPLOY-HTTPS-001 | `deploymentConfig.handler` 包住正式 `Server.Handler`；真 TLS reverse proxy 保留 Host／覆寫 X-Forwarded-Proto | Host／Origin／HTTPS 前置拒絕仍保留原管理認證；healthz 只曝既有健康資料；固定 master key、絕對 DB，真 API mutation 後兩程序 reopen／vault decrypt，無 secret log／GET |
 
 新 HEAD 須完整同 SHA 六項 CI；具體證據由 PR #20 body 保存。Infrlo 控制台在此環境不可讀，官方公開 README 無 Go／ingress／persistent volume 契約；不將本機代理測試、512 MB／2 GB 宣傳數字當作目標平台驗收，不標已部署。
+

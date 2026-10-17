@@ -80,6 +80,20 @@ final class AtlasCoreTests: XCTestCase {
         XCTAssertEqual(Data(base64Encoded: first.masterKey)?.count, 32)
         XCTAssertGreaterThanOrEqual(first.token.count, 24)
     }
+    func testPickerCursorRetainsExactScopeAndNeverWrapsOrChoosesMissingRows() {
+        var cursor = ModelPickerCursor()
+        let ids = ["provider/a/key/model/chat", "provider/b/key/model/chat", "provider/a/key/model/responses"]
+        cursor.reconcile(ids, preferredID: ids[1]); XCTAssertEqual(cursor.highlightedID, ids[1])
+        cursor.move(by: 1, in: ids); XCTAssertEqual(cursor.highlightedID, ids[2])
+        cursor.move(by: 1, in: ids); XCTAssertEqual(cursor.highlightedID, ids[2])
+        cursor.reconcile([ids[2], ids[1]]); XCTAssertEqual(cursor.highlightedID, ids[2])
+        cursor.reconcile([ids[0], ids[1]], preferredID: ids[1]); XCTAssertEqual(cursor.highlightedID, ids[1])
+        cursor.move(by: -1, in: ids); XCTAssertEqual(cursor.highlightedID, ids[0])
+        cursor.move(by: -1, in: ids); XCTAssertEqual(cursor.highlightedID, ids[0])
+        cursor.reconcile([]); XCTAssertNil(cursor.highlightedID)
+        cursor.move(by: 1, in: []); XCTAssertNil(cursor.highlightedID)
+        cursor.reconcile([ids[2]]); XCTAssertEqual(cursor.highlightedID, ids[2])
+    }
     func testManagementClientOnlyAcceptsFixedLoopbackOrigins() throws {
         for raw in ["https://elsewhere.example", "http://localhost:8000", "http://0.0.0.0:8000", "http://127.0.0.1:8000/path", "http://a:b@127.0.0.1:8000"] {
             XCTAssertThrowsError(try AtlasClient(baseURL: URL(string: raw)!, token: "test"))
@@ -169,3 +183,4 @@ final class AtlasCoreTests: XCTestCase {
         do { try await api.stream("/truncated", body: .object([:])) { _ in }; XCTFail("Truncated stream was marked done") } catch AtlasError.invalidResponse { }
     }
 }
+

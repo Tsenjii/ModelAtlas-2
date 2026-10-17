@@ -96,7 +96,9 @@ assert report.exists(), (out/'FAILURE.txt').read_text() if (out/'FAILURE.txt').e
 value=json.loads(report.read_text())
 assert value['result']=='PASS' and value['real_tls_chat'] and value['screenshots']==11,value
 assert value['draft_scope_guards'] and value['search_scope_guards'],value
+assert value['keyboard_picker_guards'],value
 assert value['providers']==2 and value['models']==4 and value['messages']==2,value
 assert len(list(out.glob('*.png')))==11
 print(json.dumps(value,ensure_ascii=False))
 PY
+

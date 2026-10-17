@@ -10,6 +10,7 @@
 - Playground：緊湊 composer 與清楚的模型按鈕；⌘K、側欄及 composer 共用原生搜尋 sheet。只列已加入、ACTIVE、enabled 的模型，依完整 Provider×Account×Credential×Model×Group×Endpoint identity，顯示帳戶／Key label／群組與端點。只有使用者選擇才切換，不自動推論。
 - 搜尋只索引明確允許的模型／scope／顯示 label／別名／canonical／vendor／category，不索引任意 config、secret 或 credential payload。所有查詢詞均須符合，大小寫／全半形／重音不影響匹配。
 - `chooseModel` 重新檢查現存可用的 exact scope；未送出的草稿與附件原樣保留。已有對話先以既有機制保存草稿，再開新對話，不覆寫原 scope／history。串流中不能選模。
+- 選模 sheet 使用真正 `NSSearchField` 的 field editor：↑／↓ 移動高亮並捲至可見、Enter 或「使用模型」才確認、Esc 關閉。完整 scope cursor 不使用列索引辨識連線，搜尋／篩選後保留有效高亮或重新選首筆；空結果不能確認。中文／日文 marked text 的方向鍵／Enter／Esc 留給輸入法，不會因選字切換模型。無全域鍵盤監聽，游標移動不送推論。
 - 沒有新增 production dependency、服務、背景探測、資料庫 migration 或 Android／VPS UI 變更。
 
 ## 驗證與限制
@@ -18,7 +19,10 @@
 
 - `AtlasCoreTests` 新增全詞／width／case／accent／別名搜尋、禁止任意 secret 索引與完整 scope 不合併；原八項真 Keychain／engine／TLS／SSE／cancel 等測試全保留。
 - Opt-in `NativeSmoke` 在獨立合成 DB、真 packaged engine／TLS 上執行：未送草稿／附件選模保留；既有對話選模產生新 draft，再恢復舊 draft／history；非法 scope 拒選；跨帳戶／provider 同模型同 Key ID 查詢精確命中。
+- 新增 cursor 邊界／重排／篩選／空清單單元測試；actual sheet／field editor 的真 AppKit key event 驗 ↑／↓ 後不切換、Enter 才選定不同模型且草稿／附件不變、空結果拒選及 Esc 關閉。另以 AppKit marked text 呼叫正式 delegate 驗 IME guard，這不是端到端注音輸入法驗證。`keyboard_picker_guards` 為 gate 必要值。
+- 修正前片 fixture 的群組綁定：`review-team` membership 的 Key 同樣綁到 `review-team`。正式 `selectionUsable`／`groupBound` 繼續拒絕錯群組；沒有放寬 scope、刪除斷言或減少預期模型。失敗 checkpoint 僅保存固定 label，不輸出使用者資料。
 - 每個架構保留原六張三工作區／深淺色／窄窗 PNG，增加深淺選模 sheet、窄窗 Models／Providers、新增供應商 sheet，總十一張。Capture 實際 AppKit frame view／attached sheet，不使用 HTML 或設計稿冒充執行畫面。
 - 兩架構執行同一 Universal artifact，所有十一張必須生成且 smoke scope／draft guard PASS；人工檢視22張後才驗收。這是原生 view capture＋store caller，不宣稱 XCUI 全點擊覆蓋或已實測 macOS12。
 - 保留原同 SHA 九項 gate、可取消／退出／engine 收尾及精確 CA 撤銷要求。RAM 報告僅 App＋owned engine 的本輪有限 workload RSS，排除 fixture／runner，不是全功能硬上限。
 - 尚未 Apple Developer ID／公證、macOS12實機與進階專用表單的原有限制不變，見 `README.md`。
+

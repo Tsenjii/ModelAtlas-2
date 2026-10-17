@@ -7,7 +7,10 @@ struct ModelPickerView: View {
     @State private var search = ""
     @State private var favorites = false
     @State private var providerID = ""
-    @FocusState private var searchFocused: Bool
+    @State private var cursor = ModelPickerCursor()
+    @State private var scrollTarget: String?
+    private var entryIDs: [String] { entries.map(\.id) }
+    private var highlighted: ModelSearchEntry? { entries.first { $0.id == cursor.highlightedID } }
     private var entries: [ModelSearchEntry] {
         store.modelEntries(store.activeModels).filter {
             $0.matches(search) && (!favorites || $0.model["favorite"].boolean) && (providerID.isEmpty || $0.scope.providerID == providerID)
@@ -27,8 +30,8 @@ struct ModelPickerView: View {
                 Spacer()
                 Button("完成") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(20)
-            SearchField(placeholder: "搜尋模型、供應商、帳戶、Key 或群組", text: $search)
-                .focused($searchFocused).onSubmit { if let first = entries.first { choose(first) } }
+            ModelPickerSearchField(text: $search, move: move, submit: chooseHighlighted, cancel: { dismiss() })
+                .frame(height: 30)
                 .padding(.horizontal, 20).padding(.bottom, 12)
             HStack {
                 Picker("顯示", selection: $favorites) { Text("全部").tag(false); Text("收藏").tag(true) }
@@ -40,6 +43,7 @@ struct ModelPickerView: View {
                 }.labelsHidden().frame(maxWidth: 210)
             }.padding(.horizontal, 20).padding(.bottom, 14)
             Divider()
+            ScrollViewReader { reader in
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(entries) { entry in
@@ -58,7 +62,11 @@ struct ModelPickerView: View {
                                 Spacer(minLength: 6)
                                 if entry.id == store.scopeID { Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(atlasAccent) }
                             }.padding(.horizontal, 20).padding(.vertical, 13).frame(maxWidth: .infinity, alignment: .leading)
-                        }.buttonStyle(AtlasRowButtonStyle()).help(entry.scope.modelID + " · " + store.scopeTitle(entry.model) + " · " + entry.scope.endpoint)
+                        }.buttonStyle(AtlasRowButtonStyle())
+                            .background(cursor.highlightedID == entry.id ? atlasAccent.opacity(0.085) : Color.clear)
+                            .accessibilityAddTraits(cursor.highlightedID == entry.id ? .isSelected : [])
+                            .help(entry.scope.modelID + " · " + store.scopeTitle(entry.model) + " · " + entry.scope.endpoint)
+                            .id(entry.id)
                         Divider().padding(.leading, 64)
                     }
                     if entries.isEmpty {
@@ -71,14 +79,25 @@ struct ModelPickerView: View {
                     }
                 }
             }
+            .onChange(of: scrollTarget) { id in if let id { reader.scrollTo(id, anchor: .center) } }
+            .onAppear {
+                cursor.reconcile(entryIDs, preferredID: store.scopeID)
+                if let id = cursor.highlightedID { reader.scrollTo(id, anchor: .center) }
+            }
+            }
             Divider()
             HStack {
                 Text("\(entries.count) 個連線").foregroundStyle(.secondary)
                 Spacer()
-                Text("↵ 選擇首筆 · esc 關閉").foregroundStyle(.secondary)
+                Text("↑↓ 選擇 · ↵ 使用 · esc 關閉").foregroundStyle(.secondary)
+                Button("使用模型", action: chooseHighlighted).buttonStyle(.borderedProminent)
+                    .disabled(highlighted == nil || store.generating)
             }.font(.caption).padding(.horizontal, 20).padding(.vertical, 12)
         }.frame(width: 620, height: 550).background(atlasSurface)
-            .onAppear { searchFocused = true }
+            .onChange(of: entryIDs) { ids in cursor.reconcile(ids, preferredID: store.scopeID) }
     }
     private func choose(_ entry: ModelSearchEntry) { store.chooseModel(entry.model); dismiss() }
+    private func chooseHighlighted() { if let highlighted { choose(highlighted) } }
+    private func move(_ step: Int) { cursor.move(by: step, in: entryIDs); scrollTarget = cursor.highlightedID }
 }
+

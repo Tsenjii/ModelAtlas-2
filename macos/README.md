@@ -12,7 +12,7 @@ GitHub Actions `macOS Native App` 產出 `ModelAtlas-macOS-Universal.dmg`、`.zi
 
 ## 已接線的原生工作區
 
-- Playground：⌘K 搜尋式模型選擇，依模型／供應商／帳戶／Key label／群組／端點搜尋、收藏與供應商篩選；切換未送模型保留草稿／附件，舊對話 scope 不改。完整選定 Provider×Account×Key×Model×Group×Endpoint，真 SSE 文字／reasoning、停止、可持續輸入下一稿、永久對話、搜尋／置頂／命名／封存／恢復／分頁與完整 JSON／Markdown 匯出；系統指示、Token 上限、串流與工具定義／工具結果接續。
+- Playground：⌘K 搜尋式模型選擇，依模型／供應商／帳戶／Key label／群組／端點搜尋、收藏與供應商篩選；↑／↓ 高亮、Enter 確認、Esc 關閉，輸入法組字期間保留選字操作；切換未送模型保留草稿／附件，舊對話 scope 不改。完整選定 Provider×Account×Key×Model×Group×Endpoint，真 SSE 文字／reasoning、停止、可持續輸入下一稿、永久對話、搜尋／置頂／命名／封存／恢復／分頁與完整 JSON／Markdown 匯出；系統指示、Token 上限、串流與工具定義／工具結果接續。
 - 圖片／PDF／WAV／MP3 選檔與每種4MiB限制，沿用引擎 signature／能力再次驗證；影像生成／編輯、轉寫、語音、embedding／rerank 走同一正式媒體入口，原生圖片預覽、音訊播放、結果儲存，不自動抓遠端圖片。
 - Providers：Quick／Advanced → 真檢查／可恢復 Review → 明確選模型確認；帳戶、Key／PAT、群組、啟停、rotate／版本恢復、額外加密認證欄位、immutable endpoints／CUSTOM 宣告式協定、網站／備註／簽到設定與 New API 資料查詢。
 - Models：緊湊完整連線列，真實平均 TTFT／TPS、我的上線率附本機樣本數與時間窗；少量樣本提示僅為介面提示，不是統計信賴區間。My Models 與 Catalog 分開，搜尋／分類、完整 Catalog 搜尋與分批顯示、手動加入、精確 Key／端點連線、即時比較、模型詳情、來源／時間窗／保留歷史、能力確認、分類／別名／手動資料與收藏／觀察／隱藏／封存。
@@ -54,3 +54,4 @@ SwiftPM 也可直接用 Xcode 開啟 `macos/Package.swift` 查看原生程式碼
 - Linux Go新增 `TestDesktopDynamicLoopbackAndParentPipeLifetime`，真 binary 驗實際埠／0600 ready／401／parent EOF退出／ready移除／DB lock釋放，既有完整Go／VPS Browser／Android gate仍全部保留。
 
 Mac 唯一 live slice／未驗收狀態見 `docs/ACTIVE_TASK.md`，正式 caller → 測試見 `docs/TRACEABILITY.md`；最新 PR body 保存 exact code SHA、全部九項 jobs、artifact、實圖 review 與限制。不要將缺 Apple 公證、未跑 macOS12 或後續專用表單寫成已完成。
+

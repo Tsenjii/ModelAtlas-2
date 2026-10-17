@@ -35,6 +35,8 @@ import SwiftUI
             store.chooseModel(code)
             guard store.draft == "切換模型仍保留的未送出草稿", store.attachments == unsentFiles,
                   store.selectedScope == ModelScope(code), store.sessionID == nil else { throw AtlasError.invalidResponse }
+            stage = "native-picker-keyboard-and-ime"
+            try await verifyPickerKeyboard(store: store, chat: chat, code: code, files: unsentFiles) { stage = "native-picker-" + $0 }
             store.attachments = []; store.chooseModel(chat)
             store.workspace = .playground; store.draft = "請用繁體中文介紹這個原生 Mac 工作區。"
             stage = "real-tls-chat"
@@ -54,7 +56,7 @@ import SwiftUI
             // labels visible in real UI. These are isolated synthetic fixtures.
             stage = "seed-distinct-account-and-provider"
             _ = try await store.mutate("/accounts", body: .object(["id": .string("review"), "provider_id": provider["id"], "label": .string("長名稱帳戶 · 團隊文件與程式審查")]))
-            _ = try await store.mutate("/credentials", body: .object(["id": .string("key"), "provider_id": provider["id"], "account_id": .string("review"), "label": .string("專案用 Key"), "secret": .string("fixture-other-account-key")]))
+            _ = try await store.mutate("/credentials", body: .object(["id": .string("key"), "provider_id": provider["id"], "account_id": .string("review"), "label": .string("專案用 Key"), "group": .string("review-team"), "secret": .string("fixture-other-account-key")]))
             var otherScope = ModelScope(chat).json; otherScope["account_id"] = .string("review"); otherScope["group"] = .string("review-team")
             _ = try await store.mutate("/my-models", body: otherScope)
             _ = try await store.mutate("/providers", body: .object(["id": .string("research-fixture"), "name": .string("研究工作區"), "base_url": .string(fixture + "/v1"), "description": .string("獨立帳戶與憑證 · 合成測試資料"), "auth_mode": .string("BEARER")]))
@@ -103,7 +105,7 @@ import SwiftUI
             try await capture(window, to: output.appendingPathComponent("11-add-provider-light.png"), sheet: true)
             store.newProviderOpen = false
             try await Task.sleep(nanoseconds: 450_000_000)
-            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(11)])
+            let result: JSONValue = .object(["result": .string("PASS"), "real_engine": .bool(true), "real_tls_chat": .bool(true), "native_windows": .bool(true), "draft_scope_guards": .bool(true), "search_scope_guards": .bool(true), "keyboard_picker_guards": .bool(true), "providers": .number(Double(store.providers.count)), "models": .number(Double(store.myModels.count)), "messages": .number(Double(store.messages.count)), "screenshots": .number(11)])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-smoke.json"), options: .atomic)
         } catch {
             // Fixed stage labels only: never dump a store, request, credential,
@@ -116,6 +118,89 @@ import SwiftUI
         DispatchQueue.main.async {
             if ProcessInfo.processInfo.arguments.contains("--smoke-close-window"), let window = NSApp.windows.first(where: \.isVisible) { window.performClose(nil) }
             else { NSApp.terminate(nil) }
+        }
+    }
+    private static func verifyPickerKeyboard(store: AtlasStore, chat: JSONValue, code: JSONValue, files: [JSONValue], checkpoint: (String) -> Void) async throws {
+        let draft = store.draft
+        checkpoint("open-first-sheet")
+        var (window, field, _) = try await openPicker(store)
+        checkpoint("up-arrow-before-confirm")
+        try press(126, "\u{F700}", in: window)
+        await Task.yield()
+        guard store.selectedScope == ModelScope(code), store.sessionID == nil else { throw AtlasError.invalidResponse }
+        try press(36, "\r", in: window)
+        checkpoint("up-arrow-confirm")
+        try await waitFor { !store.modelPickerOpen }
+        guard store.selectedScope == ModelScope(chat), store.draft == draft, store.attachments == files else { throw AtlasError.invalidResponse }
+        checkpoint("open-second-sheet")
+        (window, field, _) = try await openPicker(store)
+        checkpoint("down-arrow-before-confirm")
+        try press(125, "\u{F701}", in: window)
+        await Task.yield()
+        guard store.selectedScope == ModelScope(chat) else { throw AtlasError.invalidResponse }
+        try press(36, "\r", in: window)
+        checkpoint("down-arrow-confirm")
+        try await waitFor { !store.modelPickerOpen }
+        guard store.selectedScope == ModelScope(code), store.draft == draft, store.attachments == files else { throw AtlasError.invalidResponse }
+        checkpoint("open-empty-search-sheet")
+        let opened = try await openPicker(store)
+        window = opened.0; field = opened.1
+        let editor = opened.2
+        editor.selectAll(nil)
+        editor.insertText("no-matching-fixture-connection", replacementRange: NSRange(location: NSNotFound, length: 0))
+        // Let SwiftUI apply the field editor's genuine change notification.
+        try await Task.sleep(nanoseconds: 100_000_000)
+        checkpoint("empty-search-rejects-confirm")
+        guard field.stringValue == "no-matching-fixture-connection" else { throw AtlasError.invalidResponse }
+        try press(36, "\r", in: window)
+        guard store.modelPickerOpen, store.selectedScope == ModelScope(code) else { throw AtlasError.invalidResponse }
+        checkpoint("marked-text-guard")
+        guard let delegate = field.delegate as? ModelPickerSearchField.Coordinator else { throw AtlasError.invalidResponse }
+        let composing = NSTextView()
+        composing.setMarkedText("注音候選", selectedRange: NSRange(location: 0, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+        guard composing.hasMarkedText() else { throw AtlasError.invalidResponse }
+        for command in [#selector(NSResponder.moveDown(_:)), #selector(NSResponder.insertNewline(_:)), #selector(NSResponder.cancelOperation(_:))] {
+            guard !delegate.control(field, textView: composing, doCommandBy: command) else { throw AtlasError.invalidResponse }
+        }
+        guard store.modelPickerOpen, store.sessionID == nil, !store.generating,
+              store.messages.isEmpty, store.draft == draft, store.attachments == files else { throw AtlasError.invalidResponse }
+        checkpoint("escape-closes-sheet")
+        try press(53, "\u{1b}", in: window)
+        try await waitFor { !store.modelPickerOpen }
+    }
+    private static func openPicker(_ store: AtlasStore) async throws -> (NSWindow, NSSearchField, NSTextView) {
+        // Wait for the preceding sheet to finish detaching before reopening it.
+        try await waitFor { !NSApp.windows.contains { $0.attachedSheet != nil } }
+        store.modelPickerOpen = true
+        try await waitFor {
+            NSApp.windows.contains { parent in
+                guard let sheet = parent.attachedSheet, let view = sheet.contentView else { return false }
+                return searchField(in: view) != nil
+            }
+        }
+        guard let sheet = NSApp.windows.compactMap(\.attachedSheet).first,
+              let view = sheet.contentView, let field = searchField(in: view) else { throw AtlasError.invalidResponse }
+        sheet.makeKeyAndOrderFront(nil)
+        guard sheet.makeFirstResponder(field), let editor = field.currentEditor() as? NSTextView else { throw AtlasError.invalidResponse }
+        await Task.yield()
+        return (sheet, field, editor)
+    }
+    private static func searchField(in view: NSView) -> NSSearchField? {
+        if let field = view as? NSSearchField, field.identifier?.rawValue == "model-picker-search" { return field }
+        for child in view.subviews { if let field = searchField(in: child) { return field } }
+        return nil
+    }
+    private static func press(_ code: UInt16, _ characters: String, in window: NSWindow) throws {
+        guard let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                           windowNumber: window.windowNumber, context: nil, characters: characters,
+                                           charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code) else { throw AtlasError.invalidResponse }
+        window.sendEvent(event)
+    }
+    private static func waitFor(_ condition: () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(4)
+        while !condition() {
+            guard Date() < deadline else { throw AtlasError.invalidResponse }
+            try await Task.sleep(nanoseconds: 20_000_000)
         }
     }
     private static func capture(_ window: NSWindow, to url: URL, sheet: Bool = false) async throws {

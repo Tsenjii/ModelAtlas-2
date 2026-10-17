@@ -23,3 +23,23 @@ public struct ModelSearchEntry: Identifiable, Sendable {
         value.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: Locale(identifier: "en_US_POSIX"))
     }
 }
+
+/// The highlighted row is a presentation cursor, never the active model.
+/// Stable full-scope identities keep filtering and refreshes from choosing a
+/// different account merely because it occupies the same list index.
+public struct ModelPickerCursor: Sendable {
+    public var highlightedID: String?
+    public init() {}
+    public mutating func reconcile(_ ids: [String], preferredID: String? = nil) {
+        if let highlightedID, ids.contains(highlightedID) { return }
+        highlightedID = preferredID.flatMap { ids.contains($0) ? $0 : nil } ?? ids.first
+    }
+    public mutating func move(by step: Int, in ids: [String]) {
+        guard !ids.isEmpty else { highlightedID = nil; return }
+        guard let highlightedID, let index = ids.firstIndex(of: highlightedID) else {
+            self.highlightedID = ids.first; return
+        }
+        self.highlightedID = ids[max(0, min(ids.count - 1, index + step))]
+    }
+}
+
