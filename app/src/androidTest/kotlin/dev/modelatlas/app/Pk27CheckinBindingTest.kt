@@ -6,6 +6,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
@@ -327,10 +328,12 @@ class Pk27CheckinBindingTest {
         val choice = hasClickAction() and hasText(label, substring = true)
         compose.onNode(choice).performScrollTo().performClick()
         compose.waitUntil(TIMEOUT_MS) { viewModel.state.value.selectedId == connectionId }
-        // Wait for the state change, let the rule synchronize composition, then
-        // assert actual UI disabled semantics. Never poll a Compose node from
-        // a raw waitUntil predicate running on the instrumentation thread.
-        compose.waitForIdle()
+        // selectedId updates before ProviderDetailLoader's Dispatchers.IO read
+        // restores the new actionScope. Compose idleness alone does not await
+        // that read. Wait for the actual scoped UI under the original 15s
+        // bound, then retain the same disabled assertion and exact-account DB
+        // checks. Let the Compose harness own semantics-tree polling.
+        compose.waitUntilAtLeastOneExists(choice and isNotEnabled(), TIMEOUT_MS)
         compose.onNode(choice).assertIsNotEnabled()
         headerToTop()
     }

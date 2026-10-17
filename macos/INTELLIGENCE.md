@@ -32,3 +32,8 @@ KiosAPI 的公開研究與實測缺口見 `../docs/KIOSAPI_RESEARCH.md`；這裡
 5cd93e7 的 arm64原35核心／50圖通過，VPS四項與Android build/device通過；Intel原35核心通過後在既有 rich-stream 25秒完成界線失敗。固定數字診斷確認上游已送完1249字／finished=true，App只顯示1083字、仍generating且無problem，閱讀offset保持0。不是放寬測試或盲重跑。
 
 AtlasClient 原本每個 SSE event 都 await MainActor callback，畫面排版較慢時網路解析跟著逐token等待。改為最多128 wire events／2MiB的 bounded delivery queue，只合併相鄰且只有text欄位的delta／reasoning；control／metadata／Unicode／順序保留。背壓時等待已排程的UI delivery，不丟內容，結束／取消／錯誤均等待delivery完成，避免舊callback污染下一次請求。新增3核心測試涵4096碎片、128事件／byte背壓、control／metadata順序、取消與返回前全部送達。原25秒、全文SHA256、閱讀位置、120秒與100實圖要求全部保留，新HEAD重新九項驗收。
+
+
+## 同片 Android 回歸測試同步
+
+34cab84 的Mac三項／38核心每架構／100實圖全部成功，Intel完成等待階段879ms、完整1249字與offset0；VPS四項、Android build成功。Android device在既有PK27 choose(B)的disabled語意斷言失敗：VM selectedId更新早於ProviderDetailLoader在Dispatchers.IO讀取完畢，stale scope投影會暫時移除actionScope，waitForIdle本身不等待IO。只改測試使用Compose harness等待該連線實際disabled，再保留原assert與exact-account簽到DB、B→A、舊時間戳所有斷言；沿用15秒、不改Android產品。原100圖／九項gate不減，新HEAD重新全部驗收。
