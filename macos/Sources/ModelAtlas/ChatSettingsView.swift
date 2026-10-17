@@ -129,10 +129,16 @@ struct ChatSettingsView: View {
     private var footer: some View {
             HStack(alignment: .center, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    if let problem = model.saveProblem { Text(problem).foregroundStyle(.red).textSelection(.enabled) }
+                    if let problem = model.saveProblem {
+                        Label { Text(problem).foregroundStyle(.primary).textSelection(.enabled) }
+                        icon: { Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.red) }
+                    }
                     else if let saved = model.savedDraft {
-                        Label(saved == model.draft ? "已儲存" : "上一份修改已儲存，目前修改尚未儲存。", systemImage: "checkmark.circle")
-                            .foregroundStyle(atlasAccent)
+                        Label { Text(saved == model.draft ? "已儲存" : "上一份修改已儲存，目前修改尚未儲存。").foregroundStyle(.primary) }
+                        icon: {
+                            Image(systemName: saved == model.draft ? "checkmark.circle" : "pencil.circle")
+                                .foregroundStyle(saved == model.draft ? atlasAccent : Color.secondary)
+                        }
                     } else { Text("儲存後繼續留在設定面板。").foregroundStyle(.secondary) }
                 }.font(.caption).frame(maxWidth: .infinity, alignment: .leading)
                 Button { Task { await model.save(store: store) } } label: {

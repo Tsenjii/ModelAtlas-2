@@ -19,3 +19,7 @@
 真NativeSmoke透過production controller與正式packaged engine驗：初始讀取、真401錯誤與同面板重試、invalid Token前後真API設定完全一致、A面板打開後選到B仍只保存A的system／777／streaming／title、B仍512且空system；成功後輸入888仍留面板但真API保持777，關閉回A歷史／原草稿不變。四張新增實際sheet為ready／validation／read error／saved＋next draft；原21張完整保留，每架構25／總50圖。測試不宣稱XCUI全點擊。
 
 本提交為候選。須新HEAD九項全綠及50圖審閱後更新PR #21 canonical驗收與交付DMG。保留原120秒程序、4秒條件、500ms閱讀／25秒串流及完整1249字SHA256，不增timeout／不減舊workload。沒有merge、遠端部署、Apple Developer ID／公證。新增供應商與媒體結果的進一步表單／儲存體驗另片處理，不將本片宣稱為全App回饋完成。
+
+## 實圖可讀性修整
+
+3df9dcb／Mac39024396342的Universal與arm64原生25圖、18核心成功後，圖審發現深色footer的teal小字對比不足；改原生primary文字搭配彩色圖示，未儲存下一份改為pencil，錯誤同樣使用primary文字與red icon。保持原50圖與全部斷言，新HEAD重新九項gate；不以部分綠燈或前HEAD圖審驗收新碼。
