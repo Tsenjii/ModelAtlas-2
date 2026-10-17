@@ -52,3 +52,6 @@ Unknown 不當 0／Free；Catalog 不等於 My Models。所有操作維持 Provi
 
 
 深色模型清單實圖仍見macOS小型自動Picker以淺色field繪製；高頻來源／排序改為原生Menu內的單選Picker，保留全部選項與Binding，按鈕底色跟隨工作區。批次Review同時快取本次rows供顯示，避免每列重建整份scope配對。原84圖及所有功能驗證不減。
+
+
+`c390957`／Mac39044507432 Universal與雙架構29核心／42圖均PASS。首輪最終實圖發現新Menu標籤繼承深teal，在深色小字的對比仍不足；標籤及Menu tint明確採原生primary。只修可讀性，全部scope／狀態Binding／84圖不變；新HEAD仍重新九項驗收。

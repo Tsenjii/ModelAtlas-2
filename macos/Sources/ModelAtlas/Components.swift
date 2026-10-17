@@ -216,8 +216,9 @@ struct AtlasChoiceMenu: View {
             }.pickerStyle(.inline)
         } label: {
             Text(items.first(where: { $0.id == selection })?.title ?? title)
-                .font(.system(size: 11, weight: .medium)).frame(maxWidth: .infinity, alignment: .leading)
-        }.menuStyle(.borderlessButton).padding(.horizontal, 9).padding(.vertical, 6)
+                .font(.system(size: 11, weight: .medium)).foregroundStyle(Color.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }.menuStyle(.borderlessButton).tint(Color.primary).padding(.horizontal, 9).padding(.vertical, 6)
             .background(atlasInset).cornerRadius(6)
             .accessibilityLabel(title)
     }
