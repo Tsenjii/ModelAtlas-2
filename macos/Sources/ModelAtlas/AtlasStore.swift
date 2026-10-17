@@ -186,6 +186,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     func send(retry: String? = nil, toolContinuation: Bool = false) {
         guard let api, !closing, !generating, !attaching, let scope = selectedScope, retry != nil || toolContinuation || !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         let prompt = draft, files = attachments, beforeIDs = Set(messages.map { $0["id"].string })
+        let requestFiles = files.map(LocalAttachment.requestValue)
         chatReading.resume()
         generating = true; problem = nil; mediaResult = nil; pendingText = ""; pendingReasoning = ""
         streamingText = ""; reasoning = ""
@@ -204,8 +205,8 @@ enum Workspace: String, CaseIterable, Identifiable {
                     var body = scope.json
                     body["prompt"] = .string(prompt); body["request_id"] = .string(id)
                     if op == "IMAGES_GENERATION" { body["size"] = .string(imageSize) }
-                    if op == "IMAGES_EDIT" { body["image"] = files.first { $0["kind"].string == "image" } ?? .null }
-                    if op == "AUDIO" { body["audio"] = files.first { $0["kind"].string == "audio" } ?? .null }
+                    if op == "IMAGES_EDIT" { body["image"] = requestFiles.first { $0["kind"].string == "image" } ?? .null }
+                    if op == "AUDIO" { body["audio"] = requestFiles.first { $0["kind"].string == "audio" } ?? .null }
                     if op == "AUDIO_SPEECH" { body["voice"] = .string(mediaVoice); body["format"] = .string("wav") }
                     if op == "GEMINI_SPEECH" { body["voice"] = .string(mediaVoice); body["speech_dialect"] = .string(speechDialect) }
                     if op == "EMBEDDINGS" { body["inputs"] = .array(prompt.components(separatedBy: "\n").filter { !$0.isEmpty }.map(JSONValue.string)) }
@@ -221,7 +222,7 @@ enum Workspace: String, CaseIterable, Identifiable {
                     var body: JSONValue = .object(["session_id": .string(id)])
                     if let retry { body["retry_id"] = .string(retry) }
                     else if toolContinuation { body["tool_results"] = .array(submittedResults) }
-                    else { body["prompt"] = .string(prompt); if !files.isEmpty { body["attachments"] = .array(files) } }
+                    else { body["prompt"] = .string(prompt); if !requestFiles.isEmpty { body["attachments"] = .array(requestFiles) } }
                     if let submittedTools { body["tools"] = submittedTools; stagedTools[id] = submittedTools }
                     if retry == nil && !toolContinuation { messages.append(.object(["id": .string("pending-user"), "role": .string("user"), "content": .string(prompt)])) }
                     try await api.stream("/infer", body: body) { event in

@@ -13,6 +13,11 @@ public enum LocalAttachmentError: Error, LocalizedError {
 }
 
 public enum LocalAttachment {
+    /// Only the four fields accepted by the engine's strict Attachment decoder.
+    /// Display metadata remains local, including fields added by future UI.
+    public static func requestValue(_ value: JSONValue) -> JSONValue {
+        .object(Dictionary(uniqueKeysWithValues: ["kind", "filename", "mime", "data"].map { ($0, value[$0]) }))
+    }
     /// Atomic batch: callers keep the original tray when any file is invalid.
     public static func adding(_ urls: [URL], to existing: [JSONValue]) throws -> [JSONValue] {
         var result = existing

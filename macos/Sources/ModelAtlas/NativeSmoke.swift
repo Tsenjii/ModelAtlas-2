@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import AtlasCore
 import SwiftUI
 
@@ -141,9 +142,21 @@ import SwiftUI
         store.chooseModel(code); store.draft = "請示範原生 Markdown、Swift 程式碼及比較表。"
         store.send()
         let streamDeadline = Date().addingTimeInterval(15)
-        while store.generating && store.streamingText.count < 900 && Date() < streamDeadline { try await Task.sleep(nanoseconds: 30_000_000) }
+        while store.generating && store.streamingText.count < 650 && Date() < streamDeadline { try await Task.sleep(nanoseconds: 30_000_000) }
         guard store.generating else { checkpoint("rich-stream-ended-before-release"); throw AtlasError.invalidResponse }
-        guard store.streamingText.count >= 900 else { checkpoint("rich-stream-threshold"); throw AtlasError.invalidResponse }
+        guard store.streamingText.count >= 650 else { checkpoint("rich-stream-threshold"); throw AtlasError.invalidResponse }
+        checkpoint("fixture-prefix-reached-barrier")
+        guard let stateURL = URL(string: fixture + "/fixture/rich-state") else { throw AtlasError.invalidEndpoint }
+        var fixtureState: JSONValue = .null
+        let barrierDeadline = Date().addingTimeInterval(10)
+        while Date() < barrierDeadline {
+            let (data, response) = try await URLSession.shared.data(from: stateURL)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw AtlasError.invalidResponse }
+            fixtureState = try JSONDecoder().decode(JSONValue.self, from: data)
+            if fixtureState["paused"].boolean { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        guard fixtureState["paused"].boolean else { throw AtlasError.invalidResponse }
         checkpoint("find-real-scroll-view")
         guard let root = window.contentView, let probe = findView(in: root, identifier: "chat-scroll-probe"), let scroll = probe.enclosingScrollView,
               let document = scroll.documentView, document.bounds.height > scroll.contentView.bounds.height + 100 else { throw AtlasError.invalidResponse }
@@ -168,6 +181,9 @@ import SwiftUI
         while store.generating && Date() < finish { try await Task.sleep(nanoseconds: 30_000_000) }
         guard !store.generating, !store.chatReading.following,
               let answer = store.messages.last, answer["role"].string == "assistant" else { throw AtlasError.invalidResponse }
+        let answerText = answer["content"].string
+        let digest = SHA256.hash(data: Data(answerText.utf8)).map { String(format: "%02x", $0) }.joined()
+        guard digest == fixtureState["sha256"].string, Double(answerText.count) == fixtureState["expected_characters"].numeric else { throw AtlasError.invalidResponse }
         let blocks = MessageMarkup.parse(answer["content"].string)
         guard blocks.contains(where: { if case .code = $0 { return true }; return false }),
               blocks.contains(where: { if case .table = $0 { return true }; return false }) else { throw AtlasError.invalidResponse }
@@ -200,6 +216,7 @@ import SwiftUI
         checkpoint("attachment-production-caller")
         let file = output.appendingPathComponent("attachment-fixture.pdf")
         try Data("%PDF-1.7\nNative attachment fixture".utf8).write(to: file)
+        defer { try? FileManager.default.removeItem(at: file) }
         let beforeDraft = store.draft, scope = store.selectedScope
         await store.addAttachments([file])
         guard store.attachments.count == 1, store.attachments[0]["filename"].string == file.lastPathComponent,
@@ -212,10 +229,26 @@ import SwiftUI
         store.attachments = []
         window.setContentSize(NSSize(width: 920, height: 650))
         try await capture(window, to: output.appendingPathComponent("16-chat-markdown-compact.png"))
-        try? FileManager.default.removeItem(at: file)
         checkpoint("new-conversation-resets-reading")
         store.newConversation()
         guard store.chatReading == ChatReadingState(), store.messages.isEmpty else { throw AtlasError.invalidResponse }
+        checkpoint("real-attachment-inference-strict-decoder")
+        let codeScope = ModelScope(code)
+        guard let attachmentModel = store.activeModels.first(where: {
+            let value = ModelScope($0)
+            return value.providerID == codeScope.providerID && value.accountID == codeScope.accountID && value.credentialID == codeScope.credentialID && value.modelID == "native-fixture-chat"
+        }) else { throw AtlasError.invalidResponse }
+        var capability = ModelScope(attachmentModel).json
+        capability["confirm"] = .bool(true); capability["capabilities"] = .array([.string("FILES")])
+        _ = try await store.mutate("/models/capabilities", body: capability)
+        store.chooseModel(attachmentModel)
+        await store.addAttachments([file])
+        store.draft = "請讀取這份本機測試附件。"; store.send()
+        let attachmentDeadline = Date().addingTimeInterval(15)
+        while store.generating && Date() < attachmentDeadline { try await Task.sleep(nanoseconds: 30_000_000) }
+        guard !store.generating, store.problem == nil, store.messages.count == 2,
+              store.messages.first?["attachments"].array.first?["filename"].string == file.lastPathComponent,
+              store.messages.last?["role"].string == "assistant" else { throw AtlasError.invalidResponse }
         // Keep final report's existing exact two-message assertion and verify
         // that rendering and attachment validation never rewrote the history.
         let sessions = try await api.get("/sessions", query: [URLQueryItem(name: "state", value: "ALL")]).requiredArray()

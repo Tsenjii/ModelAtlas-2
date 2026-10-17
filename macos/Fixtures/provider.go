@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -45,9 +46,15 @@ func main() {
 	var cancelled, redirected atomic.Int64
 	spy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { redirected.Add(1); io.WriteString(w, `{}`) }))
 	defer spy.Close()
+	richReply := "## 原生 Mac，也能舒服地寫程式\n\n清楚的排版讓**重點**、程式碼與比較資料更容易閱讀。這些內容來自隔離的 TLS 合成測試。\n\n```swift\nstruct Workspace {\n    let name = \"ModelAtlas\"\n    let local = true\n\n    func greeting() -> String {\n        \"你好，\\(name)\"\n    }\n}\n```\n\n### 工作區比較\n\n| 工作區 | 用途 | 資料來源 |\n| --- | --- | --- |\n| Playground | 對話與寫程式 | 本機請求 |\n| Providers | 管理連線 | 使用者設定 |\n| Models | 搜尋與比較 | 各自保留來源 |\n\n> 上捲閱讀時，新的回應會繼續接收，畫面留在你正在看的位置。\n\n- 程式碼可直接複製。\n- 表格可水平捲動。\n- 附件可以拖入輸入區。\n\n" + strings.Repeat("這是較長的原生閱讀測試段落。串流持續接收，歷史仍完整保存；向上閱讀不會被新文字拉回底部。\n\n", 18)
 	mux := http.NewServeMux()
 	richContinue := make(chan struct{})
 	var releaseRich sync.Once
+	var richPaused atomic.Bool
+	mux.HandleFunc("/fixture/rich-state", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"paused": richPaused.Load(), "expected_characters": len([]rune(richReply)), "sha256": fmt.Sprintf("%x", sha256.Sum256([]byte(richReply)))})
+	})
 	mux.HandleFunc("/fixture/release-rich", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method required", 405)
@@ -79,7 +86,7 @@ func main() {
 		}
 		reply := "這是原生 Mac 工作區。你的模型、對話和研究資料都保存在本機，並保留清楚的連線與來源。"
 		if body.Model == "native-fixture-code" {
-			reply = "## 原生 Mac，也能舒服地寫程式\n\n清楚的排版讓**重點**、程式碼與比較資料更容易閱讀。這些內容來自隔離的 TLS 合成測試。\n\n```swift\nstruct Workspace {\n    let name = \"ModelAtlas\"\n    let local = true\n\n    func greeting() -> String {\n        \"你好，\\(name)\"\n    }\n}\n```\n\n### 工作區比較\n\n| 工作區 | 用途 | 資料來源 |\n| --- | --- | --- |\n| Playground | 對話與寫程式 | 本機請求 |\n| Providers | 管理連線 | 使用者設定 |\n| Models | 搜尋與比較 | 各自保留來源 |\n\n> 上捲閱讀時，新的回應會繼續接收，畫面留在你正在看的位置。\n\n- 程式碼可直接複製。\n- 表格可水平捲動。\n- 附件可以拖入輸入區。\n\n" + strings.Repeat("這是較長的原生閱讀測試段落。串流持續接收，歷史仍完整保存；向上閱讀不會被新文字拉回底部。\n\n", 18)
+			reply = richReply
 		}
 		if !body.Stream {
 			w.Header().Set("Content-Type", "application/json")
@@ -97,8 +104,10 @@ func main() {
 		}
 		for index, rune := range []rune(reply) {
 			if body.Model == "native-fixture-code" && index == 900 {
+				richPaused.Store(true)
 				select {
 				case <-richContinue:
+					richPaused.Store(false)
 				case <-r.Context().Done():
 					return
 				}
