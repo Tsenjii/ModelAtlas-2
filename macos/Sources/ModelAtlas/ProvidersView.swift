@@ -4,14 +4,21 @@ import SwiftUI
 let adapterOptions = ["GENERIC", "NEW_API", "ANTHROPIC", "OPENROUTER_FREE", "AMD_SHARED", "AMD_DEDICATED", "NVIDIA_NIM_HOSTED", "NVIDIA_NIM_SELF_HOSTED", "GEMINI_FREE", "GROQ_FREE"]
 let endpointOptions = ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "IMAGES_GENERATION", "IMAGES_EDIT", "AUDIO", "AUDIO_SPEECH", "GEMINI_SPEECH", "EMBEDDINGS", "RERANK"]
 
-struct ProvidersView: View {
+@MainActor struct ProvidersView: View {
     @ObservedObject var store: AtlasStore
+    @ObservedObject private var checkins: AccountCheckinController
     @State private var search = ""
     @State private var sort = "name"
-    @State private var freeOnly = false
+    @State private var filter = "all"
+    init(store: AtlasStore, initialFilter: String = "all") {
+        self.store = store; checkins = store.checkins; _filter = State(initialValue: initialFilter)
+    }
     private var filtered: [JSONValue] {
         let freeProviders = Set(store.activeModels.filter { $0["price_state"].string == "FREE_NOW" }.map { $0["provider_id"].string })
-        return store.providers.filter { (!freeOnly || freeProviders.contains($0.id)) && (search.isEmpty || ($0["name"].string + " " + $0["base_url"].string + " " + $0["description"].string).localizedCaseInsensitiveContains(search)) }.sorted { a, b in
+        return store.providers.filter { provider in
+            let matches = filter == "all" || (filter == "free" && freeProviders.contains(provider.id)) || (filter == "checkin" && checkins.rows(providerID: provider.id)?.contains(where: \.pending) == true)
+            return matches && (search.isEmpty || (provider["name"].string + " " + provider["base_url"].string + " " + provider["description"].string).localizedCaseInsensitiveContains(search))
+        }.sorted { a, b in
             if sort == "smart" { let filters = ModelFilters(); @MainActor func score(_ p: JSONValue) -> Double? { let scores = store.activeModels.filter { $0["provider_id"] == p["id"] }.compactMap { filters.ranking($0, weights: store.settings["ranking_weights"]).score }; return scores.isEmpty ? nil : scores.reduce(0, +) / Double(scores.count) }; let x = score(a), y = score(b); if x != y { return (x ?? -1) > (y ?? -1) } }
             return a["name"].string.localizedStandardCompare(b["name"].string) == .orderedAscending
         }
@@ -29,26 +36,30 @@ struct ProvidersView: View {
                 }
                 HStack(spacing: 12) { SearchField(placeholder: "搜尋供應商、網址或描述", text: $search); AtlasChoiceMenu(title: "排序", selection: $sort, items: [AtlasTab("name", "依名稱"), AtlasTab("smart", "依模型評分")]).frame(width: 130) }
                 HStack(spacing: 6) {
-                    AtlasFilterChip(title: "全部", selected: !freeOnly) { freeOnly = false }
-                    AtlasFilterChip(title: "有免費連線", icon: "gift", selected: freeOnly) { freeOnly = true }
+                    AtlasFilterChip(title: "全部", selected: filter == "all") { filter = "all" }
+                    AtlasFilterChip(title: "有免費連線", icon: "gift", selected: filter == "free") { filter = "free" }
+                    AtlasFilterChip(title: "待簽到", icon: "calendar.badge.clock", selected: filter == "checkin") { filter = "checkin" }
                     Spacer()
                     Text("\(entries.count) 個供應商").font(.caption).foregroundStyle(.secondary)
                 }
                 if store.providers.isEmpty {
                     EmptyCard(icon: "server.rack", title: "接上第一個供應商", detail: "貼上 Base URL 與 Key，檢查結果後再加入。", action: "新增供應商") { store.newProviderOpen = true }.frame(height: 350)
+                } else if filter == "checkin" && (checkins.current == nil || checkins.problem != nil) {
+                    if checkins.pending { ProgressView("更新簽到狀態…").frame(maxWidth: .infinity, minHeight: 200) }
+                    else { EmptyCard(icon: "calendar.badge.exclamationmark", title: "簽到狀態尚未更新", detail: checkins.problem ?? "重新載入後即可按今天的帳戶狀態篩選。", action: "重新載入") { if let api = store.api { checkins.refresh(using: api) } }.frame(height: 280) }
                 } else if entries.isEmpty {
-                    EmptyCard(icon: "magnifyingglass", title: "沒有符合的供應商", detail: freeOnly ? "只顯示已有 FREE NOW 連線的供應商；價格未確認不會當成免費。" : "試試其他名稱或網址。", action: "清除篩選") { search = ""; freeOnly = false }.frame(height: 280)
+                    EmptyCard(icon: filter == "checkin" ? "checkmark.circle" : "magnifyingglass", title: filter == "checkin" ? "今天沒有待簽到帳戶" : "沒有符合的供應商", detail: filter == "free" ? "只顯示已有 FREE NOW 連線的供應商；價格未確認不會當成免費。" : filter == "checkin" ? "已設定每日簽到的帳戶都已完成，或目前沒有符合搜尋的帳戶。" : "試試其他名稱或網址。", action: "清除篩選") { search = ""; filter = "all" }.frame(height: 280)
                 } else {
                     VStack(spacing: 0) {
                         ForEach(entries) { provider in
-                            ProviderRow(store: store, provider: provider, freeCount: freeCounts[provider.id] ?? 0)
+                            ProviderRow(store: store, provider: provider, freeCount: freeCounts[provider.id] ?? 0, checkins: checkins.rows(providerID: provider.id))
                             if provider.id != entries.last?.id { Divider().padding(.leading, 64) }
                         }
                     }.background(atlasSurface).cornerRadius(12)
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(atlasHairline, lineWidth: 0.5))
                 }
             }.padding(24).frame(maxWidth: 1150).frame(maxWidth: .infinity)
-        }
+        }.task { if let api = store.api { checkins.refreshIfNeeded(using: api) } }
     }
 }
 
@@ -56,6 +67,7 @@ private struct ProviderRow: View {
     @ObservedObject var store: AtlasStore
     let provider: JSONValue
     let freeCount: Int
+    let checkins: [CheckinAccount]?
     private var providerID: String { provider["id"].string }
     var body: some View {
         Button { store.detailProvider = provider } label: {
@@ -72,6 +84,13 @@ private struct ProviderRow: View {
                     Text("\(store.accounts.filter { $0["provider_id"].string == providerID }.count) 帳戶 · \(store.credentials.filter { $0["provider_id"].string == providerID && $0["enabled"].boolean }.count) 啟用 Key").font(.caption).foregroundStyle(.secondary)
                     SmallBadge(text: "\(store.activeModels.filter { $0["provider_id"].string == providerID }.count) 條模型連線", color: atlasAccent)
                     if freeCount > 0 { Text("\(freeCount) 條免費連線").font(.system(size: 10)).foregroundStyle(atlasTextAccent) }
+                    if provider["config"]["requires_daily_checkin"].boolean {
+                        if let rows = checkins {
+                            let waiting = rows.filter(\.pending).count
+                            if waiting > 0 { Label("\(waiting) 個帳戶待簽到", systemImage: "calendar.badge.clock").font(.caption2).foregroundStyle(.secondary) }
+                            else if !rows.isEmpty { Label("今日簽到已完成", systemImage: "checkmark.circle").font(.caption2).foregroundStyle(.secondary) }
+                        } else { Text("簽到狀態待更新").font(.caption2).foregroundStyle(.secondary) }
+                    }
                 }
                 Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
             }.padding(.horizontal, 16).padding(.vertical, 13).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
@@ -188,11 +207,16 @@ struct AddProviderView: View {
 
 }
 
-struct ProviderDetailView: View {
+@MainActor struct ProviderDetailView: View {
     @ObservedObject var store: AtlasStore
+    @ObservedObject private var checkins: AccountCheckinController
     let provider: JSONValue
     @Environment(\.dismiss) private var dismiss
-    @State private var tab = "帳戶與 Key"
+    @Environment(\.atlasMotion) private var motion
+    @State private var tab = "概覽"
+    init(store: AtlasStore, provider: JSONValue, initialTab: String = "概覽") {
+        self.store = store; self.provider = provider; checkins = store.checkins; _tab = State(initialValue: initialTab)
+    }
     @State private var accountLabel = ""
     @State private var keyLabel = ""
     @State private var secret = ""
@@ -229,16 +253,17 @@ struct ProviderDetailView: View {
                 VStack(alignment: .leading, spacing: 5) { Text(currentProvider["name"].string).font(.title2.weight(.bold)); Text(currentProvider["base_url"].string).foregroundStyle(.secondary).textSelection(.enabled) }
                 Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(25)
-            Picker("分區", selection: $tab) { ForEach(["帳戶與 Key", "Catalog", "端點", "設定", "站方資料"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
+            Picker("分區", selection: $tab) { ForEach(["概覽", "帳戶與 Key", "Catalog", "端點", "設定", "站方資料"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
+                    if tab == "概覽" { overview }
                     if tab == "帳戶與 Key" { accountsContent }
                     if tab == "Catalog" { CatalogView(store: store, providerID: id) }
                     if tab == "端點" { endpointsContent }
                     if tab == "設定" { configContent }
                     if tab == "站方資料" { providerData }
-                }.padding(24)
+                }.padding(24).animation(motion.panel, value: tab)
             }
         }.frame(width: 820, height: 760)
         .onChange(of: accountID) { _ in dataCredential = "" }
@@ -249,6 +274,31 @@ struct ProviderDetailView: View {
             customHeaders = configuration["headers"] == .null ? "{}" : configuration["headers"].pretty
             customPaths = configuration["endpoints"] == .null ? "{}" : configuration["endpoints"].pretty
             if accountID.isEmpty { accountID = providerAccounts.first?["id"].string ?? "" }
+        }
+    }
+    private var overview: some View {
+        VStack(spacing: 18) {
+            AtlasCard {
+                HStack {
+                    Text("帳戶與連線").font(.headline)
+                    Spacer()
+                    Button("管理帳戶與 Key") { tab = "帳戶與 Key" }
+                }
+                if !currentProvider["description"].string.isEmpty { Text(currentProvider["description"].string).foregroundStyle(.secondary) }
+                ForEach(providerAccounts) { account in
+                    let keys = store.credentials.filter { $0["provider_id"].string == id && $0["account_id"].string == account.id }
+                    let models = store.activeModels.filter { $0["provider_id"].string == id && $0["account_id"].string == account.id }
+                    HStack {
+                        Label(account["label"].string, systemImage: "person.crop.circle").font(.subheadline.weight(.medium))
+                        Spacer()
+                        Text("\(keys.filter { $0["enabled"].boolean }.count)／\(keys.count) 啟用 Key · \(models.count) 條模型連線").font(.caption).foregroundStyle(.secondary)
+                    }.padding(.vertical, 4)
+                    if account.id != providerAccounts.last?.id { Divider() }
+                }
+                if providerAccounts.isEmpty { Text("先新增帳戶，再加入對應的 Key。").foregroundStyle(.secondary) }
+            }
+            if currentProvider["config"]["requires_daily_checkin"].boolean { AccountCheckinPanel(controller: checkins, providerID: id, api: store.api) }
+            AtlasLoadedMarker(name: "provider-overview-loaded").frame(height: 0)
         }
     }
     private var accountsContent: some View {
@@ -335,10 +385,7 @@ struct ProviderDetailView: View {
                 _ = try await store.mutate("/providers/config", body: .object(["provider_id": .string(id), "config": value])); if configuration == submitted { configuration = value }
             }
             if requiresCheckin {
-                HStack {
-                    Button("開啟簽到頁") { openHTTPS(checkinURL) }
-                    ActionButton(title: "標記今日已簽到") { _ = try await store.mutate("/checkins", body: .object(["provider_id": .string(id), "timezone": store.settings["timezone"]])) }
-                }
+                Button("查看各帳戶簽到狀態") { tab = "概覽" }
             }
         }
         }

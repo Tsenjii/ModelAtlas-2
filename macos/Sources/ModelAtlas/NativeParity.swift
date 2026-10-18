@@ -1,5 +1,6 @@
 import AppKit
 import AtlasCore
+import CryptoKit
 import SwiftUI
 
 // Separate opt-in process/data directory. The original 25-frame acceptance
@@ -211,12 +212,98 @@ import SwiftUI
             try await verifyComparison(store, chat: chat, foreign: foreign, output: output)
             stage = "native-chart-selection-and-retained-archive"
             try await verifyCharts(store, chat: chat, foreign: foreign, output: output, fixture: fixture)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(35), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "wire_counts": counts])
+            stage = "account-checkin-scope-retry-and-civil-date"
+            try await verifyAccountCheckins(store, chat: chat, output: output, fixture: fixture)
+            stage = "native-motion-and-reduced-motion"
+            try await verifyMotion(store, output: output)
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(39), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "account_checkin_scope": .bool(true), "checkin_retry_cancel": .bool(true), "native_motion": .bool(true), "reduced_motion": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
     }
     private static func require(_ value: @autoclosure () -> Bool) throws { guard value() else { throw AtlasError.invalidResponse } }
+    private static func verifyAccountCheckins(_ store: AtlasStore, chat: JSONValue, output: URL, fixture: String) async throws {
+        guard let api = store.api, let provider = store.providers.first(where: { $0.id == chat["provider_id"].string }) else { throw AtlasError.invalidResponse }
+        let before = try await fixtureJSON(fixture + "/fixture/parity-state")
+        let selected = store.selectedModel, session = store.sessionID, messages = store.messages, draft = store.draft
+        var config = provider["config"]; config["requires_daily_checkin"] = .bool(true); config["checkin_url"] = .string("https://example.com/checkin")
+        _ = try await store.mutate("/providers/config", body: .object(["provider_id": provider["id"], "config": config]))
+        _ = try await api.call("/checkins", method: "POST", body: .object(["provider_id": provider["id"], "timezone": .string(store.checkins.timezone)]))
+        store.checkins.refresh(using: api); try await wait { !store.checkins.pending && store.checkins.current != nil }
+        let rows = store.checkins.rows(providerID: provider.id) ?? []
+        try require(rows.count == 2 && rows.allSatisfy(\.pending))
+        try await capture(ProvidersView(store: store, initialFilter: "checkin"), output, "36-providers-checkin-pending-light", dark: false)
+        let lastGood = store.checkins.state?.accounts
+        let denied = try AtlasClient(baseURL: api.baseURL, token: "invalid-native-test-only-admin-token")
+        store.checkins.refresh(using: denied); try await wait { !store.checkins.pending }
+        try require(store.checkins.problem != nil && store.checkins.state?.accounts == lastGood)
+        store.checkins.refresh(using: api); store.checkins.cancel()
+        try await Task.sleep(nanoseconds: 30_000_000)
+        try require(!store.checkins.pending && store.checkins.state?.accounts == lastGood)
+        store.checkins.refresh(using: api); try await wait { !store.checkins.pending && store.checkins.problem == nil }
+        try await store.checkins.complete(rows[0], using: api)
+        try await store.checkins.complete(rows[0], using: api)
+        let partial = store.checkins.rows(providerID: provider.id) ?? []
+        try require(partial.count == 2 && partial.filter(\.pending).count == 1 && partial.first(where: { $0.id == rows[1].id })?.pending == true)
+        try await capture(ProviderDetailView(store: store, provider: provider), output, "37-account-checkin-overview-dark", dark: true, marker: "account-checkins-loaded")
+        try await store.checkins.complete(rows[1], using: api)
+        store.checkins.refresh(using: api); try await wait { !store.checkins.pending }
+        try require(store.checkins.rows(providerID: provider.id)?.allSatisfy({ !$0.pending && $0.completedAt != nil }) == true)
+        try await capture(ProvidersView(store: store, initialFilter: "checkin"), output, "39-checkin-filter-complete-light", dark: false)
+        let after = try await fixtureJSON(fixture + "/fixture/parity-state")
+        try require(before == after && store.selectedModel == selected && store.sessionID == session && store.messages == messages && store.draft == draft)
+    }
+    private static func verifyMotion(_ store: AtlasStore, output: URL) async throws {
+        guard let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }) else { throw AtlasError.invalidResponse }
+        let oldPreference = UserDefaults.standard.bool(forKey: "reduceInterfaceMotion"), oldWorkspace = store.workspace, oldSidebar = store.sidebarVisible
+        defer { UserDefaults.standard.set(oldPreference, forKey: "reduceInterfaceMotion"); store.sidebarVisible = oldSidebar; store.workspace = oldWorkspace }
+        let selected = store.selectedModel, session = store.sessionID, messages = store.messages, draft = store.draft
+        window.setContentSize(NSSize(width: 1200, height: 800)); window.makeKeyAndOrderFront(nil); window.makeFirstResponder(nil)
+        store.workspace = .providers; store.sidebarVisible = true
+        UserDefaults.standard.set(false, forKey: "reduceInterfaceMotion")
+        let systemReduced = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        try await wait { contains(window.contentView, systemReduced ? "motion-reduced" : "motion-standard") }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let directory = output.appendingPathComponent("motion", isDirectory: true); try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        var records: [JSONValue] = []
+        for (name, visible) in [("sidebar-close", false), ("sidebar-open", true)] {
+            let start = ProcessInfo.processInfo.systemUptime
+            var hashes = Set<String>()
+            for (index, ms) in [0, 40, 80, 120, 180, 280].enumerated() {
+                let remaining = start + Double(ms) / 1000 - ProcessInfo.processInfo.systemUptime
+                if remaining > 0 { try await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000)) }
+                let data = try motionFrame(window), file = "\(name)-\(index).png"
+                let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(); hashes.insert(hash)
+                try data.write(to: directory.appendingPathComponent(file))
+                records.append(.object(["file": .string(file), "elapsed_ms": .number((ProcessInfo.processInfo.systemUptime - start) * 1000), "sha256": .string(hash)]))
+                if index == 0 { store.sidebarVisible = visible }
+            }
+            if !systemReduced { try require(hashes.count >= 3) }
+        }
+        UserDefaults.standard.set(true, forKey: "reduceInterfaceMotion")
+        try await wait { contains(window.contentView, "motion-reduced") }
+        try await capture(SettingsView(store: store), output, "38-settings-reduced-motion-light", dark: false, marker: "motion-reduced")
+        window.makeKeyAndOrderFront(nil); window.makeFirstResponder(nil)
+        store.sidebarVisible = false
+        try await wait { !contains(window.contentView, "workspace-sidebar") }
+        try await Task.sleep(nanoseconds: 40_000_000)
+        let first = try motionFrame(window); try first.write(to: directory.appendingPathComponent("reduced-0.png"))
+        try await Task.sleep(nanoseconds: 160_000_000)
+        let last = try motionFrame(window); try last.write(to: directory.appendingPathComponent("reduced-1.png"))
+        try require(first == last)
+        let report: JSONValue = .object(["result": .string("PASS"), "system_reduced_motion": .bool(systemReduced), "normal_frames": .number(12), "reduced_frames": .number(2), "reduced_settled": .bool(true), "frames": .array(records)])
+        try JSONEncoder().encode(report).write(to: output.appendingPathComponent("motion.diagnostics.log"), options: .atomic)
+        try require(store.selectedModel == selected && store.sessionID == session && store.messages == messages && store.draft == draft)
+    }
+    private static func motionFrame(_ window: NSWindow) throws -> Data {
+        // Compare actual app content; WindowServer titlebar activation has its
+        // own animations and is outside the app's Reduce Motion transaction.
+        guard let root = window.contentView else { throw AtlasError.invalidResponse }
+        root.layoutSubtreeIfNeeded(); root.displayIfNeeded()
+        guard let bitmap = root.bitmapImageRepForCachingDisplay(in: root.bounds) else { throw AtlasError.invalidResponse }
+        root.cacheDisplay(in: root.bounds, to: bitmap)
+        guard let data = bitmap.representation(using: .png, properties: [:]), data.count > 10_000 else { throw AtlasError.invalidResponse }; return data
+    }
     private static func verifyCharts(_ store: AtlasStore, chat: JSONValue, foreign: JSONValue, output: URL, fixture: String) async throws {
         guard let api = store.api else { throw AtlasError.engineUnavailable }
         let before = try await fixtureJSON(fixture + "/fixture/parity-state")

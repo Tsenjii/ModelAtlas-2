@@ -66,6 +66,7 @@ jobs:
             macos/qa/**/ui/FAILURE.txt
             macos/qa/**/ui/failure-state.json
             macos/qa/**/parity-ui/*.png
+            macos/qa/**/parity-ui/motion/*.png
             macos/qa/**/parity-ui/native-parity.json
             macos/qa/**/parity-ui/FAILURE.txt
             macos/qa/**/parity-footprint.json

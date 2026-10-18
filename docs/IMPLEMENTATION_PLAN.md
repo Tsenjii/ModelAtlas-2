@@ -91,3 +91,7 @@ Routing/Fallback/Key auto rotation/HTTP gateway/Local API server/完整 remote c
 ## 委派
 主 session 負責架構、secret boundary、inference pipeline、整合與驗收。
 獨立 OpenCode sessions 處理 Domain/測試與建置環境；優先使用使用者指定免費模型，Muse Spark effort=xhigh，其餘嘗試 max。絕不傳遞使用者 API key。
+
+## 2026-10-18 Mac 帳戶簽到與動畫
+
+MAC-PROVIDER-MOTION-011以已交付0.5.0／3529736九項與120圖為基線。完整scope、正式caller、v17保留資料升級、原生過場／Reduce Motion與新HEAD九項驗收見`../macos/PROVIDER_MOTION.md`；不改完整P1–P10目標與尚未驗收狀態。

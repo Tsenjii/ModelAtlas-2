@@ -1,5 +1,11 @@
 # ModelAtlas Public — TRACEABILITY
 
+## MAC-PROVIDER-MOTION-011（2026-10-18 候選）
+
+ProvidersView → ProviderDetailView概覽 → AccountCheckinPanel／AccountCheckinController → 正式GET／POST `/checkins/accounts`；來源MANUAL_COMPLETION、完整provider/account/date/timezone與v16→17加法式升級，legacy不借給帳戶。RootView／SettingsView／AtlasTabs／原生ButtonStyle／TrendChartView → AtlasMotion與有效Reduce Motion。
+
+新增AccountCheckinTests八項與Go五項HTTP／SQLite／通知測試；NativeParity正式caller驗A/B隔離、部分／全部完成、401 last-good與取消／重試、模型／對話／草稿與零額外fixture inference。四張新production畫面＋每架構14實際動畫frame，原54核心／120圖全保留，共62核心／64圖每架構，128圖＋28frame；新HEAD九項與圖審前PENDING。已交付010為3529736／Mac39105128601／VPS39105128591／Android39105128634九項SUCCESS、120圖。完整Master Spec仍PARTIAL。詳macos/PROVIDER_MOTION.md。
+
 ## MAC-CHARTS-010（2026-10-18 候選）
 
 Models → ModelDetailView → ModelPricingPanel／ModelPerformancePanel／ModelObservationHistory → TrendChartView／TrendPointer／ObservationArchiveController → 正式 `/models/observations`、`/models/detail`、`/telemetry/detail`。價格圖置頂，真時間／單位／零與缺值、滑鼠固定／鍵盤逐點、精確JSON與真收據；永久價格／觀測以固定snapshot的keyset分頁及全scope／來源／類型／時間查詢，不再把最近200筆當全部。詳細界線見 `macos/CHARTS.md`。

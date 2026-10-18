@@ -1,13 +1,18 @@
 import AppKit
 import AtlasCore
+import Combine
 import SwiftUI
 
-struct RootView: View {
+@MainActor struct RootView: View {
     @ObservedObject var store: AtlasStore
     @AppStorage("appearance") private var appearance = "system"
+    @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
+    @AppStorage("reduceInterfaceMotion") private var userReducedMotion = false
+    private var motion: AtlasMotion { AtlasMotion(reduced: systemReducedMotion || userReducedMotion) }
+    @Namespace private var sidebarSelection
     var body: some View {
         HSplitView {
-            if store.sidebarVisible { sidebar.frame(minWidth: 200, idealWidth: 216, maxWidth: 260).background(AtlasLoadedMarker(name: "workspace-sidebar")) }
+            if store.sidebarVisible { sidebar.frame(minWidth: 200, idealWidth: 216, maxWidth: 260).background(AtlasLoadedMarker(name: "workspace-sidebar")).transition(.move(edge: .leading).combined(with: .opacity)) }
             VStack(spacing: 0) {
                 if let problem = store.problem {
                     HStack(alignment: .top) {
@@ -21,15 +26,16 @@ struct RootView: View {
                     if store.booting { VStack(spacing: 18) { ProgressView(); Text("正在開啟工作區…").foregroundStyle(.secondary) }.frame(maxWidth: .infinity, maxHeight: .infinity) }
                     else { EmptyCard(icon: "externaldrive", title: "本機工作區", detail: "模型、對話與研究資料保存在這台 Mac。", action: "啟動") { Task { await store.bootstrap() } } }
                 } else {
-                    switch store.workspace {
+                    Group { switch store.workspace {
                     case .playground: ChatView(store: store)
                     case .providers: ProvidersView(store: store)
                     case .models: ModelsView(store: store)
-                    }
+                    } }.transition(.opacity).animation(motion.panel, value: store.workspace)
                 }
             }.frame(minWidth: 600).background(atlasCanvas)
         }
         .frame(minWidth: 900, minHeight: 620)
+        .animation(motion.sidebar, value: store.sidebarVisible)
         .environment(\.openURL, OpenURLAction { url in
             guard url.scheme == "https", url.user == nil, url.password == nil else { return .discarded }
             NSWorkspace.shared.open(url); return .handled
@@ -59,11 +65,15 @@ struct RootView: View {
         .atlasAppearance()
         .onAppear { applyNativeAppearance(appearance) }
         .onChange(of: appearance) { applyNativeAppearance($0) }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification).receive(on: RunLoop.main)) { _ in refreshCheckinDate() }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in refreshCheckinDate() }
+        .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange).receive(on: RunLoop.main)) { _ in refreshCheckinDate() }
         .disabled(store.closing)
         .overlay {
             if store.closing { ProgressView("正在儲存並關閉本機工作區…").padding(24).background(.regularMaterial).cornerRadius(14) }
         }
     }
+    private func refreshCheckinDate() { if let api = store.api, store.ready, !store.closing { store.checkins.refreshIfNeeded(using: api) } }
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
@@ -85,11 +95,13 @@ struct RootView: View {
                             if section == .providers { sidebarCount(store.providers.count) }
                             if section == .models { sidebarCount(store.activeModels.count) }
                         }.frame(maxWidth: .infinity, minHeight: 35, alignment: .leading).padding(.horizontal, 11)
-                            .background(store.workspace == section ? Color.primary.opacity(0.075) : Color.clear).cornerRadius(7)
+                            .background { if store.workspace == section { RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.075)).matchedGeometryEffect(id: "workspace-selection", in: sidebarSelection) } }
                             .foregroundStyle(Color.primary)
-                    }.buttonStyle(.plain).accessibilityIdentifier("nav-" + section.rawValue)
+                    }.buttonStyle(AtlasRowButtonStyle()).clipShape(RoundedRectangle(cornerRadius: 7)).accessibilityIdentifier("nav-" + section.rawValue)
+                        .accessibilityAddTraits(store.workspace == section ? .isSelected : [])
                 }
             }
+            .animation(motion.navigation, value: store.workspace)
             if store.ready {
                 Button { store.modelPickerOpen = true } label: {
                     HStack { Label("快速選擇模型", systemImage: "magnifyingglass"); Spacer(); Text("⌘K").font(.system(size: 10)).padding(3).background(Color.primary.opacity(0.035)).cornerRadius(4) }

@@ -1,5 +1,7 @@
 # ModelAtlas 原生 macOS App
 
+最新候選0.6.0（build11）：按帳戶每日簽到、Provider概覽／待簽到篩選、原生短過場與Reduce Motion，詳`PROVIDER_MOTION.md`。已交付基線0.5.0為3529736，九項SUCCESS／120圖已檢視。新候選仍須同HEAD九項、62核心／64圖每架構與動畫frame驗收；完整大綱仍PARTIAL。更新方式為退出App後以新版DMG取代應用程式，資料與Keychain沿用；v17升級及限制見該文件。
+
 SwiftUI／AppKit 原生介面，加上內建 Go／SQLite 本機引擎。沒有 WebView、Electron、常駐 Node 或外部 VPS 前置要求。與 Android／VPS 同 repo 分支維護；不把新 Mac 介面當成 Android phase 已完成。
 
 ## 完整產品範圍與0.2.1候選

@@ -40,4 +40,4 @@ private struct AtlasAppearance: ViewModifier {
         content.environment(\.atlasAccentChoice, choice).tint(choice.color).accentColor(choice.color)
     }
 }
-extension View { func atlasAppearance() -> some View { modifier(AtlasAppearance()) } }
+extension View { func atlasAppearance() -> some View { modifier(AtlasAppearance()).atlasMotionPreferences() } }

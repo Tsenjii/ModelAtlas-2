@@ -235,6 +235,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /onboarding/import", s.batchImport)
 	api.HandleFunc("GET /checkins", s.listCheckins)
 	api.HandleFunc("POST /checkins", s.completeCheckin)
+	api.HandleFunc("GET /checkins/accounts", s.accountCheckinsHTTP)
+	api.HandleFunc("POST /checkins/accounts", s.completeAccountCheckin)
 	api.HandleFunc("GET /notifications", s.notificationsHTTP)
 	api.HandleFunc("POST /notifications/seen", s.seenNotifications)
 	api.HandleFunc("GET /settings", s.getSettings)

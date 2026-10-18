@@ -11,7 +11,7 @@ root = pathlib.Path(qa)
 out = root / "parity-ui"
 out.mkdir(parents=True, exist_ok=True)
 peaks = {"app_rss_bytes": 0, "engine_rss_bytes": 0, "combined_rss_bytes": 0, "samples": 0,
-         "method": "ps RSS; separate packaged native app and owned engine; real TLS media, management, versions, evidence, safe refs, adaptive composer, sidebar, scoped prices, quota pools, telemetry trends, live comparison, appearance choices and thirty-five native captures"}
+         "method": "ps RSS; separate packaged native app and owned engine; real TLS media, management, versions, evidence, safe refs, adaptive composer, sidebar, scoped prices, quota pools, telemetry trends, live comparison, appearance choices and thirty-nine native captures"}
 with (root / "parity-app.log").open("w") as log:
     process = subprocess.Popen([str(pathlib.Path(app) / "Contents/MacOS/ModelAtlas"), "--smoke-dir", str(out),
                                 "--fixture-url", fixture, "--parity-smoke"], stdout=log, stderr=log)
@@ -43,7 +43,7 @@ with (root / "parity-app.log").open("w") as log:
 report = out / "native-parity.json"
 assert report.exists(), (out / "FAILURE.txt").read_text() if (out / "FAILURE.txt").exists() else "Native parity did not finish"
 value = json.loads(report.read_text())
-assert value["result"] == "PASS" and value["screenshots"] == 35, value
+assert value["result"] == "PASS" and value["screenshots"] == 39, value
 for field in ["real_tls_media", "batch_confirm_undo", "stale_guards", "connector_caller", "knowledge_versions", "manual_evidence", "safe_references", "retained_history", "native_composer", "adaptive_composer", "composer_focus", "sidebar_toggle", "price_scope_guards"]:
     assert value[field], field
 for field in ["native_intelligence", "telemetry_trends", "quota_scope_guards", "read_only_no_inference"]:
@@ -52,7 +52,12 @@ for field in ["native_comparison", "comparison_receipts", "comparison_scope_guar
     assert value[field], field
 for field in ["chart_keyboard_selection", "observation_archive", "chart_receipt_identity", "chart_export_exact"]:
     assert value[field], field
-assert len(list(out.glob("*.png"))) == 35
+for field in ["account_checkin_scope", "checkin_retry_cancel", "native_motion", "reduced_motion"]:
+    assert value[field], field
+assert len(list(out.glob("*.png"))) == 39
+assert len(list((out / "motion").glob("*.png"))) == 14
+motion = json.loads((out / "motion.diagnostics.log").read_text())
+assert motion["result"] == "PASS" and motion["reduced_settled"] and motion["normal_frames"] == 12 and motion["reduced_frames"] == 2
 assert peaks["app_rss_bytes"] > 0 and peaks["engine_rss_bytes"] > 0 and peaks["samples"] >= 3
 ids = json.loads((out / "measurement-pids.json").read_text())
 child = subprocess.run(["ps", "-o", "pid=", "-p", str(int(ids["engine_pid"]))], capture_output=True, text=True)

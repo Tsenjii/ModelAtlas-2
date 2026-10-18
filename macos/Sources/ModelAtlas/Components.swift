@@ -81,10 +81,13 @@ struct AtlasRowButtonStyle: ButtonStyle {
     private struct Row: View {
         let configuration: ButtonStyleConfiguration
         @State private var hovering = false
+        @Environment(\.atlasMotion) private var motion
         var body: some View {
             configuration.label.contentShape(Rectangle())
                 .background(Color.primary.opacity(configuration.isPressed ? 0.09 : hovering ? 0.035 : 0))
                 .onHover { hovering = $0 }
+                .animation(motion.feedback, value: hovering)
+                .animation(motion.feedback, value: configuration.isPressed)
         }
     }
 }
@@ -149,6 +152,7 @@ struct AtlasActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     @Environment(\.colorScheme) private var scheme
     @Environment(\.atlasAccentChoice) private var accent
+    @Environment(\.atlasMotion) private var motion
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.system(size: 12, weight: .medium))
             .padding(.horizontal, 12).padding(.vertical, 6)
@@ -156,6 +160,7 @@ struct AtlasActionStyle: ButtonStyle {
             .background(prominent ? accent.color : atlasSurface).cornerRadius(7)
             .overlay(RoundedRectangle(cornerRadius: 7).stroke(prominent ? Color.clear : atlasHairline, lineWidth: 0.5))
             .opacity(enabled ? (configuration.isPressed ? 0.7 : 1) : 0.45)
+            .animation(motion.feedback, value: configuration.isPressed)
     }
 }
 
@@ -169,6 +174,8 @@ struct AtlasTab: Identifiable {
 struct AtlasTabs: View {
     @Binding var selection: String
     let items: [AtlasTab]
+    @Environment(\.atlasMotion) private var motion
+    @Namespace private var underline
     var body: some View {
         HStack(spacing: 20) {
             ForEach(items) { item in
@@ -178,11 +185,14 @@ struct AtlasTabs: View {
                         Text(item.title).font(.system(size: 12, weight: selection == item.id ? .semibold : .medium)).lineLimit(1)
                     }.padding(.horizontal, 2).frame(height: 37)
                         .foregroundStyle(selection == item.id ? Color.primary : Color.secondary)
-                        .overlay(alignment: .bottom) { Capsule().fill(selection == item.id ? Color.primary : Color.clear).frame(height: 2) }
+                        .overlay(alignment: .bottom) {
+                            if selection == item.id { Capsule().fill(Color.primary).frame(height: 2).matchedGeometryEffect(id: "selection", in: underline) }
+                        }
                 }.buttonStyle(.plain).accessibilityAddTraits(selection == item.id ? .isSelected : [])
             }
             Spacer(minLength: 0)
         }.frame(maxWidth: .infinity).overlay(alignment: .bottom) { Rectangle().fill(atlasHairline).frame(height: 0.5) }
+            .animation(motion.navigation, value: selection)
     }
 }
 
@@ -191,6 +201,7 @@ struct AtlasFilterChip: View {
     var icon = ""
     var selected = false
     let action: () -> Void
+    @Environment(\.atlasMotion) private var motion
     var body: some View {
         Button(action: action) {
             HStack(spacing: 5) { if !icon.isEmpty { Image(systemName: icon) }; Text(title) }
@@ -198,6 +209,7 @@ struct AtlasFilterChip: View {
                 .foregroundStyle(selected ? Color.primary : Color.secondary)
                 .background(selected ? Color.primary.opacity(0.07) : Color.clear).cornerRadius(6)
         }.buttonStyle(AtlasRowButtonStyle())
+            .animation(motion.feedback, value: selected)
     }
 }
 

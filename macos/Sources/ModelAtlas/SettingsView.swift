@@ -9,6 +9,10 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("appearance") private var appearance = "system"
     @AppStorage("workspaceAccent") private var accent = "graphite"
+    @AppStorage("reduceInterfaceMotion") private var reduceInterfaceMotion = false
+    @Environment(\.atlasMotion) private var motion
+    @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
+    @Namespace private var settingsSelection
     @State private var tab = "一般"
     @State private var timezone = "Asia/Taipei"
     @State private var performance = "7d"
@@ -43,7 +47,7 @@ struct SettingsView: View {
             interval = store.settings["background"]["interval_minutes"].display; maxScopes = store.settings["background"]["max_scopes"].display
             rules = store.settings["notification_rules"]; quotaThreshold = rules["quota_remaining_below"].display
             if let api = store.api { notificationRecords = (try? await api.get("/notifications").requiredArray()) ?? [] }
-        }
+        }.animation(motion.panel, value: tab)
     }
     private var settingsContent: some View {
         Group {
@@ -81,12 +85,13 @@ struct SettingsView: View {
                         Image(systemName: ["一般":"slider.horizontal.3", "服務":"key", "資料":"externaldrive", "研究":"globe", "請求紀錄":"clock", "通知":"bell"][item]!).frame(width: 17).foregroundStyle(tab == item ? atlasTextAccent : Color.secondary)
                         Text(item).font(.system(size: 12, weight: tab == item ? .semibold : .regular))
                         Spacer(minLength: 0)
-                    }.padding(.horizontal, 10).frame(height: 35).background(tab == item ? atlasSurface : Color.clear).cornerRadius(7)
+                    }.padding(.horizontal, 10).frame(height: 35)
+                        .background { if tab == item { RoundedRectangle(cornerRadius: 7).fill(atlasSurface).matchedGeometryEffect(id: "settings-selection", in: settingsSelection) } }
                 }.buttonStyle(.plain)
             }
             Spacer()
-            Text("ModelAtlas").font(.system(size: 10)).foregroundStyle(.tertiary).padding(10)
-        }.padding(12).frame(width: 150).frame(maxHeight: .infinity).background(atlasSidebar)
+            Text("ModelAtlas " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")).font(.system(size: 10)).foregroundStyle(.tertiary).padding(10)
+        }.padding(12).frame(width: 150).frame(maxHeight: .infinity).background(atlasSidebar).animation(motion.navigation, value: tab)
     }
     private var settingsSubtitle: String {
         ["一般":"讓工作區依照你的習慣運作。", "服務":"管理外部服務與安全金鑰。", "資料":"備份、匯出與管理本機資料。", "請求紀錄":"查看每次請求的結果與精確來源。", "通知":"掌握模型與供應商的重要變化。"][tab] ?? "探索與驗證新的模型來源。"
@@ -105,6 +110,9 @@ struct SettingsView: View {
                     }.labelsHidden().frame(width: 180).accessibilityIdentifier("settings-accent")
                 }
                 Text("外觀變更會立即套用並保留。").font(.caption).foregroundStyle(.secondary)
+                Divider()
+                Toggle("減少介面動態效果", isOn: $reduceInterfaceMotion).toggleStyle(.checkbox).accessibilityIdentifier("settings-reduced-motion")
+                Text(systemReducedMotion ? "已依照 macOS 設定減少動態效果。" : "減少面板與選取過場；也會遵循 macOS 的設定。").font(.caption).foregroundStyle(.secondary)
                 AtlasLoadedMarker(name: "appearance-" + accent).frame(height: 0)
             }
             AtlasCard {

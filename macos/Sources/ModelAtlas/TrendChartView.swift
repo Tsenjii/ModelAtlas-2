@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
     @State private var selectedID: String?
     @State private var hoveredID: String?
     @State private var exportProblem: String?
+    @Environment(\.atlasMotion) private var motion
     private var point: TrendPoint? { data.points.first { $0.id == (hoveredID ?? selectedID) } ?? data.points.last }
     private var activeIndex: Int? { data.points.firstIndex { $0.id == point?.id } }
     private func date(_ at: Double, seconds: Bool = false) -> String {
@@ -122,6 +123,7 @@ import UniformTypeIdentifiers
                         return true
                     })
                 }
+                .animation(motion.feedback, value: selectedID != nil)
             }.frame(height: 174).accessibilityHidden(true)
         }.padding(.trailing, 8)
     }

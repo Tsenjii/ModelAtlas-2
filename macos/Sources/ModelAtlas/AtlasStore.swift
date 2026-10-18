@@ -62,6 +62,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     @Published var requestReceipt: String?
     @Published var attaching = false
     let engine: EngineController
+    let checkins = AccountCheckinController()
     var api: AtlasClient?
     private var drafts: [String: String] = [:]
     private var loadRevision = 0
@@ -134,6 +135,7 @@ enum Workspace: String, CaseIterable, Identifiable {
         guard revision == loadRevision else { return }
         providers = try values.0.requiredArray(); accounts = try values.1.requiredArray(); credentials = try values.2.requiredArray()
         endpoints = try values.3.requiredArray(); settings = values.4; myModels = members
+        checkins.refresh(using: api)
         if sessionID == nil && !activeModels.contains(where: { ModelScope($0).id == scopeID }) { scopeID = activeModels.first.map { ModelScope($0).id } ?? "" }
         try await loadSessions()
     }
@@ -292,7 +294,7 @@ enum Workspace: String, CaseIterable, Identifiable {
             _ = try await api.call("/infer/cancel", method: "POST", body: body)
         } catch { problem = error.localizedDescription }
     }
-    func shutdown() async { closing = true; operation?.cancel(); await engine.stop(); ready = false }
+    func shutdown() async { closing = true; operation?.cancel(); checkins.cancel(); await engine.stop(); ready = false }
 
     func pickAttachments() {
         guard ready, !closing, !generating, !attaching, !hasPresentedSheet else { return }
