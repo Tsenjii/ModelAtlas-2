@@ -1,5 +1,7 @@
 # Mac 功能對齊驗收
 
+2026-10-18最新：011／0.6.0 `48ff43f` 九項SUCCESS、70核心／136靜態圖與28 frame已驗收交付。012接續帳戶／Key工作區，並以 `../docs/CROSS_PLATFORM_STRENGTHS.md` 持續保留其他平台優點；詳 `PROVIDER_MANAGEMENT.md`。新HEAD的九項／78核心／146實圖與28 frame前仍候選，完整Master Spec為PARTIAL。下方為歷史紀錄。
+
 2026-10-18最新：010／0.5.0已由3529736九項SUCCESS／120圖驗收交付；011／0.6.0現正補帳戶簽到、Provider概覽、原生過場與Reduce Motion，詳`PROVIDER_MOTION.md`。新HEAD九項／62核心／64圖每架構與動畫frame前為候選；完整Master Spec仍PARTIAL。
 
 2026-10-18 最新進度：跨平台既有入口對齊006後已逐片驗收至009／0.4.0（52d5bfd，九項SUCCESS／110圖）；以下表格是006當時的原始工作表。010現正增加原生互動圖表與完整觀測分頁，詳 `CHARTS.md`；原始完整需求仍以 `MASTER_SCOPE.md` 為PARTIAL，不因既有API入口存在而宣稱全需求完成。

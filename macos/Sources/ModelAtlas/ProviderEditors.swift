@@ -1,12 +1,6 @@
 import AtlasCore
 import SwiftUI
 
-struct SecretFieldDraft: Identifiable, Equatable {
-    let id = UUID()
-    var name = "", secret = "", query = false
-    var json: JSONValue { .object(["name": .string(name), "secret": .string(secret), "query": .bool(query)]) }
-}
-
 struct SecretFieldsEditor: View {
     @Binding var rows: [SecretFieldDraft]
     var body: some View {
@@ -56,7 +50,7 @@ struct CredentialMetadataEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { Text("Key 顯示與優先序").font(.title2.weight(.semibold)); Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction) }
-            Text(credential["provider_id"].string + " · " + credential["account_id"].string + " · " + credential["id"].string).font(.caption).textSelection(.enabled)
+            Text(store.providerName(credential["provider_id"].string) + " · " + ConnectionLabels.credential(credential, accounts: store.accounts)).font(.callout).foregroundStyle(.secondary)
             Text("綁定來源：" + credential["base_url"].string).font(.callout).textSelection(.enabled)
             FormField(title: "顯示名稱", text: $label); FormField(title: "備註", text: $note); FormField(title: "優先序（0–1000）", text: $priority); Toggle("啟用", isOn: $enabled)
             ActionButton(title: "預覽變更") {

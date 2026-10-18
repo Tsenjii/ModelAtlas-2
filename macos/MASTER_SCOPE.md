@@ -1,5 +1,7 @@
 # ModelAtlas 完整產品範圍與 Mac 驗收界線
 
+2026-10-18目前唯一live為012／0.6.1 build12帳戶／Key管理候選，詳 `PROVIDER_MANAGEMENT.md`。011的48ff43f已九項全綠、136圖／28frame檢視與0.6.0交付。依使用者要求新增 `../docs/CROSS_PLATFORM_STRENGTHS.md`，保留VPS／Android優點並持續補齊；不將本片擴稱全大綱完成。新HEAD須九項／78核心／146圖／28frame；以下早期狀態為歷史。
+
 - **0.6.0 build11候選修復：** 使用者三張實圖與HJMAPI實際回應優先；公開資料自動讀取、v0 schema、公告、站方曲線／群組／單位與實際502來源、連線可讀操作。70核心／136靜態圖＋28frame與九項新HEAD驗收前未交付；私人未知版本及完整大綱仍PARTIAL。詳../docs/HJMAPI_COMPATIBILITY.md。
 
 目前唯一live為 **MAC-PROVIDER-MOTION-011／0.6.0 build11候選**，詳`PROVIDER_MOTION.md`。010已由3529736與Mac39105128601／VPS39105128591／Android39105128634九項、120圖驗收交付0.5.0。此片增加按帳戶的每日簽到／待簽到篩選、Provider概覽與短原生動態／Reduce Motion；須新HEAD九項、62核心／64圖每架構及動畫frame審查。完整大綱仍PARTIAL；下方為歷史界線。

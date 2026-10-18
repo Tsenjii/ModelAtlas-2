@@ -1,5 +1,13 @@
 # ModelAtlas Public — TRACEABILITY
 
+## MAC-PROVIDER-012（2026-10-18 候選）
+
+Providers → ProviderDetailView → ProviderAccountsView／新增帳戶與Key表單／CredentialRow → ProviderWriteController → 正式 `/accounts`、`/credentials`、`/credentials/toggle`、`/credentials/rotate`。AtlasStore按Provider保留工作區，跨分區／關閉重開仍共用帳戶lease與草稿；只在記憶體。ProviderManagement核心持有完整identity、已知enabled的精確bulk、快照、正確role／固定origin與分開的秘密值／版本payload，保存後的新稿不被清除或重用已提交ID。
+
+保留原70核心與136靜態圖／28frame，新增8核心與5實際畫面；預期78核心／73圖每架構、146靜態圖，原25秒串流／1249字SHA256／閱讀位置／120秒parity不減。NativeParity驗真401、實際SQLite commit／版本、跨Provider及帳戶同Key ID、重複提交與另一帳戶操作、關閉後晚完成、新稿保留、刷新失敗後只讀重試及零Provider HTTP。新HEAD九項與實圖前PENDING。011已由48ff43f／Mac39112956833、VPS39112956835、Android39112956891九項及136實圖／28frame交付0.6.0。
+
+跨平台優點持續清單見 `CROSS_PLATFORM_STRENGTHS.md`；本片細節 `macos/PROVIDER_MANAGEMENT.md`。其餘管理／Research／Assistant／Reflection及完整Master Spec仍PARTIAL。以下候選狀態為歷史。
+
 - **MAC-PROVIDER-MOTION-011 實際站點修復候選：** HJMAPI五個公開介面已匿名核對200；v0公開schema／換行公告／站方根層series與時間窗／真上游狀態／公開與私人查詢分離／Catalog語意／捲動重置接入正式caller。新增8核心／4原生圖，最終70核心與68圖每架構；136靜態圖＋28frame與九項CI尚待修復HEAD驗收，不能用8c1824失敗候選或0.5綠燈代替。詳HJMAPI_COMPATIBILITY.md。
 
 ## MAC-PROVIDER-MOTION-011（2026-10-18 候選）

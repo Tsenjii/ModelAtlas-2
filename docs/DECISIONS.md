@@ -40,3 +40,8 @@
 - Mac預設石墨灰，中性色承載內容與清單；主要按鈕可在設定選石墨灰／跟隨macOS／鳶尾紫／靛藍，保留深淺色。只保存非敏感本機外觀偏好，不改引擎設定或排程。
 - 沿用現有SwiftUI／AppKit元件，參考官方實圖的資訊層級、分組、字級與互動；不增加WebView／Electron或外部UI依賴。
 - Android／VPS既有配色與未整合UI保持原狀；三工作區、scope／Unknown／last-good約束不變。
+
+## D-008：保留跨平台優點（2026-10-18 使用者明確更新）
+- 使用者要求繼續優化 Mac，並將其他平台做得更好的功能與操作保留、持續吸收，不能因跨平台外觀對齊而砍功能。
+- `CROSS_PLATFORM_STRENGTHS.md` 保存實際來源、Mac 狀態、未驗情境及下一步；每片接續先讀，按正式 caller／測試與實圖更新，不以 API 存在冒充流程完成。
+- Mac 仍優先，Android／VPS 現有優點不回退；完整 Master Spec／既有 retention、scope、Unknown、last-good 與全部安全／驗收約束繼續適用。

@@ -215,16 +215,12 @@ struct AddProviderView: View {
     @Environment(\.atlasMotion) private var motion
     @State private var tab = "概覽"
     @StateObject private var site: ProviderSiteController
-    init(store: AtlasStore, provider: JSONValue, initialTab: String = "概覽", site: ProviderSiteController? = nil) {
+    @StateObject private var writes: ProviderWriteController
+    init(store: AtlasStore, provider: JSONValue, initialTab: String = "概覽", site: ProviderSiteController? = nil, writes: ProviderWriteController? = nil) {
         self.store = store; self.provider = provider; checkins = store.checkins; _tab = State(initialValue: initialTab)
         _site = StateObject(wrappedValue: site ?? ProviderSiteController(providerID: provider["id"].string, origin: provider["base_url"].string))
+        _writes = StateObject(wrappedValue: writes ?? store.providerWorkspace(provider["id"].string))
     }
-    @State private var accountLabel = ""
-    @State private var keyLabel = ""
-    @State private var secret = ""
-    @State private var group = ""
-    @State private var accountID = ""
-    @State private var role = "INFERENCE"
     @State private var endpointID = ""
     @State private var endpointURL = ""
     @State private var endpointType = "CHAT_COMPLETIONS"
@@ -236,11 +232,6 @@ struct AddProviderView: View {
     @State private var configuration: JSONValue = .object([:])
     @State private var customHeaders = "{}"
     @State private var customPaths = "{}"
-    @State private var authFields: [SecretFieldDraft] = []
-    @State private var keyOrigin = ""
-    @State private var keyAuth = ""
-    @State private var keyNote = ""
-    @State private var keyPriority = "0"
     private var id: String { provider["id"].string }
     private var currentProvider: JSONValue { store.providers.first { $0["id"].string == id } ?? provider }
     private var providerAccounts: [JSONValue] { store.accounts.filter { $0["provider_id"].string == id } }
@@ -270,7 +261,6 @@ struct AddProviderView: View {
             requiresCheckin = configuration["requires_daily_checkin"].boolean; checkinURL = configuration["checkin_url"].string
             customHeaders = configuration["headers"] == .null ? "{}" : configuration["headers"].pretty
             customPaths = configuration["endpoints"] == .null ? "{}" : configuration["endpoints"].pretty
-            if accountID.isEmpty { accountID = providerAccounts.first?["id"].string ?? "" }
         }
     }
     private var overview: some View {
@@ -298,48 +288,7 @@ struct AddProviderView: View {
             AtlasLoadedMarker(name: "provider-overview-loaded").frame(height: 0)
         }
     }
-    private var accountsContent: some View {
-        VStack(spacing: 18) {
-            ForEach(providerAccounts, id: \.id) { account in
-                AtlasCard {
-                    Label(account["label"].string, systemImage: "person.crop.circle").font(.headline)
-                    HStack { ForEach([true, false], id: \.self) { enabled in ActionButton(title: enabled ? "啟用此帳戶全部 Key" : "停用此帳戶全部 Key") { let ids = store.credentials.filter { $0["provider_id"].string == id && $0["account_id"] == account["id"] }.map { $0["id"] }; guard !ids.isEmpty else { return }; _ = try await store.mutate("/credentials/toggle", body: .object(["provider_id": .string(id), "account_id": account["id"], "ids": .array(ids), "enabled": .bool(enabled)])) } } }
-                    ForEach(store.credentials.filter { $0["provider_id"].string == id && $0["account_id"].string == account["id"].string }, id: \.id) { credential in
-                        CredentialRow(store: store, credential: credential)
-                    }
-                }
-            }
-            AtlasCard {
-                Text("新增帳戶").font(.headline)
-                FormField(title: "帳戶名稱", text: $accountLabel)
-                ActionButton(title: "加入帳戶") {
-                    let submitted = accountLabel
-                    _ = try await store.mutate("/accounts", body: .object(["id": .string(UUID().uuidString.lowercased()), "provider_id": .string(id), "label": .string(submitted)]))
-                    if accountLabel == submitted { accountLabel = "" }
-                }
-            }
-            AtlasCard {
-                Text("新增 Key").font(.headline)
-                Picker("帳戶", selection: $accountID) { Text("選擇帳戶").tag(""); ForEach(providerAccounts, id: \.self) { Text($0["label"].string).tag($0["id"].string) } }
-                HStack { FormField(title: "Key 名稱", text: $keyLabel); FormField(title: "群組（選填）", text: $group) }
-                Picker("用途", selection: $role) { Text("模型推論").tag("INFERENCE"); Text("帳戶 PAT").tag("ACCOUNT_PAT") }
-                FormField(title: "秘密值", text: $secret, secure: true)
-                DisclosureGroup("來源與額外認證") {
-                    FormField(title: "綁定 Base URL（留空沿用目前供應商）", text: $keyOrigin)
-                    Picker("此 Key 認證方式", selection: $keyAuth) { Text("沿用供應商設定").tag(""); ForEach(["BEARER", "API_KEY", "CUSTOM_HEADER", "NONE"], id: \.self) { Text($0).tag($0) } }
-                    FormField(title: "備註", text: $keyNote); FormField(title: "優先序（0–1000）", text: $keyPriority)
-                    SecretFieldsEditor(rows: $authFields)
-                }
-                ActionButton(title: "儲存 Key") {
-                    let submitted = [accountID, keyLabel, secret, group, role, keyOrigin, keyAuth, keyNote, keyPriority], fields = authFields
-                    guard let priority = Int(keyPriority), (0...1000).contains(priority) else { throw DraftProblem("優先序需為 0–1000 的整數。") }
-                    _ = try await store.mutate("/credentials", body: .object(["id": .string(UUID().uuidString.lowercased()), "provider_id": .string(id), "account_id": .string(accountID), "label": .string(keyLabel), "secret": .string(secret), "group": .string(group), "role": .string(role), "base_url": .string(keyOrigin), "auth_mode": .string(keyAuth), "note": .string(keyNote), "priority": .number(Double(priority)), "auth_fields": .array(fields.map(\.json))]))
-                    if submitted == [accountID, keyLabel, secret, group, role, keyOrigin, keyAuth, keyNote, keyPriority], fields == authFields { secret = ""; authFields = []; keyLabel = "" }
-
-                }.disabled(accountID.isEmpty)
-            }
-        }
-    }
+    private var accountsContent: some View { ProviderAccountsView(store: store, writes: writes) }
     private var endpointsContent: some View {
         VStack(spacing: 18) {
             ForEach(store.endpoints.filter { $0["provider_id"].string == id }, id: \.self) { item in AtlasCard { Label(item["operation"].string, systemImage: "point.3.connected.trianglepath.dotted"); Text(item["url"].string).textSelection(.enabled).foregroundStyle(.secondary); Text(item["id"].string).font(.caption).foregroundStyle(.secondary) } }
@@ -393,41 +342,5 @@ struct AddProviderView: View {
             ProviderSiteView(controller: site, api: store.api, origin: currentProvider["base_url"].string)
             ProviderAccountDataView(store: store, providerID: id, manageCredentials: { tab = "帳戶與 Key" })
         }
-    }
-}
-
-struct CredentialRow: View {
-    @ObservedObject var store: AtlasStore
-    let credential: JSONValue
-    @State private var rotating = false
-    @State private var editing = false
-    @State private var secret = ""
-    @State private var version = ""
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "key.fill").foregroundStyle(atlasTextAccent)
-                VStack(alignment: .leading, spacing: 3) { Text(credential["label"].string.isEmpty ? "未命名 Key" : credential["label"].string).font(.callout.weight(.semibold)); Text(ConnectionLabels.role(credential["role"].string) + " · " + (credential["group"].string.isEmpty ? "未指定群組" : credential["group"].string)).font(.caption).foregroundStyle(.secondary) }
-                Spacer()
-                SmallBadge(text: credential["enabled"].boolean ? "已啟用" : "已停用", color: credential["enabled"].boolean ? atlasAccent : .secondary)
-                ActionButton(title: credential["enabled"].boolean ? "停用" : "啟用") {
-                    _ = try await store.mutate("/credentials/toggle", body: .object(["provider_id": credential["provider_id"], "account_id": credential["account_id"], "ids": .array([credential["id"]]), "enabled": .bool(!credential["enabled"].boolean)]))
-                }
-                Button("編輯…") { editing = true }
-                Button("更新…") { rotating.toggle() }
-            }
-            if rotating {
-                FormField(title: "新的秘密值", text: $secret, secure: true)
-                FormField(title: "或恢復指定版本（留空代表儲存新 Key）", text: $version)
-                ActionButton(title: "確認更新這個帳戶的 Key") {
-                    let submitted = [secret, version]
-                    var value: JSONValue = .object(["provider_id": credential["provider_id"], "account_id": credential["account_id"], "credential_id": credential["id"], "confirm": .bool(true), "secret": .string(secret)])
-                    if !version.isEmpty { guard let number = Int(version), number > 0 else { throw AtlasError.invalidJSON }; value["version"] = .number(Double(number)); value["secret"] = .string("") }
-                    _ = try await store.mutate("/credentials/rotate", body: value)
-                    if submitted == [secret, version] { secret = ""; version = ""; rotating = false }
-                }
-            }
-        }.padding(.vertical, 6)
-        .sheet(isPresented: $editing) { CredentialMetadataEditor(store: store, credential: credential).atlasModal(store) }
     }
 }

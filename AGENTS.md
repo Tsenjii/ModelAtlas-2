@@ -10,6 +10,7 @@
 4. Provider/Model/Pricing/Quota/FREE/UI/Assistant Research 領域必讀 `docs/PROVIDER_MODEL_INTELLIGENCE_CONTRACT.md`。
 5. Crawler/eligibility 必讀 `docs/RESEARCH_POLICY.md`。
 6. `docs/TRACEABILITY.md`、`docs/IMPLEMENTATION_PLAN.md`、相關 Kotlin production/tests。
+   跨平台接續亦讀 `docs/CROSS_PLATFORM_STRENGTHS.md`，保留各平台優點與尚未補齊情境。
 7. 同一 repo 最新 main code SHA、Actions build + device job；不能用文件「已測」取代目前 repo 的 CI。
 
 衝突時：本輪使用者明確指示 > `DECISIONS` 較新適用條目 > Intelligence 專門契約的已拍板內容 > `PRODUCT_SPEC` > Master Spec 原始提示詞 > implementation/status/historical docs。不能因摘要漏寫而刪除既有需求。

@@ -64,6 +64,7 @@ enum Workspace: String, CaseIterable, Identifiable {
     let engine: EngineController
     let checkins = AccountCheckinController()
     var api: AtlasClient?
+    private var providerWorkspaces: [String: ProviderWriteController] = [:]
     private var drafts: [String: String] = [:]
     private var loadRevision = 0
     private var historyRevision = 0
@@ -81,6 +82,12 @@ enum Workspace: String, CaseIterable, Identifiable {
     var selectedScope: ModelScope? { currentSession.map(ModelScope.init) ?? selectedModel.map(ModelScope.init) }
     var selectedSession: JSONValue? { currentSession }
     func providerName(_ id: String) -> String { providers.first { $0["id"].string == id }?["name"].string ?? id }
+    func providerWorkspace(_ id: String) -> ProviderWriteController {
+        if let saved = providerWorkspaces[id] { return saved }
+        let created = ProviderWriteController(providerID: id)
+        providerWorkspaces[id] = created
+        return created
+    }
     func scopeTitle(_ value: JSONValue) -> String {
         let s = ModelScope(value)
         let key = credentials.first { $0["provider_id"].string == s.providerID && $0["account_id"].string == s.accountID && $0["id"].string == s.credentialID }

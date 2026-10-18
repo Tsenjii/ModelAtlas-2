@@ -218,12 +218,121 @@ import SwiftUI
             try await verifyPublicSite(store, chat: chat, output: output, fixture: fixture)
             stage = "native-motion-and-reduced-motion"
             try await verifyMotion(store, output: output)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(43), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "account_checkin_scope": .bool(true), "checkin_retry_cancel": .bool(true), "native_motion": .bool(true), "reduced_motion": .bool(true), "public_site_auto_read": .bool(true), "provider_series_scope": .bool(true), "site_partial_retry": .bool(true), "connection_actions": .bool(true), "provider_window_restored": .bool(true), "wire_counts": counts])
+            stage = "native-provider-forms-writes-and-retained-drafts"
+            try await verifyProviderManagement(store, output: output, fixture: fixture)
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(48), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "account_checkin_scope": .bool(true), "checkin_retry_cancel": .bool(true), "native_motion": .bool(true), "reduced_motion": .bool(true), "public_site_auto_read": .bool(true), "provider_series_scope": .bool(true), "site_partial_retry": .bool(true), "connection_actions": .bool(true), "provider_window_restored": .bool(true), "provider_form_feedback": .bool(true), "provider_account_write_guards": .bool(true), "provider_next_draft": .bool(true), "credential_restore_scope": .bool(true), "saved_refresh_no_repost": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
     }
     private static func require(_ value: @autoclosure () -> Bool) throws { guard value() else { throw AtlasError.invalidResponse } }
+    private static func verifyProviderManagement(_ store: AtlasStore, output: URL, fixture: String) async throws {
+        guard let api = store.api else { throw AtlasError.engineUnavailable }
+        var checkpoint = "seed"
+        do {
+            let beforeWire = try await fixtureJSON(fixture + "/fixture/parity-state")
+            for providerID in ["manager", "manager-peer"] {
+                _ = try await api.call("/providers", method: "POST", body: .object(["id": .string(providerID), "name": .string(providerID == "manager" ? "連線管理 · 合成資料" : "另一站 · 合成資料"), "base_url": .string(fixture + "/v1"), "auth_mode": .string("BEARER")]))
+                for account in providerID == "manager" ? ["work", "personal"] : ["work"] {
+                    _ = try await api.call("/accounts", method: "POST", body: .object(["provider_id": .string(providerID), "id": .string(account), "label": .string(account == "work" ? "工作帳戶" : "個人帳戶")]))
+                    _ = try await api.call("/credentials", method: "POST", body: .object(["provider_id": .string(providerID), "account_id": .string(account), "id": .string("shared-key"), "label": .string("常用 Key"), "secret": .string("native-fixture-provider-key"), "group": .string(account == "work" ? "team" : "personal")]))
+                }
+            }
+            try await store.reload()
+            guard let provider = store.providers.first(where: { $0.id == "manager" }),
+                  let work = store.credentials.first(where: { $0["provider_id"].string == "manager" && $0["account_id"].string == "work" }),
+                  let personal = store.credentials.first(where: { $0["provider_id"].string == "manager" && $0["account_id"].string == "personal" }),
+                  let peer = store.credentials.first(where: { $0["provider_id"].string == "manager-peer" }) else { throw AtlasError.invalidResponse }
+            let selected = store.selectedScope, session = store.sessionID, messages = store.messages, draft = store.draft
+            let memberships = Dictionary(uniqueKeysWithValues: store.myModels.map { (ModelScope($0).id, $0["state"]) })
+            let writes = store.providerWorkspace("manager")
+            try require(writes === store.providerWorkspace("manager"))
+            let workID = try CredentialIdentity(work), personalID = try CredentialIdentity(personal)
+            try await capture(ProviderDetailView(store: store, provider: provider, initialTab: "帳戶與 Key", writes: writes), output, "44-account-key-workspace-light", dark: false, marker: "provider-accounts-ready")
+
+            checkpoint = "shared-account-lease-and-other-account"
+            let barrier = NativeWriteBarrier(); defer { barrier.release() }
+            let toggle = try ProviderManagementRequest.toggle(providerID: "manager", accountID: "work", credentials: [work], enabled: false)!
+            let pending = Task { await writes.perform(form: "account-work", accountID: "work", success: "工作帳戶的 Key 已停用。", write: { await barrier.wait(); return try await api.call("/credentials/toggle", method: "POST", body: toggle) }, refresh: { try await store.reload() }) }
+            try await wait { writes.busy(accountID: "work") }
+            var forbiddenRan = false
+            let duplicate = await writes.perform(form: "rotate-work", accountID: "work", success: "不可執行", write: { forbiddenRan = true; return try await api.call("/credentials/toggle", method: "POST", body: toggle) }, refresh: { try await store.reload() })
+            try require(!duplicate && !forbiddenRan && writes.busy(form: "account-work"))
+            await writes.toggle(store: store, accountID: "personal", credentials: [personal], enabled: false, form: personalID.id)
+            try require(store.credentials.first(where: { (try? CredentialIdentity($0)) == personalID })?["enabled"] == .bool(false))
+            try require(store.credentials.first(where: { (try? CredentialIdentity($0)) == workID })?["enabled"] == .bool(true))
+            await writes.toggle(store: store, accountID: "personal", credentials: store.credentials, enabled: true, form: personalID.id)
+            try require(writes.feedback[personalID.id]?.phase == .saved && writes.busy(accountID: "work"))
+            try await capture(ProviderDetailView(store: store, provider: provider, initialTab: "帳戶與 Key", writes: writes), output, "47-account-write-pending-light", dark: false, marker: "provider-accounts-ready")
+            // The actual old window is now closed; completing it must not alter
+            // another Provider's workspace or reopen a detail.
+            let replacement = store.providerWorkspace("manager-peer")
+            replacement.key.label = "另一個工作區的草稿"
+            barrier.release(); let committed = await pending.value
+            try require(committed && !writes.busy(accountID: "work") && replacement.feedback.isEmpty && replacement.key.label == "另一個工作區的草稿")
+            try require(store.credentials.first(where: { (try? CredentialIdentity($0)) == workID })?["enabled"] == .bool(false))
+            await writes.toggle(store: store, accountID: "work", credentials: store.credentials, enabled: true, form: "account-work")
+
+            checkpoint = "exact-key-update-and-version-restore"
+            var rotation = CredentialUpdateDraft(); rotation.secret = "changed-native-fixture-only"
+            writes.rotations[personalID.id] = rotation; writes.expandedRotations.insert(personalID.id)
+            await writes.update(personalID, store: store)
+            try require(writes.versions[personalID.id] == 2 && writes.rotations[personalID.id] == nil && !writes.expandedRotations.contains(personalID.id))
+            rotation.mode = "version"; rotation.version = "1"; rotation.secret = "must-never-be-sent-in-restore"
+            writes.rotations[personalID.id] = rotation; writes.expandedRotations.insert(personalID.id)
+            try await capture(ProviderAccountsView(store: store, writes: writes).padding(24).frame(width: 820, height: 720, alignment: .top), output, "46-key-version-restore-light", dark: false, marker: "provider-accounts-ready")
+            await writes.update(personalID, store: store)
+            try require(writes.versions[personalID.id] == 3 && writes.feedback[personalID.id]?.phase == .saved)
+            let db = store.engine.directory.appendingPathComponent("atlas.sqlite")
+            let personalVersions = try sqliteInteger(db, "SELECT COUNT(*) FROM credential_secret_versions WHERE provider_id='manager' AND account_id='personal' AND credential_id='shared-key'")
+            let foreignVersions = try sqliteInteger(db, "SELECT COUNT(*) FROM credential_secret_versions WHERE (provider_id='manager' AND account_id='work') OR provider_id='manager-peer'")
+            try require(personalVersions == 3 && foreignVersions == 0)
+
+            checkpoint = "new-account-and-real-failed-key-save"
+            writes.account.label = "研究帳戶"; let accountID = writes.account.id
+            await writes.addAccount(store: store)
+            try require(writes.feedback["new-account"]?.phase == .saved && writes.account.label.isEmpty && store.accounts.filter { $0["provider_id"].string == "manager" }.count == 3)
+            writes.key.accountID = accountID; writes.key.label = "研究用 Key"; writes.key.secret = "synthetic-new-credential-only"; writes.key.group = "research"
+            let submitted = writes.key
+            let body = try submitted.request(providerID: "manager", accounts: store.accounts, inheritedOrigin: provider["base_url"].string, inheritedAuth: "BEARER")
+            let denied = try AtlasClient(baseURL: api.baseURL, token: "invalid-native-test-only-admin-token")
+            let failed = await writes.perform(form: "new-key", accountID: accountID, success: "不可成功", write: { try await denied.call("/credentials", method: "POST", body: body) }, refresh: { try await store.reload() })
+            try require(!failed && writes.feedback["new-key"]?.phase == .failed && writes.key == submitted && !writes.busy(form: "new-key"))
+            try await capture(ProviderKeyEditorView(store: store, writes: writes), output, "45-key-save-retry-dark", dark: true, marker: "provider-key-editor-ready")
+
+            checkpoint = "commit-preserves-next-draft-and-refresh-failure"
+            let saveBarrier = NativeWriteBarrier(); defer { saveBarrier.release() }
+            let save = Task { await writes.perform(form: "new-key", accountID: accountID, success: "Key 已加入研究帳戶。", write: { await saveBarrier.wait(); return try await api.call("/credentials", method: "POST", body: body) }, committed: { _ in writes.key.committed(submitted) }, refresh: { throw AtlasError.http(503) }) }
+            try await wait { writes.busy(form: "new-key") }
+            writes.key.label = "下一份草稿"; writes.key.secret = "next-draft-synthetic-only"
+            await writes.saveKey(store: store)
+            saveBarrier.release(); let saved = await save.value
+            try require(saved && writes.feedback["new-key"]?.phase == .refreshNeeded && writes.key.label == "下一份草稿" && writes.key.secret == "next-draft-synthetic-only" && writes.key.id != submitted.id)
+            let persisted = try await api.get("/credentials").requiredArray()
+            try require(persisted.filter { $0["provider_id"].string == "manager" && $0["account_id"].string == accountID }.count == 1 && persisted.contains { $0["id"].string == submitted.id && $0["label"].string == "研究用 Key" })
+            try await capture(ProviderKeyEditorView(store: store, writes: writes), output, "48-key-saved-refresh-dark", dark: true, marker: "provider-key-editor-ready")
+            await writes.refresh(form: "new-key", store: store)
+            try require(writes.feedback["new-key"]?.phase == .saved && store.credentials.filter { $0["provider_id"].string == "manager" }.count == 3)
+            try require(store.credentials.first(where: { $0["provider_id"].string == "manager-peer" }) == peer)
+            try require(store.selectedScope == selected && store.sessionID == session && store.messages == messages && store.draft == draft)
+            try require(Dictionary(uniqueKeysWithValues: store.myModels.map { (ModelScope($0).id, $0["state"]) }) == memberships)
+            let afterWire = try await fixtureJSON(fixture + "/fixture/parity-state")
+            try require(afterWire == beforeWire)
+            let report: JSONValue = .object(["result": .string("PASS"), "shared_account_lease": .bool(true), "different_account_available": .bool(true), "repeated_write_rejected": .bool(true), "closed_workspace_preserved": .bool(true), "failed_draft_retained": .bool(true), "next_draft_retained": .bool(true), "saved_refresh_no_repost": .bool(true), "restore_exact_account": .bool(true), "zero_provider_http": .bool(true), "retained_conversation": .bool(true)])
+            try JSONEncoder().encode(report).write(to: output.appendingPathComponent("provider-management.diagnostics.log"), options: .atomic)
+        } catch {
+            try? JSONEncoder().encode(JSONValue.object(["result": .string("FAIL"), "checkpoint": .string(checkpoint)])).write(to: output.appendingPathComponent("provider-management.diagnostics.log"), options: .atomic)
+            throw error
+        }
+    }
+    private static func sqliteInteger(_ database: URL, _ query: String) throws -> Int {
+        let process = Process(), output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        process.arguments = ["-readonly", database.path, query]; process.standardOutput = output; process.standardError = Pipe()
+        try process.run(); let data = output.fileHandleForReading.readDataToEndOfFile(); process.waitUntilExit()
+        guard process.terminationStatus == 0, let value = Int(String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)) else { throw AtlasError.invalidResponse }
+        return value
+    }
     private static func verifyPublicSite(_ store: AtlasStore, chat: JSONValue, output: URL, fixture: String) async throws {
         guard let api = store.api, let provider = store.providers.first(where: { $0.id == chat["provider_id"].string }),
               let key = store.credentials.first(where: { $0["provider_id"] == chat["provider_id"] && $0["account_id"] == chat["account_id"] && $0["id"] == chat["credential_id"] }) else { throw AtlasError.invalidResponse }
@@ -680,6 +789,13 @@ import SwiftUI
         return nil
     }
     private static func contains(_ view: NSView?, _ marker: String) -> Bool { guard let view else { return false }; return view.identifier?.rawValue == marker || view.subviews.contains { contains($0, marker) } }
+}
+
+@MainActor private final class NativeWriteBarrier {
+    private var open = false
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+    func wait() async { if open { return }; await withCheckedContinuation { waiting.append($0) } }
+    func release() { open = true; let values = waiting; waiting = []; for value in values { value.resume() } }
 }
 
 private struct ParityFiltersPreview: View {
