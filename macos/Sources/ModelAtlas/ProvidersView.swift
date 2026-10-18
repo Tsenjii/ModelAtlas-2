@@ -407,7 +407,7 @@ struct CredentialRow: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "key.fill").foregroundStyle(atlasTextAccent)
-                VStack(alignment: .leading, spacing: 3) { Text(credential["label"].string.isEmpty ? credential["id"].string : credential["label"].string).font(.callout.weight(.semibold)); Text(credential["role"].string + " · " + (credential["group"].string.isEmpty ? "預設群組" : credential["group"].string)).font(.caption).foregroundStyle(.secondary) }
+                VStack(alignment: .leading, spacing: 3) { Text(credential["label"].string.isEmpty ? "未命名 Key" : credential["label"].string).font(.callout.weight(.semibold)); Text(ConnectionLabels.role(credential["role"].string) + " · " + (credential["group"].string.isEmpty ? "未指定群組" : credential["group"].string)).font(.caption).foregroundStyle(.secondary) }
                 Spacer()
                 SmallBadge(text: credential["enabled"].boolean ? "已啟用" : "已停用", color: credential["enabled"].boolean ? atlasAccent : .secondary)
                 ActionButton(title: credential["enabled"].boolean ? "停用" : "啟用") {

@@ -85,7 +85,7 @@ enum Workspace: String, CaseIterable, Identifiable {
         let s = ModelScope(value)
         let key = credentials.first { $0["provider_id"].string == s.providerID && $0["account_id"].string == s.accountID && $0["id"].string == s.credentialID }
         let account = accounts.first { $0["provider_id"].string == s.providerID && $0["id"].string == s.accountID }
-        return [providerName(s.providerID), account?["label"].string ?? s.accountID, key?["label"].string ?? s.credentialID, s.group.isEmpty ? "預設群組" : s.group].filter { !$0.isEmpty }.joined(separator: " · ")
+        return [providerName(s.providerID), account?["label"].string ?? s.accountID, key?["label"].string ?? s.credentialID, s.group.isEmpty ? "未指定群組" : s.group].filter { !$0.isEmpty }.joined(separator: " · ")
     }
     func operationName(_ value: JSONValue) -> String {
         let id = value["endpoint"].string

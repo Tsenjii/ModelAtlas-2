@@ -397,8 +397,14 @@ func installPublicSiteRoutes(mux *http.ServeMux) {
 			case "/api/perf-metrics/summary":
 				json.NewEncoder(w).Encode(map[string]any{"success": true, "data": map[string]any{"summary": map[string]any{"success_rate": 98.5, "avg_tps": 62.4, "avg_latency_ms": 1240}, "window_start": 1791705600, "window_end": 1792309328, "models": []any{map[string]any{"model_name": "native-fixture-chat", "success_rate": 98.5, "avg_tps": 62.4, "avg_latency_ms": 1240}}}})
 			case "/api/perf-metrics":
+				hours := int64(168)
+				if _, err := fmt.Sscan(r.URL.Query().Get("hours"), &hours); err != nil || hours < 1 || hours > 720 {
+					http.Error(w, "invalid window", 400)
+					return
+				}
+				windowEnd := int64(1792309328)
 				points := []any{map[string]any{"ts": 1791705600, "avg_ttft_ms": 220, "avg_latency_ms": 1250, "success_rate": 99, "avg_tps": 55.2}, map[string]any{"ts": 1791792000, "avg_ttft_ms": 180, "avg_latency_ms": 1100, "success_rate": 100, "avg_tps": 68.1}, map[string]any{"ts": 1791964800, "avg_ttft_ms": 320, "avg_latency_ms": 1410, "success_rate": 96.5, "avg_tps": 52.7}, map[string]any{"ts": 1792309200, "avg_ttft_ms": 195, "avg_latency_ms": 1170, "success_rate": 98.5, "avg_tps": 62.4}}
-				json.NewEncoder(w).Encode(map[string]any{"success": true, "data": map[string]any{"model_name": r.URL.Query().Get("model"), "series_schema": "dbcd0a3c01b55203", "summary": map[string]any{"success_rate": 98.5, "avg_tps": 62.4, "avg_latency_ms": 1240}, "series": points, "window_start": 1791705600, "window_end": 1792309328, "groups": []any{map[string]any{"group": "default", "avg_ttft_ms": 220, "avg_latency_ms": 1240, "success_rate": 98.5, "avg_tps": 62.4, "series": points}}}})
+				json.NewEncoder(w).Encode(map[string]any{"success": true, "data": map[string]any{"model_name": r.URL.Query().Get("model"), "series_schema": "dbcd0a3c01b55203", "summary": map[string]any{"success_rate": 98.5, "avg_tps": 62.4, "avg_latency_ms": 1240}, "series": points, "window_start": windowEnd - hours*3600, "window_end": windowEnd, "groups": []any{map[string]any{"group": "default", "avg_ttft_ms": 220, "avg_latency_ms": 1240, "success_rate": 98.5, "avg_tps": 62.4, "series": points}}}})
 			}
 		})
 	}

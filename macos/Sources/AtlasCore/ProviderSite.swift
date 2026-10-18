@@ -50,6 +50,7 @@ public struct ProviderSiteSnapshot: Sendable {
 }
 
 public enum ConnectionLabels {
+    public static func role(_ value: String) -> String { ["INFERENCE":"推論 Key", "ACCOUNT_PAT":"帳戶 PAT"][value] ?? "用途未提供" }
     public static func credential(_ key: JSONValue, accounts: [JSONValue]) -> String {
         let account = accounts.first { $0["provider_id"] == key["provider_id"] && $0["id"] == key["account_id"] }
         let name = account?["label"].string

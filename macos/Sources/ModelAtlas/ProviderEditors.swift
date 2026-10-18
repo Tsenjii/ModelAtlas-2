@@ -76,7 +76,7 @@ struct OnboardingScopeSummary: View {
         VStack(alignment: .leading, spacing: 9) {
             Label(review["account"]["label"].string, systemImage: "person.crop.circle").font(.callout)
             ForEach(review["credentials"].array, id: \.self) { credential in
-                Text([credential["label"].string, credential["role"].string, credential["group"].string.isEmpty ? "預設群組" : credential["group"].string].joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                Text([credential["label"].string, ConnectionLabels.role(credential["role"].string), credential["group"].string.isEmpty ? "未指定群組" : credential["group"].string].joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                 if !credential["base_url"].string.isEmpty { Text("綁定來源：" + credential["base_url"].string).font(.caption).foregroundStyle(.secondary) }
             }
             ForEach(review["endpoint_profiles"].array, id: \.self) { endpoint in Text(operationTitle(endpoint["operation"].string) + " · " + endpoint["url"].string).font(.caption).foregroundStyle(.secondary).textSelection(.enabled) }

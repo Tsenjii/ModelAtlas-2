@@ -161,7 +161,6 @@ struct SiteMetricValues: View {
     var origin: String? = nil
     @State private var group = ""
     @State private var metric = "avg_tps"
-    @State private var hours = 168
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             AtlasCard {
@@ -173,7 +172,7 @@ struct SiteMetricValues: View {
                     Spacer()
                     Button { refresh() } label: { Image(systemName: "arrow.clockwise") }.buttonStyle(.borderless).help("重新讀取站方效能").disabled(!controller.loading.isEmpty)
                 }
-                Picker("站方時間範圍", selection: $hours) { Text("1 天").tag(24); Text("7 天").tag(168); Text("30 天").tag(720) }.pickerStyle(.segmented)
+                Picker("站方時間範圍", selection: Binding(get: { controller.requestedHours }, set: { hours in if let api { controller.refresh(using: api, operations: ["performance"], hours: hours) } })) { Text("1 天").tag(24); Text("7 天").tag(168); Text("30 天").tag(720) }.pickerStyle(.segmented)
                 ProviderReadState(controller: controller, operation: "performance", retry: refresh)
                 if let snapshot = controller.values["performance"] { performance(snapshot) }
                 else if controller.didLoad && controller.loading.isEmpty && controller.problems["performance"] == nil { Text("站點尚未提供這個模型的效能資料。").foregroundStyle(.secondary) }
@@ -183,10 +182,9 @@ struct SiteMetricValues: View {
             group = selectedGroup
             if let api { controller.refreshIfNeeded(using: api, operations: ["performance"]) }
         }
-        .onChange(of: hours) { _ in refresh() }
         .onDisappear { controller.cancel() }
     }
-    private func refresh() { if let api { controller.refresh(using: api, operations: ["performance"], hours: hours) } }
+    private func refresh() { if let api { controller.refresh(using: api, operations: ["performance"], hours: controller.requestedHours) } }
     @ViewBuilder private func performance(_ snapshot: ProviderSiteSnapshot) -> some View {
         Picker("參考群組", selection: $group) {
             Text("全部群組 · 站方整體統計").tag("")

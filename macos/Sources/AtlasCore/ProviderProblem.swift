@@ -18,6 +18,16 @@ public struct ProviderProblem: Error, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch code {
         case "UPSTREAM_HTTP":
+            if operation == "inference" {
+                switch upstreamStatus {
+                case 400: return "站點未接受這次模型請求（HTTP 400）。請查看收據，核對模型與對話設定。"
+                case 401: return "這把 Key 未通過站點驗證（HTTP 401）。請確認 Key 是否有效，以及是否屬於目前的站點。"
+                case 402: return "站點要求確認付費或可用額度（HTTP 402）。請在官網檢查這個帳戶與 Key 的餘額。"
+                case 403: return "站點不允許這把 Key 使用目前的模型或群組（HTTP 403）。請在官網確認權限。"
+                case 404: return "站點找不到這個模型或端點（HTTP 404）。請核對模型 ID、Key 群組與 API 位址。"
+                default: break
+                }
+            }
             switch upstreamStatus {
             case 401, 403: return "站點拒絕這項查詢（HTTP \(upstreamStatus)）。公開資料與帳戶 PAT 的權限可能不同。"
             case 404, 405: return "這個站點未提供此資料介面（HTTP \(upstreamStatus)）。其他已讀取的資料仍會保留。"

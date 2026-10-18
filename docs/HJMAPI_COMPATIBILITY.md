@@ -42,3 +42,5 @@ b6558df的Universal與arm64全流程、70核心／68圖／14frame通過，四張
 Android device的966測試中有一項PK27在Room／IO worker觸發Choreographer無Looper；trace顯示Compose預設UnconfinedTestDispatcher內的frame traversal在發射執行緒續行。依[AndroidX正式測試context契約](https://android.googlesource.com/platform/frameworks/support/+/edd8bafb328feda384a1048242a66d77f12b6699/compose/ui/ui-test/src/androidMain/kotlin/androidx/compose/ui/test/ComposeUiTest.android.kt)，只為該測試rule提供StandardTestDispatcher並加入同版本1.10.1的androidTest依賴；不改Android產品UI／VM、15秒上限、任何斷言或測試數。新HEAD須重跑完整九項。
 
 arm64當次系統Reduce Motion為true，動畫frame因此驗證的是系統減少動態與本機偏好行為；不將其宣稱為已觀察到正常模式的連續動畫。
+
+時間範圍由ProviderSiteController保留，返回效能頁時選項與資料仍維持原查詢；NativeParity另驗720小時查詢跨View重建仍一致，fixture亦回傳匹配的實際時間窗。空群組明示「未指定群組」，不冒充站點的default群組；Key用途顯示推論Key／帳戶PAT。聊天的401／402／403／404分別說明驗證、付費或額度、權限與模型／端點核對，不混用私人資料查詢的說明。

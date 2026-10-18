@@ -10,6 +10,7 @@ import SwiftUI
     @Published private(set) var problems: [String: String] = [:]
     @Published private(set) var loading = Set<String>()
     @Published private(set) var didLoad = false
+    @Published private(set) var requestedHours = 168
     private var task: Task<Void, Never>?
     private var revision = 0
     init(providerID: String, modelID: String = "", origin: String? = nil) { self.providerID = providerID; self.modelID = modelID; self.origin = origin }
@@ -17,9 +18,14 @@ import SwiftUI
         guard self.origin != origin else { return }
         cancel(); values = [:]; problems = [:]; didLoad = false; self.origin = origin
     }
-    func cancel() { revision += 1; task?.cancel(); task = nil; loading = [] }
-    func refreshIfNeeded(using api: AtlasClient, operations: [String]) { if !didLoad && loading.isEmpty { refresh(using: api, operations: operations) } }
+    func cancel() {
+        let interrupted = !loading.isEmpty
+        revision += 1; task?.cancel(); task = nil; loading = []
+        if interrupted { didLoad = false }
+    }
+    func refreshIfNeeded(using api: AtlasClient, operations: [String]) { if !didLoad && loading.isEmpty { refresh(using: api, operations: operations, hours: requestedHours) } }
     func refresh(using api: AtlasClient, operations: [String], hours: Int = 168) {
+        if operations.contains("performance") || operations.contains("summary") { requestedHours = hours }
         cancel(); let ticket = revision; loading = Set(operations)
         for name in operations { problems.removeValue(forKey: name) }
         task = Task { [weak self] in

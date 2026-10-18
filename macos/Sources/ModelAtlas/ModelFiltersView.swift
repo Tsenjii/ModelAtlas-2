@@ -17,7 +17,7 @@ struct ModelFiltersView: View {
                         Text("全部我的 Key").tag("")
                         ForEach(store.credentials.filter { $0["role"].string == "INFERENCE" }, id: \.self) { key in Text(keyLabel(key)).tag(JSONValue.array([key["provider_id"], key["account_id"], key["id"]]).pretty) }
                     }
-                    Picker("群組", selection: $filters.group) { Text("全部群組").tag(""); ForEach(Array(Set(store.myModels.map { $0["group"].string.isEmpty ? "__DEFAULT__" : $0["group"].string })).sorted(), id: \.self) { Text($0 == "__DEFAULT__" ? "預設群組" : $0).tag($0) } }
+                    Picker("群組", selection: $filters.group) { Text("全部群組").tag(""); ForEach(Array(Set(store.myModels.map { $0["group"].string.isEmpty ? "__DEFAULT__" : $0["group"].string })).sorted(), id: \.self) { Text($0 == "__DEFAULT__" ? "未指定群組" : $0).tag($0) } }
                     choice("類別", value: $filters.category, options: ["CHAT_REASONING", "CODING", "IMAGE", "AUDIO", "EMBEDDING", "RERANK", "SAFETY", "OTHER"])
                     choice("已確認能力", value: $filters.capability, options: ["VISION", "FILES", "AUDIO_INPUT", "AUDIO_OUTPUT", "IMAGE_GENERATION", "IMAGE_EDITING", "CODING", "REASONING", "TOOL_CALLING", "FUNCTION_CALLING", "STRUCTURED_OUTPUT", "JSON_MODE", "EMBEDDING", "RERANK", "WEB_SEARCH", "COMPUTER_USE", "LONG_CONTEXT", "SAFETY", "OTHER"])
                     choice("模態", value: $filters.modality, options: ["TEXT_INPUT", "TEXT_OUTPUT", "IMAGE_INPUT", "IMAGE_OUTPUT", "AUDIO_INPUT", "AUDIO_OUTPUT", "FILE_INPUT"])

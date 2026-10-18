@@ -52,7 +52,7 @@ for field in ["native_comparison", "comparison_receipts", "comparison_scope_guar
     assert value[field], field
 for field in ["chart_keyboard_selection", "observation_archive", "chart_receipt_identity", "chart_export_exact"]:
     assert value[field], field
-for field in ["account_checkin_scope", "checkin_retry_cancel", "native_motion", "reduced_motion", "public_site_auto_read", "provider_series_scope", "site_partial_retry", "connection_actions"]:
+for field in ["account_checkin_scope", "checkin_retry_cancel", "native_motion", "reduced_motion", "public_site_auto_read", "provider_series_scope", "site_partial_retry", "connection_actions", "provider_window_restored"]:
     assert value[field], field
 assert len(list(out.glob("*.png"))) == 43
 assert len(list((out / "motion").glob("*.png"))) == 14

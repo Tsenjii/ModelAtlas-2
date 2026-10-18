@@ -56,6 +56,9 @@ final class ProviderSiteTests: XCTestCase {
         var bad = raw; bad["error"]["code"] = .string("never-show-this-secret"); XCTAssertNil(ProviderProblem(bad))
         bad = raw; bad["error"]["upstream_status"] = .number(-1); XCTAssertNil(ProviderProblem(bad))
         XCTAssertTrue(InferenceFailure.message(.object(["http_status": .number(503), "category": .string("anything")])).contains("503"))
+        XCTAssertTrue(InferenceFailure.message(.object(["http_status": .number(402)])).contains("額度"))
+        XCTAssertTrue(InferenceFailure.message(.object(["http_status": .number(404)])).contains("模型"))
+        XCTAssertFalse(InferenceFailure.message(.object(["http_status": .number(401)])).contains("PAT"))
     }
     func testConnectionLabelsResolveAccountNameWithinExactProvider() throws {
         let accounts: [JSONValue] = [.object(["provider_id": .string("q"), "id": .string("same"), "label": .string("另一站帳戶")]), .object(["provider_id": .string("p"), "id": .string("same"), "label": .string("主要帳戶")])]
