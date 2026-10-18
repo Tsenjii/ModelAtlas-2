@@ -302,7 +302,8 @@ import SwiftUI
 
             checkpoint = "commit-preserves-next-draft-and-refresh-failure"
             let saveBarrier = NativeWriteBarrier(); defer { saveBarrier.release() }
-            let save = Task { await writes.perform(form: "new-key", accountID: accountID, success: "Key 已加入研究帳戶。", write: { await saveBarrier.wait(); return try await api.call("/credentials", method: "POST", body: body) }, committed: { _ in writes.key.committed(submitted) }, refresh: { throw AtlasError.http(503) }) }
+            var savedPosts = 0
+            let save = Task { await writes.perform(form: "new-key", accountID: accountID, success: "Key 已加入研究帳戶。", write: { await saveBarrier.wait(); savedPosts += 1; return try await api.call("/credentials", method: "POST", body: body) }, committed: { _ in writes.key.committed(submitted) }, refresh: { throw AtlasError.http(503) }) }
             try await wait { writes.busy(form: "new-key") }
             writes.key.label = "下一份草稿"; writes.key.secret = "next-draft-synthetic-only"
             await writes.saveKey(store: store)
@@ -312,7 +313,7 @@ import SwiftUI
             try require(persisted.filter { $0["provider_id"].string == "manager" && $0["account_id"].string == accountID }.count == 1 && persisted.contains { $0["id"].string == submitted.id && $0["label"].string == "研究用 Key" })
             try await capture(ProviderKeyEditorView(store: store, writes: writes), output, "48-key-saved-refresh-dark", dark: true, marker: "provider-key-editor-ready")
             await writes.refresh(form: "new-key", store: store)
-            try require(writes.feedback["new-key"]?.phase == .saved && store.credentials.filter { $0["provider_id"].string == "manager" }.count == 3)
+            try require(savedPosts == 1 && writes.feedback["new-key"]?.phase == .saved && store.credentials.filter { $0["provider_id"].string == "manager" }.count == 3)
             try require(store.credentials.first(where: { $0["provider_id"].string == "manager-peer" }) == peer)
             try require(store.selectedScope == selected && store.sessionID == session && store.messages == messages && store.draft == draft)
             try require(Dictionary(uniqueKeysWithValues: store.myModels.map { (ModelScope($0).id, $0["state"]) }) == memberships)

@@ -35,7 +35,7 @@ import SwiftUI
             if values.isEmpty, let cached = try? await api.get("/newapi/snapshots", query: [URLQueryItem(name: "provider_id", value: providerID)]) {
                 guard revision == ticket, !Task.isCancelled else { return }
                 for operation in operations {
-                    if let saved = cached.array.compactMap({ try? ProviderSiteSnapshot($0, providerID: providerID, operation: operation, modelID: modelID, origin: origin) }).max(by: { $0.at < $1.at }) { values[operation] = saved }
+                    if let saved = cached.array.compactMap({ try? ProviderSiteSnapshot($0, providerID: self.providerID, operation: operation, modelID: self.modelID, origin: self.origin) }).max(by: { $0.at < $1.at }) { values[operation] = saved }
                 }
             }
             for operation in operations {
@@ -45,7 +45,7 @@ import SwiftUI
                     let raw = try await api.call("/newapi/" + operation, method: "POST", body: body)
                     try Task.checkCancellation()
                     guard revision == ticket else { return }
-                    values[operation] = try ProviderSiteSnapshot(raw, providerID: providerID, operation: operation, modelID: modelID, origin: origin)
+                    values[operation] = try ProviderSiteSnapshot(raw, providerID: self.providerID, operation: operation, modelID: self.modelID, origin: self.origin)
                 } catch is CancellationError { return }
                 catch { if revision == ticket && !Task.isCancelled { problems[operation] = error.localizedDescription } }
                 if revision == ticket { loading.remove(operation) }
