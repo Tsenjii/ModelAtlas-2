@@ -199,12 +199,11 @@ struct ModelQuotaPanel: View {
 @MainActor struct ModelPerformancePanel: View {
     let intelligence: ModelIntelligence
     var openReceipt: ((String) -> Void)?
-    @State private var source = "local"
+    var source = "local"
     @State private var metric = "ttft"
     private var local: JSONValue { intelligence.local }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Picker("資料來源", selection: $source) { Text("我的 Key").tag("local"); Text("供應商回報").tag("provider"); Text("外部參考").tag("external") }.pickerStyle(.segmented)
             if source == "local" { localContent }
             if source == "provider" {
                 Text("站方範圍的觀測，可能包含其他帳戶與群組；不作為我的 Key 上線率。").font(.callout).foregroundStyle(.secondary)

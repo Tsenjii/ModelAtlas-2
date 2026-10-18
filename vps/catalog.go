@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 )
@@ -527,7 +528,10 @@ func (s *Server) syncModels(w http.ResponseWriter, r *http.Request) {
 	}
 	count, err := s.discover(r.Context(), v)
 	if err != nil {
-		http.Error(w, "provider sync failed", 502)
+		if errors.Is(err, sql.ErrNoRows) {
+			err = &providerReadError{Code: "CREDENTIAL_ROLE"}
+		}
+		writeProviderProblem(w, err, "catalog")
 		return
 	}
 	jsonOK(w, 200, map[string]any{"models_seen": count, "my_models_unchanged": true})
@@ -555,4 +559,3 @@ func (s *Server) endpointAuth(ctx context.Context, provider, account, credential
 	key, err := s.decrypt(enc)
 	return p, key, err
 }
-

@@ -76,10 +76,12 @@ public struct ModelScope: Hashable, Codable, Sendable, Identifiable {
 
 public enum AtlasError: Error, LocalizedError {
     case invalidResponse, http(Int), invalidEndpoint, engineUnavailable, keychain(Int32), missingVault, invalidJSON
+    case provider(ProviderProblem)
     public var errorDescription: String? {
         switch self {
         case .invalidResponse: return "收到無法辨識的資料，請重試。"
         case .http(let code): return "操作未完成（HTTP \(code)）。請確認連線、所選帳戶與設定後重試。"
+        case .provider(let problem): return problem.localizedDescription
         case .invalidEndpoint: return "本機引擎位址無效。"
         case .engineUnavailable: return "本機引擎無法啟動。請確認沒有另一個 ModelAtlas 正在使用相同資料。"
         case .keychain(let status): return "無法使用 macOS 鑰匙圈（\(status)）；未建立明文備援。"

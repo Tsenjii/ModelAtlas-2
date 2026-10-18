@@ -2,11 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/base64"
-	"encoding/binary"
-	"image"
-	"image/color"
-	"image/png"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -14,9 +9,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"math/big"
 	"net"
@@ -124,7 +124,9 @@ func main() {
 			chunk, _ := json.Marshal(map[string]any{"model": body.Model, "choices": []any{map[string]any{"delta": map[string]string{"content": string(rune)}}}})
 			fmt.Fprintf(w, "data: %s\n\n", chunk)
 			f.Flush()
-			if body.Model == "native-fixture-code" { richSent.Store(int64(index + 1)) }
+			if body.Model == "native-fixture-code" {
+				richSent.Store(int64(index + 1))
+			}
 			if body.Model == "native-fixture-code" {
 				// Small, evenly paced bursts avoid per-rune timer granularity
 				// deciding when the two architectures reach the handshake.
@@ -137,7 +139,9 @@ func main() {
 		}
 		fmt.Fprint(w, "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":48,\"total_tokens\":60}}\n\ndata: [DONE]\n\n")
 		f.Flush()
-		if body.Model == "native-fixture-code" { richFinished.Store(true) }
+		if body.Model == "native-fixture-code" {
+			richFinished.Store(true)
+		}
 	})
 	secure := httptest.NewUnstartedServer(mux)
 	secure.TLS = &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12}
@@ -163,79 +167,239 @@ func main() {
 	select {}
 }
 
-
 // The parity harness asserts real wire options without retaining prompts or keys.
 func installParityRoutes(mux *http.ServeMux) {
+	installPublicSiteRoutes(mux)
 	var counts sync.Map
-	record := func(name string) { value, _ := counts.LoadOrStore(name, new(atomic.Int64)); value.(*atomic.Int64).Add(1) }
+	record := func(name string) {
+		value, _ := counts.LoadOrStore(name, new(atomic.Int64))
+		value.(*atomic.Int64).Add(1)
+	}
 	wav := make([]byte, 52)
-	copy(wav, "RIFF"); binary.LittleEndian.PutUint32(wav[4:], 44); copy(wav[8:], "WAVEfmt ")
-	binary.LittleEndian.PutUint32(wav[16:], 16); binary.LittleEndian.PutUint16(wav[20:], 1); binary.LittleEndian.PutUint16(wav[22:], 1)
-	binary.LittleEndian.PutUint32(wav[24:], 24000); binary.LittleEndian.PutUint32(wav[28:], 48000); binary.LittleEndian.PutUint16(wav[32:], 2); binary.LittleEndian.PutUint16(wav[34:], 16)
-	copy(wav[36:], "data"); binary.LittleEndian.PutUint32(wav[40:], 8)
+	copy(wav, "RIFF")
+	binary.LittleEndian.PutUint32(wav[4:], 44)
+	copy(wav[8:], "WAVEfmt ")
+	binary.LittleEndian.PutUint32(wav[16:], 16)
+	binary.LittleEndian.PutUint16(wav[20:], 1)
+	binary.LittleEndian.PutUint16(wav[22:], 1)
+	binary.LittleEndian.PutUint32(wav[24:], 24000)
+	binary.LittleEndian.PutUint32(wav[28:], 48000)
+	binary.LittleEndian.PutUint16(wav[32:], 2)
+	binary.LittleEndian.PutUint16(wav[34:], 16)
+	copy(wav[36:], "data")
+	binary.LittleEndian.PutUint32(wav[40:], 8)
 	bitmap := image.NewRGBA(image.Rect(0, 0, 160, 120))
-	for y := 0; y < 120; y++ { for x := 0; x < 160; x++ { bitmap.SetRGBA(x, y, color.RGBA{uint8(x), 130, uint8(y + 50), 255}) } }
-	var raster bytes.Buffer; _ = png.Encode(&raster, bitmap)
+	for y := 0; y < 120; y++ {
+		for x := 0; x < 160; x++ {
+			bitmap.SetRGBA(x, y, color.RGBA{uint8(x), 130, uint8(y + 50), 255})
+		}
+	}
+	var raster bytes.Buffer
+	_ = png.Encode(&raster, bitmap)
 	mux.HandleFunc("/fixture/parity-state", func(w http.ResponseWriter, r *http.Request) {
-		out := map[string]int64{}; counts.Range(func(k, v any) bool { out[k.(string)] = v.(*atomic.Int64).Load(); return true }); json.NewEncoder(w).Encode(out)
+		out := map[string]int64{}
+		counts.Range(func(k, v any) bool { out[k.(string)] = v.(*atomic.Int64).Load(); return true })
+		json.NewEncoder(w).Encode(out)
 	})
-	mux.HandleFunc("/fixture/parity.wav", func(w http.ResponseWriter, r *http.Request) { w.Header().Set("Content-Type", "audio/wav"); w.Write(wav) })
-	mux.HandleFunc("/fixture/parity.png", func(w http.ResponseWriter, r *http.Request) { w.Header().Set("Content-Type", "image/png"); w.Write(raster.Bytes()) })
-	auth := func(w http.ResponseWriter, r *http.Request) bool { if r.Header.Get("Authorization") != "Bearer native-fixture-provider-key" { record("invalid"); http.Error(w, "fixture auth required", 401); return false }; return true }
+	mux.HandleFunc("/fixture/parity.wav", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "audio/wav")
+		w.Write(wav)
+	})
+	mux.HandleFunc("/fixture/parity.png", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Write(raster.Bytes())
+	})
+	auth := func(w http.ResponseWriter, r *http.Request) bool {
+		if r.Header.Get("Authorization") != "Bearer native-fixture-provider-key" {
+			record("invalid")
+			http.Error(w, "fixture auth required", 401)
+			return false
+		}
+		return true
+	}
 	object := func(v any) map[string]any { m, _ := v.(map[string]any); return m }
 	for _, path := range []string{"/v1/audio/speech", "/v1/embeddings", "/v1/rerank", "/v1/images/generations"} {
 		path := path
 		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-			if !auth(w, r) { return }
+			if !auth(w, r) {
+				return
+			}
 			var body map[string]any
-			if json.NewDecoder(r.Body).Decode(&body) != nil { record("invalid"); http.Error(w, "invalid fixture body", 400); return }
+			if json.NewDecoder(r.Body).Decode(&body) != nil {
+				record("invalid")
+				http.Error(w, "invalid fixture body", 400)
+				return
+			}
 			w.Header().Set("Content-Type", "application/json")
 			switch path {
 			case "/v1/audio/speech":
-				if body["voice"] != "alloy" || body["speed"] != 1.75 || body["response_format"] != "wav" || body["instructions"] != "親切" { record("invalid"); http.Error(w, "speech option mismatch", 400); return }
-				record("speech"); w.Header().Set("Content-Type", "audio/wav"); w.Write(wav)
+				if body["voice"] != "alloy" || body["speed"] != 1.75 || body["response_format"] != "wav" || body["instructions"] != "親切" {
+					record("invalid")
+					http.Error(w, "speech option mismatch", 400)
+					return
+				}
+				record("speech")
+				w.Header().Set("Content-Type", "audio/wav")
+				w.Write(wav)
 			case "/v1/embeddings":
 				inputs, _ := body["input"].([]any)
-				if len(inputs) != 2 || body["dimensions"] != float64(3) { record("invalid"); http.Error(w, "vector option mismatch", 400); return }
-				record("embeddings"); json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"index": 0, "embedding": []float64{0, 0.5, 1}}, map[string]any{"index": 1, "embedding": []float64{1, 0.5, 0}}}, "usage": map[string]int{"prompt_tokens": 0, "total_tokens": 0}})
+				if len(inputs) != 2 || body["dimensions"] != float64(3) {
+					record("invalid")
+					http.Error(w, "vector option mismatch", 400)
+					return
+				}
+				record("embeddings")
+				json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"index": 0, "embedding": []float64{0, 0.5, 1}}, map[string]any{"index": 1, "embedding": []float64{1, 0.5, 0}}}, "usage": map[string]int{"prompt_tokens": 0, "total_tokens": 0}})
 			case "/v1/rerank":
 				documents, _ := body["documents"].([]any)
-				if len(documents) != 2 || body["top_n"] != float64(1) { record("invalid"); http.Error(w, "rerank option mismatch", 400); return }
-				record("rerank"); io.WriteString(w, `{"results":[{"index":1,"relevance_score":0.9}]}`)
+				if len(documents) != 2 || body["top_n"] != float64(1) {
+					record("invalid")
+					http.Error(w, "rerank option mismatch", 400)
+					return
+				}
+				record("rerank")
+				io.WriteString(w, `{"results":[{"index":1,"relevance_score":0.9}]}`)
 			case "/v1/images/generations":
-				if body["size"] != "1024x1024" { record("invalid"); http.Error(w, "image size mismatch", 400); return }
-				record("images"); json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"b64_json": base64.StdEncoding.EncodeToString(raster.Bytes())}}})
+				if body["size"] != "1024x1024" {
+					record("invalid")
+					http.Error(w, "image size mismatch", 400)
+					return
+				}
+				record("images")
+				json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"b64_json": base64.StdEncoding.EncodeToString(raster.Bytes())}}})
 			}
 		})
 	}
 	for _, path := range []string{"/v1/audio/transcriptions", "/v1/images/edits"} {
 		path := path
 		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-			if !auth(w, r) { return }
-			if r.ParseMultipartForm(8 << 20) != nil { record("invalid"); http.Error(w, "multipart required", 400); return }
+			if !auth(w, r) {
+				return
+			}
+			if r.ParseMultipartForm(8<<20) != nil {
+				record("invalid")
+				http.Error(w, "multipart required", 400)
+				return
+			}
 			defer r.MultipartForm.RemoveAll()
-			field := "file"; if path == "/v1/images/edits" { field = "image" }
-			file, _, err := r.FormFile(field); if err != nil { record("invalid"); http.Error(w, "file required", 400); return }; defer file.Close()
-			raw, err := io.ReadAll(io.LimitReader(file, 4 << 20)); if err != nil || len(raw) == 0 { record("invalid"); http.Error(w, "empty file", 400); return }
+			field := "file"
+			if path == "/v1/images/edits" {
+				field = "image"
+			}
+			file, _, err := r.FormFile(field)
+			if err != nil {
+				record("invalid")
+				http.Error(w, "file required", 400)
+				return
+			}
+			defer file.Close()
+			raw, err := io.ReadAll(io.LimitReader(file, 4<<20))
+			if err != nil || len(raw) == 0 {
+				record("invalid")
+				http.Error(w, "empty file", 400)
+				return
+			}
 			w.Header().Set("Content-Type", "application/json")
-			if path == "/v1/audio/transcriptions" { if r.FormValue("prompt") != "" { record("invalid"); http.Error(w, "transcription must allow empty prompt", 400); return }; record("transcription"); io.WriteString(w, `{"text":"這是只含音訊附件的真實轉寫測試。"}`) } else { record("image-edit"); json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"b64_json": base64.StdEncoding.EncodeToString(raster.Bytes())}}}) }
+			if path == "/v1/audio/transcriptions" {
+				if r.FormValue("prompt") != "" {
+					record("invalid")
+					http.Error(w, "transcription must allow empty prompt", 400)
+					return
+				}
+				record("transcription")
+				io.WriteString(w, `{"text":"這是只含音訊附件的真實轉寫測試。"}`)
+			} else {
+				record("image-edit")
+				json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"b64_json": base64.StdEncoding.EncodeToString(raster.Bytes())}}})
+			}
 		})
 	}
 	mux.HandleFunc("/v1/models/", func(w http.ResponseWriter, r *http.Request) {
-		if !auth(w, r) { return }; var body map[string]any
-		if !strings.HasSuffix(r.URL.Path, ":generateContent") || json.NewDecoder(r.Body).Decode(&body) != nil { record("invalid"); http.Error(w, "native speech required", 400); return }
-		config := object(body["generationConfig"]); speech := object(config["speechConfig"]); label := "native-current"
+		if !auth(w, r) {
+			return
+		}
+		var body map[string]any
+		if !strings.HasSuffix(r.URL.Path, ":generateContent") || json.NewDecoder(r.Body).Decode(&body) != nil {
+			record("invalid")
+			http.Error(w, "native speech required", 400)
+			return
+		}
+		config := object(body["generationConfig"])
+		speech := object(config["speechConfig"])
+		label := "native-current"
 		if multi := object(speech["multiSpeakerVoiceConfig"]); len(multi) > 0 {
-			voices, _ := multi["speakerVoiceConfigs"].([]any); contents, _ := body["contents"].([]any)
-			if len(voices) != 2 || len(contents) != 1 { record("invalid"); http.Error(w, "dual speakers missing", 400); return }
+			voices, _ := multi["speakerVoiceConfigs"].([]any)
+			contents, _ := body["contents"].([]any)
+			if len(voices) != 2 || len(contents) != 1 {
+				record("invalid")
+				http.Error(w, "dual speakers missing", 400)
+				return
+			}
 			parts, _ := object(contents[0])["parts"].([]any)
-			if len(parts) != 2 || object(object(parts[0])["speech_metadata"])["speaker"] != "Joe" || object(object(parts[1])["speech_metadata"])["speaker"] != "Jane" { record("invalid"); http.Error(w, "dual turns mismatch", 400); return }; label = "native-dual"
-		} else if voice := object(speech["voiceConfig"]); voice["prebuiltVoiceConfig"] != nil { label = "native-legacy" } else if voice["voice"] != "Kore" { record("invalid"); http.Error(w, "native voice mismatch", 400); return }
+			if len(parts) != 2 || object(object(parts[0])["speech_metadata"])["speaker"] != "Joe" || object(object(parts[1])["speech_metadata"])["speaker"] != "Jane" {
+				record("invalid")
+				http.Error(w, "dual turns mismatch", 400)
+				return
+			}
+			label = "native-dual"
+		} else if voice := object(speech["voiceConfig"]); voice["prebuiltVoiceConfig"] != nil {
+			label = "native-legacy"
+		} else if voice["voice"] != "Kore" {
+			record("invalid")
+			http.Error(w, "native voice mismatch", 400)
+			return
+		}
 		record(label)
 		json.NewEncoder(w).Encode(map[string]any{"candidates": []any{map[string]any{"finishReason": "STOP", "content": map[string]any{"parts": []any{map[string]any{"inlineData": map[string]any{"mimeType": "audio/L16;codec=pcm;rate=24000", "data": base64.StdEncoding.EncodeToString(wav[44:])}}}}}}, "usageMetadata": map[string]int{"promptTokenCount": 0, "candidatesTokenCount": 0, "totalTokenCount": 0}})
 	})
 	mux.HandleFunc("/v1/quota/", func(w http.ResponseWriter, r *http.Request) {
-		if !auth(w, r) { return }; record("connector")
+		if !auth(w, r) {
+			return
+		}
+		record("connector")
 		json.NewEncoder(w).Encode(map[string]any{"data": []any{map[string]any{"model": strings.TrimPrefix(r.URL.Path, "/v1/quota/"), "group": "", "limits": map[string]int{"rpd": 120, "tpd": 2000000}}}})
 	})
+}
+
+// Same response shapes as the anonymously inspected New API v0 deployment.
+// Values/text are synthetic; no real provider credentials or traffic are used.
+func installPublicSiteRoutes(mux *http.ServeMux) {
+	var failNotice atomic.Bool
+	var reads, authLeaks atomic.Int64
+	mux.HandleFunc("/fixture/site-state", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]int64{"public_reads": reads.Load(), "auth_leaks": authLeaks.Load()})
+	})
+	mux.HandleFunc("/fixture/site-failure", func(w http.ResponseWriter, r *http.Request) {
+		failNotice.Store(r.URL.Query().Get("enabled") == "true")
+		json.NewEncoder(w).Encode(map[string]bool{"enabled": failNotice.Load()})
+	})
+	for _, path := range []string{"/api/status", "/api/notice", "/api/pricing", "/api/perf-metrics/summary", "/api/perf-metrics"} {
+		path := path
+		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+			reads.Add(1)
+			if r.Header.Get("Authorization") != "" {
+				authLeaks.Add(1)
+				http.Error(w, "anonymous only", 401)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			switch path {
+			case "/api/status":
+				json.NewEncoder(w).Encode(map[string]any{"success": true, "data": map[string]any{"version": "v0.0.0", "system_name": "原生功能驗收 · 合成站點", "quota_per_unit": 500000, "checkin_enabled": true, "HeaderNavModules": "", "quota_display_type": "CUSTOM", "custom_currency_symbol": "￥"}})
+			case "/api/notice":
+				if failNotice.Load() {
+					http.Error(w, "native-fixture-provider-key", 502)
+					return
+				}
+				json.NewEncoder(w).Encode(map[string]any{"success": true, "data": "歡迎使用模型工作區。\n公告與模型資料會從站點直接讀取，並保留更新時間。\n這是隔離驗收資料。"})
+			case "/api/pricing":
+				json.NewEncoder(w).Encode(map[string]any{"success": true, "data": []any{map[string]any{"model_name": "native-fixture-chat", "quota_type": 0, "model_ratio": 1, "completion_ratio": 2, "enable_groups": []string{"default"}, "supported_endpoint_types": []string{"openai"}}}, "group_ratio": map[string]int{"default": 1}, "pricing_version": "synthetic-public-v0"})
+			case "/api/perf-metrics/summary":
+				json.NewEncoder(w).Encode(map[string]any{"success": true, "data": map[string]any{"summary": map[string]any{"success_rate": 98.5, "avg_tps": 62.4, "avg_latency_ms": 1240}, "window_start": 1791705600, "window_end": 1792309328, "models": []any{map[string]any{"model_name": "native-fixture-chat", "success_rate": 98.5, "avg_tps": 62.4, "avg_latency_ms": 1240}}}})
+			case "/api/perf-metrics":
+				points := []any{map[string]any{"ts": 1791705600, "avg_ttft_ms": 220, "avg_latency_ms": 1250, "success_rate": 99, "avg_tps": 55.2}, map[string]any{"ts": 1791792000, "avg_ttft_ms": 180, "avg_latency_ms": 1100, "success_rate": 100, "avg_tps": 68.1}, map[string]any{"ts": 1791964800, "avg_ttft_ms": 320, "avg_latency_ms": 1410, "success_rate": 96.5, "avg_tps": 52.7}, map[string]any{"ts": 1792309200, "avg_ttft_ms": 195, "avg_latency_ms": 1170, "success_rate": 98.5, "avg_tps": 62.4}}
+				json.NewEncoder(w).Encode(map[string]any{"success": true, "data": map[string]any{"model_name": r.URL.Query().Get("model"), "series_schema": "dbcd0a3c01b55203", "summary": map[string]any{"success_rate": 98.5, "avg_tps": 62.4, "avg_latency_ms": 1240}, "series": points, "window_start": 1791705600, "window_end": 1792309328, "groups": []any{map[string]any{"group": "default", "avg_ttft_ms": 220, "avg_latency_ms": 1240, "success_rate": 98.5, "avg_tps": 62.4, "series": points}}}})
+			}
+		})
+	}
 }

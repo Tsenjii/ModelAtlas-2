@@ -39,6 +39,7 @@ type Server struct {
 	mediaBytes    int
 	MaxFlights    int
 	AutoSync      bool
+	desktop       bool
 	wake          chan struct{}
 	reflectionDue int64
 }
@@ -360,7 +361,7 @@ func runApplication() error {
 	}
 	defer listener.Close()
 	client := &http.Client{Timeout: 120 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: true, MaxFlights: configuredFlights()}
+	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: true, MaxFlights: configuredFlights(), desktop: config.desktopReady != ""}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if config.desktopReady != "" {

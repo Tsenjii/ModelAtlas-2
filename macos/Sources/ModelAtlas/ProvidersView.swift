@@ -214,8 +214,10 @@ struct AddProviderView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.atlasMotion) private var motion
     @State private var tab = "概覽"
-    init(store: AtlasStore, provider: JSONValue, initialTab: String = "概覽") {
+    @StateObject private var site: ProviderSiteController
+    init(store: AtlasStore, provider: JSONValue, initialTab: String = "概覽", site: ProviderSiteController? = nil) {
         self.store = store; self.provider = provider; checkins = store.checkins; _tab = State(initialValue: initialTab)
+        _site = StateObject(wrappedValue: site ?? ProviderSiteController(providerID: provider["id"].string))
     }
     @State private var accountLabel = ""
     @State private var keyLabel = ""
@@ -239,10 +241,6 @@ struct AddProviderView: View {
     @State private var keyAuth = ""
     @State private var keyNote = ""
     @State private var keyPriority = "0"
-    @State private var performanceModel = ""
-    @State private var performanceHours = "168"
-    @State private var snapshots: JSONValue = .array([])
-    @State private var dataCredential = ""
     private var id: String { provider["id"].string }
     private var currentProvider: JSONValue { store.providers.first { $0["id"].string == id } ?? provider }
     private var providerAccounts: [JSONValue] { store.accounts.filter { $0["provider_id"].string == id } }
@@ -264,9 +262,8 @@ struct AddProviderView: View {
                     if tab == "設定" { configContent }
                     if tab == "站方資料" { providerData }
                 }.padding(24).animation(motion.panel, value: tab)
-            }
+            }.id(tab)
         }.frame(width: 820, height: 760)
-        .onChange(of: accountID) { _ in dataCredential = "" }
         .task {
             configuration = provider["config"]
             website = configuration["website"].string; notes = configuration["notes"].string
@@ -392,31 +389,9 @@ struct AddProviderView: View {
     }
     private func configText(_ key: String) -> Binding<String> { Binding(get: { configuration[key].string }, set: { configuration[key] = .string($0) }) }
     private var providerData: some View {
-        AtlasCard {
-            Text("New API 結構化資料").font(.headline)
-            Text("站方資料與本機實測分開保存。帳戶查詢需在上方選擇帳戶 PAT。").foregroundStyle(.secondary)
-            Picker("帳戶", selection: $accountID) { Text("選擇帳戶").tag(""); ForEach(providerAccounts, id: \.self) { Text($0["label"].string).tag($0["id"].string) } }
-            Picker("資料查詢 Key／PAT", selection: $dataCredential) {
-                Text("選擇認證").tag("")
-                ForEach(store.credentials.filter { $0["provider_id"].string == id && $0["account_id"].string == accountID && $0["enabled"].boolean }, id: \.self) { credential in
-                    Text(credential["label"].string + " · " + credential["role"].string + " · " + credential["group"].string).tag(credential["id"].string)
-                }
-            }
-            HStack { FormField(title: "站方效能模型 ID", text: $performanceModel); FormField(title: "時間窗（1–720 小時）", text: $performanceHours) }
-            ForEach(["status", "notice", "pricing", "summary", "performance", "account", "token"], id: \.self) { operation in
-                ActionButton(title: ["status": "讀取站方狀態", "notice": "讀取公告", "pricing": "讀取價格", "summary": "讀取站方效能摘要", "performance": "讀取指定模型站方效能", "account": "讀取帳戶用量", "token": "讀取 Key 額度"][operation]!) {
-                    guard let api = store.api else { return }
-                    let wantPAT = operation == "account"
-                    let credential = store.credentials.first { $0["provider_id"].string == id && $0["account_id"].string == accountID && $0["id"].string == dataCredential && $0["enabled"].boolean }
-                    if ["account", "token"].contains(operation) && credential?["role"].string != (wantPAT ? "ACCOUNT_PAT" : "INFERENCE") { throw AtlasError.http(422) }
-                    guard let hours = Int(performanceHours), (1...720).contains(hours) else { throw DraftProblem("時間窗需為 1–720 小時。") }
-                    var body: JSONValue = .object(["provider_id": .string(id), "account_id": .string(accountID), "hours": .number(Double(hours))])
-                    if operation == "performance" { guard !performanceModel.isEmpty else { throw DraftProblem("請先填入模型 ID。") }; body["model_id"] = .string(performanceModel) }
-                    if let credential { body["credential_id"] = credential["id"] }
-                    snapshots = try await api.call("/newapi/" + operation, method: "POST", body: body)
-                }
-            }
-            JSONTree(value: snapshots)
+        VStack(spacing: 18) {
+            ProviderSiteView(controller: site, api: store.api)
+            ProviderAccountDataView(store: store, providerID: id, manageCredentials: { tab = "帳戶與 Key" })
         }
     }
 }

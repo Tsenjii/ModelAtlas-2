@@ -214,20 +214,62 @@ import SwiftUI
             try await verifyCharts(store, chat: chat, foreign: foreign, output: output, fixture: fixture)
             stage = "account-checkin-scope-retry-and-civil-date"
             try await verifyAccountCheckins(store, chat: chat, output: output, fixture: fixture)
+            stage = "public-site-auto-read-source-scope-retry"
+            try await verifyPublicSite(store, chat: chat, output: output, fixture: fixture)
             stage = "native-motion-and-reduced-motion"
             try await verifyMotion(store, output: output)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(39), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "account_checkin_scope": .bool(true), "checkin_retry_cancel": .bool(true), "native_motion": .bool(true), "reduced_motion": .bool(true), "wire_counts": counts])
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(43), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "account_checkin_scope": .bool(true), "checkin_retry_cancel": .bool(true), "native_motion": .bool(true), "reduced_motion": .bool(true), "public_site_auto_read": .bool(true), "provider_series_scope": .bool(true), "site_partial_retry": .bool(true), "connection_actions": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
     }
     private static func require(_ value: @autoclosure () -> Bool) throws { guard value() else { throw AtlasError.invalidResponse } }
+    private static func verifyPublicSite(_ store: AtlasStore, chat: JSONValue, output: URL, fixture: String) async throws {
+        guard let api = store.api, let provider = store.providers.first(where: { $0.id == chat["provider_id"].string }),
+              let key = store.credentials.first(where: { $0["provider_id"] == chat["provider_id"] && $0["account_id"] == chat["account_id"] && $0["id"] == chat["credential_id"] }) else { throw AtlasError.invalidResponse }
+        let before = try await fixtureJSON(fixture + "/fixture/parity-state")
+        let selected = store.selectedModel, session = store.sessionID, messages = store.messages, draft = store.draft
+        let site = ProviderSiteController(providerID: provider.id)
+        site.refresh(using: api, operations: ["status", "notice", "summary", "pricing"])
+        try await wait { site.loading.isEmpty }
+        try require(site.problems.isEmpty && site.values.count == 4 && site.values["notice"]?.facts["text"].string.contains("\n") == true)
+        try require(site.values["status"]?.raw["version"].string == "v0.0.0" && site.values["pricing"]?.facts["price_mapping_available"] == .bool(false))
+        try await capture(ProviderDetailView(store: store, provider: provider, initialTab: "站方資料", site: site), output, "40-site-auto-read-light", dark: false, marker: "provider-site-loaded")
+        let lastGood = site.values["notice"]?.raw
+        _ = try await fixtureJSON(fixture + "/fixture/site-failure?enabled=true")
+        site.refresh(using: api, operations: ["notice"]); try await wait { site.loading.isEmpty }
+        try require(site.problems["notice"]?.contains("502") == true && site.problems["notice"]?.contains("native-fixture-provider-key") == false && site.values["notice"]?.raw == lastGood)
+        try await capture(ProviderDetailView(store: store, provider: provider, initialTab: "站方資料", site: site), output, "43-site-partial-failure-dark", dark: true, marker: "provider-site-loaded")
+        _ = try await fixtureJSON(fixture + "/fixture/site-failure?enabled=false")
+        site.refresh(using: api, operations: ["notice"]); site.cancel()
+        try await Task.sleep(nanoseconds: 30_000_000)
+        try require(site.values["notice"]?.raw == lastGood)
+        site.refresh(using: api, operations: ["notice"]); try await wait { site.loading.isEmpty }
+        try require(site.problems["notice"] == nil && site.values["notice"] != nil)
+        let performance = ProviderSiteController(providerID: provider.id, modelID: chat["model_id"].string)
+        performance.refresh(using: api, operations: ["performance"]); try await wait { performance.loading.isEmpty }
+        guard let snapshot = performance.values["performance"] else { throw AtlasError.invalidResponse }
+        try require(performance.problems.isEmpty && snapshot.chart(metric: "avg_tps", group: "")?.points.count == 4 && snapshot.chart(metric: "avg_tps", group: "other") == nil)
+        try await capture(ModelDetailView(store: store, model: chat, initialTab: "效能", initialPerformanceSource: "provider", providerPerformance: performance), output, "41-provider-performance-chart-dark", dark: true, marker: "provider-performance-loaded")
+        let catalog = try await api.get("/models", query: [URLQueryItem(name: "provider_id", value: provider.id)])
+        guard let item = catalog.array.first(where: { $0["provider_id"].string == provider.id && $0["id"] == chat["model_id"] }) else { throw AtlasError.invalidResponse }
+        try await capture(CatalogDetailView(store: store, model: item, initialKey: key, initialEndpoint: chat["endpoint"].string), output, "42-catalog-active-connection-light", dark: false, marker: "catalog-connection-state-ACTIVE")
+        let counts = try await fixtureJSON(fixture + "/fixture/site-state")
+        try require((counts["public_reads"].numeric ?? 0) >= 12 && counts["auth_leaks"] == .number(0))
+        let after = try await fixtureJSON(fixture + "/fixture/parity-state")
+        try require(before == after && store.selectedModel == selected && store.sessionID == session && store.messages == messages && store.draft == draft)
+    }
     private static func verifyAccountCheckins(_ store: AtlasStore, chat: JSONValue, output: URL, fixture: String) async throws {
         guard let api = store.api, let provider = store.providers.first(where: { $0.id == chat["provider_id"].string }) else { throw AtlasError.invalidResponse }
         let before = try await fixtureJSON(fixture + "/fixture/parity-state")
-        let selected = store.selectedModel, session = store.sessionID, messages = store.messages, draft = store.draft
+        let selectedScope = store.selectedScope, session = store.sessionID, messages = store.messages, draft = store.draft
         var config = provider["config"]; config["requires_daily_checkin"] = .bool(true); config["checkin_url"] = .string("https://example.com/checkin")
         _ = try await store.mutate("/providers/config", body: .object(["provider_id": provider["id"], "config": config]))
+        // Setup intentionally changes the selected offer's check-in metadata.
+        // Verify identity/drafts across setup, then freeze the complete model
+        // value for the read/complete/retry flow itself.
+        try require(store.selectedScope == selectedScope && store.sessionID == session && store.messages == messages && store.draft == draft)
+        let selected = store.selectedModel
         _ = try await api.call("/checkins", method: "POST", body: .object(["provider_id": provider["id"], "timezone": .string(store.checkins.timezone)]))
         store.checkins.refresh(using: api); try await wait { !store.checkins.pending && store.checkins.current != nil }
         let rows = store.checkins.rows(providerID: provider.id) ?? []

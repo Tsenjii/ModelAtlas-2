@@ -1,10 +1,12 @@
 # ModelAtlas Public — TRACEABILITY
 
+- **MAC-PROVIDER-MOTION-011 實際站點修復候選：** HJMAPI五個公開介面已匿名核對200；v0公開schema／換行公告／站方根層series與時間窗／真上游狀態／公開與私人查詢分離／Catalog語意／捲動重置接入正式caller。新增8核心／4原生圖，最終70核心與68圖每架構；136靜態圖＋28frame與九項CI尚待修復HEAD驗收，不能用8c1824失敗候選或0.5綠燈代替。詳HJMAPI_COMPATIBILITY.md。
+
 ## MAC-PROVIDER-MOTION-011（2026-10-18 候選）
 
 ProvidersView → ProviderDetailView概覽 → AccountCheckinPanel／AccountCheckinController → 正式GET／POST `/checkins/accounts`；來源MANUAL_COMPLETION、完整provider/account/date/timezone與v16→17加法式升級，legacy不借給帳戶。RootView／SettingsView／AtlasTabs／原生ButtonStyle／TrendChartView → AtlasMotion與有效Reduce Motion。
 
-新增AccountCheckinTests八項與Go五項HTTP／SQLite／通知測試；NativeParity正式caller驗A/B隔離、部分／全部完成、401 last-good與取消／重試、模型／對話／草稿與零額外fixture inference。四張新production畫面＋每架構14實際動畫frame，原54核心／120圖全保留，共62核心／64圖每架構，128圖＋28frame；新HEAD九項與圖審前PENDING。已交付010為3529736／Mac39105128601／VPS39105128591／Android39105128634九項SUCCESS、120圖。完整Master Spec仍PARTIAL。詳macos/PROVIDER_MOTION.md。
+新增AccountCheckinTests八項與Go六項HTTP／SQLite／通知測試；NativeParity正式caller驗A/B隔離、部分／全部完成、401 last-good與取消／重試、模型／對話／草稿與零額外fixture inference。四張新production畫面＋每架構14實際動畫frame，原54核心／120圖全保留，共62核心／64圖每架構，128圖＋28frame；新HEAD九項與圖審前PENDING。已交付010為3529736／Mac39105128601／VPS39105128591／Android39105128634九項SUCCESS、120圖。完整Master Spec仍PARTIAL。詳macos/PROVIDER_MOTION.md。
 
 ## MAC-CHARTS-010（2026-10-18 候選）
 

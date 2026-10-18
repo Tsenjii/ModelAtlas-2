@@ -268,7 +268,7 @@ enum Workspace: String, CaseIterable, Identifiable {
                         if event.name == "start" && toolContinuation { for result in submittedResults { self.toolResults.removeValue(forKey: result["call_id"].string) } }
                         if event.name == "delta" { self.pendingText += event.value["text"].string }
                         if event.name == "reasoning" { self.pendingReasoning += event.value["text"].string }
-                        if event.name == "error" { self.problem = "請求結束：" + event.value["category"].string }
+                        if event.name == "error" { self.problem = InferenceFailure.message(event.value) }
                     }
                     flush(); await loadMessages()
                 }

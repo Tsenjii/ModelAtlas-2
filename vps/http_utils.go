@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -35,6 +36,13 @@ func safeText(value string, max int, secrets ...string) string {
 				return ""
 			}
 		}
+	}
+	return value
+}
+func safeMultilineText(value string, max int, secrets ...string) string {
+	plain := strings.NewReplacer("\n", " ", "\r", " ", "\t", " ").Replace(value)
+	if safeText(plain, max, secrets...) == "" && value != "" {
+		return ""
 	}
 	return value
 }
@@ -79,14 +87,19 @@ func (s *Server) getStructured(ctx context.Context, p Provider, c ProviderConfig
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, 0, errors.New("upstream network failure")
+		code := "UPSTREAM_NETWORK"
+		var timeout net.Error
+		if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &timeout) && timeout.Timeout() {
+			code = "UPSTREAM_TIMEOUT"
+		}
+		return nil, 0, &providerReadError{Code: code}
 	}
 	defer resp.Body.Close()
 	if name, _ := ctx.Value(integrationHeaderKey{}).(string); name != "" {
 		s.observeIntegrationHeaders(ctx, name, resp.Header)
 	}
 	if resp.StatusCode != 200 {
-		return nil, resp.StatusCode, errors.New("upstream HTTP failure")
+		return nil, resp.StatusCode, &providerReadError{Code: "UPSTREAM_HTTP", UpstreamStatus: resp.StatusCode}
 	}
 	b, err := readBounded(resp.Body, limit)
 	if err != nil {
@@ -115,7 +128,7 @@ func cleanSecretEcho(value any, secrets []string, depth int) any {
 	}
 	switch v := value.(type) {
 	case string:
-		if safeText(v, len(v), secrets...) == "" && v != "" {
+		if safeMultilineText(v, len(v), secrets...) == "" && v != "" {
 			return nil
 		}
 		return v

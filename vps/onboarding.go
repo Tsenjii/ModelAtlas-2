@@ -185,7 +185,7 @@ func (s *Server) inspectDraft(ctx context.Context, id string, draft storedDraft,
 	in := draft.Input
 	review := OnboardingReview{EndpointProfiles: in.EndpointProfiles, ID: id, Status: "REVIEW", Provider: in.Provider, Account: in.Account, Credentials: in.Credentials, Models: append([]string{}, in.ModelIDs...), Unknown: []string{"價格", "配額", "模型可用性"}, Attempts: attempts}
 	if in.Mode == "QUICK" {
-		if _, version, err := s.newApiStatus(ctx, in.Provider); err == nil && version == "v1.0.0-rc.25" {
+		if facts, version, err := s.newApiStatus(ctx, in.Provider); err == nil && (version == "v1.0.0-rc.25" || version != "UNKNOWN" && decimal(facts["quota_per_unit"]) != nil && facts["checkin_enabled"] != nil) {
 			cfg := *in.Provider.Config
 			cfg.Adapter = "NEW_API"
 			review.Provider.Config = &cfg

@@ -209,3 +209,38 @@ func TestAccountCheckinNotificationUsesExactAccountAndDoesNotRepeat(t *testing.T
 		t.Fatal("expected one deduplicated pending-account event", count)
 	}
 }
+
+func TestDesktopAccountCheckinNotificationsUseMachineDate(t *testing.T) {
+	s := testServer(t)
+	v := seed(t, s, "https://example.com/v1")
+	checkinConfig(t, s, "p")
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	current := time.Now()
+	localDate := current.In(time.Local).Format("2006-01-02")
+	otherZone := ""
+	for _, name := range []string{"Pacific/Kiritimati", "Etc/GMT+12"} {
+		date, err := checkinDate(name, current)
+		if err == nil && date != localDate {
+			otherZone = name
+			break
+		}
+	}
+	if otherZone == "" {
+		t.Fatal("expected a different civil date")
+	}
+	requireCode(t, req(t, s, "POST", "/api/v1/settings", map[string]any{"timezone": otherZone, "notification_rules": map[string]any{"checkin_pending": true, "quota_remaining_below": 100}}), 200)
+	requireCode(t, req(t, s, "POST", "/api/v1/checkins/accounts", map[string]any{"provider_id": "p", "account_id": "a", "timezone": "Local", "date": localDate}), 200)
+	s.desktop = true
+	s.checkNotificationRules(context.Background())
+	var count int
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM notification_events WHERE kind='CHECKIN_PENDING'").Scan(&count)
+	if count != 0 {
+		t.Fatal("native completion compared with web timezone")
+	}
+	s.desktop = false
+	s.checkNotificationRules(context.Background())
+	s.Store.DB.QueryRow("SELECT COUNT(*) FROM notification_events WHERE kind='CHECKIN_PENDING'").Scan(&count)
+	if count != 1 {
+		t.Fatal("standalone VPS did not retain its configured timezone")
+	}
+}

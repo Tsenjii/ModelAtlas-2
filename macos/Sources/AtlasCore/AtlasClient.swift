@@ -94,9 +94,12 @@ public final class AtlasClient: @unchecked Sendable {
         }
         return request
     }
-    private func check(_ response: URLResponse) throws {
+    private func check(_ response: URLResponse, data: Data? = nil) throws {
         guard let response = response as? HTTPURLResponse else { throw AtlasError.invalidResponse }
-        guard (200..<300).contains(response.statusCode) else { throw AtlasError.http(response.statusCode) }
+        guard (200..<300).contains(response.statusCode) else {
+            if let data, data.count <= 8192, let value = try? JSONDecoder().decode(JSONValue.self, from: data), let problem = ProviderProblem(value) { throw AtlasError.provider(problem) }
+            throw AtlasError.http(response.statusCode)
+        }
     }
     public func get(_ path: String, query: [URLQueryItem] = []) async throws -> JSONValue {
         try await call(path, query: query)
@@ -104,7 +107,7 @@ public final class AtlasClient: @unchecked Sendable {
     public func call(_ path: String, method: String = "GET", body: JSONValue? = nil,
                      query: [URLQueryItem] = []) async throws -> JSONValue {
         let (data, response) = try await session.data(for: request(path, method: method, body: body, query: query))
-        try check(response)
+        try check(response, data: data)
         guard data.count <= 20 << 20 else { throw AtlasError.invalidResponse }
         return try JSONDecoder().decode(JSONValue.self, from: data)
     }
@@ -112,6 +115,11 @@ public final class AtlasClient: @unchecked Sendable {
         var request = try request(path, method: "POST", body: body)
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         let (bytes, response) = try await session.bytes(for: request)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            var errorData = Data()
+            for try await byte in bytes { if errorData.count >= 8192 { break }; errorData.append(byte) }
+            try check(response, data: errorData)
+        }
         try check(response)
         guard (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Type")?.hasPrefix("text/event-stream") == true else { throw AtlasError.invalidResponse }
         var decoder = EventFramer(), terminal = false

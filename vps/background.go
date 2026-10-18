@@ -103,6 +103,11 @@ func (s *Server) checkNotificationRules(ctx context.Context) {
 	if e != nil {
 		zone = time.UTC
 	}
+	if s.desktop {
+		// Native check-ins follow the machine's civil date, independently of
+		// the saved web/display timezone used by standalone VPS clients.
+		zone = time.Local
+	}
 	date := time.Now().In(zone).Format("2006-01-02")
 	for _, v := range scopes {
 		if !s.validateSelection(ctx, v) {

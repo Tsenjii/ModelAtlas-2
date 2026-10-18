@@ -1,5 +1,7 @@
 # ModelAtlas 完整產品範圍與 Mac 驗收界線
 
+- **0.6.0 build11候選修復：** 使用者三張實圖與HJMAPI實際回應優先；公開資料自動讀取、v0 schema、公告、站方曲線／群組／單位與實際502來源、連線可讀操作。70核心／136靜態圖＋28frame與九項新HEAD驗收前未交付；私人未知版本及完整大綱仍PARTIAL。詳../docs/HJMAPI_COMPATIBILITY.md。
+
 目前唯一live為 **MAC-PROVIDER-MOTION-011／0.6.0 build11候選**，詳`PROVIDER_MOTION.md`。010已由3529736與Mac39105128601／VPS39105128591／Android39105128634九項、120圖驗收交付0.5.0。此片增加按帳戶的每日簽到／待簽到篩選、Provider概覽與短原生動態／Reduce Motion；須新HEAD九項、62核心／64圖每架構及動畫frame審查。完整大綱仍PARTIAL；下方為歷史界線。
 
 目前唯一live為 **MAC-CHARTS-010／0.5.0 build10候選**，詳 `CHARTS.md`。009已由52d5bfd／Mac39090603877、VPS39090603936、Android39090603909九項與110圖驗收並交付0.4.0，可讀並列比較與石墨／可選accent已落地。本片增加圖表真選取／鍵盤／精確匯出／收據，以及超過200筆的價格／觀測分頁；須新HEAD九項及120實圖，完整大綱仍PARTIAL。下方切片敘述與表格保留原驗收時的歷史界線，不能覆蓋此最新狀態。

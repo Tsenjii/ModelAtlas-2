@@ -325,15 +325,20 @@ struct CatalogView: View {
     @State private var customEnd = Date()
     @State private var chartReceipt: String?
     @State private var historyKind = "observations"
+    @State private var performanceSource = "provider"
+    @State private var performanceChoiceMade = false
+    @StateObject private var providerPerformance: ProviderSiteController
     @StateObject private var priceArchive: ObservationArchiveController
     @StateObject private var historyArchive: ObservationArchiveController
     private var scope: ModelScope { ModelScope(model) }
     private var usableModel: JSONValue? { store.activeModels.first { ModelScope($0) == scope } }
     private var intelligence: ModelIntelligence { ModelIntelligence(detail: detail, scope: scope) }
-    init(store: AtlasStore, model: JSONValue, initialTab: String = "概覽", priceArchive: ObservationArchiveController? = nil, historyArchive: ObservationArchiveController? = nil) {
+    init(store: AtlasStore, model: JSONValue, initialTab: String = "概覽", priceArchive: ObservationArchiveController? = nil, historyArchive: ObservationArchiveController? = nil, initialPerformanceSource: String? = nil, providerPerformance: ProviderSiteController? = nil) {
         self.store = store; self.model = model; _tab = State(initialValue: initialTab)
         _priceArchive = StateObject(wrappedValue: priceArchive ?? ObservationArchiveController(scope: ModelScope(model)))
         _historyArchive = StateObject(wrappedValue: historyArchive ?? ObservationArchiveController(scope: ModelScope(model)))
+        _providerPerformance = StateObject(wrappedValue: providerPerformance ?? ProviderSiteController(providerID: model["provider_id"].string, modelID: model["model_id"].string))
+        if let initialPerformanceSource { _performanceSource = State(initialValue: initialPerformanceSource); _performanceChoiceMade = State(initialValue: true) }
     }
     var body: some View {
         VStack(spacing: 0) {
@@ -343,6 +348,11 @@ struct CatalogView: View {
                 Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(25)
             Picker("詳情", selection: $tab) { ForEach(["概覽", "價格", "額度", "效能", "歷史", "設定"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
+            if tab == "效能" {
+                Picker("資料來源", selection: Binding(get: { performanceSource }, set: { performanceSource = $0; performanceChoiceMade = true })) {
+                    Text("本機實測").tag("local"); Text("站方效能").tag("provider"); Text("外部參考").tag("external")
+                }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)
+            }
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -355,11 +365,7 @@ struct CatalogView: View {
                     }
                     if tab == "價格" { ModelPricingPanel(intelligence: intelligence, priceState: usableModel?["price_state"].string ?? model["price_state"].string, cachePrice: (usableModel ?? model)["offer"]["effective_price"]["legs"]["cache"], api: store.api, archive: priceArchive) }
                     if tab == "額度" { ModelQuotaPanel(intelligence: intelligence); DisclosureGroup("帳戶來源紀錄") { JSONTree(value: detail["account_facts"]) } }
-                    if tab == "效能" {
-                        Picker("時間窗", selection: $window) { ForEach(["1h", "24h", "7d", "30d", "all", "custom"], id: \.self) { Text(["1h":"1 小時", "24h":"24 小時", "7d":"7 天", "30d":"30 天", "all":"全部", "custom":"自訂"][$0]!).tag($0) } }.pickerStyle(.segmented)
-                        if window == "custom" { HStack { DatePicker("開始", selection: $customStart); DatePicker("結束", selection: $customEnd); Button("套用") { Task { await load() } } } }
-                        ModelPerformancePanel(intelligence: intelligence, openReceipt: { chartReceipt = $0 })
-                    }
+                    if tab == "效能", intelligence.matchesSelection { performanceContent }
                     if tab == "歷史" {
                         Picker("歷史種類", selection: $historyKind) { Text("觀測紀錄").tag("observations"); Text("請求紀錄").tag("requests") }.pickerStyle(.segmented)
                         if historyKind == "observations" { ModelObservationHistory(api: store.api, archive: historyArchive) }
@@ -367,7 +373,7 @@ struct CatalogView: View {
                     }
                     if tab == "設定" { settingsContent }
                 }.padding(24)
-            }
+            }.id(tab + (tab == "效能" ? performanceSource : ""))
         }.frame(width: 830, height: 760)
         .task {
             capabilities = Set(model["capabilities"].array.map(\.string)); favorite = model["favorite"].boolean
@@ -378,7 +384,24 @@ struct CatalogView: View {
         .sheet(isPresented: Binding(get: { chartReceipt != nil }, set: { if !$0 { chartReceipt = nil } })) {
             if let chartReceipt { RequestReceiptView(store: store, sampleID: chartReceipt).atlasModal(store) }
         }
-        .onDisappear { priceArchive.cancel(); historyArchive.cancel() }
+        .onDisappear { priceArchive.cancel(); historyArchive.cancel(); providerPerformance.cancel() }
+    }
+    @ViewBuilder private var performanceContent: some View {
+        if performanceSource == "provider" {
+            ProviderPerformanceView(controller: providerPerformance, api: store.api, selectedGroup: scope.group)
+        } else if performanceSource == "local" {
+            if intelligence.samples.isEmpty && !loading {
+                AtlasCard {
+                    Label("還沒有本機請求紀錄", systemImage: "bubble.left.and.bubble.right").font(.headline)
+                    Text("使用這條連線送出對話後，會記錄你這把 Key 的速度、延遲與成功率。你也可以先查看站方提供的效能資料。").font(.callout).foregroundStyle(.secondary)
+                    HStack { Button("查看站方效能") { performanceSource = "provider"; performanceChoiceMade = true }; Spacer(); Button("使用此模型") { if let usableModel { store.chooseModel(usableModel); dismiss() } }.disabled(usableModel == nil || store.generating) }
+                }
+            } else {
+                Picker("時間窗", selection: $window) { ForEach(["1h", "24h", "7d", "30d", "all", "custom"], id: \.self) { Text(["1h":"1 小時", "24h":"24 小時", "7d":"7 天", "30d":"30 天", "all":"全部", "custom":"自訂"][$0]!).tag($0) } }.pickerStyle(.segmented)
+                if window == "custom" { HStack { DatePicker("開始", selection: $customStart); DatePicker("結束", selection: $customEnd); Button("套用") { Task { await load() } } } }
+                ModelPerformancePanel(intelligence: intelligence, openReceipt: { chartReceipt = $0 })
+            }
+        } else { ModelPerformancePanel(intelligence: intelligence, source: "external") }
     }
     private var settingsContent: some View {
         VStack(spacing: 18) {
@@ -418,6 +441,7 @@ struct CatalogView: View {
             guard loadRevision == revision else { return }
             guard ModelScope(value["selection"]) == scope else { throw AtlasError.invalidResponse }
             let previousObservation = detail["history"].array.first?["id"].string
+            if !performanceChoiceMade { performanceSource = (ModelIntelligence(detail: value, scope: scope).local["samples"].numeric ?? 0) > 0 ? "local" : "provider"; performanceChoiceMade = true }
             detail = value; problem = nil
             if let previousObservation, previousObservation != value["history"].array.first?["id"].string {
                 if priceArchive.state != nil { priceArchive.refresh(using: api, filter: priceArchive.requested) }
