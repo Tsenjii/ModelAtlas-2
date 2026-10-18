@@ -66,7 +66,7 @@ struct ActionReviewView: View {
                 Text("套用前會重新檢查資料版本。隱藏與封存會保留歷史。").font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 if model.busy { ProgressView().controlSize(.small) }
-                if model.value["state"].string == "PENDING" { Button("確認套用") { Task { await model.apply(); await store.refresh() } }.buttonStyle(.borderedProminent).disabled(model.busy || (model.isBatch && !model.batchComplete)) }
+                if model.value["state"].string == "PENDING" { Button("確認套用") { Task { await model.apply(); await store.refresh() } }.buttonStyle(AtlasActionStyle(prominent: true)).disabled(model.busy || (model.isBatch && !model.batchComplete)) }
                 if model.value["state"].string == "CONFIRMED" { Button("復原這項變更") { Task { await model.apply(undo: true); await store.refresh() } }.disabled(model.busy) }
             }
         }.padding(24).frame(width: 760, height: 660).background(atlasCanvas)

@@ -5,6 +5,7 @@ import SwiftUI
 struct RequestReceiptView: View {
     @ObservedObject var store: AtlasStore
     let sampleID: String
+    @Environment(\.dismiss) private var dismiss
     @State private var value: JSONValue?
     @State private var problem: String?
     @State private var loading = false
@@ -17,7 +18,7 @@ struct RequestReceiptView: View {
                 }
                 Spacer()
                 Button("下載 JSON…") { Task { await store.export("/telemetry/detail", query: [URLQueryItem(name: "id", value: sampleID)], filename: "ModelAtlas-Request.json") } }
-                Button("完成") { store.requestReceipt = nil }.keyboardShortcut(.cancelAction)
+                Button("完成") { store.requestReceipt = nil; dismiss() }.keyboardShortcut(.cancelAction)
             }
             Divider()
             ScrollView {

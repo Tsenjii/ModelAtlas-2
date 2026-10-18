@@ -80,4 +80,4 @@ Mac 唯一 live slice／未驗收狀態見 `docs/ACTIVE_TASK.md`，正式 caller
 
 
 
-目前候選為0.3.0（build8），新增原生模型價格／額度／效能趨勢／觀測歷史，詳 `INTELLIGENCE.md`；完整Master Spec仍PARTIAL。已交付0.2.1 `f3700796`九項全綠與90實圖僅驗收MAC-DESKTOP-007。
+目前候選為0.4.0（build9），依使用者要求改石墨灰預設／可選強調色、整理原生介面並補可讀並列比較，詳 `NATIVE_POLISH.md`。基線0.3.0 `8eb68087`九項全綠與100實圖已交付；本候選需44核心／55圖每架構、110圖與新HEAD九項驗收。完整Master Spec仍PARTIAL。

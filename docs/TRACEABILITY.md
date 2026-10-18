@@ -1,5 +1,11 @@
 # ModelAtlas Public — TRACEABILITY
 
+## MAC-NATIVE-009（2026-10-18 候選）
+
+使用者明確更新Mac視覺／主色要求見D-007。正式入口為共用SwiftUI元件與Appearance→Root／Settings／各native sheets、Models選取→ComparisonView／ComparisonController→既有 `/models/compare` →正式inference／telemetry／receipt。原始JSON比較改為按完整scope對齊的並列數值、失敗／未知與非串流、當次價格／各單位扣款／獨立額度快照、收據及匯出；取消／last-good／重複提交guard不改上游路由。
+
+新增6核心與5實際native captures，預期每架構44核心／55圖、共110圖；保留全部38核心／原50圖及25s串流／120s parity。新HEAD九項與實圖前PENDING。基線008為8eb68087，Mac39058446721／VPS39058446728／Android39058446846九項SUCCESS／100圖已檢視並交付。完整Master Spec仍PARTIAL；Provider與完整Research／Assistant／Reflection等缺口見 `macos/MASTER_SCOPE.md`，本片細節見 `macos/NATIVE_POLISH.md`。
+
 ## Mac 原生入口（2026-10-17 候選，獨立於 Android／VPS 驗收）
 
 | ID | 正式 caller／測試 | 驗收條件 |

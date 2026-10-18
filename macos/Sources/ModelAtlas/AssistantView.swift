@@ -60,7 +60,7 @@ struct AssistantView: View {
             HStack {
                 Spacer()
                 if busy { ActionButton(title: "停止 Assistant") { defer { task?.cancel() }; if let api = store.api, !threadID.isEmpty { _ = try await api.call("/assistant/cancel", method: "POST", body: .object(["thread_id": .string(threadID)])) } } }
-                else { Button("傳送給 Assistant") { send() }.buttonStyle(.borderedProminent).controlSize(.large).disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || configuredID.isEmpty || scopeID != configuredID) }
+                else { Button("傳送給 Assistant") { send() }.buttonStyle(AtlasActionStyle(prominent: true)).controlSize(.large).disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || configuredID.isEmpty || scopeID != configuredID) }
             }
         }.padding(26).frame(width: 850, height: 740).task {
             if let api = store.api, let config = try? await api.get("/assistant/config"), config["configured"].boolean { scopeID = ModelScope(config["selection"]).id; configuredID = scopeID }

@@ -84,7 +84,7 @@ struct ChatView: View {
                 Spacer(minLength: 4)
                 Text(store.attaching ? "加入附件中…" : "⌘↵").font(.system(size: 10)).foregroundStyle(.secondary)
                 if store.generating { Button { Task { await store.cancel() } } label: { Label("停止", systemImage: "stop.fill") }.keyboardShortcut(.escape, modifiers: []).disabled(store.hasPresentedSheet) }
-                else { Button { store.send() } label: { Image(systemName: "arrow.up").font(.system(size: 14, weight: .semibold)).frame(width: 16, height: 22) }.buttonStyle(.borderedProminent).keyboardShortcut(.return, modifiers: .command).disabled(store.attaching || store.hasPresentedSheet || !store.canSend).accessibilityLabel("傳送訊息").accessibilityIdentifier("chat-send") }
+                else { Button { store.send() } label: { Image(systemName: "arrow.up").font(.system(size: 14, weight: .semibold)).frame(width: 12, height: 19) }.buttonStyle(AtlasActionStyle(prominent: true)).keyboardShortcut(.return, modifiers: .command).disabled(store.attaching || store.hasPresentedSheet || !store.canSend).accessibilityLabel("傳送訊息").accessibilityIdentifier("chat-send") }
             }
         }.padding(10).background(atlasSurface).cornerRadius(10)
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(dropTargeted ? atlasAccent : Color.primary.opacity(0.16), lineWidth: dropTargeted ? 2 : 0.5))

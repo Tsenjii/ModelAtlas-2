@@ -1,5 +1,7 @@
 # ModelAtlas 完整產品範圍與 Mac 驗收界線
 
+最新工作為 **MAC-NATIVE-009／0.4.0 build9候選**，詳 `NATIVE_POLISH.md`。使用者明確要求重新研究好看軟體並取消固定藍綠按鈕；此片整理原生外觀與可讀並列比較。008已由8eb68087／Mac39058446721、VPS39058446728、Android39058446846九項與100圖驗收並交付0.3.0。009須新HEAD九項及110圖；完整大綱與其他情境仍PARTIAL，下方切片文字保留歷史。
+
 2026-10-18（台灣）。依使用者重新提供的 `astra_master_prompt_structured_final_zh-TW-1(1).txt`：Part I 50節、Part II Runtime Research、Part III App Assistant、Part IV Reflection，以及後續明確產品決策。
 
 ## 產品定位

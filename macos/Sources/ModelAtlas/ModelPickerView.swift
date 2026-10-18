@@ -35,7 +35,7 @@ struct ModelPickerView: View {
             results
             Divider()
             footer
-        }.frame(width: 620, height: 550).background(atlasCanvas).tint(atlasAccent)
+        }.frame(width: 620, height: 550).background(atlasCanvas)
             .onChange(of: entryIDs) { ids in cursor.reconcile(ids, preferredID: store.scopeID) }
     }
     private var header: some View {
@@ -96,7 +96,7 @@ struct ModelPickerView: View {
             if hasFilters { Button("清除篩選", action: resetFilters).accessibilityIdentifier("model-picker-reset") }
             Spacer()
             Text("↑↓ 選擇 · ↵ 使用 · esc 關閉").foregroundStyle(.secondary)
-            Button("使用模型", action: chooseHighlighted).buttonStyle(.borderedProminent)
+            Button("使用模型", action: chooseHighlighted).buttonStyle(AtlasActionStyle(prominent: true))
                 .disabled(highlighted == nil || store.generating)
         }.font(.caption).padding(.horizontal, 20).padding(.vertical, 12)
     }

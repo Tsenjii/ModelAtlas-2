@@ -10,6 +10,7 @@ import SwiftUI
         do {
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
             guard store.ready, let api = store.api else { throw AtlasError.engineUnavailable }
+            UserDefaults.standard.set("graphite", forKey: "workspaceAccent")
             let args = ProcessInfo.processInfo.arguments
             guard let at = args.firstIndex(of: "--fixture-url"), args.count > at + 1 else { throw AtlasError.invalidEndpoint }
             let fixture = args[at + 1]
@@ -206,12 +207,55 @@ import SwiftUI
             try await capture(SettingsView(store: store), output, "17-settings-dark", dark: true)
             stage = "scoped-native-intelligence-prices-pools-trends-history"
             try await verifyIntelligence(store, chat: chat, foreign: foreign, output: output, fixture: fixture)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(25), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "wire_counts": counts])
+            stage = "real-native-comparison-and-appearance"
+            try await verifyComparison(store, chat: chat, foreign: foreign, output: output)
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(30), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
     }
     private static func require(_ value: @autoclosure () -> Bool) throws { guard value() else { throw AtlasError.invalidResponse } }
+    private static func verifyComparison(_ store: AtlasStore, chat: JSONValue, foreign: JSONValue, output: URL) async throws {
+        guard let api = store.api else { throw AtlasError.engineUnavailable }
+        let selected = store.selectedModel, session = store.sessionID, messages = store.messages, draft = store.draft
+        _ = try await store.mutate("/models/metadata", body: .object(["provider_id": chat["provider_id"], "model_id": chat["model_id"], "canonical_id": chat["model_id"], "primary_category": .string("CHAT_REASONING")]))
+        let scopes = [ModelScope(chat), ModelScope(foreign)]
+        let models = try scopes.map { scope -> JSONValue in
+            guard let row = store.myModels.first(where: { ModelScope($0) == scope }) else { throw AtlasError.invalidResponse }; return row
+        }
+        let offers = models.map { model in ComparisonOffer(model: model, title: store.modelEntries([model]).first!.title, context: store.scopeTitle(model), operation: store.operationName(model)) }
+        let controller = ComparisonController(offers: offers)
+        try require(controller.validation == nil && offers[0].scope.accountID != offers[1].scope.accountID)
+        try await capture(ComparisonView(store: store, controller: controller), output, "26-comparison-ready-light", dark: false, marker: "comparison-ready")
+        let query = [URLQueryItem(name: "q", value: "COMPARE_LIVE"), URLQueryItem(name: "limit", value: "200")]
+        let before = try await api.get("/telemetry", query: query).requiredArray()
+        controller.start(using: api); controller.start(using: api)
+        try await wait { !controller.pending }
+        guard let report = controller.report else { throw AtlasError.invalidResponse }
+        try require(controller.problem == nil && report.items.map(\.scope) == scopes && report.items.allSatisfy { $0.outcome == "SUCCESS" && !$0.sampleID.isEmpty })
+        let after = try await api.get("/telemetry", query: query).requiredArray()
+        try require(after.count == before.count + 2 && Set(report.items.map(\.sampleID)).count == 2)
+        for item in report.items {
+            let value = try await api.get("/telemetry/detail", query: [URLQueryItem(name: "id", value: item.sampleID)])
+            let sample = value["sample"] == .null ? value : value["sample"]
+            try require(ModelScope(sample) == item.scope && sample["source"].string == "COMPARE_LIVE")
+        }
+        try require(report.items[1].receipt["price_state"].string == "UNKNOWN")
+        try await capture(ComparisonView(store: store, controller: controller), output, "27-comparison-results-dark", dark: true, marker: "comparison-results")
+        try await capture(RequestReceiptView(store: store, sampleID: report.items[0].sampleID), output, "28-comparison-receipt-light", dark: false, marker: "receipt-loaded-" + report.items[0].sampleID)
+        let cancelled = ComparisonController(offers: offers)
+        cancelled.start(using: api); cancelled.cancel()
+        try await Task.sleep(nanoseconds: 30_000_000)
+        let unchanged = try await api.get("/telemetry", query: query).requiredArray()
+        try require(!cancelled.pending && cancelled.report == nil && unchanged.count == after.count)
+        UserDefaults.standard.set("violet", forKey: "workspaceAccent")
+        try await capture(SettingsView(store: store), output, "29-settings-violet-light", dark: false, marker: "appearance-violet")
+        try require(UserDefaults.standard.string(forKey: "workspaceAccent") == "violet")
+        UserDefaults.standard.set("graphite", forKey: "workspaceAccent")
+        store.workspace = .models
+        try await captureWorkspace(store, output, "30-models-graphite-light", dark: false)
+        try require(store.selectedModel.map(ModelScope.init) == selected.map(ModelScope.init) && store.sessionID == session && store.messages == messages && store.draft == draft)
+    }
     private static func verifyIntelligence(_ store: AtlasStore, chat: JSONValue, foreign: JSONValue, output: URL, fixture: String) async throws {
         guard let api = store.api else { throw AtlasError.engineUnavailable }
         let scope = ModelScope(chat), beforeMessages = store.messages, beforeDraft = store.draft, beforeModel = store.selectedModel
@@ -285,7 +329,7 @@ import SwiftUI
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.title = "ModelAtlas · 原生功能驗收"
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: ScrollView { view.tint(atlasAccent).preferredColorScheme(dark ? .dark : .light) }.frame(width: 860, height: 760))
+        window.contentView = NSHostingView(rootView: ScrollView { view.atlasAppearance().preferredColorScheme(dark ? .dark : .light) }.frame(width: 860, height: 760))
         window.center(); window.makeKeyAndOrderFront(nil); defer { window.close() }
         if let marker {
             let end = Date().addingTimeInterval(4)

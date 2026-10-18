@@ -63,7 +63,7 @@ private struct ProviderRow: View {
                 Image(systemName: "server.rack").font(.system(size: 16, weight: .medium)).foregroundStyle(atlasTextAccent)
                     .frame(width: 30, height: 30).background(atlasAccent.opacity(0.06)).cornerRadius(7)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(provider["name"].string).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    Text(provider["name"].string).font(.system(size: 14, weight: .semibold)).lineLimit(1)
                     Text(provider["base_url"].string).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     if !provider["description"].string.isEmpty { Text(provider["description"].string).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
                 }

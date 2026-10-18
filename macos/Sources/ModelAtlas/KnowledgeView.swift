@@ -116,7 +116,7 @@ struct VersionDetailView: View {
                 if controller.busy { ProgressView().controlSize(.small) }
                 if let _ = controller.undoID { Button("復原這次啟用") { Task { await controller.undo(); await store.refresh() } }.disabled(controller.busy) }
                 Spacer()
-                if !controller.value["active"].boolean { Button("確認啟用此版本") { Task { await controller.activate(); await store.refresh() } }.buttonStyle(.borderedProminent).disabled(controller.busy || controller.needsReload || (controller.connector && controller.value["status"].string != "VALIDATED")) }
+                if !controller.value["active"].boolean { Button("確認啟用此版本") { Task { await controller.activate(); await store.refresh() } }.buttonStyle(AtlasActionStyle(prominent: true)).disabled(controller.busy || controller.needsReload || (controller.connector && controller.value["status"].string != "VALIDATED")) }
             }
         }.padding(24).frame(width: 780, height: 700)
         .sheet(isPresented: $editing) { Group { if controller.connector { ConnectorEditor(store: store, initial: controller.value) } else { KnowledgeEditor(store: store, initial: controller.value) } }.atlasModal(store) }

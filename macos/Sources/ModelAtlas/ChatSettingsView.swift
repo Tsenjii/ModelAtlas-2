@@ -100,7 +100,7 @@ struct ChatSettingsView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Label("無法讀取對話設定", systemImage: "exclamationmark.triangle").font(.headline)
                             Text(problem).foregroundStyle(.secondary).textSelection(.enabled)
-                            Button("重試讀取") { Task { await load() } }.buttonStyle(.borderedProminent)
+                            Button("重試讀取") { Task { await load() } }.buttonStyle(AtlasActionStyle(prominent: true))
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
                     } else {
                         FormField(title: "對話名稱", text: $model.draft.title)
@@ -143,7 +143,7 @@ struct ChatSettingsView: View {
                 }.font(.caption).frame(maxWidth: .infinity, alignment: .leading)
                 Button { Task { await model.save(store: store) } } label: {
                     HStack { if model.saving { ProgressView().controlSize(.small) }; Text(model.saving ? "儲存中…" : "儲存") }
-                }.buttonStyle(.borderedProminent).disabled(!model.loaded || model.loading || model.saving || store.generating || store.closing)
+                }.buttonStyle(AtlasActionStyle(prominent: true)).disabled(!model.loaded || model.loading || model.saving || store.generating || store.closing)
             }.padding(20)
     }
     private func load() async { await model.load(api: store.api, tools: store.stagedTools[model.sessionID]) }

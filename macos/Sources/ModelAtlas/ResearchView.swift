@@ -86,7 +86,7 @@ struct ResearchView: View {
     }
     private var sourceList: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Button { sourceDetail = .object([:]) } label: { Label("新增公開來源", systemImage: "plus") }.buttonStyle(.borderedProminent)
+            Button { sourceDetail = .object([:]) } label: { Label("新增公開來源", systemImage: "plus") }.buttonStyle(AtlasActionStyle(prominent: true))
             ForEach(sources, id: \.self) { source in AtlasCard { HStack { VStack(alignment: .leading, spacing: 5) { Text(source["name"].string).font(.headline); Text(source["url"].string).font(.caption).foregroundStyle(.secondary).lineLimit(2) }; Spacer(); SmallBadge(text: source["enabled"].boolean ? "已啟用" : "已停用", color: atlasAccent) }; HStack { Button("編輯來源") { sourceDetail = source }; ActionButton(title: source["enabled"].boolean ? "停用" : "啟用") { guard let api = store.api else { return }; var body = source; body["enabled"] = .bool(!source["enabled"].boolean); _ = try await api.call("/research/sources", method: "POST", body: body); await load() } } } }
         }
     }

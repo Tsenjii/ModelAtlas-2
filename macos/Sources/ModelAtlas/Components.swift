@@ -2,32 +2,28 @@ import AppKit
 import AtlasCore
 import SwiftUI
 
-let atlasAccent = Color(red: 0.02, green: 0.51, blue: 0.47)
-let atlasTextAccent = Color(nsColor: NSColor(name: nil, dynamicProvider: { appearance in
-    appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        ? NSColor(srgbRed: 0.25, green: 0.78, blue: 0.70, alpha: 1)
-        : NSColor(srgbRed: 0.0, green: 0.44, blue: 0.41, alpha: 1)
-}))
 private func atlasColor(light: CGFloat, dark: CGFloat) -> Color {
     Color(nsColor: NSColor(name: nil, dynamicProvider: { appearance in
         let value = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
         return NSColor(srgbRed: value, green: value, blue: value, alpha: 1)
     }))
 }
-let atlasCanvas = atlasColor(light: 0.985, dark: 0.105)
-let atlasSurface = atlasColor(light: 1, dark: 0.14)
-let atlasInset = atlasColor(light: 0.955, dark: 0.18)
-let atlasSidebar = atlasColor(light: 0.96, dark: 0.125)
-let atlasHairline = Color.primary.opacity(0.085)
+let atlasInk = atlasColor(light: 0.18, dark: 0.88)
+let atlasAccent = atlasInk
+let atlasTextAccent = Color.primary
+let atlasCanvas = atlasColor(light: 0.975, dark: 0.105)
+let atlasSurface = atlasColor(light: 1, dark: 0.145)
+let atlasInset = atlasColor(light: 0.95, dark: 0.185)
+let atlasSidebar = atlasColor(light: 0.945, dark: 0.125)
+let atlasHairline = Color.primary.opacity(0.10)
 
 struct AtlasCard<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
         VStack(alignment: .leading, spacing: 16) { content }
             .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-            .background(atlasSurface).cornerRadius(12)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(atlasHairline, lineWidth: 0.5))
-            .shadow(color: .black.opacity(0.025), radius: 5, y: 2)
+            .background(atlasSurface).cornerRadius(10)
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(atlasHairline, lineWidth: 0.5))
     }
 }
 
@@ -49,8 +45,8 @@ struct PageHeading: View {
     let eyebrow: String, title: String, subtitle: String
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(.system(size: 20, weight: .semibold))
-            Text(subtitle).font(.system(size: 12)).foregroundStyle(.secondary)
+            Text(title).font(.system(size: 24, weight: .semibold))
+            Text(subtitle).font(.system(size: 13)).foregroundStyle(.secondary)
         }
     }
 }
@@ -75,8 +71,8 @@ struct ModelMark: View {
     let name: String
     var body: some View {
         Text(String(name.prefix(1)).uppercased()).font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(atlasTextAccent).frame(width: 30, height: 30)
-            .background(atlasAccent.opacity(0.06)).cornerRadius(7)
+            .foregroundStyle(Color.primary.opacity(0.8)).frame(width: 34, height: 34)
+            .background(atlasInset).cornerRadius(9)
     }
 }
 
@@ -87,7 +83,7 @@ struct AtlasRowButtonStyle: ButtonStyle {
         @State private var hovering = false
         var body: some View {
             configuration.label.contentShape(Rectangle())
-                .background(atlasAccent.opacity(configuration.isPressed ? 0.12 : hovering ? 0.055 : 0))
+                .background(Color.primary.opacity(configuration.isPressed ? 0.09 : hovering ? 0.035 : 0))
                 .onHover { hovering = $0 }
         }
     }
@@ -151,11 +147,13 @@ struct ActionButton: View {
 struct AtlasActionStyle: ButtonStyle {
     var prominent = false
     @Environment(\.isEnabled) private var enabled
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.atlasAccentChoice) private var accent
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.system(size: 12, weight: .medium))
             .padding(.horizontal, 12).padding(.vertical, 6)
-            .foregroundStyle(prominent ? Color.white : Color.primary)
-            .background(prominent ? atlasAccent : atlasSurface).cornerRadius(7)
+            .foregroundStyle(prominent ? accent.foreground(scheme) : Color.primary)
+            .background(prominent ? accent.color : atlasSurface).cornerRadius(7)
             .overlay(RoundedRectangle(cornerRadius: 7).stroke(prominent ? Color.clear : atlasHairline, lineWidth: 0.5))
             .opacity(enabled ? (configuration.isPressed ? 0.7 : 1) : 0.45)
     }
@@ -172,19 +170,19 @@ struct AtlasTabs: View {
     @Binding var selection: String
     let items: [AtlasTab]
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 20) {
             ForEach(items) { item in
                 Button { selection = item.id } label: {
                     HStack(spacing: 6) {
                         if !item.icon.isEmpty { Image(systemName: item.icon).font(.system(size: 11)) }
                         Text(item.title).font(.system(size: 12, weight: selection == item.id ? .semibold : .medium)).lineLimit(1)
-                    }.padding(.horizontal, 13).frame(height: 31).frame(maxWidth: .infinity)
+                    }.padding(.horizontal, 2).frame(height: 37)
                         .foregroundStyle(selection == item.id ? Color.primary : Color.secondary)
-                        .background(selection == item.id ? atlasSurface : Color.clear).cornerRadius(7)
-                        .shadow(color: .black.opacity(selection == item.id ? 0.06 : 0), radius: 2, y: 1)
+                        .overlay(alignment: .bottom) { Capsule().fill(selection == item.id ? Color.primary : Color.clear).frame(height: 2) }
                 }.buttonStyle(.plain).accessibilityAddTraits(selection == item.id ? .isSelected : [])
             }
-        }.padding(3).background(atlasInset).cornerRadius(9)
+            Spacer(minLength: 0)
+        }.frame(maxWidth: .infinity).overlay(alignment: .bottom) { Rectangle().fill(atlasHairline).frame(height: 0.5) }
     }
 }
 
@@ -197,8 +195,8 @@ struct AtlasFilterChip: View {
         Button(action: action) {
             HStack(spacing: 5) { if !icon.isEmpty { Image(systemName: icon) }; Text(title) }
                 .font(.system(size: 11, weight: .medium)).padding(.horizontal, 10).frame(height: 27)
-                .foregroundStyle(selected ? atlasTextAccent : Color.secondary)
-                .background(selected ? atlasAccent.opacity(0.09) : Color.clear).cornerRadius(6)
+                .foregroundStyle(selected ? Color.primary : Color.secondary)
+                .background(selected ? Color.primary.opacity(0.07) : Color.clear).cornerRadius(6)
         }.buttonStyle(AtlasRowButtonStyle())
     }
 }

@@ -8,9 +8,8 @@ struct ModelsView: View {
     @State private var modelFilters = ModelFilters()
     @State private var selecting = false
     @State private var shown = 100
-    @State private var comparePrompt = "Reply OK."
     @State private var compareSelection: Set<ModelScope> = []
-    @State private var comparison: JSONValue?
+    @State private var comparison: ComparisonController?
     var body: some View {
         let entries = filtered
         ScrollView {
@@ -49,12 +48,12 @@ struct ModelsView: View {
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(atlasHairline, lineWidth: 0.5))
                     }
                     if filtered.count > shown { Button("顯示更多（共 \(filtered.count) 個）") { shown += 100 } }
-                    if !compareSelection.isEmpty { compareBar }
-                    if let comparison { AtlasCard { Text("本次即時比較").font(.headline); JSONTree(value: comparison) } }
                     Text("目前以" + ["local":"我的實測", "provider":"供應商回報", "external":"外部參考"][modelFilters.source, default: "我的實測"] + "篩選與排序；各來源分開保存。").font(.caption).foregroundStyle(.secondary)
                 }
             }.padding(24).frame(maxWidth: 1150).frame(maxWidth: .infinity)
-        }
+        }.safeAreaInset(edge: .bottom) {
+            if selecting && ["My Models", "Hidden"].contains(tab) { compareBar }
+        }.sheet(item: $comparison) { ComparisonView(store: store, controller: $0) }
     }
     private var filters: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -72,31 +71,36 @@ struct ModelsView: View {
         }
     }
     private var canCompare: Bool {
-        let rows = store.activeModels.filter { compareSelection.contains(ModelScope($0)) }
-        let ids = Set(rows.map { $0["metadata"]["canonical_id"].string })
-        return (2...4).contains(compareSelection.count) && rows.count == compareSelection.count && ids.count == 1 && !ids.contains("") && rows.allSatisfy { ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "CUSTOM"].contains(store.operationName($0)) } && comparePrompt.utf8.count <= 1000
+        offers.count == compareSelection.count && ComparisonOffer.problem(offers, prompt: "") == nil
+    }
+    private var offers: [ComparisonOffer] {
+        store.modelEntries(store.myModels.filter { compareSelection.contains(ModelScope($0)) }).sorted { $0.id < $1.id }.map {
+            ComparisonOffer(model: $0.model, title: $0.title, context: store.scopeTitle($0.model), operation: store.operationName($0.model))
+        }
     }
     private var compareBar: some View {
-        AtlasCard {
-            HStack { Text("已選 \(compareSelection.count) 個連線").font(.headline); Spacer(); Button("清除選取") { compareSelection = [] } }
-            FormField(title: "比較使用的提示詞", text: $comparePrompt)
-            Text("即時比較使用同一 Canonical 模型的 2–4 個可用連線；批次管理最多 100 個連線。").font(.caption).foregroundStyle(.secondary)
-            HStack {
-                ActionButton(title: "即時比較（實際請求）") {
-                    guard let api = store.api else { return }
-                    comparison = try await api.call("/models/compare", method: "POST", body: .object(["selections": .array(compareSelection.sorted { $0.id < $1.id }.map(\.json)), "prompt": .string(comparePrompt)]))
-                    await store.refresh()
-                }.disabled(!canCompare)
-                Spacer()
+        HStack(spacing: 14) {
+            Text(compareSelection.isEmpty ? "選取要管理的連線" : "已選 \(compareSelection.count) 個連線").font(.system(size: 12, weight: .medium))
+            if !compareSelection.isEmpty { Button("清除") { compareSelection = [] }.buttonStyle(.plain).foregroundStyle(.secondary) }
+            Spacer()
+            Menu("批次管理") {
                 ForEach(["HIDDEN", "ARCHIVED", "ACTIVE"], id: \.self) { state in
-                    ActionButton(title: ["HIDDEN":"預覽隱藏", "ARCHIVED":"預覽封存", "ACTIVE":"預覽恢復"][state]!) {
-                        guard let api = store.api else { return }
-                        let value = try await api.call("/assistant/actions/preview", method: "POST", body: .object(["kind": .string("MODEL_BATCH"), "selections": .array(compareSelection.sorted { $0.id < $1.id }.map(\.json)), "patch": .object(["state": .string(state)])]))
-                        store.controlReview = ActionReviewController(api: api, value: value)
-                    }.disabled(!(2...100).contains(compareSelection.count))
+                    Button(["HIDDEN":"預覽隱藏", "ARCHIVED":"預覽封存", "ACTIVE":"預覽恢復"][state]!) {
+                        let selections = compareSelection.sorted { $0.id < $1.id }.map(\.json)
+                        Task {
+                            do {
+                                guard let api = store.api else { return }
+                                let value = try await api.call("/assistant/actions/preview", method: "POST", body: .object(["kind": .string("MODEL_BATCH"), "selections": .array(selections), "patch": .object(["state": .string(state)])]))
+                                store.controlReview = ActionReviewController(api: api, value: value)
+                            } catch { store.problem = error.localizedDescription }
+                        }
+                    }
                 }
-            }
-        }
+            }.fixedSize().disabled(!(2...100).contains(compareSelection.count))
+            Button { comparison = ComparisonController(offers: offers) } label: { Label("並列比較", systemImage: "rectangle.split.2x1") }
+                .buttonStyle(AtlasActionStyle(prominent: true)).disabled(!canCompare)
+                .help(ComparisonOffer.problem(offers, prompt: "") ?? "比較同一模型的各個連線")
+        }.padding(.horizontal, 24).padding(.vertical, 14).background(.regularMaterial).overlay(alignment: .top) { Divider() }
     }
     private var filtered: [ModelSearchEntry] {
         let models = store.modelEntries(store.myModels).filter {
@@ -118,14 +122,14 @@ private struct ModelLibraryRow: View {
             ModelMark(name: entry.title).padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
-                    Text(entry.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    Text(entry.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
                     if entry.model["favorite"].boolean { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.orange) }
                     if !entry.model["enabled"].boolean { SmallBadge(text: "已停用") }
                     Spacer(minLength: 4)
                     SmallBadge(text: operationTitle(store.operationName(entry.model)), color: atlasAccent)
                     Image(systemName: "chevron.right").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
                 }
-                Text(store.scopeTitle(entry.model) + " · " + store.endpointLabel(entry.model)).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                Text(store.scopeTitle(entry.model) + " · " + store.endpointLabel(entry.model)).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                 if let label = priceLabel {
                     Text(label).font(.system(size: 10, weight: .medium)).foregroundStyle(entry.model["price_state"].string == "FREE_NOW" ? atlasTextAccent : Color.secondary)
                 }
@@ -324,8 +328,8 @@ struct ModelDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                VStack(alignment: .leading, spacing: 5) { Text(scope.modelID).font(.title2.weight(.bold)); Text(store.scopeTitle(model)).font(.caption).foregroundStyle(.secondary); Text(store.operationName(model)).font(.caption).foregroundStyle(atlasTextAccent) }
-                Spacer(); Button("使用此模型") { if let usableModel { store.chooseModel(usableModel); dismiss() } }.buttonStyle(.borderedProminent).disabled(store.generating || usableModel == nil)
+                VStack(alignment: .leading, spacing: 6) { Text(ModelSearchEntry(model: model, context: "", operation: "").title).font(.system(size: 20, weight: .semibold)); Text(store.scopeTitle(model)).font(.system(size: 12)).foregroundStyle(.secondary); Text(operationTitle(store.operationName(model))).font(.caption).foregroundStyle(.secondary) }
+                Spacer(); Button("使用此模型") { if let usableModel { store.chooseModel(usableModel); dismiss() } }.buttonStyle(AtlasActionStyle(prominent: true)).disabled(store.generating || usableModel == nil)
                 Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(25)
             Picker("詳情", selection: $tab) { ForEach(["概覽", "價格", "額度", "效能", "歷史", "設定"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 24).padding(.bottom, 16)

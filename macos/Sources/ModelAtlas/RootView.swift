@@ -56,7 +56,7 @@ struct RootView: View {
         .sheet(isPresented: Binding(get: { store.requestReceipt != nil }, set: { if !$0 { store.requestReceipt = nil } })) {
             if let id = store.requestReceipt { RequestReceiptView(store: store, sampleID: id) }
         }
-        .tint(atlasAccent)
+        .atlasAppearance()
         .onAppear { applyNativeAppearance(appearance) }
         .onChange(of: appearance) { applyNativeAppearance($0) }
         .disabled(store.closing)
@@ -67,27 +67,25 @@ struct RootView: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                Image(systemName: "square.stack.3d.up.fill").font(.system(size: 15, weight: .medium)).foregroundStyle(atlasTextAccent)
+                Image(systemName: "square.stack.3d.up.fill").font(.system(size: 17, weight: .medium)).foregroundStyle(.primary)
                     .frame(width: 26, height: 26)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("ModelAtlas").font(.system(size: 13, weight: .semibold))
-                    Text("模型與供應商").font(.system(size: 10)).foregroundStyle(.secondary)
+                    Text("ModelAtlas").font(.system(size: 14, weight: .semibold))
                 }
             }.padding(.horizontal, 9).padding(.top, 5).padding(.bottom, 3)
-            Text("工作區").font(.system(size: 10, weight: .medium)).foregroundStyle(.tertiary).padding(.horizontal, 12)
+            Text("工作區").font(.system(size: 11, weight: .medium)).foregroundStyle(.secondary).padding(.horizontal, 12)
             VStack(spacing: 3) {
                 ForEach(Workspace.allCases) { section in
                     Button { store.workspace = section } label: {
                         HStack(spacing: 10) {
                             Image(systemName: section.symbol).font(.system(size: 14, weight: .medium)).frame(width: 19)
                                 .foregroundStyle(store.workspace == section ? atlasTextAccent : Color.secondary)
-                            Text(section.rawValue).font(.system(size: 12, weight: store.workspace == section ? .semibold : .medium))
+                            Text(section.rawValue).font(.system(size: 13, weight: store.workspace == section ? .semibold : .regular))
                             Spacer(minLength: 4)
                             if section == .providers { sidebarCount(store.providers.count) }
                             if section == .models { sidebarCount(store.activeModels.count) }
                         }.frame(maxWidth: .infinity, minHeight: 35, alignment: .leading).padding(.horizontal, 11)
-                            .background(store.workspace == section ? atlasSurface.opacity(0.85) : Color.clear).cornerRadius(7)
-                            .overlay(RoundedRectangle(cornerRadius: 7).stroke(store.workspace == section ? atlasHairline : Color.clear, lineWidth: 0.5))
+                            .background(store.workspace == section ? Color.primary.opacity(0.075) : Color.clear).cornerRadius(7)
                             .foregroundStyle(Color.primary)
                     }.buttonStyle(.plain).accessibilityIdentifier("nav-" + section.rawValue)
                 }
@@ -105,7 +103,7 @@ struct RootView: View {
                 Image(systemName: "internaldrive").font(.system(size: 12)).foregroundStyle(.secondary)
                 Text(store.ready ? "本機工作區" : "尚未啟動").font(.system(size: 11)).foregroundStyle(.secondary)
                 Spacer()
-                Circle().fill(store.ready ? atlasAccent : Color.secondary).frame(width: 5, height: 5)
+                Circle().fill(store.ready ? Color.green : Color.secondary).frame(width: 5, height: 5)
             }.padding(.horizontal, 11).padding(.bottom, 9)
         }.padding(10).background(atlasSidebar)
     }

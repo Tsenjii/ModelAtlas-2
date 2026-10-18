@@ -1,6 +1,29 @@
 import AtlasCore
 import SwiftUI
 
+enum IntelligenceLabels {
+    static func source(_ value: String) -> String {
+        if value.hasPrefix("DECLARATIVE_PROVIDER_META:") { return "供應商連接器" }
+        return ["USER":"手動紀錄", "PROVIDER_REPORTED":"供應商回報", "MY_KEY_LOCAL":"我的 Key 實測", "EXTERNAL":"外部參考", "NEW_API":"站方 API"][value] ?? (value.isEmpty ? "來源未提供" : value)
+    }
+    static func scope(_ value: String) -> String {
+        ["MODEL_KEY_GROUP":"模型連線", "MODEL":"模型", "CREDENTIAL":"金鑰", "GROUP":"群組", "ACCOUNT":"帳戶", "PROVIDER":"供應商"][value] ?? (value.isEmpty ? "原始觀測範圍" : value)
+    }
+    static func kind(_ value: String) -> String {
+        if value.hasPrefix("MANUAL_QUOTA:") {
+            let components = value.split(separator: ":", omittingEmptySubsequences: false)
+            return "手動額度 · " + scope(components.count > 1 ? String(components[1]) : "")
+        }
+        return ["MANUAL_PRICE":"價格紀錄", "MANUAL_QUOTA":"額度紀錄", "BALANCE":"餘額快照", "PRICE":"價格觀測", "QUOTA":"額度觀測", "CATALOG":"模型目錄同步", "PERFORMANCE":"效能觀測", "AVAILABILITY":"可用性觀測", "CAPABILITY":"模型能力"][value] ?? value
+    }
+    static func status(_ value: String) -> String {
+        ["SUCCESS":"成功", "FAILED":"失敗", "SNAPSHOT":"已保存", "CANCELLED":"已取消", "INTERRUPTED":"已中斷", "RUNNING":"進行中", "TIMEOUT":"逾時", "NETWORK":"網路錯誤", "RATE_LIMIT":"限流", "UNAUTHORIZED":"認證失敗", "SERVER_ERROR":"站方錯誤"][value] ?? value
+    }
+    static func price(_ value: String) -> String {
+        ["FREE_NOW":"目前免費", "PAID":"付費", "PARTIALLY_FREE":"部分免費", "UNKNOWN":"尚未確認"][value] ?? "尚未確認"
+    }
+}
+
 private func insightDate(_ milliseconds: Double) -> String {
     guard milliseconds > 0 else { return "時間未提供" }
     return Date(timeIntervalSince1970: milliseconds / 1000).formatted(date: .abbreviated, time: .shortened)
@@ -16,7 +39,7 @@ struct InsightValue: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.system(size: 17, weight: .medium, design: .rounded)).monospacedDigit().textSelection(.enabled)
+            Text(value).font(.system(size: 20, weight: .semibold)).monospacedDigit().textSelection(.enabled)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -25,9 +48,13 @@ struct ObservationEvidence: View {
     let observation: IntelligenceObservation
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(observation.source + " · " + insightDate(observation.at)).font(.caption).foregroundStyle(.secondary)
-            Text(observation.scopeDescription).font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
-            DisclosureGroup("來源與完整觀測") { JSONTree(value: observation.raw).padding(.top, 8) }.font(.caption)
+            Text(IntelligenceLabels.source(observation.source) + " · " + insightDate(observation.at)).font(.caption).foregroundStyle(.secondary)
+            DisclosureGroup("來源與適用範圍") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(observation.scopeDescription).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                    JSONTree(value: observation.raw)
+                }.padding(.top, 8)
+            }.font(.caption)
         }
     }
 }
@@ -43,7 +70,7 @@ struct ModelPricingPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             AtlasCard {
-                HStack { Text("這個連線的免費狀態").font(.headline); Spacer(); SmallBadge(text: priceState.isEmpty || priceState == "UNKNOWN" ? "尚未確認" : priceState, color: atlasAccent) }
+                HStack { Text("這個連線的價格狀態").font(.headline); Spacer(); SmallBadge(text: IntelligenceLabels.price(priceState)) }
                 Text("FREE NOW 與定期免費資格分開判定；以下保留最後成功觀測的時間與來源。").font(.callout).foregroundStyle(.secondary)
             }
             if prices.isEmpty { AtlasCard { Text("尚無價格觀測").font(.headline); Text("加入模型後可同步資料，或在設定中記錄標價與已確認的實際扣款。").foregroundStyle(.secondary) } }
@@ -98,7 +125,7 @@ struct ModelQuotaPanel: View {
             if intelligence.pools.isEmpty { AtlasCard { Text("尚無額度資料").font(.headline); Text("沒有數值不代表額度為零，也不代表不可使用。").foregroundStyle(.secondary) } }
             ForEach(intelligence.pools) { row in
                 AtlasCard {
-                    HStack { Text(row.facts["scope_kind"].string.isEmpty ? "站方額度快照" : row.facts["scope_kind"].string + " 額度池").font(.headline); Spacer(); Text(row.status).font(.caption).foregroundStyle(.secondary) }
+                    HStack { Text(row.facts["scope_kind"].string.isEmpty ? "站方額度快照" : IntelligenceLabels.scope(row.facts["scope_kind"].string) + "額度池").font(.headline); Spacer(); Text(IntelligenceLabels.status(row.status)).font(.caption).foregroundStyle(.secondary) }
                     let values = row.facts["values"].fields.isEmpty ? row.facts : row.facts["values"]
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), alignment: .leading)], alignment: .leading, spacing: 18) {
                         ForEach(ModelIntelligence.quotaFields.map(\.0), id: \.self) { key in
@@ -221,14 +248,14 @@ struct ModelObservationHistory: View {
         AtlasCard {
             HStack { Text("價格、額度與同步觀測").font(.headline); Spacer(); Text("\(rows.count) 筆").font(.caption).foregroundStyle(.secondary) }
             HStack {
-                Picker("來源", selection: $source) { Text("全部來源").tag(""); ForEach(Array(Set(intelligence.history.map(\.source))).sorted(), id: \.self) { Text($0).tag($0) } }
-                Picker("類型", selection: $kind) { Text("全部類型").tag(""); ForEach(Array(Set(intelligence.history.map(\.kind))).sorted(), id: \.self) { Text($0).tag($0) } }
+                Picker("來源", selection: $source) { Text("全部來源").tag(""); ForEach(Array(Set(intelligence.history.map(\.source))).sorted(), id: \.self) { Text(IntelligenceLabels.source($0)).tag($0) } }
+                Picker("類型", selection: $kind) { Text("全部類型").tag(""); ForEach(Array(Set(intelligence.history.map(\.kind))).sorted(), id: \.self) { Text(IntelligenceLabels.kind($0)).tag($0) } }
             }
             Text("顯示引擎最近保留的最多 200 筆觀測；失敗不取代最後成功資料。原始紀錄持續保存。").font(.caption).foregroundStyle(.secondary)
             if rows.isEmpty { Text("尚無符合的觀測").foregroundStyle(.secondary) }
             ForEach(rows) { row in
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack { Image(systemName: row.status == "SUCCESS" ? "checkmark.circle" : "exclamationmark.circle").foregroundStyle(row.status == "SUCCESS" ? atlasTextAccent : Color.primary); Text(row.kind).font(.subheadline.weight(.semibold)); Spacer(); Text(row.status).font(.caption) }
+                    HStack { Image(systemName: row.status == "SUCCESS" ? "checkmark.circle" : "exclamationmark.circle").foregroundStyle(row.status == "SUCCESS" ? Color.green : Color.secondary); Text(IntelligenceLabels.kind(row.kind)).font(.subheadline.weight(.semibold)); Spacer(); Text(IntelligenceLabels.status(row.status)).font(.caption).foregroundStyle(.secondary) }
                     ObservationEvidence(observation: row)
                     if !row.facts["reason"].string.isEmpty { Text(row.facts["reason"].string).font(.caption).foregroundStyle(.secondary) }
                 }.padding(.vertical, 8)
@@ -256,6 +283,12 @@ struct InsightTrend: View {
                     let start = points.map(\.at).min() ?? 0, end = points.map(\.at).max() ?? 0
                     let verticalRange = max(high - low, max(abs(high) * 0.1, 0.000001))
                     Path { path in
+                        for fraction in [0.0, 0.5, 1.0] {
+                            let y = 6 + fraction * max(geometry.size.height - 12, 0)
+                            path.move(to: CGPoint(x: 6, y: y)); path.addLine(to: CGPoint(x: geometry.size.width - 6, y: y))
+                        }
+                    }.stroke(Color.primary.opacity(0.09), style: StrokeStyle(lineWidth: 0.5, dash: [3, 4]))
+                    Path { path in
                         var continuing = false
                         for point in points {
                             guard let value = point.value else { continuing = false; continue }
@@ -274,7 +307,7 @@ struct InsightTrend: View {
                             path.addEllipse(in: CGRect(x: x - 2, y: y - 2, width: 4, height: 4))
                         }
                     }.fill(atlasTextAccent)
-                }.frame(height: 110).background(atlasInset).cornerRadius(6).accessibilityHidden(true)
+                }.frame(height: 110).accessibilityHidden(true)
                 HStack { Text(points.first.map { insightDate($0.at) } ?? ""); Spacer(); Text(points.last.map { insightDate($0.at) } ?? "") }.font(.caption2).foregroundStyle(.secondary)
                 Text("最低 \(String(format: "%.3g", values.min()!)) · \(values.count) 個有效觀測點").font(.caption2).foregroundStyle(.secondary)
             }

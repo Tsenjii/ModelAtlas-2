@@ -8,6 +8,7 @@ struct SettingsView: View {
     @ObservedObject var store: AtlasStore
     @Environment(\.dismiss) private var dismiss
     @AppStorage("appearance") private var appearance = "system"
+    @AppStorage("workspaceAccent") private var accent = "graphite"
     @State private var tab = "一般"
     @State private var timezone = "Asia/Taipei"
     @State private var performance = "7d"
@@ -95,6 +96,16 @@ struct SettingsView: View {
             AtlasCard {
                 Text("外觀").font(.headline)
                 Picker("色彩模式", selection: $appearance) { Text("跟隨系統").tag("system"); Text("淺色").tag("light"); Text("深色").tag("dark") }.pickerStyle(.segmented)
+                Divider()
+                HStack {
+                    Text("按鈕強調色")
+                    Spacer()
+                    Picker("按鈕強調色", selection: $accent) {
+                        ForEach(AtlasAccentChoice.allCases) { Text($0.title).tag($0.rawValue) }
+                    }.labelsHidden().frame(width: 180).accessibilityIdentifier("settings-accent")
+                }
+                Text("外觀變更會立即套用並保留。").font(.caption).foregroundStyle(.secondary)
+                AtlasLoadedMarker(name: "appearance-" + accent).frame(height: 0)
             }
             AtlasCard {
                 Text("使用偏好").font(.headline)

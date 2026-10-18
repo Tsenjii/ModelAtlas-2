@@ -34,3 +34,9 @@
 - 既定工作可依優先序連續處理，不必每片徵詢；每片必須實作、測試、審查、同 SHA 全綠，再接下一片。
 - Red-head lock：main 只要未獲同 SHA 全綠就不開新功能。
 - V1 P1–P10 是完整交付目標，不因難度刪除 P8 Crawler／P9 Assistant／P10 Reflection；但 routing/fallback/gateway 仍是 future-only extension。
+
+## D-007：Mac 原生外觀（2026-10-18 使用者明確更新）
+- 使用者認為既有Mac UI過時，要求實際研究Magpie／其他好看軟體，也明確質疑固定藍綠按鈕；Mac不再被D-005的Android teal綁定。
+- Mac預設石墨灰，中性色承載內容與清單；主要按鈕可在設定選石墨灰／跟隨macOS／鳶尾紫／靛藍，保留深淺色。只保存非敏感本機外觀偏好，不改引擎設定或排程。
+- 沿用現有SwiftUI／AppKit元件，參考官方實圖的資訊層級、分組、字級與互動；不增加WebView／Electron或外部UI依賴。
+- Android／VPS既有配色與未整合UI保持原狀；三工作區、scope／Unknown／last-good約束不變。
