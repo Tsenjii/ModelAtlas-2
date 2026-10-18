@@ -211,7 +211,7 @@ import SwiftUI
             try await verifyComparison(store, chat: chat, foreign: foreign, output: output)
             stage = "native-chart-selection-and-retained-archive"
             try await verifyCharts(store, chat: chat, foreign: foreign, output: output, fixture: fixture)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(34), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "wire_counts": counts])
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(35), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
@@ -270,6 +270,11 @@ import SwiftUI
         try await wait { !empty.pending }
         try require(empty.problem == nil && empty.state?.total == 0 && empty.state?.rows.isEmpty == true)
         try await capture(ModelDetailView(store: store, model: chat, initialTab: "價格", priceArchive: empty), output, "34-price-range-empty-light", dark: false, marker: "price-archive-loaded")
+        let emptyHistory = ObservationArchiveController(scope: scope)
+        emptyHistory.refresh(using: api, filter: ObservationFilter(source: "USER", kind: "MANUAL_PRICE", start: 0, end: 1000))
+        try await wait { !emptyHistory.pending }
+        try require(emptyHistory.problem == nil && emptyHistory.state?.total == 0 && emptyHistory.state?.sources.isEmpty == true && emptyHistory.state?.kinds.isEmpty == true)
+        try await capture(ModelDetailView(store: store, model: chat, initialTab: "歷史", historyArchive: emptyHistory), output, "35-history-filter-empty-light", dark: false, marker: "observation-archive-loaded")
         let other = try await api.get("/models/observations", query: ModelScope(foreign).query + filter.query)
         let otherPage = try ObservationPage(other, scope: ModelScope(foreign), filter: filter)
         try require(otherPage.rows.isEmpty)

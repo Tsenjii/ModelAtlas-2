@@ -324,6 +324,7 @@ struct CatalogView: View {
     @State private var customStart = Date().addingTimeInterval(-7 * 86400)
     @State private var customEnd = Date()
     @State private var chartReceipt: String?
+    @State private var historyKind = "observations"
     @StateObject private var priceArchive: ObservationArchiveController
     @StateObject private var historyArchive: ObservationArchiveController
     private var scope: ModelScope { ModelScope(model) }
@@ -359,7 +360,11 @@ struct CatalogView: View {
                         if window == "custom" { HStack { DatePicker("開始", selection: $customStart); DatePicker("結束", selection: $customEnd); Button("套用") { Task { await load() } } } }
                         ModelPerformancePanel(intelligence: intelligence, openReceipt: { chartReceipt = $0 })
                     }
-                    if tab == "歷史" { ModelObservationHistory(api: store.api, archive: historyArchive); RequestHistoryView(store: store, scope: scope) }
+                    if tab == "歷史" {
+                        Picker("歷史種類", selection: $historyKind) { Text("觀測紀錄").tag("observations"); Text("請求紀錄").tag("requests") }.pickerStyle(.segmented)
+                        if historyKind == "observations" { ModelObservationHistory(api: store.api, archive: historyArchive) }
+                        else { RequestHistoryView(store: store, scope: scope) }
+                    }
                     if tab == "設定" { settingsContent }
                 }.padding(24)
             }

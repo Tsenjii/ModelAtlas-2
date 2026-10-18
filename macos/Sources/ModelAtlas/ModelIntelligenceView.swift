@@ -300,6 +300,8 @@ private struct ProviderMetricValues: View {
     @State private var start = Date().addingTimeInterval(-7 * 86400)
     @State private var end = Date()
     @State private var filterProblem: String?
+    private var sources: [String] { Array(Set((archive.state?.sources ?? []) + (source.isEmpty ? [] : [source]))).sorted() }
+    private var kinds: [String] { Array(Set((archive.state?.kinds ?? []) + (kind.isEmpty ? [] : [kind]))).sorted() }
     init(api: AtlasClient?, archive: ObservationArchiveController) {
         self.api = api; self.archive = archive
         let filter = archive.requested
@@ -316,11 +318,11 @@ private struct ProviderMetricValues: View {
                 HStack {
                     Picker("來源", selection: $source) {
                         Text("全部來源").tag("")
-                        ForEach(archive.state?.sources ?? [], id: \.self) { Text(IntelligenceLabels.source($0)).tag($0) }
+                        ForEach(sources, id: \.self) { Text(IntelligenceLabels.source($0)).tag($0) }
                     }
                     Picker("類型", selection: $kind) {
                         Text("全部類型").tag("")
-                        ForEach(archive.state?.kinds ?? [], id: \.self) { Text(IntelligenceLabels.kind($0)).tag($0) }
+                        ForEach(kinds, id: \.self) { Text(IntelligenceLabels.kind($0)).tag($0) }
                     }
                 }
                 if let filterProblem { Text(filterProblem).font(.caption).foregroundStyle(.red) }
