@@ -10,6 +10,7 @@ struct ModelsView: View {
     @State private var shown = 100
     @State private var compareSelection: Set<ModelScope> = []
     @State private var comparison: ComparisonController?
+    @State private var bulkPending = false
     var body: some View {
         let entries = filtered
         ScrollView {
@@ -86,8 +87,10 @@ struct ModelsView: View {
             Menu("批次管理") {
                 ForEach(["HIDDEN", "ARCHIVED", "ACTIVE"], id: \.self) { state in
                     Button(["HIDDEN":"預覽隱藏", "ARCHIVED":"預覽封存", "ACTIVE":"預覽恢復"][state]!) {
+                        guard !bulkPending else { return }; bulkPending = true
                         let selections = compareSelection.sorted { $0.id < $1.id }.map(\.json)
                         Task {
+                            defer { bulkPending = false }
                             do {
                                 guard let api = store.api else { return }
                                 let value = try await api.call("/assistant/actions/preview", method: "POST", body: .object(["kind": .string("MODEL_BATCH"), "selections": .array(selections), "patch": .object(["state": .string(state)])]))
@@ -96,9 +99,10 @@ struct ModelsView: View {
                         }
                     }
                 }
-            }.fixedSize().disabled(!(2...100).contains(compareSelection.count))
+            }.fixedSize().disabled(bulkPending || !(2...100).contains(compareSelection.count))
+            if bulkPending { ProgressView().controlSize(.small).accessibilityLabel("正在準備批次預覽") }
             Button { comparison = ComparisonController(offers: offers, refresh: { try await store.reload() }) } label: { Label("並列比較", systemImage: "rectangle.split.2x1") }
-                .buttonStyle(AtlasActionStyle(prominent: true)).disabled(!canCompare)
+                .buttonStyle(AtlasActionStyle(prominent: true)).disabled(!canCompare || bulkPending)
                 .help(ComparisonOffer.problem(offers, prompt: "") ?? "比較同一模型的各個連線")
         }.padding(.horizontal, 24).padding(.vertical, 14).background(.regularMaterial).overlay(alignment: .top) { Divider() }
     }
