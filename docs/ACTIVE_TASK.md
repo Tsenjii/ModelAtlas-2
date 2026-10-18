@@ -1,5 +1,7 @@
 # ModelAtlas Public — ACTIVE TASK
 
+- **012 同片 Android 回歸修訂：** `5f69dc5` 的 Mac39128935000 三項（雙架構78核心／74圖／14frame）與 VPS39128934998 四項 SUCCESS；Android39128934992 build SUCCESS、device 的 rapidDoubleToggle 單項15秒逾時，故未驗收／未交付。該測試假設兩次真 Room count 一定先於首次 add，但 query／transaction executor 交錯沒有此保證；加入預設 null 的讀後觀察器，只在本測試用 coroutine barrier 固定原本要驗的兩次 non-member 快照。兩次真讀取／獨立 coroutine／全部完成／exact DB 只一列加強斷言，原15秒、全部既有測試及產品UI／DB行為保留。新HEAD重新完整九項與148實圖＋28frame，不借5f69部分綠燈、不盲重跑。
+
 - **2026-10-18 MAC-PROVIDER-012（唯一live，0.6.1 build12候選）：** 使用者要求繼續優化並保留其他平台做得較好的功能／操作。新增持續維護的跨平台優點清單與D-008；本片先吸收VPS的表單草稿／局部保存回饋，以及Android的精確操作範圍／busy保護，改善Mac帳戶／Key清單、新增表單、帳戶共用寫入鎖與分開的秘密值更新／版本恢復。基線011 `48ff43f` 的Mac39112956833／VPS39112956835／Android39112956891九項SUCCESS，70核心／136靜態圖與28 frame已檢視、0.6.0已交付。main5009e0c8／38408176782 build115333198754、device115333198701本輪重查SUCCESS。原全部70核心／68圖每架構與28 frame保留，新增8核心／6圖，預期78核心／74圖每架構、148靜態圖；原25秒串流／1249字SHA256／閱讀位置／120秒parity不減。新HEAD九項與實圖前候選／Draft，不merge／改base／部署。詳macos/PROVIDER_MANAGEMENT.md、docs/CROSS_PLATFORM_STRENGTHS.md；完整大綱仍PARTIAL，下方live為歷史。
 
 - **011 Android測試排程修訂：** b94的device在55/966後沒有進度，直到被beb7a86新HEAD的concurrency取消；非完整綠燈。StandardTestDispatcher避開IO續行，但本專案legacy Compose測試API的排程在activity／idle同步前未被驅動。只為PK27的同一正式ComposeRule加主Looper的ready-work driver，包在activity rule外；不推進虛擬時間、不改15秒／測試數／UI與DB斷言，不改Android產品行為。Mac／VPS的既有成功不代替新HEAD，所有九項仍需重驗。

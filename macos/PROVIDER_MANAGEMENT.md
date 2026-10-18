@@ -24,3 +24,5 @@ NativeParity 走正式 packaged engine／SQLite／API 與相同 production Contr
 最低macOS12；實際CI仍macOS15兩架構。新HEAD九項／78核心／148靜態圖與28 frame檢視前保持候選／Draft。完整大綱仍 PARTIAL；不merge、不改base、不部署。
 
 同片收尾：新增帳戶採可捲動內容與固定操作列，避免保存／下一稿回饋擠壓操作；補第49張真實表單與另一表單操作後草稿仍在的斷言。所有既有畫面／計數不減。
+
+Android 回歸：5f69dc5 的 Mac 三項／VPS 四項與 Android build 成功，但 rapidDoubleToggle 測試逾時，未驗收。該測試的兩次讀取原本僅靠排程猜測先後；以預設 null 的讀後觀察器，在真 Room 讀取後用 coroutine barrier 確保兩次 non-member 快照再放行。保留15秒及所有舊斷言，增加兩次獨立 coroutine 完成與 exact DB 僅一列檢查，不改正式 Android 操作語意。修訂後重新驗新 HEAD 全九項與同版實圖。
