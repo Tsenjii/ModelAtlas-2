@@ -13,7 +13,17 @@ enum AtlasAccentChoice: String, CaseIterable, Identifiable {
         case .blue: return Color(red: 0.22, green: 0.36, blue: 0.70)
         }
     }
-    func foreground(_ scheme: ColorScheme) -> Color { self == .graphite && scheme == .dark ? .black : .white }
+    func foreground(_ scheme: ColorScheme) -> Color {
+        if self == .system, let rgb = NSColor.controlAccentColor.usingColorSpace(.sRGB) {
+            func linear(_ component: CGFloat) -> Double {
+                let value = Double(component)
+                return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+            }
+            let luminance = 0.2126 * linear(rgb.redComponent) + 0.7152 * linear(rgb.greenComponent) + 0.0722 * linear(rgb.blueComponent)
+            return luminance > 0.179 ? .black : .white
+        }
+        return self == .graphite && scheme == .dark ? .black : .white
+    }
 }
 
 private struct AtlasAccentKey: EnvironmentKey { static let defaultValue = AtlasAccentChoice.graphite }

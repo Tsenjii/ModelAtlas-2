@@ -41,3 +41,5 @@ NativeParity使用正式metadata／ComparisonController→引擎→隔離TLS fix
 這是正式caller／原生視窗及隔離fixture驗證，不等於全部新控制都經XCUI點擊，也不是Kios等外部供應商認證實測。CI與實圖未全通過前仍候選。
 
 完整Master Spec仍PARTIAL：Provider全量inventory／批量多Key／簽到／stale情境、完整Research／Assistant／Reflection、200筆以上原生觀測分頁、站方series_schema互動圖及外部多單位轉換仍須後續。Android PLAY-004／P8–P10未完成狀態保留。
+
+3976a1d首候選在Mac Universal編譯時發現新增ComparisonResult與Foundation既有型別同名；改為LiveComparisonItem，未刪改任何功能或測試。同步外觀source review補系統強調色的相對亮度文字對比，避免亮色按鈕固定白字。新HEAD重新九項／110圖，前候選不能交付。

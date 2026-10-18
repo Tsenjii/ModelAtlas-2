@@ -153,7 +153,7 @@ struct ComparisonView: View {
             }.font(.system(size: 12))
         }
     }
-    private func column(_ item: ComparisonResult) -> some View {
+    private func column(_ item: LiveComparisonItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(offer(item.scope)?.title ?? item.scope.modelID).font(.system(size: 14, weight: .semibold)).lineLimit(2)
@@ -166,7 +166,7 @@ struct ComparisonView: View {
             Button("查看收據") { receipt = ComparisonReceipt(id: item.sampleID) }.buttonStyle(AtlasActionStyle()).disabled(item.sampleID.isEmpty).frame(height: 48)
         }.frame(width: controller.offers.count == 2 ? 290 : 235, alignment: .leading).padding(.horizontal, 18)
     }
-    @ViewBuilder private func quota(_ item: ComparisonResult) -> some View {
+    @ViewBuilder private func quota(_ item: LiveComparisonItem) -> some View {
         if item.quota.isEmpty && item.receipt["response_quota"].fields.isEmpty { Text("這次請求沒有可用的額度快照。").foregroundStyle(.secondary) }
         else {
             Text("請求前後的額度快照").font(.subheadline.weight(.semibold))
@@ -197,7 +197,7 @@ private enum ComparisonMetric: String, CaseIterable, Identifiable {
     case outcome, ttft, tps, latency, input, output, price, actual, estimate, nominal
     var id: String { rawValue }
     var title: String { ["outcome":"請求結果", "ttft":"首 Token · ms", "tps":"TPS · tokens/s", "latency":"總延遲 · ms", "input":"輸入 Token", "output":"輸出 Token", "price":"當時價格狀態", "actual":"站方回報扣款", "estimate":"有效價格估算", "nominal":"標價估算"][rawValue]! }
-    func value(_ item: ComparisonResult) -> String {
+    func value(_ item: LiveComparisonItem) -> String {
         switch self {
         case .outcome: return IntelligenceLabels.status(item.outcome) + (item.raw["http_status"] == .null ? "" : " · " + item.raw["http_status"].display)
         case .price: return IntelligenceLabels.price(item.receipt["price_state"].string)

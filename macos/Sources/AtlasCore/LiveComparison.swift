@@ -29,7 +29,7 @@ public struct ComparisonOffer: Identifiable, Sendable {
 
 public struct LiveComparison: Sendable {
     public let raw: JSONValue
-    public let items: [ComparisonResult]
+    public let items: [LiveComparisonItem]
     public init(response: JSONValue, scopes: [ModelScope]) throws {
         guard case .array(let rows) = response, rows.count == scopes.count,
               Set(scopes).count == scopes.count, (2...4).contains(scopes.count) else { throw AtlasError.invalidResponse }
@@ -42,12 +42,12 @@ public struct LiveComparison: Sendable {
         raw = response
         items = try scopes.map { scope in
             guard let row = byScope[scope] else { throw AtlasError.invalidResponse }
-            return ComparisonResult(raw: row, scope: scope)
+            return LiveComparisonItem(raw: row, scope: scope)
         }
     }
 }
 
-public struct ComparisonResult: Identifiable, Sendable {
+public struct LiveComparisonItem: Identifiable, Sendable {
     public let raw: JSONValue
     public let scope: ModelScope
     public var id: String { scope.id }
