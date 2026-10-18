@@ -30,6 +30,8 @@ Models → 模型詳情 → 價格／效能／歷史。
 
 以上包含真正式caller與原生事件，但不等同全部控制的XCUI點擊或任何Kios外部認證實測。
 
+7908d64的arm64已通過54核心／60圖；實圖審查後補回價格頁常駐的selected-offer「Cache另計費」提示（不從其他source推定）、縮短來源標籤、讓密集折線只標端點但保留所有原始值／缺段／選取／匯出。選取capture捲動範圍包含座標與收據操作，空日期fixture用2025連續兩天以便閱讀。原54核心／120圖與全部guard不變，新HEAD重新九項，不交付前候選或借其部分結果。
+
 ## 其餘範圍
 
 站方專用series_schema全量互動圖、外部多單位轉換、Provider完整inventory／多Key／簽到／stale與Research／Assistant／Reflection全部情境仍未宣稱完成。Android／VPS產品介面不改；新增只讀API可供後續共用。自動路由／fallback／Key輪替／對外Gateway仍future-only。

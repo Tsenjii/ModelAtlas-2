@@ -353,7 +353,7 @@ struct CatalogView: View {
                         AtlasCard { Text("模型資訊").font(.headline); JSONTree(value: detail["metadata"]); Text("已確認能力").font(.headline); Text(detail["capabilities"].array.map(\.string).joined(separator: " · ")).foregroundStyle(.secondary) }
                         AtlasCard { HStack { Text("本機手動測試").font(.headline); Spacer(); ActionButton(title: "同步資料") { _ = try await store.mutate("/intelligence/sync", body: scope.json); await load() }; ActionButton(title: "測試這個連線") { guard let api = store.api else { return }; testResult = try await api.call("/models/test", method: "POST", body: scope.json); await store.refresh(); await load() } }; if let testResult { JSONTree(value: testResult) } }
                     }
-                    if tab == "價格" { ModelPricingPanel(intelligence: intelligence, priceState: usableModel?["price_state"].string ?? model["price_state"].string, api: store.api, archive: priceArchive) }
+                    if tab == "價格" { ModelPricingPanel(intelligence: intelligence, priceState: usableModel?["price_state"].string ?? model["price_state"].string, cachePrice: (usableModel ?? model)["offer"]["effective_price"]["legs"]["cache"], api: store.api, archive: priceArchive) }
                     if tab == "額度" { ModelQuotaPanel(intelligence: intelligence); DisclosureGroup("帳戶來源紀錄") { JSONTree(value: detail["account_facts"]) } }
                     if tab == "效能" {
                         Picker("時間窗", selection: $window) { ForEach(["1h", "24h", "7d", "30d", "all", "custom"], id: \.self) { Text(["1h":"1 小時", "24h":"24 小時", "7d":"7 天", "30d":"30 天", "all":"全部", "custom":"自訂"][$0]!).tag($0) } }.pickerStyle(.segmented)

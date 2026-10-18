@@ -62,6 +62,7 @@ struct ObservationEvidence: View {
 @MainActor struct ModelPricingPanel: View {
     let intelligence: ModelIntelligence
     let priceState: String
+    let cachePrice: JSONValue
     let api: AtlasClient?
     @ObservedObject var archive: ObservationArchiveController
     @State private var series = ""
@@ -76,8 +77,8 @@ struct ObservationEvidence: View {
         return ModelIntelligence(detail: .object(["selection": intelligence.scope.json, "history": .array(state.rows.map(\.raw))]), scope: intelligence.scope).priceTracks
     }
     private var track: IntelligencePriceTrack? { tracks.first { $0.id == series } ?? tracks.first { $0.legKey == "price" && $0.observations.count > 1 } ?? tracks.first }
-    init(intelligence: ModelIntelligence, priceState: String, api: AtlasClient?, archive: ObservationArchiveController) {
-        self.intelligence = intelligence; self.priceState = priceState; self.api = api; self.archive = archive
+    init(intelligence: ModelIntelligence, priceState: String, cachePrice: JSONValue, api: AtlasClient?, archive: ObservationArchiveController) {
+        self.intelligence = intelligence; self.priceState = priceState; self.cachePrice = cachePrice; self.api = api; self.archive = archive
         let filter = archive.requested
         if let first = filter.start, let last = filter.end {
             _window = State(initialValue: "custom"); _start = State(initialValue: Date(timeIntervalSince1970: first / 1000)); _end = State(initialValue: Date(timeIntervalSince1970: last / 1000))
@@ -86,12 +87,12 @@ struct ObservationEvidence: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             AtlasCard {
-                HStack { Text("價格走勢").font(.headline); SmallBadge(text: IntelligenceLabels.price(priceState)); Spacer(); Button { reload() } label: { Image(systemName: "arrow.clockwise") }.buttonStyle(.borderless).help("重新載入價格歷史").disabled(archive.pending) }
+                HStack { Text("價格走勢").font(.headline); SmallBadge(text: priceLabel); Spacer(); Button { reload() } label: { Image(systemName: "arrow.clockwise") }.buttonStyle(.borderless).help("重新載入價格歷史").disabled(archive.pending) }
                 ObservationTimePicker(window: $window, start: $start, end: $end, apply: reload)
                 if let filterProblem { Text(filterProblem).font(.caption).foregroundStyle(.red) }
                 ObservationArchiveFooter(archive: archive, api: api)
                 if let track {
-                    Picker("來源、計價種類與單位", selection: Binding(get: { track.id }, set: { series = $0 })) { ForEach(tracks) { Text(trackLabel($0)).tag($0.id) } }
+                    Picker("價格來源", selection: Binding(get: { track.id }, set: { series = $0 })) { ForEach(tracks) { Text(trackLabel($0)).tag($0.id) } }
                     Picker("價格項目", selection: $leg) { Text("輸入").tag("input"); Text("輸出").tag("output"); Text("固定請求").tag("fixed"); Text("Cache").tag("cache") }.pickerStyle(.segmented)
                     TrendChartView(data: chart(track), identifier: "price")
                     DisclosureGroup("精確價格資料（\(track.observations.count) 筆）") {
@@ -134,8 +135,12 @@ struct ObservationEvidence: View {
     }
     private func trackLabel(_ track: IntelligencePriceTrack) -> String {
         guard let row = track.observations.first else { return track.label }
-        let version = row.facts["credential_version"] == .null ? "" : " · 版本 " + row.facts["credential_version"].display
+        let version = ModelIntelligence.number(row.facts["credential_version"]).map { $0 > 0 ? " · 金鑰版本 " + row.facts["credential_version"].display : "" } ?? ""
         return IntelligenceLabels.source(row.source) + " · " + (track.legKey == "price" ? "標價" : "已確認扣款") + " · " + row.facts[track.legKey]["unit"].display + version
+    }
+    private var priceLabel: String {
+        if priceState == "FREE_NOW", let cache = ModelIntelligence.number(cachePrice), cache > 0 { return "目前免費 · Cache 另計費" }
+        return IntelligenceLabels.price(priceState)
     }
     private func chart(_ track: IntelligencePriceTrack) -> TrendData {
         let titles = ["input": "輸入價格", "output": "輸出價格", "fixed": "每次請求價格", "cache": "Cache 價格"]
@@ -242,7 +247,7 @@ struct ModelQuotaPanel: View {
                 Text("取消 \(local["cancelled"].display) 筆 · 中斷 \(local["interrupted"].display) 筆，均不計入上線率。非串流 TTFT 不適用。").font(.caption).foregroundStyle(.secondary)
             }
             AtlasCard {
-                HStack { Text("請求趨勢").font(.headline); Spacer(); Text("最近 \(intelligence.samples.count) / \(local["history_total"].display) 筆").font(.caption).foregroundStyle(.secondary) }
+                HStack { Text("本機請求趨勢").font(.headline); Spacer(); Text("最近 \(intelligence.samples.count) / \(local["history_total"].display) 筆").font(.caption).foregroundStyle(.secondary) }
                 Picker("趨勢指標", selection: $metric) { Text("TTFT · ms").tag("ttft"); Text("TPS").tag("tps"); Text("延遲 · ms").tag("latency"); Text("成功／失敗").tag("success") }.pickerStyle(.segmented)
                 TrendChartView(data: localChart, identifier: "local", binary: metric == "success", openReceipt: openReceipt)
                 Text("圖表最多顯示最近 \(local["history_limit"].display) 筆；上方統計使用選定時間窗內全部有效樣本，完整請求仍保留在歷史。").font(.caption).foregroundStyle(.secondary)

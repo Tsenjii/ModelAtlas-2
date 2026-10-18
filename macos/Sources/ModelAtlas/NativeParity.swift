@@ -266,12 +266,12 @@ import SwiftUI
         try require(history.problem == nil && (history.state?.rows.count ?? 0) > 200)
         try await capture(ModelDetailView(store: store, model: chat, initialTab: "歷史", historyArchive: history), output, "33-history-archive-dark", dark: true, marker: "observation-archive-loaded")
         let empty = ObservationArchiveController(scope: scope)
-        empty.refresh(using: api, filter: ObservationFilter(category: "PRICE", start: 0, end: 1000))
+        empty.refresh(using: api, filter: ObservationFilter(category: "PRICE", start: 1_735_689_600_000, end: 1_735_776_000_000))
         try await wait { !empty.pending }
         try require(empty.problem == nil && empty.state?.total == 0 && empty.state?.rows.isEmpty == true)
         try await capture(ModelDetailView(store: store, model: chat, initialTab: "價格", priceArchive: empty), output, "34-price-range-empty-light", dark: false, marker: "price-archive-loaded")
         let emptyHistory = ObservationArchiveController(scope: scope)
-        emptyHistory.refresh(using: api, filter: ObservationFilter(source: "USER", kind: "MANUAL_PRICE", start: 0, end: 1000))
+        emptyHistory.refresh(using: api, filter: ObservationFilter(source: "USER", kind: "MANUAL_PRICE", start: 1_735_689_600_000, end: 1_735_776_000_000))
         try await wait { !emptyHistory.pending }
         try require(emptyHistory.problem == nil && emptyHistory.state?.total == 0 && emptyHistory.state?.sources.isEmpty == true && emptyHistory.state?.kinds.isEmpty == true)
         try await capture(ModelDetailView(store: store, model: chat, initialTab: "歷史", historyArchive: emptyHistory), output, "35-history-filter-empty-light", dark: false, marker: "observation-archive-loaded")
@@ -288,7 +288,9 @@ import SwiftUI
     private static func verifyChartInput(_ window: NSWindow, id: String, data: TrendData) async throws {
         guard let pointer = find(window.contentView, "chart-input-" + id) as? TrendPointerView, pointer.bounds.width > 100,
               let index = data.nearest(to: 0.45) else { throw AtlasError.invalidResponse }
-        _ = pointer.scrollToVisible(pointer.bounds)
+        if let document = pointer.enclosingScrollView?.documentView {
+            _ = document.scrollToVisible(pointer.convert(pointer.bounds, to: document).insetBy(dx: 0, dy: -96))
+        } else { _ = pointer.scrollToVisible(pointer.bounds) }
         let location = pointer.convert(NSPoint(x: pointer.bounds.width * 0.45, y: pointer.bounds.midY), to: nil)
         guard let click = NSEvent.mouseEvent(with: .leftMouseDown, location: location, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1) else { throw AtlasError.invalidResponse }
         pointer.mouseDown(with: click)

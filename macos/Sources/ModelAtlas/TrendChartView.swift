@@ -84,7 +84,7 @@ import UniformTypeIdentifiers
                 Text(axis(data.ceiling)); Spacer()
                 if !binary { Text(axis(data.ceiling / 2)); Spacer() }
                 Text(axis(0))
-            }.font(.caption2.monospacedDigit()).foregroundStyle(.secondary).frame(width: 38, height: 162).padding(.vertical, 2)
+            }.font(.caption2.monospacedDigit()).lineLimit(1).minimumScaleFactor(0.7).foregroundStyle(.secondary).frame(width: 38, height: 162).padding(.vertical, 2)
             GeometryReader { geometry in
                 ZStack {
                     Path { path in
@@ -141,7 +141,10 @@ import UniformTypeIdentifiers
     }
     private func marks(in size: CGSize) -> Path {
         Path { path in
-            for index in data.points.indices {
+            // Dense line series keep every value in the path/selection/export;
+            // mark the endpoints instead of covering the line with opaque dots.
+            let indices = !binary && data.points.count > 60 ? [0, data.points.count - 1] : Array(data.points.indices)
+            for index in indices {
                 guard let point = position(index, in: size) else { continue }
                 path.addEllipse(in: CGRect(x: point.x - 2, y: point.y - 2, width: 4, height: 4))
             }
