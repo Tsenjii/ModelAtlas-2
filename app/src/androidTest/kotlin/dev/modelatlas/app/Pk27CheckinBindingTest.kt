@@ -1,5 +1,7 @@
 package dev.modelatlas.app
 
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
@@ -33,6 +35,7 @@ import dev.modelatlas.core.onboarding.AuthMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -45,6 +48,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExternalResource
+import org.junit.rules.RuleChain
+import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import java.time.LocalDate
 import java.util.UUID
@@ -61,12 +67,36 @@ import java.util.UUID
 @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class Pk27CheckinBindingTest {
-    @get:Rule
+    private val compositionScheduler = TestCoroutineScheduler()
     // The default UnconfinedTestDispatcher can resume frame traversal on a
     // Room/IO emitter thread, where Android's Choreographer has no Looper.
     // Queue composition work for the harness clock instead; keep every real
     // UI interaction, the original 15s waits and exact-account DB assertions.
-    val compose = createAndroidComposeRule<MainActivity>(effectContext = StandardTestDispatcher())
+    val compose = createAndroidComposeRule<MainActivity>(
+        effectContext = StandardTestDispatcher(compositionScheduler),
+    )
+
+    // On this legacy Compose test API, queued composition must also be driven
+    // before ActivityScenario/idle synchronization can finish. Only run ready
+    // work on Android's main Looper; do not advance virtual time or change the
+    // original 15s condition bounds. Start before the activity rule and stop
+    // after its composition has been disposed.
+    private val compositionDriver = object : ExternalResource() {
+        private val main = Handler(Looper.getMainLooper())
+        @Volatile private var active = false
+        private val pulse = object : Runnable {
+            override fun run() {
+                if (!active) return
+                compositionScheduler.runCurrent()
+                if (active) main.postDelayed(this, 16L)
+            }
+        }
+        override fun before() { active = true; main.post(pulse) }
+        override fun after() { active = false; main.removeCallbacks(pulse) }
+    }
+
+    @get:Rule
+    val testRules: TestRule = RuleChain.outerRule(compositionDriver).around(compose)
 
     private lateinit var app: AtlasApplication
     private lateinit var viewModel: AtlasViewModel

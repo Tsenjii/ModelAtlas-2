@@ -1,5 +1,7 @@
 # ModelAtlas Public — ACTIVE TASK
 
+- **011 Android測試排程修訂：** b94的device在55/966後沒有進度，直到被beb7a86新HEAD的concurrency取消；非完整綠燈。StandardTestDispatcher避開IO續行，但本專案legacy Compose測試API的排程在activity／idle同步前未被驅動。只為PK27的同一正式ComposeRule加主Looper的ready-work driver，包在activity rule外；不推進虛擬時間、不改15秒／測試數／UI與DB斷言，不改Android產品行為。Mac／VPS的既有成功不代替新HEAD，所有九項仍需重驗。
+
 - **011時間篩選與操作收尾候選：** b94b70e的Mac三項（雙架構70核心／68圖／14frame）、VPS四項與Android build已SUCCESS；device仍在執行且耗時超出前一輪，未稱九綠／未交付。收尾讓站方時間範圍由Controller保存，取消尚未完成的查詢後回頁會補讀原範圍；正式NativeParity驗720h跨View與取消／last-good，原計數／120秒上限不變。空群組與Key用途改可讀／不誤導的標示，推論401／402／403／404各有對應說明。新HEAD重新完整九項與136靜態圖＋28frame，PR仍Draft。
 
 - **011同片驗證修訂：** b6558df的Mac Universal與arm64（70核心／68圖／14frame）、VPS四項與Android build成功；Intel在既有composer broad stage失敗，加入逐步固定checkpoint及純數值診斷，原4秒／68圖／全部斷言不變。Android device有1/966測試在IO worker的Choreographer無Looper失敗；依Compose官方TestDispatcher契約，只將PK27測試rule改為StandardTestDispatcher，保留15秒、全部UI／exact-account DB斷言及正式Android產品行為。另修同片已認證標價的原帳戶投影回歸（新增test先失敗後通過），加目前Base URL的快取／回應核對及來源變更清除；70核心與136靜態圖／28frame不減。新HEAD重新九項，不借b655部分綠燈。

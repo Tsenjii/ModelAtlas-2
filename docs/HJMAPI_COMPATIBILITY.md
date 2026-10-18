@@ -44,3 +44,5 @@ Android device的966測試中有一項PK27在Room／IO worker觸發Choreographer
 arm64當次系統Reduce Motion為true，動畫frame因此驗證的是系統減少動態與本機偏好行為；不將其宣稱為已觀察到正常模式的連續動畫。
 
 時間範圍由ProviderSiteController保留，返回效能頁時選項與資料仍維持原查詢；NativeParity另驗720小時查詢跨View重建仍一致，fixture亦回傳匹配的實際時間窗。空群組明示「未指定群組」，不冒充站點的default群組；Key用途顯示推論Key／帳戶PAT。聊天的401／402／403／404分別說明驗證、付費或額度、權限與模型／端點核對，不混用私人資料查詢的說明。
+
+b94的StandardTestDispatcher單獨使用後，device停在55/966且無後續進度，隨beb7a86新HEAD自動取消，不能當作已修復。PK27測試另以JUnit RuleChain在activity之前啟動主Looper排程driver、在composition清理之後停止；只執行TestCoroutineScheduler.runCurrent已ready的工作，不推進虛擬時間、跳過操作、增加15秒期限或修改正式UI／VM。完整九項須再驗證。
