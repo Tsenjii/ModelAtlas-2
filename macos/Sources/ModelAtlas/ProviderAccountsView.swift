@@ -65,19 +65,25 @@ import SwiftUI
     @ObservedObject var writes: ProviderWriteController
     @Environment(\.dismiss) private var dismiss
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack { Text("新增帳戶").font(.title2.weight(.semibold)); Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction) }
-            Text(store.providerName(writes.providerID)).foregroundStyle(.secondary)
-            FormField(title: "帳戶名稱", text: $writes.account.label)
-            ProviderWriteStatus(writes: writes, store: store, form: "new-account")
-            if !writes.account.label.isEmpty, let status = writes.feedback["new-account"], status.phase == .saved || status.phase == .refreshNeeded { Text("上一份已儲存，目前這份帳戶草稿尚未儲存。").font(.caption).foregroundStyle(.secondary) }
-            Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack { Text("新增帳戶").font(.title2.weight(.semibold)); Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction) }.padding(24)
+            Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text(store.providerName(writes.providerID)).foregroundStyle(.secondary)
+                    FormField(title: "帳戶名稱", text: $writes.account.label)
+                    ProviderWriteStatus(writes: writes, store: store, form: "new-account")
+                    if !writes.account.label.isEmpty, let status = writes.feedback["new-account"], status.phase == .saved || status.phase == .refreshNeeded { Text("上一份已儲存，目前這份帳戶草稿尚未儲存。").font(.caption).foregroundStyle(.secondary) }
+                    AtlasLoadedMarker(name: "provider-account-editor-ready").frame(height: 0)
+                }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Divider()
             HStack {
                 Button("清空草稿") { writes.clearAccount() }.disabled(writes.busy(form: "new-account"))
                 Spacer()
                 Button("加入帳戶") { Task { await writes.addAccount(store: store) } }.buttonStyle(AtlasActionStyle(prominent: true)).disabled(writes.busy(form: "new-account") || writes.account.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-        }.padding(24).frame(width: 570, height: 310)
+            }.padding(20)
+        }.frame(width: 570, height: 400)
     }
 }
 

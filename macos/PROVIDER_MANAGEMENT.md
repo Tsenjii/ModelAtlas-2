@@ -19,6 +19,8 @@
 
 保留原 70 項原生核心，增加8項 ProviderManagementTests：同帳戶互斥與不同帳戶並行、舊 lease 不解鎖新請求、exact-account bulk／Unknown／重複 ID、同 Key ID 跨帳戶／Provider、分開恢復／秘密值與無效輸入、新 Key 的固定來源／role／custom auth、成功不抹新稿及新 ID、帳戶草稿重試／下一稿。
 
-NativeParity 走正式 packaged engine／SQLite／API 與相同 production Controller／View。新增48之前的43張 parity全部保留，再加5張帳戶清單、保存失敗、版本恢復、處理中及已保存但刷新失敗畫面，共48 parity＋25 smoke＝73張／架構、146張實圖；原28 frame保持。驗精確帳戶、重複提交零額外寫入、真正 401 後草稿與重試、真 commit 後讀取失敗不重做、版本／跨帳戶隔離、原模型／對話／草稿與推論計數不變。原25秒串流、1249字 SHA256／閱讀位置與120秒 parity上限不變。
+NativeParity 走正式 packaged engine／SQLite／API 與相同 production Controller／View。原43張 parity全部保留，再加6張帳戶清單、保存失敗、版本恢復、處理中、已保存但刷新失敗與帳戶下一稿畫面，共49 parity＋25 smoke＝74張／架構、148張實圖；原28 frame保持。驗精確帳戶、重複提交零額外寫入、真正 401 後草稿與重試、真 commit 後讀取失敗不重做、版本／跨帳戶隔離、原模型／對話／草稿與推論計數不變。原25秒串流、1249字 SHA256／閱讀位置與120秒 parity上限不變。
 
-最低macOS12；實際CI仍macOS15兩架構。新HEAD九項／78核心／146靜態圖與28 frame檢視前保持候選／Draft。完整大綱仍 PARTIAL；不merge、不改base、不部署。
+最低macOS12；實際CI仍macOS15兩架構。新HEAD九項／78核心／148靜態圖與28 frame檢視前保持候選／Draft。完整大綱仍 PARTIAL；不merge、不改base、不部署。
+
+同片收尾：新增帳戶採可捲動內容與固定操作列，避免保存／下一稿回饋擠壓操作；補第49張真實表單與另一表單操作後草稿仍在的斷言。所有既有畫面／計數不減。
