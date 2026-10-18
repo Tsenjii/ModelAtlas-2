@@ -3,6 +3,7 @@
 更新：2026-10-15（VPS 獨立分支），公開 repo `Tsenjii/ModelAtlas-2`。
 
 ## Live state
+- **009同片實圖資料刷新修復：** 65fcaf8 arm6444核心／55圖通過，實圖Models統計仍可能停在Compare前。ComparisonController完成後直接呼叫正式store.reload，移除依賴View.onChange(pending)的刷新；保留結果／last-good／取消／錯誤，增加兩帳戶各自samples精確+1斷言。原44核心／110圖、全部舊guard及時間界線不變，新HEAD九項重驗。
 - **009同片編譯修復：** 3976a1d／Mac39089640906 Universal因新增ComparisonResult與Foundation同名失敗，兩架構測試未執行；改唯一LiveComparisonItem，保留44核心／110圖與原全部條件。source review另補跟隨macOS亮色accent時依相對亮度選擇文字對比。新HEAD重新九項，不盲重跑、不借其他job綠燈。
 - **2026-10-18 MAC-NATIVE-009（唯一live，0.4.0 build9候選）：** 使用者要求實際研究好看軟體、改善原生視覺並取消固定藍綠按鈕；依D-007改石墨灰預設與可選強調色、精簡陰影／技術識別字、改善清單／頁籤與固定選取操作列。同片補正式 `/models/compare` 的可讀並列、取消／重複提交guard、當次價格／多單位扣款／獨立額度快照、收據與匯出，不自創排名或額外probe。基線 `8eb68087fae76bbf6e04875fd14024e93d4ab510` 0.3.0，Mac39058446721／VPS39058446728／Android39058446846九項SUCCESS，雙架構各38核心／50圖、100圖已檢視與安裝檔已交付。本輪main重查仍5009e0c8／38408176782 build115333198754、device115333198701 SUCCESS。新增6核心／5圖，預期44核心／55圖每架構、110圖；原25s串流／120s parity／全部斷言保留。新HEAD九項及110實圖前為候選／PR Draft，不借舊綠燈、不改base／merge／部署。詳 `macos/NATIVE_POLISH.md`。完整大綱仍PARTIAL；下方live文字為歷史。
 

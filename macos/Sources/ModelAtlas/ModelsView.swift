@@ -97,7 +97,7 @@ struct ModelsView: View {
                     }
                 }
             }.fixedSize().disabled(!(2...100).contains(compareSelection.count))
-            Button { comparison = ComparisonController(offers: offers) } label: { Label("並列比較", systemImage: "rectangle.split.2x1") }
+            Button { comparison = ComparisonController(offers: offers, refresh: { try await store.reload() }) } label: { Label("並列比較", systemImage: "rectangle.split.2x1") }
                 .buttonStyle(AtlasActionStyle(prominent: true)).disabled(!canCompare)
                 .help(ComparisonOffer.problem(offers, prompt: "") ?? "比較同一模型的各個連線")
         }.padding(.horizontal, 24).padding(.vertical, 14).background(.regularMaterial).overlay(alignment: .top) { Divider() }

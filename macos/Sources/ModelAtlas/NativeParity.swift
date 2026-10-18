@@ -224,7 +224,8 @@ import SwiftUI
             guard let row = store.myModels.first(where: { ModelScope($0) == scope }) else { throw AtlasError.invalidResponse }; return row
         }
         let offers = models.map { model in ComparisonOffer(model: model, title: store.modelEntries([model]).first!.title, context: store.scopeTitle(model), operation: store.operationName(model)) }
-        let controller = ComparisonController(offers: offers)
+        let beforeSamples = scopes.map { scope in models.first(where: { ModelScope($0) == scope })?["performance"]["samples"].numeric ?? 0 }
+        let controller = ComparisonController(offers: offers, refresh: { try await store.reload() })
         try require(controller.validation == nil && offers[0].scope.accountID != offers[1].scope.accountID)
         try await capture(ComparisonView(store: store, controller: controller), output, "26-comparison-ready-light", dark: false, marker: "comparison-ready")
         let query = [URLQueryItem(name: "q", value: "COMPARE_LIVE"), URLQueryItem(name: "limit", value: "200")]
@@ -233,6 +234,9 @@ import SwiftUI
         try await wait { !controller.pending }
         guard let report = controller.report else { throw AtlasError.invalidResponse }
         try require(controller.problem == nil && report.items.map(\.scope) == scopes && report.items.allSatisfy { $0.outcome == "SUCCESS" && !$0.sampleID.isEmpty })
+        for (index, scope) in scopes.enumerated() {
+            try require(store.myModels.first(where: { ModelScope($0) == scope })?["performance"]["samples"].numeric == beforeSamples[index] + 1)
+        }
         let after = try await api.get("/telemetry", query: query).requiredArray()
         try require(after.count == before.count + 2 && Set(report.items.map(\.sampleID)).count == 2)
         for item in report.items {

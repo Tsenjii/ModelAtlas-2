@@ -15,7 +15,10 @@ import UniformTypeIdentifiers
     @Published private(set) var showingPrevious = false
     private var task: Task<Void, Never>?
     private var revision = UUID()
-    init(offers: [ComparisonOffer]) { self.offers = offers }
+    private let refresh: @MainActor () async throws -> Void
+    init(offers: [ComparisonOffer], refresh: @escaping @MainActor () async throws -> Void = {}) {
+        self.offers = offers; self.refresh = refresh
+    }
     var validation: String? { ComparisonOffer.problem(offers, prompt: prompt) }
     func start(using api: AtlasClient) {
         guard !pending else { return }
@@ -30,8 +33,14 @@ import UniformTypeIdentifiers
                 let raw = try await api.call("/models/compare", method: "POST", body: body)
                 try Task.checkCancellation()
                 guard let self, self.revision == token else { return }
-                self.report = try LiveComparison(response: raw, scopes: self.offers.map(\.scope))
+                let report = try LiveComparison(response: raw, scopes: self.offers.map(\.scope))
+                var refreshFailed = false
+                do { try await self.refresh() } catch { refreshFailed = true }
+                try Task.checkCancellation()
+                guard self.revision == token else { return }
+                self.report = report
                 self.completedAt = Date(); self.comparedPrompt = submittedPrompt; self.showingPrevious = false; self.pending = false; self.task = nil
+                if refreshFailed { self.problem = "比較已完成，但清單統計未能更新。可稍後重新整理工作區。" }
             } catch {
                 guard let self, self.revision == token else { return }
                 self.problem = Task.isCancelled ? "已停止比較。已完成的請求仍保留在歷史。" : error.localizedDescription
@@ -84,7 +93,6 @@ struct ComparisonView: View {
             }
         }.frame(width: 860, height: 760).background(atlasCanvas).atlasModal(store)
             .onDisappear { controller.cancel() }
-            .onChange(of: controller.pending) { if !$0 { Task { await store.refresh() } } }
             .sheet(item: $receipt) { ref in RequestReceiptView(store: store, sampleID: ref.id).atlasModal(store) }
     }
     private var setup: some View {

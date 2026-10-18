@@ -43,3 +43,5 @@ NativeParity使用正式metadata／ComparisonController→引擎→隔離TLS fix
 完整Master Spec仍PARTIAL：Provider全量inventory／批量多Key／簽到／stale情境、完整Research／Assistant／Reflection、200筆以上原生觀測分頁、站方series_schema互動圖及外部多單位轉換仍須後續。Android PLAY-004／P8–P10未完成狀態保留。
 
 3976a1d首候選在Mac Universal編譯時發現新增ComparisonResult與Foundation既有型別同名；改為LiveComparisonItem，未刪改任何功能或測試。同步外觀source review補系統強調色的相對亮度文字對比，避免亮色按鈕固定白字。新HEAD重新九項／110圖，前候選不能交付。
+
+65fcaf8的arm64已通過44核心／55圖；實圖顯示Compare確實新增telemetry，但回到Models仍可能看到舊的2筆樣本。資料刷新原先依賴View.onChange(pending)，在視窗關閉或狀態合併時不夠可靠。改由ComparisonController在請求完成後直接呼叫正式store.reload，保留完整結果及可讀的刷新失敗提示；取消／舊revision仍受保護。NativeParity使用同一refresh caller，新增兩帳戶各自samples精確+1斷言，再capture Models。不是更改期望值或假填統計；新HEAD九項與110圖重驗。
