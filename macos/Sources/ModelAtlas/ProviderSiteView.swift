@@ -12,6 +12,7 @@ private func siteNumber(_ value: JSONValue, suffix: String = "") -> String {
 @MainActor struct ProviderSiteView: View {
     @ObservedObject var controller: ProviderSiteController
     let api: AtlasClient?
+    let origin: String
     private let operations = ["status", "notice", "summary", "pricing"]
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -28,7 +29,7 @@ private func siteNumber(_ value: JSONValue, suffix: String = "") -> String {
             summaryCard
             pricingCard
             if controller.didLoad && controller.loading.isEmpty { AtlasLoadedMarker(name: "provider-site-loaded").frame(height: 0) }
-        }.task { if let api { controller.refreshIfNeeded(using: api, operations: operations) } }
+        }.task(id: origin) { controller.setOrigin(origin); if let api { controller.refreshIfNeeded(using: api, operations: operations) } }
         .onDisappear { controller.cancel() }
     }
     private func refresh(_ names: [String]) { if let api { controller.refresh(using: api, operations: names) } }
@@ -135,6 +136,7 @@ struct ProviderSiteEvidence: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("站方公開資料 · " + siteDate(snapshot.at)).font(.caption).foregroundStyle(.secondary)
+            if let url = URL(string: snapshot.facts["origin"].string), let host = url.host { Text(host).font(.caption).foregroundStyle(.secondary).textSelection(.enabled) }
             DisclosureGroup("來源與原始資料") { JSONTree(value: snapshot.raw).padding(.top, 8) }.font(.caption)
         }
     }
@@ -156,6 +158,7 @@ struct SiteMetricValues: View {
     @ObservedObject var controller: ProviderSiteController
     let api: AtlasClient?
     let selectedGroup: String
+    var origin: String? = nil
     @State private var group = ""
     @State private var metric = "avg_tps"
     @State private var hours = 168
@@ -175,7 +178,8 @@ struct SiteMetricValues: View {
                 if let snapshot = controller.values["performance"] { performance(snapshot) }
                 else if controller.didLoad && controller.loading.isEmpty && controller.problems["performance"] == nil { Text("站點尚未提供這個模型的效能資料。").foregroundStyle(.secondary) }
             }
-        }.task {
+        }.task(id: origin) {
+            if let origin { controller.setOrigin(origin) }
             group = selectedGroup
             if let api { controller.refreshIfNeeded(using: api, operations: ["performance"]) }
         }

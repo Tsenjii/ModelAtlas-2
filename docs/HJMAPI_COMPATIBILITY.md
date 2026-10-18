@@ -14,7 +14,7 @@
 | [全站效能](https://hjmapi.923578.xyz/api/perf-metrics/summary?hours=168) | HTTP200；模型摘要與時間窗 | 保留summary與window_start／window_end，進入站方資料頁自動讀取 |
 | [模型效能](https://hjmapi.923578.xyz/api/perf-metrics?model=glm-5.3-flash&hours=168) | HTTP200；model_name、series_schema、summary、series、groups | 原解析器丟失根層曲線與時間窗；現在保存、驗證並以原生圖表呈現 |
 
-本輪核對的效能時間戳是Unix秒，success_rate是百分比，低於1的值仍是百分點。不可依數值大小猜比例、補不存在的樣本數、重算群組加權或把站方統計當成本機Key的上線率。模型回應需與明確查詢model_id相同；缺少所選群組不得借用其他群組。
+本輪核對的效能時間戳是Unix秒，success_rate是百分比，低於1的值仍是百分點。不可依數值大小猜比例、補不存在的樣本數、重算群組加權或把站方統計當成本機Key的上線率。模型回應需與明確查詢model_id相同；快取與新回應需匹配目前Base URL，變更來源會清空舊來源的畫面狀態；缺少所選群組不得借用其他群組。
 
 ## 失敗來源與畫面
 
@@ -28,9 +28,17 @@ Catalog連線選擇顯示精確Provider下的帳戶名稱，不顯示內部帳�
 
 ## 驗證範圍
 
-- Go正式HTTP路徑覆蓋v0公開相容、零憑證外送、多行公告、百分點／秒／完整曲線、錯模型與壞格式拒絕、last-good、真上游狀態與收據、敏感回應不外露。另重播本輪五份實際公開回應；不呼叫真實推論。
+- Go正式HTTP路徑另驗已認證公開標價仍投影至原帳戶offer且不冒充實際扣款；覆蓋v0公開相容、零憑證外送、多行公告、百分點／秒／完整曲線、錯模型與壞格式拒絕、last-good、真上游狀態與收據、敏感回應不外露。另重播本輪五份實際公開回應；不呼叫真實推論。
 - 增加8項原生核心測試，保留原62項：公開request allowlist、Provider／Model／Role隔離、秒與百分點、0與missing、群組隔離、未知單位、固定錯誤與可讀帳戶／狀態操作。
 - NativeParity經真TLS fixture和正式engine／Controller讀取v0形狀的資料，測公告502後保留last-good、重試／取消、零認證外送／零推論，以及站方曲線和已啟用Catalog連線。新增40–43四張原生畫面。保留原39張，合計43 parity＋25 smoke＝68圖／架構，共136圖；動畫14frame／架構仍保留。
-- 8c1824候選的兩架構62核心及原60圖＋三張簽到圖曾執行，最後checkin invariant失敗：測試在變更requires_daily_checkin之前凍結完整模型，卻以之比較合法改變的offer metadata。現在先驗setup前後的scope／對話／草稿，再於setup後凍結完整模型；read／complete／retry流程仍要求完整值不變。沒有放寬原斷言、數量、時間上限或跳過新HEAD驗證。
+- 8c1824候選的兩架構62核心及原60圖＋三張簽到圖曾執行，最後checkin invariant失敗：測試在變更requires_daily_checkin之前凍結完整模型，卻以之比較setup中正式reload後的模型JSON（含即時performance window）。現在先驗setup前後的scope／對話／草稿，再於setup後凍結完整模型；read／complete／retry流程仍要求完整值不變。沒有放寬原斷言、數量、時間上限或跳過新HEAD驗證。
 
 本修復不代表已使用使用者的Key驗證聊天，也不能保證外部站點的502不再發生。完整Master Spec仍PARTIAL；驗收以修復HEAD的九項CI與雙架構實圖為準。
+
+## 同片驗證診斷
+
+b6558df的Universal與arm64全流程、70核心／68圖／14frame通過，四張新UI已實看；Intel在舊composer broad stage失敗，加入細分checkpoint和字數／幾何／marked-text／undo布林診斷，不記錄文字或秘密，保留原4秒與全部斷言。尚不能據此宣稱已定位或修正該步問題。
+
+Android device的966測試中有一項PK27在Room／IO worker觸發Choreographer無Looper；trace顯示Compose預設UnconfinedTestDispatcher內的frame traversal在發射執行緒續行。依[AndroidX正式測試context契約](https://android.googlesource.com/platform/frameworks/support/+/edd8bafb328feda384a1048242a66d77f12b6699/compose/ui/ui-test/src/androidMain/kotlin/androidx/compose/ui/test/ComposeUiTest.android.kt)，只為該測試rule提供StandardTestDispatcher並加入同版本1.10.1的androidTest依賴；不改Android產品UI／VM、15秒上限、任何斷言或測試數。新HEAD須重跑完整九項。
+
+arm64當次系統Reduce Motion為true，動畫frame因此驗證的是系統減少動態與本機偏好行為；不將其宣稱為已觀察到正常模式的連續動畫。

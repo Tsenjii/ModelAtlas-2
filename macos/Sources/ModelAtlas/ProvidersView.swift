@@ -217,7 +217,7 @@ struct AddProviderView: View {
     @StateObject private var site: ProviderSiteController
     init(store: AtlasStore, provider: JSONValue, initialTab: String = "概覽", site: ProviderSiteController? = nil) {
         self.store = store; self.provider = provider; checkins = store.checkins; _tab = State(initialValue: initialTab)
-        _site = StateObject(wrappedValue: site ?? ProviderSiteController(providerID: provider["id"].string))
+        _site = StateObject(wrappedValue: site ?? ProviderSiteController(providerID: provider["id"].string, origin: provider["base_url"].string))
     }
     @State private var accountLabel = ""
     @State private var keyLabel = ""
@@ -390,7 +390,7 @@ struct AddProviderView: View {
     private func configText(_ key: String) -> Binding<String> { Binding(get: { configuration[key].string }, set: { configuration[key] = .string($0) }) }
     private var providerData: some View {
         VStack(spacing: 18) {
-            ProviderSiteView(controller: site, api: store.api)
+            ProviderSiteView(controller: site, api: store.api, origin: currentProvider["base_url"].string)
             ProviderAccountDataView(store: store, providerID: id, manageCredentials: { tab = "帳戶與 Key" })
         }
     }

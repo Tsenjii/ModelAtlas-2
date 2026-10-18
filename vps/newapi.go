@@ -233,12 +233,10 @@ func (s *Server) newApiRead(ctx context.Context, q NewApiQuery, path string) (Ne
 		case "/api/pricing":
 			facts, err = parseNewApiPricing(root, token)
 			if err == nil && certified {
-				priceScope := q
-				if role == "ANONYMOUS" {
-					priceScope.AccountID = ""
-					priceScope.CredentialID = ""
-				}
-				err = s.mapNewApiPrices(ctx, priceScope, facts, statusFacts)
+				// Retain the caller's account projection for its nominal quote.
+				// The public snapshot below remains anonymous; this is never an
+				// inference about that account's effective charge or access.
+				err = s.mapNewApiPrices(ctx, q, facts, statusFacts)
 			}
 			if err == nil {
 				facts["price_mapping_available"] = certified

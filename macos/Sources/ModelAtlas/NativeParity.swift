@@ -229,7 +229,7 @@ import SwiftUI
               let key = store.credentials.first(where: { $0["provider_id"] == chat["provider_id"] && $0["account_id"] == chat["account_id"] && $0["id"] == chat["credential_id"] }) else { throw AtlasError.invalidResponse }
         let before = try await fixtureJSON(fixture + "/fixture/parity-state")
         let selected = store.selectedModel, session = store.sessionID, messages = store.messages, draft = store.draft
-        let site = ProviderSiteController(providerID: provider.id)
+        let site = ProviderSiteController(providerID: provider.id, origin: provider["base_url"].string)
         site.refresh(using: api, operations: ["status", "notice", "summary", "pricing"])
         try await wait { site.loading.isEmpty }
         try require(site.problems.isEmpty && site.values.count == 4 && site.values["notice"]?.facts["text"].string.contains("\n") == true)
@@ -246,7 +246,7 @@ import SwiftUI
         try require(site.values["notice"]?.raw == lastGood)
         site.refresh(using: api, operations: ["notice"]); try await wait { site.loading.isEmpty }
         try require(site.problems["notice"] == nil && site.values["notice"] != nil)
-        let performance = ProviderSiteController(providerID: provider.id, modelID: chat["model_id"].string)
+        let performance = ProviderSiteController(providerID: provider.id, modelID: chat["model_id"].string, origin: provider["base_url"].string)
         performance.refresh(using: api, operations: ["performance"]); try await wait { performance.loading.isEmpty }
         guard let snapshot = performance.values["performance"] else { throw AtlasError.invalidResponse }
         try require(performance.problems.isEmpty && snapshot.chart(metric: "avg_tps", group: "")?.points.count == 4 && snapshot.chart(metric: "avg_tps", group: "other") == nil)
@@ -254,6 +254,8 @@ import SwiftUI
         let catalog = try await api.get("/models", query: [URLQueryItem(name: "provider_id", value: provider.id)])
         guard let item = catalog.array.first(where: { $0["provider_id"].string == provider.id && $0["id"] == chat["model_id"] }) else { throw AtlasError.invalidResponse }
         try await capture(CatalogDetailView(store: store, model: item, initialKey: key, initialEndpoint: chat["endpoint"].string), output, "42-catalog-active-connection-light", dark: false, marker: "catalog-connection-state-ACTIVE")
+        site.setOrigin("https://changed-origin.example/v1")
+        try require(site.values.isEmpty && site.problems.isEmpty && !site.didLoad && site.loading.isEmpty)
         let counts = try await fixtureJSON(fixture + "/fixture/site-state")
         try require((counts["public_reads"].numeric ?? 0) >= 12 && counts["auth_leaks"] == .number(0))
         let after = try await fixtureJSON(fixture + "/fixture/parity-state")
@@ -265,7 +267,7 @@ import SwiftUI
         let selectedScope = store.selectedScope, session = store.sessionID, messages = store.messages, draft = store.draft
         var config = provider["config"]; config["requires_daily_checkin"] = .bool(true); config["checkin_url"] = .string("https://example.com/checkin")
         _ = try await store.mutate("/providers/config", body: .object(["provider_id": provider["id"], "config": config]))
-        // Setup intentionally changes the selected offer's check-in metadata.
+        // Setup reloads the model, including its live performance time window.
         // Verify identity/drafts across setup, then freeze the complete model
         // value for the read/complete/retry flow itself.
         try require(store.selectedScope == selectedScope && store.sessionID == session && store.messages == messages && store.draft == draft)
@@ -576,50 +578,66 @@ import SwiftUI
         try data.write(to: output.appendingPathComponent(name + ".png"))
     }
     private static func verifyComposer(_ store: AtlasStore, output: URL) async throws {
+        var checkpoint = "find-active-editor"
+        do {
         guard let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }),
               let editor = find(window.contentView, "chat-composer") as? NSTextView,
               window.makeFirstResponder(editor) else { throw AtlasError.invalidResponse }
+        checkpoint = "multiline-binding"
         editor.selectAll(nil); editor.insertText("第一行\n第二行", replacementRange: NSRange(location: NSNotFound, length: 0))
         try await wait { store.draft == "第一行\n第二行" }
         try require(editor.string == store.draft && store.canSend && !editor.drawsBackground)
+        checkpoint = "start-ime-marked-text"
         editor.selectAll(nil)
         editor.setMarkedText("注音候選", selectedRange: NSRange(location: 0, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
         try require(editor.hasMarkedText())
+        checkpoint = "retain-ime-marked-text"
         store.draft = "外部狀態更新不得取代組字"
         try await Task.sleep(nanoseconds: 80_000_000)
         try require(editor.hasMarkedText() && editor.string.contains("注音候選"))
+        checkpoint = "commit-ime-and-bind"
         editor.unmarkText(); editor.selectAll(nil)
         editor.insertText("完成的中文\n保留換行", replacementRange: NSRange(location: NSNotFound, length: 0))
         try await wait { store.draft == "完成的中文\n保留換行" }
+        checkpoint = "external-reset-and-undo"
         store.draft = ""
         try await wait { editor.string.isEmpty }
         try require(editor.undoManager?.canUndo != true && !store.generating && store.sessionID == nil)
         guard let scroll = editor.enclosingScrollView else { throw AtlasError.invalidResponse }
+        checkpoint = "empty-height"
         try await wait { scroll.bounds.height >= 29 && scroll.bounds.height <= 32 }
+        checkpoint = "keyboard-focus"
         window.makeFirstResponder(nil); store.focusComposer()
         try await wait { window.firstResponder === editor }
         let wrapping = String(repeating: "寬度變更與中文自動換行 ", count: 16)
+        checkpoint = "wrapped-text-height"
         editor.insertText(wrapping, replacementRange: NSRange(location: NSNotFound, length: 0))
         try await wait { store.draft == wrapping && scroll.bounds.height > 35 && scroll.bounds.height < 140 }
         let wideHeight = scroll.bounds.height
+        checkpoint = "narrow-resize"
         window.setContentSize(NSSize(width: 920, height: 800))
         try await wait { scroll.bounds.height > wideHeight + 8 && scroll.bounds.height <= 145 }
+        checkpoint = "restore-wide-resize"
         window.setContentSize(NSSize(width: 1200, height: 800))
         try await wait { abs(scroll.bounds.height - wideHeight) < 2 }
         store.draft = ""
         try await wait { editor.string.isEmpty && scroll.bounds.height <= 32 }
+        checkpoint = "clear-wrapped-text"
         let scope = store.selectedScope, history = store.messages
         let longText = (1...20).map { "第\($0)行：這是原生多行編輯、自然換行與捲動驗收。" }.joined(separator: "\n")
+        checkpoint = "long-text-scroll"
         editor.insertText(longText, replacementRange: NSRange(location: NSNotFound, length: 0))
         try await wait { store.draft == longText && scroll.bounds.height >= 130 && scroll.bounds.height <= 145 }
         editor.scrollRangeToVisible(NSRange(location: (longText as NSString).length, length: 0))
         try require(scroll.contentView.bounds.origin.y > 0)
         try await captureWorkspace(store, output, "18-composer-multiline-light", dark: false)
         try await wait { contains(window.contentView, "workspace-sidebar") }
+        checkpoint = "hide-sidebar-preserves-editor"
         store.sidebarVisible = false
         try await wait { !contains(window.contentView, "workspace-sidebar") }
         try require(store.draft == longText && store.selectedScope == scope && store.messages == history)
         try await captureWorkspace(store, output, "19-sidebar-hidden-dark", dark: true)
+        checkpoint = "restore-sidebar-and-empty-height"
         store.sidebarVisible = true
         try await wait { contains(window.contentView, "workspace-sidebar") }
         store.draft = ""
@@ -629,6 +647,19 @@ import SwiftUI
             return current.string.isEmpty && currentScroll.bounds.height >= 29 && currentScroll.bounds.height <= 32
         }
         try require(store.selectedScope == scope && store.messages == history && !store.generating)
+        } catch {
+            let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil })
+            let editor = find(window?.contentView, "chat-composer") as? NSTextView
+            let report: JSONValue = .object(["checkpoint": .string(checkpoint), "editor_found": .bool(editor != nil),
+                "first_responder_is_editor": .bool(editor != nil && window?.firstResponder === editor),
+                "marked_text": .bool(editor?.hasMarkedText() ?? false), "can_undo": .bool(editor?.undoManager?.canUndo ?? false),
+                "draft_characters": .number(Double(store.draft.count)), "editor_characters": .number(Double(editor?.string.count ?? -1)),
+                "scroll_height": .number(Double(editor?.enclosingScrollView?.bounds.height ?? -1)), "editor_width": .number(Double(editor?.bounds.width ?? -1)),
+                "container_width": .number(Double(editor?.textContainer?.containerSize.width ?? -1)), "generating": .bool(store.generating), "has_session": .bool(store.sessionID != nil)])
+            try? JSONEncoder().encode(report).write(to: output.appendingPathComponent("composer.diagnostics.log"), options: .atomic)
+            try? await captureWorkspace(store, output, "composer-failure", dark: false)
+            throw DraftProblem("輸入框驗證失敗：" + checkpoint)
+        }
     }
     private static func wait(_ condition: () -> Bool) async throws {
         let end = Date().addingTimeInterval(4)

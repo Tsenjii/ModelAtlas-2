@@ -1,5 +1,7 @@
 # ModelAtlas Public — ACTIVE TASK
 
+- **011同片驗證修訂：** b6558df的Mac Universal與arm64（70核心／68圖／14frame）、VPS四項與Android build成功；Intel在既有composer broad stage失敗，加入逐步固定checkpoint及純數值診斷，原4秒／68圖／全部斷言不變。Android device有1/966測試在IO worker的Choreographer無Looper失敗；依Compose官方TestDispatcher契約，只將PK27測試rule改為StandardTestDispatcher，保留15秒、全部UI／exact-account DB斷言及正式Android產品行為。另修同片已認證標價的原帳戶投影回歸（新增test先失敗後通過），加目前Base URL的快取／回應核對及來源變更清除；70核心與136靜態圖／28frame不減。新HEAD重新九項，不借b655部分綠燈。
+
 - **2026-10-18 MAC-PROVIDER-MOTION-011 同片實際使用修復（唯一live）：** 使用者提供三張實圖與HJMAPI，回報502／422、不明操作與站方效能未抓取。已匿名核對五個公開介面200、v0.0.0與完整series／groups；公開schema相容、公告換行、真上游錯誤來源、站方自動載入／曲線、可讀連線操作與頁籤捲動重置為本片優先。私有未知版本不冒充已驗證；不使用使用者Key或真推論。8c1824 Mac兩測試在checkin setup前後metadata invariant失敗，依setup語意修正baseline、全部scope／對話／草稿／完整模型guards保留。新增8核心／4圖，預期70核心／68圖每架構，共136實圖＋28動畫frame；原25秒串流／120秒parity／全部測試不減。新HEAD九項和實圖前仍候選／Draft，不merge／改base／部署。詳docs/HJMAPI_COMPATIBILITY.md；完整大綱仍PARTIAL。
 
 - **2026-10-18 MAC-PROVIDER-MOTION-011（唯一live，0.6.0 build11候選）：** 使用者要求繼續做完、詢問安裝／更新並改善動畫。010已由3529736739ba219fe37073125688abb039fdc02c（tree b38e7a2eee5b0e3b4af556a7e15c08b7892819a3）驗收，Mac39105128601／VPS39105128591／Android39105128634九項SUCCESS、54核心／60圖每架構、120圖已檢視與0.5.0已交付。此片補按帳戶／當地日期的簽到、Provider概覽／待簽到篩選與舊資料分離、v17加法式升級；短原生動態與系統或本機Reduce Motion。新增8核心／4圖／每架構14動畫frame，預期62核心／64靜態圖每架構，128圖及28frame review；原25秒串流／1249字SHA256／閱讀位置／120秒parity不減。main5009e0c8／38408176782 build115333198754、device115333198701本輪重查SUCCESS。新HEAD九項與實圖前候選／PR Draft，不merge、不改base、不部署。詳macos/PROVIDER_MOTION.md；完整大綱仍PARTIAL，下方live為歷史。

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,28 @@ import (
 
 const publicStatusFixture = `{"success":true,"data":{"version":"v0.0.0","system_name":"公開相容站點","quota_per_unit":500000,"checkin_enabled":true,"HeaderNavModules":"","quota_display_type":"CUSTOM","custom_currency_symbol":"￥"}}`
 const publicPerformanceFixture = `{"success":true,"data":{"model_name":"m","series_schema":"dbcd0a3c01b55203","summary":{"success_rate":0.5,"avg_tps":25,"avg_latency_ms":1000},"window_start":1791705600,"window_end":1792309328,"series":[{"ts":1791705600,"success_rate":0,"avg_tps":0,"avg_latency_ms":1000,"avg_ttft_ms":0},{"ts":1791712800,"success_rate":100,"avg_tps":50,"avg_latency_ms":500,"avg_ttft_ms":100}],"groups":[{"group":"default","success_rate":0.5,"avg_tps":25,"avg_latency_ms":1000,"avg_ttft_ms":100,"series":[{"ts":1791705600,"success_rate":0,"avg_tps":0,"avg_latency_ms":1000,"avg_ttft_ms":0}]}]}}`
+
+func TestCertifiedPublicNominalPriceStillReachesSelectedOffer(t *testing.T) {
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" {
+			t.Error("public price carried a credential")
+		}
+		if r.URL.Path == "/api/status" {
+			w.Write([]byte(`{"success":true,"data":{"version":"v1.0.0-rc.25","quota_per_unit":500000}}`))
+			return
+		}
+		w.Write([]byte(`{"success":true,"data":[{"model_name":"m","quota_type":0,"model_ratio":1,"completion_ratio":2,"supported_endpoint_types":["openai"]}],"group_ratio":{"":1}}`))
+	}))
+	defer up.Close()
+	s := testServer(t)
+	s.Client = up.Client()
+	v := seed(t, s, up.URL+"/v1")
+	requireCode(t, req(t, s, "POST", "/api/v1/newapi/pricing", NewApiQuery{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: v.CredentialID}), 200)
+	summary := s.offerSummary(context.Background(), v)
+	if summary["nominal_price"] == nil || summary["effective_price"] != nil {
+		t.Fatal("public nominal quote lost its account projection or became effective price")
+	}
+}
 
 func TestNewApiPublicVersionZeroUsesSchemaWithoutSendingInferenceKey(t *testing.T) {
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

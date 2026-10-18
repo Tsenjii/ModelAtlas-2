@@ -22,6 +22,8 @@ final class ProviderSiteTests: XCTestCase {
         }
         var bad = snapshot(); bad["facts"]["model_name"] = .string("other")
         XCTAssertThrowsError(try ProviderSiteSnapshot(bad, providerID: "p", operation: "performance", modelID: "m"))
+        bad = snapshot(); bad["facts"]["origin"] = .string("https://old.example/v1")
+        XCTAssertThrowsError(try ProviderSiteSnapshot(bad, providerID: "p", operation: "performance", modelID: "m", origin: "https://new.example/v1"))
     }
     func testProviderChartsKeepSecondsSpacingPercentageUnitsAndZero() throws {
         let value = try ProviderSiteSnapshot(snapshot(), providerID: "p", operation: "performance", modelID: "m")

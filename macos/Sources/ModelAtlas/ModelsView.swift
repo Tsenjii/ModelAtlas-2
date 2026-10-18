@@ -337,7 +337,7 @@ struct CatalogView: View {
         self.store = store; self.model = model; _tab = State(initialValue: initialTab)
         _priceArchive = StateObject(wrappedValue: priceArchive ?? ObservationArchiveController(scope: ModelScope(model)))
         _historyArchive = StateObject(wrappedValue: historyArchive ?? ObservationArchiveController(scope: ModelScope(model)))
-        _providerPerformance = StateObject(wrappedValue: providerPerformance ?? ProviderSiteController(providerID: model["provider_id"].string, modelID: model["model_id"].string))
+        _providerPerformance = StateObject(wrappedValue: providerPerformance ?? ProviderSiteController(providerID: model["provider_id"].string, modelID: model["model_id"].string, origin: store.providers.first(where: { $0["id"] == model["provider_id"] })?["base_url"].string))
         if let initialPerformanceSource { _performanceSource = State(initialValue: initialPerformanceSource); _performanceChoiceMade = State(initialValue: true) }
     }
     var body: some View {
@@ -388,7 +388,7 @@ struct CatalogView: View {
     }
     @ViewBuilder private var performanceContent: some View {
         if performanceSource == "provider" {
-            ProviderPerformanceView(controller: providerPerformance, api: store.api, selectedGroup: scope.group)
+            ProviderPerformanceView(controller: providerPerformance, api: store.api, selectedGroup: scope.group, origin: store.providers.first(where: { $0["id"] == model["provider_id"] })?["base_url"].string)
         } else if performanceSource == "local" {
             if intelligence.samples.isEmpty && !loading {
                 AtlasCard {

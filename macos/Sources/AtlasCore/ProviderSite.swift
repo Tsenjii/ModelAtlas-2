@@ -6,12 +6,13 @@ public struct ProviderSiteSnapshot: Sendable {
     public let operation: String
     public var facts: JSONValue { raw["facts"] }
     public var at: Double { raw["observed_at"].numeric ?? 0 }
-    public init(_ value: JSONValue, providerID: String, operation: String, modelID: String = "") throws {
+    public init(_ value: JSONValue, providerID: String, operation: String, modelID: String = "", origin: String? = nil) throws {
         guard let path = Self.endpoints[operation], value["provider_id"].string == providerID,
               value["endpoint"].string == path, value["credential_role"].string == "ANONYMOUS",
               value["account_id"].string.isEmpty, value["credential_id"].string.isEmpty,
               value["source"].string == "NEW_API_OFFICIAL", let at = value["observed_at"].numeric, at > 0,
               case .object = value["facts"], operation != "performance" || value["facts"]["model_name"].string == modelID else { throw AtlasError.invalidResponse }
+        if let origin, value["facts"]["origin"].string != origin { throw AtlasError.invalidResponse }
         raw = value; self.operation = operation
     }
     public static func request(providerID: String, operation: String, modelID: String = "", hours: Int = 168) throws -> JSONValue {

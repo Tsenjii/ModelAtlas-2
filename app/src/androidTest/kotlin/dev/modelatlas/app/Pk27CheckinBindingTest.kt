@@ -31,6 +31,8 @@ import dev.modelatlas.app.data.ProviderManualConfig
 import dev.modelatlas.app.data.toEntity
 import dev.modelatlas.core.onboarding.AuthMode
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -56,11 +58,15 @@ import java.util.UUID
  * ConnectionCardInteractionTest, ConnectionCardFlowTest and ProviderManagementViewModelTest
  * remain the TV-9/10 regression suites.
  */
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class Pk27CheckinBindingTest {
     @get:Rule
-    val compose = createAndroidComposeRule<MainActivity>()
+    // The default UnconfinedTestDispatcher can resume frame traversal on a
+    // Room/IO emitter thread, where Android's Choreographer has no Looper.
+    // Queue composition work for the harness clock instead; keep every real
+    // UI interaction, the original 15s waits and exact-account DB assertions.
+    val compose = createAndroidComposeRule<MainActivity>(effectContext = StandardTestDispatcher())
 
     private lateinit var app: AtlasApplication
     private lateinit var viewModel: AtlasViewModel
