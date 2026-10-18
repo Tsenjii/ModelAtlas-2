@@ -212,6 +212,7 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /endpoints", s.listEndpoints)
 	api.HandleFunc("POST /endpoints", s.addEndpoint)
 	api.HandleFunc("GET /models/detail", s.modelDetail)
+	api.HandleFunc("GET /models/observations", s.modelObservations)
 	api.HandleFunc("POST /models/metadata", s.setMetadata)
 	api.HandleFunc("POST /models/capabilities", s.confirmCapabilities)
 	api.HandleFunc("POST /models/facts", s.manualFacts)

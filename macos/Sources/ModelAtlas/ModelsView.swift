@@ -304,7 +304,7 @@ struct CatalogView: View {
     }
 }
 
-struct ModelDetailView: View {
+@MainActor struct ModelDetailView: View {
     @ObservedObject var store: AtlasStore
     let model: JSONValue
     @Environment(\.dismiss) private var dismiss
@@ -323,11 +323,16 @@ struct ModelDetailView: View {
     @State private var loading = true
     @State private var customStart = Date().addingTimeInterval(-7 * 86400)
     @State private var customEnd = Date()
+    @State private var chartReceipt: String?
+    @StateObject private var priceArchive: ObservationArchiveController
+    @StateObject private var historyArchive: ObservationArchiveController
     private var scope: ModelScope { ModelScope(model) }
     private var usableModel: JSONValue? { store.activeModels.first { ModelScope($0) == scope } }
     private var intelligence: ModelIntelligence { ModelIntelligence(detail: detail, scope: scope) }
-    init(store: AtlasStore, model: JSONValue, initialTab: String = "概覽") {
+    init(store: AtlasStore, model: JSONValue, initialTab: String = "概覽", priceArchive: ObservationArchiveController? = nil, historyArchive: ObservationArchiveController? = nil) {
         self.store = store; self.model = model; _tab = State(initialValue: initialTab)
+        _priceArchive = StateObject(wrappedValue: priceArchive ?? ObservationArchiveController(scope: ModelScope(model)))
+        _historyArchive = StateObject(wrappedValue: historyArchive ?? ObservationArchiveController(scope: ModelScope(model)))
     }
     var body: some View {
         VStack(spacing: 0) {
@@ -347,14 +352,14 @@ struct ModelDetailView: View {
                         AtlasCard { Text("模型資訊").font(.headline); JSONTree(value: detail["metadata"]); Text("已確認能力").font(.headline); Text(detail["capabilities"].array.map(\.string).joined(separator: " · ")).foregroundStyle(.secondary) }
                         AtlasCard { HStack { Text("本機手動測試").font(.headline); Spacer(); ActionButton(title: "同步資料") { _ = try await store.mutate("/intelligence/sync", body: scope.json); await load() }; ActionButton(title: "測試這個連線") { guard let api = store.api else { return }; testResult = try await api.call("/models/test", method: "POST", body: scope.json); await store.refresh(); await load() } }; if let testResult { JSONTree(value: testResult) } }
                     }
-                    if tab == "價格" { ModelPricingPanel(intelligence: intelligence, priceState: usableModel?["price_state"].string ?? model["price_state"].string) }
+                    if tab == "價格" { ModelPricingPanel(intelligence: intelligence, priceState: usableModel?["price_state"].string ?? model["price_state"].string, api: store.api, archive: priceArchive) }
                     if tab == "額度" { ModelQuotaPanel(intelligence: intelligence); DisclosureGroup("帳戶來源紀錄") { JSONTree(value: detail["account_facts"]) } }
                     if tab == "效能" {
-                        Picker("時間窗", selection: $window) { ForEach(["1h", "24h", "7d", "30d", "all", "custom"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.segmented)
+                        Picker("時間窗", selection: $window) { ForEach(["1h", "24h", "7d", "30d", "all", "custom"], id: \.self) { Text(["1h":"1 小時", "24h":"24 小時", "7d":"7 天", "30d":"30 天", "all":"全部", "custom":"自訂"][$0]!).tag($0) } }.pickerStyle(.segmented)
                         if window == "custom" { HStack { DatePicker("開始", selection: $customStart); DatePicker("結束", selection: $customEnd); Button("套用") { Task { await load() } } } }
-                        ModelPerformancePanel(intelligence: intelligence)
+                        ModelPerformancePanel(intelligence: intelligence, openReceipt: { chartReceipt = $0 })
                     }
-                    if tab == "歷史" { ModelObservationHistory(intelligence: intelligence); RequestHistoryView(store: store, scope: scope) }
+                    if tab == "歷史" { ModelObservationHistory(api: store.api, archive: historyArchive); RequestHistoryView(store: store, scope: scope) }
                     if tab == "設定" { settingsContent }
                 }.padding(24)
             }
@@ -365,6 +370,10 @@ struct ModelDetailView: View {
             await load(); metadataText = detail["metadata"].pretty
         }
         .onChange(of: window) { _ in Task { await load() } }
+        .sheet(isPresented: Binding(get: { chartReceipt != nil }, set: { if !$0 { chartReceipt = nil } })) {
+            if let chartReceipt { RequestReceiptView(store: store, sampleID: chartReceipt).atlasModal(store) }
+        }
+        .onDisappear { priceArchive.cancel(); historyArchive.cancel() }
     }
     private var settingsContent: some View {
         VStack(spacing: 18) {
@@ -403,7 +412,12 @@ struct ModelDetailView: View {
             let value = try await api.get("/models/detail", query: query)
             guard loadRevision == revision else { return }
             guard ModelScope(value["selection"]) == scope else { throw AtlasError.invalidResponse }
+            let previousObservation = detail["history"].array.first?["id"].string
             detail = value; problem = nil
+            if let previousObservation, previousObservation != value["history"].array.first?["id"].string {
+                if priceArchive.state != nil { priceArchive.refresh(using: api, filter: priceArchive.requested) }
+                if historyArchive.state != nil { historyArchive.refresh(using: api, filter: historyArchive.requested) }
+            }
         } catch { if loadRevision == revision { problem = error.localizedDescription } }
     }
 }

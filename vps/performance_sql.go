@@ -65,17 +65,17 @@ func (s *Server) performanceSQL(ctx context.Context, v Selection, start, end int
 	}
 	if detail {
 		history := []map[string]any{}
-		rows, e := tx.QueryContext(ctx, "SELECT created_at,outcome,status_code,ttft_ms,latency_ms,"+numericTPS+" FROM telemetry WHERE "+completed+" ORDER BY rowid DESC LIMIT 400", args...)
+		rows, e := tx.QueryContext(ctx, "SELECT id,created_at,outcome,status_code,ttft_ms,latency_ms,"+numericTPS+" FROM telemetry WHERE "+completed+" ORDER BY rowid DESC LIMIT 400", args...)
 		if e == nil {
 			for rows.Next() {
 				var at int64
-				var outcome string
+				var id, outcome string
 				var status sql.NullInt64
 				var ttft, latency, tps sql.NullFloat64
-				if rows.Scan(&at, &outcome, &status, &ttft, &latency, &tps) != nil {
+				if rows.Scan(&id, &at, &outcome, &status, &ttft, &latency, &tps) != nil {
 					continue
 				}
-				history = append(history, map[string]any{"at": at, "outcome": outcome, "http_status": nullable(status), "ttft_ms": plotMetric(ttft), "latency_ms": plotMetric(latency), "tps": plotMetric(tps)})
+				history = append(history, map[string]any{"id": id, "at": at, "outcome": outcome, "http_status": nullable(status), "ttft_ms": plotMetric(ttft), "latency_ms": plotMetric(latency), "tps": plotMetric(tps)})
 			}
 			rows.Close()
 		}

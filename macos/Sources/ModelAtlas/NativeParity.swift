@@ -209,12 +209,91 @@ import SwiftUI
             try await verifyIntelligence(store, chat: chat, foreign: foreign, output: output, fixture: fixture)
             stage = "real-native-comparison-and-appearance"
             try await verifyComparison(store, chat: chat, foreign: foreign, output: output)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(30), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "wire_counts": counts])
+            stage = "native-chart-selection-and-retained-archive"
+            try await verifyCharts(store, chat: chat, foreign: foreign, output: output, fixture: fixture)
+            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(34), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
     }
     private static func require(_ value: @autoclosure () -> Bool) throws { guard value() else { throw AtlasError.invalidResponse } }
+    private static func verifyCharts(_ store: AtlasStore, chat: JSONValue, foreign: JSONValue, output: URL, fixture: String) async throws {
+        guard let api = store.api else { throw AtlasError.engineUnavailable }
+        let before = try await fixtureJSON(fixture + "/fixture/parity-state")
+        let selected = store.selectedModel, session = store.sessionID, messages = store.messages, draft = store.draft
+        let scope = ModelScope(chat)
+        for index in 0..<205 {
+            var value = scope.json
+            let input = index == 204 ? "0" : String(format: "%.6f", Double((index * 17) % 37) / 1000)
+            value["price"] = .object(["input": .string(input), "output": .string("0"), "fixed_absent": .bool(true), "cache": index % 13 == 0 ? .null : .string("0.01"), "unit": .string("USD/1K tokens")])
+            value["confirmed_effective_price"] = .bool(true)
+            value["note"] = .string("圖表與永久歷史的合成價格觀測")
+            _ = try await api.call("/models/facts", method: "POST", body: value)
+        }
+        let prices = ObservationArchiveController(scope: scope)
+        let filter = ObservationFilter(category: "PRICE")
+        prices.refresh(using: api, filter: filter); prices.refresh(using: api, filter: filter)
+        try await wait { !prices.pending }
+        try require(prices.problem == nil && prices.state?.rows.count == 200 && (prices.state?.total ?? 0) >= 207)
+        prices.loadMore(using: api); prices.loadMore(using: api)
+        try await wait { !prices.pending }
+        guard let saved = prices.state else { throw AtlasError.invalidResponse }
+        try require(prices.problem == nil && saved.rows.count == saved.total && saved.rows.count > 200 && saved.nextCursor.isEmpty)
+        try require(Set(saved.rows.map(\.id)).count == saved.rows.count && saved.rows.allSatisfy { ModelScope($0.raw) == scope })
+        let projection = ModelIntelligence(detail: .object(["selection": scope.json, "history": .array(saved.rows.map(\.raw))]), scope: scope)
+        guard let track = projection.priceTracks.first(where: { $0.legKey == "price" && $0.observations.count > 1 }) else { throw AtlasError.invalidResponse }
+        let priceData = TrendData(points: track.observations.map { TrendPoint(id: $0.id, at: $0.at, rawValue: $0.facts["price"]["input"]) }, unit: "USD/1K tokens", title: "輸入價格")
+        try require(priceData.points.count > 200 && priceData.points.contains { $0.value == 0 })
+        let export = try JSONValue.parse(priceData.export.pretty)
+        try require(export["coverage"].string == "LOADED_OBSERVATIONS_ONLY" && export["points"].array.count == priceData.points.count)
+        try await capture(ModelDetailView(store: store, model: chat, initialTab: "價格", priceArchive: prices), output, "31-price-chart-selected-light", dark: false, marker: "price-archive-loaded", interaction: { window in
+            try await verifyChartInput(window, id: "price", data: priceData)
+        })
+        let raw = try await api.get("/models/detail", query: scope.query + [URLQueryItem(name: "window", value: "7d")])
+        let detail = ModelIntelligence(detail: raw, scope: scope)
+        try require(!detail.samples.isEmpty && detail.samples.allSatisfy { !$0.receiptID.isEmpty })
+        let localData = TrendData(points: detail.samples.map { TrendPoint(id: $0.id, at: $0.at, rawValue: $0.ttft.map(JSONValue.number) ?? .null) }, unit: "ms", title: "首 Token 延遲")
+        try await capture(ModelDetailView(store: store, model: chat, initialTab: "效能"), output, "32-local-chart-selected-dark", dark: true, marker: "chart-input-local", interaction: { window in
+            try await verifyChartInput(window, id: "local", data: localData)
+        })
+        let sampleID = detail.samples.last!.receiptID
+        let receipt = try await api.get("/telemetry/detail", query: [URLQueryItem(name: "id", value: sampleID)])
+        let sample = receipt["sample"] == .null ? receipt : receipt["sample"]
+        try require(ModelScope(sample) == scope && sample["id"].string == sampleID)
+        let history = ObservationArchiveController(scope: scope)
+        history.refresh(using: api, filter: ObservationFilter(source: "USER", kind: "MANUAL_PRICE"))
+        try await wait { !history.pending }; history.loadMore(using: api); try await wait { !history.pending }
+        try require(history.problem == nil && (history.state?.rows.count ?? 0) > 200)
+        try await capture(ModelDetailView(store: store, model: chat, initialTab: "歷史", historyArchive: history), output, "33-history-archive-dark", dark: true, marker: "observation-archive-loaded")
+        let empty = ObservationArchiveController(scope: scope)
+        empty.refresh(using: api, filter: ObservationFilter(category: "PRICE", start: 0, end: 1000))
+        try await wait { !empty.pending }
+        try require(empty.problem == nil && empty.state?.total == 0 && empty.state?.rows.isEmpty == true)
+        try await capture(ModelDetailView(store: store, model: chat, initialTab: "價格", priceArchive: empty), output, "34-price-range-empty-light", dark: false, marker: "price-archive-loaded")
+        let other = try await api.get("/models/observations", query: ModelScope(foreign).query + filter.query)
+        let otherPage = try ObservationPage(other, scope: ModelScope(foreign), filter: filter)
+        try require(otherPage.rows.isEmpty)
+        let cancelled = ObservationArchiveController(scope: scope)
+        cancelled.refresh(using: api, filter: filter); cancelled.cancel()
+        try await Task.sleep(nanoseconds: 30_000_000)
+        try require(!cancelled.pending && cancelled.state == nil)
+        let after = try await fixtureJSON(fixture + "/fixture/parity-state")
+        try require(before == after && store.selectedModel == selected && store.sessionID == session && store.messages == messages && store.draft == draft)
+    }
+    private static func verifyChartInput(_ window: NSWindow, id: String, data: TrendData) async throws {
+        guard let pointer = find(window.contentView, "chart-input-" + id) as? TrendPointerView, pointer.bounds.width > 100,
+              let index = data.nearest(to: 0.45) else { throw AtlasError.invalidResponse }
+        _ = pointer.scrollToVisible(pointer.bounds)
+        let location = pointer.convert(NSPoint(x: pointer.bounds.width * 0.45, y: pointer.bounds.midY), to: nil)
+        guard let click = NSEvent.mouseEvent(with: .leftMouseDown, location: location, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1) else { throw AtlasError.invalidResponse }
+        pointer.mouseDown(with: click)
+        try await wait { contains(window.contentView, "chart-point-" + id + "-" + data.points[index].id) }
+        try require(window.firstResponder === pointer)
+        guard let arrow = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil, characters: String(UnicodeScalar(0xF703)!), charactersIgnoringModifiers: String(UnicodeScalar(0xF703)!), isARepeat: false, keyCode: 124),
+              let nextID = data.moved(from: data.points[index].id, by: 1) else { throw AtlasError.invalidResponse }
+        window.sendEvent(arrow)
+        try await wait { contains(window.contentView, "chart-point-" + id + "-" + nextID) }
+    }
     private static func verifyComparison(_ store: AtlasStore, chat: JSONValue, foreign: JSONValue, output: URL) async throws {
         guard let api = store.api else { throw AtlasError.engineUnavailable }
         let selected = store.selectedModel, session = store.sessionID, messages = store.messages, draft = store.draft
@@ -327,7 +406,7 @@ import SwiftUI
     private static func mediaPreview(_ store: AtlasStore, operation: String) -> some View {
         ScrollView { VStack(alignment: .leading, spacing: 18) { Label(operationTitle(operation), systemImage: "sparkles").font(.title2.weight(.semibold)); Text("原生 App · 隔離 TLS 合成驗收").foregroundStyle(.secondary); MediaOptionsView(draft: Binding(get: { store.mediaDraft }, set: { store.mediaDraft = $0 }), operation: operation, expanded: true); if let result = store.mediaResult { MediaResultView(value: result) } }.padding(24) }.frame(width: 850, height: 740)
     }
-    private static func capture<V: View>(_ view: V, _ output: URL, _ name: String, dark: Bool, marker: String? = nil) async throws {
+    private static func capture<V: View>(_ view: V, _ output: URL, _ name: String, dark: Bool, marker: String? = nil, interaction: ((NSWindow) async throws -> Void)? = nil) async throws {
         UserDefaults.standard.set(dark ? "dark" : "light", forKey: "appearance")
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 760), styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
@@ -341,6 +420,7 @@ import SwiftUI
             try require(contains(window.contentView, marker))
         }
         try await Task.sleep(nanoseconds: 450_000_000)
+        if let interaction { window.contentView?.layoutSubtreeIfNeeded(); try await interaction(window) }
         try require(NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == (dark ? .darkAqua : .aqua))
         guard let root = window.contentView?.superview else { throw AtlasError.invalidResponse }; root.layoutSubtreeIfNeeded(); root.displayIfNeeded()
         guard let bitmap = root.bitmapImageRepForCachingDisplay(in: root.bounds) else { throw AtlasError.invalidResponse }; root.cacheDisplay(in: root.bounds, to: bitmap)

@@ -1,5 +1,7 @@
 # ModelAtlas 完整產品範圍與 Mac 驗收界線
 
+目前唯一live為 **MAC-CHARTS-010／0.5.0 build10候選**，詳 `CHARTS.md`。009已由52d5bfd／Mac39090603877、VPS39090603936、Android39090603909九項與110圖驗收並交付0.4.0，可讀並列比較與石墨／可選accent已落地。本片增加圖表真選取／鍵盤／精確匯出／收據，以及超過200筆的價格／觀測分頁；須新HEAD九項及118實圖，完整大綱仍PARTIAL。下方切片敘述與表格保留原驗收時的歷史界線，不能覆蓋此最新狀態。
+
 最新工作為 **MAC-NATIVE-009／0.4.0 build9候選**，詳 `NATIVE_POLISH.md`。使用者明確要求重新研究好看軟體並取消固定藍綠按鈕；此片整理原生外觀與可讀並列比較。008已由8eb68087／Mac39058446721、VPS39058446728、Android39058446846九項與100圖驗收並交付0.3.0。009須新HEAD九項及110圖；完整大綱與其他情境仍PARTIAL，下方切片文字保留歷史。
 
 2026-10-18（台灣）。依使用者重新提供的 `astra_master_prompt_structured_final_zh-TW-1(1).txt`：Part I 50節、Part II Runtime Research、Part III App Assistant、Part IV Reflection，以及後續明確產品決策。

@@ -70,7 +70,7 @@ public struct ModelIntelligence: Sendable {
         local["history"].array.enumerated().compactMap { index, row in
             guard let at = Self.number(row["at"]), at >= 0,
                   !["RUNNING", "CANCELLED", "INTERRUPTED"].contains(row["outcome"].string) else { return nil }
-            return IntelligenceSample(id: String(index), at: at, outcome: row["outcome"].string,
+            return IntelligenceSample(id: row["id"].string.isEmpty ? String(index) : row["id"].string, receiptID: row["id"].string, at: at, outcome: row["outcome"].string,
                 httpStatus: row["http_status"], ttft: Self.number(row["ttft_ms"]),
                 latency: Self.number(row["latency_ms"]), tps: Self.number(row["tps"]))
         }
@@ -141,6 +141,7 @@ public struct IntelligenceObservation: Identifiable, Hashable, Sendable {
 
 public struct IntelligenceSample: Identifiable, Sendable {
     public let id: String
+    public let receiptID: String
     public let at: Double
     public let outcome: String
     public let httpStatus: JSONValue

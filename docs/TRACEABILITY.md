@@ -1,5 +1,11 @@
 # ModelAtlas Public — TRACEABILITY
 
+## MAC-CHARTS-010（2026-10-18 候選）
+
+Models → ModelDetailView → ModelPricingPanel／ModelPerformancePanel／ModelObservationHistory → TrendChartView／TrendPointer／ObservationArchiveController → 正式 `/models/observations`、`/models/detail`、`/telemetry/detail`。價格圖置頂，真時間／單位／零與缺值、滑鼠固定／鍵盤逐點、精確JSON與真收據；永久價格／觀測以固定snapshot的keyset分頁及全scope／來源／類型／時間查詢，不再把最近200筆當全部。詳細界線見 `macos/CHARTS.md`。
+
+Go四項新HTTP／SQLite測試與全測試、vet本機通過；新增10核心、4張真production畫面及NSView滑鼠／鍵盤事件，保留原44核心／55圖及全部25秒串流／120秒parity guards。預期54核心／59PNG每架構、118圖；新HEAD九項與實圖前PENDING。已交付009為52d5bfd，Mac39090603877／VPS39090603936／Android39090603909九項SUCCESS、110圖已檢視。完整Master Spec仍PARTIAL。
+
 ## MAC-NATIVE-009（2026-10-18 候選）
 
 使用者明確更新Mac視覺／主色要求見D-007。正式入口為共用SwiftUI元件與Appearance→Root／Settings／各native sheets、Models選取→ComparisonView／ComparisonController→既有 `/models/compare` →正式inference／telemetry／receipt。原始JSON比較改為按完整scope對齊的並列數值、失敗／未知與非串流、當次價格／各單位扣款／獨立額度快照、收據及匯出；取消／last-good／重複提交guard不改上游路由。

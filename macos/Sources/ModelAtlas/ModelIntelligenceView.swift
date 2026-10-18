@@ -59,45 +59,88 @@ struct ObservationEvidence: View {
     }
 }
 
-struct ModelPricingPanel: View {
+@MainActor struct ModelPricingPanel: View {
     let intelligence: ModelIntelligence
     let priceState: String
+    let api: AtlasClient?
+    @ObservedObject var archive: ObservationArchiveController
     @State private var series = ""
     @State private var leg = "input"
+    @State private var window = "all"
+    @State private var start = Date().addingTimeInterval(-7 * 86400)
+    @State private var end = Date()
+    @State private var filterProblem: String?
     private var prices: [IntelligenceObservation] { intelligence.lastGood.filter { !$0.facts["price"].fields.isEmpty || !$0.facts["effective_charge"].fields.isEmpty } }
-    private var tracks: [IntelligencePriceTrack] { intelligence.priceTracks }
+    private var tracks: [IntelligencePriceTrack] {
+        guard let state = archive.state else { return intelligence.priceTracks }
+        return ModelIntelligence(detail: .object(["selection": intelligence.scope.json, "history": .array(state.rows.map(\.raw))]), scope: intelligence.scope).priceTracks
+    }
     private var track: IntelligencePriceTrack? { tracks.first { $0.id == series } ?? tracks.first { $0.legKey == "price" && $0.observations.count > 1 } ?? tracks.first }
+    init(intelligence: ModelIntelligence, priceState: String, api: AtlasClient?, archive: ObservationArchiveController) {
+        self.intelligence = intelligence; self.priceState = priceState; self.api = api; self.archive = archive
+        let filter = archive.requested
+        if let first = filter.start, let last = filter.end {
+            _window = State(initialValue: "custom"); _start = State(initialValue: Date(timeIntervalSince1970: first / 1000)); _end = State(initialValue: Date(timeIntervalSince1970: last / 1000))
+        }
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             AtlasCard {
-                HStack { Text("這個連線的價格狀態").font(.headline); Spacer(); SmallBadge(text: IntelligenceLabels.price(priceState)) }
-                Text("FREE NOW 與定期免費資格分開判定；以下保留最後成功觀測的時間與來源。").font(.callout).foregroundStyle(.secondary)
-            }
-            if prices.isEmpty { AtlasCard { Text("尚無價格觀測").font(.headline); Text("加入模型後可同步資料，或在設定中記錄標價與已確認的實際扣款。").foregroundStyle(.secondary) } }
-            ForEach(prices) { row in
-                AtlasCard {
-                    HStack { Text(row.kind == "MANUAL_PRICE" ? "人工價格紀錄" : "價格觀測").font(.headline); Spacer(); Text(insightDate(row.at)).font(.caption).foregroundStyle(.secondary) }
-                    if !row.facts["price"].fields.isEmpty { PriceLegValues(title: "標價", legs: row.facts["price"]) }
-                    if !row.facts["effective_charge"].fields.isEmpty { PriceLegValues(title: "已確認實際扣款", legs: row.facts["effective_charge"]) }
-                    else { Text("實際扣款尚未確認").font(.caption).foregroundStyle(.secondary) }
-                    ObservationEvidence(observation: row)
-                }
-            }
-            if let track {
-                AtlasCard {
-                    Text("價格歷史").font(.headline)
-                    Picker("來源、計價種類與單位", selection: Binding(get: { track.id }, set: { series = $0 })) { ForEach(tracks) { Text($0.label).tag($0.id) } }
+                HStack { Text("價格走勢").font(.headline); SmallBadge(text: IntelligenceLabels.price(priceState)); Spacer(); Button { reload() } label: { Image(systemName: "arrow.clockwise") }.buttonStyle(.borderless).help("重新載入價格歷史").disabled(archive.pending) }
+                ObservationTimePicker(window: $window, start: $start, end: $end, apply: reload)
+                if let filterProblem { Text(filterProblem).font(.caption).foregroundStyle(.red) }
+                ObservationArchiveFooter(archive: archive, api: api)
+                if let track {
+                    Picker("來源、計價種類與單位", selection: Binding(get: { track.id }, set: { series = $0 })) { ForEach(tracks) { Text(trackLabel($0)).tag($0.id) } }
                     Picker("價格項目", selection: $leg) { Text("輸入").tag("input"); Text("輸出").tag("output"); Text("固定請求").tag("fixed"); Text("Cache").tag("cache") }.pickerStyle(.segmented)
-                    InsightTrend(points: track.observations.map { InsightPoint(id: $0.id, at: $0.at, value: ModelIntelligence.number($0.facts[track.legKey][leg])) }, unit: track.observations.first?.facts[track.legKey]["unit"].string ?? "")
-                    Text("依觀測時間顯示；缺值保留空段。不同來源、單位與憑證版本各自呈現。").font(.caption).foregroundStyle(.secondary)
+                    TrendChartView(data: chart(track), identifier: "price")
                     DisclosureGroup("精確價格資料（\(track.observations.count) 筆）") {
-                        ForEach(track.observations) { row in
-                            HStack { Text(insightDate(row.at)); Spacer(); Text(ModelIntelligence.amount(row.facts[track.legKey][leg])) }.font(.caption.monospacedDigit()).textSelection(.enabled)
+                        LazyVStack(spacing: 10) {
+                            ForEach(track.observations.reversed()) { row in
+                                HStack { Text(insightDate(row.at)); Spacer(); Text(ModelIntelligence.amount(row.facts[track.legKey][leg])) }.font(.caption.monospacedDigit()).textSelection(.enabled)
+                            }
                         }
                     }
+                } else if !archive.pending {
+                    Label("此範圍尚無價格觀測", systemImage: "chart.xyaxis.line").foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 140)
+                }
+                if archive.state != nil && !archive.pending { AtlasLoadedMarker(name: "price-archive-loaded").frame(height: 0) }
+            }
+            AtlasCard {
+                DisclosureGroup("最新已確認價格與來源") {
+                    VStack(alignment: .leading, spacing: 18) {
+                        Text("目前免費與定期免費資格分開保存；標價、已確認扣款也各自保留來源。").font(.caption).foregroundStyle(.secondary)
+                        if prices.isEmpty { Text("尚無價格觀測；可同步資料，或在設定中記錄價格。").foregroundStyle(.secondary) }
+                        ForEach(prices) { row in
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(insightDate(row.at)).font(.caption).foregroundStyle(.secondary)
+                                if !row.facts["price"].fields.isEmpty { PriceLegValues(title: "標價", legs: row.facts["price"]) }
+                                if !row.facts["effective_charge"].fields.isEmpty { PriceLegValues(title: "已確認實際扣款", legs: row.facts["effective_charge"]) }
+                                else { Text("實際扣款尚未確認").font(.caption).foregroundStyle(.secondary) }
+                                ObservationEvidence(observation: row)
+                            }
+                        }
+                    }.padding(.top, 12)
                 }
             }
         }
+        .task { if archive.state == nil || archive.showingPreviousQuery { reload() } }
+        .onDisappear { archive.cancel() }
+    }
+    private func reload() {
+        guard let api else { return }
+        do { let filter = try ObservationTimePicker.filter(window: window, start: start, end: end, category: "PRICE"); filterProblem = nil; archive.refresh(using: api, filter: filter) }
+        catch { filterProblem = error.localizedDescription }
+    }
+    private func trackLabel(_ track: IntelligencePriceTrack) -> String {
+        guard let row = track.observations.first else { return track.label }
+        let version = row.facts["credential_version"] == .null ? "" : " · 版本 " + row.facts["credential_version"].display
+        return IntelligenceLabels.source(row.source) + " · " + (track.legKey == "price" ? "標價" : "已確認扣款") + " · " + row.facts[track.legKey]["unit"].display + version
+    }
+    private func chart(_ track: IntelligencePriceTrack) -> TrendData {
+        let titles = ["input": "輸入價格", "output": "輸出價格", "fixed": "每次請求價格", "cache": "Cache 價格"]
+        let context: JSONValue = .object(["selection": intelligence.scope.json, "series_id": .string(track.id), "leg": .string(leg), "loaded_query": archive.state?.filter.json ?? .null])
+        return TrendData(points: track.observations.map { TrendPoint(id: $0.id, at: $0.at, rawValue: $0.facts[track.legKey][leg], note: IntelligenceLabels.source($0.source)) }, unit: track.observations.first?.facts[track.legKey]["unit"].string ?? "單位未提供", title: titles[leg] ?? leg, context: context)
     }
 }
 
@@ -148,8 +191,9 @@ struct ModelQuotaPanel: View {
     }
 }
 
-struct ModelPerformancePanel: View {
+@MainActor struct ModelPerformancePanel: View {
     let intelligence: ModelIntelligence
+    var openReceipt: ((String) -> Void)?
     @State private var source = "local"
     @State private var metric = "ttft"
     private var local: JSONValue { intelligence.local }
@@ -200,7 +244,7 @@ struct ModelPerformancePanel: View {
             AtlasCard {
                 HStack { Text("請求趨勢").font(.headline); Spacer(); Text("最近 \(intelligence.samples.count) / \(local["history_total"].display) 筆").font(.caption).foregroundStyle(.secondary) }
                 Picker("趨勢指標", selection: $metric) { Text("TTFT · ms").tag("ttft"); Text("TPS").tag("tps"); Text("延遲 · ms").tag("latency"); Text("成功／失敗").tag("success") }.pickerStyle(.segmented)
-                InsightTrend(points: intelligence.samples.map { InsightPoint(id: $0.id, at: $0.at, value: $0.value(metric)) }, unit: metric == "ttft" || metric == "latency" ? "ms" : metric == "tps" ? "tokens/s" : "成功 1／失敗 0")
+                TrendChartView(data: localChart, identifier: "local", binary: metric == "success", openReceipt: openReceipt)
                 Text("圖表最多顯示最近 \(local["history_limit"].display) 筆；上方統計使用選定時間窗內全部有效樣本，完整請求仍保留在歷史。").font(.caption).foregroundStyle(.secondary)
                 DisclosureGroup("查看每筆數值") { ForEach(intelligence.samples) { sample in
                     HStack { Text(insightDate(sample.at)); Text(sample.outcome); Spacer(); Text(sample.value(metric).map { String(format: "%.2f", $0) } ?? "不適用／未提供") }.font(.caption.monospacedDigit()).textSelection(.enabled)
@@ -218,6 +262,14 @@ struct ModelPerformancePanel: View {
                 HStack { InsightValue(title: "RPM", value: metricText(local["observed_rpm"])); InsightValue(title: "輸入 TPM", value: metricText(local["observed_input_tpm"])); InsightValue(title: "輸出 TPM", value: metricText(local["observed_output_tpm"])); InsightValue(title: "總 TPM", value: metricText(local["observed_total_tpm"])) }
             }
         }
+    }
+    private var localChart: TrendData {
+        let titles = ["ttft": "首 Token 延遲", "tps": "生成速度", "latency": "總延遲", "success": "請求結果"]
+        return TrendData(points: intelligence.samples.map { sample in
+            TrendPoint(id: sample.id, at: sample.at, rawValue: sample.value(metric).map(JSONValue.number) ?? .null,
+                       note: IntelligenceLabels.status(sample.outcome) + (sample.httpStatus == .null ? "" : " · HTTP " + sample.httpStatus.display), receiptID: sample.receiptID)
+        }, unit: metric == "tps" ? "tokens/s" : metric == "success" ? "" : "ms", title: titles[metric] ?? metric,
+            context: .object(["selection": intelligence.scope.json, "source": .string("MY_KEY_LOCAL"), "window_start": local["window_start"], "window_end": local["window_end"], "history_total": local["history_total"]]))
     }
     private var successText: String {
         guard let count = ModelIntelligence.number(local["samples"]), count > 0, let rate = ModelIntelligence.number(local["success_rate"]), rate <= 1 else { return "尚無資料" }
@@ -239,78 +291,75 @@ private struct ProviderMetricValues: View {
     }
 }
 
-struct ModelObservationHistory: View {
-    let intelligence: ModelIntelligence
+@MainActor struct ModelObservationHistory: View {
+    let api: AtlasClient?
+    @ObservedObject var archive: ObservationArchiveController
     @State private var source = ""
     @State private var kind = ""
-    private var rows: [IntelligenceObservation] { intelligence.history.filter { (source.isEmpty || $0.source == source) && (kind.isEmpty || $0.kind == kind) } }
-    var body: some View {
-        AtlasCard {
-            HStack { Text("價格、額度與同步觀測").font(.headline); Spacer(); Text("\(rows.count) 筆").font(.caption).foregroundStyle(.secondary) }
-            HStack {
-                Picker("來源", selection: $source) { Text("全部來源").tag(""); ForEach(Array(Set(intelligence.history.map(\.source))).sorted(), id: \.self) { Text(IntelligenceLabels.source($0)).tag($0) } }
-                Picker("類型", selection: $kind) { Text("全部類型").tag(""); ForEach(Array(Set(intelligence.history.map(\.kind))).sorted(), id: \.self) { Text(IntelligenceLabels.kind($0)).tag($0) } }
-            }
-            Text("顯示引擎最近保留的最多 200 筆觀測；失敗不取代最後成功資料。原始紀錄持續保存。").font(.caption).foregroundStyle(.secondary)
-            if rows.isEmpty { Text("尚無符合的觀測").foregroundStyle(.secondary) }
-            ForEach(rows) { row in
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack { Image(systemName: row.status == "SUCCESS" ? "checkmark.circle" : "exclamationmark.circle").foregroundStyle(row.status == "SUCCESS" ? Color.green : Color.secondary); Text(IntelligenceLabels.kind(row.kind)).font(.subheadline.weight(.semibold)); Spacer(); Text(IntelligenceLabels.status(row.status)).font(.caption).foregroundStyle(.secondary) }
-                    ObservationEvidence(observation: row)
-                    if !row.facts["reason"].string.isEmpty { Text(row.facts["reason"].string).font(.caption).foregroundStyle(.secondary) }
-                }.padding(.vertical, 8)
-                Divider()
-            }
+    @State private var window = "all"
+    @State private var start = Date().addingTimeInterval(-7 * 86400)
+    @State private var end = Date()
+    @State private var filterProblem: String?
+    init(api: AtlasClient?, archive: ObservationArchiveController) {
+        self.api = api; self.archive = archive
+        let filter = archive.requested
+        _source = State(initialValue: filter.source); _kind = State(initialValue: filter.kind)
+        if let first = filter.start, let last = filter.end {
+            _window = State(initialValue: "custom"); _start = State(initialValue: Date(timeIntervalSince1970: first / 1000)); _end = State(initialValue: Date(timeIntervalSince1970: last / 1000))
         }
     }
-}
-
-struct InsightPoint: Identifiable { let id: String; let at: Double; let value: Double? }
-
-/// Native macOS 12 Path rendering. Missing values break the line; observations
-/// are placed on their actual time axis rather than evenly spaced by index.
-struct InsightTrend: View {
-    let points: [InsightPoint]
-    let unit: String
-    private var values: [Double] { points.compactMap(\.value) }
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if values.isEmpty { Text("這個指標尚無可繪製數值").foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 110) }
-            else {
-                HStack { Text(String(format: "最高 %.3g", values.max()!)); Spacer(); Text(unit) }.font(.caption2).foregroundStyle(.secondary)
-                GeometryReader { geometry in
-                    let low = values.min()!, high = values.max()!
-                    let start = points.map(\.at).min() ?? 0, end = points.map(\.at).max() ?? 0
-                    let verticalRange = max(high - low, max(abs(high) * 0.1, 0.000001))
-                    Path { path in
-                        for fraction in [0.0, 0.5, 1.0] {
-                            let y = 6 + fraction * max(geometry.size.height - 12, 0)
-                            path.move(to: CGPoint(x: 6, y: y)); path.addLine(to: CGPoint(x: geometry.size.width - 6, y: y))
-                        }
-                    }.stroke(Color.primary.opacity(0.09), style: StrokeStyle(lineWidth: 0.5, dash: [3, 4]))
-                    Path { path in
-                        var continuing = false
-                        for point in points {
-                            guard let value = point.value else { continuing = false; continue }
-                            let x = end > start ? (point.at - start) / (end - start) * max(geometry.size.width - 12, 0) + 6 : geometry.size.width / 2
-                            let y = high == low ? geometry.size.height / 2 : (high - value) / verticalRange * max(geometry.size.height - 12, 0) + 6
-                            let position = CGPoint(x: x, y: y)
-                            if continuing { path.addLine(to: position) } else { path.move(to: position) }
-                            continuing = true
-                        }
-                    }.stroke(atlasAccent, style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
-                    Path { path in
-                        for point in points {
-                            guard let value = point.value else { continue }
-                            let x = end > start ? (point.at - start) / (end - start) * max(geometry.size.width - 12, 0) + 6 : geometry.size.width / 2
-                            let y = high == low ? geometry.size.height / 2 : (high - value) / verticalRange * max(geometry.size.height - 12, 0) + 6
-                            path.addEllipse(in: CGRect(x: x - 2, y: y - 2, width: 4, height: 4))
-                        }
-                    }.fill(atlasTextAccent)
-                }.frame(height: 110).accessibilityHidden(true)
-                HStack { Text(points.first.map { insightDate($0.at) } ?? ""); Spacer(); Text(points.last.map { insightDate($0.at) } ?? "") }.font(.caption2).foregroundStyle(.secondary)
-                Text("最低 \(String(format: "%.3g", values.min()!)) · \(values.count) 個有效觀測點").font(.caption2).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 18) {
+            AtlasCard {
+                HStack { Text("觀測紀錄").font(.headline); Spacer(); Button { reload() } label: { Image(systemName: "arrow.clockwise") }.buttonStyle(.borderless).help("重新載入歷史").disabled(archive.pending) }
+                ObservationTimePicker(window: $window, start: $start, end: $end, apply: reload)
+                HStack {
+                    Picker("來源", selection: $source) {
+                        Text("全部來源").tag("")
+                        ForEach(archive.state?.sources ?? [], id: \.self) { Text(IntelligenceLabels.source($0)).tag($0) }
+                    }
+                    Picker("類型", selection: $kind) {
+                        Text("全部類型").tag("")
+                        ForEach(archive.state?.kinds ?? [], id: \.self) { Text(IntelligenceLabels.kind($0)).tag($0) }
+                    }
+                }
+                if let filterProblem { Text(filterProblem).font(.caption).foregroundStyle(.red) }
+                ObservationArchiveFooter(archive: archive, api: api)
+                Text("失敗觀測與最後成功資料各自保留，較早紀錄可繼續載入。").font(.caption).foregroundStyle(.secondary)
             }
-        }.accessibilityElement(children: .combine)
+            if let state = archive.state {
+                if state.rows.isEmpty {
+                    AtlasCard { Label("沒有符合篩選的紀錄", systemImage: "clock.arrow.circlepath").foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 100) }
+                } else {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(state.rows) { row in
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Image(systemName: row.status == "SUCCESS" ? "checkmark.circle" : "exclamationmark.circle")
+                                        .foregroundStyle(row.status == "SUCCESS" ? Color.green : Color.secondary)
+                                    Text(IntelligenceLabels.kind(row.kind)).font(.subheadline.weight(.semibold))
+                                    Spacer()
+                                    Text(IntelligenceLabels.status(row.status)).font(.caption).foregroundStyle(.secondary)
+                                }
+                                ObservationEvidence(observation: row)
+                                if !row.facts["reason"].string.isEmpty { Text(row.facts["reason"].string).font(.caption).foregroundStyle(.secondary) }
+                            }.padding(.vertical, 13)
+                            Divider()
+                        }
+                    }.padding(.horizontal, 8)
+                }
+                if !archive.pending { AtlasLoadedMarker(name: "observation-archive-loaded").frame(height: 0) }
+            }
+        }.task { if archive.state == nil || archive.showingPreviousQuery { reload() } }
+            .onChange(of: source) { _ in reload() }
+            .onChange(of: kind) { _ in reload() }
+            .onDisappear { archive.cancel() }
+    }
+    private func reload() {
+        guard let api else { return }
+        do {
+            let filter = try ObservationTimePicker.filter(window: window, start: start, end: end, source: source, kind: kind)
+            filterProblem = nil; archive.refresh(using: api, filter: filter)
+        } catch { filterProblem = error.localizedDescription }
     }
 }
