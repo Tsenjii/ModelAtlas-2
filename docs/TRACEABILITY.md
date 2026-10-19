@@ -237,3 +237,8 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | VPS-DEPLOY-HTTPS-001 | `deploymentConfig.handler` 包住正式 `Server.Handler`；真 TLS reverse proxy 保留 Host／覆寫 X-Forwarded-Proto | Host／Origin／HTTPS 前置拒絕仍保留原管理認證；healthz 只曝既有健康資料；固定 master key、絕對 DB，真 API mutation 後兩程序 reopen／vault decrypt，無 secret log／GET |
 
 新 HEAD 須完整同 SHA 六項 CI；具體證據由 PR #20 body 保存。Infrlo 控制台在此環境不可讀，官方公開 README 無 Go／ingress／persistent volume 契約；不將本機代理測試、512 MB／2 GB 宣傳數字當作目標平台驗收，不標已部署。
+
+
+## VPS-MAC-PARITY-002（2026-10-19 候選）
+
+完整 Mac production UI/caller 對照見 `vps/MAC_PARITY.md`。以已驗 VPS 3aec657、Mac 74e2c37 為參考，補全域對話搜尋／分頁與記憶體草稿、獨立 Provider 編輯、六分區模型／來源切換／完整模型與 quota 欄位、精確圖表匯出、私人用量／Recipe／服務／並列比較。原 16 Browser 保留語意、fixtures、timeout 與完整 workload；UI 重排只更換真實入口，不以 force click／sleep／刪斷言通過。新增 `TestBrowserMacParityWorkflow` 使用正式 Handler／SQLite／vault／TLS 驗跨帳戶歷史、205 價格點、額度零／未知、私人用途隔離與真比較。新 HEAD 六項／實圖前仍 CANDIDATE；未 merge／未部署，完整 Master Spec 仍 PARTIAL。

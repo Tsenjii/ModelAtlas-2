@@ -55,16 +55,16 @@ function detailLocalMetrics(parent,local){
  if(local.window_start!==undefined)parent.append(el("p",new Date(local.window_start).toLocaleString()+" — "+new Date(local.window_end).toLocaleString(),"detail-provenance"));
  parent.append(stats);
  item(stats,"成功率",local.success_rate===null||local.success_rate===undefined?"尚無樣本":(local.success_rate*100).toFixed(1)+"%");
- item(stats,"TTFT · p50",local.ttft?.p50===undefined?"尚無資料":Math.round(local.ttft.p50)+" ms");
- item(stats,"TPS · p50",local.tps?.p50===undefined?"尚無資料":local.tps.p50.toFixed(1));
- item(stats,"延遲 · p50",local.latency?.p50===undefined?"尚無資料":Math.round(local.latency.p50)+" ms");
+ item(stats,"平均 TTFT",knownNumber(local.ttft?.mean)===null?"尚無資料":Math.round(local.ttft.mean)+" ms");
+ item(stats,"平均 TPS",knownNumber(local.tps?.mean)===null?"尚無資料":local.tps.mean.toFixed(1));
+ item(stats,"平均延遲",knownNumber(local.latency?.mean)===null?"尚無資料":Math.round(local.latency.mean)+" ms");
  const history=el("div",undefined,"history-strip");history.setAttribute("aria-label","最近最多 60 次有效請求");
  (local.history||[]).slice(-60).forEach(v=>{const n=el("span",undefined,v.outcome==="SUCCESS"?"success":"failure");n.title=v.outcome+" · "+new Date(v.at).toLocaleString();n.setAttribute("aria-label",n.title);history.append(n);});parent.append(history);
  const percentiles=el("details"),summary=el("summary","分位數與最近 60 秒觀測"),table=el("table"),thead=el("thead"),head=el("tr"),tbody=el("tbody");
  for(const title of ["指標","p50","p90","p95"]){const th=el("th",title);th.scope="col";head.append(th);}thead.append(head);table.append(thead,tbody);
  for(const [id,label,unit]of [["ttft","TTFT"," ms"],["tps","TPS",""],["latency","延遲"," ms"]]){const tr=el("tr"),th=el("th",label);th.scope="row";tr.append(th);for(const p of ["p50","p90","p95"]){const n=knownNumber(local[id]?.[p]);tr.append(el("td",n===null?"—":(id==="tps"?n.toFixed(1):Math.round(n))+unit));}tbody.append(tr);}
  percentiles.append(summary,table);detailRows(percentiles,[["觀測 RPM",local.observed_rpm],["觀測輸入 TPM",local.observed_input_tpm],["觀測輸出 TPM",local.observed_output_tpm],["觀測總 TPM",local.observed_total_tpm]]);percentiles.append(el("p","最近 60 秒的本地觀測，並非供應商官方上限。","section-description"));parent.append(percentiles);
- localPerformancePlot(parent,local);factsView(parent,"本地用量與紀錄",local);
+ localPerformancePlot(parent,local);const failures=detailSection(parent,"錯誤分布");const failureRows=Object.entries(local.failures||{});if(failureRows.length)detailRows(failures,failureRows);else failures.append(el("p","此時間窗尚無失敗分類。","section-description"));parent.append(el("p","取消 "+(local.cancelled??0)+" 筆 · 中斷 "+(local.interrupted??0)+" 筆，均不計入上線率；非串流 TTFT 不適用。","section-description"));factsView(parent,"本地用量與紀錄",local);
 }
 function detailPerformance(parent,m,initial,local,ticket){
  const section=detailSection(parent,"我的實測"),controls=el("div",undefined,"detail-performance-controls"),select=el("select"),label=el("label","效能時間窗"),range=el("details"),form=el("form");
@@ -73,10 +73,10 @@ function detailPerformance(parent,m,initial,local,ticket){
  const start=field(form,"開始","datetime-local"),end=field(form,"結束","datetime-local");start.required=end.required=true;
  const dateInput=ms=>{const date=new Date(ms);return new Date(ms-date.getTimezoneOffset()*60000).toISOString().slice(0,16);};
  start.value=dateInput(local.window_start);end.value=dateInput(local.window_end);form.append(el("button","套用時間窗"));
- const status=el("div"),metrics=el("div");section.append(status,metrics);detailLocalMetrics(metrics,local);let serial=0,current=initial;
+ const status=el("div"),metrics=el("div");section.append(status,metrics);detailLocalMetrics(metrics,{...local,selection:scope(m)});let serial=0,current=initial;
  const load=async window=>{
   const id=++serial;status.replaceChildren();detailState(status,"正在讀取實測紀錄…");metrics.setAttribute("aria-busy","true");
-  try{const value=await api("/models/detail?"+query(m)+"&window="+window);if(!detailCurrent(ticket)||id!==serial)return;current=window;status.replaceChildren();detailLocalMetrics(metrics,value.local);}
+  try{const value=await api("/models/detail?"+query(m)+"&window="+window);if(!detailCurrent(ticket)||id!==serial)return;if(key(value.selection)!==key(m)||value.local?.source!=="MY_KEY_LOCAL")throw Error("模型資料的連線或來源範圍不符。");current=window;status.replaceChildren();detailLocalMetrics(metrics,{...value.local,selection:scope(m)});}
   catch(e){if(!detailCurrent(ticket)||id!==serial)return;status.replaceChildren();detailState(status,"無法讀取此時間窗，仍顯示上次成功的結果。"+e.message,true,()=>load(window));}
   finally{if(id===serial)metrics.removeAttribute("aria-busy");}
  };

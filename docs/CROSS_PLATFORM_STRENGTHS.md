@@ -2,7 +2,7 @@
 
 2026-10-18，依使用者「其他平台比我們好的留下來繼續搞」建立。這份清單與完整 Master Spec 同時維護；既有功能與各平台優點保留，不能為了外觀一致而刪除。比較必須能指到正式 caller 或真實驗收，不能只用有無 API／選單判斷功能已完成。
 
-依 D-009，本輪 VPS 優先對齊 Mac 0.6.1，Android 介面下一片。狀態「候選」代表已實作或正在驗證，尚不能當作已交付。
+依 D-010，先完成 VPS 的全部 Mac 0.6.1 正式 UI／操作對照；Android 保持暫停。狀態「候選」代表已實作或正在驗證，尚不能當作已交付。
 
 | 優點或落差 | 已核對的來源 | Mac 處理與接續驗收 |
 | --- | --- | --- |
@@ -17,8 +17,8 @@
 
 ## 下一步優先序
 
-1. 完成 VPS-MAC-ALIGN-001 同 SHA 六項與實圖，保留全部十四個原 Browser 流程、完整匯出、草稿與部署能力。
-2. Android 介面與功能依 Mac 正式 caller、VPS 改善及本表逐項接續，尚未開始本輪介面驗收。
+1. VPS-MAC-ALIGN-001 已由 3aec657 同 SHA 六項／16 Browser 驗收。本輪 VPS-MAC-PARITY-002 對照全部 Mac caller，補正式表單／完整側欄／模型分區與編輯／來源／比較／服務；新 HEAD 須完整六項／原16 Browser＋新增流程及實圖，不借前片結果。
+2. 使用者最新要求本輪留在 VPS；Android 介面未開始，原有優點與待辦保留。
 3. 私人站點 adapter 逐站 schema／認證、多 Key availability／quota／stale、研究／Assistant／Reflection 及完整大綱仍追蹤，P1–P10 仍 PARTIAL。
 
 每次接續先讀此表與 ACTIVE_TASK，依新驗收證據更新來源、狀態與未驗情境。不得把別的平台未完成規劃當作既有能力；routing／fallback／自動 Key 輪替／Gateway 繼續 future-only。

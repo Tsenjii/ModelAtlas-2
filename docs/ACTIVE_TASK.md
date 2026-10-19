@@ -1,16 +1,12 @@
 # ModelAtlas Public — ACTIVE TASK
 
-更新：2026-10-19；唯一 live 切片 **VPS-MAC-ALIGN-001**，候選實作與回歸中。
+更新：2026-10-19；唯一 live 切片 **VPS-MAC-PARITY-002**，逐頁對齊 Mac 0.6.1 的正式 UI 與操作。使用者最新要求：「VPS 介面及功能全部完全跟 Mac 一樣」，本輪留在 VPS，不轉 Android。
 
-使用者：「把安卓和 vps 的介面以及功能對齊 Mac，先處理好 vps 的」。VPS 優先，Android 介面下一片；完整 Master Spec 仍 PARTIAL。
-
-- VPS 基線 `026f58ba77ad5ec4ad680b5d07c58c1a0a3ed1a6`／PR #20／feature/vps-rebuild-20261014；VPS `38765740195` 四項及 Android `38765740924` 兩項同 SHA SUCCESS。
-- Mac 參考 `74e2c378c1117fda3bebdb9f8d50ead872aa5af7`，0.6.1 build12／PR #21，九項同 SHA SUCCESS；移植共用後端與必要測試驅動，不混入 Mac App。
-- 最新 main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`／`38408176782`，build `115333198754`、device `115333198701` SUCCESS，2026-10-19 重新查核，FEATURE FREEZE=OFF。
-- UI：桌面三工作區側欄／近期對話、石墨與可選重點色／減少動態、薄輸入框、分區設定、完整 scope 搜尋選模、帳戶／Key 分組及更新／還原分離。
-- 功能：逐帳戶簽到、公開站方資料／獨立錯誤與 last-good／效能時間窗、完整觀測 cursor 分頁及來源分開的互動圖表、可讀上游狀態。六表單草稿新增關閉重開保留，秘密只存瀏覽器記憶體。
-- 新 HEAD 尚待同 SHA 六項、全部原 Browser＋新增流程、實圖及更新包；候選期間 PR #20 保持 Draft。不 merge、不改 PR #21 base、不部署。
-- 原始五份 staged Mac 檔及暫停 Android UI 均保留；VPS 在獨立工作樹處理。
+- 已交付 VPS `3aec65729b9daf5db7ac5629ecca69df4ef94afc`，VPS `39188438480` 四項及 Android `39188438452` 兩項同 SHA SUCCESS，16 Browser／124 PNG 已驗。這是第一輪對齊，不能宣稱完整 Mac parity。
+- 固定 Mac 參考 `74e2c378c1117fda3bebdb9f8d50ead872aa5af7`／0.6.1 build12，使用獨立唯讀工作樹；原始五份 staged Mac 檔與暫停 Android UI 不動。
+- 本輪重新確認 main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`／`38408176782`，build `115333198754`、device `115333198701` SUCCESS；FEATURE FREEZE=OFF。
+- 本片補導航／完整連線對話搜尋與草稿、帳戶／Key 獨立編輯、Provider Catalog／可讀設定、模型六分區／三來源效能／額度／完整資訊編輯與圖表控制；差異與 caller 見 `vps/MAC_PARITY.md`。
+- 原 16 Browser 語意斷言、全量匯出與 expanded workload 保留；畫面改動只調整真實入口與幾何。新 HEAD 仍須六項同 SHA SUCCESS／實圖檢查才驗收。PR #20 保持 Draft；不 merge、不改 Mac PR base、不冒充已遠端部署。完整 Master Spec 仍 PARTIAL。
 
 ## 舊切片歷史（不代表目前優先序與新 HEAD 驗收）
 

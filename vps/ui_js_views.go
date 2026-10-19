@@ -11,14 +11,14 @@ async function refresh(){
  const version=++refreshVersion,values=await Promise.all([api("/providers"),api("/accounts"),api("/credentials"),apiPages("/models"),apiPages("/my-models?all=true"),api("/settings"),api("/endpoints")]);if(version!==refreshVersion)return;
  [providers,accounts,credentials,models,myModels,settings,endpointProfiles]=values;refreshAccountCheckins();renderSettingsForm();modelCatalogIndex=new Map(models.map(m=>[JSON.stringify([m.provider_id,m.id]),m]));modelFilterOptions();catalogIndexes();renderProviders();renderModels();renderCatalog();assistantTargets();
  const oldTarget=$("target").value;$("target").replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled&&operationLabels[targetOperation(m)]).forEach(m=>option($("target"),key(m),modelDisplayName(m)+" · "+operationLabels[targetOperation(m)]+" · "+(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" / "+connectionLabel(m)));if([...$("target").options].some(o=>o.value===oldTarget))$("target").value=oldTarget;
- if($("detail").open&&$("detail").dataset.kind==="provider")await $("detail-content").providerReload?.();modelPickerReady=true;syncModelPickerButton();const target=$("target").value;await sessionSelectRefresh();if(version!==refreshVersion)return;
+ if($("detail").open&&$("detail").dataset.kind==="provider")await $("detail-content").providerReload?.();modelPickerReady=true;syncModelPickerButton();syncNativeShell();const target=$("target").value;await sessionSelectRefresh();if(version!==refreshVersion)return;
  if(oldTarget!==target)resetMediaDraft();updatePlayground();
- if(!busy)await loadChat();
+ if(!busy){restoreComposerDraft();await loadChat();}
 }
 function renderProviders(){
  const q=$("provider-search").value.toLowerCase(),box=$("provider-list");box.replaceChildren();
- const rows=providers.slice().sort((a,b)=>{if($("provider-sort").value!=="smart")return a.name.localeCompare(b.name);const x=providerRanking(a),y=providerRanking(b);return x===null||y===null?(x===y?0:x===null?1:-1):y-x;}).filter(p=>(p.name+" "+p.base_url).toLowerCase().includes(q)).filter(p=>providerQuick==="pending"?pendingCheckins(p.id).length>0:providerQuick==="models"?myModels.some(m=>m.provider_id===p.id&&m.state==="ACTIVE"):true);
- $("provider-result-count").textContent=rows.length+" 個供應商";
+ const rows=providers.slice().sort((a,b)=>{if($("provider-sort").value!=="smart")return a.name.localeCompare(b.name);const x=providerRanking(a),y=providerRanking(b);return x===null||y===null?(x===y?0:x===null?1:-1):y-x;}).filter(p=>(p.name+" "+p.base_url+" "+(p.description||"")).toLowerCase().includes(q)).filter(p=>providerQuick==="free"?myModels.some(m=>m.provider_id===p.id&&m.state==="ACTIVE"&&m.price_state==="FREE_NOW"):providerQuick==="pending"?pendingCheckins(p.id).length>0:providerQuick==="models"?myModels.some(m=>m.provider_id===p.id&&m.state==="ACTIVE"):true);
+ $("provider-result-count").textContent=rows.length+" 個供應商";$("provider-page-count").textContent=providers.length+" 個供應商 · "+accounts.length+" 個帳戶";
  rows.forEach(p=>{const count=myModels.filter(m=>m.provider_id===p.id&&m.state==="ACTIVE").length,{body}=collectionItem(box,"provider",p.name,p.description||adapterLabels[p.config?.adapter]||"自訂連線",()=>providerDetail(p));let host=p.base_url;try{host=new URL(p.base_url).host;}catch(e){}body.append(el("small",host));const metrics=el("div",undefined,"metric-line");metricChip(metrics,"模型",String(count));metricChip(metrics,"帳戶",String(accounts.filter(a=>a.provider_id===p.id).length));metricChip(metrics,"已啟用 Key",String(credentials.filter(c=>c.provider_id===p.id&&c.enabled&&c.role==="INFERENCE").length));if(pendingCheckins(p.id).length)metrics.append(el("span",pendingCheckins(p.id).length+" 個帳戶待簽到","state-chip"));body.append(metrics);});
  if(!rows.length)workspaceEmpty(box,providers.length?"沒有符合的供應商":"連接你的第一個 Provider",providers.length?"換個名稱或網址搜尋。":"加入 API 連線後，就能探索模型、開始對話。","provider",providers.length?"清除搜尋":"新增連線",()=>{if(providers.length){$("provider-search").value="";renderProviders();}else workspace("providers","providers-new",true);});
 }
@@ -40,9 +40,9 @@ function renderModels(){
 }
 let chatHistorySession="",chatHistoryStamp=null;
 async function loadChat(){
- if(busy)return;
+ if(busy)return;restoreComposerDraft();
  if(!$("target").value){chatEmpty(false);chatHistorySession="";chatHistoryStamp=null;chatHistoryReady();return;}
- if(!chatOperation(selectedOperation()))return;
+ if(!chatOperation(selectedOperation())||sessionScope!==$("target").value)return;
  const version=++loadVersion,id=$("session").value;
  if(!id){chatEmpty(false);chatHistorySession="";chatHistoryStamp=null;chatHistoryReady();return;}
  try{

@@ -52,3 +52,8 @@
 - 移植逐帳戶簽到、完整觀測分頁、站方公開資料與圖表；保留六份 Provider 表單的草稿／展開／精確選取、平台部署、全量匯出與全部十四個原 Browser 流程。
 - Android 本輪只同步 Mac 已驗收的必要 harness 修正，介面下一片處理。完整大綱仍 PARTIAL，不宣稱全面對齊。
 - 新 VPS HEAD 同 SHA 四項 VPS＋兩項 Android 全綠且實圖檢查後才驗收；不 merge、不冒充已遠端部署。
+
+## D-010：VPS 的完整 Mac 操作對齊（2026-10-19）
+- 使用者要求 VPS 的介面與功能全部跟 Mac 一樣；D-009 的 Android 下一片改為先完成 VPS 的逐頁對照與缺口。
+- 以已驗 Mac 0.6.1／74e2c37 的 production caller 為標準，對齊導航、表單、草稿、來源分區、圖表與管理操作；VPS 部署、完整匯出、窄螢幕與 48px 優點保留。
+- OS 專屬 Keychain／Finder 使用平台對應的安全儲存與下載，不模仿假的原生系統能力。不將尚未完成的完整 Master Spec 項目偽稱為 Mac 既有能力。
