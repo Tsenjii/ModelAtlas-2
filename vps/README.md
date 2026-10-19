@@ -1,5 +1,8 @@
 # ModelAtlas VPS — Go / SQLite
 
+最新 VPS-MAC-ALIGN-001：對齊 Mac 0.6.1 的工作區、帳戶／Key、逐帳戶簽到、站方資料、完整觀測分頁與互動趨勢。功能對照見 [MAC_ALIGNMENT.md](MAC_ALIGNMENT.md)，原部署的更新步驟見 [UPDATE.md](UPDATE.md)。候選與正式驗收以 PR #20 最新同 SHA 六項 checks／body 為準；下方歷史量測不代表新 HEAD。
+
+
 這是與 Android 同 repo、**獨立維護**的 VPS Web 服務。完整 V1 功能與實測驗收見 [DELIVERY.md](DELIVERY.md)。源自 Android 已驗收的產品契約（`docs/DECISIONS.md`、`docs/PRODUCT_SPEC.md`、`docs/RESEARCH_POLICY.md`），不是把 Android APK 改名當伺服器，也不會憑空聲稱全部同等功能。
 
 ## 架構及安全

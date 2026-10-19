@@ -6,6 +6,7 @@ async function chooseTarget(page,value){
  const selection=JSON.parse(value);
  await page.getByRole('button',{name:'選擇模型',exact:true}).click();
  await page.locator('#model-picker-search').fill(selection.model_id);
+ await page.waitForFunction(v=>[...document.querySelectorAll('#model-picker-results [data-scope-value]')].some(n=>n.dataset.scopeValue===v),value);
  const choices=page.locator('#model-picker-results [data-scope-value]');
  let found=false;
  for(let i=0;i<await choices.count();i++){

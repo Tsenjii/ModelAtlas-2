@@ -53,7 +53,7 @@ const homeHTML = `<!doctype html>
 <div id="work-chat" class="workspace-panel" role="tabpanel" aria-labelledby="work-chat-tab" data-workspace-panel="playground">
 <div class="card chat-card">
 <div class="toolbar target-bar">
-<button id="model-picker-open" class="ghost model-picker-trigger" type="button" aria-label="選擇模型" aria-haspopup="dialog" aria-controls="model-picker" data-icon="models"><span id="model-picker-title">選擇模型</span><kbd>⌘ / Ctrl K</kbd></button>
+<button id="model-picker-open" disabled class="ghost model-picker-trigger" type="button" aria-label="選擇模型" aria-haspopup="dialog" aria-controls="model-picker" data-icon="models"><span id="model-picker-title">正在讀取模型…</span><kbd>⌘ / Ctrl K</kbd></button>
 <select id="target" aria-label="使用的模型" hidden></select>
 <button id="new-session" class="ghost" type="button" data-icon="plus">新對話</button>
 </div>

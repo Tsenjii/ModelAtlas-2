@@ -17,6 +17,11 @@ func TestBrowserScopedModelPickerWorkflow(t *testing.T) {
 		t.Skip("enable in browser CI job")
 	}
 	var inferenceCalls atomic.Int32
+	var initialReady atomic.Bool
+	var holdInitial atomic.Bool
+	holdInitial.Store(true)
+	initialRelease := make(chan struct{})
+	var releaseInitial sync.Once
 	release := make(chan struct{})
 	var releaseOnce sync.Once
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -86,12 +91,33 @@ func TestBrowserScopedModelPickerWorkflow(t *testing.T) {
 	handler := s.Handler()
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case "/picker-fixture/initial-state":
+			jsonOK(w, 200, map[string]bool{"ready": initialReady.Load()})
+		case "/picker-fixture/release-models":
+			releaseInitial.Do(func() { close(initialRelease) })
+			w.WriteHeader(204)
 		case "/picker-fixture/state":
 			jsonOK(w, 200, map[string]int32{"calls": inferenceCalls.Load()})
 		case "/picker-fixture/release":
 			releaseOnce.Do(func() { close(release) })
 			w.WriteHeader(204)
 		default:
+			if r.URL.Path == "/api/v1/my-models" && holdInitial.Swap(false) {
+				recorder := httptest.NewRecorder()
+				handler.ServeHTTP(recorder, r)
+				initialReady.Store(true)
+				select {
+				case <-initialRelease:
+				case <-r.Context().Done():
+					return
+				}
+				for k, vs := range recorder.Header() {
+					w.Header()[k] = vs
+				}
+				w.WriteHeader(recorder.Code)
+				w.Write(recorder.Body.Bytes())
+				return
+			}
 			handler.ServeHTTP(w, r)
 		}
 	}))
@@ -99,6 +125,7 @@ func TestBrowserScopedModelPickerWorkflow(t *testing.T) {
 	cmd := exec.Command("node", "e2e/model-picker.cjs", app.URL)
 	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token)
 	out, err := cmd.CombinedOutput()
+	releaseInitial.Do(func() { close(initialRelease) })
 	if err != nil {
 		t.Fatalf("scoped model picker Browser: %v\n%s", err, out)
 	}

@@ -23,6 +23,10 @@ const {chooseTarget}=require('./model-picker-helper.cjs');
  await fs.mkdir('e2e/screenshots',{recursive:true});
  try{
   await page.goto(origin);
+  await page.waitForFunction(async()=>(await(await fetch('/picker-fixture/initial-state')).json()).ready);
+  assert(await page.locator('#model-picker-open').isDisabled(),'picker opened before its real scope read finished');
+  assert.equal(await page.locator('#model-picker-title').textContent(),'正在讀取模型…');await page.keyboard.press('Meta+k');assert(await dialog.isHidden());
+  await page.request.get(origin+'/picker-fixture/release-models');
   await page.waitForFunction(()=>document.querySelector('#target').options.length===114);
   await chooseTarget(page,original);
   await page.locator('#new-session').click();await page.locator('#send:enabled').waitFor();

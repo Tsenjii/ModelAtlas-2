@@ -3,7 +3,7 @@ package main
 // Display-only projection of joined, enabled scopes. Confirmation revalidates
 // against the current target list and uses the existing change handler.
 const jsModelPicker = `
-let pickerRows=[],pickerCursor="",pickerLimit=100,pickerComposing=false;
+let modelPickerReady=false,pickerRows=[],pickerCursor="",pickerLimit=100,pickerComposing=false;
 function pickerFold(value){return String(value).normalize("NFKD").replace(/\p{M}/gu,"").toLowerCase();}
 function pickerIdentity(m){
  const provider=providers.find(p=>p.id===m.provider_id),account=accounts.find(a=>a.provider_id===m.provider_id&&a.id===m.account_id),credential=credentials.find(c=>c.provider_id===m.provider_id&&c.account_id===m.account_id&&c.id===m.credential_id);
@@ -17,7 +17,7 @@ function pickerMatches(m,terms){
 }
 function syncModelPickerButton(){
  const selected=pickerAvailable().find(m=>key(m)===$("target").value),button=$("model-picker-open");
- $("model-picker-title").textContent=selected?modelDisplayName(selected):"選擇模型";button.disabled=busy;
+ $("model-picker-title").textContent=selected?modelDisplayName(selected):"選擇模型";button.disabled=busy||!modelPickerReady;if(!modelPickerReady)$("model-picker-title").textContent="正在讀取模型…";
  button.title=selected?modelDisplayName(selected)+" · "+pickerIdentity(selected).provider+" · "+connectionLabel(selected)+" · "+selected.endpoint:"選擇模型（⌘ / Ctrl K）";
  if(busy&&$("model-picker").open)$("model-picker").close();
  if($("model-picker").open)renderModelPicker(true);
@@ -41,7 +41,7 @@ function renderModelPicker(refreshProviders=false){
   row.type="button";row.id="model-choice-"+index;row.tabIndex=-1;row.dataset.scopeValue=value;row.setAttribute("role","option");
   mark.append(icon(/IMAGE/.test(targetOperation(m))?"image":/AUDIO|SPEECH/.test(targetOperation(m))?"audio":"models"));
   const title=el("strong",modelDisplayName(m));if(m.favorite){const star=icon("star");star.classList.add("favorite-mark");title.append(star);}
-  body.append(title,el("span",identity.provider+" · "+identity.account+" / "+identity.credential+(m.group?" / "+m.group:" / 預設群組")),el("small",(operationLabels[targetOperation(m)]||targetOperation(m))+" · "+m.endpoint));
+  body.append(title,el("span",identity.provider+" · "+identity.account+" / "+identity.credential+(m.group?" / "+m.group:" / 未指定群組")),el("small",(operationLabels[targetOperation(m)]||targetOperation(m))+" · "+m.endpoint));
   if(modelDisplayName(m)!==m.model_id)body.append(el("small",m.model_id));row.append(mark,body);
   if(value===$("target").value){const check=icon("check");check.classList.add("model-choice-current");row.append(check);}
   row.addEventListener("click",()=>choosePickerScope(value));box.append(row);
@@ -55,7 +55,7 @@ function choosePickerScope(value){
  $("target").value=value;$("target").dispatchEvent(new Event("change",{bubbles:true}));
 }
 function openModelPicker(){
- if(busy||document.querySelector("dialog[open]"))return;
+ if(!modelPickerReady||busy||document.querySelector("dialog[open]"))return;
  show("playground");workspace("playground","work-chat");pickerLimit=100;pickerCursor=$("target").value;
  $("model-picker-search").value="";$("model-picker-provider").value="";$("model-picker-favorites").checked=false;
  renderModelPicker(true);$("model-picker").showModal();$("model-picker-search").setAttribute("aria-expanded","true");$("model-picker-search").focus();
