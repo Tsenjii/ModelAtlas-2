@@ -642,6 +642,8 @@ const homeHTML = `<!doctype html>
 <dt>
 <kbd>Ctrl／⌘ + K</kbd>
 </dt>
+<dd>搜尋模型連線</dd>
+<dt><kbd>Ctrl／⌘ + Shift + K</kbd></dt>
 <dd>搜尋對話紀錄</dd>
 <dt>
 <kbd>Ctrl／⌘ + Shift + O</kbd>

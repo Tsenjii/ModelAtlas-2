@@ -29,3 +29,5 @@
 - 本機完整 Go race／vet 通過；正式候選仍等待新 HEAD 六項同 SHA gate。此環境的外層 placeholder Git 影響 Go VCS stamping，本機僅用 GOFLAGS=-buildvcs=false，不改正式 CI 或測試內容。
 
 - 收尾加入逐欄編輯 revision：真 Key commit 回應延遲，關閉重開並編輯下一稿，即使秘密值再改回同一字串，晚回應也不得清除此稿；已開啟的 Provider 只反應更新清單，六份表單不重建。新真 Browser 驗一次寫入、另一帳戶原 Key 不變與新稿完整保留；原 Provider／CUSTOM 協定流程一併成功。
+
+- 8b60499 四項 VPS CI／123 實圖後，200% 桌面畫面仍有固定 sidebar 寬度造成標誌與導航擠壓；改以 rem 寬度／高度隨字級伸展，新增 1024px／200% 真實截圖與標誌／導航／近期對話不重疊幾何斷言。原 375／1024／1280 斷言全部保留，新 HEAD 重新六項 gate。
