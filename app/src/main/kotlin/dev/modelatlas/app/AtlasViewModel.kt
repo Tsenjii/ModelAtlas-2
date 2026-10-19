@@ -183,6 +183,7 @@ class AtlasViewModel @JvmOverloads constructor(
     private val providerModelTestEngine: InferenceEngine? = null,
     private val compareTestEngine: InferenceEngine? = null,
     private val credentialEnableTestWriter: (suspend (String, Boolean) -> Unit)? = null,
+    private val myModelToggleReadObserver: (suspend (MyModelKey, Boolean) -> Unit)? = null,
 ) : AndroidViewModel(application) {
     private val app: AtlasApplication = application as AtlasApplication
 
@@ -2753,7 +2754,11 @@ class AtlasViewModel @JvmOverloads constructor(
                 _myModelToggleInFlight.value += key
                 _myModelToggleError.value -= key
                 try {
-                    if (myModelsStore.isMyModel(providerId, providerModelId)) {
+                    val wasMember = myModelsStore.isMyModel(providerId, providerModelId)
+                    // 裝置並行測試可在真 Room 讀取後等待另一讀取；正式 caller 不傳此觀察器。
+                    // 不替換 membership、不改寫入或 in-flight 語意，也不持有 DB transaction。
+                    myModelToggleReadObserver?.invoke(key, wasMember)
+                    if (wasMember) {
                         myModelsStore.removeFromMyModels(providerId, providerModelId)
                     } else {
                         val selected = recordFor(_state.value.selectedId)

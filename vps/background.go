@@ -103,6 +103,11 @@ func (s *Server) checkNotificationRules(ctx context.Context) {
 	if e != nil {
 		zone = time.UTC
 	}
+	if s.desktop {
+		// Native check-ins follow the machine's civil date, independently of
+		// the saved web/display timezone used by standalone VPS clients.
+		zone = time.Local
+	}
 	date := time.Now().In(zone).Format("2006-01-02")
 	for _, v := range scopes {
 		if !s.validateSelection(ctx, v) {
@@ -186,9 +191,9 @@ func (s *Server) checkNotificationRules(ctx context.Context) {
 		p, e := s.provider(ctx, v.ProviderID)
 		if e == nil && rules.CheckinPending && s.config(ctx, p).RequiresCheckin {
 			var n int
-			_ = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM checkins WHERE provider_id=? AND date=?", v.ProviderID, date).Scan(&n)
-			if n == 0 {
-				s.notify(ctx, v, "CHECKIN_PENDING", p.Name+" 今天尚未記錄簽到", v.ProviderID+"/checkin/"+date)
+			checkErr := s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM account_checkins WHERE provider_id=? AND account_id=? AND date=?", v.ProviderID, v.AccountID, date).Scan(&n)
+			if checkErr == nil && n == 0 {
+				s.notify(ctx, v, "CHECKIN_PENDING", p.Name+" 的帳戶 "+v.AccountID+" 今天尚未記錄簽到", v.ProviderID+"/"+v.AccountID+"/checkin/"+date)
 			}
 		}
 	}

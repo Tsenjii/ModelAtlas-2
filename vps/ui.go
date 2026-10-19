@@ -37,6 +37,7 @@ const homeHTML = `<!doctype html>
 <button id="settings-toggle" class="ghost header-settings" type="button" aria-controls="settings" aria-expanded="false" data-icon="settings">設定</button>
 </header>
 <a class="skip-link" href="#main-content">跳到主要內容</a>
+<aside class="desktop-sidebar" aria-label="近期對話"><div class="sidebar-tools"><span class="sidebar-caption">近期對話</span><button id="sidebar-new-session" class="ghost icon-button" type="button" aria-label="建立新對話" data-icon="plus"></button></div><label class="sidebar-search"><span class="sr-only">搜尋近期對話</span><input id="sidebar-conversation-search" type="search" placeholder="搜尋近期對話"></label><div id="sidebar-conversations" class="sidebar-conversations"></div><button id="sidebar-history" class="sidebar-more" type="button" data-icon="history">所有對話紀錄</button><span class="sidebar-footer">VPS 工作區</span></aside>
 <main id="main-content">
 <p id="notice" role="status" aria-live="polite">
 </p>
@@ -52,11 +53,8 @@ const homeHTML = `<!doctype html>
 <div id="work-chat" class="workspace-panel" role="tabpanel" aria-labelledby="work-chat-tab" data-workspace-panel="playground">
 <div class="card chat-card">
 <div class="toolbar target-bar">
-<label>
-<span class="sr-only">使用的模型</span>
-<select id="target" aria-label="使用的模型">
-</select>
-</label>
+<button id="model-picker-open" class="ghost model-picker-trigger" type="button" aria-label="選擇模型" aria-haspopup="dialog" aria-controls="model-picker" data-icon="models"><span id="model-picker-title">選擇模型</span><kbd>⌘ / Ctrl K</kbd></button>
+<select id="target" aria-label="使用的模型" hidden></select>
 <button id="new-session" class="ghost" type="button" data-icon="plus">新對話</button>
 </div>
 <div id="chat-ui">
@@ -244,6 +242,7 @@ const homeHTML = `<!doctype html>
 </select>
 </label>
 </div>
+<div class="quick-filters" aria-label="供應商快速篩選"><button type="button" data-provider-quick="all" aria-pressed="true">全部</button><button type="button" data-provider-quick="models" aria-pressed="false">已加入模型</button><button type="button" data-provider-quick="pending" aria-pressed="false">待簽到</button></div>
 <div class="collection-meta">
 <span id="provider-result-count">
 </span>
@@ -572,6 +571,7 @@ const homeHTML = `<!doctype html>
 </div>
 <button id="settings-back" type="button" class="ghost" data-icon="back">返回</button>
 </div>
+<div class="settings-workspace">
 <div class="workspace-tabs" role="tablist" aria-label="settings 工作區" data-workspace-tabs="settings">
 <button type="button" role="tab" id="settings-general-tab" aria-controls="settings-general" aria-selected="true" tabindex="0" data-icon="settings">偏好設定</button>
 <button type="button" role="tab" id="settings-services-tab" aria-controls="settings-services" aria-selected="false" tabindex="-1" data-icon="spark">研究服務</button>
@@ -586,6 +586,8 @@ const homeHTML = `<!doctype html>
 <option value="dark">深色</option>
 </select>
 </label>
+<label>重點色<select id="appearance-accent"><option value="graphite">石墨灰</option><option value="violet">鳶尾紫</option><option value="indigo">靛藍</option></select></label><label class="check"><input id="appearance-reduce-motion" type="checkbox">減少動態效果</label>
+
 <p class="section-description">套用在這個瀏覽器，下次開啟也會保留。</p>
 </div>
 <div class="card">
@@ -722,6 +724,7 @@ const homeHTML = `<!doctype html>
 <p id="status" class="section-description">
 </p>
 </div>
+</div>
 </section>
 </main>
 <nav class="bottom-nav" aria-label="主分頁">
@@ -736,6 +739,17 @@ const homeHTML = `<!doctype html>
 </button>
 </nav>
 </div>
+<dialog id="model-picker" aria-labelledby="model-picker-heading" aria-describedby="model-picker-hint">
+<div class="model-picker-head"><div><h2 id="model-picker-heading">選擇模型</h2><p id="model-picker-hint">從已加入的連線選擇。切換後使用該連線的對話；未送出的內容會清空。</p></div><button id="model-picker-close" type="button" class="ghost">完成</button></div>
+<div class="model-picker-filters">
+<label class="model-picker-search"><span class="sr-only">搜尋模型、供應商、帳戶或 Key</span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 21l-4.5-4.5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg><input id="model-picker-search" type="search" placeholder="搜尋模型、供應商、帳戶或 Key" role="combobox" aria-autocomplete="list" aria-controls="model-picker-results" aria-expanded="false" autocomplete="off"></label>
+<label><span class="sr-only">篩選選模供應商</span><select id="model-picker-provider" aria-label="篩選選模供應商"><option value="">所有供應商</option></select></label>
+<label class="check"><input id="model-picker-favorites" type="checkbox">只看收藏</label>
+</div>
+<div id="model-picker-results" role="listbox" aria-label="已加入的模型連線"></div>
+<button id="model-picker-more" type="button" class="ghost model-picker-more" hidden>載入更多連線</button>
+<div class="model-picker-footer"><span id="model-picker-count" role="status" aria-live="polite"></span><button id="model-picker-reset" type="button" class="ghost" hidden>清除篩選</button><button id="model-picker-use" type="button">使用模型</button></div>
+</dialog>
 <dialog id="detail" aria-labelledby="detail-title">
 <div class="dialog-bar">
 <h2 id="detail-title">

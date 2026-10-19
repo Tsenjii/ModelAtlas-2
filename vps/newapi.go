@@ -20,11 +20,16 @@ type NewApiQuery struct {
 	Hours        int    `json:"hours,omitempty"`
 }
 type NewApiResult struct {
-	Version    string         `json:"version"`
-	Endpoint   string         `json:"endpoint"`
-	Facts      map[string]any `json:"facts"`
-	ObservedAt int64          `json:"observed_at"`
-	Source     string         `json:"source"`
+	ProviderID    string         `json:"provider_id"`
+	AccountID     string         `json:"account_id"`
+	CredentialID  string         `json:"credential_id"`
+	Role          string         `json:"credential_role"`
+	Version       string         `json:"version"`
+	Endpoint      string         `json:"endpoint"`
+	Facts         map[string]any `json:"facts"`
+	ObservedAt    int64          `json:"observed_at"`
+	Source        string         `json:"source"`
+	Compatibility string         `json:"compatibility"`
 }
 
 func (s *Server) accountPAT(ctx context.Context, q NewApiQuery) (Provider, string, error) {
@@ -46,13 +51,16 @@ func (s *Server) newApiGet(ctx context.Context, p Provider, path, token string) 
 	mode := "NONE"
 	if token != "" {
 		mode = "BEARER"
+	} else {
+		p.AuthFields = nil
+		p.CredentialMode = ""
 	}
 	root, _, err := s.getJSON(ctx, p, ProviderConfig{AuthMode: mode}, u.String(), token, 4<<20)
 	if err != nil {
 		return nil, err
 	}
 	if string(root["success"]) != "true" && string(root["code"]) != "true" {
-		return nil, errors.New("upstream success=false")
+		return nil, &providerReadError{Code: "UPSTREAM_REJECTED"}
 	}
 	return root, nil
 }
@@ -125,6 +133,11 @@ func (s *Server) newApiStatus(ctx context.Context, p Provider) (map[string]any, 
 		version = "UNKNOWN"
 	}
 	facts := map[string]any{"version": version}
+	for _, field := range []string{"system_name", "docs_link", "quota_display_type", "custom_currency_symbol"} {
+		if text := stringField(data, field); text != "" {
+			facts[field] = text
+		}
+	}
 	for _, field := range []string{"quota_per_unit", "checkin_enabled"} {
 		if v := scalarField(data, field); v != nil {
 			facts[field] = v
@@ -149,53 +162,63 @@ func (s *Server) newApiSnapshot(ctx context.Context, q NewApiQuery, endpoint, ro
 func (s *Server) newApiRead(ctx context.Context, q NewApiQuery, path string) (NewApiResult, error) {
 	p, err := s.provider(ctx, q.ProviderID)
 	if err != nil {
-		return NewApiResult{}, err
+		return NewApiResult{}, &providerReadError{Code: "PROVIDER_NOT_FOUND"}
 	}
 	token, role := "", "ANONYMOUS"
 	if path == "/api/usage/token/" {
 		p, token, err = s.endpointAuth(ctx, q.ProviderID, q.AccountID, q.CredentialID)
 		role = "INFERENCE"
-	} else if path != "/api/status" && path != "/api/notice" && q.CredentialID != "" {
+	} else if path == "/api/user/self" {
 		p, token, err = s.accountPAT(ctx, q)
 		role = "ACCOUNT_PAT"
+	} else if path == "/api/pricing" && q.CredentialID != "" {
+		// Public queries must not fail because the user selected an inference
+		// key. Only an explicitly selected account PAT authenticates pricing.
+		var selectedRole string
+		if e := s.Store.DB.QueryRowContext(ctx, "SELECT role FROM credentials WHERE provider_id=? AND account_id=? AND id=? AND enabled=1", q.ProviderID, q.AccountID, q.CredentialID).Scan(&selectedRole); e != nil {
+			err = e
+		} else if selectedRole == "ACCOUNT_PAT" {
+			p, token, err = s.accountPAT(ctx, q)
+			role = "ACCOUNT_PAT"
+		}
 	}
 	if err != nil {
-		return NewApiResult{}, errors.New("credential role/scope unavailable")
+		return NewApiResult{}, &providerReadError{Code: "CREDENTIAL_ROLE"}
 	}
 	if q.Origin != "" {
 		if !validateHTTPS(q.Origin) || token != "" && p.BaseURL != q.Origin {
-			return NewApiResult{}, errors.New("credential origin mismatch")
+			return NewApiResult{}, &providerReadError{Code: "CREDENTIAL_ORIGIN"}
 		}
 		p.BaseURL = q.Origin
 	}
 	if path == "/api/user/self" && role != "ACCOUNT_PAT" {
-		return NewApiResult{}, errors.New("account PAT required")
+		return NewApiResult{}, &providerReadError{Code: "CREDENTIAL_ROLE"}
 	}
 	q.Origin = p.BaseURL
 	facts, version, err := s.newApiStatus(ctx, p)
 	if err != nil {
 		return NewApiResult{}, err
 	}
-	if path != "/api/status" && version != "v1.0.0-rc.25" {
-		return NewApiResult{}, errors.New("New API version not certified")
+	certified := version == "v1.0.0-rc.25"
+	if role != "ANONYMOUS" && !certified {
+		return NewApiResult{}, &providerReadError{Code: "UNSUPPORTED_PRIVATE_VERSION"}
 	}
 	statusFacts := facts
 	if path != "/api/status" {
-		if path == "/api/pricing" && role == "ANONYMOUS" && statusFacts["pricing_requires_auth"] != false {
-			return NewApiResult{}, errors.New("pricing auth policy unknown")
-		}
+		// Reading a public endpoint anonymously is safe even when an optional
+		// HeaderNavModules setting is absent. 401/403 remains a scoped failure.
 		actualPath := path
 		if strings.HasPrefix(path, "/api/perf-metrics") {
 			if q.Hours == 0 {
 				q.Hours = 168
 			}
 			if q.Hours < 1 || q.Hours > 720 {
-				return NewApiResult{}, errors.New("invalid performance window")
+				return NewApiResult{}, &providerReadError{Code: "INVALID_WINDOW"}
 			}
 			query := url.Values{"hours": {jsonNumber(q.Hours)}}
 			if path == "/api/perf-metrics" {
 				if !validID(q.ModelID) {
-					return NewApiResult{}, errors.New("explicit model required")
+					return NewApiResult{}, &providerReadError{Code: "MODEL_REQUIRED"}
 				}
 				query.Set("model", q.ModelID)
 			}
@@ -209,11 +232,26 @@ func (s *Server) newApiRead(ctx context.Context, q NewApiQuery, path string) (Ne
 		switch path {
 		case "/api/pricing":
 			facts, err = parseNewApiPricing(root, token)
-			if err == nil {
+			if err == nil && certified {
+				// Retain the caller's account projection for its nominal quote.
+				// The public snapshot below remains anonymous; this is never an
+				// inference about that account's effective charge or access.
 				err = s.mapNewApiPrices(ctx, q, facts, statusFacts)
 			}
+			if err == nil {
+				facts["price_mapping_available"] = certified
+			}
 		case "/api/notice":
-			facts["present"] = stringField(root, "data") != ""
+			var notice string
+			if json.Unmarshal(root["data"], &notice) != nil {
+				return NewApiResult{}, errors.New("invalid notice")
+			}
+			text := safeMultilineText(notice, 65536, token)
+			if text != notice {
+				return NewApiResult{}, errors.New("invalid notice")
+			}
+			facts["present"] = text != ""
+			facts["text"] = text
 		case "/api/user/self", "/api/usage/token/":
 			var data map[string]json.RawMessage
 			data, err = getNewAPIData(root)
@@ -245,6 +283,9 @@ func (s *Server) newApiRead(ctx context.Context, q NewApiQuery, path string) (Ne
 		case "/api/perf-metrics/summary", "/api/perf-metrics":
 			facts, err = parseNewApiPerformance(root, token, path == "/api/perf-metrics")
 			if err == nil {
+				if path == "/api/perf-metrics" && facts["model_name"] != q.ModelID {
+					return NewApiResult{}, errors.New("performance model mismatch")
+				}
 				facts["hours"] = q.Hours
 				facts["source"] = "PROVIDER_REPORTED"
 			}
@@ -255,6 +296,7 @@ func (s *Server) newApiRead(ctx context.Context, q NewApiQuery, path string) (Ne
 			return NewApiResult{}, err
 		}
 	}
+	facts["origin"] = p.BaseURL
 	saved := q
 	if role == "ANONYMOUS" {
 		saved.AccountID = ""
@@ -263,7 +305,11 @@ func (s *Server) newApiRead(ctx context.Context, q NewApiQuery, path string) (Ne
 	if err = s.newApiSnapshot(ctx, saved, path, role, version, facts); err != nil {
 		return NewApiResult{}, err
 	}
-	return NewApiResult{Version: version, Endpoint: path, Facts: facts, ObservedAt: now(), Source: "NEW_API_OFFICIAL"}, nil
+	compatibility := "SCHEMA_VALIDATED"
+	if certified {
+		compatibility = "VERSION_CERTIFIED"
+	}
+	return NewApiResult{ProviderID: saved.ProviderID, AccountID: saved.AccountID, CredentialID: saved.CredentialID, Role: role, Version: version, Endpoint: path, Facts: facts, ObservedAt: now(), Source: "NEW_API_OFFICIAL", Compatibility: compatibility}, nil
 }
 func parseNewApiPricing(root map[string]json.RawMessage, key string) (map[string]any, error) {
 	var entries []map[string]json.RawMessage
@@ -400,13 +446,16 @@ func parseNewApiPerformance(root map[string]json.RawMessage, key string, detail 
 		for _, n := range []string{"avg_latency_ms", "success_rate", "avg_tps"} {
 			value := scalarField(row, n)
 			_, numeric := value.(json.Number)
-			if !numeric {
+			if !numeric || !validNewApiMetric(n, value) {
 				return nil, errors.New("perf metric missing")
 			}
 			entry[n] = value
 		}
 		if detail {
 			if value := intField(row, "avg_ttft_ms"); value != nil {
+				if *value < 0 {
+					return nil, errors.New("invalid TTFT")
+				}
 				entry["avg_ttft_ms"] = value
 			} else {
 				return nil, errors.New("TTFT missing")
@@ -428,6 +477,9 @@ func parseNewApiPerformance(root map[string]json.RawMessage, key string, detail 
 					if v == nil {
 						return nil, errors.New("malformed series")
 					}
+					if !validNewApiMetric(name, v) {
+						return nil, errors.New("invalid series metric")
+					}
 					point[name] = v
 				}
 				points = append(points, point)
@@ -438,10 +490,47 @@ func parseNewApiPerformance(root map[string]json.RawMessage, key string, detail 
 			if json.Unmarshal(row["recent_success_rates"], &rates) == nil {
 				entry["recent_success_rates"] = rates
 			}
+			if raw := row["recent_success_series"]; len(raw) > 0 {
+				points, e := parseNewApiSeries(raw, []string{"ts", "success_rate"})
+				if e != nil {
+					return nil, e
+				}
+				entry["recent_success_series"] = points
+			}
 		}
 		out = append(out, entry)
 	}
-	facts := map[string]any{field: out}
+	facts := map[string]any{field: out, "parser_schema": "new-api-performance-v1", "timestamp_unit": "UNIX_SECONDS", "success_rate_unit": "PERCENT"}
+	for _, name := range []string{"window_start", "window_end"} {
+		if raw := data[name]; len(raw) > 0 {
+			value := intField(data, name)
+			if value == nil || *value < 0 {
+				return nil, errors.New("invalid performance window")
+			}
+			facts[name] = *value
+		}
+	}
+	if start, ok := facts["window_start"].(int64); ok {
+		if end, ok := facts["window_end"].(int64); ok && end < start {
+			return nil, errors.New("reversed performance window")
+		}
+	}
+	if raw := data["summary"]; len(raw) > 0 {
+		var summary map[string]json.RawMessage
+		if json.Unmarshal(raw, &summary) != nil || summary == nil {
+			return nil, errors.New("invalid summary")
+		}
+		clean := map[string]any{}
+		for _, name := range []string{"avg_ttft_ms", "avg_latency_ms", "avg_tps", "success_rate", "request_count"} {
+			if v := scalarField(summary, name); v != nil {
+				if !validNewApiMetric(name, v) {
+					return nil, errors.New("invalid summary metric")
+				}
+				clean[name] = v
+			}
+		}
+		facts["summary"] = clean
+	}
 	if detail {
 		model := safeText(stringField(data, "model_name"), 256, key)
 		schema := safeText(stringField(data, "series_schema"), 64, key)
@@ -450,8 +539,45 @@ func parseNewApiPerformance(root map[string]json.RawMessage, key string, detail 
 		}
 		facts["model_name"] = model
 		facts["series_schema"] = schema
+		if raw := data["series"]; len(raw) > 0 {
+			points, e := parseNewApiSeries(raw, []string{"ts", "avg_ttft_ms", "avg_latency_ms", "success_rate", "avg_tps"})
+			if e != nil {
+				return nil, e
+			}
+			facts["series"] = points
+		}
 	}
 	return facts, nil
+}
+func validNewApiMetric(name string, value any) bool {
+	n, ok := value.(json.Number)
+	if !ok {
+		return false
+	}
+	r := decimal(n)
+	if r == nil || r.Sign() < 0 {
+		return false
+	}
+	return name != "success_rate" || r.Cmp(big.NewRat(100, 1)) <= 0
+}
+func parseNewApiSeries(raw json.RawMessage, fields []string) ([]map[string]any, error) {
+	var rows []map[string]json.RawMessage
+	if json.Unmarshal(raw, &rows) != nil || rows == nil || len(rows) > 10000 {
+		return nil, errors.New("invalid performance series")
+	}
+	points := make([]map[string]any, 0, len(rows))
+	for _, row := range rows {
+		point := map[string]any{}
+		for _, field := range fields {
+			v := scalarField(row, field)
+			if !validNewApiMetric(field, v) {
+				return nil, errors.New("invalid performance series metric")
+			}
+			point[field] = v
+		}
+		points = append(points, point)
+	}
+	return points, nil
 }
 func (s *Server) newApiQuery(w http.ResponseWriter, r *http.Request, path string) {
 	var q NewApiQuery
@@ -464,18 +590,18 @@ func (s *Server) newApiQuery(w http.ResponseWriter, r *http.Request, path string
 	}
 	result, err := s.newApiRead(r.Context(), q, path)
 	if err != nil {
-		code := 502
-		msg := err.Error()
-		if strings.Contains(msg, "credential") || strings.Contains(msg, "PAT") || strings.Contains(msg, "certified") || strings.Contains(msg, "required") || strings.Contains(msg, "policy") {
-			code = 422
-		}
-		http.Error(w, "New API read unavailable", code)
+		writeProviderProblem(w, err, path)
 		return
 	}
 	jsonOK(w, 200, result)
 }
 func (s *Server) listNewApiSnapshots(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,credential_role,endpoint,facts_json,provider_version,observed_at FROM newapi_snapshots ORDER BY rowid DESC LIMIT 200")
+	provider := r.URL.Query().Get("provider_id")
+	if provider != "" && !validID(provider) {
+		http.Error(w, "invalid provider", 400)
+		return
+	}
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,credential_role,endpoint,facts_json,provider_version,observed_at FROM newapi_snapshots WHERE (?='' OR provider_id=?) ORDER BY rowid DESC LIMIT 200", provider, provider)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

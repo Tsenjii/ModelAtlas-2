@@ -5,6 +5,7 @@ let speechOperation="";
 function isSpeech(op){return ["AUDIO_SPEECH","GEMINI_SPEECH"].includes(op);}
 function selectedOperation(){return $("target").value?targetOperation(JSON.parse($("target").value)):"";}
 function updatePlayground(){
+ syncModelPickerButton();
  const operation=selectedOperation(),media=["IMAGES_GENERATION","IMAGES_EDIT","AUDIO","AUDIO_SPEECH","GEMINI_SPEECH","EMBEDDINGS","RERANK"].includes(operation);
  $("chat-ui").hidden=media;$("media-ui").hidden=!media;$("new-session").hidden=media;
  $("new-session").disabled=busy||!chatOperation(operation);$("send").disabled=busy||!chatOperation(operation)||!$("session").value;

@@ -34,3 +34,21 @@
 - 既定工作可依優先序連續處理，不必每片徵詢；每片必須實作、測試、審查、同 SHA 全綠，再接下一片。
 - Red-head lock：main 只要未獲同 SHA 全綠就不開新功能。
 - V1 P1–P10 是完整交付目標，不因難度刪除 P8 Crawler／P9 Assistant／P10 Reflection；但 routing/fallback/gateway 仍是 future-only extension。
+
+## D-007：Mac 原生外觀（2026-10-18 使用者明確更新）
+- 使用者認為既有Mac UI過時，要求實際研究Magpie／其他好看軟體，也明確質疑固定藍綠按鈕；Mac不再被D-005的Android teal綁定。
+- Mac預設石墨灰，中性色承載內容與清單；主要按鈕可在設定選石墨灰／跟隨macOS／鳶尾紫／靛藍，保留深淺色。只保存非敏感本機外觀偏好，不改引擎設定或排程。
+- 沿用現有SwiftUI／AppKit元件，參考官方實圖的資訊層級、分組、字級與互動；不增加WebView／Electron或外部UI依賴。
+- Android／VPS既有配色與未整合UI保持原狀；三工作區、scope／Unknown／last-good約束不變。
+
+## D-008：保留跨平台優點（2026-10-18 使用者明確更新）
+- 使用者要求繼續優化 Mac，並將其他平台做得更好的功能與操作保留、持續吸收，不能因跨平台外觀對齊而砍功能。
+- `CROSS_PLATFORM_STRENGTHS.md` 保存實際來源、Mac 狀態、未驗情境及下一步；每片接續先讀，按正式 caller／測試與實圖更新，不以 API 存在冒充流程完成。
+- Mac 仍優先，Android／VPS 現有優點不回退；完整 Master Spec／既有 retention、scope、Unknown、last-good 與全部安全／驗收約束繼續適用。
+
+## D-009：跨平台對齊 Mac，VPS 優先（2026-10-19）
+- 使用者最新明確指示：Android 與 VPS 的介面及功能對齊 Mac，先完成 VPS；取代 D-007／D-008 的 Mac 優先與其他平台配色不變限制。
+- VPS 延續單 Go／SQLite 及原生瀏覽器元件，採石墨色、可選重點色、桌面側欄、薄輸入框及分區設定；手機保留底導覽與 48px 操作區。
+- 移植逐帳戶簽到、完整觀測分頁、站方公開資料與圖表；保留六份 Provider 表單的草稿／展開／精確選取、平台部署、全量匯出與全部十四個原 Browser 流程。
+- Android 本輪只同步 Mac 已驗收的必要 harness 修正，介面下一片處理。完整大綱仍 PARTIAL，不宣稱全面對齊。
+- 新 VPS HEAD 同 SHA 四項 VPS＋兩項 Android 全綠且實圖檢查後才驗收；不 merge、不冒充已遠端部署。

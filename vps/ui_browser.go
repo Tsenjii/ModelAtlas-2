@@ -1,6 +1,6 @@
 package main
 
-const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsDetailWorkspace + jsProviderForms + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts + jsStreaming + jsCatalog + jsWorkspace
+const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsDetailWorkspace + jsProviderForms + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts + jsStreaming + jsCatalog + jsWorkspace + jsModelPicker + jsMacAlignment + jsIntelligence + jsCheckins
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);
@@ -10,7 +10,7 @@ let mediaAttachment=null,mediaRequestID=null,mediaResultURLs=[],fileReadVersion=
 const selectedCompare=new Map();
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function notice(msg,bad=false){clearTimeout(noticeTimer);$("notice").textContent=msg;$("notice").classList.toggle("error",bad);$("notice").classList.add("notice-visible");if(!bad)noticeTimer=setTimeout(()=>$("notice").classList.remove("notice-visible"),5000);}
-async function api(path,opts={}){const r=await fetch("/api/v1"+path,{credentials:"same-origin",cache:"no-store",...opts});if(!r.ok)throw Error((await r.text()).trim().slice(0,150)||"HTTP "+r.status);return r.json();}
+async function api(path,opts={}){const r=await fetch("/api/v1"+path,{credentials:"same-origin",cache:"no-store",...opts});if(!r.ok)throw Error(readableProblem(await r.text(),r.status));return r.json();}
 async function apiPages(path){const out=[];for(let offset=0;;offset+=200){const rows=await api(path+(path.includes("?")?"&":"?")+"limit=200&offset="+offset);out.push(...rows);if(rows.length<200)return out;}}
 async function submit(path,value,method="POST"){return api(path,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(value)});}
 function data(form){return Object.fromEntries(new FormData(form).entries());}

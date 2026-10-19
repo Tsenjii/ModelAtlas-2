@@ -273,13 +273,23 @@ func (s *Server) infer(w http.ResponseWriter, r *http.Request) {
 		if id, ok := result.Details["sample_id"].(string); ok {
 			w.Header().Set("X-ModelAtlas-Sample-ID", id)
 		}
-		http.Error(w, result.Outcome, code)
+		if result.Status >= 400 {
+			writeProviderProblem(w, &providerReadError{Code: "UPSTREAM_HTTP", UpstreamStatus: result.Status}, "inference")
+		} else if result.Outcome == "NETWORK" || result.Outcome == "TIMEOUT" {
+			problemCode := "UPSTREAM_NETWORK"
+			if result.Outcome == "TIMEOUT" {
+				problemCode = "UPSTREAM_TIMEOUT"
+			}
+			writeProviderProblem(w, &providerReadError{Code: problemCode}, "inference")
+		} else {
+			http.Error(w, result.Outcome, code)
+		}
 		return
 	}
 	if result.Outcome == "SUCCESS" {
 		_ = emit("done", result)
 	} else {
-		_ = emit("error", map[string]string{"category": result.Outcome})
+		_ = emit("error", map[string]any{"category": result.Outcome, "http_status": result.Status, "sample_id": result.Details["sample_id"]})
 	}
 }
 

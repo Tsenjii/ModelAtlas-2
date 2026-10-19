@@ -19,7 +19,7 @@ function detailRows(parent,rows){
 function detailTabs(parent,kind,definitions,initial){
  const tabs=el("div",undefined,"workspace-tabs detail-tabs"),panels={},buttons={};
  tabs.setAttribute("role","tablist");tabs.setAttribute("aria-label",kind==="model"?"模型詳情分區":"供應商詳情分區");parent.append(tabs);
- const activate=(id,focus=false)=>{if(!panels[id])return;tabs.dataset.active=id;for(const [key,panel]of Object.entries(panels)){const chosen=key===id;panel.hidden=!chosen;buttons[key].setAttribute("aria-selected",String(chosen));buttons[key].tabIndex=chosen?0:-1;}if(focus)buttons[id].focus();};
+ const activate=(id,focus=false)=>{if(!panels[id])return;tabs.dataset.active=id;for(const [key,panel]of Object.entries(panels)){const chosen=key===id;panel.hidden=!chosen;buttons[key].setAttribute("aria-selected",String(chosen));buttons[key].tabIndex=chosen?0:-1;}if(focus)buttons[id].focus();panels[id].dispatchEvent(new Event("detailactivate"));};
  for(const [id,label]of definitions){
   const b=el("button",label),panel=el("section",undefined,"detail-panel");b.type="button";b.id="detail-"+kind+"-"+id+"-tab";b.setAttribute("role","tab");b.setAttribute("aria-controls","detail-"+kind+"-"+id);panel.id="detail-"+kind+"-"+id;panel.setAttribute("role","tabpanel");panel.setAttribute("aria-labelledby",b.id);panel.tabIndex=0;
   buttons[id]=b;panels[id]=panel;tabs.append(b);parent.append(panel);b.addEventListener("click",()=>activate(id));
@@ -64,7 +64,7 @@ function detailLocalMetrics(parent,local){
  for(const title of ["指標","p50","p90","p95"]){const th=el("th",title);th.scope="col";head.append(th);}thead.append(head);table.append(thead,tbody);
  for(const [id,label,unit]of [["ttft","TTFT"," ms"],["tps","TPS",""],["latency","延遲"," ms"]]){const tr=el("tr"),th=el("th",label);th.scope="row";tr.append(th);for(const p of ["p50","p90","p95"]){const n=knownNumber(local[id]?.[p]);tr.append(el("td",n===null?"—":(id==="tps"?n.toFixed(1):Math.round(n))+unit));}tbody.append(tr);}
  percentiles.append(summary,table);detailRows(percentiles,[["觀測 RPM",local.observed_rpm],["觀測輸入 TPM",local.observed_input_tpm],["觀測輸出 TPM",local.observed_output_tpm],["觀測總 TPM",local.observed_total_tpm]]);percentiles.append(el("p","最近 60 秒的本地觀測，並非供應商官方上限。","section-description"));parent.append(percentiles);
- factsView(parent,"本地用量與紀錄",local);
+ localPerformancePlot(parent,local);factsView(parent,"本地用量與紀錄",local);
 }
 function detailPerformance(parent,m,initial,local,ticket){
  const section=detailSection(parent,"我的實測"),controls=el("div",undefined,"detail-performance-controls"),select=el("select"),label=el("label","效能時間窗"),range=el("details"),form=el("form");

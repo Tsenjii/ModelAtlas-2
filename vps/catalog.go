@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 )
@@ -363,16 +364,19 @@ func (s *Server) addModel(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) listMyModels(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageRange(r, 200)
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,model_id,group_id,endpoint FROM my_models ORDER BY created_at DESC,rowid DESC LIMIT ? OFFSET ?", limit, offset)
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT m.provider_id,m.account_id,m.credential_id,m.model_id,m.group_id,m.endpoint,COALESCE(NULLIF(c.display_name,''),m.model_id) FROM my_models m LEFT JOIN models c ON c.provider_id=m.provider_id AND c.id=m.model_id ORDER BY m.created_at DESC,m.rowid DESC LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
 	a := []Selection{}
+	names := map[Selection]string{}
 	for rows.Next() {
 		var v Selection
-		if rows.Scan(&v.ProviderID, &v.AccountID, &v.CredentialID, &v.ModelID, &v.Group, &v.Endpoint) == nil {
+		var name string
+		if rows.Scan(&v.ProviderID, &v.AccountID, &v.CredentialID, &v.ModelID, &v.Group, &v.Endpoint, &name) == nil {
 			a = append(a, v)
+			names[v] = name
 		}
 	}
 	rows.Close()
@@ -390,6 +394,7 @@ func (s *Server) listMyModels(w http.ResponseWriter, r *http.Request) {
 		b, _ := json.Marshal(v)
 		obj := map[string]any{}
 		_ = json.Unmarshal(b, &obj)
+		obj["display_name"] = names[v]
 		obj["state"] = state
 		obj["favorite"] = favorite
 		obj["watchlist"] = watch
@@ -523,7 +528,10 @@ func (s *Server) syncModels(w http.ResponseWriter, r *http.Request) {
 	}
 	count, err := s.discover(r.Context(), v)
 	if err != nil {
-		http.Error(w, "provider sync failed", 502)
+		if errors.Is(err, sql.ErrNoRows) {
+			err = &providerReadError{Code: "CREDENTIAL_ROLE"}
+		}
+		writeProviderProblem(w, err, "catalog")
 		return
 	}
 	jsonOK(w, 200, map[string]any{"models_seen": count, "my_models_unchanged": true})

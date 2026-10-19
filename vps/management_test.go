@@ -46,6 +46,14 @@ func TestFullHistorySQLStatisticsAndPagedRetention(t *testing.T) {
 	if len(stats["history"].([]map[string]any)) != 400 || stats["history_total"] != 1001 {
 		t.Fatal("chart cap polluted full statistics")
 	}
+	chart := stats["history"].([]map[string]any)
+	if chart[0]["ttft_ms"] != float64(602) || chart[0]["latency_ms"] != float64(1204) || chart[0]["tps"] != float64(602) {
+		t.Fatalf("chart lost original sample metrics: %v", chart[0])
+	}
+	lastPoint := chart[len(chart)-1]
+	if lastPoint["outcome"] != "NETWORK" || lastPoint["ttft_ms"] != nil || lastPoint["latency_ms"] != nil || lastPoint["tps"] != nil {
+		t.Fatalf("missing values became plot zeroes: %v", lastPoint)
+	}
 	var count int
 	s.Store.DB.QueryRow("SELECT COUNT(*) FROM telemetry").Scan(&count)
 	if count != 1003 {
@@ -59,6 +67,34 @@ func TestFullHistorySQLStatisticsAndPagedRetention(t *testing.T) {
 	s.Store.DB.Exec("UPDATE telemetry SET details_json='invalid' WHERE id='1'")
 	if s.performanceBetween(ctx, v, 0, now()+1)["tps"] == nil {
 		t.Fatal("invalid details poisoned valid numeric samples")
+	}
+}
+
+func TestMetricHistoryUsesExactScopeWindowAndKeepsNonStreamingUnknown(t *testing.T) {
+	s := testServer(t)
+	v := seed(t, s, "https://provider.example/v1")
+	for i, row := range []struct {
+		account, outcome, details string
+		at                       int
+	}{
+		{"a", "SUCCESS", `{"tps":0}`, 100},
+		{"a", "RATE_LIMIT", `{"tps":"not numeric"}`, 200},
+		{"a", "CANCELLED", `{}`, 300},
+		{"other", "SUCCESS", `{"tps":999}`, 400},
+		{"a", "SUCCESS", `{"tps":888}`, 500},
+	} {
+		_, err := s.Store.DB.Exec("INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,latency_ms,details_json,created_at) VALUES(?,'p',?,'c','m','','CHAT_COMPLETIONS','CHAT_COMPLETIONS','PLAYGROUND',?,0,?,?)", fmt.Sprint(i), row.account, row.outcome, row.details, row.at)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	stats := s.performanceBetween(context.Background(), v, 100, 500)
+	chart := stats["history"].([]map[string]any)
+	if stats["samples"] != 2 || stats["cancelled"] != 1 || len(chart) != 2 || chart[0]["at"] != int64(100) || chart[1]["at"] != int64(200) {
+		t.Fatalf("scope/window/cancel guards lost: %v", stats)
+	}
+	if chart[0]["ttft_ms"] != nil || chart[0]["latency_ms"] != float64(0) || chart[0]["tps"] != float64(0) || chart[1]["tps"] != nil {
+		t.Fatalf("non-streaming, known zero or unknown semantics lost: %v", chart)
 	}
 }
 

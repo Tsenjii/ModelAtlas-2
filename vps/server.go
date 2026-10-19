@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -38,6 +39,7 @@ type Server struct {
 	mediaBytes    int
 	MaxFlights    int
 	AutoSync      bool
+	desktop       bool
 	wake          chan struct{}
 	reflectionDue int64
 }
@@ -211,6 +213,7 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /endpoints", s.listEndpoints)
 	api.HandleFunc("POST /endpoints", s.addEndpoint)
 	api.HandleFunc("GET /models/detail", s.modelDetail)
+	api.HandleFunc("GET /models/observations", s.modelObservations)
 	api.HandleFunc("POST /models/metadata", s.setMetadata)
 	api.HandleFunc("POST /models/capabilities", s.confirmCapabilities)
 	api.HandleFunc("POST /models/facts", s.manualFacts)
@@ -233,6 +236,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /onboarding/import", s.batchImport)
 	api.HandleFunc("GET /checkins", s.listCheckins)
 	api.HandleFunc("POST /checkins", s.completeCheckin)
+	api.HandleFunc("GET /checkins/accounts", s.accountCheckinsHTTP)
+	api.HandleFunc("POST /checkins/accounts", s.completeAccountCheckin)
 	api.HandleFunc("GET /notifications", s.notificationsHTTP)
 	api.HandleFunc("POST /notifications/seen", s.seenNotifications)
 	api.HandleFunc("GET /settings", s.getSettings)
@@ -350,17 +355,33 @@ func runApplication() error {
 		return fmt.Errorf("database initialization failed: %w", err)
 	}
 	defer store.Close()
+	listener, err := net.Listen("tcp", config.addr)
+	if err != nil {
+		return fmt.Errorf("HTTP server stopped: %w", err)
+	}
+	defer listener.Close()
 	client := &http.Client{Timeout: 120 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: true, MaxFlights: configuredFlights()}
+	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: true, MaxFlights: configuredFlights(), desktop: config.desktopReady != ""}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	if config.desktopReady != "" {
+		if err = publishDesktopReady(config.desktopReady, listener.Addr().String()); err != nil {
+			return err
+		}
+		defer os.Remove(config.desktopReady)
+		go func() {
+			// The native parent keeps this pipe open. EOF also covers parent crashes.
+			_, _ = io.Copy(io.Discard, os.Stdin)
+			stop()
+		}()
+	}
 	workerDone := make(chan struct{})
 	go func() { defer close(workerDone); srv.worker(ctx) }()
 	server := &http.Server{Addr: config.addr, Handler: config.handler(srv.Handler()), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 130 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 1 << 16}
 	if config.publicOrigin != "" {
 		log.Print("Platform mode requires an isolated HTTPS reverse proxy that overwrites X-Forwarded-Proto")
 	}
-	log.Printf("ModelAtlas VPS listening on %s", config.addr)
+	log.Printf("ModelAtlas engine listening on %s", listener.Addr())
 	shutdownDone := make(chan struct{})
 	go func() {
 		defer close(shutdownDone)
@@ -371,7 +392,7 @@ func runApplication() error {
 			_ = server.Close()
 		}
 	}()
-	err = server.ListenAndServe()
+	err = server.Serve(listener)
 	stop()
 	<-shutdownDone
 	<-workerDone
