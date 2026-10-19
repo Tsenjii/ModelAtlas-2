@@ -16,9 +16,9 @@ Providers、Models、Settings 及詳情分頁皆為單列橫向捲動。`workspa
 
 `mobile_alignment_test.go`／`e2e/mobile-alignment.cjs` 使用正式 Handler、SQLite、vault 及 TLS 上游：
 
-- 320×740、375×812、430×932、768×1024、959×900、375×900／200%、320×740／200%、812×375、812×375／200%，含淺／深色。
+- 320×740、375×812、430×932、768×1024、959×900、375×900／200%、320×740／200%、812×375、812×375／200%，含淺／深色，另加直向 top=44／bottom=34 與橫向 left=right=44／bottom=21 的安全區覆寫，共十一種情境。
 - 全部主頁；Providers／Models／Settings 各分頁；Catalog、研究知識、Assistant；帳戶／Key 編輯；真 onboarding 預覽；真兩連線比較及第二層收據。
 - 頁面左右邊緣、彈窗內容邊緣與內距、無整頁橫向溢出、標題不壓關閉、48px 控制、選中分頁可見、保存／確認／聊天按鈕可到達。
 - 分頁與編輯視窗切換保留未送出草稿；不確認新增、不刪成員或歷史。只有明確按下「開始比較」發送兩次推論；預覽只讀一次 Catalog，站方分頁保留原本公開唯讀資料取得。
 
-原十八個 Browser 流程、race／vet、雙 Linux binary 及 standalone expanded workload 均保留，新 HEAD 必須重新通過六項同 SHA CI。此處為 Chromium 的手機觸控模擬、尺寸與大字驗證；未宣稱實體 iPhone／Android 或軟體鍵盤裝置驗收，也未 merge 或操作遠端 VPS 部署。最新 SHA、實圖與資源結果以 PR #20 為準，完整 Master Spec 仍 PARTIAL。
+原十八個 Browser 流程、race／vet、雙 Linux binary 及 standalone expanded workload 均保留，新 HEAD 必須重新通過六項同 SHA CI。此處為 Chromium 的手機觸控、安全區覆寫、尺寸與大字驗證；未宣稱實體 iPhone／Android 或軟體鍵盤裝置驗收，也未 merge 或操作遠端 VPS 部署。最新 SHA、實圖與資源結果以 PR #20 為準，完整 Master Spec 仍 PARTIAL。
