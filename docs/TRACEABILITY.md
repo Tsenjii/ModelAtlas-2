@@ -263,3 +263,12 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | VPS-MOBILE-SPACING-004 | `appCSS` → `mobileAlignmentCSS` → 三主頁、設定六區、Catalog／研究／知識／Assistant、詳情／選模／編輯／Review／收據；第十九 Browser 的十一種尺寸／200%／深淺色／直橫向瀏海與手勢安全區 | CANDIDATE；頁面／欄位／卡片／dialog 邊緣、48px 控制、標題與關閉無重疊；原十八流程保留 |
 | VPS-MOBILE-NAVIGATION-004 | `workspace`／`detailTabs` → `revealWorkspaceTab`；ResizeObserver／方向鍵／Home／End；窄版橫向單列 tabs | CANDIDATE；選中分頁可見、零整頁橫向溢出、原草稿／資料 scope 不變 |
 | VPS-MOBILE-FORMS-004 | 五種原生 dialog 共用標題／內容框架；短視窗單一 scroller；真 onboarding 預覽、兩連線 TLS 比較與第二層 receipt | CANDIDATE；保存／確認／傳送可到達，成員及歷史保留；非實體手機／鍵盤裝置驗收，未 merge／部署 |
+
+
+## VPS 模型查找→比較→使用（2026-10-19）
+
+前片 VPS-MOBILE-ALIGN-004 code `b7444fe9be8f6a397521422aa40e340a908807ca` 已由 VPS `39253363969` 四項及 Android `39253363984` 兩項同 SHA SUCCESS，19 Browser／263 PNG 與原 expanded workload 已自行檢查，無獨立外部 reviewer。精確證據見 `vps/verification/20261019/b7444fe-baseline.json`；只代表該 code SHA。
+
+| Requirement | 正式 caller／驗證 | 狀態 |
+| --- | --- | --- |
+| VPS-MODEL-WORKFLOW-005 | `ui_js_model_views.go` → explicit localStorage view save/update/delete/apply、whitelisted display filters、active chips／recent／watchlist；`ui_js_model_connections.go`／`ui_js_mac_parity.go` → `openModelConnection` → original picker／change path → scoped sessions／drafts；`model_views_test.go`＋`e2e/model-views.cjs` 真 Handler／SQLite／vault／TLS、精確 Key／Group、storage error／stale option、no implicit inference/session、existing history／drafts／membership、320–1280／200% 實圖 | CANDIDATE；新 HEAD 六項同 SHA、原十九＋新增第二十 Browser／實圖及原 expanded workload 待驗；Mac／Android／完整 Master Spec 不升級 |

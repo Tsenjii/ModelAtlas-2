@@ -3,9 +3,9 @@ package main
 // Non-sensitive appearance preferences may persist. Conversation drafts and
 // attachments remain in this browser tab's memory and are never sent as metadata.
 const jsMacAlignment = `
-const composerDrafts=new Map();let composerDraftOwner="";
+const composerDrafts=new Map(),lastConversationByScope=new Map();let composerDraftOwner="";
 function composerDraftKey(){return $("target").value?(chatOperation(selectedOperation())?"session:"+(sessionScope===$("target").value&&$("session").value?$("session").value:$("target").value):"media:"+$("target").value):"";}
-function rememberComposerDraft(){if(composerDraftOwner)composerDrafts.set(composerDraftOwner,{text:$("prompt").value,attachments:attachments.slice()});}
+function rememberComposerDraft(){if(sessionScope&&$("session").value)lastConversationByScope.set(sessionScope,$("session").value);if(composerDraftOwner)composerDrafts.set(composerDraftOwner,{text:$("prompt").value,attachments:attachments.slice()});}
 function restoreComposerDraft(){const id=composerDraftKey();if(id===composerDraftOwner)return;const previous=composerDraftOwner;rememberComposerDraft();if(previous==="session:"+$("target").value&&id!==previous){const pending=composerDrafts.get(previous);if(pending&&(pending.text||pending.attachments.length))composerDrafts.set(id,pending);composerDrafts.delete(previous);}composerDraftOwner=id;const draft=composerDrafts.get(id);$("prompt").value=draft?.text||"";attachments=draft?.attachments.slice()||[];renderAttachments();$("prompt").dispatchEvent(new Event("input"));}
 function prepareComposerSelection(){rememberComposerDraft();sessionScope="";sessionListVersion++;loadVersion++;$("session").replaceChildren();restoreComposerDraft();chatEmpty(true);chatHistorySession="";chatHistoryStamp=null;chatHistoryReady();updatePlayground();}
 function applyAccent(value){if(!["graphite","violet","indigo"].includes(value))value="graphite";document.documentElement.dataset.accent=value;$("appearance-accent").value=value;}

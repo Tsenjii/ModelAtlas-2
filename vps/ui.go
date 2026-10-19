@@ -364,6 +364,8 @@ const homeHTML = `<!doctype html>
 <button type="button" data-model-quick="all" aria-pressed="true">全部</button>
 <button type="button" data-model-quick="favorite" aria-pressed="false">最愛</button>
 <button type="button" data-model-quick="free" aria-pressed="false">FREE NOW</button>
+<button type="button" data-model-quick="recent" aria-pressed="false">最近使用</button>
+<button type="button" data-model-quick="watchlist" aria-pressed="false">追蹤中</button>
 </div>
 <details id="model-filters">
 <summary data-icon="filter">篩選模型<span id="model-filter-count">
@@ -407,7 +409,7 @@ const homeHTML = `<!doctype html>
 <option value="">全部</option>
 </select>
 </label>` + modelControlsHTML + `</details>
-</div>
+</div>` + modelViewsHTML + `
 <div class="collection-meta">
 <span id="model-result-count">
 </span>

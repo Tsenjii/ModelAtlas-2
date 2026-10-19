@@ -1,10 +1,16 @@
 # ModelAtlas Public — ACTIVE TASK
 
-更新：2026-10-19；唯一 live 切片 **VPS-MOBILE-ALIGN-004**。使用者要求「再優化手機介面，所有的介面都要對齊」；接續 VPS，統一全部手機頁面與彈窗，不轉 Android。
+更新：2026-10-19；唯一 live 切片 **VPS-MODEL-WORKFLOW-005**。使用者要求「新增一些功能以及功能優化及 UI 優化」；接續 VPS 的模型查找→比較→使用流程，不轉 Android。
 
-- 前片 code `14d07695cfafb4beb71ba7fa13b80240288a6bca` 已確認 [VPS 39228161620](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161620) 四項與 [Android 39228161664](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161664) 兩項同 SHA SUCCESS。18 Browser／142 PNG 已自行檢視；原 expanded workload 服務峰值 182,927,360 bytes、待機 24,809,472 bytes，不含 OS／代理／瀏覽器。原始證據見 `vps/verification/20261019/14d076-baseline.json`，只代表該 code SHA。
-- 本片共用手機版 16px 對齊與卡片／表單間距、單列可捲分頁、五種 dialog 框架、短視窗捲動、48px 輸入與操作及導覽安全區；接線與完整尺寸矩陣見 `vps/MOBILE_ALIGNMENT.md`。
-- 新 HEAD 仍為候選，須六項同 SHA SUCCESS、原十八 Browser 加新增第十九流程／實圖及原 expanded workload 才驗收；自行 review，無獨立外部 reviewer。PR #20 保持 Draft，不 merge、不冒充已遠端部署。Mac／Android 與完整 Master Spec 的 PARTIAL 狀態不變。
+- 前片 code `b7444fe9be8f6a397521422aa40e340a908807ca` 已確認 [VPS 39253363969](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363969) 四項與 [Android 39253363984](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363984) 兩項同 SHA SUCCESS。19 Browser／263 PNG 已自行檢視；原 expanded workload 服務峰值 208,445,440 bytes、待機 26,345,472 bytes，不含 OS／代理／瀏覽器。原始證據見 `vps/verification/20261019/b7444fe-baseline.json`，只代表該 code SHA。
+- 本輪再確認 main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d` 的 build／device-tests SUCCESS；FEATURE FREEZE=OFF。
+- 本片新增明確儲存／更新／刪除的瀏覽器本機模型檢視、可逐項移除的篩選條件、最近使用／追蹤快捷鍵，以及完整 scope 的連線／比較結果直達 Playground；沿用原 picker change path，切換不自動 inference／不新增對話，保留各對話草稿與歷史。正式 caller、限制與驗證見 `vps/MODEL_VIEWS.md`。
+- 新 HEAD 仍為候選，須六項同 SHA SUCCESS、原十九 Browser 加新增第二十流程／實圖及原 expanded workload 才驗收；自行 review，無獨立外部 reviewer。PR #20 保持 Draft，不 merge、不冒充已遠端部署。Mac／Android 與完整 Master Spec 的 PARTIAL 狀態不變。
+
+## 前片 VPS-MOBILE-ALIGN-004（已驗 code，較新 HEAD 另驗）
+
+- `b7444fe9be8f6a397521422aa40e340a908807ca` 同 SHA 六項 SUCCESS／十九 Browser／263 PNG 已驗；手機頁面／分頁／表單與五種 dialog 的共用對齊、48px 操作、200% 大字與直橫安全區見 `vps/MOBILE_ALIGNMENT.md`。
+- 驗證是 Chromium mobile／touch／safe-area override，不代表實體 iPhone／Safari／軟體鍵盤測試；不 merge、不遠端部署。
 
 ## 前片 VPS-MANAGEMENT-UX-003（已驗 code，較新 HEAD 另驗）
 
