@@ -6,6 +6,7 @@
 - 固定 Mac 參考 `74e2c378c1117fda3bebdb9f8d50ead872aa5af7`／0.6.1 build12，使用獨立唯讀工作樹；原始五份 staged Mac 檔與暫停 Android UI 不動。
 - 本輪重新確認 main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`／`38408176782`，build `115333198754`、device `115333198701` SUCCESS；FEATURE FREEZE=OFF。
 - 本片補導航／完整連線對話搜尋與草稿、帳戶／Key 獨立編輯、Provider Catalog／可讀設定、模型六分區／三來源效能／額度／完整資訊編輯與圖表控制；差異與 caller 見 `vps/MAC_PARITY.md`。
+- 使用者追加資源效率與 CF／GitHub 免費部署評估；同片補完整 context 分段 JSON、5 筆輪詢／不重疊及通知 OFF 節流，保留原 expanded workload／六項 gate。架構、受控編碼對照與官方部署限制見 `vps/RESOURCE_HOSTING.md`；不假稱現有 Go／SQLite 可直接在免費 Pages／Workers 跑完整後端。
 - 原 16 Browser 語意斷言、全量匯出與 expanded workload 保留；畫面改動只調整真實入口與幾何。新 HEAD 仍須六項同 SHA SUCCESS／實圖檢查才驗收。PR #20 保持 Draft；不 merge、不改 Mac PR base、不冒充已遠端部署。完整 Master Spec 仍 PARTIAL。
 
 ## 舊切片歷史（不代表目前優先序與新 HEAD 驗收）

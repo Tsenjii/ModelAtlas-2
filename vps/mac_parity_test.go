@@ -101,7 +101,7 @@ func TestBrowserMacParityWorkflow(t *testing.T) {
 	}))
 	defer app.Close()
 	cmd := exec.Command("node", "e2e/mac-parity.cjs", app.URL)
-	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token)
+	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token, "MODELATLAS_PARITY_PNG="+testPNG(t))
 	if out, e := cmd.CombinedOutput(); e != nil {
 		t.Fatalf("Mac parity browser: %v\n%s", e, out)
 	} else {

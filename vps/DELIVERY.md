@@ -1,6 +1,6 @@
 # VPS 最新交付入口
 
-VPS-MAC-ALIGN-001 的 Mac 對齊與保留範圍見 [MAC_ALIGNMENT.md](MAC_ALIGNMENT.md)，更新／部署見 [UPDATE.md](UPDATE.md)。最新 commit、六項同 SHA 驗收、實際 Browser 圖及新 RAM 結果以 PR #20 與交付套件 VERSION.json／VERIFICATION.json 為準。
+最新 VPS-MAC-PARITY-002 的完整 caller 對照見 [MAC_PARITY.md](MAC_PARITY.md)，資源與免費部署方案見 [RESOURCE_HOSTING.md](RESOURCE_HOSTING.md)，更新／部署見 [UPDATE.md](UPDATE.md)。最新 commit、六項同 SHA 驗收、實際 Browser 圖及新 RAM 結果以 PR #20 與交付套件 VERSION.json／VERIFICATION.json 為準。
 
 以下保留 2026-10-15 的歷史驗收，不能套用為最新 HEAD 的結果。
 

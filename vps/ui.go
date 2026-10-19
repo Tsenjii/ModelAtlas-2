@@ -147,6 +147,7 @@ const homeHTML = `<!doctype html>
 <small id="prompt-shortcuts" class="composer-hint">Enter 換行 · Ctrl／⌘ + Enter 傳送</small>
 </div>
 <div id="media-ui" hidden>
+<div id="media-model-bar" class="media-model-bar"></div>
 <h2 id="media-operation">
 </h2>
 <form id="media-form">

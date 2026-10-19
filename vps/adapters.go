@@ -458,7 +458,8 @@ func (s *Server) syncIntelligence(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 200, s.enrich(r.Context(), v))
 }
 func (s *Server) syncHistory(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,scope_key,status,summary_json,observed_at FROM sync_history ORDER BY rowid DESC LIMIT 100")
+	limit, offset := pageRange(r, 100)
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,scope_key,status,summary_json,observed_at FROM sync_history ORDER BY rowid DESC LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

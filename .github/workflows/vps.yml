@@ -42,10 +42,14 @@ jobs:
         run: go vet -mod=readonly ./...
       - name: Measure standalone resource footprint
         run: MODELATLAS_FOOTPRINT_TEST=1 MODELATLAS_FOOTPRINT_OUT=footprint.json go test -mod=readonly -v -run TestStandaloneProcessFootprint -count=1 -timeout=3m
+      - name: Compare full-context JSON encoding allocations
+        run: go test -mod=readonly -run '^TestRequestJSON' -bench '^BenchmarkInferenceJSONBody$' -benchtime=3x -benchmem -count=1 | tee encoding-allocations.txt
       - uses: actions/upload-artifact@v4
         with:
           name: modelatlas-vps-footprint
-          path: vps/footprint.json
+          path: |
+            vps/footprint.json
+            vps/encoding-allocations.txt
           if-no-files-found: error
       - name: Smoke Linux runtime
         run: |

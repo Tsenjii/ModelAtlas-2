@@ -4,6 +4,8 @@
 
 本片以前一輪已驗收 VPS `3aec657` 為基線。下表是正式 caller 的對照；候選仍須最新 HEAD 六項 CI、原十六個 Browser 加新增完整流程、實圖及 expanded workload 驗收。最新 SHA／run／job 以 PR #20 與交付驗證檔為準；不以舊綠燈代替本片。
 
+本輪補 compact 附件入口／原子多檔／拖放、固定詳情導覽、初次載入與跨 scope 草稿保護、重試保留下一稿、晚讀取不得覆蓋使用者選定來源、表單 pending 與部分刷新。資源改動及免費部署判斷另見 [RESOURCE_HOSTING.md](RESOURCE_HOSTING.md)，原上下文／並行數／歷史／匯出不減。
+
 | Mac 正式畫面／操作 | VPS 正式入口 | 本片接續 |
 | --- | --- | --- |
 | RootView 三工作區／側欄／上方工具 | `ui.go`、`ui_js_mac_alignment.go`、`ui_css_mac_parity.go` | 中性色、三工作區數量、工具列、快速選模與可隱藏側欄；手機仍有 48px 底導覽 |
