@@ -3,6 +3,7 @@
 > 本文件由使用者提供的「Astra / OpenCode 最終整合 Prompt — Final Structured v2」整理而來，作為 repo 內可直接閱讀的產品母規格。
 > 原始母規格本身仍屬高階完整大綱；遺漏細節不得被解讀為「不需要做」。後續使用者明確決策記在 `docs/DECISIONS.md`，發生衝突時由較新的決策覆蓋本文件。
 > **Provider / Model Intelligence 專門規格：`docs/PROVIDER_MODEL_INTELLIGENCE_CONTRACT.md`。在 Provider / Model / Performance / Pricing / Quota / FREE / Intelligence UI / Assistant Research 範圍內，該 contract 的較新【已拍板】規則取代本文件中相衝突的舊描述。**
+> **2026-10-19 願望清單補充：** 原始 [`ASTRA_MASTER_SPEC.md`](ASTRA_MASTER_SPEC.md) Part V 新增 WISH-CRAWL-001／002、WISH-REFL-001、WISH-AUTH-001、WISH-ACCEPT-001，細化持續發現排程、未知站點 Connector、可量測研究改進閉環、模型真實性及真站／跨平台／手機驗收。原有需求全部保留；這五項為 OPEN（待完成／待驗收），實際狀態追蹤見 `TRACEABILITY.md`，不因文件新增而視為已交付。
 
 ## 0. 成功定義
 

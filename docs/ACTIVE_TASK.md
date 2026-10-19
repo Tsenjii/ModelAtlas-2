@@ -1,5 +1,14 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 最新使用者指示：補回原願望清單（2026-10-19）
+
+- 本輪為文件整理：將完整功能盤點後的持續發現排程、未知站點解析／Connector、研究改進閉環、模型真實性與真站／跨平台／手機完整驗收，加入原 `ASTRA_MASTER_SPEC.md` Part V，保留全部原文與既有需求。
+- 新增 WISH-CRAWL-001／002、WISH-REFL-001、WISH-AUTH-001、WISH-ACCEPT-001；全部 **OPEN：待完成／待驗收**，`PRODUCT_SPEC.md` 已接引用，`TRACEABILITY.md` 登錄正式缺口。未開新的 production 功能切片。
+- 盤點及前片已驗基準 code `ae0849294fdcf4f48c0cf549de797e59afd53ecb`：VPS `39258806970` 四項、Android `39258806978` build／device-tests 同 SHA SUCCESS，20 Browser／281 PNG 已自行檢查；main 仍 `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`。本次文件 HEAD CI 另查 PR #20，不借用 code 基準宣稱新 HEAD 全綠。
+- 完整 Master Spec 及新增五項均未整體驗收；PR #20 維持 Draft，Mac／Android 原狀態與暫停順序不變。後續實作依本檔單一切片與同 SHA gate 接續；本輪不 merge／部署。
+
+## 前片 VPS-MODEL-WORKFLOW-005
+
 更新：2026-10-19；唯一 live 切片 **VPS-MODEL-WORKFLOW-005**。使用者要求「新增一些功能以及功能優化及 UI 優化」；接續 VPS 的模型查找→比較→使用流程，不轉 Android。
 
 - 前片 code `b7444fe9be8f6a397521422aa40e340a908807ca` 已確認 [VPS 39253363969](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363969) 四項與 [Android 39253363984](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363984) 兩項同 SHA SUCCESS。19 Browser／263 PNG 已自行檢視；原 expanded workload 服務峰值 208,445,440 bytes、待機 26,345,472 bytes，不含 OS／代理／瀏覽器。原始證據見 `vps/verification/20261019/b7444fe-baseline.json`，只代表該 code SHA。

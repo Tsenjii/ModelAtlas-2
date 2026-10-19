@@ -272,3 +272,17 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | Requirement | 正式 caller／驗證 | 狀態 |
 | --- | --- | --- |
 | VPS-MODEL-WORKFLOW-005 | `ui_js_model_views.go` → explicit localStorage view save/update/delete/apply、whitelisted display filters、active chips／recent／watchlist；`ui_js_model_connections.go`／`ui_js_mac_parity.go` → `openModelConnection` → original picker／change path → scoped sessions／drafts；`model_views_test.go`＋`e2e/model-views.cjs` 真 Handler／SQLite／vault／TLS、精確 Key／Group、storage error／stale option、no implicit inference/session、existing history／drafts／membership、320–1280／200% 實圖 | CANDIDATE；新 HEAD 六項同 SHA、原十九＋新增第二十 Browser／實圖及原 expanded workload 待驗；Mac／Android／完整 Master Spec 不升級 |
+
+## 原願望清單補充（2026-10-19，需求登錄）
+
+使用者要求把完整功能盤點的缺口補回原文檔；完整需求與逐項驗收在 [`ASTRA_MASTER_SPEC.md`](ASTRA_MASTER_SPEC.md) Part V。以下只登錄需求，不代表新增 production 功能或驗收通過；原有 requirement、P8／P9／P10 及平台狀態全部保留。
+
+| Requirement | 既有基礎與待補正式流程 | 必要驗收 | 狀態 |
+| --- | --- | --- | --- |
+| WISH-CRAWL-001 | `vps/research_jobs.go` 任務、`adapters.go` worker、`background.go` metadata refresh；待接持久化 discovery 排程與正式 UI | 到期真研究／候選、重啟／去重／暫停／取消、每日與每輪預算、完整報告 | OPEN：待完成／待驗收 |
+| WISH-CRAWL-002 | `research_execute.go`、`assistant_tools.go`、`connectors.go` 已有來源與提案基礎；待補未知站點識別到有效 mapping 的端到端流程 | fixture＋有界真 HTTP、scope／單位／auth、Review／啟用／失敗保留／回退 | OPEN：待完成／待驗收 |
+| WISH-REFL-001 | `reflection.go`、`knowledge.go` 已有報告與版本；待補跨輪具體策略生成、比較評估、啟用及監測閉環 | 品質／成本基線、下一輪實際採用版本、失敗提案拒絕與退化回退 | OPEN：待完成／待驗收 |
+| WISH-AUTH-001 | `research_execute.go` 最小 inference 與 metadata；待補獨立 fingerprint suite 及可信跨 Provider 對照 | 正反例／真站對照、版本／成本／confidence、矛盾與不足判定 | OPEN：待完成／待驗收 |
+| WISH-ACCEPT-001 | 現有 CI／Browser／footprint 只涵蓋已執行範圍；待補真站長跑、實際部署及各平台／實機完整矩陣 | Requirement→正式 caller→測試／實圖／真站證據→同 SHA 必要 CI／review；保留所有未驗情境 | OPEN：待完成／待驗收 |
+
+盤點 code 基準 `ae0849294fdcf4f48c0cf549de797e59afd53ecb`：VPS [39258806970](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39258806970) 四項及 Android [39258806978](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39258806978) build／device-tests 同 SHA SUCCESS，僅支持既有切片；不作上述五項的 ACCEPTED 證據。本次文件提交的 CI 另查 PR #20 最新 HEAD，不外推前一 SHA。
