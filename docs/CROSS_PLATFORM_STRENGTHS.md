@@ -17,6 +17,8 @@
 
 ## 下一步優先序
 
+2026-10-19 接續：`b3c16e9` 已同 SHA 六項 SUCCESS／17 Browser／134 PNG 核對。當前 VPS-MANAGEMENT-UX-003 補模型概覽的各家完整連線速度與簽到可靠性（`vps/MODEL_CONNECTIONS.md`）；屬新候選，不能外推舊驗收。保留 Mac／Android 現有優點與暫停狀態。
+
 1. VPS-MAC-ALIGN-001 已由 3aec657 同 SHA 六項／16 Browser 驗收。本輪 VPS-MAC-PARITY-002 對照全部 Mac caller，補正式表單／完整側欄／模型分區與編輯／來源／比較／服務；新 HEAD 須完整六項／原16 Browser＋新增流程及實圖，不借前片結果。
 2. 使用者最新要求本輪留在 VPS；Android 介面未開始，原有優點與待辦保留。
 3. 私人站點 adapter 逐站 schema／認證、多 Key availability／quota／stale、研究／Assistant／Reflection 及完整大綱仍追蹤，P1–P10 仍 PARTIAL。

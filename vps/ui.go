@@ -249,6 +249,7 @@ const homeHTML = `<!doctype html>
 </label>
 </div>
 <div class="quick-filters" aria-label="供應商快速篩選"><button type="button" data-provider-quick="all" aria-pressed="true">全部</button><button type="button" data-provider-quick="free" aria-pressed="false">有免費連線</button><button type="button" data-provider-quick="models" aria-pressed="false">已加入模型</button><button type="button" data-provider-quick="pending" aria-pressed="false">待簽到</button></div>
+<div id="checkin-summary" class="checkin-summary" role="region" aria-label="今日簽到進度" hidden></div>
 <div class="collection-meta">
 <span id="provider-result-count">
 </span>

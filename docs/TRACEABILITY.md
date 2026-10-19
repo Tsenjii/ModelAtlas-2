@@ -244,3 +244,12 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 完整 Mac production UI/caller 對照見 `vps/MAC_PARITY.md`。以已驗 VPS 3aec657、Mac 74e2c37 為參考，補全域對話搜尋／分頁與記憶體草稿、獨立 Provider 編輯、六分區模型／來源切換／完整模型與 quota 欄位、精確圖表匯出、私人用量／Recipe／服務／並列比較。原 16 Browser 保留語意、fixtures、timeout 與完整 workload；UI 重排只更換真實入口，不以 force click／sleep／刪斷言通過。新增 `TestBrowserMacParityWorkflow` 使用正式 Handler／SQLite／vault／TLS 驗跨帳戶歷史、205 價格點、額度零／未知、私人用途隔離與真比較。新 HEAD 六項／實圖前仍 CANDIDATE；未 merge／未部署，完整 Master Spec 仍 PARTIAL。
 
 | VPS-MAC-PARITY-002 資源與部署接續 | 使用者追加省資源／CF／GitHub；`request_json.go` 完整 Unicode context 分段編碼、HTTP Content-Length／replay／秘密邊界；`syncHistory` SQL 分頁與 UI 單次輪詢；原子附件與重試草稿。官方方案見 `vps/RESOURCE_HOSTING.md`。 | 原 expanded workload 與六項同 SHA gate 保留；新增 wire／secret／replay／encoded-size／持久 history pagination 測試及 31 MiB 受控編碼 benchmark。最新驗收以 PR #20／套件驗證檔為準；完整 Master Spec 仍 PARTIAL。 |
+
+## VPS-MANAGEMENT-UX-003（2026-10-19 候選）
+
+前片 `b3c16e9` 的六項同 SHA SUCCESS、17 Browser／134 PNG 及原 expanded workload 已核對，證據見 `vps/verification/20261019/b3c16-baseline.json`。自行 review，無獨立外部 reviewer；本片不能借用前片結果。
+
+| Requirement | 正式 caller／驗證 | 驗收狀態 |
+|---|---|---|
+| VPS-MODEL-CONNECTIONS-003 | `modelDetail` → `ui_js_model_connections.go` → 既有 My Models 完整 scope 摘要 → 原 `openComparison`／`models/compare`；真 TLS 五站／32 scope／分頁／零未知／取消／相近模型隔離／四列上限／完整匯出 | CANDIDATE；待本 HEAD 六項／18 Browser／實圖，原批次選取與原十七流程保留 |
+| VPS-CHECKIN-RESILIENCE-003 | Providers 今日進度／逐帳戶完成 → 既有簽到 API；請求合併、last-good、跨日／時區 guard、完成後 invalidation；被阻塞的真 GET／真 commit／503／瀏覽器跨日 | CANDIDATE；錯誤不清同日有效狀態，過期日期零 POST，不執行站方簽到、不刪歷史、不改 schema／OFF 通知預設 |

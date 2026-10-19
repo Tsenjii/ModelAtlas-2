@@ -1,6 +1,12 @@
 # ModelAtlas Public — ACTIVE TASK
 
-更新：2026-10-19；唯一 live 切片 **VPS-MAC-PARITY-002**，逐頁對齊 Mac 0.6.1 的正式 UI 與操作。使用者最新要求：「VPS 介面及功能全部完全跟 Mac 一樣」，本輪留在 VPS，不轉 Android。
+更新：2026-10-19；唯一 live 切片 **VPS-MANAGEMENT-UX-003**。使用者要求繼續 ModelAtlas，接續 VPS，優先完成同模型各家速度入口與每日簽到可靠性；不轉 Android。
+
+- 前片 code `b3c16e95b29a61d93d53a945fea78aa80a7dc31f` 已確認 [VPS 39218809855](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39218809855) 四項與 [Android 39218809822](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39218809822) 兩項同 SHA SUCCESS。17 Browser／134 PNG 已自行檢視，原 expanded workload 服務峰值 208,769,024 bytes、待機 26,451,968 bytes；不含 OS／瀏覽器，沒有獨立外部 reviewer。原始證據見 `vps/verification/20261019/b3c16-baseline.json`，只代表該 code SHA。
+- 本片正式流程及界線見 `vps/MODEL_CONNECTIONS.md`。模型概覽直接列同 Canonical Model 各家完整 scope 的本機速度／上線率／樣本與明確比較；Providers 新增今日簽到進度、last-good／重試、晚 GET 不撤銷完成回條及跨日保護。
+- 新 HEAD 仍為候選，須六項同 SHA SUCCESS、原十七 Browser 加新增第十八流程／實圖及原 expanded workload 才驗收；PR #20 保持 Draft，不 merge、不冒充已遠端部署。Mac／Android 與完整 Master Spec 的 PARTIAL 狀態不變。
+
+## 前片 VPS-MAC-PARITY-002（已驗 code，較新 HEAD 另驗）
 
 - 已交付 VPS `3aec65729b9daf5db7ac5629ecca69df4ef94afc`，VPS `39188438480` 四項及 Android `39188438452` 兩項同 SHA SUCCESS，16 Browser／124 PNG 已驗。這是第一輪對齊，不能宣稱完整 Mac parity。
 - 固定 Mac 參考 `74e2c378c1117fda3bebdb9f8d50ead872aa5af7`／0.6.1 build12，使用獨立唯讀工作樹；原始五份 staged Mac 檔與暫停 Android UI 不動。

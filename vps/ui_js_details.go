@@ -47,6 +47,7 @@ async function modelDetail(m,window=settings.performance_window||"7d",initial="o
  useButton.disabled=busy||!operationLabels[targetOperation(m)]||m.state!=="ACTIVE"||!m.enabled;useButton.title=useButton.disabled?"此連線尚不可在 Playground 使用":"";
  const testButton=action(tools,"測試",async()=>{const r=await submit("/models/test",selection);notice(r.outcome);await refresh();if(detailCurrent(ticket))await box.refreshModelFacts?.();});testButton.disabled=!chatOperation(targetOperation(m));testButton.title=testButton.disabled?"此操作請在 Playground 手動發送":"";
  action(tools,"同步資料",async()=>{const r=await submit("/intelligence/sync",selection);notice(Object.values(r).includes("PARTIAL")?"部分來源尚無資料":"已同步");await refresh();if(detailCurrent(ticket))await box.refreshModelFacts?.();});
+ modelConnections(panels.overview,m,ticket);
  const overview=detailSection(panels.overview,"連線資訊");detailRows(overview,[["模型 ID",m.model_id],["端點類型",operationLabels[targetOperation(m)]||targetOperation(m)],["Group",m.group||"未指定群組"],["連線狀態",m.enabled?"已啟用":"未啟用"],["顯示狀態",{ACTIVE:"顯示中",HIDDEN:"已隱藏",ARCHIVED:"已封存"}[m.state]||m.state],["價格狀態",{FREE_NOW:"FREE NOW",PAID:"付費",PARTIALLY_FREE:"部分免費",UNKNOWN:"尚未確認"}[m.price_state]||"尚未確認"]]);
  factsView(overview,"連線識別資料",selection);const collection=el("div",undefined,"actions");overview.append(collection);
  action(collection,m.favorite?"取消最愛":"加入最愛",async()=>{await submit("/models/lifecycle",{...selection,state:m.state,favorite:!m.favorite,watchlist:m.watchlist});await refresh();await reopen();});
