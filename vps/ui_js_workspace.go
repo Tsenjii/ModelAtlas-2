@@ -7,12 +7,13 @@ const iconPaths={bell:["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"
 function icon(name){const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("fill","none");svg.setAttribute("stroke","currentColor");svg.setAttribute("stroke-width","1.7");svg.setAttribute("stroke-linecap","round");svg.setAttribute("stroke-linejoin","round");svg.setAttribute("aria-hidden","true");svg.classList.add("icon");for(const d of iconPaths[name]||iconPaths.models){const path=document.createElementNS(svg.namespaceURI,"path");path.setAttribute("d",d);svg.append(path);}return svg;}
 function decorateIcons(){document.querySelectorAll("[data-icon]").forEach(n=>{if(!n.querySelector(":scope > svg"))n.prepend(icon(n.dataset.icon));});}
 let workspaceChatReading=null;
+function revealWorkspaceTab(tab){const list=tab?.closest('[role="tablist"]');if(!list||list.scrollWidth<=list.clientWidth)return;const area=list.getBoundingClientRect(),mark=tab.getBoundingClientRect();if(mark.left<area.left)list.scrollLeft-=area.left-mark.left;else if(mark.right>area.right)list.scrollLeft+=mark.right-area.right;}
 function workspace(group,id,focus=false){
  const tabs=[...document.querySelectorAll('[data-workspace-tabs="'+group+'"] [role="tab"]')],selected=tabs.find(t=>t.getAttribute("aria-controls")===id);if(!selected)return;
  const pane=selected.closest(".pane");if(group==="playground"&&!$("work-chat").hidden)workspaceChatReading={session:$("session").value,position:chatReadPosition()};
  pane.querySelectorAll('[data-workspace-panel="'+group+'"]').forEach(panel=>{panel.hidden=panel.id!==id;if(panel.tagName==="DETAILS")panel.open=panel.id===id;});
  tabs.forEach(tab=>{const active=tab===selected;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;});
- syncModelCollection(group,id);syncSettingsPanels(group,id);if(focus)selected.focus({preventScroll:true});if(group==="playground"&&id==="work-chat"){const reading=workspaceChatReading?.session===$("session").value?workspaceChatReading.position:null;if(reading)restoreChatReadPosition(reading);else chatChanged(false,false);}
+ syncModelCollection(group,id);syncSettingsPanels(group,id);if(focus)selected.focus({preventScroll:true});revealWorkspaceTab(selected);if(group==="playground"&&id==="work-chat"){const reading=workspaceChatReading?.session===$("session").value?workspaceChatReading.position:null;if(reading)restoreChatReadPosition(reading);else chatChanged(false,false);}
 }
 let previousPane="playground",currentPane="playground",noticeTimer=null;
 function workspaceEmpty(parent,title,description,kind="models",label="",callback=null){const box=el("div",undefined,"empty-state"),mark=el("div",undefined,"empty-mark");mark.append(icon(kind));box.append(mark,el("h2",title),el("p",description));if(callback)action(box,label,callback,false);parent.append(box);return box;}
@@ -41,6 +42,7 @@ function bindWorkspace(){
  const markSettingsEdit=event=>{if(event.target.name){settingsEdits.add(event.target.name);settingsEditVersion++;}};$("settings-form").addEventListener("input",markSettingsEdit);$("settings-form").addEventListener("change",markSettingsEdit);
  decorateIcons();document.querySelectorAll("[data-workspace-tabs]").forEach(list=>{
   const tabs=[...list.querySelectorAll('[role="tab"]')],group=list.dataset.workspaceTabs;
+  if("ResizeObserver" in window)new ResizeObserver(()=>revealWorkspaceTab(list.querySelector('[aria-selected="true"]'))).observe(list);
   tabs.forEach(tab=>{tab.addEventListener("click",()=>workspace(group,tab.getAttribute("aria-controls")));tab.addEventListener("keydown",event=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)||event.altKey||event.ctrlKey||event.metaKey)return;event.preventDefault();let index=tabs.indexOf(tab);if(event.key==="Home")index=0;else if(event.key==="End")index=tabs.length-1;else index=(index+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;workspace(group,tabs[index].getAttribute("aria-controls"),true);});});
  });
  $("provider-add").addEventListener("click",()=>workspace("providers","providers-new",true));$("settings-back").addEventListener("click",()=>show(previousPane));

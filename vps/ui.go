@@ -19,7 +19,7 @@ const homeHTML = `<!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>ModelAtlas</title>
 <link rel="stylesheet" href="/app.css">
@@ -759,7 +759,7 @@ const homeHTML = `<!doctype html>
 </nav>
 </div>
 <dialog id="model-picker" aria-labelledby="model-picker-heading" aria-describedby="model-picker-hint">
-<div class="model-picker-head"><div><h2 id="model-picker-heading">選擇模型</h2><p id="model-picker-hint">從已加入的連線選擇。切換連線後可繼續先前對話；各段尚未送出的草稿會保留在這個分頁。</p></div><button id="model-picker-close" type="button" class="ghost">完成</button></div>
+<div class="model-picker-head"><div><h2 id="model-picker-heading">選擇模型</h2><p id="model-picker-hint">從已加入的連線選擇，未送出草稿會留在這個分頁。</p></div><button id="model-picker-close" type="button" class="ghost">完成</button></div>
 <div class="model-picker-filters">
 <label class="model-picker-search"><span class="sr-only">搜尋模型、供應商、帳戶或 Key</span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 21l-4.5-4.5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg><input id="model-picker-search" type="search" placeholder="搜尋模型、供應商、帳戶或 Key" role="combobox" aria-autocomplete="list" aria-controls="model-picker-results" aria-expanded="false" autocomplete="off"></label>
 <label><span class="sr-only">篩選選模供應商</span><select id="model-picker-provider" aria-label="篩選選模供應商"><option value="">所有供應商</option></select></label>

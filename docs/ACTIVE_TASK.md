@@ -1,6 +1,12 @@
 # ModelAtlas Public — ACTIVE TASK
 
-更新：2026-10-19；唯一 live 切片 **VPS-MANAGEMENT-UX-003**。使用者要求繼續 ModelAtlas，接續 VPS，優先完成同模型各家速度入口與每日簽到可靠性；不轉 Android。
+更新：2026-10-19；唯一 live 切片 **VPS-MOBILE-ALIGN-004**。使用者要求「再優化手機介面，所有的介面都要對齊」；接續 VPS，統一全部手機頁面與彈窗，不轉 Android。
+
+- 前片 code `14d07695cfafb4beb71ba7fa13b80240288a6bca` 已確認 [VPS 39228161620](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161620) 四項與 [Android 39228161664](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161664) 兩項同 SHA SUCCESS。18 Browser／142 PNG 已自行檢視；原 expanded workload 服務峰值 182,927,360 bytes、待機 24,809,472 bytes，不含 OS／代理／瀏覽器。原始證據見 `vps/verification/20261019/14d076-baseline.json`，只代表該 code SHA。
+- 本片共用手機版 16px 對齊與卡片／表單間距、單列可捲分頁、五種 dialog 框架、短視窗捲動、48px 輸入與操作及導覽安全區；接線與完整尺寸矩陣見 `vps/MOBILE_ALIGNMENT.md`。
+- 新 HEAD 仍為候選，須六項同 SHA SUCCESS、原十八 Browser 加新增第十九流程／實圖及原 expanded workload 才驗收；自行 review，無獨立外部 reviewer。PR #20 保持 Draft，不 merge、不冒充已遠端部署。Mac／Android 與完整 Master Spec 的 PARTIAL 狀態不變。
+
+## 前片 VPS-MANAGEMENT-UX-003（已驗 code，較新 HEAD 另驗）
 
 - 前片 code `b3c16e95b29a61d93d53a945fea78aa80a7dc31f` 已確認 [VPS 39218809855](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39218809855) 四項與 [Android 39218809822](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39218809822) 兩項同 SHA SUCCESS。17 Browser／134 PNG 已自行檢視，原 expanded workload 服務峰值 208,769,024 bytes、待機 26,451,968 bytes；不含 OS／瀏覽器，沒有獨立外部 reviewer。原始證據見 `vps/verification/20261019/b3c16-baseline.json`，只代表該 code SHA。
 - 本片正式流程及界線見 `vps/MODEL_CONNECTIONS.md`。模型概覽直接列同 Canonical Model 各家完整 scope 的本機速度／上線率／樣本與明確比較；Providers 新增今日簽到進度、last-good／重試、晚 GET 不撤銷完成回條及跨日保護。

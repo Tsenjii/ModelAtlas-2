@@ -58,7 +58,7 @@ function openModelPicker(){
  if(!modelPickerReady||busy||document.querySelector("dialog[open]"))return;
  show("playground");workspace("playground","work-chat");pickerLimit=100;pickerCursor=$("target").value;
  $("model-picker-search").value="";$("model-picker-provider").value="";$("model-picker-favorites").checked=false;
- renderModelPicker(true);$("model-picker").showModal();$("model-picker-search").setAttribute("aria-expanded","true");$("model-picker-search").focus();
+ renderModelPicker(true);$("model-picker").showModal();$("model-picker").scrollTop=0;$("model-picker-search").setAttribute("aria-expanded","true");$("model-picker-search").focus({preventScroll:true});
 }
 function bindModelPicker(){
  const dialog=$("model-picker"),input=$("model-picker-search");$("model-picker-open").addEventListener("click",openModelPicker);$("model-picker-close").addEventListener("click",()=>dialog.close());

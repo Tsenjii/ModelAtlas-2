@@ -1,6 +1,8 @@
 package main
 
 const jsDetailWorkspace = `
+let detailTabResizeObserver=null;
+function clearDetailTabObserver(){detailTabResizeObserver?.disconnect();detailTabResizeObserver=null;}
 function detailCurrent(ticket){return $("detail").open&&ticket===detailVersion;}
 function detailSection(parent,title,description){
  const section=el("section",undefined,"detail-section");
@@ -19,13 +21,13 @@ function detailRows(parent,rows){
 function detailTabs(parent,kind,definitions,initial){
  const tabs=el("div",undefined,"workspace-tabs detail-tabs"),panels={},buttons={};
  tabs.setAttribute("role","tablist");tabs.setAttribute("aria-label",kind==="model"?"模型詳情分區":"供應商詳情分區");parent.append(tabs);
- const activate=(id,focus=false)=>{if(!panels[id])return;tabs.dataset.active=id;for(const [key,panel]of Object.entries(panels)){const chosen=key===id;panel.hidden=!chosen;buttons[key].setAttribute("aria-selected",String(chosen));buttons[key].tabIndex=chosen?0:-1;}if(focus)buttons[id].focus();const area=tabs.getBoundingClientRect(),mark=buttons[id].getBoundingClientRect();if(mark.left<area.left)tabs.scrollLeft-=area.left-mark.left;else if(mark.right>area.right)tabs.scrollLeft+=mark.right-area.right;panels[id].dispatchEvent(new Event("detailactivate"));};
+ const activate=(id,focus=false)=>{if(!panels[id])return;tabs.dataset.active=id;for(const [key,panel]of Object.entries(panels)){const chosen=key===id;panel.hidden=!chosen;buttons[key].setAttribute("aria-selected",String(chosen));buttons[key].tabIndex=chosen?0:-1;}if(focus)buttons[id].focus({preventScroll:true});revealWorkspaceTab(buttons[id]);panels[id].dispatchEvent(new Event("detailactivate"));};
  for(const [id,label]of definitions){
   const b=el("button",label),panel=el("section",undefined,"detail-panel");b.type="button";b.id="detail-"+kind+"-"+id+"-tab";b.setAttribute("role","tab");b.setAttribute("aria-controls","detail-"+kind+"-"+id);panel.id="detail-"+kind+"-"+id;panel.setAttribute("role","tabpanel");panel.setAttribute("aria-labelledby",b.id);panel.tabIndex=0;
   buttons[id]=b;panels[id]=panel;tabs.append(b);parent.append(panel);b.addEventListener("click",()=>activate(id));
   b.addEventListener("keydown",e=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;e.preventDefault();const ids=definitions.map(v=>v[0]),index=ids.indexOf(id);activate(ids[e.key==="Home"?0:e.key==="End"?ids.length-1:(index+(e.key==="ArrowRight"?1:-1)+ids.length)%ids.length],true);});
  }
- activate(initial||definitions[0][0]);return {panels,activate,current:()=>tabs.dataset.active};
+ activate(initial||definitions[0][0]);if("ResizeObserver" in window){clearDetailTabObserver();detailTabResizeObserver=new ResizeObserver(()=>revealWorkspaceTab(buttons[tabs.dataset.active]));detailTabResizeObserver.observe(tabs);$("detail").addEventListener("close",clearDetailTabObserver,{once:true});}return {panels,activate,current:()=>tabs.dataset.active};
 }
 function detailState(parent,message,bad=false,retry){
  const state=el("div",undefined,"detail-state"+(bad?" detail-state-error":""));state.setAttribute("role",bad?"alert":"status");state.append(el("p",message));if(retry)action(state,"重新載入",retry);parent.append(state);return state;

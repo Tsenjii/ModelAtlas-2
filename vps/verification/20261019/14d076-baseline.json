@@ -1,0 +1,76 @@
+{
+  "code_sha": "14d07695cfafb4beb71ba7fa13b80240288a6bca",
+  "tree": "c4c607dc69591106f73374089b2d5639c0a2a301",
+  "vps_run": 39228161620,
+  "android_run": 39228161664,
+  "jobs": [
+    {
+      "name": "device-tests",
+      "id": 117979796773,
+      "conclusion": "success",
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161664/job/117979796773"
+    },
+    {
+      "name": "build",
+      "id": 117979796308,
+      "conclusion": "success",
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161664/job/117979796308"
+    },
+    {
+      "name": "vps-linux-amd64",
+      "id": 117979440510,
+      "conclusion": "success",
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161620/job/117979440510"
+    },
+    {
+      "name": "vps-linux-arm64",
+      "id": 117979440449,
+      "conclusion": "success",
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161620/job/117979440449"
+    },
+    {
+      "name": "vps-browser",
+      "id": 117979440341,
+      "conclusion": "success",
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161620/job/117979440341"
+    },
+    {
+      "name": "vps-test",
+      "id": 117979439950,
+      "conclusion": "success",
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39228161620/job/117979439950"
+    }
+  ],
+  "browser_workflows": 18,
+  "browser_screenshots": 142,
+  "artifacts": [
+    {
+      "name": "modelatlas-vps-linux-amd64",
+      "id": 12176775139,
+      "sha256": "7d59ff120bc84a6e53315bab0de216df789c201acfa13b87a33f6fb0fef8b443"
+    },
+    {
+      "name": "modelatlas-vps-footprint",
+      "id": 12176340753,
+      "sha256": "db1ea1a20fe9abedaaa195e814294ebe80c8fc5ec08d59d3bfa8bf2e6f51356a"
+    },
+    {
+      "name": "modelatlas-vps-browser",
+      "id": 12176035820,
+      "sha256": "06110a7c1c988aa3b9999107d47371ce46cc42ebd6a5966635564b939da3b52b"
+    },
+    {
+      "name": "modelatlas-vps-linux-arm64",
+      "id": 12175116670,
+      "sha256": "6ae08026094d58b69221ba30e2da5d65bcf42fa93358ca6ab9ef9df7daef7229"
+    }
+  ],
+  "peak_rss_bytes": 182927360,
+  "idle_rss_bytes": 24809472,
+  "review": "自行檢視全部 142 張實圖的聯絡表及重點原圖；沒有獨立外部 reviewer。",
+  "limits": [
+    "此記錄只證明 14d0769，不代表較新 HEAD。",
+    "服務 RSS 不含 OS／代理／瀏覽器；未 merge、未遠端部署。",
+    "Mac／Android UI 與完整 Master Spec 的 PARTIAL 狀態不變。"
+  ]
+}
