@@ -27,3 +27,5 @@
 - 從實圖修正設定內容 shrink-to-fit 與舊綠色 backdrop；新增桌面設定寬度／相鄰分區幾何斷言。
 - 公開 last-good 快照按 operation／origin／模型／時間窗／匿名 role 先篩選再取上限；測試插入 237 筆其他模型快照後仍讀到舊公告，不借用 PAT 或其他 origin。
 - 本機完整 Go race／vet 通過；正式候選仍等待新 HEAD 六項同 SHA gate。此環境的外層 placeholder Git 影響 Go VCS stamping，本機僅用 GOFLAGS=-buildvcs=false，不改正式 CI 或測試內容。
+
+- 收尾加入逐欄編輯 revision：真 Key commit 回應延遲，關閉重開並編輯下一稿，即使秘密值再改回同一字串，晚回應也不得清除此稿；已開啟的 Provider 只反應更新清單，六份表單不重建。新真 Browser 驗一次寫入、另一帳戶原 Key 不變與新稿完整保留；原 Provider／CUSTOM 協定流程一併成功。

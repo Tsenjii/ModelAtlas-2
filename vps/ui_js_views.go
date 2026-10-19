@@ -11,7 +11,7 @@ async function refresh(){
  const version=++refreshVersion,values=await Promise.all([api("/providers"),api("/accounts"),api("/credentials"),apiPages("/models"),apiPages("/my-models?all=true"),api("/settings"),api("/endpoints")]);if(version!==refreshVersion)return;
  [providers,accounts,credentials,models,myModels,settings,endpointProfiles]=values;refreshAccountCheckins();renderSettingsForm();modelCatalogIndex=new Map(models.map(m=>[JSON.stringify([m.provider_id,m.id]),m]));modelFilterOptions();catalogIndexes();renderProviders();renderModels();renderCatalog();assistantTargets();
  const oldTarget=$("target").value;$("target").replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled&&operationLabels[targetOperation(m)]).forEach(m=>option($("target"),key(m),modelDisplayName(m)+" · "+operationLabels[targetOperation(m)]+" · "+(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" / "+connectionLabel(m)));if([...$("target").options].some(o=>o.value===oldTarget))$("target").value=oldTarget;
- modelPickerReady=true;syncModelPickerButton();const target=$("target").value;await sessionSelectRefresh();if(version!==refreshVersion)return;
+ if($("detail").open&&$("detail").dataset.kind==="provider")await $("detail-content").providerReload?.();modelPickerReady=true;syncModelPickerButton();const target=$("target").value;await sessionSelectRefresh();if(version!==refreshVersion)return;
  if(oldTarget!==target)resetMediaDraft();updatePlayground();
  if(!busy)await loadChat();
 }

@@ -15,11 +15,11 @@ func TestBrowserMacAlignmentWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
-	var inference, publicCalls, rotations, accountWrites atomic.Int32
-	var armSavedRead, failProviderRead atomic.Bool
+	var inference, publicCalls, rotations, accountWrites, keyWrites atomic.Int32
+	var armSavedRead, failProviderRead, armKey, keyReady atomic.Bool
 	var failNotice, windowReady, toggleReady, holdToggle atomic.Bool
-	windowRelease, toggleRelease := make(chan struct{}), make(chan struct{})
-	var releaseWindow, releaseToggle sync.Once
+	windowRelease, toggleRelease, keyRelease := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	var releaseWindow, releaseToggle, releaseKey sync.Once
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		publicCalls.Add(1)
 		if r.Header.Get("Authorization") != "" {
@@ -59,6 +59,7 @@ func TestBrowserMacAlignmentWorkflow(t *testing.T) {
 	defer up.Close()
 	defer releaseWindow.Do(func() { close(windowRelease) })
 	defer releaseToggle.Do(func() { close(toggleRelease) })
+	defer releaseKey.Do(func() { close(keyRelease) })
 	s := testServer(t)
 	s.Client = up.Client()
 	v := seed(t, s, up.URL+"/v1")
@@ -85,8 +86,12 @@ func TestBrowserMacAlignmentWorkflow(t *testing.T) {
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/__mac_alignment_fixture/state":
-			jsonOK(w, 200, map[string]any{"public_calls": publicCalls.Load(), "inference": inference.Load(), "window_ready": windowReady.Load(), "toggle_ready": toggleReady.Load(), "rotations": rotations.Load(), "account_writes": accountWrites.Load()})
+			jsonOK(w, 200, map[string]any{"public_calls": publicCalls.Load(), "inference": inference.Load(), "window_ready": windowReady.Load(), "toggle_ready": toggleReady.Load(), "rotations": rotations.Load(), "account_writes": accountWrites.Load(), "key_writes": keyWrites.Load(), "key_ready": keyReady.Load()})
 			return
+		case "/__mac_alignment_fixture/arm-key":
+			armKey.Store(true)
+		case "/__mac_alignment_fixture/release-key":
+			releaseKey.Do(func() { close(keyRelease) })
 		case "/__mac_alignment_fixture/arm-saved-read":
 			armSavedRead.Store(true)
 		case "/__mac_alignment_fixture/fail-notice":
@@ -102,6 +107,25 @@ func TestBrowserMacAlignmentWorkflow(t *testing.T) {
 		case "/__mac_alignment_fixture/append":
 			archiveInsert(t, s, v, "new-after-snapshot", "MANUAL_PRICE", "MANUAL", "SUCCESS", `{"price":{"input":"0","output":"0","unit":"USD/1K tokens"}}`, now())
 		default:
+			if r.URL.Path == "/api/v1/credentials" && r.Method == "POST" {
+				keyWrites.Add(1)
+				recorder := httptest.NewRecorder()
+				handler.ServeHTTP(recorder, r)
+				if armKey.Swap(false) {
+					keyReady.Store(true)
+					select {
+					case <-keyRelease:
+					case <-r.Context().Done():
+						return
+					}
+				}
+				for k, vs := range recorder.Header() {
+					w.Header()[k] = vs
+				}
+				w.WriteHeader(recorder.Code)
+				w.Write(recorder.Body.Bytes())
+				return
+			}
 			if r.URL.Path == "/api/v1/providers" && r.Method == "GET" && failProviderRead.Swap(false) {
 				http.Error(w, "synthetic saved read interruption", 503)
 				return
@@ -142,6 +166,7 @@ func TestBrowserMacAlignmentWorkflow(t *testing.T) {
 	cmd := exec.Command("node", "e2e/mac-alignment.cjs", app.URL)
 	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token)
 	out, err := cmd.CombinedOutput()
+	releaseKey.Do(func() { close(keyRelease) })
 	releaseWindow.Do(func() { close(windowRelease) })
 	releaseToggle.Do(func() { close(toggleRelease) })
 	if err != nil {
@@ -151,7 +176,7 @@ func TestBrowserMacAlignmentWorkflow(t *testing.T) {
 	s.Store.DB.QueryRow("SELECT COUNT(*) FROM account_checkins").Scan(&checkins)
 	s.Store.DB.QueryRow("SELECT COUNT(*) FROM observations").Scan(&observations)
 	s.Store.DB.QueryRow("SELECT COUNT(*) FROM my_models").Scan(&memberships)
-	if checkins != 1 || observations != 239 || memberships != 1 || inference.Load() != 0 || rotations.Load() != 2 || accountWrites.Load() != 1 {
+	if checkins != 1 || observations != 239 || memberships != 1 || inference.Load() != 0 || rotations.Load() != 2 || accountWrites.Load() != 1 || keyWrites.Load() != 1 {
 		t.Fatalf("persisted counts checkins=%d observations=%d membership=%d inference=%d rotations=%d", checkins, observations, memberships, inference.Load(), rotations.Load())
 	}
 	var enc string
