@@ -1,11 +1,15 @@
 # ModelAtlas VPS — Go / SQLite
 
+最新優先序是 **VPS 第一、Mac 第二、Android 第三**。同一來源的三平台下載見 [Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)，固定 tag／完整套件／發布檢查見 [RELEASES.md](../docs/RELEASES.md)。VPS 提供 AMD64／ARM64 tar.gz、VERSION.json／RELEASE.json、逐檔校驗與 install／update／download 工具；原備份、健康驗證與失敗／中斷回復保留。不使用自動安裝 HEAD 的更新方式。
+
+以下 SHA／量測是各切片歷史基線；最新整合版本以 Release 的來源 commit／RELEASE-MANIFEST.json 與 PR #20 同 SHA 九項為準，不把舊六項綠燈移作新版本證據。
+
 接續 VPS 公開研究排程第一階段：正式 UI／啟停／紀錄、每輪及每日 HTTP 上限、重啟接續與來源變更確認見 [RESEARCH_SCHEDULES.md](RESEARCH_SCHEDULES.md)。code `b1e0c66` 已同 SHA 六項 SUCCESS／23 Browser／303圖、Android976與原完整 workload；證據見 `../docs/verification/20261020/vps-scheduler-ci-baseline.json`。整體研究願望仍 PARTIAL，後續 HEAD 各自六項 CI；未遠端部署。維運 code `034e775` 已六項成功，證據見 `../docs/verification/20261020/vps-ops-ci-baseline.json`。
 
 已驗維運基線 VPS-OPS-006：先完成 VPS 日常使用與後續更新。完整架構套件包含版本／校驗、首次安裝、完整備份與副本預檢、健康驗證、自動回復及中斷復原；設定→資料可查看服務版本與儲存／Key 狀態。操作見 [UPDATE.md](UPDATE.md)。同 SHA 六項 CI 才驗收，不宣稱已在使用者主機部署；原跨平台與完整研究願望清單仍 PARTIAL。
 
 
-這是與 Android 同 repo、**獨立維護**的 VPS Web 服務。完整 V1 功能與實測驗收見 [DELIVERY.md](DELIVERY.md)。源自 Android 已驗收的產品契約（`docs/DECISIONS.md`、`docs/PRODUCT_SPEC.md`、`docs/RESEARCH_POLICY.md`），不是把 Android APK 改名當伺服器，也不會憑空聲稱全部同等功能。
+這是與 Android／Mac 同 repo、同來源交付、獨立程序執行的 VPS Web 服務。完整 V1 功能與實測驗收見 [DELIVERY.md](DELIVERY.md)。源自 Android 已驗收的產品契約（`docs/DECISIONS.md`、`docs/PRODUCT_SPEC.md`、`docs/RESEARCH_POLICY.md`），不是把 Android APK 改名當伺服器，也不會憑空聲稱全部同等功能。
 
 ## 架構及安全
 

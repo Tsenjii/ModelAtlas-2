@@ -1,0 +1,96 @@
+name: macOS Native App
+on:
+  pull_request:
+    paths:
+      - "macos/**"
+      - "vps/**"
+      - ".github/workflows/macos-native.yml"
+      - "docs/ACTIVE_TASK.md"
+      - "release/**"
+  push:
+    branches: [main]
+    paths:
+      - "macos/**"
+      - "vps/**"
+      - "release/**"
+      - ".github/workflows/macos-native.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: macos-native-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  macos-build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - name: Build universal native app and disk image
+        run: bash macos/scripts/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ModelAtlas-macOS-Universal
+          path: |
+            macos/dist/ModelAtlas-macOS-Universal.zip
+            macos/dist/ModelAtlas-macOS-Universal.dmg
+            macos/dist/SHA256SUMS.txt
+          if-no-files-found: error
+  macos-test:
+    needs: macos-build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            arch: arm64
+          - os: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ModelAtlas-macOS-Universal
+          path: macos/dist
+      - name: Test the same signed universal artifact on this architecture
+        run: bash macos/scripts/test.sh "${{ matrix.arch }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ModelAtlas-macOS-QA-${{ matrix.arch }}
+          path: |
+            macos/qa/**/ui/*.png
+            macos/qa/**/ui/native-smoke.json
+            macos/qa/**/ui/FAILURE.txt
+            macos/qa/**/ui/failure-state.json
+            macos/qa/**/parity-ui/*.png
+            macos/qa/**/parity-ui/motion/*.png
+            macos/qa/**/parity-ui/native-parity.json
+            macos/qa/**/parity-ui/FAILURE.txt
+            macos/qa/**/parity-footprint.json
+            macos/qa/**/parity-app.log
+            macos/qa/**/process-footprint.json
+            macos/qa/**/swift-tests.log
+            macos/qa/**/swift-test-build.log
+            macos/qa/**/trust-fixture.log
+            macos/qa/**/remove-fixture-*.log
+            macos/qa/**/revoke-fixture-trust.log
+            macos/qa/**/verify-fixture-*.log
+            macos/qa/**/*.diagnostics.log
+            macos/qa/**/stack-*.log
+            macos/qa/**/app-launch.log
+          if-no-files-found: warn

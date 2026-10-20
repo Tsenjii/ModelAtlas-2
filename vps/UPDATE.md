@@ -1,10 +1,12 @@
 # VPS 安裝與更新
 
-本輪切片 VPS-OPS-006：完整套件、資料庫升級前快照、預檢、健康檢查與更新失敗回復。只使用通過同 SHA 六項 CI 的套件；最新結果見 [PR #20](https://github.com/Tsenjii/ModelAtlas-2/pull/20)。這些流程不代表已替使用者部署到遠端主機，也不代表完整研究願望清單已完成。
+最新交付依 D-014 優先 VPS；完整版本在 [三平台 Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)，下載／發布規則見 [RELEASES.md](../docs/RELEASES.md)。同一 Release 皆為同 SHA 三平台，需九個必要 CI 全成功；VPS 執行時仍為單 Go binary／SQLite。
+
+維運切片 VPS-OPS-006：完整套件、資料庫升級前快照、預檢、健康檢查與更新失敗回復。只使用通過該版本必要 CI 的套件；最新結果見 [PR #20](https://github.com/Tsenjii/ModelAtlas-2/pull/20)。這些流程不代表已替使用者部署到遠端主機，也不代表完整研究願望清單已完成。
 
 ## 一般 VPS：Debian／Ubuntu + systemd
 
-在該 SHA 的 VPS Actions 下載 `modelatlas-vps-linux-amd64` 或 `modelatlas-vps-linux-arm64` artifact。`uname -m` 為 x86_64 選 amd64；aarch64／arm64 選 arm64。解開 artifact ZIP 後會有單一 binary、完整 tar.gz 與外層校驗檔。正式運行不需要 Go、Node、Python 或瀏覽器。
+優先從該版本 GitHub Release 下載對應 tar.gz 與 .sha256；Actions 只供正在驗證中的候選。在該 SHA 的 VPS Actions 亦可下載 `modelatlas-vps-linux-amd64` 或 `modelatlas-vps-linux-arm64` artifact。`uname -m` 為 x86_64 選 amd64；aarch64／arm64 選 arm64。解開 artifact ZIP 後會有單一 binary、完整 tar.gz 與外層校驗檔。正式運行不需要 Go、Node、Python 或瀏覽器。
 
 以下以 amd64 為例，先在可信 GitHub Actions 頁核對 commit／artifact SHA256，再檢查並解壓完整套件：
 
@@ -25,7 +27,13 @@ sudo sh deploy/install.sh "$PWD"
 
 會建立獨立 modelatlas 系統使用者、0700 資料目錄、root-only 0600 環境檔，產生一次性的隨機管理密碼與 master key，安裝並啟用服務。管理帳號為 `admin`；在自己的安全終端以 `sudoedit /etc/modelatlas/modelatlas.env` 查看管理密碼。首次產生後須將環境檔另行安全備份；不放入 Git、聊天或網址。資料預設 `/var/lib/modelatlas/atlas.sqlite`，binary 在 `/opt/modelatlas/modelatlas-vps`。
 
-日後每次下載並解開新套件後，只需：
+日後可從既有套件取得部署工具，以明確 tag 下載到新目錄，工具自動選架構並校驗完整套件，不會停止或安裝服務：
+
+```sh
+sh deploy/download.sh v0.8.0-preview.1 ../modelatlas-0.8.0-preview.1
+```
+
+選擇之後要更新的實際 tag，已存在的輸出目錄會拒絕覆寫。每次下載並解開新套件後，只需：
 
 ```sh
 sudo sh deploy/update.sh "$PWD"

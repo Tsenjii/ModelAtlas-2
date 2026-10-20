@@ -1,5 +1,7 @@
 # VPS 最新交付入口
 
+最新 D-014／VPS-RELEASE-008：**VPS 第一、Mac 第二、Android 第三**；三平台同源版本與下載見 [Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)、[RELEASES.md](../docs/RELEASES.md)。完整發布須新整合 HEAD 的九項及全部套件完整性成功；固定 tag 下載後再明確 install／update。公開 RELEASE-MANIFEST.json 保存真 SHA／run／job／artifact 與附件雜湊，不借下方歷史驗收。目標 VPS 部署仍需實際主機，這不代表完整願望清單已完成。
+
 接續 VPS 公開研究排程第一階段：正式 UI／啟停／紀錄、每輪及每日 HTTP 上限、重啟接續與來源變更確認見 [RESEARCH_SCHEDULES.md](RESEARCH_SCHEDULES.md)。code `b1e0c66` 已同 SHA 六項 SUCCESS／23 Browser／303圖、Android976與原完整 workload；證據見 `../docs/verification/20261020/vps-scheduler-ci-baseline.json`。整體研究願望仍 PARTIAL，後續 HEAD 各自六項 CI；未遠端部署。維運 code `034e775` 已六項成功，證據見 `../docs/verification/20261020/vps-ops-ci-baseline.json`。
 
 2026-10-20 最新優先序為 VPS-OPS-006：一般 VPS 完整安裝／更新／副本預檢／健康檢查／失敗與中斷復原，Git 平台升級前自動保存 schema 快照；說明及實際邊界見 [UPDATE.md](UPDATE.md)。本輪新 HEAD 的同 SHA 六項檢查與套件以 PR #20 最新結果為準。尚未部署到目標主機；完整 P1–P10／Part V／原生全量互通仍 PARTIAL。

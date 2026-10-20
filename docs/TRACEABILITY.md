@@ -400,3 +400,9 @@ MAC-INTELLIGENCE-008同片回歸：5cd93e7 Intel長串流25秒失敗，上游124
 | Requirement | 正式 caller／測試 | 狀態與界線 |
 | --- | --- | --- |
 | VPS-RESEARCH-SCHEDULE-007 | Models／Settings 研究 → `ui_js_research_schedules.go` → schedules APIs → `backgroundTick` → `researchScheduleTick` → 同 transaction enqueue／去重 → 原 `runResearchPending` → 真 HTTPS／每日保留 → candidate／evidence／summary。`research_schedule_test.go`／`research_schedule_browser_test.go` 包含跨日、重啟、人為暫停、取消真 HTTP、兩端同步及自己 ACK、定義 revision／來源確認、每輪接續、正式策略啟用和手機實圖 | ACCEPTED（所列第一階段）：code `b1e0c669ffea48575875e0c16b7da6980aca5552`／VPS 39448158004 四項＋Android 39448157661 兩項，同 SHA SUCCESS；14 情境／23 Browser／303圖／976項原生／原 workload／真 systemd，證據 `verification/20261020/vps-scheduler-ci-baseline.json`。禁止自動推論，不外推整體 WISH-CRAWL-001 或 P8–P10 完成；目標主機／實機未部署驗收。後續 HEAD 各自重新六項 gate |
+
+## VPS-RELEASE-008 三平台完整交付（2026-10-20 候選）
+
+| Requirement | 正式 caller／必要驗證 | 驗收界線 |
+| --- | --- | --- |
+| VPS-RELEASE-008 | release/version.properties → 各平台 build／實際 Android aapt2＋apksigner、Mac plist／BuildInfo／同源引擎、Linux RELEASE.json；release.yml → prepare.py 等同 SHA 九項 → 固定 CI artifact digest／全部套件 → publish.py draft／完整 upload digest／公開 prerelease → 真 HTTPS download.sh／bundle-check；release/test_release.py 保護 skipped／舊 SHA／舊綠燈／外站 token／缺平台／雜湊／路徑／tag／附件 | 新整合 HEAD 各自九項＋release-checks／實際發布成功後才能接受；即時精確 SHA／run／job 見 PR #20／RELEASE-MANIFEST.json。原測試／timeout／全部歷史與 expanded workload 保留；未合併 PR／未遠端部署。Android 固定正式簽署與 Mac 公證未設定，不外推完整願望清單完成。 |

@@ -18,10 +18,17 @@ schema=$(sed -n 's/^const schemaVersion = \([0-9][0-9]*\)$/\1/p' "$vps_dir/migra
 [ -n "$schema" ] || { echo 'missing schema version' >&2; exit 1; }
 printf '{"commit":"%s","built_at":"%s","os":"linux","arch":"%s","schema":%s}\n' \
   "$revision" "$MODELATLAS_BUILD_TIME" "$arch" "$schema" >"$bundle/VERSION.json"
-for file in install.sh update.sh manage.sh modelatlas-vps.service; do cp "$vps_dir/deploy/$file" "$bundle/deploy/$file"; done
+for file in install.sh update.sh manage.sh download.sh modelatlas-vps.service; do cp "$vps_dir/deploy/$file" "$bundle/deploy/$file"; done
+properties=$vps_dir/../release/version.properties
+version=$(sed -n 's/^version=//p' "$properties")
+tag=$(sed -n 's/^tag=//p' "$properties")
+[ -n "$version" ] && [ -n "$tag" ] || { echo 'missing release identity' >&2; exit 1; }
+case "$version:$tag" in *[!A-Za-z0-9.:-]*|'':*) echo 'invalid release identity' >&2; exit 1 ;; esac
+printf '{"schema":1,"version":"%s","tag":"%s","commit":"%s","os":"linux","arch":"%s","database_schema":%s}\n' \
+  "$version" "$tag" "$revision" "$arch" "$schema" >"$bundle/RELEASE.json"
 for file in "$vps_dir/"*.md; do cp "$file" "$bundle/"; done
 chmod 755 "$bundle/bin/$name" "$bundle/deploy/"*.sh
-(cd "$bundle" && sha256sum VERSION.json "bin/$name" deploy/install.sh deploy/update.sh deploy/manage.sh deploy/modelatlas-vps.service *.md >SHA256SUMS.txt)
+(cd "$bundle" && sha256sum VERSION.json RELEASE.json "bin/$name" deploy/install.sh deploy/update.sh deploy/manage.sh deploy/download.sh deploy/modelatlas-vps.service *.md >SHA256SUMS.txt)
 tar -C "$output" -czf "$output/$name.tar.gz" "$name"
 (cd "$output" && sha256sum "$name.tar.gz" >"$name.tar.gz.sha256")
 echo "$output/$name.tar.gz"

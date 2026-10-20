@@ -1,5 +1,7 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-20 最新 D-014：**VPS 第一、Mac 第二、Android 第三**。VPS-RELEASE-008 將 Mac e408262 的完整原生 App 子樹帶入最新 VPS／Android 交付來源，保留全部平台的原 caller／tests；整合 HEAD 必須重新九項，不借原分支綠燈。Release 同時提供 Linux 兩架構、Mac Universal 與 Android APK，簽署／原生 UI／生命週期及尚未完成差異繼續明示。以下較舊順序為歷史。
+
 2026-10-20 接續 VPS-RESEARCH-SCHEDULE-007：維運 code `034e775` 同 SHA 六項成功；新公開研究排程僅在目前引擎明確啟用，關閉瀏覽器仍由 VPS 服務執行，排程意圖／HTTP 保留量不隨同步帶到另一端。Mac／Android 原生排程管理及 OS 背景能力尚未對應；候選、證據與歷史仍同步，既有各平台優點保留。
 
 2026-10-20 前片指示先 VPS 可用性與後續更新（VPS-OPS-006），原同步核心與各平台優點保留。VPS 增加完整架構套件、schema 前快照、預檢／健康／失敗及中斷復原；此輪只修改 VPS 及維運文件，未把結果外推為 Mac／Android 實機或目標主機部署。較舊優先序為歷史。

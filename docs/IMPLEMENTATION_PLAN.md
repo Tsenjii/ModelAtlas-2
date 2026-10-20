@@ -1,5 +1,7 @@
 # ModelAtlas Implementation Plan
 
+最新 D-014／VPS-RELEASE-008：VPS 第一、Mac 第二、Android 第三。先統一三平台來源／版本／完整發布、更新首頁與 VPS 下載更新入口；九項同 SHA 及完整性 gate 後才公開預覽版。原願望與平台優點保留，詳 ACTIVE_TASK、TRACEABILITY、RELEASES.md。以下優先序為歷史。
+
 2026-10-20 前片使用者優先序：先 VPS-OPS-006（可日常部署與後續安全更新），caller／驗收／未部署界線見 ACTIVE_TASK、TRACEABILITY 及 vps/UPDATE.md。原 SYNC-001 剩餘原生對應／分塊、研究排程、未知站點、可量測改進、authenticity 與實機完整驗收保留；不因調整順序刪需求。
 
 

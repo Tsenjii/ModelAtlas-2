@@ -1,5 +1,19 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-20 新優先序與三平台交付（VPS-RELEASE-008）
+
+使用者最新指示 **VPS 第一、Mac 第二、Android 第三**，更新公開介紹，Release 要涵蓋三平台（D-014）。本片整合已驗 Mac `e408262817b7f4d9d70550cb15f828f9a0e21eb0` 的完整 macos/ 子樹與其兩份相容性文件到 VPS `50a08a95038f2424f2d6791c9d4acf225fb0b080` 基線，保留較新的 VPS／Android source、所有歷史與原測試，不以較舊 Mac 分支覆蓋 VPS 改善。兩個舊分支的原 CI 不代替整合 HEAD 的九項。
+
+- README 與 docs/RELEASES.md 改為目前三平台的能力／安裝／更新／簽署與完整功能界線。原 main SHA `5009e0c8` 的 Android run38408176782 build／device 已重查 SUCCESS，FEATURE FREEZE=OFF；未合併 PR。
+- 新增單一 release/version.properties；Android 真 APK version／minSdk／apksigner metadata、Mac Info.plist／BuildInfo／內建引擎 commit、VPS RELEASE.json 對齊同一 tag。Android／Mac workflow checkout 明確 PR head，不借 merge-ref。
+- Three-platform Release 只在受信任本庫分支 push／手動發布，PR 只檢查。等同 SHA 四 VPS＋兩 Android＋三 Mac 全 SUCCESS，下載固定 run 產物並核對原始 digest、Linux 每檔 hash／ELF／真 CLI、Mac 版本／來源、Android 實際簽章／APK，先 draft 完整上傳並核對 GitHub digest，才公開三平台 prerelease。已公開 tag 不移動／不覆寫。發布完整性回歸另跑，原 workload／測試／timeout 全保留。
+- VPS deploy/download.sh 指定 tag、自動選架構，僅下載到全新目錄、外層／內層校驗和 bundle-check；不停止／安裝服務，不執行 shell 載入秘密。發布後另驗真公開 HTTPS 下載。原 update 的備份／預檢／健康／失敗及中斷復原保留。
+- 發布與整合的即時驗收以 PR #20 最新 head 九項、Three-platform Release 及公開 RELEASE-MANIFEST.json 為準；未成功時仍候選，不把預期當結果。PR #21 的原 Mac 分支保留，之後從已驗統一來源接續。
+- Android 為 debug 簽署預覽 APK，固定正式簽署金鑰尚未設定；Mac 為 ad-hoc 未公證。沒有目標主機存取資料，未部署 VPS；公開排程、研究、自我改進、authenticity、同步分塊／部分原生呈現及原 Part V 28 項仍按原狀態追蹤，不因 Release 全平台就標全部完成。
+
+以下為較舊切片與證據，優先序以本節／D-014 為準。
+
+
 ## 2026-10-20 接續：VPS 公開研究排程（VPS-RESEARCH-SCHEDULE-007）
 
 - 本片 code `b1e0c669ffea48575875e0c16b7da6980aca5552` 已同 SHA 六項 SUCCESS：VPS `39448158004` test `118715496855`／browser `118715496992`／amd64 `118715497341`／arm64 `118715496849`；Android `39448157661` build `118715495693`／device `118715494503`。完整 Go race 231.476s／vet、14 個新增後端情境、真 systemd 41.80s、23 Browser／303圖全部通過；Android 976／0 failure／0 error／5 既有 skip。兩架構 25 檔／18份操作文件／版本／全部內外雜湊與真 amd64 CLI 已核對。服務待機 24,244,224 bytes／峰值 207,597,568 bytes（23.12／197.98 MiB），原完整 workload 未減，排除 OS／proxy／browser；不是目標主機量測。原始 job／artifact／SHA256／完整量測及界線見 `verification/20261020/vps-scheduler-ci-baseline.json`。
