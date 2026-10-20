@@ -372,7 +372,7 @@ MAC-INTELLIGENCE-008同片回歸：5cd93e7 Intel長串流25秒失敗，上游124
 
 | Requirement | 既有基礎與待補正式流程 | 必要驗收 | 狀態 |
 | --- | --- | --- | --- |
-| WISH-CRAWL-001 | VPS `research_schedule.go` 持久公開 discovery／HTTP 上限／重啟／來源確認；`ui_js_research_schedules.go` 正式啟停／紀錄；metadata sync 獨立；詳見 `vps/RESEARCH_SCHEDULES.md` | 本片真 TLS／跨日／重啟／來源與工作同步／UI 候選；完整推論／費用／逐憑證 quota、地區／並行／退避及原生生命週期仍待完成 | PARTIAL：第一階段候選，六項 gate 待驗；全部原驗收條件保留 |
+| WISH-CRAWL-001 | VPS `research_schedule.go` 持久公開 discovery／HTTP 上限／重啟／來源確認；`ui_js_research_schedules.go` 正式啟停／紀錄；metadata sync 獨立；詳見 `vps/RESEARCH_SCHEDULES.md` | 本片真 TLS／跨日／重啟／來源與工作同步／UI 候選；完整推論／費用／逐憑證 quota、地區／並行／退避及原生生命週期仍待完成 | PARTIAL：VPS 公開第一階段 code `b1e0c66` 六項／23 Browser／303圖已驗；完整原驗收條件保留 |
 | WISH-CRAWL-002 | `research_execute.go`、`assistant_tools.go`、`connectors.go` 已有來源與提案基礎；待補未知站點識別到有效 mapping 的端到端流程 | fixture＋有界真 HTTP、scope／單位／auth、Review／啟用／失敗保留／回退 | OPEN：待完成／待驗收 |
 | WISH-REFL-001 | `reflection.go`、`knowledge.go` 已有報告與版本；待補跨輪具體策略生成、比較評估、啟用及監測閉環 | 品質／成本基線、下一輪實際採用版本、失敗提案拒絕與退化回退 | OPEN：待完成／待驗收 |
 | WISH-AUTH-001 | `research_execute.go` 最小 inference 與 metadata；待補獨立 fingerprint suite 及可信跨 Provider 對照 | 正反例／真站對照、版本／成本／confidence、矛盾與不足判定 | OPEN：待完成／待驗收 |
@@ -395,8 +395,8 @@ MAC-INTELLIGENCE-008同片回歸：5cd93e7 Intel長串流25秒失敗，上游124
 | VPS-OPS-006 | `deploy/package.sh`→同 commit／架構 VERSION／SHA256→`install.sh`／`update.sh`→`manage.sh`；`operations.go` env／完整 snapshot／副本 migration／restore／authenticated readiness；`store.go` schema 寫入前自動快照與版本／vault guard；`system_status.go` maintenance gate＋worker；Settings 資料狀態 last-good／retry | ACCEPTED（所列 code／CI 範圍）：`034e775fafc5a51af0f62753389508dfed24c739` VPS 39420196524 四項＋Android 39420196530 兩項同 SHA SUCCESS；976／0 failure／0 error／5 原 skip，22 Browser／295圖、完整 race／vet／真 systemd 40.84s 與原 workload。證據 `verification/20261020/vps-ops-ci-baseline.json`；目標主機／平台部署及完整 P1–P10 未驗，無自動安裝未驗證 HEAD |
 
 
-## VPS-RESEARCH-SCHEDULE-007 持續公開研究排程（2026-10-20 候選）
+## VPS-RESEARCH-SCHEDULE-007 持續公開研究排程（2026-10-20 已驗 code）
 
 | Requirement | 正式 caller／測試 | 狀態與界線 |
 | --- | --- | --- |
-| VPS-RESEARCH-SCHEDULE-007 | Models／Settings 研究 → `ui_js_research_schedules.go` → schedules APIs → `backgroundTick` → `researchScheduleTick` → 同 transaction enqueue／去重 → 原 `runResearchPending` → 真 HTTPS／每日保留 → candidate／evidence／summary。`research_schedule_test.go`／`research_schedule_browser_test.go` 包含跨日、重啟、人為暫停、取消真 HTTP、兩端同步及自己 ACK、定義 revision／來源確認、每輪接續、正式策略啟用和手機實圖 | CANDIDATE：本片新 HEAD 六項與原 workload／全部22流程加第23流程待驗。第一階段禁止自動推論，不把局部完成外推為整體 WISH-CRAWL-001 或 P8–P10 完成；目標主機／實機未部署驗收 |
+| VPS-RESEARCH-SCHEDULE-007 | Models／Settings 研究 → `ui_js_research_schedules.go` → schedules APIs → `backgroundTick` → `researchScheduleTick` → 同 transaction enqueue／去重 → 原 `runResearchPending` → 真 HTTPS／每日保留 → candidate／evidence／summary。`research_schedule_test.go`／`research_schedule_browser_test.go` 包含跨日、重啟、人為暫停、取消真 HTTP、兩端同步及自己 ACK、定義 revision／來源確認、每輪接續、正式策略啟用和手機實圖 | ACCEPTED（所列第一階段）：code `b1e0c669ffea48575875e0c16b7da6980aca5552`／VPS 39448158004 四項＋Android 39448157661 兩項，同 SHA SUCCESS；14 情境／23 Browser／303圖／976項原生／原 workload／真 systemd，證據 `verification/20261020/vps-scheduler-ci-baseline.json`。禁止自動推論，不外推整體 WISH-CRAWL-001 或 P8–P10 完成；目標主機／實機未部署驗收。後續 HEAD 各自重新六項 gate |

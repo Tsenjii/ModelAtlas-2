@@ -1,6 +1,6 @@
 # ModelAtlas VPS — Go / SQLite
 
-接續 VPS 公開研究排程第一階段：正式 UI／啟停／紀錄、每輪及每日 HTTP 上限、重啟接續與來源變更確認見 [RESEARCH_SCHEDULES.md](RESEARCH_SCHEDULES.md)。整體研究願望仍 PARTIAL，新 HEAD 六項 CI 另驗；未遠端部署。維運 code `034e775` 已六項成功，證據見 `../docs/verification/20261020/vps-ops-ci-baseline.json`。
+接續 VPS 公開研究排程第一階段：正式 UI／啟停／紀錄、每輪及每日 HTTP 上限、重啟接續與來源變更確認見 [RESEARCH_SCHEDULES.md](RESEARCH_SCHEDULES.md)。code `b1e0c66` 已同 SHA 六項 SUCCESS／23 Browser／303圖、Android976與原完整 workload；證據見 `../docs/verification/20261020/vps-scheduler-ci-baseline.json`。整體研究願望仍 PARTIAL，後續 HEAD 各自六項 CI；未遠端部署。維運 code `034e775` 已六項成功，證據見 `../docs/verification/20261020/vps-ops-ci-baseline.json`。
 
 已驗維運基線 VPS-OPS-006：先完成 VPS 日常使用與後續更新。完整架構套件包含版本／校驗、首次安裝、完整備份與副本預檢、健康驗證、自動回復及中斷復原；設定→資料可查看服務版本與儲存／Key 狀態。操作見 [UPDATE.md](UPDATE.md)。同 SHA 六項 CI 才驗收，不宣稱已在使用者主機部署；原跨平台與完整研究願望清單仍 PARTIAL。
 

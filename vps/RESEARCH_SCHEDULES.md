@@ -25,7 +25,7 @@ VPS-RESEARCH-SCHEDULE-007；WISH-CRAWL-001 的第一階段，整體仍 PARTIAL�
 | 每輪耗盡 | 保留舊輪所有結果，下一個間隔以新輪及明確 continued_from 接續未執行公開工作；避免前面的來源一直吃掉小上限。接續完成後才開始下一次完整掃描 |
 | 每日耗盡 | 不發送超額請求，也不為未發送請求產生來源失敗證據；保存本輪 checkpoint，下一個 UTC 日在相同輪次繼續 |
 | Brave／AA 整合限制 | 保留 Brave 原每日 admission cap、AA 獨立固定 24 小時 window／站方 remaining。已達整合限制等待其重設，不每 30 秒空轉重試；不宣稱已實作所有逐憑證費用／推論 quota |
-| 重啟接續 | 只有此主機已確認的本機排程且 durable intent=1 才自動恢復；中斷工作最多三次重播，已成功的工作不重做；手動暫停／取消與一般手動 ResearchRun 不自動恢復 |
+| 重啟接續 | 只有此主機已確認的本機排程且 durable intent=1 才自動恢復；中斷工作最多三次重播，已完成的工作不重做；單一多頁工作（例如 AA）若尚未完成，重啟／接續時會從該工作重新讀取，尚未提供逐頁 checkpoint，用量不退款；手動暫停／取消與一般手動 ResearchRun 不自動恢復 |
 | 讀取失敗 | 清單與表單分開；保留 last-good 和草稿。保存已提交但清單更新失敗，只重讀清單，不重送保存請求；過期 revision 拒絕覆寫 |
 
 這階段只做公開 discovery／inspect 與可選整合資料讀取；**不接受模型連線 Selections、MinimalInference 或 ProbeBudget**。整合 Key 保持既有 vault 與固定 origin；不送給新發現的網站。HTTP 200、模型名稱、free 字樣或最小回覆都不是免費／身份／能力的充分證明。
@@ -44,6 +44,6 @@ schema19 以三張新增表保存定義、輪次意圖與每日保留量。這�
 
 `research_schedule_test.go` 使用正式 Handler／SQLite、真 TLS upstream，驗證預設關閉、到期／並發去重、每輪接續／每日及全域上限、UTC 跨日、完整關閉再開啟 DB、手動暫停意圖、真 HTTP 取消、來源改動、兩台引擎的真 HTTPS 同步／自己的 ACK、策略正式啟用與 v18 遷移前備份。`research_schedule_browser_test.go` → `e2e/research-schedules.cjs` 走實際 UI／worker／HTTP／候選與上限，包含等待防重、提交後刷新失敗、草稿、紀錄、停用／編輯保留當日量，以及 320／375／1280 深淺色、200% 共 8 圖。
 
-新 code HEAD 仍須完整六項同 SHA CI、原22 Browser／295圖及原 expanded workload，加本片第23流程／8圖才能驗收本片。不能借前片 `034e775` 的綠燈替代。
+code `b1e0c669ffea48575875e0c16b7da6980aca5552` 已同 SHA VPS 四項＋Android 兩項 SUCCESS；完整 race／vet、真 systemd、14 個新增後端情境、23 Browser／303圖及原 expanded workload 已通過，Android 976／0 failure／0 error／5 原 skip。新增8圖已目視檢查。詳細 job／artifact／SHA256／完整 workload 在 `docs/verification/20261020/vps-scheduler-ci-baseline.json`。後續 HEAD／驗收文件提交各自重新六項 CI，最新結果以 PR #20 checks 為準；不借用前一 SHA 的綠燈。
 
 完整 WISH-CRAWL-001 尚缺每輪／每日推論與費用、實際逐憑證 quota、地區／可調並行、429／502 自動退避及更完整的高價值／過期重驗策略；Mac／Android 原生排程設定與各自 OS 生命週期尚未對應。未知站點 Connector、具品質／成本對照的 Reflection、authenticity、真站長跑／目標 VPS／實機驗收全部保留。通知仍預設 OFF。

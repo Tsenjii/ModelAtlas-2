@@ -2,6 +2,8 @@
 
 ## 2026-10-20 接續：VPS 公開研究排程（VPS-RESEARCH-SCHEDULE-007）
 
+- 本片 code `b1e0c669ffea48575875e0c16b7da6980aca5552` 已同 SHA 六項 SUCCESS：VPS `39448158004` test `118715496855`／browser `118715496992`／amd64 `118715497341`／arm64 `118715496849`；Android `39448157661` build `118715495693`／device `118715494503`。完整 Go race 231.476s／vet、14 個新增後端情境、真 systemd 41.80s、23 Browser／303圖全部通過；Android 976／0 failure／0 error／5 既有 skip。兩架構 25 檔／18份操作文件／版本／全部內外雜湊與真 amd64 CLI 已核對。服務待機 24,244,224 bytes／峰值 207,597,568 bytes（23.12／197.98 MiB），原完整 workload 未減，排除 OS／proxy／browser；不是目標主機量測。原始 job／artifact／SHA256／完整量測及界線見 `verification/20261020/vps-scheduler-ci-baseline.json`。
+- ACCEPTED 限此 VPS 公開研究第一階段的 caller／測試；WISH-CRAWL-001 及完整 P8–P10 仍 PARTIAL。以下新 HEAD／驗收文件提交仍須自己的六項 gate，結果以 PR #20 最新 checks 為準；原 28 個完整驗收 checkbox 未提前勾選。截圖等待成功提示消失，200% 改存完整頁面，避免固定提示／導航在元素裁切裡遮住內容；全部斷言、8圖與原有測試／timeout 保留。
 - 前片 VPS-OPS-006 code `034e775fafc5a51af0f62753389508dfed24c739` 已同 SHA 六項 SUCCESS：VPS `39420196524` test `118618941602`／browser `118618940875`／amd64 `118618941243`／arm64 `118618941309`；Android `39420196530` build `118618951927`／device `118618952519`。Android 976 項、0 failure／0 error、5 項既有 skip；完整 Go race／vet、真 systemd 安裝→TLS inference→更新→失敗回復→SIGKILL 接續、22 Browser／295 PNG 與原 expanded workload 均通過。服務程序待機 24,072,192 bytes／峰值 180,957,184 bytes，不含 OS／代理／瀏覽器。兩架構套件內外雜湊／24 個檔案、真 amd64 version／bundle-check 已獨立核對；前片驗收範圍限程式與 CI，尚無目標 VPS，未遠端部署。
 - 使用者續行既定完整 VPS 目標；本輪唯一切片為 VPS-RESEARCH-SCHEDULE-007：預設關閉的持久公開資料探索排程、每輪／每日 HTTP 上限、去重、重啟接續、明確停用及正式 UI／紀錄。來源變更需本機確認，遠端研究歷史不能成為可執行工作。metadata sync 保持獨立；不自動推論或花用模型 Key。
 - WISH-CRAWL-001 仍 PARTIAL；推論／費用／逐憑證 quota、429／502 自動退避、地區／並行控制及原生生命週期仍待後續完整落地。未知站點 Connector／可量測 Reflection／authenticity 與原願望清單全部保留，不以第一階段提前勾選。

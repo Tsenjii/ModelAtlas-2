@@ -2810,7 +2810,7 @@ Astra 開工前必須先：
 
 # Part V — 我的願望清單補充：完整研究與自我改進（2026-10-19）
 
-本章依使用者要求，將功能盤點後應補齊的項目加入原願望清單，並細化 Part I、II、IV 的驗收條件。原文與既有需求全部保留；WISH-CRAWL-001 已進入 **PARTIAL：VPS 公開研究排程第一階段候選**，其餘四項為 **OPEN：待完成／待驗收**。寫入清單不代表功能已實作，也不會把完整 Master Spec 升為已完成。
+本章依使用者要求，將功能盤點後應補齊的項目加入原願望清單，並細化 Part I、II、IV 的驗收條件。原文與既有需求全部保留；WISH-CRAWL-001 已進入 **PARTIAL：VPS 公開研究排程第一階段已驗**，其餘四項為 **OPEN：待完成／待驗收**。寫入清單不代表功能已實作，也不會把完整 Master Spec 升為已完成。
 
 查核基準是 VPS code `ae0849294fdcf4f48c0cf549de797e59afd53ecb`（2026-10-19）。該版本已有研究任務、候選與證據、有限預算、反思報告、版本提案及明確啟用／回退的基礎；本章追蹤尚未完整交付的持續發現、未知站點理解、真實性驗證與可量測的學習閉環。平台及最新驗收狀態仍見 `ACTIVE_TASK.md`、`TRACEABILITY.md`。
 
@@ -2818,7 +2818,7 @@ Astra 開工前必須先：
 
 | 順序 | Requirement ID | 願望 | 對應既有範圍 | 狀態 |
 | --- | --- | --- | --- | --- |
-| 1 | WISH-CRAWL-001 | 持續自主發現與研究排程 | Part I §33–39、§45／P8 | PARTIAL（第一階段候選） |
+| 1 | WISH-CRAWL-001 | 持續自主發現與研究排程 | Part I §33–39、§45／P8 | PARTIAL（VPS 公開第一階段已驗） |
 | 2 | WISH-CRAWL-002 | 未知站點解析與 Connector 提案 | Part I §30、§36、§40；Intelligence Contract §18–19／P8、P10 | OPEN |
 | 3 | WISH-REFL-001 | 可評估、可啟用、可回退的研究改進閉環 | Part I §40、Part IV／P10 | OPEN |
 | 4 | WISH-AUTH-001 | 完整模型真實性與替換風險驗證 | Part I §37–38、Part II／P8 | OPEN |
@@ -2828,7 +2828,7 @@ Astra 開工前必須先：
 
 ## WISH-CRAWL-001：持續自主發現與研究排程
 
-2026-10-20 進度：VPS-RESEARCH-SCHEDULE-007 候選接上正式 UI、持久公開探索、每輪／每日 HTTP 上限、重啟／啟停及本機來源確認，詳見 `vps/RESEARCH_SCHEDULES.md`。整項仍 PARTIAL；以下六個完整驗收條件全部保留，未因第一階段提前勾選。推論／費用／逐憑證 quota、地區／並行／自動退避和原生生命週期仍待後續。
+2026-10-20 進度：VPS-RESEARCH-SCHEDULE-007 code `b1e0c66` 已以同 SHA 六項 CI／23 Browser／303圖驗證並接上正式 UI、持久公開探索、每輪／每日 HTTP 上限、重啟／啟停及本機來源確認，詳見 `vps/RESEARCH_SCHEDULES.md`。整項仍 PARTIAL；以下六個完整驗收條件全部保留，未因第一階段提前勾選。推論／費用／逐憑證 quota、地區／並行／自動退避和原生生命週期仍待後續。
 
 - [ ] 在 App 中管理持久化研究排程，定期建立新的全球／多語 discovery ResearchRun，持續發現新 Provider，並重新查核高價值、過期及先前失敗的候選。
 - [ ] 排程可設定間隔、來源／語言／地區優先序、並行上限、每輪及每日 HTTP／inference／費用預算；預算按實際 credential／quota scope 計算，避免耗盡有限免費額度。
