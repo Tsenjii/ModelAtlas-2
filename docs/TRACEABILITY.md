@@ -379,3 +379,11 @@ MAC-INTELLIGENCE-008同片回歸：5cd93e7 Intel長串流25秒失敗，上游124
 | WISH-ACCEPT-001 | 現有 CI／Browser／footprint 只涵蓋已執行範圍；待補真站長跑、實際部署及各平台／實機完整矩陣 | Requirement→正式 caller→測試／實圖／真站證據→同 SHA 必要 CI／review；保留所有未驗情境 | OPEN：待完成／待驗收 |
 
 盤點 code 基準 `ae0849294fdcf4f48c0cf549de797e59afd53ecb`：VPS [39258806970](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39258806970) 四項及 Android [39258806978](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39258806978) build／device-tests 同 SHA SUCCESS，僅支持既有切片；不作上述五項的 ACCEPTED 證據。本次文件提交的 CI 另查 PR #20 最新 HEAD，不外推前一 SHA。
+
+## SYNC-001 跨平台同步核心（2026-10-20 已驗範圍）
+
+| Requirement | 正式 caller／驗證 | 狀態 |
+| --- | --- | --- |
+| SYNC-001 | VPS Settings→workspace API／持久journal；Android Settings→DeviceWorkspaceSync→Room／Keystore→WorkspaceSyncWorker；Mac Settings資料→WorkspaceSyncView→loopback AtlasClient→共用Go HTTPS／Keychain。真TLS雙向／第二原生端／精確ID與origin／匿名與scoped移除／4MiB歷史／雙方衝突／真背景等待與取消／重啟／撤銷；21 Browser、Android973、Mac各82核心及152靜態圖＋28frame | 所列核心由VPS／Android `c9d1d33` 六項與Mac `f67cfa4` 九項同SHA成功；整體仍PARTIAL，未對應的原生呈現、大型分塊與部署／實機尚未驗收。Part V二十八項不因此完成。 |
+
+精確job／artifact／內外層SHA256、量測界線與限制見`docs/verification/20261020/sync-ci-baseline.json`。這些是code基線，不代替後續文件HEAD的完整CI。保留所有原測試、timeout、完整context、歷史與workload；本片未有獨立外部reviewer、未合併PR／部署。

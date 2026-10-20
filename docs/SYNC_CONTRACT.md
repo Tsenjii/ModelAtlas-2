@@ -28,8 +28,12 @@ Android 的未知 null 群組、複合自訂認證與尚未有同義呈現的功
 
 ## 驗證與仍待驗收
 
+2026-10-20最新code：VPS／Android `c9d1d33` 六項、Mac `f67cfa4` 九項同SHA SUCCESS。Mac兩架構各82核心／76靜態圖／14frame、Android973項與21 Browser已通過；新409真生命週期競態已修，等待可取消、不盲目重跑。Mac 0.7.0 build13的Universal／QA artifact與內外層SHA256已核對。完整證據見`docs/verification/20261020/sync-ci-baseline.json`。以下6ec資料為前一code基線，不外推新HEAD；本次文件HEAD仍另跑必要完整CI。
+
+2026-10-20 code `6ec4662` 已由 VPS `39403490771` 四項與 Android `39403490790` 兩項同 SHA SUCCESS。Android 報告 973 項、0 failure／0 error、5 項既有 API skip；真 Go↔原生整合 4.766 秒通過，另驗 Android→中心→第二原生端、原始 Offering／Availability ID、跨帳號 origin、匿名及逐 scope 成員移除。Browser 21 個流程與 288 圖完成，新同步 7 圖已自行檢視；原 workload 保留，單服務峰值 180,740,096 bytes。精確證據見 `vps/verification/20261020/6ec4662-sync-baseline.json`。這是指定 code SHA 的驗收，不外推後續文件 HEAD 或 Mac 新候選。
+
 - Go 真實 TLS 雙向同步、目的端重新加密、Key 版本更新、離線衝突兩種選擇、撤銷、metadata-only、64 位整數、成員刪除與歷史保留已有整合測試。
 - Browser 新增真實配對、衝突預覽與選擇、撤銷後保留資料；原有全部流程保留。320／375px、深淺色、200% 字級與 48px 控制項皆有檢查；測試環境安裝繁中文字型。
 - Android 以同一 production manager、Room、Keystore，連到 CI 的真正 Go HTTPS 引擎；包含超過 CursorWindow 的保留訊息、雙向編輯、衝突與撤銷。測試 fixture 不隨產品啟動，不連線真實供應商。
-- Mac 原生設定入口已準備；須整合已全綠的引擎後，重新跑 Universal build、兩架構 native QA。
+- Mac 原生設定入口與真 packaged engine／Keychain／HTTPS重啟接續已由PR #21 code `f67cfa4` 的九項及實圖通過；App／Engine均含arm64和x86_64，原78核心／148靜態圖及28frame全保留。完整產品與實機範圍仍按上列限制接續。
 - 所有結果以 ACTIVE_TASK 的精確 SHA 與 Actions 為準。目前沒有目標 VPS 部署、Sharp R8s／iPhone／M2 實機驗收；Part V 的爬蟲排程、未知站點、自我改進及真實性驗證仍各自保留待辦，不能提前勾選完成。
