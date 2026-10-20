@@ -46,3 +46,51 @@ jobs:
           PY
       - name: Run all release boundary regressions with the public certificate fixture
         run: python3 -m unittest discover -s release -p 'test_*.py' -v
+      - name: Verify actual Linux and Mac bundles with the production release verifier
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import io, json, os, plistlib, subprocess, sys, tempfile, zipfile
+          from pathlib import Path
+          sys.path.insert(0, 'release')
+          from prepare import GitHub, REPOSITORY, digest, linux_bundle, member, read_zip, require, sums
+          source = 'be2605f61806a9db8b35e9bdc85f1950bcc54da2'
+          api = GitHub(os.environ['GH_TOKEN'])
+          with tempfile.TemporaryDirectory() as temporary:
+              root = Path(temporary)
+              for run_id, names in [
+                  (39459229921, ['modelatlas-vps-linux-amd64', 'modelatlas-vps-linux-arm64']),
+                  (39459229916, ['ModelAtlas-macOS-Universal']),
+              ]:
+                  artifacts = {a['name']: a for a in api.pages('/repos/' + REPOSITORY + '/actions/runs/' + str(run_id) + '/artifacts', 'artifacts')}
+                  for name in names:
+                      path = root / (name + '.zip')
+                      api.download(artifacts[name], path)
+                      with read_zip(path) as archive:
+                          if name.startswith('modelatlas-vps-linux-'):
+                              arch = name.rsplit('-', 1)[-1]
+                              raw = member(archive, name + '.tar.gz')
+                              require(sums(member(archive, name + '.tar.gz.sha256')) == {name + '.tar.gz': digest(raw)}, 'outer checksum mismatch')
+                              files, version = linux_bundle(raw, arch, source, 'v0.8.0-preview.1')
+                              if arch == 'amd64':
+                                  directory = root / 'linux'
+                                  for filename, data in files.items():
+                                      target = directory / filename
+                                      target.parent.mkdir(parents=True, exist_ok=True)
+                                      target.write_bytes(data)
+                                  binary = directory / 'bin' / name
+                                  binary.chmod(0o755)
+                                  require(json.loads(subprocess.check_output([str(binary), 'version'], text=True)) == version, 'actual binary identity mismatch')
+                                  subprocess.run([str(binary), 'ops', 'bundle-check', '--directory', str(directory)], check=True)
+                              print('ACTUAL RELEASE BUNDLE PASS:', name, len(files), flush=True)
+                          else:
+                              raw = member(archive, 'ModelAtlas-macOS-Universal.zip')
+                              dmg = member(archive, 'ModelAtlas-macOS-Universal.dmg')
+                              require(sums(member(archive, 'SHA256SUMS.txt')) == {'ModelAtlas-macOS-Universal.zip': digest(raw), 'ModelAtlas-macOS-Universal.dmg': digest(dmg)}, 'Mac checksum mismatch')
+                              with zipfile.ZipFile(io.BytesIO(raw)) as app:
+                                  info = json.loads(app.read('ModelAtlas.app/Contents/Resources/BuildInfo.json'))
+                                  plist = plistlib.loads(app.read('ModelAtlas.app/Contents/Info.plist'))
+                              require(info['commit'] == source and info['tag'] == 'v0.8.0-preview.1' and plist['CFBundleShortVersionString'] == '0.8.0' and plist['CFBundleVersion'] == '14', 'Mac identity mismatch')
+                              print('ACTUAL RELEASE BUNDLE PASS:', name, info['commit'], flush=True)
+          PY
