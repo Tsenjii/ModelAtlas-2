@@ -9,6 +9,8 @@
 - 本機原完整 Go race 已有一輪 PASS（202.362s），新離線操作 race 回歸 PASS；新增真 systemd 安裝／TLS inference／更新／啟動失敗回復／SIGKILL 復原／損壞套件拒絕，須在真正 systemd CI 執行，不能以本機無 systemd 當通過。新 HEAD 六項 gate、原21 Browser／288圖＋新狀態流程／7圖與原 expanded workload 重新驗，未驗前維持 CANDIDATE。
 - 尚無目標主機 IP／已部署 URL／登入方式，未遠端部署；不 merge PR，PR #20 維持 Draft。爬蟲排程／未知站點／可量測 Reflection／authenticity 與 Part V 28 項仍 OPEN，不宣稱全部功能完成。
 
+- 首個完整維運候選 `af6184e64510bf12eab1dd22a90cbe0290620cc1`：VPS `39418940266` 的原完整 Go race213.076s／vet及22個Browser／兩架構成功，但真systemd首次安裝失敗（118614980832），因此不是六項全綠。自訂root包含 `/opt/modelatlas` 時連續sed替換會重寫已展開路徑，改為分離marker再展開；保留完整systemd驗證與所有硬化設定。新候選並補已committed主機重啟恢復／不重播新寫入、缺DB拒絕空初始化，以及SIGKILL後子程序釋放部署鎖的真等待；完整六項重新驗，不以修前綠燈借驗。
+
 
 ## 2026-10-20 認證角色補強（SYNC-001 同片新候選）
 

@@ -52,6 +52,9 @@ chmod 600 "$env"
 chown root:root "$env"
 db=$("$candidate" ops database --env-file "$env" --default-db "$data/atlas.sqlite" --gate-file "$gate")
 case "$db" in "$data"/*) ;; *) fail '此工具只管理安裝資料目錄內的 DB；其他平台路徑請依 UPDATE.md 使用離線 ops。' ;; esac
+if [ ! -f "$pending" ] && { [ "$mode" = update ] || systemctl is-active --quiet "$unit.service"; }; then
+  [ -s "$db" ] || fail '找不到既有資料庫，保留目前服務；不建立空資料取代。'
+fi
 
 checkpoint() {
   printf '%s\n' "$1" >"$backup/phase.next" || return 1
@@ -59,10 +62,10 @@ checkpoint() {
   mv "$backup/phase.next" "$backup/phase" || return 1
   sync -f "$backup" || return 1
 }
-wait_previous() {
+wait_service() {
   count=0
   while [ "$count" -lt 30 ]; do
-    if "$candidate" ops ready-previous --env-file "$env" --default-db "$data/atlas.sqlite" >/dev/null 2>&1; then return 0; fi
+    if "$1" ops "$2" --env-file "$env" --default-db "$data/atlas.sqlite" >/dev/null 2>&1; then return 0; fi
     count=$((count+1))
     sleep 1
   done
@@ -78,13 +81,15 @@ recover_pending() {
   phase=$(cat "$backup/phase")
   case "$phase" in prepared|activating|restored|committed) ;; *) echo '更新階段不明，未覆寫任何資料。' >&2; return 1 ;; esac
   if [ "$phase" = committed ]; then
+    [ -s "$db" ] || { echo '已提交更新的 DB 不存在，未建立空資料。' >&2; return 1; }
+    systemctl start "$unit.service" && wait_service "$opt/modelatlas-vps" ready || return 1
     rm -f "$gate"
     mv "$pending" "$backup/committed" || return 1
     return 0
   fi
   if [ "$phase" = restored ]; then
     rm -f "$gate"
-    if [ -f "$backup/was-active" ]; then systemctl start "$unit.service" && wait_previous || return 1; fi
+    if [ -f "$backup/was-active" ]; then systemctl start "$unit.service" && wait_service "$candidate" ready-previous || return 1; fi
     mv "$pending" "$backup/recovered" || return 1
     return 0
   fi
@@ -102,7 +107,7 @@ recover_pending() {
   systemctl daemon-reload || return 1
   checkpoint restored || return 1
   rm -f "$gate"
-  if [ -f "$backup/was-active" ]; then systemctl start "$unit.service" && wait_previous || return 1; fi
+  if [ -f "$backup/was-active" ]; then systemctl start "$unit.service" && wait_service "$candidate" ready-previous || return 1; fi
   mv "$pending" "$backup/recovered" || return 1
   echo "已回復更新前的程式／資料，備份保留於 $backup"
 }
@@ -148,12 +153,19 @@ fi
 checkpoint activating
 install -m 755 "$candidate" "$opt/.candidate-binary"
 mv -f "$opt/.candidate-binary" "$opt/modelatlas-vps"
-sed -e "s|/var/lib/modelatlas|$data|g" -e "s|/etc/modelatlas|$etc|g" -e "s|/opt/modelatlas|$opt|g" \
-  "$bundle/deploy/modelatlas-vps.service" >"$backup/new-unit"
+# Resolve original template paths to distinct markers first. A custom root may
+# itself contain /opt/modelatlas; replacements must never rewrite earlier ones.
+sed -e 's|/var/lib/modelatlas|@MODELATLAS_DATA@|g' -e 's|/etc/modelatlas|@MODELATLAS_ETC@|g' -e 's|/opt/modelatlas|@MODELATLAS_OPT@|g' \
+  "$bundle/deploy/modelatlas-vps.service" >"$backup/unit-template"
+sed -e "s|@MODELATLAS_DATA@|$data|g" -e "s|@MODELATLAS_ETC@|$etc|g" -e "s|@MODELATLAS_OPT@|$opt|g" \
+  "$backup/unit-template" >"$backup/new-unit"
 install -m 644 "$backup/new-unit" "$service"
 systemctl daemon-reload
 systemctl enable "$unit.service" >/dev/null
-systemctl restart "$unit.service"
+if ! systemctl restart "$unit.service"; then
+  systemctl show "$unit.service" --property=Result,StatusErrno,ExecMainCode,ExecMainStatus >&2 || true
+  exit 1
+fi
 healthy=0
 attempt=0
 while [ "$attempt" -lt 30 ]; do

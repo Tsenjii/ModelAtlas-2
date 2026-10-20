@@ -228,6 +228,20 @@ func TestAutomaticMigrationSnapshotAndFutureSchemaGuard(t *testing.T) {
 	if after, _ := fileDigest(s.Store.path); after != beforeWrongKey {
 		t.Fatal("wrong-key startup migrated the original database")
 	}
+	backupDir := filepath.Join(filepath.Dir(s.Store.path), "upgrade-backups")
+	if err = os.WriteFile(backupDir, []byte("blocked backup directory"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if unexpected, e := OpenStore(s.Store.path); e == nil {
+		unexpected.Close()
+		t.Fatal("migration continued without a durable backup")
+	}
+	if after, _ := fileDigest(s.Store.path); after != beforeWrongKey {
+		t.Fatal("failed snapshot changed the original schema / data")
+	}
+	if err = os.Remove(backupDir); err != nil {
+		t.Fatal(err)
+	}
 	migrated, err := OpenStore(s.Store.path)
 	if err != nil {
 		t.Fatal(err)

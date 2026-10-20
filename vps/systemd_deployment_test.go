@@ -221,6 +221,28 @@ func TestSystemdDeploymentLifecycle(t *testing.T) {
 	if json.Unmarshal(request("GET", "/api/v1/system", nil, 200), &state) != nil || state.Version != version || !state.VaultVerified || state.Maintenance {
 		t.Fatal("installed version / readiness mismatch")
 	}
+	// Reconstruct a crash after the durable commit but before clearing its gate.
+	// New writes after the successful update must survive; never replay its old DB.
+	request("POST", "/api/v1/providers", Provider{ID: "after-commit", Name: "Written after update", BaseURL: provider.URL + "/v1", AuthMode: "BEARER"}, 201)
+	committed, err := filepath.Glob(filepath.Join(root, "var/backups/modelatlas", "upgrade-*", "database.sqlite"))
+	if err != nil || len(committed) != 1 {
+		t.Fatal("successful update backup missing", err)
+	}
+	committedDir := filepath.Dir(committed[0])
+	if err = exec.Command("/bin/systemctl", "stop", unit+".service").Run(); err != nil {
+		t.Fatal(err)
+	}
+	if err = os.WriteFile(gate, nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err = os.WriteFile(filepath.Join(root, "etc/modelatlas/update-pending"), []byte(filepath.Base(committedDir)+"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	run(second, "recover", true)
+	if !bytes.Contains(request("GET", "/api/v1/providers", nil, 200), []byte("after-commit")) {
+		t.Fatal("committed recovery replayed an obsolete snapshot")
+	}
+	assertHistory()
 	// Correctly checksummed but unstartable service: real activation fails and
 	// the updater must restore the previous binary, DB, unit and active state.
 	bad := filepath.Join(root, "unstartable")
@@ -268,6 +290,25 @@ func TestSystemdDeploymentLifecycle(t *testing.T) {
 		t.Fatal("did not reach real activation checkpoint")
 	}
 	crash.Wait()
+	// A child already inside systemctl or an offline snapshot can retain the
+	// inherited deployment lease briefly after its parent is killed.
+	lease, err := os.OpenFile(filepath.Join(root, "etc/modelatlas/deploy.lock"), os.O_RDWR, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	leaseDeadline := time.Now().Add(5 * time.Second)
+	released := false
+	for time.Now().Before(leaseDeadline) {
+		if syscall.Flock(int(lease.Fd()), syscall.LOCK_EX|syscall.LOCK_NB) == nil {
+			released = true
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	lease.Close()
+	if !released {
+		t.Fatal("killed updater's child did not release its deployment lease")
+	}
 	crashedOut, _ := os.ReadFile(crashLog.Name())
 	cleanOutput(crashedOut)
 	if _, err = os.Stat(filepath.Join(root, "etc/modelatlas/update-pending")); err != nil {

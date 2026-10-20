@@ -19,9 +19,9 @@ schema=$(sed -n 's/^const schemaVersion = \([0-9][0-9]*\)$/\1/p' "$vps_dir/migra
 printf '{"commit":"%s","built_at":"%s","os":"linux","arch":"%s","schema":%s}\n' \
   "$revision" "$MODELATLAS_BUILD_TIME" "$arch" "$schema" >"$bundle/VERSION.json"
 for file in install.sh update.sh manage.sh modelatlas-vps.service; do cp "$vps_dir/deploy/$file" "$bundle/deploy/$file"; done
-for file in README.md UPDATE.md PLATFORM_DEPLOY.md; do cp "$vps_dir/$file" "$bundle/$file"; done
+for file in "$vps_dir/"*.md; do cp "$file" "$bundle/"; done
 chmod 755 "$bundle/bin/$name" "$bundle/deploy/"*.sh
-(cd "$bundle" && sha256sum VERSION.json "bin/$name" deploy/install.sh deploy/update.sh deploy/manage.sh deploy/modelatlas-vps.service README.md UPDATE.md PLATFORM_DEPLOY.md >SHA256SUMS.txt)
+(cd "$bundle" && sha256sum VERSION.json "bin/$name" deploy/install.sh deploy/update.sh deploy/manage.sh deploy/modelatlas-vps.service *.md >SHA256SUMS.txt)
 tar -C "$output" -czf "$output/$name.tar.gz" "$name"
 (cd "$output" && sha256sum "$name.tar.gz" >"$name.tar.gz.sha256")
 echo "$output/$name.tar.gz"
