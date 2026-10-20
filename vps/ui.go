@@ -708,6 +708,7 @@ const homeHTML = `<!doctype html>
 </div>
 </div>
 <div id="settings-data" class="workspace-panel" role="tabpanel" aria-labelledby="settings-data-tab" data-workspace-panel="settings" hidden>
+` + workspaceSyncHTML + `
 <div class="card">
 <h2>備份與還原</h2>
 <p>觀測與歷史持續保留。</p>

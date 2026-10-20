@@ -1,5 +1,12 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 最新使用者指示：完成願望清單並優先解決跨平台同步（2026-10-19）
+
+- 使用者已授權實作 Part V 全部需求，並明確要求解決 Mac／VPS／Android 資料同步。先處理唯一整合切片 **SYNC-001**，其後依序接研究排程、未知站點解析、可量測 Reflection 與 authenticity；不在只寫文件後結束。
+- 同步採可選 VPS 中心＋各端本機離線資料、版本／游標增量、持久變更與明確衝突處理；裝置獨立配對／撤銷，Key 經認證 HTTPS 傳送並在目的端 vault 重新加密。秘密不進模型、log、同步 metadata 或 Git。
+- 基準 `2f0af8296f3996bc83b1fa42b9596a61a2e79410`：VPS `39266118313` 四項、Android `39266118493` build／device 同 SHA SUCCESS。main 已重驗仍 `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`，`38408176782` build／device SUCCESS；FEATURE FREEZE=OFF。
+- 最新授權允許同步所需的 Android／Mac 功能接線；保留原 UI／功能優點及兩分支既有修改，不合併／部署。新切片有 production caller、測試與同 SHA 必要 CI 前不升 ACCEPTED；實體裝置／目標主機未取得的驗收範圍如實保留。
+
 ## 最新使用者指示：補回原願望清單（2026-10-19）
 
 - 本輪為文件整理：將完整功能盤點後的持續發現排程、未知站點解析／Connector、研究改進閉環、模型真實性與真站／跨平台／手機完整驗收，加入原 `ASTRA_MASTER_SPEC.md` Part V，保留全部原文與既有需求。

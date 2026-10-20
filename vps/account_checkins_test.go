@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -132,6 +133,25 @@ func TestAccountCheckinMigrationPreservesLegacyHistoryAndEncryptedCredentials(t 
 	}
 	var encrypted string
 	old.DB.QueryRow("SELECT encrypted_key FROM credentials WHERE provider_id='p' AND account_id='a' AND id='c'").Scan(&encrypted)
+	// Reconstruct an actual v16 fixture: sync tables/triggers did not exist yet.
+	names := []string{}
+	rows, queryErr := old.DB.Query("SELECT type,name FROM sqlite_master WHERE name LIKE 'workspace_%' AND type IN ('trigger','table') ORDER BY CASE type WHEN 'trigger' THEN 0 ELSE 1 END")
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
+	for rows.Next() {
+		var kind, name string
+		if e = rows.Scan(&kind, &name); e != nil {
+			t.Fatal(e)
+		}
+		names = append(names, "DROP "+strings.ToUpper(kind)+" "+name)
+	}
+	rows.Close()
+	for _, q := range names {
+		if _, e = old.DB.Exec(q); e != nil {
+			t.Fatal(e)
+		}
+	}
 	if _, e = old.DB.Exec("DROP TABLE account_checkins; PRAGMA user_version=16"); e != nil {
 		t.Fatal(e)
 	}
@@ -146,7 +166,7 @@ func TestAccountCheckinMigrationPreservesLegacyHistoryAndEncryptedCredentials(t 
 	var version, count int
 	var kept string
 	updated.DB.QueryRow("PRAGMA user_version").Scan(&version)
-	if version != 17 {
+	if version != schemaVersion {
 		t.Fatal(version)
 	}
 	updated.DB.QueryRow("SELECT encrypted_key FROM credentials WHERE provider_id='p' AND account_id='a' AND id='c'").Scan(&kept)

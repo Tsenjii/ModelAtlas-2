@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 17
+const schemaVersion = 18
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -164,6 +164,14 @@ func migrate(db *sql.DB) error {
 		if _, err = tx.Exec(`CREATE TABLE account_checkins(provider_id TEXT NOT NULL,account_id TEXT NOT NULL,date TEXT NOT NULL,timezone TEXT NOT NULL,completed_at INTEGER NOT NULL,source TEXT NOT NULL CHECK(source='MANUAL_COMPLETION'),PRIMARY KEY(provider_id,account_id,date),FOREIGN KEY(provider_id,account_id) REFERENCES accounts(provider_id,id) ON DELETE RESTRICT);
  CREATE INDEX account_checkins_history ON account_checkins(provider_id,account_id,completed_at DESC);
  PRAGMA user_version=17;`); err != nil {
+			return err
+		}
+	}
+	if version < 18 {
+		if err = workspaceCreateSchema(tx); err != nil {
+			return err
+		}
+		if _, err = tx.Exec("PRAGMA user_version=18"); err != nil {
 			return err
 		}
 	}
