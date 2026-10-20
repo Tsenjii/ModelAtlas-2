@@ -1,0 +1,73 @@
+name: Recover Verified Three-platform Release
+on:
+  push:
+    branches: [operations/recover-release-20261020]
+permissions:
+  contents: read
+concurrency:
+  group: recover-modelatlas-v0.8.0-preview.1
+  cancel-in-progress: false
+jobs:
+  verify-and-recover:
+    if: github.repository == 'Tsenjii/ModelAtlas-2' && github.ref == 'refs/heads/operations/recover-release-20261020'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: controller
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 44c8cd1003a286ccecc47fb654a44414311065f7
+          path: source
+          persist-credentials: false
+      - name: Test fixed draft discovery and all release integrity boundaries
+        working-directory: controller
+        run: python3 -m unittest discover -s release -p 'test_*.py' -v
+      - name: Regenerate proofs from the exact already tested application source
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODELATLAS_SOURCE_COMMIT: 44c8cd1003a286ccecc47fb654a44414311065f7
+          MODELATLAS_REPOSITORY: Tsenjii/ModelAtlas-2
+        run: |
+          cp ../controller/release/publish.py release/publish.py
+          python3 release/prepare.py --wait-minutes 1
+      - name: Verify the exact existing draft and finish publication by release ID
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODELATLAS_SOURCE_COMMIT: 44c8cd1003a286ccecc47fb654a44414311065f7
+          MODELATLAS_REPOSITORY: Tsenjii/ModelAtlas-2
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'release')
+          import publish
+          commit = '44c8cd1003a286ccecc47fb654a44414311065f7'
+          manifest, expected = publish.validate_output(Path('release-output'), commit)
+          draft = publish.gh('api', 'repos/Tsenjii/ModelAtlas-2/releases/418668468')
+          publish.require(draft['tag_name'] == 'v0.8.0-preview.1' and draft['target_commitish'] == commit and draft['prerelease'], 'unexpected recovery release')
+          publish.verify_uploaded(draft, expected)
+          publish.require(publish.release_for_tag('v0.8.0-preview.1')['id'] == 418668468, 'draft discovery mismatch')
+          print('Existing draft ID and every already uploaded asset match the verified source.', flush=True)
+          publish.main()
+          PY
+      - name: Verify the real public VPS download and complete bundle
+        working-directory: source
+        run: sh vps/deploy/download.sh v0.8.0-preview.1 /tmp/modelatlas-recovered-${{ github.run_id }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-published-release-verification
+          path: |
+            source/release-output/RELEASE-MANIFEST.json
+            source/release-output/SHA256SUMS.txt
+            source/release-output/RELEASE-NOTES.md
+          if-no-files-found: warn
