@@ -19,7 +19,7 @@ certificate_sha256, certificate_profiles = certificate_fingerprint(result.stdout
 print("Verified APK certificate SHA256:", certificate_sha256, "profiles:", ", ".join(certificate_profiles))
 badging = subprocess.check_output([str(signer.parent / "aapt2"), "dump", "badging", str(apk)], text=True)
 package = re.search(r"^package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'", badging, re.MULTILINE)
-minimum = re.search(r"^sdkVersion:'([0-9]+)'", badging, re.MULTILINE)
+minimum = re.search(r"^(?:minSdkVersion|sdkVersion):'([0-9]+)'", badging, re.MULTILINE)
 if not package or package.groups() != ("dev.modelatlas.app", properties["androidVersionCode"], properties["androidVersionName"]) or not minimum or minimum[1] != "26":
     raise SystemExit("Actual APK package/version/minimum SDK mismatch")
 commit = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()

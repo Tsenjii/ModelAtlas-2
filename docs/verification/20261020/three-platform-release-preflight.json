@@ -11,9 +11,11 @@
     "actual_label": "V2 Signer:",
     "failed_candidate_jobs": [
       118750127913,
-      118754048127
+      118754048127,
+      118762618902
     ],
-    "cause": "Human-readable signer labels changed; numbered and SDK-range-only text parsing was incomplete."
+    "cause": "SDK37 changed both signer display labels and sdkVersion to minSdkVersion; final verification uses canonical PEM/DER and accepts the legacy/current SDK field names while still requiring API26.",
+    "actual_minimum_sdk_label": "minSdkVersion:'26'"
   },
   "diagnostic": {
     "initial_run": 39460480723,
@@ -33,6 +35,15 @@
       "both real Linux bundles: outer and every inner checksum, source, ELF, 27 files",
       "actual AMD64 version and ops bundle-check",
       "actual universal Mac ZIP/DMG checksums, BuildInfo commit, Info.plist 0.8.0/build14"
+    ],
+    "full_metadata_run": 39462620307,
+    "full_metadata_job": 118765711221,
+    "full_metadata_checks": [
+      "whole production android-metadata.py against the actual APK source checkout",
+      "valid signature and independent DER fingerprint",
+      "actual package name, versionCode8001, versionName0.8.0-preview.1 and minimumAPI26",
+      "exact source commit and actual APK SHA256",
+      "all 13 regression tests plus both actual Linux and universal Mac bundle verification"
     ]
   },
   "homepage": {
