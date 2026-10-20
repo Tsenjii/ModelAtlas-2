@@ -1,0 +1,39 @@
+name: Inspect APK Signing Metadata
+on:
+  push:
+    branches: [diagnostics/apk-signing-20261020-1646]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: modelatlas-debug-and-reports
+          github-token: ${{ github.token }}
+          repository: Tsenjii/ModelAtlas-2
+          run-id: 39459229914
+          path: artifact
+      - name: Verify existing APK and inspect public signing certificate output
+        run: |
+          python3 - <<'PY'
+          import os, subprocess
+          from pathlib import Path
+          apk = next(Path('artifact').rglob('app-debug.apk'))
+          signer = sorted((Path(os.environ['ANDROID_HOME']) / 'build-tools').glob('*/apksigner'))[-1]
+          print('SDK verifier:', signer, flush=True)
+          result = subprocess.run([str(signer), 'verify', '--verbose', '--print-certs-pem', str(apk)], text=True, capture_output=True)
+          print('Verification exit status:', result.returncode, flush=True)
+          print('PUBLIC certificate output stdout:', repr(result.stdout), flush=True)
+          print('PUBLIC certificate output stderr:', repr(result.stderr), flush=True)
+          result.check_returncode()
+          badging = subprocess.check_output([str(signer.parent / 'aapt2'), 'dump', 'badging', str(apk)], text=True)
+          print('\n'.join(badging.splitlines()[:6]), flush=True)
+          PY
