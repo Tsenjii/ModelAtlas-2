@@ -193,6 +193,23 @@ class ReleaseBoundaryTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 publish.validate_output(out, COMMIT)
 
+    def test_unpublished_draft_is_found_by_collection_not_published_tag_endpoint(self):
+        draft = {"id": 418668468, "tag_name": "v0.8.0-preview.1", "draft": True}
+        with patch.object(publish, "gh", return_value=[draft]) as api:
+            self.assertEqual(publish.release_for_tag(draft["tag_name"]), draft)
+            self.assertTrue(all("/releases?" in call.args[1] for call in api.call_args_list))
+            self.assertIsNone(publish.release_for_tag("v0.8.0-absent"))
+
+    def test_draft_lookup_paginates_and_refuses_duplicate_tag(self):
+        filler = [{"id": index, "tag_name": "other-" + str(index)} for index in range(100)]
+        draft = {"id": 101, "tag_name": "wanted", "draft": True}
+        with patch.object(publish, "gh", side_effect=[filler, [draft]]) as api:
+            self.assertEqual(publish.release_for_tag("wanted"), draft)
+            self.assertIn("page=2", api.call_args_list[1].args[1])
+        with patch.object(publish, "gh", return_value=[draft, dict(draft, id=102)]):
+            with self.assertRaises(ValueError):
+                publish.release_for_tag("wanted")
+
     def test_remote_release_requires_all_uploaded_digests(self):
         expected = {"a": {"sha256": "a" * 64, "size": 10}, "b": {"sha256": "b" * 64, "size": 20}}
         release = {"assets": [{"name": name, "size": value["size"], "digest": "sha256:" + value["sha256"]} for name, value in expected.items()]}

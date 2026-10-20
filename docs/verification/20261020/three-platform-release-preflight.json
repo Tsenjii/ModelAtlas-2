@@ -65,5 +65,18 @@
     "No target VPS deployment or physical-device acceptance.",
     "Mac ad-hoc signing; Android debug preview certificate; fixed production Android signer is not configured.",
     "Full crawler, measurable reflection, authenticity, large-record sync and the original wishlist remain partial/open."
-  ]
+  ],
+  "publication_repair": {
+    "runtime_source": "44c8cd1003a286ccecc47fb654a44414311065f7",
+    "all_nine_original_jobs": "SUCCESS",
+    "vps_run": 39462900675,
+    "android_run": 39462900740,
+    "mac_run": 39462900663,
+    "publish_run": 39462901052,
+    "failed_job": 118767677267,
+    "draft_release": 418668468,
+    "tag": "v0.8.0-preview.1",
+    "reason": "GitHub published-tag lookup cannot read an unpublished draft; fixed collection discovery and ID reads.",
+    "runtime_artifacts_changed": false
+  }
 }

@@ -47,6 +47,17 @@ def validate_output(out, commit):
             require(manifest["assets"][name] == {"sha256": expected, "size": len(raw)}, "release asset metadata mismatch")
     return manifest, {name: {"sha256": digest((out / name).read_bytes()), "size": (out / name).stat().st_size} for name in sorted(PAYLOADS | ADDITIONAL)}
 
+def release_for_tag(tag):
+    matches = []
+    for page in range(1, 11):
+        values = gh("api", "repos/" + REPOSITORY + "/releases?per_page=100&page=" + str(page))
+        require(isinstance(values, list), "invalid release collection")
+        matches.extend(value for value in values if value["tag_name"] == tag)
+        require(len(matches) <= 1, "multiple releases use this tag; publication stopped")
+        if len(values) < 100:
+            return matches[0] if matches else None
+    raise ValueError("release collection exceeds the verified pagination bound")
+
 def tag_commit(tag):
     ref = gh("api", "repos/" + REPOSITORY + "/git/ref/tags/" + tag, optional=True)
     if ref is None:
@@ -73,8 +84,7 @@ def main():
     tag = manifest["tag"]
     resolved = tag_commit(tag)
     require(resolved is None or resolved == commit, "release tag belongs to another source; choose a new tag")
-    endpoint = "repos/" + REPOSITORY + "/releases/tags/" + tag
-    existing = gh("api", endpoint, optional=True)
+    existing = release_for_tag(tag)
     if existing and not existing["draft"]:
         require(resolved == commit and existing["prerelease"], "existing release identity mismatch")
         verify_uploaded(existing, expected)
@@ -89,6 +99,9 @@ def main():
         gh("release", "create", tag, "--repo", REPOSITORY, "--target", commit,
            "--title", "ModelAtlas " + tag + "｜VPS · Mac · Android",
            "--draft", "--prerelease", "--verify-tag", "--notes-file", str(out / "RELEASE-NOTES.md"))
+    existing = release_for_tag(tag)
+    require(existing is not None and existing["draft"] and existing["target_commitish"] == commit, "created draft identity mismatch")
+    endpoint = "repos/" + REPOSITORY + "/releases/" + str(existing["id"])
     require(tag_commit(tag) == commit, "created release tag source mismatch")
     subprocess.run(["gh", "release", "upload", tag, "--repo", REPOSITORY, "--clobber", *[str(out / name) for name in sorted(expected)]], check=True)
     uploaded = gh("api", endpoint)
