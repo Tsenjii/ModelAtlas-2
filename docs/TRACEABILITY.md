@@ -1,5 +1,45 @@
 # ModelAtlas Public — TRACEABILITY
 
+## MAC-PROVIDER-012（2026-10-18 候選）
+
+Providers → ProviderDetailView → ProviderAccountsView／新增帳戶與Key表單／CredentialRow → ProviderWriteController → 正式 `/accounts`、`/credentials`、`/credentials/toggle`、`/credentials/rotate`。AtlasStore按Provider保留工作區，跨分區／關閉重開仍共用帳戶lease與草稿；只在記憶體。ProviderManagement核心持有完整identity、已知enabled的精確bulk、快照、正確role／固定origin與分開的秘密值／版本payload，保存後的新稿不被清除或重用已提交ID。
+
+保留原70核心與136靜態圖／28frame，新增8核心與6實際畫面；預期78核心／74圖每架構、148靜態圖，原25秒串流／1249字SHA256／閱讀位置／120秒parity不減。NativeParity驗真401、實際SQLite commit／版本、跨Provider及帳戶同Key ID、重複提交與另一帳戶操作、關閉後晚完成、新稿保留、刷新失敗後只讀重試及零Provider HTTP。新HEAD九項與實圖前PENDING。011已由48ff43f／Mac39112956833、VPS39112956835、Android39112956891九項及136實圖／28frame交付0.6.0。
+
+跨平台優點持續清單見 `CROSS_PLATFORM_STRENGTHS.md`；本片細節 `macos/PROVIDER_MANAGEMENT.md`。其餘管理／Research／Assistant／Reflection及完整Master Spec仍PARTIAL。以下候選狀態為歷史。
+
+- **MAC-PROVIDER-MOTION-011 實際站點修復候選：** HJMAPI五個公開介面已匿名核對200；v0公開schema／換行公告／站方根層series與時間窗／真上游狀態／公開與私人查詢分離／Catalog語意／捲動重置接入正式caller。新增8核心／4原生圖，最終70核心與68圖每架構；136靜態圖＋28frame與九項CI尚待修復HEAD驗收，不能用8c1824失敗候選或0.5綠燈代替。詳HJMAPI_COMPATIBILITY.md。
+
+## MAC-PROVIDER-MOTION-011（2026-10-18 候選）
+
+ProvidersView → ProviderDetailView概覽 → AccountCheckinPanel／AccountCheckinController → 正式GET／POST `/checkins/accounts`；來源MANUAL_COMPLETION、完整provider/account/date/timezone與v16→17加法式升級，legacy不借給帳戶。RootView／SettingsView／AtlasTabs／原生ButtonStyle／TrendChartView → AtlasMotion與有效Reduce Motion。
+
+新增AccountCheckinTests八項與Go六項HTTP／SQLite／通知測試；NativeParity正式caller驗A/B隔離、部分／全部完成、401 last-good與取消／重試、模型／對話／草稿與零額外fixture inference。四張新production畫面＋每架構14實際動畫frame，原54核心／120圖全保留，共62核心／64圖每架構，128圖＋28frame；新HEAD九項與圖審前PENDING。已交付010為3529736／Mac39105128601／VPS39105128591／Android39105128634九項SUCCESS、120圖。完整Master Spec仍PARTIAL。詳macos/PROVIDER_MOTION.md。
+
+## MAC-CHARTS-010（2026-10-18 候選）
+
+Models → ModelDetailView → ModelPricingPanel／ModelPerformancePanel／ModelObservationHistory → TrendChartView／TrendPointer／ObservationArchiveController → 正式 `/models/observations`、`/models/detail`、`/telemetry/detail`。價格圖置頂，真時間／單位／零與缺值、滑鼠固定／鍵盤逐點、精確JSON與真收據；永久價格／觀測以固定snapshot的keyset分頁及全scope／來源／類型／時間查詢，不再把最近200筆當全部。詳細界線見 `macos/CHARTS.md`。
+
+Go四項新HTTP／SQLite測試與全測試、vet本機通過；新增10核心、5張真production畫面及NSView滑鼠／鍵盤事件，保留原44核心／55圖及全部25秒串流／120秒parity guards。預期54核心／60PNG每架構、120圖；新HEAD九項與實圖前PENDING。已交付009為52d5bfd，Mac39090603877／VPS39090603936／Android39090603909九項SUCCESS、110圖已檢視。完整Master Spec仍PARTIAL。
+
+## MAC-NATIVE-009（2026-10-18 候選）
+
+使用者明確更新Mac視覺／主色要求見D-007。正式入口為共用SwiftUI元件與Appearance→Root／Settings／各native sheets、Models選取→ComparisonView／ComparisonController→既有 `/models/compare` →正式inference／telemetry／receipt。原始JSON比較改為按完整scope對齊的並列數值、失敗／未知與非串流、當次價格／各單位扣款／獨立額度快照、收據及匯出；取消／last-good／重複提交guard不改上游路由。
+
+新增6核心與5實際native captures，預期每架構44核心／55圖、共110圖；保留全部38核心／原50圖及25s串流／120s parity。新HEAD九項與實圖前PENDING。基線008為8eb68087，Mac39058446721／VPS39058446728／Android39058446846九項SUCCESS／100圖已檢視並交付。完整Master Spec仍PARTIAL；Provider與完整Research／Assistant／Reflection等缺口見 `macos/MASTER_SCOPE.md`，本片細節見 `macos/NATIVE_POLISH.md`。
+
+## Mac 原生入口（2026-10-17 候選，獨立於 Android／VPS 驗收）
+
+| ID | 正式 caller／測試 | 驗收條件 |
+|---|---|---|
+| MAC-NATIVE-001 | SwiftUI `ModelAtlasApp` → `RootView`／Playground／Providers／Models／Settings／Research／Assistant → `AtlasStore` → `AtlasClient` → bundled production engine；原生視窗smoke與十一實圖 | Universal arm64／x86_64，macOS12部署目標；同一artifact在兩種Mac架構執行，不用WebView／mock transport，不能以Linux交叉編譯稱Mac執行 |
+| MAC-UI-002 | `ModelPickerView`／⌘K／緊湊三工作區 → `ModelSearchEntry`／`AtlasStore.chooseModel` → 原 full-scope API；真單元＋native store caller／十一實圖 | 搜尋全部詞、全半形／大小寫／別名；AppKit ↑↓／Enter／Esc、完整 scope cursor、空結果拒選及 marked-text guard（真 field-editor key events＋單元測試）；同 model/key 跨帳戶／provider 不合併；未送草稿／附件保留，舊對話草稿恢復；非法未加入 scope 拒選。雙架構同 artifact／全部九項同 SHA gate 與 22 PNG review 前 PENDING，詳 `macos/UI_REVIEW.md` |
+| MAC-CHAT-003 | `ChatTranscriptView`／`ChatScrollProbe` → `ChatReadingState`；`ChatMarkdown` → `MessageMarkup`；file picker／`ComposerFileDrop` → `AtlasStore.addAttachments` → `LocalAttachment`；訊息 sample_id → `RequestReceiptView` → `/telemetry/detail`；核心回歸＋正式TLS串流／真NSScrollView／附件批次／same-scope收據／18 PNG | 本輪候選 PENDING；新 HEAD 同 SHA 九項 CI與雙架構36圖 review 前不得 ACCEPTED；保留舊11圖、全部scope／keyboard／cancel／lifetime／Keychain斷言，詳 `macos/CHAT_EXPERIENCE.md` |
+| MAC-LIFETIME-001 | `EngineController` → `desktop` config → OS動態loopback listener／0600 readiness／stdin EOF → HTTP／worker／SQLite收尾 | 真Go程序測試＋兩Mac程序restart／writer拒絕；App無常駐daemon，不繼承PORT對外開埠；保持原平台／本機模式認證 |
+| MAC-SECRET-SCOPE-001 | `KeychainVault` → Security.framework／SecRandom、完整`ModelScope`、禁redirect/cookie/cache/proxy的native client | 真Keychain roundtrip／missing-vault拒絕重生、A/B同KeyID隔離、SSE與實際cancel／history／vault reopen、Unknown不當0／Free、預設背景通知OFF |
+
+候選須同SHA九項CI（Mac build／arm64 test／Intel test＋原VPS四項＋Android兩項），實際PNG人工review後才驗收；exact SHA／run／artifact由Mac PR body保存。Apple Developer ID／公證、macOS12實機與部分進階專用表單不在本片已驗範圍，詳`macos/README.md`。
+
 > 此檔是公開 repo 新起點的粗粒度驗收銜接；**不是**原 private repo 85 項逐項驗收 ledger 的完整轉儲。原始完整 ledger 保留於 private repo。後續 public slices 的 acceptance 逐項追加，未經新 repo 完整 CI 不得標 accepted。
 
 | Phase | 來源 Private Ledger（僅歷史參考） | 公開版驗收 |
@@ -239,6 +279,59 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 新 HEAD 須完整同 SHA 六項 CI；具體證據由 PR #20 body 保存。Infrlo 控制台在此環境不可讀，官方公開 README 無 Go／ingress／persistent volume 契約；不將本機代理測試、512 MB／2 GB 宣傳數字當作目標平台驗收，不標已部署。
 
 
+
+## MAC-USABILITY-004 — 2026-10-17
+
+| Requirement | Production caller / tests | 狀態 |
+| --- | --- | --- |
+| MAC-USABILITY-004 / conversation search | `RootView` task(id: query/state) → `AtlasStore.searchSessions` debounce/cancellation → real `/sessions`；`NativeSmoke.verifySessionSearch` 無 Enter 即出結果、archive/clear、current scope/history/draft 不變 | CANDIDATE，新 HEAD 九項同 SHA + 原生42圖 |
+| MAC-USABILITY-004 / model picker | `ModelPickerView` reset/count/eligible providers/duplicate name IDs + revalidate exact active scope；原鍵盤/IME與新增filtered/empty實圖 | CANDIDATE；原18圖保留，兩架構各21圖 |
+
+基線 `a00b038` 九項與36圖 ACCEPTED；Android/VPS新UI已依使用者指示暫存，沒有整合。詳 `macos/USABILITY.md`，最終驗收由最新PR #21 body記錄。
+
+
+## MAC-FEEDBACK-005 — 2026-10-17
+
+| Requirement | Production caller / tests | 狀態 |
+| --- | --- | --- |
+| MAC-FEEDBACK-005 / settings | Chat menu → `AtlasStore.openChatSettings` → `ChatSettingsView/Controller` → 真sessions settings/update；`ChatSettingsDraft` / `ChatSettingsTests`；NativeSmoke真401/retry/invalid前後API相同/A與B隔離/下一稿與history保留 | CANDIDATE，新HEAD九項與50圖驗收 |
+| MAC-FEEDBACK-005 / modal actions | `ModelAtlasApp` commands及composer以`hasPresentedSheet`停用會切換context／傳送的快捷鍵；Store原scope與engine不變 | 本片原生code review＋原全部keyboard/IME regression |
+
+詳 `macos/SETTINGS_FEEDBACK.md`；0.1.3基線d719bb9已ACCEPTED，其他平台UI仍暫存，最終evidence由PR #21最新body保存。
+
+
+## MAC-PARITY-006 — 2026-10-17
+
+| 範圍 | 正式 caller → 驗證 | 驗收 |
+|---|---|---|
+| 媒體完整選項與結果 | MediaOptionsView／MediaDraft／AtlasStore.send → infer/media → 真TLS fixture；空文字音訊、current/legacy/雙人、speech speed/format/instructions、dimensions/top_n、圖片生成與multipart編輯、完整下載 | 新HEAD候選；原18核心＋11新核心與原25圖＋17新圖／架構，九項同SHA及84圖review後接受 |
+| 管理與精確來源 | ModelFilters／CatalogDetail／原生ModelEditors／BatchImport／ProviderEditors → 既有正式API；NativeParity exact-account批次confirm/undo、ABA stale、原對話、ALL/archive/scope清單及匯出；原history/IME/keychain/lifetime全部保留 | 不把Catalog當My Models、Unknown當零、不同origin或account的同Key ID合併 |
+| 研究／知識／外部服務 | ResearchRequest／ResearchDetails／KnowledgeView／VersionController／Services → 正式來源、候選／證據、判讀、預算／控制、versions、connectors、integrations API；NativeParity真擷取測試→啟用→intelligence caller→復原、證據知識版本／stale／復原、實際佇列pause/resume/cancel及無推論預算、加密Key及安全Assistant參照 | caller不是只讀JSON；高階知識／CUSTOM資料保留與VPS同範圍的JSON定義。驗收查PR #21最新exact SHA/run/artifact |
+
+對照基線 Android `5009e0c8`、VPS `026f58ba`；不據此聲稱 Android 本身 P8–P10／PLAY-004 整體已驗收，不 merge、不啟用未經使用者選擇的背景或外部推論。歷史失敗與修復均保留於 `macos/FEATURE_PARITY.md`。
+
+
+## MAC-DESKTOP-007 — 2026-10-18 候選
+
+完整產品定位與原文Part I–IV對照見 `macos/MASTER_SCOPE.md`；MAC-PARITY-006的既有功能聯集驗收不代表整份Master Spec已完成。已確認原生缺口包含完整可讀quota pools／價格與效能history charts、Compare並列結果與部分管理摘要，保持PARTIAL。
+
+`ComposerTextEditor`依AppKit排版30–144pt、原生捲動／clear shrink／IME／Undo；`AtlasStore.focusComposer`→⌘L、⌘O選檔、側欄toggle保留scope/draft/history；`ModelsView`顯示引擎已知price_state與cache另計、Provider依已知免費連線篩選。保留29核心／25原smoke／17parity圖，增3圖及真AppKit adaptive/focus/sidebar／exact-account effective-price guard，合計90圖。新HEAD九項同SHA／圖審前不ACCEPTED，不改Android P8–P10狀態。
+
+
+## MAC-INTELLIGENCE-008：原生模型 Intelligence 功能
+
+| 需求 | Production caller 與驗證 | 狀態 |
+|---|---|---|
+| 模型價格／額度／來源／歷史 | Models → ModelDetailView → ModelIntelligence → ModelPricingPanel／ModelQuotaPanel／ModelObservationHistory；同一正式detail API、可展開原始evidence；6項核心含跨帳戶／群組／端點／單位／版本／Unknown／last-good | CANDIDATE；新HEAD九項與100實圖待驗收 |
+| 個人效能趨勢 | performanceSQL bounded400個原樣本指標 → ModelPerformancePanel原生Path／資料表；全量統計、rolling60s、cancel與missing值不變；Go新scoped-window/non-streaming guard＋原1000樣本保留guard；NativeParity真TLS歷史／custom窗／無額外inference | CANDIDATE |
+| Kios案例研究 | docs/KIOSAPI_RESEARCH.md 保存一手來源與驗證缺口；不因免費群組公告、第三方標籤或模型名稱宣稱selected-key FREE／主結果資格 | RESEARCH ONLY；無已認證連線或台灣實測結論 |
+
+這片功能不代表完整Master Spec已完成；Compare並列、Provider批量管理／簽到摘要、完整研究／Assistant／Reflection情境仍需後續完成與驗收。
+
+MAC-INTELLIGENCE-008同片回歸：5cd93e7 Intel長串流25秒失敗，上游1249字finished而App1083字、offset0。AtlasClient串流改bounded StreamDelivery（128 wire events／2MiB）、相鄰純text合併／metadata與control保序、finish／cancel drain；新增3 StreamDeliveryTests，核心合計38每架構，原100圖與時間／hash／reading斷言不減。新HEAD重新九項，舊八綠不代替。
+
+34cab84未交付：Mac三項／38核心每架構／100實圖檢視、VPS四項與Android build成功，device的PK27 choose(B)在selectedId已更新但Dispatchers.IO detail scope未回來時立即assertNotEnabled失敗。改用既有Compose harness waitUntilAtLeastOneExists(choice and isNotEnabled)，原15s、不改assert／B→A／checkin帳戶時間戳／DB斷言；Android production未改。新HEAD重新九項，不盲重跑。
+
 ## VPS-MAC-PARITY-002（2026-10-19 候選）
 
 完整 Mac production UI/caller 對照見 `vps/MAC_PARITY.md`。以已驗 VPS 3aec657、Mac 74e2c37 為參考，補全域對話搜尋／分頁與記憶體草稿、獨立 Provider 編輯、六分區模型／來源切換／完整模型與 quota 欄位、精確圖表匯出、私人用量／Recipe／服務／並列比較。原 16 Browser 保留語意、fixtures、timeout 與完整 workload；UI 重排只更換真實入口，不以 force click／sleep／刪斷言通過。新增 `TestBrowserMacParityWorkflow` 使用正式 Handler／SQLite／vault／TLS 驗跨帳戶歷史、205 價格點、額度零／未知、私人用途隔離與真比較。新 HEAD 六項／實圖前仍 CANDIDATE；未 merge／未部署，完整 Master Spec 仍 PARTIAL。
@@ -286,3 +379,11 @@ Android rollback harness `5613943`／[38694380099](https://github.com/Tsenjii/Mo
 | WISH-ACCEPT-001 | 現有 CI／Browser／footprint 只涵蓋已執行範圍；待補真站長跑、實際部署及各平台／實機完整矩陣 | Requirement→正式 caller→測試／實圖／真站證據→同 SHA 必要 CI／review；保留所有未驗情境 | OPEN：待完成／待驗收 |
 
 盤點 code 基準 `ae0849294fdcf4f48c0cf549de797e59afd53ecb`：VPS [39258806970](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39258806970) 四項及 Android [39258806978](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39258806978) build／device-tests 同 SHA SUCCESS，僅支持既有切片；不作上述五項的 ACCEPTED 證據。本次文件提交的 CI 另查 PR #20 最新 HEAD，不外推前一 SHA。
+
+## SYNC-001 跨平台同步核心（2026-10-20 已驗範圍）
+
+| Requirement | 正式 caller／驗證 | 狀態 |
+| --- | --- | --- |
+| SYNC-001 | VPS Settings→workspace API／持久journal；Android Settings→DeviceWorkspaceSync→Room／Keystore→WorkspaceSyncWorker；Mac Settings資料→WorkspaceSyncView→loopback AtlasClient→共用Go HTTPS／Keychain。真TLS雙向／第二原生端／精確ID與origin／匿名與scoped移除／4MiB歷史／雙方衝突／真背景等待與取消／重啟／撤銷；21 Browser、Android973、Mac各82核心及152靜態圖＋28frame | 所列核心由VPS／Android `c9d1d33` 六項與Mac `f67cfa4` 九項同SHA成功；整體仍PARTIAL，未對應的原生呈現、大型分塊與部署／實機尚未驗收。Part V二十八項不因此完成。 |
+
+精確job／artifact／內外層SHA256、量測界線與限制見`docs/verification/20261020/sync-ci-baseline.json`。這些是code基線，不代替後續文件HEAD的完整CI。保留所有原測試、timeout、完整context、歷史與workload；本片未有獨立外部reviewer、未合併PR／部署。

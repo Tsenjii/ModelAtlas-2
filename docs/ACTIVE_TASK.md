@@ -1,5 +1,15 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-20 最新已驗：跨平台同步核心（整體需求仍 PARTIAL）
+
+- VPS／Android code `c9d1d33a80dda1d7fac4c63400f3dd2c1752960e`：VPS `39406475102` 四項、Android `39406475172` build／device 同 SHA SUCCESS。Mac code `f67cfa42ed6ffc0fa810d41a197edd5ad98b8d80`：Mac `39406793091` 三項、VPS `39406793037` 四項、Android `39406793040` 兩項同 SHA **九項 SUCCESS**。精確 job、artifact、SHA256、已驗與限制見 `docs/verification/20261020/sync-ci-baseline.json`。
+- Android 973 項、0 failure／0 error、5 項既有 API skip；Mac 0.7.0 build13，兩架構各82核心／76靜態圖／14frame；152靜態圖已以contact sheets檢視，新增同步4圖以原解析度核對。21 Browser／288圖與新同步7圖保留。Mac實際CI為macOS15，不能外推實體M2／最低系統的完整互動。
+- 已驗一次性配對／逐裝置撤銷、目的端 vault／Keychain 重新加密、離線增量與雙版本衝突、原始原生ID、帳號／origin隔離、匿名／成員移除、4MiB歷史／Unicode與重啟接續。真App背景同步與手動操作的409競態已有先失敗再成功的真TLS回歸，取消不遺留等待工作。
+- 同步核心不等於全部原生功能互通：尚無同義原生呈現的資料完整保存；超過單筆32MiB仍需分塊；目標VPS／SharpR8s／iPhoneSafari／實體M2未驗。唯一追蹤切片仍為SYNC-001，先收斂這些對應與實際部署界線；原Part V的28項仍OPEN，不能將爬蟲排程／未知站點／Reflection／authenticity提前勾選完成。
+- main本輪重查仍`5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`，既有`38408176782` build／device SUCCESS；不合併PR、不部署。本次僅整理驗收文件，新的文件HEAD另跑完整必要CI，最新結果見PR #20／#21，不借code基線冒充新HEAD。
+
+以下保留本片修復與前片歷史，不能取代以上最新範圍。
+
 ## 2026-10-20 同步背景／手動競態修復（同片候選）
 
 - Mac `f0f6e802` 的 Universal build SUCCESS；`39404935751` arm64 `118570387444`／Intel `118570387783` 在新增真 packaged engine 同步測試都回 HTTP 409，因此不是九項全綠、未驗收。實際 App 的配對會 wake 真背景同步，緊接的手動同步因 TryLock 直接失敗；原 Go 測試未啟動該生命週期，不能以其綠燈掩蓋。

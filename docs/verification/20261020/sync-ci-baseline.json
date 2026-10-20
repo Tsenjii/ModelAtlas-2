@@ -1,0 +1,128 @@
+{
+  "verified_at": "2026-10-20T10:37:28.771269+00:00",
+  "slice": "SYNC-001",
+  "status": "所列同步核心與正式入口已驗；完整跨格式原生呈現、大型分塊、部署與實機及原願望清單仍 PARTIAL",
+  "vps_android_code": {
+    "sha": "c9d1d33a80dda1d7fac4c63400f3dd2c1752960e",
+    "tree": "4b0acdbd5d4cdd25b01d22f4286b9fb32f4f1f1f",
+    "vps_run": 39406475102,
+    "vps_jobs": [
+      118573514972,
+      118573515104,
+      118573515325,
+      118573514802
+    ],
+    "android_run": 39406475172,
+    "android_jobs": [
+      118573761221,
+      118573761655
+    ],
+    "result": "六項同 SHA SUCCESS"
+  },
+  "mac_code": {
+    "sha": "f67cfa42ed6ffc0fa810d41a197edd5ad98b8d80",
+    "tree": "5ed249f4bca3bb560a9f3f326be477e25e69a3c6",
+    "mac_run": 39406793091,
+    "mac_jobs": [
+      118574565671,
+      118576918737,
+      118576918724
+    ],
+    "vps_run": 39406793037,
+    "vps_jobs": [
+      118574565312,
+      118574565662,
+      118574565940,
+      118574565984
+    ],
+    "android_run": 39406793040,
+    "android_jobs": [
+      118574565237,
+      118574565648
+    ],
+    "result": "九項同 SHA SUCCESS",
+    "version": "0.7.0",
+    "build": 13,
+    "minimum_macos": "12.0",
+    "actual_ci": "macOS 15 arm64／x86_64",
+    "core_tests_per_arch": 82,
+    "static_screenshots_per_arch": 76,
+    "motion_frames_per_arch": 14,
+    "visual_review": "152 靜態圖 contact sheets 已檢視；新增同步4圖另以原解析度核對；原28 frame 的正式測試與數量保留"
+  },
+  "android_tests": {
+    "total": 973,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5,
+    "skip_reason": "既有 API 29 通知權限條件"
+  },
+  "browser": {
+    "flows": 21,
+    "pngs": 288,
+    "new_sync_pngs_reviewed": 7,
+    "coverage": "320／375px、深淺色、200%與48px，原全部流程保留"
+  },
+  "runtime_proof": [
+    "原生 Android→中心→第二原生端及來源 Key／Offering／Availability ID",
+    "不同帳號同名 Key、不同 origin、匿名及逐 scope 移除",
+    "4 MiB 保留訊息與大型 Unicode CursorWindow 分段讀取",
+    "雙 packaged Mac engine／獨立 Keychain／可信 HTTPS 的 Key 使用、訊息、衝突、重啟、撤銷",
+    "真背景 TLS 傳輸 barrier：舊版手動409確實失敗，修後等待與取消回歸成功",
+    "本機兩個獨立真程序的配對、背景接續、目的端 Key、訊息、衝突、重啟、撤銷也通過"
+  ],
+  "vps_footprint": {
+    "code_sha": "c9d1d33a80dda1d7fac4c63400f3dd2c1752960e",
+    "idle_rss_bytes": 23371776,
+    "peak_rss_bytes": 204988416,
+    "warm_rss_bytes": 134033408,
+    "workload": "原100000samples／4TLSchat＋4×完整31MiBcontext／11000訊息與全量請求匯出／65模型研究／4×2048²圖片／4×4MiB音訊均保留",
+    "scope": "僅獨立服務程序，不含OS／代理／瀏覽器"
+  },
+  "mac_footprint": {
+    "arm64_smoke_combined_bytes": 196542464,
+    "arm64_parity_combined_bytes": 225361920,
+    "intel_smoke_combined_bytes": 153858048,
+    "intel_parity_combined_bytes": 177184768,
+    "scope": "App與其自有engine，排除fixture與測試runner，非整機RAM"
+  },
+  "artifacts": [
+    {
+      "id": 12257238552,
+      "name": "ModelAtlas-macOS-Universal",
+      "sha256": "89ddb0eed6e56702070ac1c353ec0404d55bd1258ad7e3e211dc3f7f74bcee56",
+      "bytes": 40039071
+    },
+    {
+      "id": 12256764416,
+      "name": "ModelAtlas-macOS-QA-arm64",
+      "sha256": "9159034f7a767c7b9cfeb4b38823f4f75d3704031a7069d1e349cd4cdef5027d",
+      "bytes": 5236695
+    },
+    {
+      "id": 12257828526,
+      "name": "ModelAtlas-macOS-QA-x86_64",
+      "sha256": "bbc3f1d045f36cca82089ef6965753819bce27f042f162317291931e883ba43c",
+      "bytes": 5381405
+    }
+  ],
+  "package_verification": {
+    "app_zip_sha256": "1ae7bec4ffb9400589631318d7b48a376952c971db0e59086e8ba79816d0a07b",
+    "dmg_sha256": "6bb6b2c96ba1937c7bb997ed8cc8f89249555e06daec3e663f8625451f160219",
+    "dmg_bytes": 22132689,
+    "inner_sha256s_verified": true,
+    "app_and_engine_fat_architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "signing": "CI ad-hoc codesign verified，不代表 Developer ID／公證"
+  },
+  "remaining": [
+    "尚無同義原生呈現的資料仍完整保存，不宣稱所有功能已跨格式對齊",
+    "單筆超過32MiB資料保留本機，待分塊協定",
+    "沒有目標VPS／SharpR8s／iPhoneSafari／實體M2完整驗收",
+    "原願望清單28項保持OPEN，爬蟲排程／未知站點／可量測Reflection／authenticity仍未完成",
+    "無獨立外部reviewer；未合併PR／未部署"
+  ],
+  "document_head": "本提交只整理證據；後續文件HEAD仍須完整同SHA checks，不能借用此code基線"
+}

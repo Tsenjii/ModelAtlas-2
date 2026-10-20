@@ -1,5 +1,9 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-20同步核心已由VPS／Android `c9d1d33` 六項、Mac `f67cfa4` 九項同SHA驗證；三端各保留本機與離線資料、真目的端vault、持久游標及明確衝突。原生呈現未對應、大型分塊及實機仍PARTIAL；詳細矩陣與證據見`SYNC_CONTRACT.md`及`verification/20261020/sync-ci-baseline.json`。
+
+2026-10-20 最新優先序為 SYNC-001；依 D-012 接續 VPS／Android／Mac 的同步，取代下方歷史片的暫停順序。各平台既有優點和待辦保留；本片新候選同 SHA 九項前不外推全面互通。
+
 2026-10-18，依使用者「其他平台比我們好的留下來繼續搞」建立。這份清單與完整 Master Spec 同時維護；既有功能與各平台優點保留，不能為了外觀一致而刪除。比較必須能指到正式 caller 或真實驗收，不能只用有無 API／選單判斷功能已完成。
 
 依 D-010／D-011，先完成 VPS 的 Mac 0.6.1 正式 UI／操作對照，並保留 VPS 單 binary、持久 SQLite、完整歷史及低配置成本的優點；省資源與免費部署評估見 `vps/RESOURCE_HOSTING.md`。Android 保持暫停。狀態「候選」代表已實作或正在驗證，尚不能當作已交付。
@@ -22,5 +26,11 @@
 1. VPS-MAC-ALIGN-001 已由 3aec657 同 SHA 六項／16 Browser 驗收。本輪 VPS-MAC-PARITY-002 對照全部 Mac caller，補正式表單／完整側欄／模型分區與編輯／來源／比較／服務；新 HEAD 須完整六項／原16 Browser＋新增流程及實圖，不借前片結果。
 2. 使用者最新要求本輪留在 VPS；Android 介面未開始，原有優點與待辦保留。
 3. 私人站點 adapter 逐站 schema／認證、多 Key availability／quota／stale、研究／Assistant／Reflection 及完整大綱仍追蹤，P1–P10 仍 PARTIAL。
+
+### 原 Mac 接續缺口（保留追蹤）
+
+1. 完成 012 帳戶／Key 的同 SHA 九項驗證及實圖，才更新此片為已交付。
+2. 高優先：Provider 設定／端點草稿與晚完成的局部回饋；私人帳戶 adapter 的逐站 schema／認證相容性；多 Key 的 availability、quota、stale 與同名 scope。不能略過版本／role／origin 限制冒充站點已支援。
+3. 接續 Catalog 缺設定引導、研究／Assistant／Reflection 的可讀流程及完整大綱 scenario。以 `macos/MASTER_SCOPE.md`、`docs/TRACEABILITY.md` 追蹤完整 P1–P10；仍為 PARTIAL。
 
 每次接續先讀此表與 ACTIVE_TASK，依新驗收證據更新來源、狀態與未驗情境。不得把別的平台未完成規劃當作既有能力；routing／fallback／自動 Key 輪替／Gateway 繼續 future-only。
