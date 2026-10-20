@@ -38,6 +38,12 @@ class WorkspaceStorageTest {
             db.execSQL("INSERT INTO credentials(credentialId,accountId,label,enabled,authMode) VALUES('c','a','key',1,'BEARER')")
             val row=db.workspaceOne("SELECT * FROM credentials WHERE credentialId='c'")!!
             assertEquals(JsonNull,row["group"])
+            db.workspacePut("credentials",JsonObject(row+workspaceMap("label" to "updated","group" to "known")))
+            assertEquals("known",db.workspaceOne("SELECT * FROM credentials WHERE credentialId='c'")!!.text("group"))
+            db.workspacePut("credentials",JsonObject(row+workspaceMap("label" to "retained","group" to null)))
+            assertEquals(JsonNull,db.workspaceOne("SELECT * FROM credentials WHERE credentialId='c'")!!["group"])
+            db.workspacePut("credentials",JsonObject(row+workspaceMap("credentialId" to "inserted","group" to "")))
+            assertEquals("",db.workspaceOne("SELECT * FROM credentials WHERE credentialId='inserted'")!!.text("group"))
             val record=WorkspaceProjection(db).export("credentials",row).first()
             assertEquals(JsonNull,record.data["group"])
             assertFalse(record.encode().contains("encrypted_key"))

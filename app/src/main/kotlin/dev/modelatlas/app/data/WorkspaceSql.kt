@@ -1,6 +1,5 @@
 package dev.modelatlas.app.data
 
-import android.content.ContentValues
 import android.database.Cursor
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dev.modelatlas.core.workspace.*
@@ -63,18 +62,29 @@ internal fun SupportSQLiteDatabase.workspacePut(table: String, data: JsonObject)
     require(data.keys.all { it in columns }) { "同步欄位版本不符，原始資料已保留" }
     val pk = workspacePK(table)
     require(pk.all { data[it] is JsonPrimitive && data[it] != JsonNull })
-    val values = ContentValues()
-    for ((key,value) in data) {
+    val values = data.values.map { value ->
         val p = value as? JsonPrimitive ?: error("同步欄位格式不符")
-        when { p == JsonNull -> values.putNull(key)
-            p.isString -> values.put(key,p.content)
-            p.longOrNull != null -> values.put(key,p.long)
-            p.doubleOrNull != null -> values.put(key,p.double)
+        when { p == JsonNull -> null
+            p.isString -> p.content
+            p.longOrNull != null -> p.long
+            p.doubleOrNull != null -> p.double
             else -> error("同步欄位格式不符") }
     }
     val where = pk.joinToString(" AND ") { "`$it`=?" }
-    val args = pk.map { data.text(it) }.toTypedArray()
-    if (update(table, 0, values, where, args) == 0) insert(table, 0, values)
+    // Framework SQLiteDatabase.update does not quote ContentValues keys. Native
+    // schemas include reserved words such as `group`; quote every identifier.
+    fun execute(sql: String, args: List<Any?>, update: Boolean): Int = compileStatement(sql).use { statement ->
+        args.forEachIndexed { index, value -> when(value) {
+            null -> statement.bindNull(index+1)
+            is Long -> statement.bindLong(index+1,value)
+            is Double -> statement.bindDouble(index+1,value)
+            else -> statement.bindString(index+1,value.toString())
+        } }
+        if(update) statement.executeUpdateDelete() else { statement.executeInsert(); 1 }
+    }
+    val assignments=data.keys.joinToString(",") { "`$it`=?" }
+    val changed=execute("UPDATE `$table` SET $assignments WHERE $where", values+pk.map { data.text(it) },true)
+    if(changed==0) execute("INSERT INTO `$table` ("+data.keys.joinToString(","){"`$it`"}+") VALUES ("+data.keys.joinToString(","){"?"}+")",values,false)
 }
 
 internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {

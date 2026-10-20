@@ -252,6 +252,7 @@ class DeviceWorkspaceSync(
         val kinds=(listOf("providers","accounts","credentials","endpoint_profiles","models","my_models")+
             workspaceNativeTables.filter { it !in WorkspaceProjection.immutableNative }.map { "android:$it" }).joinToString(","){"'$it'"}
         val rows=db.workspaceRows("SELECT kind,id FROM workspace_sync_records WHERE pendingProjection=1 AND dirty=0 AND kind IN ($kinds) ORDER BY $order,kind,id LIMIT 200")
+        db.execSQL("DELETE FROM workspace_sync_state WHERE `key`='projection-failure'")
         for(row in rows) {
             val record=current(row.text("kind"),row.text("id")) ?: continue
             // Append-only measurements from another device are stored with their
@@ -262,8 +263,14 @@ class DeviceWorkspaceSync(
                 val done=WorkspaceProjection(db).apply(record,record.key in usable)
                 if(done) db.execSQL("UPDATE workspace_sync_records SET pendingProjection=0 WHERE kind=? AND id=?",arrayOf(record.kind,record.id))
                 db.execSQL("RELEASE workspace_projection")
-            } catch(_: Exception) {
+            } catch(error: Exception) {
                 db.execSQL("ROLLBACK TO workspace_projection"); db.execSQL("RELEASE workspace_projection")
+                // Never store SQL exception messages or bind arguments: they can
+                // contain user data. This diagnostic identifies code only.
+                val location=error.stackTrace.firstOrNull { it.className.startsWith("dev.modelatlas.") }
+                val diagnostic=workspaceMap("kind" to record.kind,"type" to error.javaClass.simpleName,
+                    "method" to location?.methodName,"line" to location?.lineNumber)
+                db.execSQL("INSERT OR REPLACE INTO workspace_sync_state VALUES('projection-failure',?)",arrayOf(diagnostic.toString()))
             }
         }
     }
@@ -297,7 +304,7 @@ class DeviceWorkspaceSync(
         }
         mutable.value=DeviceWorkspaceStatus(c!=null,c?.url.orEmpty(),c?.shareSecrets?:false,
             pending=counts.number("pending").toInt(),stored=counts.number("stored").toInt(),pendingProjection=counts.number("projections").toInt(),
-            lastSuccess=c?.lastSuccess?:0,problem=problem,conflicts=conflicts)
+            lastSuccess=c?.lastSuccess?:0,problem=problem || db.workspaceOne("SELECT `key` FROM workspace_sync_state WHERE `key`='projection-failure'")!=null,conflicts=conflicts)
         } catch(_: Exception) { mutable.value=mutable.value.copy(busy=false,problem=true) }
     }
     private fun originOf(raw: String): String {
