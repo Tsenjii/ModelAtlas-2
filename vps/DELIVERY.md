@@ -1,5 +1,8 @@
 # VPS 最新交付入口
 
+2026-10-20 最新優先序為 VPS-OPS-006：一般 VPS 完整安裝／更新／副本預檢／健康檢查／失敗與中斷復原，Git 平台升級前自動保存 schema 快照；說明及實際邊界見 [UPDATE.md](UPDATE.md)。本輪新 HEAD 的同 SHA 六項檢查與套件以 PR #20 最新結果為準。尚未部署到目標主機；完整 P1–P10／Part V／原生全量互通仍 PARTIAL。
+
+
 最新 VPS-MAC-PARITY-002 的完整 caller 對照見 [MAC_PARITY.md](MAC_PARITY.md)，資源與免費部署方案見 [RESOURCE_HOSTING.md](RESOURCE_HOSTING.md)，更新／部署見 [UPDATE.md](UPDATE.md)。最新 commit、六項同 SHA 驗收、實際 Browser 圖及新 RAM 結果以 PR #20 與交付套件 VERSION.json／VERIFICATION.json 為準。
 
 以下保留 2026-10-15 的歷史驗收，不能套用為最新 HEAD 的結果。

@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"golang.org/x/sys/unix"
 	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
@@ -15,9 +15,14 @@ import (
 type Store struct {
 	DB   *sql.DB
 	lock *os.File
+	path string
 }
 
 func OpenStore(path string) (*Store, error) {
+	return openStore(path, true)
+}
+
+func openStore(path string, autoSnapshot bool, vaultKey ...[]byte) (*Store, error) {
 	if path == "" {
 		return nil, errors.New("empty database path")
 	}
@@ -40,13 +45,9 @@ func OpenStore(path string) (*Store, error) {
 	var lock *os.File
 	if path != ":memory:" {
 		var err error
-		lock, err = os.OpenFile(path+".lock", os.O_CREATE|os.O_RDWR, 0600)
+		lock, err = acquireDatabaseLock(path)
 		if err != nil {
 			return nil, err
-		}
-		if err = unix.Flock(int(lock.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
-			lock.Close()
-			return nil, errors.New("database already in use")
 		}
 	}
 	success := false
@@ -61,6 +62,42 @@ func OpenStore(path string) (*Store, error) {
 	}
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
+	var previousVersion int
+	if err = db.QueryRow("PRAGMA user_version").Scan(&previousVersion); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if previousVersion > schemaVersion {
+		db.Close()
+		return nil, fmt.Errorf("database version %d is newer than this binary", previousVersion)
+	}
+	if len(vaultKey) > 0 {
+		if err = verifyVault(context.Background(), db, vaultKey[0]); err != nil {
+			db.Close()
+			return nil, err
+		}
+	}
+	if autoSnapshot && path != ":memory:" && previousVersion < schemaVersion {
+		var tables int
+		if err = db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type='table'").Scan(&tables); err != nil {
+			db.Close()
+			return nil, err
+		}
+		if tables > 0 {
+			dir := filepath.Join(filepath.Dir(path), "upgrade-backups")
+			if err = os.MkdirAll(dir, 0700); err == nil {
+				err = syncDirectory(filepath.Dir(dir))
+			}
+			if err == nil {
+				name := fmt.Sprintf("schema-%d-to-%d-%d.sqlite", previousVersion, schemaVersion, time.Now().UTC().UnixNano())
+				err = snapshotDatabase(context.Background(), db, filepath.Join(dir, name))
+			}
+			if err != nil {
+				db.Close()
+				return nil, fmt.Errorf("pre-migration backup failed: %w", err)
+			}
+		}
+	}
 	for _, q := range []string{"PRAGMA foreign_keys=ON", "PRAGMA busy_timeout=5000", "PRAGMA journal_mode=WAL", "PRAGMA cache_size=-2048", "PRAGMA temp_store=FILE", "PRAGMA mmap_size=0"} {
 		if _, err = db.Exec(q); err != nil {
 			db.Close()
@@ -92,7 +129,7 @@ func OpenStore(path string) (*Store, error) {
 		return nil, err
 	}
 	success = true
-	return &Store{DB: db, lock: lock}, nil
+	return &Store{DB: db, lock: lock, path: path}, nil
 }
 func (s *Store) Close() error {
 	err := s.DB.Close()

@@ -26,23 +26,25 @@ import (
 )
 
 type Server struct {
-	Store         *Store
-	Token         string
-	Key           []byte
-	Client        *http.Client
-	PublicClient  *http.Client
-	workMu        sync.Mutex
-	workspaceMu   workspaceMutex
-	flightMu      sync.Mutex
-	flights       map[string]bool
-	cancels       map[string]context.CancelFunc
-	media         map[string][]Attachment
-	mediaBytes    int
-	MaxFlights    int
-	AutoSync      bool
-	desktop       bool
-	wake          chan struct{}
-	reflectionDue int64
+	Store           *Store
+	Token           string
+	Key             []byte
+	Client          *http.Client
+	PublicClient    *http.Client
+	workMu          sync.Mutex
+	workspaceMu     workspaceMutex
+	flightMu        sync.Mutex
+	flights         map[string]bool
+	cancels         map[string]context.CancelFunc
+	media           map[string][]Attachment
+	mediaBytes      int
+	MaxFlights      int
+	AutoSync        bool
+	desktop         bool
+	maintenanceFile string
+	vaultVerified   bool
+	wake            chan struct{}
+	reflectionDue   int64
 }
 
 func (s *Server) beginFlight(id string) bool {
@@ -317,6 +319,7 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /assistant/preview", s.assistantPreview)
 	api.HandleFunc("POST /assistant/confirm", s.assistantConfirm)
 	api.HandleFunc("POST /assistant/undo", s.assistantUndo)
+	api.HandleFunc("GET /system", s.systemStatus)
 	root := http.NewServeMux()
 	root.HandleFunc("POST /api/workspace/pair", s.workspaceClaim)
 	root.Handle("/api/workspace/exchange", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceExchangeHTTP)))
@@ -332,7 +335,7 @@ func (s *Server) Handler() http.Handler {
 	root.Handle("GET /app.css", s.auth(http.HandlerFunc(s.stylesheet)))
 	root.Handle("GET /app.js", s.auth(http.HandlerFunc(s.script)))
 	root.Handle("/api/v1/", s.auth(http.StripPrefix("/api/v1", api)))
-	return root
+	return s.maintenanceHandler(root)
 }
 func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 	var providers, models, sessions, samples int
@@ -344,6 +347,12 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 }
 func main() {
 	initializeMemoryLimit()
+	if len(os.Args) > 1 {
+		if err := operationCommand(os.Args[1:], os.Stdout); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if err := runApplication(); err != nil {
 		log.Fatal(err)
 	}
@@ -354,7 +363,7 @@ func runApplication() error {
 	if err != nil {
 		return err
 	}
-	store, err := OpenStore(config.db)
+	store, err := openStore(config.db, true, config.key)
 	if err != nil {
 		return fmt.Errorf("database initialization failed: %w", err)
 	}
@@ -365,7 +374,7 @@ func runApplication() error {
 	}
 	defer listener.Close()
 	client := &http.Client{Timeout: 120 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: true, MaxFlights: configuredFlights(), desktop: config.desktopReady != ""}
+	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: true, MaxFlights: configuredFlights(), desktop: config.desktopReady != "", maintenanceFile: config.maintenanceFile, vaultVerified: len(config.key) == 32}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if config.desktopReady != "" {

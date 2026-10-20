@@ -1,5 +1,8 @@
 # ModelAtlas Implementation Plan
 
+2026-10-20 最新使用者優先序：先 VPS-OPS-006（可日常部署與後續安全更新），caller／驗收／未部署界線見 ACTIVE_TASK、TRACEABILITY 及 vps/UPDATE.md。原 SYNC-001 剩餘原生對應／分塊、研究排程、未知站點、可量測改進、authenticity 與實機完整驗收保留；不因調整順序刪需求。
+
+
 ## 產品契約
 依使用者 Astra Final Structured v2 規格與追加要求開發。完整 v1 以十階段累積交付；本次先交付第一條可測試 vertical slice，不把 schema/interface 當作完整功能。
 

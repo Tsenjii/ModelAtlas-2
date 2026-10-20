@@ -708,6 +708,13 @@ const homeHTML = `<!doctype html>
 </div>
 </div>
 <div id="settings-data" class="workspace-panel" role="tabpanel" aria-labelledby="settings-data-tab" data-workspace-panel="settings" hidden>
+<section class="card" id="system-status-card" aria-labelledby="system-status-title">
+<div class="section-heading"><h2 id="system-status-title">服務與更新</h2><button id="system-status-refresh" type="button" class="ghost">重新檢查</button></div>
+<p id="system-status-summary" role="status" aria-live="polite">尚未讀取服務狀態。</p>
+<dl id="system-status-details" class="system-status-details"></dl>
+<p id="system-status-problem" class="error" role="alert" hidden></p>
+<p class="section-description">更新會沿用資料和金鑰。完整資料備份由主機保存；下方設定匯出不含對話、請求紀錄及 Key。</p>
+</section>
 ` + workspaceSyncHTML + `
 <div class="card">
 <h2>備份與還原</h2>

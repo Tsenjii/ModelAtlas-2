@@ -1,6 +1,6 @@
 # ModelAtlas VPS — Go / SQLite
 
-最新 VPS-MAC-PARITY-002：接續對齊 Mac 0.6.1 正式操作，包含獨立帳戶／Key 編輯、完整 scope 的對話搜尋／草稿、模型六分區／圖表／比較、六類設定；並降低完整 context 編碼與背景輪詢的資源消耗。功能 caller 見 [MAC_PARITY.md](MAC_PARITY.md)，資源與 CF／GitHub 部署判斷見 [RESOURCE_HOSTING.md](RESOURCE_HOSTING.md)，更新步驟見 [UPDATE.md](UPDATE.md)。候選與正式驗收以 PR #20 最新同 SHA 六項 checks／body 為準；下方歷史量測不代表新 HEAD。
+最新 VPS-OPS-006：先完成 VPS 日常使用與後續更新。完整架構套件包含版本／校驗、首次安裝、完整備份與副本預檢、健康驗證、自動回復及中斷復原；設定→資料可查看服務版本與儲存／Key 狀態。操作見 [UPDATE.md](UPDATE.md)。同 SHA 六項 CI 才驗收，不宣稱已在使用者主機部署；原跨平台與完整研究願望清單仍 PARTIAL。
 
 
 這是與 Android 同 repo、**獨立維護**的 VPS Web 服務。完整 V1 功能與實測驗收見 [DELIVERY.md](DELIVERY.md)。源自 Android 已驗收的產品契約（`docs/DECISIONS.md`、`docs/PRODUCT_SPEC.md`、`docs/RESEARCH_POLICY.md`），不是把 Android APK 改名當伺服器，也不會憑空聲稱全部同等功能。
@@ -10,7 +10,7 @@
 - Go 1.26、純 Go SQLite driver、單一 Linux binary（AMD64 / ARM64），沒有常駐 Node.js、沒有 Java Runtime。
 - SQLite WAL + 單連線順序化 + FK + 交易；Provider、Account、Credential、Catalog、My Models、Sessions、Messages、Telemetry、研究 Candidate/Evidence/Run、行動審核與版本化 Recipe 皆落地。
 - 單一明確 Provider × Account × Credential × Model × Group × Endpoint scope；不自動換 Key、不 Fallback、不提供無授權的 API Gateway。
-- AES-256-GCM 加密 API Key，master key **僅環境變數**；資料庫不寫 plaintext key，GET API 不回傳 key。管理端 HTTP Basic/Bearer 使用長隨機密碼，預設強制 loopback 監聽；明確啟用的平台模式須符合隔離的 HTTPS ingress 契約。
+- AES-256-GCM 加密 API Key，master key **僅私密環境設定**；資料庫不寫 plaintext key，GET API 不回傳 key。管理端 HTTP Basic/Bearer 使用長隨機密碼，預設強制 loopback 監聽；明確啟用的平台模式須符合隔離的 HTTPS ingress 契約。
 - Web UI 僅 Playground／Providers／Models 三工作區，設定在右上角；桌面側欄／手機底導覽、繁中、中性色與可選重點色、深淺色、48px 觸控與窄螢幕適配。
 
 ## 目前可用功能
@@ -40,28 +40,11 @@ CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o modelatlas-vps .
 
 Infrlo 等 Git 平台的 build／run 命令、`PORT`、私密環境變數與持久資料要求，見 [PLATFORM_DEPLOY.md](PLATFORM_DEPLOY.md)。平台模式為明確 opt-in；沒有聲稱已在 Infrlo 實測部署。
 
-1. 從 GitHub Actions `VPS Go Build and Integration` 下載對應 Linux AMD64／ARM64 artifact；也可以自行 `go build`。
-2. 使用 VPS 內安全的方式建立 root-only `/etc/modelatlas/modelatlas.env`，例如：
+從通過六項檢查的 Actions 下載架構套件，核對 commit／SHA256、解開 tar.gz 後，首次執行 `sudo sh deploy/install.sh "$PWD"`；後續在新套件內執行 `sudo sh deploy/update.sh "$PWD"`。會沿用原資料與金鑰，失敗回復及斷電復原流程見 [UPDATE.md](UPDATE.md)。
 
-   ```sh
-   sudo install -d -m 0700 /etc/modelatlas
-   sudo sh -c 'umask 077; : > /etc/modelatlas/modelatlas.env'
-   ```
+預設 loopback 監聽；外部以 SSH tunnel 或固定 HTTPS 入口連線。管理帳號 `admin`，密碼保存在 root-only `/etc/modelatlas/modelatlas.env`。既有非標準路徑／無 root 平台依更新文件使用離線 ops，不套用 systemd 工具。
 
-   在只由 root 可讀的編輯器內設定：
-
-   ```text
-   MODELATLAS_ADMIN_TOKEN=<獨立、足夠長的隨機密碼>
-   MODELATLAS_MASTER_KEY=<32 bytes 隨機值的 Base64>
-   ```
-
-   `openssl rand -base64 32` 可用來產生 32 bytes 隨機金鑰的 Base64；不要放進 Git、CI Log、聊天或 URL。
-
-3. 執行 `sudo sh vps/deploy/install.sh ./modelatlas-vps-linux-amd64`。
-4. `curl http://127.0.0.1:8787/healthz` 驗證；以 SSH port forward `ssh -L 8787:127.0.0.1:8787 user@vps` 連線，再瀏覽 `http://127.0.0.1:8787/`，用 HTTP Basic `admin` + 上述管理密碼登入。
-5. 如需公開網域，必須透過認證完整的 HTTPS reverse proxy / access control，轉送本機 `127.0.0.1:8787`，**切勿改為直接開放明文 HTTP 公網監聽**。
-
-部署需要使用者的 VPS SSH 權限，本 GitHub PR 的 CI 只能證明編譯／測試，**不能冒充已遠端部署**。
+目前未提供目標主機 IP／服務網址／登入方式，尚未遠端部署；CI 不代表使用者主機已可登入。
 
 ## 備份
 
@@ -71,6 +54,7 @@ SQLite 資料庫、WAL、SHM 與 `MODELATLAS_MASTER_KEY` 必須有相互一致�
 
 `GET /healthz` 公開只回服務健康；其餘 API 必須管理認證。路徑前綴 `/api/v1`：
 
+- 維運：`GET /system`（管理認證、版本／schema／啟動 vault 狀態）；`version` 與離線 `ops` 見更新文件。
 - Providers / Accounts / Credentials：`GET, POST /providers`、`/accounts`、`/credentials`
 - Models：`GET, POST /models`、`POST /models/sync`、`GET, POST, DELETE /my-models`
 - Playground：`GET, POST /sessions`、`GET /messages?session_id=`、`POST /infer`（text/event-stream）

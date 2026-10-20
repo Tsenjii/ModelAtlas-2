@@ -387,3 +387,9 @@ MAC-INTELLIGENCE-008同片回歸：5cd93e7 Intel長串流25秒失敗，上游124
 | SYNC-001 | VPS Settings→workspace API／持久journal；Android Settings→DeviceWorkspaceSync→Room／Keystore→WorkspaceSyncWorker；Mac Settings資料→WorkspaceSyncView→loopback AtlasClient→共用Go HTTPS／Keychain。真TLS雙向／第二原生端／精確ID與origin／匿名與scoped移除／4MiB歷史／雙方衝突／真背景等待與取消／重啟／撤銷；21 Browser、Android973、Mac各82核心及152靜態圖＋28frame | 所列核心由VPS／Android `c9d1d33` 六項與Mac `f67cfa4` 九項同SHA成功；整體仍PARTIAL，未對應的原生呈現、大型分塊與部署／實機尚未驗收。Part V二十八項不因此完成。 |
 
 精確job／artifact／內外層SHA256、量測界線與限制見`docs/verification/20261020/sync-ci-baseline.json`。這些是code基線，不代替後續文件HEAD的完整CI。保留所有原測試、timeout、完整context、歷史與workload；本片未有獨立外部reviewer、未合併PR／部署。
+
+## VPS-OPS-006 日常部署與可回復更新（2026-10-20 候選）
+
+| Requirement | Production caller / evidence | 狀態／邊界 |
+| --- | --- | --- |
+| VPS-OPS-006 | `deploy/package.sh`→同 commit／架構 VERSION／SHA256→`install.sh`／`update.sh`→`manage.sh`；`operations.go` env／完整 snapshot／副本 migration／restore／authenticated readiness；`store.go` schema 寫入前自動快照與版本／vault guard；`system_status.go` maintenance gate＋worker；Settings 資料狀態 last-good／retry | CANDIDATE：原21 Browser／288圖與 expanded workload 保留，新增狀態7圖／離線完整歷史與vault／錯key／損壞快照／真systemd完整安裝更新、失敗及SIGKILL回復。新 HEAD 六項同 SHA 前不升 ACCEPTED；目標主機／平台部署及完整 P1–P10 未驗，無自動安裝未驗證 HEAD |

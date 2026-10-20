@@ -382,6 +382,17 @@ func (s *Server) runPending(ctx context.Context) {
 		_, _ = s.Store.DB.ExecContext(ctx, "UPDATE sync_history SET status=?,summary_json=?,observed_at=? WHERE id=?", status, string(raw), now(), j.id)
 	}
 }
+func (s *Server) workerTick(ctx context.Context) {
+	if s.maintenancePending() {
+		return
+	}
+	s.backgroundTick(ctx)
+	s.runPending(ctx)
+	s.runResearchPending(ctx)
+	s.retryMissingReflections(ctx)
+	s.expireResearchFacts(ctx)
+}
+
 func (s *Server) worker(ctx context.Context) {
 	s.flightMu.Lock()
 	s.wake = make(chan struct{}, 1)
@@ -389,27 +400,15 @@ func (s *Server) worker(ctx context.Context) {
 	s.flightMu.Unlock()
 	timer := time.NewTicker(30 * time.Second)
 	defer timer.Stop()
-	s.backgroundTick(ctx)
-	s.runPending(ctx)
-	s.runResearchPending(ctx)
-	s.retryMissingReflections(ctx)
-	s.expireResearchFacts(ctx)
+	s.workerTick(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-wake:
-			s.backgroundTick(ctx)
-			s.runPending(ctx)
-			s.runResearchPending(ctx)
-			s.retryMissingReflections(ctx)
-			s.expireResearchFacts(ctx)
+			s.workerTick(ctx)
 		case <-timer.C:
-			s.backgroundTick(ctx)
-			s.runPending(ctx)
-			s.runResearchPending(ctx)
-			s.retryMissingReflections(ctx)
-			s.expireResearchFacts(ctx)
+			s.workerTick(ctx)
 		}
 	}
 }

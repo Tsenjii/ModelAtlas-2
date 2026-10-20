@@ -30,6 +30,8 @@ jobs:
         working-directory: vps
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26.4"
@@ -40,6 +42,12 @@ jobs:
         run: go test -mod=readonly -race -count=1 ./...
       - name: Vet
         run: go vet -mod=readonly ./...
+      - name: Genuine systemd install, upgrade, rollback and crash recovery
+        run: |
+          sh deploy/package.sh /tmp/modelatlas-systemd-release
+          sudo env "PATH=$PATH" "GOMODCACHE=$(go env GOMODCACHE)" "GOCACHE=$(go env GOCACHE)" \
+            MODELATLAS_SYSTEMD_TEST=1 MODELATLAS_SYSTEMD_BUNDLE=/tmp/modelatlas-systemd-release/modelatlas-vps-linux-amd64 \
+            go test -mod=readonly -v -run '^TestSystemdDeploymentLifecycle$' -count=1 -timeout=5m
       - name: Measure standalone resource footprint
         run: MODELATLAS_FOOTPRINT_TEST=1 MODELATLAS_FOOTPRINT_OUT=footprint.json go test -mod=readonly -v -run TestStandaloneProcessFootprint -count=1 -timeout=3m
       - name: Compare full-context JSON encoding allocations
@@ -76,6 +84,8 @@ jobs:
         working-directory: vps
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26.4"
@@ -83,11 +93,14 @@ jobs:
       - name: Build
         run: |
           go mod download
-          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o modelatlas-vps-linux-${{ matrix.arch }} .
+          GOARCH=${{ matrix.arch }} sh deploy/package.sh /tmp/modelatlas-release
+          mkdir /tmp/modelatlas-artifacts
+          cp /tmp/modelatlas-release/modelatlas-vps-linux-${{ matrix.arch }}/bin/modelatlas-vps-linux-${{ matrix.arch }} /tmp/modelatlas-artifacts/
+          cp /tmp/modelatlas-release/modelatlas-vps-linux-${{ matrix.arch }}.tar.gz* /tmp/modelatlas-artifacts/
       - uses: actions/upload-artifact@v4
         with:
           name: modelatlas-vps-linux-${{ matrix.arch }}
-          path: vps/modelatlas-vps-linux-${{ matrix.arch }}
+          path: /tmp/modelatlas-artifacts/*
           if-no-files-found: error
 
   vps-browser:
@@ -96,6 +109,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26.4"

@@ -1,5 +1,7 @@
 package main
 
+const systemStatusCSS = `.system-status-details{display:grid;grid-template-columns:minmax(5rem,.35fr) minmax(0,1fr);gap:10px 16px;margin-block:16px}.system-status-details dt{color:var(--muted)}.system-status-details dd{margin:0;min-width:0;overflow-wrap:anywhere}#system-status-card .section-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}#system-status-card p{overflow-wrap:anywhere}`
+
 const appCSS = `
 :root{color-scheme:light;--primary:#087e79;--on-primary:#fff;--accent:#e0f2ee;--bg:#f7f9f9;--card:#fff;--surface:#f0f4f3;--ink:#172b2a;--muted:#5e7170;--border:#dce5e3;--shadow:0 4px 18px #173b3506;--danger:#a52d35;--radius:16px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Noto Sans TC",sans-serif;font-size:16px}
 :root[data-theme="dark"]{color-scheme:dark;--primary:#71d0c3;--on-primary:#102d28;--accent:#203d38;--bg:#111918;--card:#192321;--surface:#202d2a;--ink:#ecf2f0;--muted:#a7bbb6;--border:#34443f;--shadow:0 4px 18px #0001;--danger:#ffabb0}
@@ -50,4 +52,4 @@ dialog{max-width:760px;width:calc(100% - 32px);max-height:88dvh;padding:24px;bor
 .catalog-selection-summary{margin:12px 0}.catalog-selection-summary>summary{min-height:48px;cursor:pointer;padding-block:12px}.catalog-selection-summary .detail-rows{margin-bottom:12px}
 #catalog .model-id{overflow-wrap:anywhere}
 #catalog-manual{margin-top:20px}
-` + modelPickerCSS + macAlignmentCSS + macParityCSS + mobileAlignmentCSS + modelViewsCSS
+` + modelPickerCSS + macAlignmentCSS + macParityCSS + mobileAlignmentCSS + modelViewsCSS + systemStatusCSS

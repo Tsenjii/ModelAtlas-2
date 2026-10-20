@@ -1,5 +1,15 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-20 最新指示：先完成 VPS 可用性與後續更新（VPS-OPS-006）
+
+- 使用者明確要求「先把vps全部弄好優化好到能夠使用，之後更新也要弄好」。本輪唯一整合切片改為 VPS-OPS-006；原 SYNC-001 與全部願望清單保留，暫不疊加其他平台 UI 或研究功能。
+- 前片 code `f83d4a59c36f4c394111bce721ae7c29e4b2fc4d`：VPS `39411965192` 四項、Android `39411965153` build／device 同 SHA SUCCESS；976 項、0 failure／0 error、5 項既有 skip。Mac `e408262817b7f4d9d70550cb15f828f9a0e21eb0` 九項成功保持原狀，不以其結果冒充本片候選。main 重查仍 `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`／`38408176782` build／device SUCCESS，FEATURE FREEZE=OFF。
+- 新增架構完整套件、一次產生且永不暗中替換的私密環境、獨立 systemd 使用者、部署鎖、原子 binary 切換、完整一致 DB 備份、校驗／FK／vault 預檢與只在副本試跑遷移、真認證／版本／儲存健康驗證及自動回復。持久階段日誌處理 SIGKILL／斷電；已確認成功或已還原階段不重播舊快照。更新期間管理／裝置同步寫入與背景工作暫停，失敗 DB／WAL／SHM 全保留。
+- Git 平台啟動於 schema 寫入前保存原版快照／manifest，錯 master key、未能備份或較新 schema 提前拒絕；不宣稱控制平台 binary 回退或磁碟持久性。Settings→資料新增版本／狀態、last-good／重試；正式 caller 與指令見 `vps/UPDATE.md`。
+- 本機原完整 Go race 已有一輪 PASS（202.362s），新離線操作 race 回歸 PASS；新增真 systemd 安裝／TLS inference／更新／啟動失敗回復／SIGKILL 復原／損壞套件拒絕，須在真正 systemd CI 執行，不能以本機無 systemd 當通過。新 HEAD 六項 gate、原21 Browser／288圖＋新狀態流程／7圖與原 expanded workload 重新驗，未驗前維持 CANDIDATE。
+- 尚無目標主機 IP／已部署 URL／登入方式，未遠端部署；不 merge PR，PR #20 維持 Draft。爬蟲排程／未知站點／可量測 Reflection／authenticity 與 Part V 28 項仍 OPEN，不宣稱全部功能完成。
+
+
 ## 2026-10-20 認證角色補強（SYNC-001 同片新候選）
 
 - 交付前稽核發現原生Onboarding的CredentialEntity預設authMode為UNKNOWN，真實PAT／自訂Header角色存在已commit的ProviderManualConfig。只看row.authMode會錯誤匯出INFERENCE／Bearer。新候選改讀完整typed配置，ACCOUNT固定對應ACCOUNT_PAT；複合／自訂認證完整保留原格式，不部分降級。舊候選錯誤的共用Bearer投影會停用，保留來源原生配置與vault；不再傳送該不完整投影的秘密。

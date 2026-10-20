@@ -14,6 +14,7 @@ import (
 type deploymentConfig struct {
 	addr, db, token, publicOrigin string
 	desktopReady                  string
+	maintenanceFile               string
 	key                           []byte
 }
 
@@ -22,6 +23,10 @@ type deploymentConfig struct {
 // Merely inheriting PORT must never expose the default local deployment.
 func readDeploymentConfig(getenv func(string) string) (deploymentConfig, error) {
 	c := deploymentConfig{token: getenv("MODELATLAS_ADMIN_TOKEN"), db: getenv("MODELATLAS_DB"), addr: getenv("MODELATLAS_LISTEN")}
+	c.maintenanceFile = getenv("MODELATLAS_MAINTENANCE_FILE")
+	if c.maintenanceFile != "" && (!filepath.IsAbs(c.maintenanceFile) || strings.ContainsAny(c.maintenanceFile, "\r\n\x00")) {
+		return c, errors.New("MODELATLAS_MAINTENANCE_FILE must be an absolute path")
+	}
 	if len(c.token) < 24 {
 		return c, errors.New("MODELATLAS_ADMIN_TOKEN must be at least 24 characters")
 	}
