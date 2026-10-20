@@ -41,13 +41,13 @@ data class WorkspaceVaultEntity(
 
 val MIGRATION_15_16: Migration = object : Migration(15, 16) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("CREATE TABLE IF NOT EXISTS workspace_sync_state (`key` TEXT NOT NULL, valueJson TEXT NOT NULL, PRIMARY KEY(`key`))")
-        db.execSQL("CREATE TABLE IF NOT EXISTS workspace_sync_records (kind TEXT NOT NULL, id TEXT NOT NULL, revision INTEGER NOT NULL, baseJson TEXT NOT NULL, localJson TEXT NOT NULL, dirty INTEGER NOT NULL, pendingProjection INTEGER NOT NULL, PRIMARY KEY(kind,id))")
-        db.execSQL("CREATE TABLE IF NOT EXISTS workspace_sync_conflicts (id TEXT NOT NULL, kind TEXT NOT NULL, recordId TEXT NOT NULL, localJson TEXT NOT NULL, remoteJson TEXT NOT NULL, state TEXT NOT NULL, createdAt INTEGER NOT NULL, PRIMARY KEY(id))")
-        db.execSQL("CREATE TABLE IF NOT EXISTS workspace_sync_versions (tableName TEXT NOT NULL, rowId INTEGER NOT NULL, version INTEGER NOT NULL, PRIMARY KEY(tableName,rowId))")
-        db.execSQL("CREATE TABLE IF NOT EXISTS workspace_sync_locators (tableName TEXT NOT NULL, rowId INTEGER NOT NULL, version INTEGER NOT NULL, signature TEXT NOT NULL, linksJson TEXT NOT NULL, PRIMARY KEY(tableName,rowId))")
-        db.execSQL("CREATE TABLE IF NOT EXISTS workspace_sync_links (kind TEXT NOT NULL, wireId TEXT NOT NULL, nativeId TEXT NOT NULL, nativeTable TEXT NOT NULL, nativeKeys TEXT NOT NULL, PRIMARY KEY(kind,wireId))")
-        db.execSQL("CREATE TABLE IF NOT EXISTS workspace_sync_vault (ref TEXT NOT NULL, origin TEXT NOT NULL, nonce TEXT NOT NULL, ciphertext TEXT NOT NULL, deleted INTEGER NOT NULL, PRIMARY KEY(ref))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workspace_sync_state` (`key` TEXT NOT NULL, `valueJson` TEXT NOT NULL, PRIMARY KEY(`key`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workspace_sync_records` (`kind` TEXT NOT NULL, `id` TEXT NOT NULL, `revision` INTEGER NOT NULL, `baseJson` TEXT NOT NULL, `localJson` TEXT NOT NULL, `dirty` INTEGER NOT NULL, `pendingProjection` INTEGER NOT NULL, PRIMARY KEY(`kind`, `id`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workspace_sync_conflicts` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, `recordId` TEXT NOT NULL, `localJson` TEXT NOT NULL, `remoteJson` TEXT NOT NULL, `state` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workspace_sync_versions` (`tableName` TEXT NOT NULL, `rowId` INTEGER NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY(`tableName`, `rowId`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workspace_sync_locators` (`tableName` TEXT NOT NULL, `rowId` INTEGER NOT NULL, `version` INTEGER NOT NULL, `signature` TEXT NOT NULL, `linksJson` TEXT NOT NULL, PRIMARY KEY(`tableName`, `rowId`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workspace_sync_links` (`kind` TEXT NOT NULL, `wireId` TEXT NOT NULL, `nativeId` TEXT NOT NULL, `nativeTable` TEXT NOT NULL, `nativeKeys` TEXT NOT NULL, PRIMARY KEY(`kind`, `wireId`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workspace_sync_vault` (`ref` TEXT NOT NULL, `origin` TEXT NOT NULL, `nonce` TEXT NOT NULL, `ciphertext` TEXT NOT NULL, `deleted` INTEGER NOT NULL, PRIMARY KEY(`ref`))")
     }
 }
 

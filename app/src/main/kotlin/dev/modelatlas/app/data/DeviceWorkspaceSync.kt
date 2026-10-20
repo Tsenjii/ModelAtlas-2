@@ -47,8 +47,13 @@ class DeviceWorkspaceSync(
     }
     private fun transaction(action: () -> Unit)=room.runInTransaction(Runnable { action() })
     private fun setImporting(active: Boolean) = db.execSQL("INSERT OR REPLACE INTO workspace_sync_state VALUES('importing',?)",arrayOf(if(active) "1" else "0"))
-    private fun stored(kind: String,id: String): JsonObject? = db.workspaceOne("SELECT * FROM workspace_sync_records WHERE kind=? AND id=?",kind,id)
-    private fun current(kind: String,id: String): WorkspaceRecord? = stored(kind,id)?.text("localJson")?.let(::workspaceRecord)
+    private fun stored(kind: String,id: String): JsonObject? {
+        val row=db.workspaceOne("SELECT kind,id,revision,dirty,pendingProjection FROM workspace_sync_records WHERE kind=? AND id=?",kind,id) ?: return null
+        return JsonObject(row + workspaceMap("localJson" to db.workspaceText("workspace_sync_records","localJson","kind=? AND id=?",kind,id),
+            "baseJson" to db.workspaceText("workspace_sync_records","baseJson","kind=? AND id=?",kind,id)))
+    }
+    private fun current(kind: String,id: String): WorkspaceRecord? =
+        db.workspaceText("workspace_sync_records","localJson","kind=? AND id=?",kind,id)?.let(::workspaceRecord)
     private fun write(v: WorkspaceRecord,base: WorkspaceRecord,dirty: Boolean,pending: Boolean) {
         db.execSQL("INSERT OR REPLACE INTO workspace_sync_records VALUES(?,?,?,?,?,?,?)",
             arrayOf(v.kind,v.id,base.revision,base.encode(),v.encode(),if(dirty)1 else 0,if(pending)1 else 0))
@@ -87,6 +92,7 @@ class DeviceWorkspaceSync(
             refresh(); true
         } catch(e: CancellationException) { throw e }
         catch(_: Exception) { refresh(problem=true); false }
+        finally { if(mutable.value.busy) refresh(problem=true) }
     } }
     suspend fun disconnect()=withContext(Dispatchers.IO) { lock.withLock {
         val previous=connection()
@@ -134,11 +140,12 @@ class DeviceWorkspaceSync(
 
     private fun envelope(c: WorkspaceConnection): WorkspaceExchange {
         val order="CASE kind WHEN 'providers' THEN 0 WHEN 'accounts' THEN 1 WHEN 'endpoint_profiles' THEN 2 WHEN 'endpoint_bindings' THEN 3 WHEN 'credentials' THEN 4 WHEN 'models' THEN 5 WHEN 'my_models' THEN 6 ELSE 20 END"
-        val rows=db.workspaceRows("SELECT r.localJson FROM workspace_sync_records r WHERE r.dirty=1 AND NOT EXISTS(SELECT 1 FROM workspace_sync_conflicts c WHERE c.kind=r.kind AND c.recordId=r.id AND c.state='OPEN') ORDER BY $order,r.id LIMIT 100")
+        val rows=db.workspaceRows("SELECT r.kind,r.id FROM workspace_sync_records r WHERE r.dirty=1 AND NOT EXISTS(SELECT 1 FROM workspace_sync_conflicts c WHERE c.kind=r.kind AND c.recordId=r.id AND c.state='OPEN') ORDER BY $order,r.id LIMIT 100")
         val changes=mutableListOf<WorkspaceRecord>(); val secrets=linkedMapOf<String,WorkspaceSecret>()
         var size=0
         for(row in rows) {
-            var v=workspaceRecord(row.text("localJson"))
+            val snapshot=current(row.text("kind"),row.text("id")) ?: continue
+            var v=snapshot
             var secret: WorkspaceSecret?=null
             if(v.kind=="credentials" && !v.deleted && c.shareSecrets) {
                 val ref=nativeCredential(v)
@@ -153,7 +160,7 @@ class DeviceWorkspaceSync(
                     // edit while preparing the privileged envelope.
                     transaction {
                         val live=current(v.kind,v.id)
-                        if(live?.encode()==row.text("localJson")) enqueue(v)
+                        if(live?.same(snapshot)==true) enqueue(v)
                     }
                 }
             }
@@ -187,6 +194,7 @@ class DeviceWorkspaceSync(
             refresh(); true
         } catch(e: CancellationException) { throw e }
         catch(_: Exception) { refresh(problem=true); false }
+        finally { if(mutable.value.busy) refresh(problem=true) }
     } }
 
     private fun conflict(local: WorkspaceRecord,remote: WorkspaceRecord) {
@@ -243,9 +251,9 @@ class DeviceWorkspaceSync(
         val order="CASE kind WHEN 'providers' THEN 0 WHEN 'accounts' THEN 1 WHEN 'endpoint_profiles' THEN 2 WHEN 'credentials' THEN 3 ELSE 20 END"
         val kinds=(listOf("providers","accounts","credentials","endpoint_profiles","models","my_models")+
             workspaceNativeTables.filter { it !in WorkspaceProjection.immutableNative }.map { "android:$it" }).joinToString(","){"'$it'"}
-        val rows=db.workspaceRows("SELECT localJson FROM workspace_sync_records WHERE pendingProjection=1 AND dirty=0 AND kind IN ($kinds) ORDER BY $order,kind,id LIMIT 200")
+        val rows=db.workspaceRows("SELECT kind,id FROM workspace_sync_records WHERE pendingProjection=1 AND dirty=0 AND kind IN ($kinds) ORDER BY $order,kind,id LIMIT 200")
         for(row in rows) {
-            val record=workspaceRecord(row.text("localJson"))
+            val record=current(row.text("kind"),row.text("id")) ?: continue
             // Append-only measurements from another device are stored with their
             // provenance. Do not present them as this device's local test results.
             if(record.kind.removePrefix("android:") in WorkspaceProjection.immutableNative) continue
@@ -263,10 +271,10 @@ class DeviceWorkspaceSync(
         try {
             transaction {
                 captureNative()
-                val row=db.workspaceOne("SELECT * FROM workspace_sync_conflicts WHERE id=? AND state='OPEN'",id) ?: error("Conflict gone")
+                val row=db.workspaceOne("SELECT id,kind,recordId FROM workspace_sync_conflicts WHERE id=? AND state='OPEN'",id) ?: error("Conflict gone")
                 val local=current(row.text("kind"),row.text("recordId")) ?: error("Missing local")
                 check(workspaceDigest(local.encode())==localHash)
-                val remote=workspaceRecord(row.text("remoteJson"))
+                val remote=workspaceRecord(db.workspaceText("workspace_sync_conflicts","remoteJson","id=?",id)!!)
                 if(keepLocal) write(local.copy(baseRevision=remote.revision),remote,true,false)
                 else {
                     write(remote.copy(baseRevision=remote.revision),remote,false,false)
@@ -279,19 +287,22 @@ class DeviceWorkspaceSync(
         catch(_: Exception) { refresh(problem=true); false }
     } }
     private fun refresh(problem: Boolean=false) {
+        try {
         val c=connection()
         val counts=db.workspaceOne("SELECT COUNT(*) AS stored,COALESCE(SUM(dirty),0) AS pending,COALESCE(SUM(pendingProjection),0) AS projections FROM workspace_sync_records")!!
-        val conflicts=db.workspaceRows("SELECT * FROM workspace_sync_conflicts WHERE state='OPEN' ORDER BY createdAt LIMIT 100").map { row ->
-            val local=current(row.text("kind"),row.text("recordId")) ?: workspaceRecord(row.text("localJson"))
-            DeviceWorkspaceConflict(row.text("id"),row.text("kind"),local.data.toString(),workspaceRecord(row.text("remoteJson")).data.toString(),workspaceDigest(local.encode()))
+        val conflicts=db.workspaceRows("SELECT id,kind,recordId FROM workspace_sync_conflicts WHERE state='OPEN' ORDER BY createdAt LIMIT 100").map { row ->
+            val local=current(row.text("kind"),row.text("recordId")) ?: workspaceRecord(db.workspaceText("workspace_sync_conflicts","localJson","id=?",row.text("id"))!!)
+            val remote=workspaceRecord(db.workspaceText("workspace_sync_conflicts","remoteJson","id=?",row.text("id"))!!)
+            DeviceWorkspaceConflict(row.text("id"),row.text("kind"),local.data.toString().take(5000),remote.data.toString().take(5000),workspaceDigest(local.encode()))
         }
         mutable.value=DeviceWorkspaceStatus(c!=null,c?.url.orEmpty(),c?.shareSecrets?:false,
             pending=counts.number("pending").toInt(),stored=counts.number("stored").toInt(),pendingProjection=counts.number("projections").toInt(),
             lastSuccess=c?.lastSuccess?:0,problem=problem,conflicts=conflicts)
+        } catch(_: Exception) { mutable.value=mutable.value.copy(busy=false,problem=true) }
     }
     private fun originOf(raw: String): String {
         val url=raw.toHttpUrl()
         require(url.scheme=="https" && url.username.isEmpty() && url.password.isEmpty())
-        return url.newBuilder().encodedPath("/").query(null).fragment(null).build().toString().trimEnd('/')
+        return dev.modelatlas.core.network.EndpointPolicy.origin(url)
     }
 }

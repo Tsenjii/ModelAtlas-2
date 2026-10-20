@@ -12,6 +12,17 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class WorkspaceStorageTest {
+    @Test fun retainedLargeUnicodeRecordDoesNotDependOnCursorWindowSize() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val room=Room.inMemoryDatabaseBuilder(context,AtlasDatabase::class.java).build()
+        try {
+            val db=room.openHelper.writableDatabase
+            val payload="保留😀".repeat(400_000)
+            db.execSQL("INSERT INTO workspace_sync_records VALUES('messages','large',1,?,?,0,1)",arrayOf(payload,payload))
+            assertEquals(payload,db.workspaceText("workspace_sync_records","localJson","kind=? AND id=?","messages","large"))
+            assertEquals(payload,db.workspaceText("workspace_sync_records","baseJson","kind=? AND id=?","messages","large"))
+        } finally { room.close() }
+    }
     @Test fun journalSurvivesReplaceAndUpsertWithoutBreakingProductWritesAndPreservesNullGroups() {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         val room=Room.inMemoryDatabaseBuilder(context,AtlasDatabase::class.java).build()

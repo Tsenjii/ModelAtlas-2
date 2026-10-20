@@ -91,7 +91,7 @@ class AtlasMigration13To14Test {
             }
             assertEquals(
                 legacySchema.keys - OLD_AVAILABILITY_UNIQUE_INDEX + NEW_AVAILABILITY_UNIQUE_INDEX +
-                    setOf("snapshot_slice_heads", "index_snapshot_slice_heads_kind"),
+                    setOf("snapshot_slice_heads", "index_snapshot_slice_heads_kind") + workspaceSyncTables,
                 currentSchema.keys,
             )
             assertFalse(currentSchema.containsKey(OLD_AVAILABILITY_UNIQUE_INDEX))
@@ -297,7 +297,7 @@ class AtlasMigration13To14Test {
             }
             assertEquals(
                 legacySchema.keys - OLD_AVAILABILITY_UNIQUE_INDEX + NEW_AVAILABILITY_UNIQUE_INDEX +
-                    setOf("snapshot_slice_heads", "index_snapshot_slice_heads_kind"),
+                    setOf("snapshot_slice_heads", "index_snapshot_slice_heads_kind") + workspaceSyncTables,
                 currentSchema.keys,
             )
             assertFalse(currentSchema.containsKey(OLD_AVAILABILITY_UNIQUE_INDEX))

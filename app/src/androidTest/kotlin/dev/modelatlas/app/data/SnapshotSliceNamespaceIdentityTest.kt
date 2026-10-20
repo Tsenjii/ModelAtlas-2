@@ -118,7 +118,7 @@ class SnapshotSliceNamespaceIdentityTest {
 
         // Version sanity: this slice runs at version 15 WITH snapshot_slice_heads
         // (LOCKED by Main/Principal for CR-011; identity memo §0/§4.1; oracle §6).
-        assertEquals(NEXT_VERSION, db.openHelper.writableDatabase.version)
+        assertEquals(16, db.openHelper.writableDatabase.version)
 
         // Two unsliced writes (older good @1000, newer good @2000) — the exact
         // legacy record() sequence, byte-identical semantics asserted below.

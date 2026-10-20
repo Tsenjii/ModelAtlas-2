@@ -33,6 +33,22 @@ internal fun SupportSQLiteDatabase.workspaceRows(sql: String, vararg args: Any?)
 internal fun SupportSQLiteDatabase.workspaceOne(sql: String, vararg args: Any?): JsonObject? =
     workspaceRows(sql, *args).firstOrNull()
 
+/** Android CursorWindow has a bounded per-window size. Fetch retained large
+ * messages in bounded UTF-8 text pieces instead of selecting a multi-MiB row. */
+internal fun SupportSQLiteDatabase.workspaceText(table: String,column: String,where: String,vararg args: Any?): String? {
+    require(table in setOf("workspace_sync_records","workspace_sync_conflicts"))
+    require(column in setOf("localJson","baseJson","remoteJson"))
+    val length=workspaceOne("SELECT length(`$column`) AS n FROM `$table` WHERE $where",*args)?.number("n") ?: return null
+    require(length<=40L*1024*1024)
+    return buildString {
+        var start=1L
+        while(start<=length) {
+            append(workspaceOne("SELECT substr(`$column`,?,131072) AS part FROM `$table` WHERE $where",start,*args)!!.text("part"))
+            start+=131072
+        }
+    }
+}
+
 internal fun SupportSQLiteDatabase.workspacePK(table: String): List<String> {
     require(table in workspaceNativeTables)
     return workspaceRows("PRAGMA table_info(`$table`)").filter { it.number("pk") > 0 }
@@ -78,10 +94,11 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
         val old = db.workspaceOne("SELECT localJson FROM workspace_sync_records WHERE kind=? AND id=?",kind,id)
             ?.text("localJson")?.let(::workspaceRecord)
         val preserve=when(kind) {
-            "providers"->setOf("description","created_at")
+            "providers"->setOf("description","created_at","base_url","auth_mode")
             "accounts"->setOf("label")
-            "credentials"->setOf("created_at","role","_auth_mode")
+            "credentials"->setOf("created_at","role","_auth_mode","_base_url")
             "models"->setOf("display_name","price_state","quota_state","provenance","updated_at")
+            "my_models"->setOf("created_at")
             else->emptySet()
         }
         return WorkspaceRecord(kind,id,data=JsonObject(old?.data.orEmpty() + data + old?.data.orEmpty().filterKeys { it in preserve }))
@@ -112,7 +129,8 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
         val c = row.text("credentialId")
         val id = wireID("credentials",c,workspaceID(p,aID,c))
         val cID = (WorkspaceJson.parseToJsonElement(id) as JsonArray)[2].jsonPrimitive.content
-        val endpoint = db.workspaceOne("SELECT baseUrl FROM endpoints WHERE providerId=? ORDER BY endpointId LIMIT 1",pNative) ?: return null
+        val endpoint = db.workspaceOne("SELECT e.baseUrl FROM endpoints e JOIN offerings o ON o.endpointId=e.endpointId JOIN credential_availability a ON a.offeringId=o.id WHERE a.credentialId=? ORDER BY e.endpointId LIMIT 1",c)
+            ?: db.workspaceOne("SELECT baseUrl FROM endpoints WHERE providerId=? ORDER BY endpointId LIMIT 1",pNative) ?: return null
         // Native custom headers/PAT retain their typed recipe and roles in the
         // android namespace. Never silently downgrade those to a Bearer key.
         val mode = row.text("authMode")
@@ -135,8 +153,10 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
             val c=WorkspaceJson.parseToJsonElement(cWire).jsonArray[2].jsonPrimitive.content
             val eWire=wireID("endpoint_profiles",row.text("endpointId"),workspaceID(p,row.text("endpointId")))
             val e=WorkspaceJson.parseToJsonElement(eWire).jsonArray[1].jsonPrimitive.content
-            record("my_models",workspaceID(p,a,c,model,group,e),workspaceMap("provider_id" to p,"account_id" to a,
-                "credential_id" to c,"model_id" to model,"group_id" to group,"endpoint" to e,"created_at" to member.number("addedAt")))
+            val wire=wireID("my_models",row.text("id"),workspaceID(p,a,c,model,group,e))
+            val wireEndpoint=WorkspaceJson.parseToJsonElement(wire).jsonArray[5].jsonPrimitive.content
+            record("my_models",wire,workspaceMap("provider_id" to p,"account_id" to a,
+                "credential_id" to c,"model_id" to model,"group_id" to group,"endpoint" to wireEndpoint,"created_at" to member.number("addedAt")))
         }
     }
     fun export(table: String, row: JsonObject): List<WorkspaceRecord> {
@@ -154,9 +174,11 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
                 val pNative = row.text("providerId"); val p = providerWire(pNative)
                 provider(pNative)?.let(result::add)
                 val e = row.text("endpointId"); val idWire=wireID("endpoint_profiles",e,workspaceID(p,e))
-                val eID=(WorkspaceJson.parseToJsonElement(idWire) as JsonArray)[1].jsonPrimitive.content
-                result += record("endpoint_profiles",idWire,workspaceMap("provider_id" to p,"id" to eID,
-                    "operation" to row.text("protocol"),"url" to row.text("endpointUrl")))
+                if(db.workspaceOne("SELECT wireId FROM workspace_sync_links WHERE kind='selection_endpoint' AND nativeId=?",e)==null) {
+                    val eID=(WorkspaceJson.parseToJsonElement(idWire) as JsonArray)[1].jsonPrimitive.content
+                    result += record("endpoint_profiles",idWire,workspaceMap("provider_id" to p,"id" to eID,
+                        "operation" to row.text("protocol"),"url" to row.text("endpointUrl")))
+                }
             }
             "credentials" -> credential(row)?.let(result::add)
             "offerings" -> {
@@ -200,6 +222,11 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
                     keys.map { it.jsonPrimitive.content }.toTypedArray())
             } else {
                 require(pk.indices.all { v.data[pk[it]]==keys[it] })
+                if(table=="credentials" || table=="accounts") {
+                    val owner=if(table=="credentials") "accountId" else "providerId"
+                    val existing=db.workspaceOne("SELECT `$owner` FROM `$table` WHERE `${pk.first()}`=?",v.data.text(pk.first()))
+                    check(existing==null || existing[owner]==v.data[owner]) { "既有帳號或憑證不可跨來源重新綁定" }
+                }
                 var data=if(table=="credentials" && !hasSecret && v.data.text("authMode")!="NONE")
                     JsonObject(v.data + ("enabled" to JsonPrimitive(0))) else v.data
                 val canonical=when(table) { "providers"->"providers"; "accounts"->"accounts"; "credentials"->"credentials"; "endpoints"->"endpoint_profiles"; else->null }
@@ -225,7 +252,7 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
             // they never delete samples, messages, evidence or last-good facts.
             val binding=db.workspaceOne("SELECT nativeTable,nativeKeys FROM workspace_sync_links WHERE kind=? AND wireId=?",v.kind,v.id) ?: return true
             val table=binding.text("nativeTable")
-            if(table !in listOf("providers","accounts","credentials","endpoints","my_models")) return true
+            if(table !in listOf("providers","accounts","credentials","endpoints","my_models","credential_availability")) return true
             val keys=WorkspaceJson.parseToJsonElement(binding.text("nativeKeys")).jsonObject
             db.execSQL("DELETE FROM `$table` WHERE "+keys.keys.joinToString(" AND "){"`$it`=?"},keys.values.map{it.jsonPrimitive.content}.toTypedArray())
             return true
@@ -268,12 +295,19 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
                 val credential=nativeID("credentials",workspaceID(pWire,d.text("account_id"),d.text("credential_id")))
                 val model=d.text("model_id"); val endpoint=d.text("endpoint")
                 var nativeEndpoint=nativeID("endpoint_profiles",workspaceID(pWire,endpoint))
+                val credentialRecord=db.workspaceOne("SELECT localJson FROM workspace_sync_records WHERE kind='credentials' AND id=?",workspaceID(pWire,d.text("account_id"),d.text("credential_id")))?.text("localJson")?.let(::workspaceRecord) ?: return false
+                val credentialBase=credentialRecord.data.text("_base_url").trimEnd('/')
+                val currentEndpoint=db.workspaceOne("SELECT * FROM endpoints WHERE endpointId=?",nativeEndpoint)
+                if(currentEndpoint!=null && currentEndpoint.text("baseUrl").trimEnd('/')!=credentialBase) {
+                    nativeEndpoint=nativeID("selection_endpoint",v.id)
+                }
                 if(db.workspaceOne("SELECT endpointId FROM endpoints WHERE endpointId=?",nativeEndpoint)==null) {
                     val providerRecord=db.workspaceOne("SELECT localJson FROM workspace_sync_records WHERE kind='providers' AND id=?",workspaceID(pWire))?.text("localJson")?.let(::workspaceRecord) ?: return false
-                    val base=providerRecord.data.text("base_url").trimEnd('/')
+                    val base=credentialBase.ifEmpty { providerRecord.data.text("base_url").trimEnd('/') }
                     val suffix=mapOf("CHAT_COMPLETIONS" to "/chat/completions","RESPONSES" to "/responses","ANTHROPIC_MESSAGES" to "/messages","EMBEDDINGS" to "/embeddings","RERANK" to "/rerank","IMAGES_GENERATION" to "/images/generations","AUDIO" to "/audio/transcriptions")[endpoint] ?: return false
                     db.workspacePut("endpoints",workspaceMap("endpointId" to nativeEndpoint,"providerId" to p,"baseUrl" to base,"endpointUrl" to base+suffix,"protocol" to endpoint))
-                    link("endpoint_profiles",workspaceID(pWire,endpoint),nativeEndpoint,"endpoints",workspaceMap("endpointId" to nativeEndpoint))
+                    if(currentEndpoint==null) link("endpoint_profiles",workspaceID(pWire,endpoint),nativeEndpoint,"endpoints",workspaceMap("endpointId" to nativeEndpoint))
+                    else link("selection_endpoint",v.id,nativeEndpoint,"endpoints",workspaceMap("endpointId" to nativeEndpoint))
                 }
                 val offering=nativeID("offering",workspaceID(pWire,model,endpoint))
                 db.workspacePut("offerings",workspaceMap("id" to offering,"providerId" to p,"endpointId" to nativeEndpoint,

@@ -53,6 +53,29 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.14.4'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache-dependency-path: vps/go.sum
+      - name: Start real TLS workspace hub for native sync integration
+        run: |
+          cd vps
+          go test -c -o /tmp/modelatlas-native-fixture .
+          MODELATLAS_NATIVE_FIXTURE_OUT=/tmp/modelatlas-native-fixture.json /tmp/modelatlas-native-fixture -test.run '^TestWorkspaceAndroidFixture$' -test.timeout=35m > /tmp/modelatlas-native-fixture.log 2>&1 &
+          for i in $(seq 1 30); do
+            if test -f /tmp/modelatlas-native-fixture.json; then break; fi
+            sleep 1
+          done
+          test -f /tmp/modelatlas-native-fixture.json
+          python3 - <<'PY'
+          import json, os
+          with open('/tmp/modelatlas-native-fixture.json') as f:
+              data = json.load(f)
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write('WORKSPACE_FIXTURE_URL=' + data['url'] + '\n')
+              f.write('WORKSPACE_FIXTURE_CERTIFICATE=' + data['certificate'] + '\n')
+              f.write('WORKSPACE_FIXTURE_ADMIN=' + data['admin'] + '\n')
+          PY
       - name: Enable emulator acceleration
         run: sudo chmod 666 /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
@@ -60,7 +83,7 @@ jobs:
           api-level: 29
           arch: x86_64
           disable-animations: true
-          script: gradle :app:connectedDebugAndroidTest --no-daemon --console=plain
+          script: gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.workspaceFixture="$WORKSPACE_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceCertificate="$WORKSPACE_FIXTURE_CERTIFICATE" -Pandroid.testInstrumentationRunnerArguments.workspaceAdmin="$WORKSPACE_FIXTURE_ADMIN" --no-daemon --console=plain
       - uses: actions/upload-artifact@v4
         if: always()
         with:

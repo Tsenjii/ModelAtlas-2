@@ -76,7 +76,9 @@ data class WorkspaceReply(
 )
 
 @Serializable
-data class WorkspacePairRequest(val code: String, val label: String, val platform: String = "Android")
+data class WorkspacePairRequest(val code: String, val label: String, val platform: String = "Android") {
+    override fun toString(): String = "WorkspacePairRequest([redacted])"
+}
 @Serializable
 data class WorkspacePairResult(
     val protocol: Int,

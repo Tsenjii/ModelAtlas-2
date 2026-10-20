@@ -964,7 +964,6 @@ private fun AtlasScreenContent(
           verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
           Text(stringResource(R.string.settings_body))
-          WorkspaceSyncSection(viewModel)
           NotificationSettingsSection(
             state = notificationSettings,
             onMasterChanged = { on ->
@@ -1013,6 +1012,7 @@ private fun AtlasScreenContent(
             error = lmspeedSyncError,
             lastSynced = lmspeedLastSynced,
           )
+          WorkspaceSyncSection(viewModel)
         }
       },
     )

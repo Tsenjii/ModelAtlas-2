@@ -98,7 +98,7 @@ func workspaceImmutable(kind string) bool {
 	if workspaceAndroidKind(kind) {
 		return oneOf(strings.TrimPrefix(kind, "android:"), "samples", "evidence", "price_snapshots", "quota_snapshots", "snapshot_facts", "external_observations", "provider_perf_facts", "provider_account_usage_facts", "provider_notices", "provider_events", "price_events", "quota_events")
 	}
-	return oneOf(kind, "messages", "telemetry", "observations", "external_models", "newapi_snapshots", "research_evidence", "research_evidence_details", "research_reflections", "connector_test_history", "recipe_versions", "knowledge_versions")
+	return oneOf(kind, "credential_origins", "endpoint_bindings", "messages", "telemetry", "observations", "external_models", "newapi_snapshots", "research_evidence", "research_evidence_details", "research_reflections", "connector_test_history", "recipe_versions", "knowledge_versions")
 }
 func workspaceRecordKey(v WorkspaceRecord) string { return v.Kind + "/" + v.ID }
 
