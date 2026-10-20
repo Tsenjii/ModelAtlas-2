@@ -13,6 +13,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+      - uses: actions/checkout@v4
+        with:
+          ref: be2605f61806a9db8b35e9bdc85f1950bcc54da2
+          path: apk-source
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -93,4 +97,28 @@ jobs:
                                   plist = plistlib.loads(app.read('ModelAtlas.app/Contents/Info.plist'))
                               require(info['commit'] == source and info['tag'] == 'v0.8.0-preview.1' and plist['CFBundleShortVersionString'] == '0.8.0' and plist['CFBundleVersion'] == '14', 'Mac identity mismatch')
                               print('ACTUAL RELEASE BUNDLE PASS:', name, info['commit'], flush=True)
+          PY
+      - name: Run the complete production APK metadata step against its actual source
+        env:
+          MODELATLAS_SOURCE_COMMIT: be2605f61806a9db8b35e9bdc85f1950bcc54da2
+        run: |
+          cp release/android-metadata.py release/android_signing.py apk-source/release/
+          mkdir -p apk-source/app/build/outputs/apk/debug
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          apk = next(Path('artifact').rglob('app-debug.apk'))
+          shutil.copyfile(apk, 'apk-source/app/build/outputs/apk/debug/app-debug.apk')
+          PY
+          python3 apk-source/release/android-metadata.py
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          info = json.loads(Path('apk-source/release-output/android.json').read_text())
+          assert info['commit'] == 'be2605f61806a9db8b35e9bdc85f1950bcc54da2'
+          assert info['version_name'] == '0.8.0-preview.1'
+          assert info['version_code'] == 8001 and info['minimum_android_api'] == 26
+          assert info['apk_sha256'] == hashlib.sha256(Path('apk-source/app/build/outputs/apk/debug/app-debug.apk').read_bytes()).hexdigest()
+          assert info['certificate_sha256'] == 'f116873861598964874192dc5a40a1a4f9dbb5e3ce705ec4451a787d48955024'
+          print('FULL ACTUAL APK METADATA PASS:', info['commit'], info['version_name'], info['minimum_android_api'], flush=True)
           PY
