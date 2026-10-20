@@ -32,7 +32,7 @@ type Server struct {
 	Client        *http.Client
 	PublicClient  *http.Client
 	workMu        sync.Mutex
-	workspaceMu   sync.Mutex
+	workspaceMu   workspaceMutex
 	flightMu      sync.Mutex
 	flights       map[string]bool
 	cancels       map[string]context.CancelFunc

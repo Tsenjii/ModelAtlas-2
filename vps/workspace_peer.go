@@ -82,8 +82,7 @@ func (s *Server) workspaceConnect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "valid HTTPS center and pairing code required", 400)
 		return
 	}
-	if !s.workspaceMu.TryLock() {
-		http.Error(w, "sync busy", 409)
+	if !s.workspaceWait(w, r) {
 		return
 	}
 	defer s.workspaceMu.Unlock()
@@ -153,8 +152,7 @@ func (s *Server) workspaceDisconnect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "explicit disconnect required", 400)
 		return
 	}
-	if !s.workspaceMu.TryLock() {
-		http.Error(w, "sync busy", 409)
+	if !s.workspaceWait(w, r) {
 		return
 	}
 	defer s.workspaceMu.Unlock()
@@ -171,8 +169,7 @@ func (s *Server) workspaceSyncHTTP(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &v) {
 		return
 	}
-	if !s.workspaceMu.TryLock() {
-		http.Error(w, "sync busy", 409)
+	if !s.workspaceWait(w, r) {
 		return
 	}
 	defer s.workspaceMu.Unlock()
@@ -402,8 +399,7 @@ func (s *Server) workspaceResolve(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "explicit conflict choice required", 400)
 		return
 	}
-	if !s.workspaceMu.TryLock() {
-		http.Error(w, "sync busy", 409)
+	if !s.workspaceWait(w, r) {
 		return
 	}
 	defer s.workspaceMu.Unlock()
