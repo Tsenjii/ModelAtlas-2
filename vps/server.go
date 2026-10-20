@@ -43,6 +43,8 @@ type Server struct {
 	desktop         bool
 	maintenanceFile string
 	vaultVerified   bool
+	scheduleMu      sync.Mutex
+	scheduleClock   func() time.Time
 	wake            chan struct{}
 	reflectionDue   int64
 }
@@ -320,6 +322,10 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /assistant/confirm", s.assistantConfirm)
 	api.HandleFunc("POST /assistant/undo", s.assistantUndo)
 	api.HandleFunc("GET /system", s.systemStatus)
+	api.HandleFunc("GET /research/schedules", s.listResearchSchedules)
+	api.HandleFunc("POST /research/schedules", s.saveResearchSchedule)
+	api.HandleFunc("POST /research/schedules/control", s.controlResearchSchedule)
+	api.HandleFunc("POST /research/schedules/limit", s.setResearchScheduleLimit)
 	root := http.NewServeMux()
 	root.HandleFunc("POST /api/workspace/pair", s.workspaceClaim)
 	root.Handle("/api/workspace/exchange", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceExchangeHTTP)))

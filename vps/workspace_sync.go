@@ -671,10 +671,31 @@ func (s *Server) workspaceApply(tx *sql.Tx, v WorkspaceRecord, secret *Workspace
 		}
 	}
 	// Incoming histories are observations, never resumable work on a second host.
-	if v.Kind == "research_runs" && oneOf(str(data["status"]), "RUNNING", "QUEUED") {
+	ownScheduledAck := false
+	if oneOf(v.Kind, "research_runs", "research_run_options", "research_tasks") {
+		run := str(data["run_id"])
+		if v.Kind == "research_runs" {
+			run = str(data["id"])
+		}
+		var owned int
+		var localDevice string
+		if e = tx.QueryRow("SELECT COUNT(*) FROM research_schedule_runs WHERE run_id=?", run).Scan(&owned); e != nil {
+			return e
+		}
+		if owned > 0 {
+			_ = tx.QueryRow("SELECT device_id FROM workspace_identity WHERE id='local'").Scan(&localDevice)
+			ownScheduledAck = localDevice != "" && v.Device == localDevice
+			if !ownScheduledAck {
+				if e = suspendScheduledRun(context.Background(), tx, run, "SYNC_CHANGED", now()); e != nil {
+					return e
+				}
+			}
+		}
+	}
+	if !ownScheduledAck && v.Kind == "research_runs" && oneOf(str(data["status"]), "RUNNING", "QUEUED") {
 		data["status"] = "PAUSED"
 	}
-	if v.Kind == "research_tasks" && oneOf(str(data["status"]), "RUNNING", "PENDING", "QUEUED") {
+	if !ownScheduledAck && v.Kind == "research_tasks" && oneOf(str(data["status"]), "RUNNING", "PENDING", "QUEUED") {
 		data["status"] = "INTERRUPTED"
 	}
 	if v.Kind == "telemetry" && str(data["outcome"]) == "RUNNING" {

@@ -70,6 +70,6 @@ sh vps/deploy/run.sh
 
 ## 後續更新與資料庫升級
 
-沿用全部固定環境值與同一持久磁碟，使用完整六項 CI 通過的 commit 重新部署。schema18 啟動遷移前自動將原 schema 的 SQLite 一致快照與校驗 manifest 保存到 DB 同目錄 `upgrade-backups`；快照失敗、錯 master key 或較新 schema 會拒絕啟動。空 DB 首次安裝不製造空備份。須保留整個目錄及足夠空間，平台不持久保存時仍會遺失資料，程式不能替平台建立 volume。
+沿用全部固定環境值與同一持久磁碟，使用完整六項 CI 通過的 commit 重新部署。schema19 啟動遷移前自動將原 schema 的 SQLite 一致快照與校驗 manifest 保存到 DB 同目錄 `upgrade-backups`；快照失敗、錯 master key 或較新 schema 會拒絕啟動。空 DB 首次安裝不製造空備份。須保留整個目錄及足夠空間，平台不持久保存時仍會遺失資料，程式不能替平台建立 volume。
 
 這不等於平台 binary 自動 rollback：原 root-only env 與所需舊 binary 也必須備份；較舊 binary 需配對舊 schema 快照，不能直接打開新 DB。離線 backup／preflight／restore、systemd 一指令更新與中斷復原見 [UPDATE.md](UPDATE.md)。設定→資料→服務與更新可核對實際服務 commit／schema／vault 狀態；`/healthz` 仍只作不含版本／私密內容的公開 probe。

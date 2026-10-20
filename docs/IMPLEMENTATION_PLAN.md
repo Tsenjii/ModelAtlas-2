@@ -1,7 +1,9 @@
 # ModelAtlas Implementation Plan
 
-2026-10-20 最新使用者優先序：先 VPS-OPS-006（可日常部署與後續安全更新），caller／驗收／未部署界線見 ACTIVE_TASK、TRACEABILITY 及 vps/UPDATE.md。原 SYNC-001 剩餘原生對應／分塊、研究排程、未知站點、可量測改進、authenticity 與實機完整驗收保留；不因調整順序刪需求。
+2026-10-20 前片使用者優先序：先 VPS-OPS-006（可日常部署與後續安全更新），caller／驗收／未部署界線見 ACTIVE_TASK、TRACEABILITY 及 vps/UPDATE.md。原 SYNC-001 剩餘原生對應／分塊、研究排程、未知站點、可量測改進、authenticity 與實機完整驗收保留；不因調整順序刪需求。
 
+
+2026-10-20 接續：VPS-OPS-006 code `034e775` 六項成功、真 systemd 及兩架構套件已驗；唯一新整合片為 VPS-RESEARCH-SCHEDULE-007，先完成公開資料排程／上限／重啟／正式 UI，完整研究及各平台缺口繼續保留。詳見 ACTIVE_TASK、TRACEABILITY、`vps/RESEARCH_SCHEDULES.md`，未取得目標主機不冒充遠端部署。
 
 ## 產品契約
 依使用者 Astra Final Structured v2 規格與追加要求開發。完整 v1 以十階段累積交付；本次先交付第一條可測試 vertical slice，不把 schema/interface 當作完整功能。

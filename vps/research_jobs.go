@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -67,6 +68,9 @@ func (s *Server) chargeNetwork(ctx context.Context, probe bool) error {
 	if probe && probeUsed >= probeBudget {
 		return errors.New("research inference budget exhausted")
 	}
+	if e = s.scheduledNetworkCharge(ctx, tx, run, probe); e != nil {
+		return e
+	}
 	if _, e = tx.ExecContext(ctx, "UPDATE research_run_options SET used=used+1,probes_used=probes_used+? WHERE run_id=?", map[bool]int{true: 1, false: 0}[probe], run); e != nil {
 		return e
 	}
@@ -86,11 +90,17 @@ func (s *Server) wakeWorker() {
 
 var searchQueries = map[string]string{"en": "recurring free strong coding reasoning model API daily token quota", "zh": "免費 強模型 API 每日 額度 推理 程式 註冊 台灣", "ru": "бесплатный API сильные модели ежедневная квота токены", "ja": "無料 高性能 AI モデル API 毎日 トークン 制限", "ko": "무료 고성능 AI 모델 API 일일 토큰 할당량", "es": "API modelos IA gratuitos cuota diaria programación", "pt": "API modelos IA grátis cota diária raciocínio", "id": "API model AI gratis kuota token harian coding"}
 
-func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
-	var v ResearchOptions
-	if !decodeJSON(w, r, &v) {
-		return
-	}
+type researchPlannedTask struct {
+	kind, dedupe string
+	input        taskInput
+}
+type researchPlanError struct {
+	status  int
+	message string
+}
+
+func (e *researchPlanError) Error() string { return e.message }
+func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchOptions, []researchPlannedTask, error) {
 	if v.Budget == 0 {
 		v.Budget = 40
 	}
@@ -98,86 +108,57 @@ func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
 		v.ProbeBudget = 2
 	}
 	if v.Budget < 1 || v.Budget > 200 || v.ProbeBudget < 0 || v.ProbeBudget > 10 || len(v.SourceIDs) > 32 || len(v.Selections) > 32 || len(v.CandidateIDs) > 32 || len(v.Queries) > 8 {
-		http.Error(w, "bounded research options required", 400)
-		return
+		return v, nil, &researchPlanError{400, "bounded research options required"}
 	}
 	for lang, q := range v.Queries {
 		if !researchLanguage(lang) || safeText(q, 300) != q || q == "" {
-			http.Error(w, "invalid query", 400)
-			return
+			return v, nil, &researchPlanError{400, "invalid query"}
 		}
 	}
-	tasks := []struct {
-		kind, dedupe string
-		input        taskInput
-	}{}
+	tasks := []researchPlannedTask{}
 	for _, id := range v.SourceIDs {
-		src, e := s.source(r.Context(), id)
+		src, e := s.source(ctx, id)
 		if e != nil || !src.Enabled {
-			http.Error(w, "source unavailable", 422)
-			return
+			return v, nil, &researchPlanError{422, "source unavailable"}
 		}
-		tasks = append(tasks, struct {
-			kind, dedupe string
-			input        taskInput
-		}{"SOURCE", "source:" + id, taskInput{SourceID: id, SourceSnapshot: &src}})
+		tasks = append(tasks, researchPlannedTask{"SOURCE", "source:" + id, taskInput{SourceID: id, SourceSnapshot: &src}})
 	}
 	for i := range v.Selections {
 		scope := v.Selections[i]
-		if !s.validateSelection(r.Context(), scope) || !s.groupBound(r.Context(), scope) || !conversationOperation(s.operation(r.Context(), scope)) {
-			http.Error(w, "explicit inference selection unavailable", 422)
-			return
+		if !s.validateSelection(ctx, scope) || !s.groupBound(ctx, scope) || !conversationOperation(s.operation(ctx, scope)) {
+			return v, nil, &researchPlanError{422, "explicit inference selection unavailable"}
 		}
-		tasks = append(tasks, struct {
-			kind, dedupe string
-			input        taskInput
-		}{"CATALOG", "catalog:" + scopeKey(scope), taskInput{Selection: &scope}})
+		tasks = append(tasks, researchPlannedTask{"CATALOG", "catalog:" + scopeKey(scope), taskInput{Selection: &scope}})
 		if v.MinimalInference {
-			tasks = append(tasks, struct {
-				kind, dedupe string
-				input        taskInput
-			}{"MINIMAL_INFERENCE", "infer:" + scopeKey(scope), taskInput{Selection: &scope}})
+			tasks = append(tasks, researchPlannedTask{"MINIMAL_INFERENCE", "infer:" + scopeKey(scope), taskInput{Selection: &scope}})
 		}
 	}
 	for _, id := range v.CandidateIDs {
-		c, e := s.candidate(r.Context(), id)
+		c, e := s.candidate(ctx, id)
 		if e != nil || !publicURL(c.Website) {
-			http.Error(w, "candidate website unavailable", 422)
-			return
+			return v, nil, &researchPlanError{422, "candidate website unavailable"}
 		}
-		tasks = append(tasks, struct {
-			kind, dedupe string
-			input        taskInput
-		}{"INSPECT", "inspect:" + id, taskInput{CandidateID: id, URL: c.Website}})
+		tasks = append(tasks, researchPlannedTask{"INSPECT", "inspect:" + id, taskInput{CandidateID: id, URL: c.Website}})
 	}
 	if v.Search {
 		if len(v.Queries) == 0 {
 			v.Queries = map[string]string{}
 			for lang, q := range searchQueries {
-				if learned := s.activeKnowledge(r.Context(), "RESEARCH_STRATEGY", lang); str(learned["query"]) != "" {
+				if learned := s.activeKnowledge(ctx, "RESEARCH_STRATEGY", lang); str(learned["query"]) != "" {
 					q = str(learned["query"])
 				}
 				v.Queries[lang] = q
 			}
 		}
 		for lang, q := range v.Queries {
-			tasks = append(tasks, struct {
-				kind, dedupe string
-				input        taskInput
-			}{"SEARCH", "search:" + lang, taskInput{Language: lang, Query: q}})
+			tasks = append(tasks, researchPlannedTask{"SEARCH", "search:" + lang, taskInput{Language: lang, Query: q}})
 		}
 	}
 	if v.RefreshAA {
-		tasks = append(tasks, struct {
-			kind, dedupe string
-			input        taskInput
-		}{"AA", "aa", taskInput{}})
+		tasks = append(tasks, researchPlannedTask{"AA", "aa", taskInput{}})
 	}
 	if v.LMSpeedSeeds {
-		tasks = append(tasks, struct {
-			kind, dedupe string
-			input        taskInput
-		}{"LMSPEED_SEEDS", "lmspeed", taskInput{}})
+		tasks = append(tasks, researchPlannedTask{"LMSPEED_SEEDS", "lmspeed", taskInput{}})
 	}
 	// Learned priorities only reorder work the user explicitly selected.
 	weights := map[string]float64{}
@@ -185,10 +166,10 @@ func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
 		weight := 1.0
 		var learned map[string]any
 		if task.input.SourceID != "" {
-			learned = s.activeKnowledge(r.Context(), "SOURCE_RELIABILITY", task.input.SourceID)
+			learned = s.activeKnowledge(ctx, "SOURCE_RELIABILITY", task.input.SourceID)
 		}
 		if task.input.Language != "" {
-			learned = s.activeKnowledge(r.Context(), "RESEARCH_STRATEGY", task.input.Language)
+			learned = s.activeKnowledge(ctx, "RESEARCH_STRATEGY", task.input.Language)
 		}
 		if n := decimal(json.Number(fmt.Sprint(learned["weight"]))); n != nil {
 			weight, _ = n.Float64()
@@ -202,33 +183,53 @@ func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
 	}
 	sort.SliceStable(tasks, func(i, j int) bool { return weights[tasks[i].dedupe] > weights[tasks[j].dedupe] })
 	if len(tasks) == 0 {
-		http.Error(w, "select sources, providers, candidates or search", 400)
+		return v, nil, &researchPlanError{400, "select sources, providers, candidates or search"}
+	}
+	return v, tasks, nil
+}
+func insertResearchRun(ctx context.Context, tx *sql.Tx, id string, v ResearchOptions, tasks []researchPlannedTask) error {
+	config, _ := json.Marshal(v)
+	if _, err := tx.ExecContext(ctx, "INSERT INTO research_runs VALUES(?,'QUEUED','',?,NULL)", id, now()); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "INSERT INTO research_run_options(run_id,config_json,budget,probe_budget) VALUES(?,?,?,?)", id, string(config), v.Budget, v.ProbeBudget); err != nil {
+		return err
+	}
+	for _, task := range tasks {
+		raw, _ := json.Marshal(task.input)
+		if _, err := tx.ExecContext(ctx, "INSERT INTO research_tasks(id,run_id,kind,dedupe,payload_json,status,created_at) VALUES(?,?,?,?,?,'QUEUED',?) ON CONFLICT(run_id,dedupe) DO NOTHING", newID(), id, task.kind, task.dedupe, string(raw), now()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
+	var v ResearchOptions
+	if !decodeJSON(w, r, &v) {
+		return
+	}
+	v, tasks, err := s.planResearch(r.Context(), v)
+	if err != nil {
+		var issue *researchPlanError
+		if errors.As(err, &issue) {
+			http.Error(w, issue.message, issue.status)
+		} else {
+			http.Error(w, "research plan unavailable", 500)
+		}
 		return
 	}
 	id := newID()
-	config, _ := json.Marshal(v)
-	tx, e := s.Store.DB.BeginTx(r.Context(), nil)
-	if e != nil {
+	tx, err := s.Store.DB.BeginTx(r.Context(), nil)
+	if err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
 	defer tx.Rollback()
-	if _, e = tx.ExecContext(r.Context(), "INSERT INTO research_runs VALUES(?,'QUEUED','',?,NULL)", id, now()); e != nil {
+	if err = insertResearchRun(r.Context(), tx, id, v, tasks); err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
-	if _, e = tx.ExecContext(r.Context(), "INSERT INTO research_run_options(run_id,config_json,budget,probe_budget) VALUES(?,?,?,?)", id, string(config), v.Budget, v.ProbeBudget); e != nil {
-		http.Error(w, "database error", 500)
-		return
-	}
-	for _, task := range tasks {
-		raw, _ := json.Marshal(task.input)
-		if _, e = tx.ExecContext(r.Context(), "INSERT INTO research_tasks(id,run_id,kind,dedupe,payload_json,status,created_at) VALUES(?,?,?,?,?,'QUEUED',?) ON CONFLICT(run_id,dedupe) DO NOTHING", newID(), id, task.kind, task.dedupe, string(raw), now()); e != nil {
-			http.Error(w, "database error", 500)
-			return
-		}
-	}
-	if e = tx.Commit(); e != nil {
+	if err = tx.Commit(); err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
@@ -291,6 +292,10 @@ func (s *Server) controlResearch(w http.ResponseWriter, r *http.Request) {
 	}
 	if v.Action != "RESUME" && !oneOf(status, "RUNNING", "QUEUED", "PAUSED", "BUDGET_EXHAUSTED") {
 		http.Error(w, "run already finished", 409)
+		return
+	}
+	if e = s.scheduledRunControl(r.Context(), tx, v.ID, v.Action, v.AdditionalProbes); e != nil {
+		http.Error(w, e.Error(), 409)
 		return
 	}
 	if v.Action == "CANCEL" {
@@ -380,7 +385,17 @@ func (s *Server) runResearchPending(parent context.Context) {
 		_, _ = s.Store.DB.ExecContext(ctx, "UPDATE research_runs SET status='RUNNING',checkpoint=? WHERE id=? AND status IN ('RUNNING','QUEUED')", t.ID, t.RunID)
 		var input taskInput
 		json.Unmarshal([]byte(payload), &input)
-		result, taskErr := s.executeResearchTask(ctx, t.RunID, t.Kind, input)
+		var result map[string]any
+		var taskErr error
+		var scheduled int
+		if oneOf(t.Kind, "MINIMAL_INFERENCE", "CATALOG") {
+			_ = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_schedule_runs WHERE run_id=?", t.RunID).Scan(&scheduled)
+		}
+		if scheduled > 0 {
+			taskErr = errors.New("automatic schedule cannot use private model credentials")
+		} else {
+			result, taskErr = s.executeResearchTask(ctx, t.RunID, t.Kind, input)
+		}
 		status := "SUCCESS"
 		if taskErr != nil {
 			status = "FAILED"
@@ -394,13 +409,23 @@ func (s *Server) runResearchPending(parent context.Context) {
 			}
 		}
 		saveCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+		if errors.Is(taskErr, errScheduledDefinitionChanged) {
+			var owner string
+			if s.Store.DB.QueryRowContext(saveCtx, "SELECT schedule_id FROM research_schedule_runs WHERE run_id=?", t.RunID).Scan(&owner) == nil {
+				s.suspendSchedule(saveCtx, owner, "SOURCES_CHANGED")
+			}
+		}
 		var runState string
 		var used, budget int
 		_ = s.Store.DB.QueryRowContext(saveCtx, "SELECT r.status,o.used,o.budget FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", t.RunID).Scan(&runState, &used, &budget)
 		if runState == "CANCELLED" {
 			status = "CANCELLED"
 		}
-		if taskErr != nil && strings.Contains(taskErr.Error(), "budget") {
+		if runState == "PAUSED" && status == "FAILED" {
+			status = "INTERRUPTED"
+		}
+		s.scheduleBudgetWait(saveCtx, t.RunID, t.ID, taskErr)
+		if taskErr != nil && strings.Contains(taskErr.Error(), "budget") && !oneOf(runState, "CANCELLED", "PAUSED") {
 			status = "BUDGET_EXHAUSTED"
 			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='BUDGET_EXHAUSTED' WHERE id=? AND status='RUNNING'", t.RunID)
 		}

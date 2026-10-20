@@ -1,5 +1,7 @@
 # VPS 最新交付入口
 
+接續 VPS 公開研究排程第一階段：正式 UI／啟停／紀錄、每輪及每日 HTTP 上限、重啟接續與來源變更確認見 [RESEARCH_SCHEDULES.md](RESEARCH_SCHEDULES.md)。整體研究願望仍 PARTIAL，新 HEAD 六項 CI 另驗；未遠端部署。維運 code `034e775` 已六項成功，證據見 `../docs/verification/20261020/vps-ops-ci-baseline.json`。
+
 2026-10-20 最新優先序為 VPS-OPS-006：一般 VPS 完整安裝／更新／副本預檢／健康檢查／失敗與中斷復原，Git 平台升級前自動保存 schema 快照；說明及實際邊界見 [UPDATE.md](UPDATE.md)。本輪新 HEAD 的同 SHA 六項檢查與套件以 PR #20 最新結果為準。尚未部署到目標主機；完整 P1–P10／Part V／原生全量互通仍 PARTIAL。
 
 

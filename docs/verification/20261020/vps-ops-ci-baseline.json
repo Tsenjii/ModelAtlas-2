@@ -1,0 +1,133 @@
+{
+  "requirement": "VPS-OPS-006",
+  "code_sha": "034e775fafc5a51af0f62753389508dfed24c739",
+  "tree_sha": "8e1df46e912d2238d92af4b0936a16dccb406005",
+  "vps_run": 39420196524,
+  "android_run": 39420196530,
+  "jobs": [
+    {
+      "id": 118618940875,
+      "name": "vps-browser",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118618941243,
+      "name": "vps-linux-amd64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118618941309,
+      "name": "vps-linux-arm64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118618941602,
+      "name": "vps-test",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118618951927,
+      "name": "build",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118618952519,
+      "name": "device-tests",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "android_tests": {
+    "tests": 976,
+    "failures": 0,
+    "errors": 0,
+    "existing_skips": 5
+  },
+  "go_race_seconds": 150.664,
+  "vet": "success",
+  "systemd_lifecycle": {
+    "result": "PASS",
+    "seconds": 40.84,
+    "scope": [
+      "fresh install",
+      "real TLS inference",
+      "versioned upgrade",
+      "committed restart preserves new writes",
+      "failed activation rollback",
+      "SIGKILL recovery",
+      "tampered bundle rejection"
+    ]
+  },
+  "browser": {
+    "workflows": 22,
+    "png_count": 295,
+    "review": "新增 system status 7 圖已於前片依原始解析度檢查；原21流程／288圖保留。"
+  },
+  "footprint": {
+    "idle_rss_bytes": 24072192,
+    "peak_rss_bytes": 180957184,
+    "warm_rss_bytes": 110354432,
+    "sqlite_bytes": 162816000,
+    "binary_bytes": 14192802,
+    "measurement": "CI service PID only; original expanded workload retained; excludes OS/proxy/browser; not target VPS"
+  },
+  "artifacts": [
+    {
+      "name": "linux-amd64",
+      "id": 12262689192,
+      "zip_bytes": 11871518,
+      "zip_sha256": "8014ce6ae8996eaaeff8eb0a5e13d044a8371fe84838d9f39fc5569605cfc8ab",
+      "tar_bytes": 5940497,
+      "tar_sha256": "2ef0f0ba85873fb648fb0903b6c3a755b58f1d09551b00da7f139f2479219636",
+      "elf_machine": 62,
+      "binary_bytes": 14192802
+    },
+    {
+      "name": "linux-arm64",
+      "id": 12262388669,
+      "zip_bytes": 11041711,
+      "zip_sha256": "9c87ad48642041683b76904a74bb86c5323358b1c04db272c704366da0d1adfc",
+      "tar_bytes": 5502118,
+      "tar_sha256": "aa92c2b192d7020df457f7fad10f29dbfbaa18292acbf82257955fbad294081f",
+      "elf_machine": 183,
+      "binary_bytes": 13369506
+    },
+    {
+      "name": "browser",
+      "id": 12262883394,
+      "zip_sha256": "cfa60084eeade05ba895551ae02c146620cb779a8fffcf9d6815a35dea0f3533"
+    },
+    {
+      "name": "footprint",
+      "id": 12263264292,
+      "zip_sha256": "e97138161db44cdf14a3f6295bfd842aa209d6a1bb063c58619e1418f3ff781a"
+    },
+    {
+      "name": "android-device",
+      "id": 12262884149,
+      "zip_sha256": "bf7e60e4796f98a6f87574475d343a5e43838c2ba16703ee04e5dbf1d8f29afe"
+    },
+    {
+      "name": "android-build",
+      "id": 12262959375,
+      "zip_sha256": "5fa053a01e799792d38bceb8bc7b8bc30516082c84cbf3194cb0cf0e9ce24462"
+    }
+  ],
+  "bundle_review": {
+    "files": 24,
+    "markdown_documents": 17,
+    "schema": 18,
+    "result": "兩架構 ZIP／tar／內層所有檔案 SHA256 和 VERSION 已核對；amd64 真 CLI version／bundle-check 成功。"
+  },
+  "limits": [
+    "No actual target VPS address or access provided; no remote deployment performed.",
+    "PR #20 remains Draft; no merge.",
+    "Only this exact code SHA is accepted for the listed tests; later HEAD requires its own six checks.",
+    "Full P8/P9/P10 and Part V wishlist remain incomplete."
+  ]
+}

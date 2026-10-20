@@ -216,6 +216,7 @@ func TestAutomaticMigrationSnapshotAndFutureSchemaGuard(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	dropScheduleSchemaFixture(t, s.Store.DB)
 	if _, err = s.Store.DB.Exec("PRAGMA user_version=17"); err != nil {
 		t.Fatal(err)
 	}

@@ -67,7 +67,7 @@ sudo /opt/modelatlas/modelatlas-vps ops ready --env-file /etc/modelatlas/modelat
 
 Repository `https://github.com/Tsenjii/ModelAtlas-2`，branch `feature/vps-rebuild-20261014`（main 是 Android 主線）。Root `.`，Build `sh vps/deploy/build.sh`，Run `sh vps/deploy/run.sh`。沿用固定的 MODELATLAS_DB／MASTER_KEY／ADMIN_TOKEN／PUBLIC_ORIGIN 及相同持久磁碟；平台契約見 [PLATFORM_DEPLOY.md](PLATFORM_DEPLOY.md)。
 
-目前 schema18。啟動發現較舊 schema 時，**在任何 schema 寫入之前**，先在 DB 同目錄的 `upgrade-backups` 保存原 schema 一致快照與 SHA256 manifest，再做原有交易遷移；空 DB 首次建立不製造空備份。若快照無法保存，啟動失敗而不開始遷移；錯 master key 或較新 schema 也在遷移前拒絕。此功能不需要 root、不啟動額外常駐程序。平台須持久保存整個資料目錄，不能只保留單一 DB 檔。
+目前 schema19。啟動發現較舊 schema 時，**在任何 schema 寫入之前**，先在 DB 同目錄的 `upgrade-backups` 保存原 schema 一致快照與 SHA256 manifest，再做原有交易遷移；空 DB 首次建立不製造空備份。若快照無法保存，啟動失敗而不開始遷移；錯 master key 或較新 schema 也在遷移前拒絕。此功能不需要 root、不啟動額外常駐程序。平台須持久保存整個資料目錄，不能只保留單一 DB 檔。
 
 平台重新部署的 binary／流量回復由平台控制，不宣稱有遠端平台 API。需要退回較舊 binary 時，先停止服務，再恢復對應 schema 的快照與舊 binary；不能只把舊 binary 指向新版 DB。若已有自己的私密單行環境檔（0600），可在停止服務後使用以下離線工具：
 

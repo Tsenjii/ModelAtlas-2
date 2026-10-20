@@ -70,7 +70,12 @@ func (s *Server) eligibility(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listResearchRuns(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT r.id,r.status,r.checkpoint,r.started_at,o.budget,o.used,o.probe_budget,o.probes_used,COALESCE(o.summary_json,'{}') FROM research_runs r LEFT JOIN research_run_options o ON o.run_id=r.id ORDER BY r.started_at DESC LIMIT 100")
+	owner := r.URL.Query().Get("schedule_id")
+	if owner != "" && !validID(owner) {
+		http.Error(w, "invalid schedule id", 400)
+		return
+	}
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT r.id,r.status,r.checkpoint,r.started_at,o.budget,o.used,o.probe_budget,o.probes_used,COALESCE(o.summary_json,'{}'),COALESCE(p.schedule_id,''),COALESCE(s.name,'') FROM research_runs r LEFT JOIN research_run_options o ON o.run_id=r.id LEFT JOIN research_schedule_runs p ON p.run_id=r.id LEFT JOIN research_schedules s ON s.id=p.schedule_id WHERE (?='' OR p.schedule_id=?) ORDER BY r.started_at DESC,r.rowid DESC LIMIT 100", owner, owner)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -81,7 +86,7 @@ func (s *Server) listResearchRuns(w http.ResponseWriter, r *http.Request) {
 		var v ResearchRun
 		var budget, used, probes, probeUsed sql.NullInt64
 		var raw string
-		if rows.Scan(&v.ID, &v.Status, &v.Checkpoint, &v.StartedAt, &budget, &used, &probes, &probeUsed, &raw) == nil {
+		if rows.Scan(&v.ID, &v.Status, &v.Checkpoint, &v.StartedAt, &budget, &used, &probes, &probeUsed, &raw, &v.ScheduleID, &v.ScheduleName) == nil {
 			if budget.Valid {
 				v.Budget = &budget.Int64
 			}

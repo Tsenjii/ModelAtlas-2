@@ -1,6 +1,13 @@
 # ModelAtlas Public — ACTIVE TASK
 
-## 2026-10-20 最新指示：先完成 VPS 可用性與後續更新（VPS-OPS-006）
+## 2026-10-20 接續：VPS 公開研究排程（VPS-RESEARCH-SCHEDULE-007）
+
+- 前片 VPS-OPS-006 code `034e775fafc5a51af0f62753389508dfed24c739` 已同 SHA 六項 SUCCESS：VPS `39420196524` test `118618941602`／browser `118618940875`／amd64 `118618941243`／arm64 `118618941309`；Android `39420196530` build `118618951927`／device `118618952519`。Android 976 項、0 failure／0 error、5 項既有 skip；完整 Go race／vet、真 systemd 安裝→TLS inference→更新→失敗回復→SIGKILL 接續、22 Browser／295 PNG 與原 expanded workload 均通過。服務程序待機 24,072,192 bytes／峰值 180,957,184 bytes，不含 OS／代理／瀏覽器。兩架構套件內外雜湊／24 個檔案、真 amd64 version／bundle-check 已獨立核對；前片驗收範圍限程式與 CI，尚無目標 VPS，未遠端部署。
+- 使用者續行既定完整 VPS 目標；本輪唯一切片為 VPS-RESEARCH-SCHEDULE-007：預設關閉的持久公開資料探索排程、每輪／每日 HTTP 上限、去重、重啟接續、明確停用及正式 UI／紀錄。來源變更需本機確認，遠端研究歷史不能成為可執行工作。metadata sync 保持獨立；不自動推論或花用模型 Key。
+- WISH-CRAWL-001 仍 PARTIAL；推論／費用／逐憑證 quota、429／502 自動退避、地區／並行控制及原生生命週期仍待後續完整落地。未知站點 Connector／可量測 Reflection／authenticity 與原願望清單全部保留，不以第一階段提前勾選。
+- main 重查仍 `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`，`38408176782` build／device SUCCESS，FEATURE FREEZE=OFF。新 HEAD 必須重新六項 gate、保留原22 Browser／295圖及完整 workload，再加本片真 TLS／重啟／上限／同步邊界／手機操作。PR #20 保持 Draft，不 merge，沒有主機存取資料不冒充完成部署。
+
+## 前片：VPS 可用性與後續更新（VPS-OPS-006，已驗 code）
 
 - 使用者明確要求「先把vps全部弄好優化好到能夠使用，之後更新也要弄好」。本輪唯一整合切片改為 VPS-OPS-006；原 SYNC-001 與全部願望清單保留，暫不疊加其他平台 UI 或研究功能。
 - 前片 code `f83d4a59c36f4c394111bce721ae7c29e4b2fc4d`：VPS `39411965192` 四項、Android `39411965153` build／device 同 SHA SUCCESS；976 項、0 failure／0 error、5 項既有 skip。Mac `e408262817b7f4d9d70550cb15f828f9a0e21eb0` 九項成功保持原狀，不以其結果冒充本片候選。main 重查仍 `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`／`38408176782` build／device SUCCESS，FEATURE FREEZE=OFF。

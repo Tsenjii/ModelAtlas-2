@@ -56,7 +56,7 @@ func (s *Server) researchDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	rows.Close()
-	rows, e = tx.QueryContext(ctx, "SELECT r.id,r.status,r.checkpoint,r.started_at,o.budget,o.used,o.probe_budget,o.probes_used,COALESCE(o.summary_json,'{}') FROM research_runs r LEFT JOIN research_run_options o ON o.run_id=r.id ORDER BY r.rowid DESC LIMIT 100")
+	rows, e = tx.QueryContext(ctx, "SELECT r.id,r.status,r.checkpoint,r.started_at,o.budget,o.used,o.probe_budget,o.probes_used,COALESCE(o.summary_json,'{}'),COALESCE(p.schedule_id,''),COALESCE(s.name,'') FROM research_runs r LEFT JOIN research_run_options o ON o.run_id=r.id LEFT JOIN research_schedule_runs p ON p.run_id=r.id LEFT JOIN research_schedules s ON s.id=p.schedule_id ORDER BY r.rowid DESC LIMIT 100")
 	if e != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -65,7 +65,7 @@ func (s *Server) researchDashboard(w http.ResponseWriter, r *http.Request) {
 		var run ResearchRun
 		var b, u, p, pu sql.NullInt64
 		var raw string
-		if rows.Scan(&run.ID, &run.Status, &run.Checkpoint, &run.StartedAt, &b, &u, &p, &pu, &raw) == nil {
+		if rows.Scan(&run.ID, &run.Status, &run.Checkpoint, &run.StartedAt, &b, &u, &p, &pu, &raw, &run.ScheduleID, &run.ScheduleName) == nil {
 			if b.Valid {
 				run.Budget = &b.Int64
 			}

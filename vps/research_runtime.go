@@ -196,6 +196,7 @@ func (s *Server) saveResearchSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "database error", 500)
 		return
 	}
+	s.wakeWorker()
 	jsonOK(w, 200, v)
 }
 func (s *Server) source(ctx context.Context, id string) (ResearchSource, error) {

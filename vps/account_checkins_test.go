@@ -152,6 +152,7 @@ func TestAccountCheckinMigrationPreservesLegacyHistoryAndEncryptedCredentials(t 
 			t.Fatal(e)
 		}
 	}
+	dropScheduleSchemaFixture(t, old.DB)
 	if _, e = old.DB.Exec("DROP TABLE account_checkins; PRAGMA user_version=16"); e != nil {
 		t.Fatal(e)
 	}

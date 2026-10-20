@@ -16,6 +16,11 @@ import (
 	"unicode/utf8"
 )
 
+// Local admission control and user cancellation are not upstream failures.
+func researchTransportStopped(ctx context.Context, err error) bool {
+	return ctx.Err() != nil || errors.Is(err, errScheduledDailyBudget) || errors.Is(err, errScheduledDefinitionChanged) || err != nil && oneOf(err.Error(), "research run paused", "scheduled research paused", "research HTTP budget exhausted", "research inference budget exhausted")
+}
+
 func excerpt(v string, max int) string {
 	v = strings.Map(func(r rune) rune {
 		if unicode.Is(unicode.Cf, r) {
@@ -96,6 +101,9 @@ func (s *Server) sourceTask(ctx context.Context, run, id string, snapshot *Resea
 	}
 	raw, ctype, status, e := s.publicFetch(ctx, src.URL)
 	if e != nil {
+		if researchTransportStopped(ctx, e) {
+			return nil, e
+		}
 		// A failed Provider source is a retained lead, even before a model ID is known.
 		candidate, saveErr := s.ensureCandidate(ctx, src.Config.ProviderIDOr(src.URL), "UNKNOWN", run, src.URL)
 		if saveErr == nil {
@@ -363,6 +371,9 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 		}
 		raw, _, _, e := s.publicFetch(ctx, input.URL)
 		if e != nil {
+			if researchTransportStopped(ctx, e) {
+				return nil, e
+			}
 			c.Reason = "website fetch failed; prior evidence retained"
 			c.LastChecked = now()
 			s.saveCandidateDetails(ctx, c.ID, c.CandidateDetails)

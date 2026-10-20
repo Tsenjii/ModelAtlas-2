@@ -1,6 +1,6 @@
 package main
 
-const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsDetailWorkspace + jsProviderForms + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts + jsStreaming + jsCatalog + jsWorkspace + jsModelPicker + jsMacAlignment + jsIntelligence + jsCheckins + jsMacParity + jsModelConnections + jsModelViews + jsWorkspaceSync + jsSystemStatus
+const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsResearchSchedules + jsDetailWorkspace + jsProviderForms + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts + jsStreaming + jsCatalog + jsWorkspace + jsModelPicker + jsMacAlignment + jsIntelligence + jsCheckins + jsMacParity + jsModelConnections + jsModelViews + jsWorkspaceSync + jsSystemStatus
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);
