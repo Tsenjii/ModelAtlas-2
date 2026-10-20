@@ -397,6 +397,8 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
                 val model=d.text("model_id"); val endpoint=d.text("endpoint")
                 var nativeEndpoint=nativeID("endpoint_profiles",workspaceID(pWire,endpoint))
                 val credentialRecord=db.workspaceOne("SELECT localJson FROM workspace_sync_records WHERE kind='credentials' AND id=?",workspaceID(pWire,d.text("account_id"),d.text("credential_id")))?.text("localJson")?.let(::workspaceRecord) ?: return false
+                val cfg=configuration(p)
+                if(credentialRecord.unmappedAuth() || credentialRecord.data.text("role")!="INFERENCE" || cfg?.authMode==AuthMode.PAT_ACCOUNT || cfg?.credentials?.any { it.safeCredentialId==credential && it.role==CredentialRole.ACCOUNT }==true) return false
                 val credentialBase=credentialRecord.data.text("_base_url").trimEnd('/')
                 val currentEndpoint=db.workspaceOne("SELECT * FROM endpoints WHERE endpointId=?",nativeEndpoint)
                 if(currentEndpoint!=null && currentEndpoint.text("baseUrl").trimEnd('/')!=credentialBase) {

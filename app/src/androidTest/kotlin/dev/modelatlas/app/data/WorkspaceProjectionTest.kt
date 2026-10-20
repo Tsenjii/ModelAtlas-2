@@ -33,7 +33,8 @@ class WorkspaceProjectionTest {
         db.execSQL("INSERT INTO accounts VALUES('account','native')")
         db.execSQL("INSERT INTO endpoints VALUES('endpoint','native','https://native.example/v1','https://native.example/v1/chat/completions','CHAT_COMPLETIONS')")
         val projector=WorkspaceProjection(db)
-        projector.export("providers",db.workspaceOne("SELECT * FROM providers")!!)
+        val provider=projector.export("providers",db.workspaceOne("SELECT * FROM providers")!!).single{it.kind=="providers"}
+        db.execSQL("INSERT INTO workspace_sync_records VALUES(?,?,1,?,?,0,0)",arrayOf(provider.kind,provider.id,provider.encode(),provider.encode()))
         projector.export("accounts",db.workspaceOne("SELECT * FROM accounts")!!)
     }
     private fun configure(db: SupportSQLiteDatabase,config: ProviderManualConfig): JsonObject {
@@ -47,7 +48,7 @@ class WorkspaceProjectionTest {
         try {
             val db=room.openHelper.writableDatabase;seedNative(db)
             db.execSQL("INSERT INTO credentials(credentialId,accountId,label,enabled) VALUES('pat','account','Account PAT',1)")
-            val config=ProviderManualConfig("native","config",AuthMode.PAT_ACCOUNT,credentials=listOf(SafeCredentialRef("pat","Account PAT",CredentialRole.ACCOUNT)))
+            val config=ProviderManualConfig("native","config",AuthMode.BEARER,credentials=listOf(SafeCredentialRef("pat","Account PAT",CredentialRole.ACCOUNT)))
             val cfg=configure(db,config)
             val projector=WorkspaceProjection(db)
             val key=projector.export("credentials",db.workspaceOne("SELECT * FROM credentials")!!).single{it.kind=="credentials"}
@@ -59,7 +60,15 @@ class WorkspaceProjectionTest {
             assertEquals("ACCOUNT_PAT",changed.data.text("role"))
             assertTrue(projector.apply(changed,true))
             assertEquals(1L,db.workspaceOne("SELECT enabled FROM credentials WHERE credentialId='pat'")!!.number("enabled"))
+            db.execSQL("UPDATE workspace_sync_records SET localJson=?,baseJson=? WHERE kind=? AND id=?",arrayOf(changed.encode(),changed.encode(),changed.kind,changed.id))
+            val membership=WorkspaceRecord("my_models",workspaceID("native","account","pat","m","","CHAT_COMPLETIONS"),data=workspaceMap(
+                "provider_id" to "native","account_id" to "account","credential_id" to "pat","model_id" to "m","group_id" to "","endpoint" to "CHAT_COMPLETIONS","created_at" to 1))
+            assertFalse(projector.apply(membership,true))
+            db.execSQL("UPDATE workspace_sync_records SET localJson=? WHERE kind=? AND id=?",arrayOf(legacy.encode(),legacy.kind,legacy.id))
+            assertFalse(projector.apply(membership,true))
             assertEquals(0L,db.workspaceOne("SELECT COUNT(*) AS n FROM credential_availability")!!.number("n"))
+            val patOnly=configure(db,ProviderManualConfig("native","config",AuthMode.PAT_ACCOUNT))
+            assertEquals("ACCOUNT_PAT",projector.export("provider_configurations",patOnly).single{it.kind=="credentials"}.data.text("role"))
         } finally { room.close() }
     }
     @Test fun customAuthRetainsNativeDataAndDisablesEarlierUnsupportedSharedBearerWithoutChangingSource() {
