@@ -37,7 +37,9 @@ func TestSystemdDeploymentLifecycle(t *testing.T) {
 	if bundle == "" {
 		t.Fatal("prepared release bundle required")
 	}
-	root, err := os.MkdirTemp("/var/tmp", "modelatlas-accept-")
+	// PrivateTmp isolates /tmp and /var/tmp inside the actual hardened unit;
+	// keep its installation and TLS trust fixture on a visible private tree.
+	root, err := os.MkdirTemp("/opt", "modelatlas-accept-")
 	if err != nil {
 		t.Fatal(err)
 	}
