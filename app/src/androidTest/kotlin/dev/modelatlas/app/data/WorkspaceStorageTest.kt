@@ -12,6 +12,23 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class WorkspaceStorageTest {
+    @Test fun credentialMapperUpgradeReexportsCommittedRolesExactlyOnceWithoutUserEdits() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val room=Room.inMemoryDatabaseBuilder(context,AtlasDatabase::class.java).build()
+        try {
+            val db=room.openHelper.writableDatabase;installWorkspaceJournal(db)
+            db.execSQL("INSERT INTO providers VALUES('p','Provider','UNKNOWN','UNKNOWN',NULL,0,0,0)")
+            db.execSQL("INSERT INTO accounts VALUES('a','p')")
+            db.execSQL("INSERT INTO credentials(credentialId,accountId,label,enabled) VALUES('c','a','Key',1)")
+            db.execSQL("INSERT OR REPLACE INTO workspace_sync_state VALUES('credential-mapper-version','1')")
+            val before=db.workspaceOne("SELECT version FROM workspace_sync_versions WHERE tableName='credentials'")!!.number("version")
+            installWorkspaceJournal(db)
+            assertEquals(before+1,db.workspaceOne("SELECT version FROM workspace_sync_versions WHERE tableName='credentials'")!!.number("version"))
+            installWorkspaceJournal(db)
+            assertEquals(before+1,db.workspaceOne("SELECT version FROM workspace_sync_versions WHERE tableName='credentials'")!!.number("version"))
+            assertEquals(1L,db.workspaceOne("SELECT enabled FROM credentials")!!.number("enabled"))
+        } finally { room.close() }
+    }
     @Test fun retainedLargeUnicodeRecordDoesNotDependOnCursorWindowSize() {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         val room=Room.inMemoryDatabaseBuilder(context,AtlasDatabase::class.java).build()
