@@ -1,5 +1,10 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-20 認證角色補強（SYNC-001 同片新候選）
+
+- 交付前稽核發現原生Onboarding的CredentialEntity預設authMode為UNKNOWN，真實PAT／自訂Header角色存在已commit的ProviderManualConfig。只看row.authMode會錯誤匯出INFERENCE／Bearer。新候選改讀完整typed配置，ACCOUNT固定對應ACCOUNT_PAT；複合／自訂認證完整保留原格式，不部分降級。舊候選錯誤的共用Bearer投影會停用，保留來源原生配置與vault；不再傳送該不完整投影的秘密。
+- 加入三項原生回歸（角色／配置編輯、舊投影停用與來源保留、mapper升級只重送一次），並擴充真Go↔兩原生端驗證PAT秘密重新加密／ACCOUNT角色／真API拒絕用PAT建立推論連線。原973項與全部斷言保留，預期976項；新HEAD各自完整6／9項與報告才驗收。上述c9d1d33／f67cfa4仍只是前一code基線，不借作本候選結果。
+
 ## 2026-10-20 最新已驗：跨平台同步核心（整體需求仍 PARTIAL）
 
 - VPS／Android code `c9d1d33a80dda1d7fac4c63400f3dd2c1752960e`：VPS `39406475102` 四項、Android `39406475172` build／device 同 SHA SUCCESS。Mac code `f67cfa42ed6ffc0fa810d41a197edd5ad98b8d80`：Mac `39406793091` 三項、VPS `39406793037` 四項、Android `39406793040` 兩項同 SHA **九項 SUCCESS**。精確 job、artifact、SHA256、已驗與限制見 `docs/verification/20261020/sync-ci-baseline.json`。

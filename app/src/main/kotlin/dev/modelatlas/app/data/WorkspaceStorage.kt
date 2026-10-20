@@ -75,4 +75,11 @@ fun installWorkspaceJournal(db: SupportSQLiteDatabase) {
         }
         db.execSQL("INSERT OR IGNORE INTO workspace_sync_versions SELECT '$table',rowid,0 FROM `$table`")
     }
+    val mapper=db.workspaceOne("SELECT valueJson FROM workspace_sync_state WHERE `key`='credential-mapper-version'")?.text("valueJson")?.toIntOrNull() ?: 0
+    if(mapper<2) {
+        // Re-export roles from committed typed configuration after upgrading an
+        // earlier sync candidate; changing a mapper must not require a user edit.
+        db.execSQL("UPDATE workspace_sync_versions SET version=version+1 WHERE tableName='credentials'")
+        db.execSQL("INSERT OR REPLACE INTO workspace_sync_state VALUES('credential-mapper-version','2')")
+    }
 }

@@ -4,6 +4,7 @@ import android.database.Cursor
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dev.modelatlas.core.workspace.*
 import dev.modelatlas.core.onboarding.AuthMode
+import dev.modelatlas.core.onboarding.CredentialRole
 import kotlinx.serialization.json.*
 import java.util.UUID
 
@@ -13,6 +14,8 @@ internal fun workspaceID(vararg keys: String): String = JsonArray(keys.map(::Jso
 internal fun WorkspaceRecord.encode(): String = WorkspaceJson.encodeToString(WorkspaceRecord.serializer(), this)
 internal fun workspaceRecord(raw: String): WorkspaceRecord = WorkspaceJson.decodeFromString(WorkspaceRecord.serializer(), raw)
 internal fun WorkspaceRecord.same(other: WorkspaceRecord): Boolean = deleted == other.deleted && data == other.data
+internal fun WorkspaceRecord.unmappedAuth(): Boolean =
+    ((data["_native_android"] as? JsonObject)?.get("auth_unmapped") as? JsonPrimitive)?.booleanOrNull == true
 internal fun workspaceMap(vararg values: Pair<String, Any?>): JsonObject = JsonObject(values.associate { (k,v) ->
     k to when(v) { null -> JsonNull; is Boolean -> JsonPrimitive(if(v) 1 else 0)
         is Number -> JsonPrimitive(v); is JsonElement -> v; else -> JsonPrimitive(v.toString()) }
@@ -139,6 +142,18 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
     private fun providerWire(p: String): String =
         (WorkspaceJson.parseToJsonElement(wireID("providers",p,workspaceID(p))) as JsonArray)[0].jsonPrimitive.content
     private fun accountWire(a: String,p: String): String = wireID("accounts",a,workspaceID(p,a))
+    private fun configuration(provider: String): ProviderManualConfig? {
+        val row=db.workspaceOne("SELECT * FROM provider_configurations WHERE providerId=?",provider) ?: return null
+        return ProviderConfigurationEntity(provider,row.text("workflowId"),row.text("authMode"),row.text("snapshotJson")).toManualConfig()
+    }
+    private fun blockedCredential(id: String,native: String): WorkspaceRecord? {
+        val old=db.workspaceText("workspace_sync_records","localJson","kind='credentials' AND id=?",id)?.let(::workspaceRecord) ?: return null
+        if(old.deleted) return null
+        // Retire an earlier unsupported Bearer projection on the center while
+        // retaining the source's working native custom authentication and vault.
+        val metadata=(old.data["_native_android"] as? JsonObject).orEmpty()+workspaceMap("native_id" to native,"auth_unmapped" to JsonPrimitive(true))
+        return old.copy(data=JsonObject(old.data+workspaceMap("enabled" to 0,"_native_android" to JsonObject(metadata))))
+    }
     private fun credential(row: JsonObject): WorkspaceRecord? {
         val a = row.text("accountId")
         val pNative = db.workspaceOne("SELECT providerId FROM accounts WHERE accountId=?",a)?.text("providerId") ?: return null
@@ -147,21 +162,30 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
         val c = row.text("credentialId")
         val id = wireID("credentials",c,workspaceID(p,aID,c))
         val cID = (WorkspaceJson.parseToJsonElement(id) as JsonArray)[2].jsonPrimitive.content
+        val cfg=try { configuration(pNative) } catch(_: Exception) { return blockedCredential(id,c) }
+        val ref=cfg?.credentials?.firstOrNull { it.safeCredentialId==c }
+        val accountOnly=ref?.role==CredentialRole.ACCOUNT || cfg?.authMode==AuthMode.PAT_ACCOUNT
+        val custom=cfg?.customAuthFields?.any { it.safeCredentialId==c }==true || (!accountOnly && cfg?.customAuthFields?.isNotEmpty()==true)
+        if(custom || (!accountOnly && cfg?.authMode in listOf(AuthMode.API_KEY,AuthMode.CUSTOM_HEADER))) return blockedCredential(id,c)
         val endpoint = db.workspaceOne("SELECT e.baseUrl FROM endpoints e JOIN offerings o ON o.endpointId=e.endpointId JOIN credential_availability a ON a.offeringId=o.id WHERE a.credentialId=? ORDER BY e.endpointId LIMIT 1",c)
             ?: db.workspaceOne("SELECT baseUrl FROM endpoints WHERE providerId=? ORDER BY endpointId LIMIT 1",pNative) ?: return null
-        // Native custom headers/PAT retain their typed recipe and roles in the
-        // android namespace. Never silently downgrade those to a Bearer key.
         val mode = row.text("authMode")
-        if (mode !in listOf("NONE","BEARER","UNKNOWN")) return null
-        return record("credentials",id,workspaceMap("provider_id" to p,"account_id" to aID,"id" to cID,
-            "label" to row.text("label"),"role" to "INFERENCE","enabled" to row.number("enabled"),
+        if (mode !in listOf("NONE","BEARER","UNKNOWN","PAT_ACCOUNT")) return blockedCredential(id,c)
+        val role=if(accountOnly || mode=="PAT_ACCOUNT") "ACCOUNT_PAT" else "INFERENCE"
+        var v=record("credentials",id,workspaceMap("provider_id" to p,"account_id" to aID,"id" to cID,
+            "label" to row.text("label"),"role" to role,"enabled" to row.number("enabled"),
             "created_at" to 0,"_base_url" to endpoint.text("baseUrl"),"_auth_mode" to if(mode=="NONE") "NONE" else ""))
+        if(ref!=null || accountOnly || mode=="PAT_ACCOUNT") v=v.copy(data=JsonObject(v.data+("role" to JsonPrimitive(role))))
+        val metadata=(v.data["_native_android"] as? JsonObject).orEmpty()+workspaceMap("native_id" to c,"auth_unmapped" to JsonPrimitive(false))
+        return v.copy(data=JsonObject(v.data+("_native_android" to JsonObject(metadata))))
     }
     private fun membership(provider: String,model: String): List<WorkspaceRecord> {
         val member=db.workspaceOne("SELECT * FROM my_models WHERE providerId=? AND providerModelId=?",provider,model) ?: return emptyList()
         val rows=db.workspaceRows("SELECT a.*,o.endpointId,e.protocol FROM credential_availability a JOIN offerings o ON o.id=a.offeringId JOIN endpoints e ON e.endpointId=o.endpointId WHERE o.providerId=? AND o.modelId=?",provider,model)
         val p=providerWire(provider)
         val exported=rows.mapNotNull { row ->
+            val key=db.workspaceOne("SELECT * FROM credentials WHERE credentialId=?",row.text("credentialId"))?.let(::credential)
+            if(key==null || key.unmappedAuth() || key.data.text("role")!="INFERENCE") return@mapNotNull null
             // Go's existing model uses an explicit string group; unknown native
             // null groups remain in the lossless Android namespace, unborrowed.
             val group=(row["group"] as? JsonPrimitive)?.contentOrNull ?: return@mapNotNull null
@@ -208,6 +232,10 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
                 }
             }
             "credentials" -> credential(row)?.let(result::add)
+            "provider_configurations" -> {
+                val p=row.text("providerId")
+                db.workspaceRows("SELECT c.* FROM credentials c JOIN accounts a ON a.accountId=c.accountId WHERE a.providerId=?",p).mapNotNull(::credential).forEach(result::add)
+            }
             "offerings" -> {
                 val p=providerWire(row.text("providerId")); val m=row.text("modelId")
                 result += record("models",workspaceID(p,m),workspaceMap("provider_id" to p,"id" to m,
@@ -230,19 +258,21 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
             val binding=when(v.kind) {
                 "providers" -> Triple("providers",row.text("providerId"),"providerId")
                 "accounts" -> Triple("accounts",row.text("accountId"),"accountId")
-                "credentials" -> Triple("credentials",row.text("credentialId"),"credentialId")
+                "credentials" -> Triple("credentials",(v.data["_native_android"] as? JsonObject)?.text("native_id").orEmpty().ifEmpty { row.text("credentialId") },"credentialId")
                 "endpoint_profiles" -> Triple("endpoints",row.text("endpointId"),"endpointId")
                 else -> null
             }
             if(binding==null || binding.second.isEmpty()) v else {
                 link(v.kind,v.id,binding.second,binding.first,workspaceMap(binding.third to binding.second))
-                v.copy(data=JsonObject(v.data+("_native_android" to workspaceMap("native_id" to binding.second))))
+                val metadata=(v.data["_native_android"] as? JsonObject).orEmpty()+workspaceMap("native_id" to binding.second)
+                v.copy(data=JsonObject(v.data+("_native_android" to JsonObject(metadata))))
             }
         }
     }
     /** Receives byte-preserved foreign records even when this build cannot yet
      * project their feature. The durable pending flag never discards a page. */
     fun apply(v: WorkspaceRecord, hasSecret: Boolean) : Boolean {
+        if(v.kind=="credentials" && v.unmappedAuth()) return true
         if (v.kind.startsWith("android:")) {
             val table=v.kind.removePrefix("android:")
             require(table in workspaceNativeTables)
@@ -339,12 +369,14 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
                 val old=db.workspaceOne("SELECT * FROM credentials WHERE credentialId=?",c)
                 val providerRecord=db.workspaceText("workspace_sync_records","localJson","kind='providers' AND id=?",workspaceID(pWire))?.let(::workspaceRecord)
                 val mode=if(d.text("_auth_mode").ifEmpty { providerRecord?.data?.text("auth_mode").orEmpty() }=="NONE") "NONE" else "BEARER"
+                val nativeConfig=configuration(p)
+                val nativeAccountOnly=nativeConfig?.credentials?.any { it.safeCredentialId==c && it.role==CredentialRole.ACCOUNT }==true || nativeConfig?.authMode==AuthMode.PAT_ACCOUNT
                 if(mode=="NONE" && db.workspaceOne("SELECT providerId FROM provider_configurations WHERE providerId=?",p)==null) {
                     val config=ProviderManualConfig(p,"workspace-anonymous-$p",AuthMode.NONE,authModeOverride=AuthMode.NONE,anonymousConfirmed=true).toEntity()
                     db.workspacePut("provider_configurations",workspaceMap("providerId" to p,"workflowId" to config.workflowId,"authMode" to config.authMode,"snapshotJson" to config.snapshotJson))
                 }
                 db.workspacePut("credentials",JsonObject(old.orEmpty()+workspaceMap("credentialId" to c,"accountId" to a,
-                    "label" to d.text("label"),"enabled" to if(d.text("role")=="INFERENCE" && hasSecret && mode!="NONE") d.number("enabled") else 0,
+                    "label" to d.text("label"),"enabled" to if(hasSecret && mode!="NONE" && (d.text("role")=="INFERENCE" || (d.text("role")=="ACCOUNT_PAT" && nativeAccountOnly))) d.number("enabled") else 0,
                     "note" to old?.get("note"),"group" to old?.get("group"),"priority" to (old?.number("priority")?:0),
                     "authMode" to mode,"headerName" to old?.get("headerName"),"headerPrefix" to old?.get("headerPrefix"),
                     "isSecret" to if(mode=="NONE") 0 else 1,"lastSuccessAt" to old?.get("lastSuccessAt"),"lastFailureAt" to old?.get("lastFailureAt"))))

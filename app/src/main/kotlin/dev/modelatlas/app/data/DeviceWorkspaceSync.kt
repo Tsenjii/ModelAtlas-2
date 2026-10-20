@@ -147,7 +147,7 @@ class DeviceWorkspaceSync(
             val snapshot=current(row.text("kind"),row.text("id")) ?: continue
             var v=snapshot
             var secret: WorkspaceSecret?=null
-            if(v.kind=="credentials" && !v.deleted && c.shareSecrets) {
+            if(v.kind=="credentials" && !v.deleted && !v.unmappedAuth() && c.shareSecrets) {
                 val ref=nativeCredential(v)
                 val origin=vault.originOf(ref)
                 if(origin!=null && origin==originOf(v.data.text("_base_url"))) {
@@ -205,7 +205,7 @@ class DeviceWorkspaceSync(
         val incoming=reply.accepted+reply.records
         val sealed=mutableMapOf<String,WorkspaceVaultCiphertext>()
         val usable=mutableSetOf<String>()
-        for(v in incoming.filter { it.kind=="credentials" && !it.deleted }) {
+        for(v in incoming.filter { it.kind=="credentials" && !it.deleted && !it.unmappedAuth() }) {
             val ref=nativeCredential(v); val origin=originOf(v.data.text("_base_url"))
             val secret=reply.secrets[v.key]
             if(c.shareSecrets && secret!=null && secret.digest()==v.data.text("_secret_digest")) {
