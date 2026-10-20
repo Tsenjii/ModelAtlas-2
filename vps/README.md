@@ -1,5 +1,8 @@
 # ModelAtlas VPS — Go / SQLite
 
+最新 VPS-MAC-PARITY-002：接續對齊 Mac 0.6.1 正式操作，包含獨立帳戶／Key 編輯、完整 scope 的對話搜尋／草稿、模型六分區／圖表／比較、六類設定；並降低完整 context 編碼與背景輪詢的資源消耗。功能 caller 見 [MAC_PARITY.md](MAC_PARITY.md)，資源與 CF／GitHub 部署判斷見 [RESOURCE_HOSTING.md](RESOURCE_HOSTING.md)，更新步驟見 [UPDATE.md](UPDATE.md)。候選與正式驗收以 PR #20 最新同 SHA 六項 checks／body 為準；下方歷史量測不代表新 HEAD。
+
+
 這是與 Android 同 repo、**獨立維護**的 VPS Web 服務。完整 V1 功能與實測驗收見 [DELIVERY.md](DELIVERY.md)。源自 Android 已驗收的產品契約（`docs/DECISIONS.md`、`docs/PRODUCT_SPEC.md`、`docs/RESEARCH_POLICY.md`），不是把 Android APK 改名當伺服器，也不會憑空聲稱全部同等功能。
 
 ## 架構及安全
@@ -8,7 +11,7 @@
 - SQLite WAL + 單連線順序化 + FK + 交易；Provider、Account、Credential、Catalog、My Models、Sessions、Messages、Telemetry、研究 Candidate/Evidence/Run、行動審核與版本化 Recipe 皆落地。
 - 單一明確 Provider × Account × Credential × Model × Group × Endpoint scope；不自動換 Key、不 Fallback、不提供無授權的 API Gateway。
 - AES-256-GCM 加密 API Key，master key **僅環境變數**；資料庫不寫 plaintext key，GET API 不回傳 key。管理端 HTTP Basic/Bearer 使用長隨機密碼，預設強制 loopback 監聽；明確啟用的平台模式須符合隔離的 HTTPS ingress 契約。
-- Web UI 僅 Playground／Providers／Models 三個底部分頁，設定在右上角；繁中、teal、深淺色、48px 觸控與窄螢幕適配。
+- Web UI 僅 Playground／Providers／Models 三工作區，設定在右上角；桌面側欄／手機底導覽、繁中、中性色與可選重點色、深淺色、48px 觸控與窄螢幕適配。
 
 ## 目前可用功能
 

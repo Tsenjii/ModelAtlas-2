@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -601,7 +602,38 @@ func (s *Server) listNewApiSnapshots(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid provider", 400)
 		return
 	}
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,credential_role,endpoint,facts_json,provider_version,observed_at FROM newapi_snapshots WHERE (?='' OR provider_id=?) ORDER BY rowid DESC LIMIT 200", provider, provider)
+	// Public UI reads one exact source before applying the historical limit.
+	// Frequent performance refreshes must never evict a notice's last-good read.
+	public, endpoint, origin, model, hours := 0, "", "", "", 0
+	if value := r.URL.Query().Get("public"); value != "" {
+		if value != "1" || !validID(provider) {
+			http.Error(w, "invalid public snapshot scope", 400)
+			return
+		}
+		public = 1
+		operation := r.URL.Query().Get("operation")
+		endpoint = map[string]string{"status": "/api/status", "notice": "/api/notice", "pricing": "/api/pricing", "summary": "/api/perf-metrics/summary", "performance": "/api/perf-metrics"}[operation]
+		origin = r.URL.Query().Get("origin")
+		if endpoint == "" || !validateHTTPS(origin) {
+			http.Error(w, "invalid public snapshot origin or operation", 400)
+			return
+		}
+		if operation == "performance" {
+			model = r.URL.Query().Get("model_id")
+			if !validID(model) {
+				http.Error(w, "model required", 400)
+				return
+			}
+		}
+		if operation == "performance" || operation == "summary" {
+			hours, _ = strconv.Atoi(r.URL.Query().Get("hours"))
+			if hours < 1 || hours > 720 {
+				http.Error(w, "invalid snapshot window", 400)
+				return
+			}
+		}
+	}
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,account_id,credential_id,credential_role,endpoint,facts_json,provider_version,observed_at FROM newapi_snapshots WHERE (?='' OR provider_id=?) AND (?=0 OR (credential_role='ANONYMOUS' AND account_id='' AND credential_id='' AND endpoint=? AND json_extract(facts_json,'$.origin')=? AND (?='' OR json_extract(facts_json,'$.model_name')=?) AND (?=0 OR json_extract(facts_json,'$.hours')=?))) ORDER BY rowid DESC LIMIT 200", provider, provider, public, endpoint, origin, model, model, hours, hours)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

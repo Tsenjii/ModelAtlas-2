@@ -473,15 +473,21 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if operation == "GEMINI_NATIVE" {
 		endpoint = geminiEndpoint(endpoint, stream)
 	}
-	body, _ := json.Marshal(payload)
-	if len(body) > 32<<20 {
+	body, err := encodeRequestJSON(payload, 32<<20)
+	if errors.Is(err, errRequestJSONLimit) {
 		result.Outcome = "CONVERSATION_LIMIT_START_NEW_CONVERSATION"
 		return result, 413
 	}
-	upstream, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(body))
+	if err != nil {
+		result.Outcome = "PROTOCOL_INPUT_UNSUPPORTED"
+		return result, 422
+	}
+	upstream, err := http.NewRequestWithContext(ctx, "POST", endpoint, body.reader())
 	if err != nil {
 		return result, 422
 	}
+	upstream.ContentLength = body.size
+	upstream.GetBody = func() (io.ReadCloser, error) { return body.reader(), nil }
 	upstream.Header.Set("Content-Type", "application/json")
 	upstream.Header.Set("Accept", "text/event-stream")
 	if operation == "ANTHROPIC_MESSAGES" && upstream.Header.Get("anthropic-version") == "" {
@@ -495,7 +501,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		return result, 429
 	}
 	userID := newID()
-	if encodedJSONContainsSecret(body, secrets) {
+	if body.containsSecret(secrets) {
 		result.Outcome = "SECRET_IN_REQUEST_CONTENT"
 		return result, 422
 	}

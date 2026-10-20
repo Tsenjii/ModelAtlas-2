@@ -32,6 +32,7 @@ type Server struct {
 	Client        *http.Client
 	PublicClient  *http.Client
 	workMu        sync.Mutex
+	workspaceMu   sync.Mutex
 	flightMu      sync.Mutex
 	flights       map[string]bool
 	cancels       map[string]context.CancelFunc
@@ -199,6 +200,7 @@ func (s *Server) decrypt(enc string) (string, error) {
 }
 func (s *Server) Handler() http.Handler {
 	api := http.NewServeMux()
+	s.workspaceRoutes(api)
 	api.HandleFunc("GET /status", s.status)
 	api.HandleFunc("GET /providers", s.listProviders)
 	api.HandleFunc("POST /providers", s.addProvider)
@@ -316,6 +318,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /assistant/confirm", s.assistantConfirm)
 	api.HandleFunc("POST /assistant/undo", s.assistantUndo)
 	root := http.NewServeMux()
+	root.HandleFunc("POST /api/workspace/pair", s.workspaceClaim)
+	root.Handle("/api/workspace/exchange", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceExchangeHTTP)))
 	root.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		security(w)
 		if err := s.Store.DB.PingContext(r.Context()); err != nil {

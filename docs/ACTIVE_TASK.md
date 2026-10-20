@@ -1,5 +1,63 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-20 Mac 同步整合候選
+
+- 共用來源已更新為 `6ec46624f51e4bc4562e9decdff985eb876ead60`：VPS `39403490771` 四項、Android `39403490790` build `118563699088`／device-tests `118563698831` 同 SHA SUCCESS。兩台原生 Android 經真 Go 中心的新增連線與 Key、原始 Offering／Availability ID、跨帳號 origin、匿名連線及 scoped 刪除皆通過。Mac 的新設定／Keychain／HTTPS 重啟接續測試仍待本候選九項。
+
+- 唯一切片 SYNC-001；保留已驗 Mac `74e2c37` 的全部原生功能、78 核心／148 實圖＋28 frame，整合六項同 SHA SUCCESS 的共用引擎 `2220229`（VPS `39402144371`／Android `39402144405`）。Mac 基線 `39130406665` 三項、`39130406620` 四項及 `39130406762` 兩項 SUCCESS。兩個已全綠來源只作整合基礎，不代表新 HEAD 已全綠。
+- 原生設定新增安全配對、手動／背景同步狀態、裝置撤銷、離線衝突與新鮮版本核對。同步不啟動推論；仍使用本機 loopback AtlasClient，共用引擎處理外部 HTTPS 和目的端 vault。新 HEAD 必須九項同 SHA、原全部 native／browser／workload 加新增深淺色設定實圖與真 packaged engine／Keychain／HTTPS 同步，預期 82 核心／76 圖各架構、152 圖＋28 frame；PR #21 先恢復 Draft，不合併 PR、不部署。
+
+## 最新使用者指示：完成願望清單並優先解決跨平台同步（2026-10-19）
+
+- `2220229f4b8c6102dc705ab4587e46e2ad9ee58e` 已六項同 SHA SUCCESS：VPS `39402144371` 四項、Android `39402144405` build `118559196703`／device-tests `118559196220`。正式 Go HTTPS↔原生 Room／Keystore 的雙向編輯、4 MiB 歷史、衝突與撤銷已通過。接續同片補原生→中心→第二原生裝置、同名 Key 的不同帳號／origin、匿名連線與 scoped membership 移除；新候選仍重新完整 gate，不借用本基線。
+- 2026-10-20 接續核對：`fede52769a7cd76ae579d1097af3dd9739ffa7c7` 的 VPS `39356955335` 四項 SUCCESS、Android `39356955363` build SUCCESS／device-tests FAILURE（971 項、5 項既有 API skip、1 項真 Go↔Android 同步失敗）。Room migration 全部通過；憑證投影因 framework UPDATE 未引用 SQL 保留欄位 `group` 而失敗。本次修正引用欄位、補原生 insert/update/null/空字串回歸，投影失敗只保留不含參數／例外訊息的程式位置。新 SHA 必須重新六項 gate，仍不稱 SYNC-001 已驗收。
+- 使用者已授權實作 Part V 全部需求，並明確要求解決 Mac／VPS／Android 資料同步。先處理唯一整合切片 **SYNC-001**，其後依序接研究排程、未知站點解析、可量測 Reflection 與 authenticity；不在只寫文件後結束。
+- 同步採可選 VPS 中心＋各端本機離線資料、版本／游標增量、持久變更與明確衝突處理；裝置獨立配對／撤銷，Key 經認證 HTTPS 傳送並在目的端 vault 重新加密。秘密不進模型、log、同步 metadata 或 Git。
+- 基準 `2f0af8296f3996bc83b1fa42b9596a61a2e79410`：VPS `39266118313` 四項、Android `39266118493` build／device 同 SHA SUCCESS。main 已重驗仍 `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`，`38408176782` build／device SUCCESS；FEATURE FREEZE=OFF。
+- 最新授權允許同步所需的 Android／Mac 功能接線；保留原 UI／功能優點及兩分支既有修改，不合併／部署。新切片有 production caller、測試與同 SHA 必要 CI 前不升 ACCEPTED；實體裝置／目標主機未取得的驗收範圍如實保留。
+
+## 最新使用者指示：補回原願望清單（2026-10-19）
+
+- 本輪為文件整理：將完整功能盤點後的持續發現排程、未知站點解析／Connector、研究改進閉環、模型真實性與真站／跨平台／手機完整驗收，加入原 `ASTRA_MASTER_SPEC.md` Part V，保留全部原文與既有需求。
+- 新增 WISH-CRAWL-001／002、WISH-REFL-001、WISH-AUTH-001、WISH-ACCEPT-001；全部 **OPEN：待完成／待驗收**，`PRODUCT_SPEC.md` 已接引用，`TRACEABILITY.md` 登錄正式缺口。未開新的 production 功能切片。
+- 盤點及前片已驗基準 code `ae0849294fdcf4f48c0cf549de797e59afd53ecb`：VPS `39258806970` 四項、Android `39258806978` build／device-tests 同 SHA SUCCESS，20 Browser／281 PNG 已自行檢查；main 仍 `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`。本次文件 HEAD CI 另查 PR #20，不借用 code 基準宣稱新 HEAD 全綠。
+- 完整 Master Spec 及新增五項均未整體驗收；PR #20 維持 Draft，Mac／Android 原狀態與暫停順序不變。後續實作依本檔單一切片與同 SHA gate 接續；本輪不 merge／部署。
+
+## 前片 VPS-MODEL-WORKFLOW-005
+
+更新：2026-10-19；唯一 live 切片 **VPS-MODEL-WORKFLOW-005**。使用者要求「新增一些功能以及功能優化及 UI 優化」；接續 VPS 的模型查找→比較→使用流程，不轉 Android。
+
+- 前片 code `b7444fe9be8f6a397521422aa40e340a908807ca` 已確認 [VPS 39253363969](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363969) 四項與 [Android 39253363984](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363984) 兩項同 SHA SUCCESS。19 Browser／263 PNG 已自行檢視；原 expanded workload 服務峰值 208,445,440 bytes、待機 26,345,472 bytes，不含 OS／代理／瀏覽器。原始證據見 `vps/verification/20261019/b7444fe-baseline.json`，只代表該 code SHA。
+- 本輪再確認 main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d` 的 build／device-tests SUCCESS；FEATURE FREEZE=OFF。
+- 本片新增明確儲存／更新／刪除的瀏覽器本機模型檢視、可逐項移除的篩選條件、最近使用／追蹤快捷鍵，以及完整 scope 的連線／比較結果直達 Playground；沿用原 picker change path，切換不自動 inference／不新增對話，保留各對話草稿與歷史。正式 caller、限制與驗證見 `vps/MODEL_VIEWS.md`。
+- 新 HEAD 仍為候選，須六項同 SHA SUCCESS、原十九 Browser 加新增第二十流程／實圖及原 expanded workload 才驗收；自行 review，無獨立外部 reviewer。PR #20 保持 Draft，不 merge、不冒充已遠端部署。Mac／Android 與完整 Master Spec 的 PARTIAL 狀態不變。
+
+## 前片 VPS-MOBILE-ALIGN-004（已驗 code，較新 HEAD 另驗）
+
+- `b7444fe9be8f6a397521422aa40e340a908807ca` 同 SHA 六項 SUCCESS／十九 Browser／263 PNG 已驗；手機頁面／分頁／表單與五種 dialog 的共用對齊、48px 操作、200% 大字與直橫安全區見 `vps/MOBILE_ALIGNMENT.md`。
+- 驗證是 Chromium mobile／touch／safe-area override，不代表實體 iPhone／Safari／軟體鍵盤測試；不 merge、不遠端部署。
+
+## 前片 VPS-MANAGEMENT-UX-003（已驗 code，較新 HEAD 另驗）
+
+- 前片 code `b3c16e95b29a61d93d53a945fea78aa80a7dc31f` 已確認 [VPS 39218809855](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39218809855) 四項與 [Android 39218809822](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39218809822) 兩項同 SHA SUCCESS。17 Browser／134 PNG 已自行檢視，原 expanded workload 服務峰值 208,769,024 bytes、待機 26,451,968 bytes；不含 OS／瀏覽器，沒有獨立外部 reviewer。原始證據見 `vps/verification/20261019/b3c16-baseline.json`，只代表該 code SHA。
+- 本片正式流程及界線見 `vps/MODEL_CONNECTIONS.md`。模型概覽直接列同 Canonical Model 各家完整 scope 的本機速度／上線率／樣本與明確比較；Providers 新增今日簽到進度、last-good／重試、晚 GET 不撤銷完成回條及跨日保護。
+- 新 HEAD 仍為候選，須六項同 SHA SUCCESS、原十七 Browser 加新增第十八流程／實圖及原 expanded workload 才驗收；PR #20 保持 Draft，不 merge、不冒充已遠端部署。Mac／Android 與完整 Master Spec 的 PARTIAL 狀態不變。
+
+## 前片 VPS-MAC-PARITY-002（已驗 code，較新 HEAD 另驗）
+
+- 已交付 VPS `3aec65729b9daf5db7ac5629ecca69df4ef94afc`，VPS `39188438480` 四項及 Android `39188438452` 兩項同 SHA SUCCESS，16 Browser／124 PNG 已驗。這是第一輪對齊，不能宣稱完整 Mac parity。
+- 固定 Mac 參考 `74e2c378c1117fda3bebdb9f8d50ead872aa5af7`／0.6.1 build12，使用獨立唯讀工作樹；原始五份 staged Mac 檔與暫停 Android UI 不動。
+- 本輪重新確認 main `5009e0c8a733f1863adcf9a5b8ef8c450da76d3d`／`38408176782`，build `115333198754`、device `115333198701` SUCCESS；FEATURE FREEZE=OFF。
+- 本片補導航／完整連線對話搜尋與草稿、帳戶／Key 獨立編輯、Provider Catalog／可讀設定、模型六分區／三來源效能／額度／完整資訊編輯與圖表控制；差異與 caller 見 `vps/MAC_PARITY.md`。
+- 使用者追加資源效率與 CF／GitHub 免費部署評估；同片補完整 context 分段 JSON、5 筆輪詢／不重疊及通知 OFF 節流，保留原 expanded workload／六項 gate。架構、受控編碼對照與官方部署限制見 `vps/RESOURCE_HOSTING.md`；不假稱現有 Go／SQLite 可直接在免費 Pages／Workers 跑完整後端。
+- 原 16 Browser 語意斷言、全量匯出與 expanded workload 保留；畫面改動只調整真實入口與幾何。新 HEAD 仍須六項同 SHA SUCCESS／實圖檢查才驗收。PR #20 保持 Draft；不 merge、不改 Mac PR base、不冒充已遠端部署。完整 Master Spec 仍 PARTIAL。
+
+## 舊切片歷史（不代表目前優先序與新 HEAD 驗收）
+
+# ModelAtlas Public — ACTIVE TASK
+
+## Mac 前片歷史（不代表目前 live）
+
 - **012 同片 Android 回歸修訂：** `5f69dc5` 的 Mac39128935000 三項（雙架構78核心／74圖／14frame）與 VPS39128934998 四項 SUCCESS；Android39128934992 build SUCCESS、device 的 rapidDoubleToggle 單項15秒逾時，故未驗收／未交付。該測試假設兩次真 Room count 一定先於首次 add，但 query／transaction executor 交錯沒有此保證；加入預設 null 的讀後觀察器，只在本測試用 coroutine barrier 固定原本要驗的兩次 non-member 快照。兩次真讀取／獨立 coroutine／全部完成／exact DB 只一列加強斷言，原15秒、全部既有測試及產品UI／DB行為保留。新HEAD重新完整九項與148實圖＋28frame，不借5f69部分綠燈、不盲重跑。
 
 - **2026-10-18 MAC-PROVIDER-012（唯一live，0.6.1 build12候選）：** 使用者要求繼續優化並保留其他平台做得較好的功能／操作。新增持續維護的跨平台優點清單與D-008；本片先吸收VPS的表單草稿／局部保存回饋，以及Android的精確操作範圍／busy保護，改善Mac帳戶／Key清單、新增表單、帳戶共用寫入鎖與分開的秘密值更新／版本恢復。基線011 `48ff43f` 的Mac39112956833／VPS39112956835／Android39112956891九項SUCCESS，70核心／136靜態圖與28 frame已檢視、0.6.0已交付。main5009e0c8／38408176782 build115333198754、device115333198701本輪重查SUCCESS。原全部70核心／68圖每架構與28 frame保留，新增8核心／6圖，預期78核心／74圖每架構、148靜態圖；原25秒串流／1249字SHA256／閱讀位置／120秒parity不減。新HEAD九項與實圖前候選／Draft，不merge／改base／部署。詳macos/PROVIDER_MANAGEMENT.md、docs/CROSS_PLATFORM_STRENGTHS.md；完整大綱仍PARTIAL，下方live為歷史。
@@ -199,4 +257,3 @@ Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97
 請求續片已驗收：schema16 請求／訊息連結、immutable 當次 pricing/quota before/after、完整用量與 actual/nominal/effective estimate 分離、scoped request detail／50列 UI／完整 NDJSON 匯出、手動 stale-safe retry 不重複 user message；修正 Catalog nominal 0 不推成 Key FREE，人工明確確認及經測試／Review 的 per-key/group connector 才可提供 effective pricing；通知使用新 proof basis。Raw attachment 與 header-name secrets guards、長 JSON 不逐 Key 重建、export 每批讀取後釋放 DB、快照選定 rowset 避免新增／狀態變更造成重複漏列。完整匯出由 sequence index／rowid 前進，修復 11,000 訊息 OFFSET 重掃逾時，未放寬 timeout 或縮減工作量。
 
 `57ef23e` 同 SHA 六項 SUCCESS：VPS `38631190515` test `116082947267`、browser `116082947583`、arm64 `116082947595`、amd64 `116082947725`；Android `38631190578` build `116083047901`、device `116083048486`。實測 31 MiB×4 完整 wire、11,000 訊息／100,008 請求完整匯出，加原四 chats／研究65 models／四圖片／四語音，服務峰值 426,102,784 bytes（406.36 MiB）、待機 26,591,232（25.36 MiB），192 MiB 僅 Go soft limit；OS 另計。已自行 diff／實際截圖 review；證據見 `vps/verification/20261015/`。Kilo 含新 engine 的真研究 `a39fa2a`／`38629907160`／`116078568504` 20.06s 成功，6 inference＋7 public HTTP、3 candidates／4 evidence，非 eligibility 證明。最後文件 HEAD 以 PR #20 最新六項 checks／body 驗收後恢復 Ready；本輪不擴新功能片，不合併／部署。
-

@@ -1,3 +1,9 @@
+# VPS 最新交付入口
+
+最新 VPS-MAC-PARITY-002 的完整 caller 對照見 [MAC_PARITY.md](MAC_PARITY.md)，資源與免費部署方案見 [RESOURCE_HOSTING.md](RESOURCE_HOSTING.md)，更新／部署見 [UPDATE.md](UPDATE.md)。最新 commit、六項同 SHA 驗收、實際 Browser 圖及新 RAM 結果以 PR #20 與交付套件 VERSION.json／VERIFICATION.json 為準。
+
+以下保留 2026-10-15 的歷史驗收，不能套用為最新 HEAD 的結果。
+
 # ModelAtlas VPS：完整 V1、對話與請求管理交付
 
 2026-10-15（台北）。最新功能 code 基線 `57ef23e96c335413003b497b06cd99b7b8838b6e`；[PR #20](https://github.com/Tsenjii/ModelAtlas-2/pull/20)。完整 V1 之後，已補齊對話管理、安全 Markdown、請求收據、明確重試、完整匯出，以及價格／免費判定修復。Android source 維持 main `5009e0c8`，VPS 的成果不改寫 Android PLAY-004／P8–P10 的驗收狀態。

@@ -143,6 +143,7 @@ struct SettingsView: View {
     }
     private var data: some View {
         VStack(spacing: 20) {
+            WorkspaceSyncView(store: store)
             AtlasCard {
                 Label("資料留在這台 Mac", systemImage: "externaldrive").font(.headline)
                 Text(store.engine.directory.path).font(.system(.callout, design: .monospaced)).textSelection(.enabled)

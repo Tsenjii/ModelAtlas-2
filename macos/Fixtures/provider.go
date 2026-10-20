@@ -22,6 +22,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,6 +56,34 @@ func main() {
 	defer spy.Close()
 	richReply := "## 原生 Mac，也能舒服地寫程式\n\n清楚的排版讓**重點**、程式碼與比較資料更容易閱讀。這些內容來自隔離的 TLS 合成測試。\n\n```swift\nstruct Workspace {\n    let name = \"ModelAtlas\"\n    let local = true\n\n    func greeting() -> String {\n        \"你好，\\(name)\"\n    }\n}\n```\n\n### 工作區比較\n\n| 工作區 | 用途 | 資料來源 |\n| --- | --- | --- |\n| Playground | 對話與寫程式 | 本機請求 |\n| Providers | 管理連線 | 使用者設定 |\n| Models | 搜尋與比較 | 各自保留來源 |\n\n> 上捲閱讀時，新的回應會繼續接收，畫面留在你正在看的位置。\n\n- 程式碼可直接複製。\n- 表格可水平捲動。\n- 附件可以拖入輸入區。\n\n" + strings.Repeat("這是較長的原生閱讀測試段落。串流持續接收，歷史仍完整保存；向上閱讀不會被新文字拉回底部。\n\n", 18)
 	mux := http.NewServeMux()
+	// Disposable native integration only: the already trusted TLS listener can
+	// expose a second real packaged engine's public sync routes. Admin APIs are
+	// never proxied, and a target must be an uncredentialed loopback HTTP origin.
+	var workspaceTarget atomic.Pointer[url.URL]
+	mux.HandleFunc("/fixture/workspace-target", func(w http.ResponseWriter, r *http.Request) {
+		var value struct {
+			URL string `json:"url"`
+		}
+		if r.Method != http.MethodPost || json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&value) != nil {
+			http.Error(w, "invalid fixture target", 400)
+			return
+		}
+		target, err := url.Parse(value.URL)
+		if err != nil || target.Scheme != "http" || target.Hostname() != "127.0.0.1" || target.Port() == "" || target.User != nil || (target.Path != "" && target.Path != "/") || target.RawQuery != "" || target.Fragment != "" {
+			http.Error(w, "loopback fixture target required", 400)
+			return
+		}
+		workspaceTarget.Store(target)
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("/api/workspace/", func(w http.ResponseWriter, r *http.Request) {
+		target := workspaceTarget.Load()
+		if target == nil {
+			http.Error(w, "workspace fixture not ready", 503)
+			return
+		}
+		httputil.NewSingleHostReverseProxy(target).ServeHTTP(w, r)
+	})
 	installParityRoutes(mux)
 	richContinue := make(chan struct{})
 	var releaseRich sync.Once

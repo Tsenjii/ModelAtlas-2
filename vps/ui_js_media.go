@@ -5,9 +5,11 @@ let speechOperation="";
 function isSpeech(op){return ["AUDIO_SPEECH","GEMINI_SPEECH"].includes(op);}
 function selectedOperation(){return $("target").value?targetOperation(JSON.parse($("target").value)):"";}
 function updatePlayground(){
+ syncModelPickerButton();
  const operation=selectedOperation(),media=["IMAGES_GENERATION","IMAGES_EDIT","AUDIO","AUDIO_SPEECH","GEMINI_SPEECH","EMBEDDINGS","RERANK"].includes(operation);
+ const picker=$("model-picker-open"),pickerHome=media?$("media-model-bar"):$("send-form").querySelector(".composer-tools");if(pickerHome&&picker.parentElement!==pickerHome){if(media)pickerHome.append(picker);else pickerHome.insertBefore(picker,$("send-form").querySelector(".send-actions"));}
  $("chat-ui").hidden=media;$("media-ui").hidden=!media;$("new-session").hidden=media;
- $("new-session").disabled=busy||!chatOperation(operation);$("send").disabled=busy||!chatOperation(operation)||!$("session").value;
+ $("new-session").disabled=busy||!chatOperation(operation)||sessionScope!==$("target").value;$("send").disabled=busy||attachmentBatchPending||!chatOperation(operation)||!$("session").value||sessionScope!==$("target").value;
  $("media-send").disabled=busy||!media;$("media-clear").disabled=busy;
  $("media-operation").textContent=operationLabels[operation]||"";$("playground-description").textContent={IMAGES_GENERATION:"描述想生成的圖片。",IMAGES_EDIT:"選擇圖片，描述要修改的內容。",AUDIO:"上傳一段音訊，取得轉寫文字。",AUDIO_SPEECH:"輸入文字，生成可播放及下載的語音。",GEMINI_SPEECH:"輸入文字或雙人對話，生成可播放及下載的語音。",EMBEDDINGS:"取得文字向量，可供搜尋與比較使用。",RERANK:"輸入查詢與文件，依相關度排序。"}[operation]||"選一個模型，開始對話。";$("media-size-label").hidden=operation!=="IMAGES_GENERATION";
  $("vector-options").hidden=!["EMBEDDINGS","RERANK"].includes(operation);$("vector-inputs").required=["EMBEDDINGS","RERANK"].includes(operation);$("vector-dimensions-label").hidden=operation!=="EMBEDDINGS";$("rerank-top-label").hidden=operation!=="RERANK";$("media-prompt-label").hidden=operation==="EMBEDDINGS";$("media-prompt").hidden=operation==="EMBEDDINGS";$("vector-input-label").firstChild.textContent=operation==="RERANK"?"待排序文件（每行一筆）":"輸入文字（每行一筆）";$("speech-options").hidden=!isSpeech(operation);$("speech-voice").required=isSpeech(operation);$("media-file-label").hidden=["IMAGES_GENERATION","AUDIO_SPEECH","GEMINI_SPEECH","EMBEDDINGS","RERANK"].includes(operation);$("media-input-name").hidden=["IMAGES_GENERATION","AUDIO_SPEECH","GEMINI_SPEECH","EMBEDDINGS","RERANK"].includes(operation);

@@ -19,7 +19,7 @@ const homeHTML = `<!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>ModelAtlas</title>
 <link rel="stylesheet" href="/app.css">
@@ -34,16 +34,22 @@ const homeHTML = `<!doctype html>
 <small>你的模型工作台</small>
 </div>
 </div>
-<button id="settings-toggle" class="ghost header-settings" type="button" aria-controls="settings" aria-expanded="false" data-icon="settings">設定</button>
+<div class="header-actions"><button id="sidebar-toggle" type="button" class="ghost icon-button" aria-label="顯示或隱藏側邊欄" aria-pressed="false" data-icon="sidebar"></button><button id="header-refresh" type="button" class="ghost icon-button" aria-label="重新整理" data-icon="refresh"></button><button id="header-assistant" type="button" class="ghost" data-icon="spark">Assistant</button><button id="settings-toggle" class="ghost header-settings" type="button" aria-controls="settings" aria-expanded="false" data-icon="settings">設定</button></div>
 </header>
 <a class="skip-link" href="#main-content">跳到主要內容</a>
+<aside class="desktop-sidebar" aria-label="對話側邊欄">
+<button id="sidebar-model-picker" class="sidebar-more" type="button" data-icon="search">快速選擇模型 <kbd>⌘ K</kbd></button>
+<div id="sidebar-chat-section" class="sidebar-chat-section">
+<div class="sidebar-tools"><span class="sidebar-caption">最近對話</span><div class="sidebar-tools-actions"><details class="sidebar-filters"><summary aria-label="篩選對話" data-icon="filter"></summary><div class="sidebar-filter-menu"><label>對話狀態<select id="sidebar-session-state"><option value="ACTIVE">使用中</option><option value="ARCHIVED">已封存</option><option value="ALL">全部狀態</option></select></label><label class="check"><input id="sidebar-session-current" type="checkbox">僅目前模型連線</label></div></details><button id="sidebar-new-session" class="ghost icon-button" type="button" aria-label="建立新對話" data-icon="plus"></button></div></div>
+<label class="sidebar-search"><span class="sr-only">搜尋近期對話</span><input id="sidebar-conversation-search" type="search" placeholder="搜尋對話"></label><div id="sidebar-session-status" class="sidebar-session-status" role="status" aria-live="polite"></div><div id="sidebar-conversations" class="sidebar-conversations"></div><button id="sidebar-session-more" type="button" class="sidebar-more" hidden>載入更多對話</button><button id="sidebar-history" class="sidebar-more" type="button" data-icon="history">管理對話紀錄</button>
+</div><span class="sidebar-footer">VPS 工作區</span></aside>
 <main id="main-content">
 <p id="notice" role="status" aria-live="polite">
 </p>
 <section id="playground" class="pane" aria-labelledby="playground-title">
 <div class="heading">
 <h1 id="playground-title">Playground</h1>
-<p id="playground-description">一個工作台，使用你的所有模型。</p>
+<p id="playground-description"></p>
 </div>
 <div class="workspace-tabs" role="tablist" aria-label="playground 工作區" data-workspace-tabs="playground">
 <button type="button" role="tab" id="work-chat-tab" aria-controls="work-chat" aria-selected="true" tabindex="0" data-icon="chat">對話與創作</button>
@@ -52,11 +58,8 @@ const homeHTML = `<!doctype html>
 <div id="work-chat" class="workspace-panel" role="tabpanel" aria-labelledby="work-chat-tab" data-workspace-panel="playground">
 <div class="card chat-card">
 <div class="toolbar target-bar">
-<label>
-<span class="sr-only">使用的模型</span>
-<select id="target" aria-label="使用的模型">
-</select>
-</label>
+<button id="model-picker-open" disabled class="ghost model-picker-trigger" type="button" aria-label="選擇模型" aria-haspopup="dialog" aria-controls="model-picker" data-icon="models"><span id="model-picker-title">正在讀取模型…</span><kbd>⌘ / Ctrl K</kbd></button>
+<select id="target" aria-label="使用的模型" hidden></select>
 <button id="new-session" class="ghost" type="button" data-icon="plus">新對話</button>
 </div>
 <div id="chat-ui">
@@ -122,7 +125,7 @@ const homeHTML = `<!doctype html>
 </div>
 <form id="send-form" class="composer">
 <label for="prompt" class="sr-only">訊息</label>
-<textarea id="prompt" aria-describedby="prompt-shortcuts" rows="2" maxlength="32000" required placeholder="想聊些什麼？">
+<textarea id="prompt" aria-describedby="prompt-shortcuts" rows="1" maxlength="32000" required placeholder="輸入訊息…">
 </textarea>
 <div class="toolbar composer-tools">
 <div class="attachment-buttons">
@@ -144,6 +147,7 @@ const homeHTML = `<!doctype html>
 <small id="prompt-shortcuts" class="composer-hint">Enter 換行 · Ctrl／⌘ + Enter 傳送</small>
 </div>
 <div id="media-ui" hidden>
+<div id="media-model-bar" class="media-model-bar"></div>
 <h2 id="media-operation">
 </h2>
 <form id="media-form">
@@ -225,10 +229,10 @@ const homeHTML = `<!doctype html>
 <section id="providers" class="pane" hidden aria-labelledby="providers-title">
 <div class="heading heading-actions">
 <div>
-<h1 id="providers-title">Providers</h1>
-<p>連接模型，管理你的帳戶。</p>
+<small class="page-eyebrow">Connections</small><h1 id="providers-title">供應商</h1>
+<p><span id="provider-page-count">管理帳戶與模型連線。</span></p>
 </div>
-<button id="provider-add" type="button" data-icon="plus">新增連線</button>
+<button id="provider-add" type="button" data-icon="plus">新增供應商</button>
 </div>
 <div class="workspace-tabs" role="tablist" aria-label="providers 工作區" data-workspace-tabs="providers">
 <button type="button" role="tab" id="providers-owned-tab" aria-controls="providers-owned" aria-selected="true" tabindex="0" data-icon="provider">供應商</button>
@@ -236,7 +240,7 @@ const homeHTML = `<!doctype html>
 </div>
 <div id="providers-owned" class="workspace-panel" role="tabpanel" aria-labelledby="providers-owned-tab" data-workspace-panel="providers">
 <div class="collection-tools">
-<label class="search-label">搜尋 Provider<input id="provider-search" type="search" placeholder="名稱或網址">
+<label class="search-label">搜尋 Provider<input id="provider-search" type="search" placeholder="搜尋供應商、網址或描述">
 </label>
 <label>排序<select id="provider-sort">
 <option value="name">名稱</option>
@@ -244,6 +248,8 @@ const homeHTML = `<!doctype html>
 </select>
 </label>
 </div>
+<div class="quick-filters" aria-label="供應商快速篩選"><button type="button" data-provider-quick="all" aria-pressed="true">全部</button><button type="button" data-provider-quick="free" aria-pressed="false">有免費連線</button><button type="button" data-provider-quick="models" aria-pressed="false">已加入模型</button><button type="button" data-provider-quick="pending" aria-pressed="false">待簽到</button></div>
+<div id="checkin-summary" class="checkin-summary" role="region" aria-label="今日簽到進度" hidden></div>
 <div class="collection-meta">
 <span id="provider-result-count">
 </span>
@@ -262,7 +268,7 @@ const homeHTML = `<!doctype html>
 </label>
 <label>API Key<input name="secret" type="password" autocomplete="off">
 </label>
-<label>Model ID（選填）<input name="model_id" placeholder="可貼上未列於 Catalog 的模型">
+<label>Model ID（選填）<input name="model_id" placeholder="多個模型 ID 以逗號分隔">
 </label>
 <details>
 <summary>進階設定</summary>
@@ -273,7 +279,7 @@ const homeHTML = `<!doctype html>
 </label>
 <label>Adapter<select name="adapter">
 <option value="GENERIC">自動 / OpenAI 相容</option>
-<option>NEW_API</option>
+<option>NEW_API</option><option>ANTHROPIC</option>
 <option>OPENROUTER_FREE</option>
 <option>NVIDIA_NIM_HOSTED</option>
 <option>NVIDIA_NIM_SELF_HOSTED</option>
@@ -292,6 +298,7 @@ const homeHTML = `<!doctype html>
 </label>
 <label>自訂 Key Header<input name="auth_header" placeholder="x-api-key">
 </label>
+<label>認證前綴<input name="auth_prefix"></label>
 <label>自訂 Key Query<input name="auth_query">
 </label>
 <label>額外認證欄位 JSON（選填）<textarea name="auth_fields" placeholder='[{"name":"x-token","secret":"...","query":false}]'>
@@ -301,6 +308,7 @@ const homeHTML = `<!doctype html>
 </label>
 <label>Key 所屬 Group<input name="group">
 </label>
+<label>主要模型用途<select name="endpoint"><option>CHAT_COMPLETIONS</option><option>RESPONSES</option><option>ANTHROPIC_MESSAGES</option><option>GEMINI_NATIVE</option><option>IMAGES_GENERATION</option><option>IMAGES_EDIT</option><option>AUDIO</option><option>AUDIO_SPEECH</option><option>GEMINI_SPEECH</option><option>EMBEDDINGS</option><option>RERANK</option></select></label>
 <label>更多端點 JSON（選填）<textarea name="endpoint_profiles" placeholder='[{"operation":"CHAT_COMPLETIONS","url":"https://example.com/v2/chat/completions"}]'>
 </textarea>
 </label>
@@ -331,12 +339,13 @@ const homeHTML = `<!doctype html>
 </section>
 <section id="models" class="pane" hidden aria-labelledby="models-title">
 <div class="heading">
-<h1 id="models-title">Models</h1>
+<small class="page-eyebrow">Model Library</small><h1 id="models-title">模型</h1>
 <p>你的模型收藏與探索空間。</p>
 </div>
 <div class="workspace-tabs" role="tablist" aria-label="models 工作區" data-workspace-tabs="models">
 <button type="button" role="tab" id="models-owned-tab" aria-controls="models-owned" aria-selected="true" tabindex="0" data-icon="models">我的模型</button>
 <button type="button" role="tab" id="models-catalog-tab" aria-controls="models-catalog" aria-selected="false" tabindex="-1" data-icon="search">探索 Catalog</button>
+<button type="button" role="tab" id="models-hidden-tab" aria-controls="models-hidden" aria-selected="false" tabindex="-1" data-icon="history">已隱藏</button>
 <button type="button" role="tab" id="research-workspace-tab" aria-controls="research-workspace" aria-selected="false" tabindex="-1" data-icon="spark">全球研究</button>
 <button type="button" role="tab" id="knowledge-panel-tab" aria-controls="knowledge-panel" aria-selected="false" tabindex="-1" data-icon="book">研究知識</button>
 </div>
@@ -344,7 +353,7 @@ const homeHTML = `<!doctype html>
 <div class="collection-search">
 <label class="search-field">
 <span class="sr-only">搜尋模型</span>
-<input id="model-search" type="search" placeholder="搜尋模型、名稱或別名">
+<input id="model-search" type="search" placeholder="搜尋模型、帳戶、Key 或群組">
 </label>
 <button id="model-select" type="button" class="ghost" aria-pressed="false" data-icon="check">
 <span id="model-select-label">選取</span>
@@ -355,6 +364,8 @@ const homeHTML = `<!doctype html>
 <button type="button" data-model-quick="all" aria-pressed="true">全部</button>
 <button type="button" data-model-quick="favorite" aria-pressed="false">最愛</button>
 <button type="button" data-model-quick="free" aria-pressed="false">FREE NOW</button>
+<button type="button" data-model-quick="recent" aria-pressed="false">最近使用</button>
+<button type="button" data-model-quick="watchlist" aria-pressed="false">追蹤中</button>
 </div>
 <details id="model-filters">
 <summary data-icon="filter">篩選模型<span id="model-filter-count">
@@ -363,7 +374,7 @@ const homeHTML = `<!doctype html>
 <div class="toolbar">
 <label>顯示<select id="model-lifecycle">
 <option value="ACTIVE">使用中</option>
-<option value="HIDDEN">已隱藏</option>
+<option value="HIDDEN">已隱藏</option><option value="RETAINED">已隱藏與封存</option>
 <option value="ARCHIVED">已封存</option>
 </select>
 </label>
@@ -398,7 +409,7 @@ const homeHTML = `<!doctype html>
 <option value="">全部</option>
 </select>
 </label>` + modelControlsHTML + `</details>
-</div>
+</div>` + modelViewsHTML + `
 <div class="collection-meta">
 <span id="model-result-count">
 </span>
@@ -421,6 +432,7 @@ const homeHTML = `<!doctype html>
 <div id="compare-result">
 </div>
 </div>
+<div id="models-hidden" class="workspace-panel" role="tabpanel" aria-labelledby="models-hidden-tab" data-workspace-panel="models" hidden></div>
 <details id="models-catalog" class="card workspace-panel" role="tabpanel" aria-labelledby="models-catalog-tab" data-workspace-panel="models" hidden>
 <summary>探索 Catalog</summary>
 <div class="section-heading">
@@ -572,11 +584,18 @@ const homeHTML = `<!doctype html>
 </div>
 <button id="settings-back" type="button" class="ghost" data-icon="back">返回</button>
 </div>
+<div class="settings-workspace">
 <div class="workspace-tabs" role="tablist" aria-label="settings 工作區" data-workspace-tabs="settings">
-<button type="button" role="tab" id="settings-general-tab" aria-controls="settings-general" aria-selected="true" tabindex="0" data-icon="settings">偏好設定</button>
-<button type="button" role="tab" id="settings-services-tab" aria-controls="settings-services" aria-selected="false" tabindex="-1" data-icon="spark">研究服務</button>
-<button type="button" role="tab" id="settings-data-tab" aria-controls="settings-data" aria-selected="false" tabindex="-1" data-icon="book">資料與紀錄</button>
+<button type="button" role="tab" id="settings-general-tab" aria-controls="settings-general" aria-selected="true" tabindex="0" data-icon="settings">一般</button>
+<button type="button" role="tab" id="settings-services-tab" aria-controls="settings-services" aria-selected="false" tabindex="-1" data-icon="spark">服務</button>
+<button type="button" role="tab" id="settings-data-tab" aria-controls="settings-data" aria-selected="false" tabindex="-1" data-icon="book">資料</button>
+<button type="button" role="tab" id="settings-research-tab" aria-controls="settings-research" aria-selected="false" tabindex="-1" data-icon="search">研究</button>
+<button type="button" role="tab" id="settings-requests-tab" aria-controls="settings-requests" aria-selected="false" tabindex="-1" data-icon="history">請求紀錄</button>
+<button type="button" role="tab" id="settings-notifications-tab" aria-controls="settings-notifications" aria-selected="false" tabindex="-1" data-icon="bell">通知</button>
 </div>
+<div id="settings-research" class="workspace-panel" role="tabpanel" aria-labelledby="settings-research-tab" data-workspace-panel="settings" hidden></div>
+<div id="settings-requests" class="workspace-panel" role="tabpanel" aria-labelledby="settings-requests-tab" data-workspace-panel="settings" hidden></div>
+<div id="settings-notifications" class="workspace-panel" role="tabpanel" aria-labelledby="settings-notifications-tab" data-workspace-panel="settings" hidden></div>
 <div id="settings-general" class="workspace-panel" role="tabpanel" aria-labelledby="settings-general-tab" data-workspace-panel="settings">
 <div class="card">
 <h2>顯示外觀</h2>
@@ -586,6 +605,8 @@ const homeHTML = `<!doctype html>
 <option value="dark">深色</option>
 </select>
 </label>
+<label>重點色<select id="appearance-accent"><option value="graphite">石墨灰</option><option value="violet">鳶尾紫</option><option value="indigo">靛藍</option></select></label><label class="check"><input id="appearance-reduce-motion" type="checkbox">減少動態效果</label>
+
 <p class="section-description">套用在這個瀏覽器，下次開啟也會保留。</p>
 </div>
 <div class="card">
@@ -640,6 +661,8 @@ const homeHTML = `<!doctype html>
 <dt>
 <kbd>Ctrl／⌘ + K</kbd>
 </dt>
+<dd>搜尋模型連線</dd>
+<dt><kbd>Ctrl／⌘ + Shift + K</kbd></dt>
 <dd>搜尋對話紀錄</dd>
 <dt>
 <kbd>Ctrl／⌘ + Shift + O</kbd>
@@ -685,6 +708,7 @@ const homeHTML = `<!doctype html>
 </div>
 </div>
 <div id="settings-data" class="workspace-panel" role="tabpanel" aria-labelledby="settings-data-tab" data-workspace-panel="settings" hidden>
+` + workspaceSyncHTML + `
 <div class="card">
 <h2>備份與還原</h2>
 <p>觀測與歷史持續保留。</p>
@@ -722,6 +746,7 @@ const homeHTML = `<!doctype html>
 <p id="status" class="section-description">
 </p>
 </div>
+</div>
 </section>
 </main>
 <nav class="bottom-nav" aria-label="主分頁">
@@ -736,6 +761,17 @@ const homeHTML = `<!doctype html>
 </button>
 </nav>
 </div>
+<dialog id="model-picker" aria-labelledby="model-picker-heading" aria-describedby="model-picker-hint">
+<div class="model-picker-head"><div><h2 id="model-picker-heading">選擇模型</h2><p id="model-picker-hint">從已加入的連線選擇，未送出草稿會留在這個分頁。</p></div><button id="model-picker-close" type="button" class="ghost">完成</button></div>
+<div class="model-picker-filters">
+<label class="model-picker-search"><span class="sr-only">搜尋模型、供應商、帳戶或 Key</span><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 21l-4.5-4.5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg><input id="model-picker-search" type="search" placeholder="搜尋模型、供應商、帳戶或 Key" role="combobox" aria-autocomplete="list" aria-controls="model-picker-results" aria-expanded="false" autocomplete="off"></label>
+<label><span class="sr-only">篩選選模供應商</span><select id="model-picker-provider" aria-label="篩選選模供應商"><option value="">所有供應商</option></select></label>
+<label class="check"><input id="model-picker-favorites" type="checkbox">只看收藏</label>
+</div>
+<div id="model-picker-results" role="listbox" aria-label="已加入的模型連線"></div>
+<button id="model-picker-more" type="button" class="ghost model-picker-more" hidden>載入更多連線</button>
+<div class="model-picker-footer"><span id="model-picker-count" role="status" aria-live="polite"></span><button id="model-picker-reset" type="button" class="ghost" hidden>清除篩選</button><button id="model-picker-use" type="button">使用模型</button></div>
+</dialog>
 <dialog id="detail" aria-labelledby="detail-title">
 <div class="dialog-bar">
 <h2 id="detail-title">
@@ -745,6 +781,8 @@ const homeHTML = `<!doctype html>
 <div id="detail-content">
 </div>
 </dialog>
+<dialog id="request-receipt" aria-labelledby="request-receipt-title"><div class="dialog-bar"><h2 id="request-receipt-title">請求詳情</h2><button id="request-receipt-close" type="button" class="ghost" aria-label="關閉請求收據">關閉</button></div><div id="request-receipt-content"></div></dialog>
+<dialog id="provider-editor" aria-labelledby="provider-editor-title"><div class="dialog-bar"><h2 id="provider-editor-title"></h2><button id="provider-editor-close" type="button" class="ghost" aria-label="關閉編輯表單">關閉</button></div><div id="provider-editor-body"></div></dialog>
 <dialog id="review">
 <div class="dialog-bar">
 <h2>確認新增</h2>

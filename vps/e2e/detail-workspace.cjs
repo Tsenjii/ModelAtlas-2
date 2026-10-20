@@ -1,4 +1,5 @@
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const {openProviderForm,closeProviderEditor}=require('./provider-editor-helper.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises');
 (async()=>{
  const browser=await chromium.launch({headless:true});
@@ -8,8 +9,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
  page.on('request',r=>{if(!r.url().startsWith(process.argv[2]+'/'))external.push(r.url());});
  await fs.mkdir('e2e/screenshots',{recursive:true});
  const fixture=path=>page.evaluate(async path=>{const r=await fetch('/__detail_fixture/'+path);if(!r.ok)throw Error('fixture '+r.status);return r.json();},path);
- const tab=id=>page.locator('#detail-'+id+'-tab').click();
- const close=()=>page.getByRole('button',{name:'關閉詳情',exact:true}).click();
+ const tab=async id=>{await closeProviderEditor(page);await page.locator('#detail-'+id+'-tab').click();if(id==='model-performance')await page.locator('#detail-model-local-tab').click();};
+ const close=async()=>{await closeProviderEditor(page);await page.getByRole('button',{name:'關閉詳情',exact:true}).click();};
  const openModel=async(name='日常對話')=>{await page.locator('#my-models .item-button').filter({hasText:name}).click();await page.locator('#detail-model-settings input[name=VISION]').waitFor({state:'attached'});};
  const rate=()=>page.locator('#detail-model-performance .metrics .item').first().locator('small').textContent();
  const shot=async name=>{
@@ -96,9 +97,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await close();await page.getByRole('button',{name:'Providers',exact:true}).click();await page.locator('#provider-list .item-button').first().click();
   assert.equal(await page.locator('#detail-provider-overview .item-button').count(),2);assert(!(await page.locator('#detail-provider-overview').textContent()).includes('未加入的候選'));
   await page.locator('#detail-provider-overview-tab').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#detail-provider-keys-tab').getAttribute('aria-selected'),'true');
-  await page.getByText('新增 Key',{exact:true}).click();await page.getByLabel('API Key / PAT',{exact:true}).fill('synthetic-unsent-draft');
+  await openProviderForm(page,'key');await page.getByLabel('API Key / PAT',{exact:true}).fill('synthetic-unsent-draft');
   await tab('provider-endpoints');assert((await page.locator('#detail-provider-endpoints').textContent()).includes('新增端點不改變既有對話'));
-  await tab('provider-keys');assert.equal(await page.getByLabel('API Key / PAT',{exact:true}).inputValue(),'synthetic-unsent-draft');await page.getByLabel('API Key / PAT',{exact:true}).fill('');
+  await tab('provider-keys');await openProviderForm(page,'key');assert.equal(await page.getByLabel('API Key / PAT',{exact:true}).inputValue(),'synthetic-unsent-draft');await page.getByLabel('API Key / PAT',{exact:true}).fill('');await closeProviderEditor(page);
   await page.locator('#detail-provider-keys').getByRole('button',{name:'停用',exact:true}).click();
   await page.locator('#detail-provider-keys').getByRole('button',{name:'啟用',exact:true}).waitFor();assert.equal(await page.locator('#detail-provider-keys-tab').getAttribute('aria-selected'),'true');
   await page.locator('#detail-provider-keys').getByRole('button',{name:'啟用',exact:true}).click();await page.locator('#detail-provider-keys').getByRole('button',{name:'停用',exact:true}).waitFor();

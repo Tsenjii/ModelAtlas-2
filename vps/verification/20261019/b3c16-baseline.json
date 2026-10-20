@@ -1,0 +1,52 @@
+{
+  "code_sha": "b3c16e95b29a61d93d53a945fea78aa80a7dc31f",
+  "tree": "98530e6d6a92e866197290368b06e0095c92aacd",
+  "vps_run": 39218809855,
+  "android_run": 39218809822,
+  "jobs": [
+    {
+      "name": "build",
+      "id": 117949156371,
+      "conclusion": "success"
+    },
+    {
+      "name": "device-tests",
+      "id": 117949156100,
+      "conclusion": "success"
+    },
+    {
+      "name": "vps-test",
+      "id": 117949088407,
+      "conclusion": "success"
+    },
+    {
+      "name": "vps-linux-amd64",
+      "id": 117949088001,
+      "conclusion": "success"
+    },
+    {
+      "name": "vps-browser",
+      "id": 117949087960,
+      "conclusion": "success"
+    },
+    {
+      "name": "vps-linux-arm64",
+      "id": 117949087718,
+      "conclusion": "success"
+    }
+  ],
+  "browser_workflows": 17,
+  "browser_screenshots": 134,
+  "browser_artifact": 12171315147,
+  "browser_artifact_sha256": "8fb649fa1596ef83127d977fdeca297d1480503f88df45d0309849fdb011a6e3",
+  "footprint_artifact": 12170907586,
+  "footprint_artifact_sha256": "f822589a56f0a8b3ac61496adf0b00b01c5939c050063d4b4ce3c4d0b0976b5c",
+  "peak_rss_bytes": 208769024,
+  "idle_rss_bytes": 26451968,
+  "review": "Self-review of original diff, all 134 screenshots in contact sheets and focused current workflow screenshots; no independent external reviewer.",
+  "limits": [
+    "No remote deployment or merge.",
+    "Mac/Android UI and complete Master Spec acceptance unchanged.",
+    "This record certifies b3c16e9, never a newer HEAD."
+  ]
+}

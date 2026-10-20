@@ -109,6 +109,8 @@ class AtlasApplication : Application() {
         private set
     lateinit var repository: AtlasRepository
         private set
+    lateinit var workspaceSync: dev.modelatlas.app.data.DeviceWorkspaceSync
+        private set
     lateinit var engine: InferenceEngine
         private set
     lateinit var notificationSettings: NotificationSettingsStore
@@ -143,6 +145,8 @@ class AtlasApplication : Application() {
         notificationSettings = NotificationSettingsStore(this)
         vault = AndroidCredentialVault(this)
         database = AtlasDatabase.create(this)
+        vault.attachSyncDatabase { database.openHelper.writableDatabase }
+        workspaceSync = dev.modelatlas.app.data.DeviceWorkspaceSync(database,vault)
         // X-014: OUTAGE_RECOVERY／PRICE_CHANGE／QUOTA_LOW 各用獨立事件管線（共用 append-only 事件庫），
         // 並各自在使用者開啟對應通知規則後才投遞。
         repository = AtlasRepository(
@@ -192,6 +196,8 @@ class AtlasApplication : Application() {
         synchronized(recoveryLock) {
             startupJob = applicationScope.launch {
                 runStartupRecovery(recover = { repository.recoverInterrupted() })
+                workspaceSync.initialize()
+                if (workspaceSync.status.value.connected) dev.modelatlas.app.work.WorkspaceSyncWorker.schedule(this@AtlasApplication)
             }
         }
     }

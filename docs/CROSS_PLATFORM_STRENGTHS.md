@@ -1,8 +1,10 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-20 最新優先序為 SYNC-001；依 D-012 接續 VPS／Android／Mac 的同步，取代下方歷史片的暫停順序。各平台既有優點和待辦保留；本片新候選同 SHA 九項前不外推全面互通。
+
 2026-10-18，依使用者「其他平台比我們好的留下來繼續搞」建立。這份清單與完整 Master Spec 同時維護；既有功能與各平台優點保留，不能為了外觀一致而刪除。比較必須能指到正式 caller 或真實驗收，不能只用有無 API／選單判斷功能已完成。
 
-Mac 仍是目前優先；本輪不重做 Android／VPS UI。狀態「候選」代表已實作或正在驗證，尚不能當作已交付。
+依 D-010／D-011，先完成 VPS 的 Mac 0.6.1 正式 UI／操作對照，並保留 VPS 單 binary、持久 SQLite、完整歷史及低配置成本的優點；省資源與免費部署評估見 `vps/RESOURCE_HOSTING.md`。Android 保持暫停。狀態「候選」代表已實作或正在驗證，尚不能當作已交付。
 
 | 優點或落差 | 已核對的來源 | Mac 處理與接續驗收 |
 | --- | --- | --- |
@@ -16,6 +18,14 @@ Mac 仍是目前優先；本輪不重做 Android／VPS UI。狀態「候選」�
 | Mac：原生 Keychain、薄輸入框、IME／Undo、鍵盤選模、分區來源與原生圖表 | `macos/MASTER_SCOPE.md`、`macos/PROVIDER_MOTION.md`、`NativeSmoke.swift`、`NativeParity.swift` | 原有 70 核心／136 實圖與 28 frame 全保留再增加驗證；其他平台改善時也不砍現有 scope、歷史、取消與 last-good |
 
 ## 下一步優先序
+
+2026-10-19 接續：`b7444fe` 已同 SHA 六項 SUCCESS／19 Browser／263 PNG 核對，手機對齊與安全區保留。當前 VPS-MODEL-WORKFLOW-005 新增瀏覽器本機常用檢視、可移除篩選條件、最近使用／追蹤快捷鍵及精確連線直達（`vps/MODEL_VIEWS.md`）；屬新候選，不能外推前片驗收。這些流程可作後續 Mac／Android 的操作參考，尚未移植；保留兩平台現有優點與暫停狀態。
+
+1. VPS-MAC-ALIGN-001 已由 3aec657 同 SHA 六項／16 Browser 驗收。本輪 VPS-MAC-PARITY-002 對照全部 Mac caller，補正式表單／完整側欄／模型分區與編輯／來源／比較／服務；新 HEAD 須完整六項／原16 Browser＋新增流程及實圖，不借前片結果。
+2. 使用者最新要求本輪留在 VPS；Android 介面未開始，原有優點與待辦保留。
+3. 私人站點 adapter 逐站 schema／認證、多 Key availability／quota／stale、研究／Assistant／Reflection 及完整大綱仍追蹤，P1–P10 仍 PARTIAL。
+
+### 原 Mac 接續缺口（保留追蹤）
 
 1. 完成 012 帳戶／Key 的同 SHA 九項驗證及實圖，才更新此片為已交付。
 2. 高優先：Provider 設定／端點草稿與晚完成的局部回饋；私人帳戶 adapter 的逐站 schema／認證相容性；多 Key 的 availability、quota、stale 與同名 scope。不能略過版本／role／origin 限制冒充站點已支援。

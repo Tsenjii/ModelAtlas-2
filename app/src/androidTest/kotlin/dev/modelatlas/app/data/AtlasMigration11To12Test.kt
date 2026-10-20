@@ -66,19 +66,19 @@ class AtlasMigration11To12Test {
         var room: AtlasDatabase? = null
         try {
             val opened = Room.databaseBuilder(context, AtlasDatabase::class.java, name)
-                .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+                .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
                 .allowMainThreadQueries()
                 .build()
             room = opened
             val sql = opened.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
             // The original perf upgrade adds only its two tables; the current upgrades add usage separately
             // and CR-003 v14 adds availability groupIdentity + swaps the unique index;
             // CR-011 v15 adds snapshot_slice_heads (additive-only).
             assertEquals(
                 legacyTables + setOf("provider_perf_facts", "provider_perf_heads",
                     "provider_account_usage_facts", "provider_account_usage_heads",
-                    "snapshot_slice_heads"),
+                    "snapshot_slice_heads") + workspaceSyncTables,
                 tables(sql),
             )
             val currentSchema = schemaObjects(sql)
@@ -149,12 +149,12 @@ class AtlasMigration11To12Test {
         var room: AtlasDatabase? = null
         try {
             val opened = Room.databaseBuilder(context, AtlasDatabase::class.java, name)
-                .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+                .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
                 .allowMainThreadQueries()
                 .build()
             room = opened
             val sql = opened.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
             val samplesBefore = rows(sql, "samples").size
             // 缺 evidence 的 fact 不得寫入（FK RESTRICT 前置）。
             var missingRejected = false

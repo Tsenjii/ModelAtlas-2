@@ -1012,6 +1012,7 @@ private fun AtlasScreenContent(
             error = lmspeedSyncError,
             lastSynced = lmspeedLastSynced,
           )
+          WorkspaceSyncSection(viewModel)
         }
       },
     )
