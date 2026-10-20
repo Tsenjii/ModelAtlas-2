@@ -1,5 +1,7 @@
 """Regression tests for the release admission boundary and artifact integrity."""
 import copy
+import base64
+import ssl
 import hashlib
 import io
 import json
@@ -51,24 +53,33 @@ def linux_files():
 
 class ReleaseBoundaryTests(unittest.TestCase):
     def test_android_numbered_and_sdk_range_signers_match_one_identity(self):
-        fingerprint = "ab" * 32
+        fingerprint = "f116873861598964874192dc5a40a1a4f9dbb5e3ce705ec4451a787d48955024"
+        pem = (Path(__file__).parent / "fixtures/debug-signing-certificate.pem").read_text()
         for labels in [
             ["Signer #1"],
+            ["V2 Signer:"],
             ["Signer (minSdkVersion=33, maxSdkVersion=2147483647)", "Signer (minSdkVersion=26, maxSdkVersion=32)"],
             ["Signer (minSdkVersion=33 (dev release=true), maxSdkVersion=2147483647)", "Signer (minSdkVersion=26, maxSdkVersion=32)"],
         ]:
-            output = "Verifies\nNumber of signers: 1\n" + "\n".join(label + " certificate SHA-256 digest: " + fingerprint for label in labels)
+            output = "Verifies\nNumber of signers: 1\n" + "\n".join(label + " certificate SHA-256 digest: " + fingerprint + "\n" + pem for label in labels)
             parsed, profiles = certificate_fingerprint(output)
             self.assertEqual(parsed, fingerprint)
             self.assertEqual(profiles, sorted(labels))
 
     def test_android_different_certificates_or_stamp_only_cannot_pass(self):
-        first, second = "a" * 64, "b" * 64
+        first = "f116873861598964874192dc5a40a1a4f9dbb5e3ce705ec4451a787d48955024"
+        pem = (Path(__file__).parent / "fixtures/debug-signing-certificate.pem").read_text()
+        der = ssl.PEM_cert_to_DER_cert(pem)
+        other_der = der[:-1] + bytes([der[-1] ^ 1])
+        other_pem = "-----BEGIN CERTIFICATE-----\n" + base64.b64encode(other_der).decode() + "\n-----END CERTIFICATE-----\n"
+        other = hashlib.sha256(other_der).hexdigest()
         for output in [
-            "Number of signers: 1\nSource Stamp Signer certificate SHA-256 digest: " + first,
-            "Number of signers: 2\nSigner #1 certificate SHA-256 digest: " + first,
-            "Number of signers: 1\nSigner (minSdkVersion=33, maxSdkVersion=99) certificate SHA-256 digest: " + first + "\nSigner (minSdkVersion=26, maxSdkVersion=32) certificate SHA-256 digest: " + second,
-            "Number of signers: 1\nSigner #1 certificate SHA-256 digest: " + first[:-1],
+            "Number of signers: 1\nSource Stamp Signer certificate SHA-256 digest: " + first + "\n" + pem,
+            "Number of signers: 2\nSigner #1 certificate SHA-256 digest: " + first + "\n" + pem,
+            "Number of signers: 1\nV2 Signer: certificate SHA-256 digest: " + first + "\n" + pem + "\nV3 Signer: certificate SHA-256 digest: " + other + "\n" + other_pem,
+            "Number of signers: 1\nSigner #1 certificate SHA-256 digest: " + first[:-1] + "\n" + pem,
+            "Number of signers: 1\nSigner #1 certificate SHA-256 digest: " + "b" * 64 + "\n" + pem,
+            "Number of signers: 1\nV2 Signer: certificate SHA-256 digest: " + first,
         ]:
             with self.assertRaises(ValueError):
                 certificate_fingerprint(output)

@@ -406,3 +406,5 @@ MAC-INTELLIGENCE-008同片回歸：5cd93e7 Intel長串流25秒失敗，上游124
 | Requirement | 正式 caller／必要驗證 | 驗收界線 |
 | --- | --- | --- |
 | VPS-RELEASE-008 | release/version.properties → 各平台 build／實際 Android aapt2＋apksigner、Mac plist／BuildInfo／同源引擎、Linux RELEASE.json；release.yml → prepare.py 等同 SHA 九項 → 固定 CI artifact digest／全部套件 → publish.py draft／完整 upload digest／公開 prerelease → 真 HTTPS download.sh／bundle-check；release/test_release.py 保護 skipped／舊 SHA／舊綠燈／外站 token／缺平台／雜湊／路徑／tag／附件 | 新整合 HEAD 各自九項＋release-checks／實際發布成功後才能接受；即時精確 SHA／run／job 見 PR #20／RELEASE-MANIFEST.json。原測試／timeout／全部歷史與 expanded workload 保留；未合併 PR／未遠端部署。Android 固定正式簽署與 Mac 公證未設定，不外推完整願望清單完成。 |
+
+本片 APK 資訊解析的真產物診斷：SDK37 改用 V2 Signer:，舊文字解析的兩個候選未驗收。正式 parser 改用已驗 APK 的公開 PEM／DER 指紋及工具交叉比對；真 APK 和兩 Linux／Universal Mac 產物預檢已通過，精確 run／job／artifact／限制在 verification/20261020/three-platform-release-preflight.json。這只支持解析與套件完整性診斷，最終整合 HEAD／三平台公開 Release 仍各自需要完整 gate；不將舊候選的診斷當正式接受版本。

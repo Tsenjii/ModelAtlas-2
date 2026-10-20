@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "status": "diagnostic-only; not release acceptance",
+  "date": "2026-10-20",
+  "repository": "Tsenjii/ModelAtlas-2",
+  "source_commit": "be2605f61806a9db8b35e9bdc85f1950bcc54da2",
+  "problem": {
+    "sdk_build_tools": "37.0.0",
+    "apk_signature_verified": true,
+    "signers": 1,
+    "actual_label": "V2 Signer:",
+    "failed_candidate_jobs": [
+      118750127913,
+      118754048127
+    ],
+    "cause": "Human-readable signer labels changed; numbered and SDK-range-only text parsing was incomplete."
+  },
+  "diagnostic": {
+    "initial_run": 39460480723,
+    "initial_job": 118758343958,
+    "canonical_parser_run": 39460871203,
+    "canonical_parser_job": 118759687429,
+    "bundle_run": 39461263594,
+    "bundle_job": 118761031263,
+    "source_apk_artifact": 12283255255,
+    "public_certificate_sha256": "f116873861598964874192dc5a40a1a4f9dbb5e3ce705ec4451a787d48955024",
+    "private_key_in_fixture": false,
+    "checks": [
+      "actual apksigner verification exit 0",
+      "canonical public PEM/DER SHA256 equals verifier fingerprint",
+      "one signer and one certificate across SDK ranges",
+      "all 13 release regressions",
+      "both real Linux bundles: outer and every inner checksum, source, ELF, 27 files",
+      "actual AMD64 version and ops bundle-check",
+      "actual universal Mac ZIP/DMG checksums, BuildInfo commit, Info.plist 0.8.0/build14"
+    ]
+  },
+  "homepage": {
+    "commit": "8ad2633360b138cc584d04210b2166c9b54502aa",
+    "files": [
+      "README.md",
+      "docs/RELEASES.md"
+    ],
+    "runtime_changed": false,
+    "run": 39458441574,
+    "successful_attempt": 2,
+    "build_job": 118755743129,
+    "device_job": 118755741309,
+    "first_attempt": "existing rapidDoubleToggle 15000ms timeout; original code/assertions/timeout retained; same SHA full rerun succeeded"
+  },
+  "limits": [
+    "These checks inspect previously built artifacts; they do not authorize release from that incomplete candidate.",
+    "The final source must independently pass all nine original jobs and all release checks.",
+    "No target VPS deployment or physical-device acceptance.",
+    "Mac ad-hoc signing; Android debug preview certificate; fixed production Android signer is not configured.",
+    "Full crawler, measurable reflection, authenticity, large-record sync and the original wishlist remain partial/open."
+  ]
+}
