@@ -39,6 +39,8 @@ VPS 詳細操作：[安裝與更新](https://github.com/Tsenjii/ModelAtlas-2/blo
 
 ## 開發與驗證
 
+三平台原始碼目前在 [PR #20](https://github.com/Tsenjii/ModelAtlas-2/pull/20) 的統一交付分支，完整發布後可 checkout 該 Release tag 自行建置。main 暫保留原 Android 基線；PR 的測試與發布不表示已合併程式主線。
+
 VPS 需要 Go 1.26.4；Mac 建置使用 Swift 5.9+／Go 1.26.4；Android 使用 JDK 17／SDK 35／Gradle 8.14.4。安裝已建置的 VPS 套件不需要 Go、Node 或 Java。
 
 ```sh

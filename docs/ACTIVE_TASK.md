@@ -4,6 +4,7 @@
 
 使用者最新指示 **VPS 第一、Mac 第二、Android 第三**，更新公開介紹，Release 要涵蓋三平台（D-014）。本片整合已驗 Mac `e408262817b7f4d9d70550cb15f828f9a0e21eb0` 的完整 macos/ 子樹與其兩份相容性文件到 VPS `50a08a95038f2424f2d6791c9d4acf225fb0b080` 基線，保留較新的 VPS／Android source、所有歷史與原測試，不以較舊 Mac 分支覆蓋 VPS 改善。兩個舊分支的原 CI 不代替整合 HEAD 的九項。
 
+- 首整合候選 `9ead23760dd91afd9c1994301678a48caf8c77fc` 未驗收：Android build job118750127913 的 Gradle／unit／APKs 成功，新增簽章 metadata 假定舊 Signer #1 格式，未涵蓋官方 v3.1 的 minSdkVersion／maxSdkVersion 標籤，故保守拒絕並停止發布。修正解析，仍須單一實際簽署身分、全 SDK 區段同一 cert SHA256，拒絕多憑證／stamp-only／截斷 hash；新增兩項回歸，新 HEAD 重新全部九項，不略過 APK／簽章檢查。README 與公開 main 介紹一致，避免未合併碼線與下載的混淆。
 - README 與 docs/RELEASES.md 改為目前三平台的能力／安裝／更新／簽署與完整功能界線。原 main SHA `5009e0c8` 的 Android run38408176782 build／device 已重查 SUCCESS，FEATURE FREEZE=OFF；未合併 PR。
 - 新增單一 release/version.properties；Android 真 APK version／minSdk／apksigner metadata、Mac Info.plist／BuildInfo／內建引擎 commit、VPS RELEASE.json 對齊同一 tag。Android／Mac workflow checkout 明確 PR head，不借 merge-ref。
 - Three-platform Release 只在受信任本庫分支 push／手動發布，PR 只檢查。等同 SHA 四 VPS＋兩 Android＋三 Mac 全 SUCCESS，下載固定 run 產物並核對原始 digest、Linux 每檔 hash／ELF／真 CLI、Mac 版本／來源、Android 實際簽章／APK，先 draft 完整上傳並核對 GitHub digest，才公開三平台 prerelease。已公開 tag 不移動／不覆寫。發布完整性回歸另跑，原 workload／測試／timeout 全保留。

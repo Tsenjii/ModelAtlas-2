@@ -7,15 +7,16 @@ from pathlib import Path
 import re
 import subprocess
 
+from android_signing import certificate_fingerprint
+
 root = Path(__file__).resolve().parents[1]
 properties = dict(line.split("=", 1) for line in (root / "release/version.properties").read_text().splitlines() if line and not line.startswith("#"))
 apk = root / "app/build/outputs/apk/debug/app-debug.apk"
 sdk = Path(os.environ["ANDROID_HOME"])
 signer = sorted((sdk / "build-tools").glob("*/apksigner"))[-1]
 result = subprocess.run([str(signer), "verify", "--verbose", "--print-certs", str(apk)], check=True, text=True, capture_output=True)
-matches = re.findall(r"Signer #1 certificate SHA-256 digest: ([0-9a-fA-F]+)", result.stdout)
-if len(matches) != 1 or len(matches[0]) != 64:
-    raise SystemExit("APK signing certificate was not verified")
+certificate_sha256, certificate_profiles = certificate_fingerprint(result.stdout)
+print("Verified APK certificate SHA256:", certificate_sha256, "profiles:", ", ".join(certificate_profiles))
 badging = subprocess.check_output([str(signer.parent / "aapt2"), "dump", "badging", str(apk)], text=True)
 package = re.search(r"^package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'", badging, re.MULTILINE)
 minimum = re.search(r"^sdkVersion:'([0-9]+)'", badging, re.MULTILINE)
@@ -29,7 +30,7 @@ metadata = {
     "version_name": properties["androidVersionName"],
     "version_code": int(properties["androidVersionCode"]), "minimum_android_api": 26,
     "variant": "debug-preview", "production_signing": False,
-    "certificate_sha256": matches[0].lower(),
+    "certificate_sha256": certificate_sha256, "certificate_profiles": certificate_profiles,
     "apk_sha256": hashlib.sha256(apk.read_bytes()).hexdigest(),
     "update_notice": "預覽 APK 使用本次 CI 的 debug 憑證；與既有安裝憑證不同時 Android 會拒絕覆蓋。請先保留本機資料，不要直接移除既有 App。正式可持續更新版需要固定的私密簽署金鑰。"
 }

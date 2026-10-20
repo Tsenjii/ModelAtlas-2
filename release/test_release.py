@@ -13,6 +13,7 @@ import zipfile
 
 import prepare
 import publish
+from android_signing import certificate_fingerprint
 
 COMMIT = "a" * 40
 
@@ -49,6 +50,29 @@ def linux_files():
     return files
 
 class ReleaseBoundaryTests(unittest.TestCase):
+    def test_android_numbered_and_sdk_range_signers_match_one_identity(self):
+        fingerprint = "ab" * 32
+        for labels in [
+            ["Signer #1"],
+            ["Signer (minSdkVersion=33, maxSdkVersion=2147483647)", "Signer (minSdkVersion=26, maxSdkVersion=32)"],
+            ["Signer (minSdkVersion=33 (dev release=true), maxSdkVersion=2147483647)", "Signer (minSdkVersion=26, maxSdkVersion=32)"],
+        ]:
+            output = "Verifies\nNumber of signers: 1\n" + "\n".join(label + " certificate SHA-256 digest: " + fingerprint for label in labels)
+            parsed, profiles = certificate_fingerprint(output)
+            self.assertEqual(parsed, fingerprint)
+            self.assertEqual(profiles, sorted(labels))
+
+    def test_android_different_certificates_or_stamp_only_cannot_pass(self):
+        first, second = "a" * 64, "b" * 64
+        for output in [
+            "Number of signers: 1\nSource Stamp Signer certificate SHA-256 digest: " + first,
+            "Number of signers: 2\nSigner #1 certificate SHA-256 digest: " + first,
+            "Number of signers: 1\nSigner (minSdkVersion=33, maxSdkVersion=99) certificate SHA-256 digest: " + first + "\nSigner (minSdkVersion=26, maxSdkVersion=32) certificate SHA-256 digest: " + second,
+            "Number of signers: 1\nSigner #1 certificate SHA-256 digest: " + first[:-1],
+        ]:
+            with self.assertRaises(ValueError):
+                certificate_fingerprint(output)
+
     def test_exact_source_and_real_job_success_required(self):
         run = valid_run()
         jobs = [{"id": index, "name": name, "status": "completed", "conclusion": "success"} for index, name in enumerate(prepare.CHECKS[run["path"]])]
