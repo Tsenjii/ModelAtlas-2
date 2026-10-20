@@ -17,6 +17,8 @@ ModelAtlas V1 **尚未全部交付**。Playground 的完整檔案、音訊、工
 
 ## 建置
 
+原生 macOS 版使用 SwiftUI／AppKit 與隨附引擎，支援 Apple Silicon／Intel、macOS12以上。最新圖表與歷史切片為0.5.0候選；已交付0.4.0基線見 [CHARTS](macos/CHARTS.md)，完整範圍與未完成項目見 [MASTER_SCOPE](macos/MASTER_SCOPE.md)。Mac測試／安裝檔由 [macOS Native App](.github/workflows/macos-native.yml) 建立與雙架構執行；不以Linux建置代替原生驗證。
+
 需要 **JDK 17、Android SDK 35、Gradle 8.14.4**。
 
 ```sh
