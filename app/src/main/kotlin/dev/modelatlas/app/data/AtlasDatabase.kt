@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import dev.modelatlas.app.onboarding.BatchSnapshotDao
 import dev.modelatlas.app.onboarding.BatchSnapshotEntity
 
-/** modelatlas.db，version 15，不做 destructive migration。v2: availability UNIQUE(offeringId,accountId,credentialId)；checkins PK 加 accountId，legacy "" 不當 wildcard。v3: onboarding_snapshots / onboarding_commits（只加表）。v4: provider_configurations / onboarding_batches（只加表）。v5: snapshot_facts / snapshot_heads（只加表）。v6: snapshot_facts 加 quotaScopeKind／quotaProjectId／quotaSlice／isEstimated（只加欄）。v7: canonical_models / provider_model_aliases / model_classifications＋三組分類關聯表（只加表，MODEL-001…003／BACKLOG F1）。v8: external_observations / external_mappings（只加表，LMS-003／LMS-004 external 槽獨立）。v9: favorite_models / watchlist_models / recent_models（只加表，MODEL-005）＋providers health 快照兩欄＋credentials metadata 九欄（只加欄，PROV-006／PROV-009）。v10: provider_notices / provider_events / price_events / quota_events（只加表，X-018 事件層）。v11: my_models（只加表，③-1 My Models membership，D-008）。v12: provider_perf_facts / provider_perf_heads（只加表，NINT-004 provider-wide perf 專用槽，NEWAPI-001 候選）。v13: provider_account_usage_facts / provider_account_usage_heads（只加表，NINT-005A 帳號 request count 專用槽）。v14: credential_availability 加非空 `groupIdentity`（CR-003 B3，`availabilityGroupIdentity(group)`：null→'n'、非 null→'v'+原值，defaultValue='n'），UNIQUE 三欄索引 `index_credential_availability_offering_account_credential` 退役（DROP INDEX IF EXISTS，缺舊索引的畸形 v13 可恢復升級；真重複仍由四欄 CREATE UNIQUE fail-closed）、換四欄 `index_credential_availability_offering_account_credential_group`；`group` nullable 原值保留、不刪列、不猜 group。v15: snapshot_slice_heads（只加表，CR-011 quota-slice heads，PK (scopeKey,kind,quotaSlice)＋kind INDEX；backfill ambiguity→absence）。 */
+/** modelatlas.db，version 16，不做 destructive migration。v2: availability UNIQUE(offeringId,accountId,credentialId)；checkins PK 加 accountId，legacy "" 不當 wildcard。v3: onboarding_snapshots / onboarding_commits（只加表）。v4: provider_configurations / onboarding_batches（只加表）。v5: snapshot_facts / snapshot_heads（只加表）。v6: snapshot_facts 加 quotaScopeKind／quotaProjectId／quotaSlice／isEstimated（只加欄）。v7: canonical_models / provider_model_aliases / model_classifications＋三組分類關聯表（只加表，MODEL-001…003／BACKLOG F1）。v8: external_observations / external_mappings（只加表，LMS-003／LMS-004 external 槽獨立）。v9: favorite_models / watchlist_models / recent_models（只加表，MODEL-005）＋providers health 快照兩欄＋credentials metadata 九欄（只加欄，PROV-006／PROV-009）。v10: provider_notices / provider_events / price_events / quota_events（只加表，X-018 事件層）。v11: my_models（只加表，③-1 My Models membership，D-008）。v12: provider_perf_facts / provider_perf_heads（只加表，NINT-004 provider-wide perf 專用槽，NEWAPI-001 候選）。v13: provider_account_usage_facts / provider_account_usage_heads（只加表，NINT-005A 帳號 request count 專用槽）。v14: credential_availability 加非空 `groupIdentity`（CR-003 B3，`availabilityGroupIdentity(group)`：null→'n'、非 null→'v'+原值，defaultValue='n'），UNIQUE 三欄索引 `index_credential_availability_offering_account_credential` 退役（DROP INDEX IF EXISTS，缺舊索引的畸形 v13 可恢復升級；真重複仍由四欄 CREATE UNIQUE fail-closed）、換四欄 `index_credential_availability_offering_account_credential_group`；`group` nullable 原值保留、不刪列、不猜 group。v15: snapshot_slice_heads（只加表，CR-011 quota-slice heads，PK (scopeKey,kind,quotaSlice)＋kind INDEX；backfill ambiguity→absence）。 */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_credential_availability_offering_account_credential` ON `credential_availability` (`offeringId`, `accountId`, `credentialId`)")
@@ -151,8 +151,15 @@ val MIGRATION_14_15: Migration = object : Migration(14, 15) {
         ProviderAccountUsageFactEntity::class,
         ProviderAccountUsageHeadEntity::class,
         SnapshotSliceHeadEntity::class,
+        WorkspaceStateEntity::class,
+        WorkspaceRecordEntity::class,
+        WorkspaceConflictEntity::class,
+        WorkspaceVersionEntity::class,
+        WorkspaceLocatorEntity::class,
+        WorkspaceLinkEntity::class,
+        WorkspaceVaultEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -192,6 +199,6 @@ abstract class AtlasDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context, name: String = "modelatlas.db"): AtlasDatabase =
-            Room.databaseBuilder(context, AtlasDatabase::class.java, name).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15).build()
+            Room.databaseBuilder(context, AtlasDatabase::class.java, name).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16).build()
     }
 }

@@ -44,7 +44,7 @@ class AtlasMigration2To3Test {
         createSeededV2(dbName)
 
         val db = Room.databaseBuilder(context, AtlasDatabase::class.java, dbName)
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
             .allowMainThreadQueries()
             .build()
         try {
@@ -74,7 +74,7 @@ class AtlasMigration2To3Test {
         helper.runMigrationsAndValidate(dbName, 12, true, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12).close()
 
         val db = Room.databaseBuilder(context, AtlasDatabase::class.java, dbName)
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
             .allowMainThreadQueries()
             .build()
         try {
@@ -219,7 +219,7 @@ class AtlasMigration2To3Test {
      */
     private fun assertV8TablesEmptyAndTyped(db: AtlasDatabase) {
         val sql = db.openHelper.writableDatabase
-        assertEquals(15, sql.version)
+        assertEquals(16, sql.version)
         assertEquals(0, countRows(db, "external_observations"))
         assertEquals(0, countRows(db, "external_mappings"))
         assertEquals(
@@ -265,7 +265,7 @@ class AtlasMigration2To3Test {
      */
     private suspend fun assertV10TablesEmptyAndTyped(db: AtlasDatabase) {
         val sql = db.openHelper.writableDatabase
-        assertEquals(15, sql.version)
+        assertEquals(16, sql.version)
         assertEquals(0, db.providerNoticeDao().count())
         assertEquals(0, db.providerEventDao().count())
         assertEquals(0, db.priceEventDao().count())

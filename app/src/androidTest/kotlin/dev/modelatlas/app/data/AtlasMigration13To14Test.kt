@@ -70,9 +70,9 @@ class AtlasMigration13To14Test {
             val opened = AtlasDatabase.create(context, name)
             room = opened
             val sql = opened.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
             // v14 不加任何表；CR-011 v15 只加 snapshot_slice_heads（additive-only）。
-            assertEquals(legacyTables + "snapshot_slice_heads", tables(sql))
+            assertEquals(legacyTables + "snapshot_slice_heads" + workspaceSyncTables, tables(sql))
             // 36 entity 逐物件保留；availability 只多 documented 欄、換 intended 索引。
             val currentSchema = schemaObjects(sql)
             for ((objectName, ddl) in legacySchema) {
@@ -183,7 +183,7 @@ class AtlasMigration13To14Test {
             val opened = AtlasDatabase.create(context, name)
             room = opened
             val sql = opened.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
             val dao = opened.availabilityDao()
             // 舊列回填（同一 offering／account／key tuple 在 v13 只有一列）。
             assertEquals("vvip", dao.getById("availability-vip")!!.groupIdentity)
@@ -278,8 +278,8 @@ class AtlasMigration13To14Test {
             val opened = AtlasDatabase.create(context, name)
             room = opened
             val sql = opened.openHelper.writableDatabase
-            assertEquals(15, sql.version)
-            assertEquals(legacyTables + "snapshot_slice_heads", tables(sql))
+            assertEquals(16, sql.version)
+            assertEquals(legacyTables + "snapshot_slice_heads" + workspaceSyncTables, tables(sql))
             val currentSchema = schemaObjects(sql)
             for ((objectName, ddl) in legacySchema) {
                 when (objectName) {
@@ -442,7 +442,7 @@ class AtlasMigration13To14Test {
             val opened = AtlasDatabase.create(context, name)
             room = opened
             val sql = opened.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
             assertUniqueIndex(sql, AVAILABILITY_TABLE, NEW_AVAILABILITY_UNIQUE_INDEX, AVAILABILITY_UNIQUE_KEY)
             assertEquals("n", rawValue(sql, AVAILABILITY_TABLE, "groupIdentity", "availability-null"))
             assertEquals("v", rawValue(sql, AVAILABILITY_TABLE, "groupIdentity", "availability-empty"))

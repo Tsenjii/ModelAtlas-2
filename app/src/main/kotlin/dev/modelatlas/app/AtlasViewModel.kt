@@ -189,6 +189,24 @@ class AtlasViewModel @JvmOverloads constructor(
 
     private fun string(id: Int): String = getApplication<Application>().getString(id)
 
+    val workspaceSyncStatus get() = app.workspaceSync.status
+    fun refreshWorkspaceSync() { viewModelScope.launch { app.workspaceSync.initialize() } }
+    fun connectWorkspace(url: String,label: String,code: String) {
+        viewModelScope.launch {
+            if(app.workspaceSync.connect(url,label,code)) {
+                dev.modelatlas.app.work.WorkspaceSyncWorker.schedule(app)
+                app.workspaceSync.syncNow()
+            }
+        }
+    }
+    fun syncWorkspace() { viewModelScope.launch { app.workspaceSync.syncNow() } }
+    fun disconnectWorkspace() { viewModelScope.launch {
+        app.workspaceSync.disconnect(); dev.modelatlas.app.work.WorkspaceSyncWorker.cancel(app)
+    } }
+    fun resolveWorkspaceConflict(id: String,hash: String,keepLocal: Boolean) { viewModelScope.launch {
+        if(app.workspaceSync.resolve(id,hash,keepLocal)) app.workspaceSync.syncNow()
+    } }
+
     // X-013 / D-005: app-owned durable choices; no permission request or automatic opt-in.
     val notificationSettings get() = app.notificationSettings.state
     private val _notificationSettingsSaving = MutableStateFlow(false)
