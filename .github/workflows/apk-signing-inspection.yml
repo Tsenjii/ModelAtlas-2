@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -24,7 +27,9 @@ jobs:
       - name: Verify existing APK and inspect public signing certificate output
         run: |
           python3 - <<'PY'
-          import os, subprocess
+          import os, subprocess, sys
+          sys.path.insert(0, 'release')
+          from android_signing import certificate_fingerprint
           from pathlib import Path
           apk = next(Path('artifact').rglob('app-debug.apk'))
           signer = sorted((Path(os.environ['ANDROID_HOME']) / 'build-tools').glob('*/apksigner'))[-1]
@@ -34,6 +39,10 @@ jobs:
           print('PUBLIC certificate output stdout:', repr(result.stdout), flush=True)
           print('PUBLIC certificate output stderr:', repr(result.stderr), flush=True)
           result.check_returncode()
+          fingerprint, profiles = certificate_fingerprint(result.stdout)
+          print('ACTUAL APK certificate parser PASS:', fingerprint, profiles, flush=True)
           badging = subprocess.check_output([str(signer.parent / 'aapt2'), 'dump', 'badging', str(apk)], text=True)
           print('\n'.join(badging.splitlines()[:6]), flush=True)
           PY
+      - name: Run all release boundary regressions with the public certificate fixture
+        run: python3 -m unittest discover -s release -p 'test_*.py' -v

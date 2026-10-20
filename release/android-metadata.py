@@ -14,7 +14,7 @@ properties = dict(line.split("=", 1) for line in (root / "release/version.proper
 apk = root / "app/build/outputs/apk/debug/app-debug.apk"
 sdk = Path(os.environ["ANDROID_HOME"])
 signer = sorted((sdk / "build-tools").glob("*/apksigner"))[-1]
-result = subprocess.run([str(signer), "verify", "--verbose", "--print-certs", str(apk)], check=True, text=True, capture_output=True)
+result = subprocess.run([str(signer), "verify", "--verbose", "--print-certs-pem", str(apk)], check=True, text=True, capture_output=True)
 certificate_sha256, certificate_profiles = certificate_fingerprint(result.stdout)
 print("Verified APK certificate SHA256:", certificate_sha256, "profiles:", ", ".join(certificate_profiles))
 badging = subprocess.check_output([str(signer.parent / "aapt2"), "dump", "badging", str(apk)], text=True)
