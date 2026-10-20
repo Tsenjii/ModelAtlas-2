@@ -238,7 +238,11 @@ class DeviceWorkspaceSync(
                 if(accepted[remote.key]?.revision==remote.revision && !own && local!=null) {
                     write(local.copy(baseRevision=remote.revision),remote,true,false); continue
                 }
-                write(remote.copy(baseRevision=remote.revision),remote,false,true)
+                // A byte-identical acknowledgement of our own native row is
+                // already applied. Replaying it as a foreign import could disable
+                // a local custom credential whose secret was not shared.
+                val nativeAcknowledgement=remote.kind.startsWith("android:") && sent[remote.key]?.same(remote)==true
+                write(remote.copy(baseRevision=remote.revision),remote,false,!nativeAcknowledgement)
                 sealed[remote.key]?.let { vault.putSyncedCiphertext(db,it) }
                 if(request.fetch.any { it.key==remote.key }) db.execSQL("DELETE FROM workspace_sync_state WHERE `key`='fetch'")
             }

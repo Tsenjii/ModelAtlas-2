@@ -3,6 +3,7 @@ package dev.modelatlas.app.data
 import android.database.Cursor
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dev.modelatlas.core.workspace.*
+import dev.modelatlas.core.onboarding.AuthMode
 import kotlinx.serialization.json.*
 import java.util.UUID
 
@@ -101,8 +102,7 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
         db.workspaceOne("SELECT wireId FROM workspace_sync_links WHERE kind=? AND nativeId=?",kind,native)
             ?.text("wireId") ?: fallback
     private fun record(kind: String, id: String, data: JsonObject): WorkspaceRecord {
-        val old = db.workspaceOne("SELECT localJson FROM workspace_sync_records WHERE kind=? AND id=?",kind,id)
-            ?.text("localJson")?.let(::workspaceRecord)
+        val old = db.workspaceText("workspace_sync_records","localJson","kind=? AND id=?",kind,id)?.let(::workspaceRecord)
         val preserve=when(kind) {
             "providers"->setOf("description","created_at","base_url","auth_mode")
             "accounts"->setOf("label")
@@ -111,12 +111,20 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
             "my_models"->setOf("created_at")
             else->emptySet()
         }
-        return WorkspaceRecord(kind,id,data=JsonObject(old?.data.orEmpty() + data + old?.data.orEmpty().filterKeys { it in preserve }))
+        val kept=old?.data.orEmpty().filterKeys { it in preserve }.toMutableMap()
+        if(kind=="credentials" && (data.text("_auth_mode")=="NONE" || old?.data?.text("_auth_mode")=="NONE")) old?.data?.get("enabled")?.let { kept["enabled"]=it }
+        return WorkspaceRecord(kind,id,data=JsonObject(old?.data.orEmpty() + data + kept))
     }
     private fun importedID(v: WorkspaceRecord): String {
         db.workspaceOne("SELECT nativeId FROM workspace_sync_links WHERE kind=? AND wireId=?",v.kind,v.id)?.text("nativeId")?.let { return it }
         val native=(v.data["_native_android"] as? JsonObject)?.text("native_id").orEmpty()
-        return if(native.matches(Regex("[A-Za-z0-9-]{1,128}"))) native else nativeID(v.kind,v.id)
+        if(!native.matches(Regex("[A-Za-z0-9-]{1,128}"))) return nativeID(v.kind,v.id)
+        check(db.workspaceOne("SELECT wireId FROM workspace_sync_links WHERE kind=? AND nativeId=? AND wireId!=?",v.kind,native,v.id)==null) { "原生識別不可跨作用域重用" }
+        return native
+    }
+    private fun requireOwner(table: String,key: String,id: String,owner: String,value: String) {
+        val existing=db.workspaceOne("SELECT `$owner` FROM `$table` WHERE `$key`=?",id)
+        check(existing==null || existing.text(owner)==value) { "既有資料不可跨來源重新綁定" }
     }
     private fun provider(p: String): WorkspaceRecord? {
         val row = db.workspaceOne("SELECT * FROM providers WHERE providerId=?",p) ?: return null
@@ -153,7 +161,7 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
         val member=db.workspaceOne("SELECT * FROM my_models WHERE providerId=? AND providerModelId=?",provider,model) ?: return emptyList()
         val rows=db.workspaceRows("SELECT a.*,o.endpointId,e.protocol FROM credential_availability a JOIN offerings o ON o.id=a.offeringId JOIN endpoints e ON e.endpointId=o.endpointId WHERE o.providerId=? AND o.modelId=?",provider,model)
         val p=providerWire(provider)
-        return rows.mapNotNull { row ->
+        val exported=rows.mapNotNull { row ->
             // Go's existing model uses an explicit string group; unknown native
             // null groups remain in the lossless Android namespace, unborrowed.
             val group=(row["group"] as? JsonPrimitive)?.contentOrNull ?: return@mapNotNull null
@@ -165,9 +173,18 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
             val e=WorkspaceJson.parseToJsonElement(eWire).jsonArray[1].jsonPrimitive.content
             val wire=wireID("my_models",row.text("id"),workspaceID(p,a,c,model,group,e))
             val wireEndpoint=WorkspaceJson.parseToJsonElement(wire).jsonArray[5].jsonPrimitive.content
+            link("my_models",wire,row.text("id"),"credential_availability",workspaceMap("id" to row.text("id")))
             record("my_models",wire,workspaceMap("provider_id" to p,"account_id" to a,
-                "credential_id" to c,"model_id" to model,"group_id" to group,"endpoint" to wireEndpoint,"created_at" to member.number("addedAt")))
+                "credential_id" to c,"model_id" to model,"group_id" to group,"endpoint" to wireEndpoint,"created_at" to member.number("addedAt"),
+                "_native_android" to workspaceMap("availability_id" to row.text("id"),"offering_id" to row.text("offeringId"),"endpoint_id" to row.text("endpointId"))))
         }
+        // Anonymous memberships have no native availability. Preserve their full
+        // shared scope when a native provider-wide membership is edited.
+        val retained=db.workspaceRows("SELECT id FROM workspace_sync_records WHERE kind='my_models'").mapNotNull { ref ->
+            db.workspaceText("workspace_sync_records","localJson","kind='my_models' AND id=?",ref.text("id"))?.let(::workspaceRecord)
+                ?.takeIf { !it.deleted && it.data.text("provider_id")==p && it.data.text("model_id")==model }
+        }
+        return (exported+retained).distinctBy { it.id }
     }
     fun export(table: String, row: JsonObject): List<WorkspaceRecord> {
         val id = JsonArray(db.workspacePK(table).map { row.getValue(it) }).toString()
@@ -197,7 +214,13 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
                     "display_name" to m,"price_state" to "UNKNOWN","quota_state" to "UNKNOWN",
                     "provenance" to "MANUAL","updated_at" to 0))
             }
-            "my_models" -> result += membership(row.text("providerId"),row.text("providerModelId"))
+            "my_models" -> {
+                val keys=workspaceID(row.text("providerId"),row.text("providerModelId"))
+                // A later explicit native membership edit owns its own lifetime.
+                val version=db.workspaceOne("SELECT v.version FROM workspace_sync_versions v JOIN my_models m ON m.rowid=v.rowId WHERE v.tableName='my_models' AND m.providerId=? AND m.providerModelId=?",row.text("providerId"),row.text("providerModelId"))?.number("version") ?: 0
+                if(version>0) db.execSQL("DELETE FROM workspace_sync_links WHERE kind='membership_owner' AND wireId=?",arrayOf(keys))
+                result += membership(row.text("providerId"),row.text("providerModelId"))
+            }
             "credential_availability" -> {
                 val offering=db.workspaceOne("SELECT providerId,modelId FROM offerings WHERE id=?",row.text("offeringId"))
                 if(offering!=null) result += membership(offering.text("providerId"),offering.text("modelId"))
@@ -226,6 +249,19 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
             val pk=db.workspacePK(table)
             val keys=WorkspaceJson.parseToJsonElement(v.id).jsonArray
             require(keys.size==pk.size)
+            if(table=="my_models") {
+                val pWire=providerWire(keys[0].jsonPrimitive.content)
+                // The shared records own their exact scopes. A stale raw native
+                // provider-wide row must not revive or delete those scopes.
+                val managed=db.workspaceRows("SELECT id FROM workspace_sync_records WHERE kind='my_models'").any { ref ->
+                    val shared=db.workspaceText("workspace_sync_records","localJson","kind='my_models' AND id=?",ref.text("id"))?.let(::workspaceRecord)
+                    if(shared?.deleted==true) {
+                        val identity=WorkspaceJson.parseToJsonElement(shared.id).jsonArray
+                        identity[0].jsonPrimitive.content==pWire && identity[3]==keys[1]
+                    } else shared?.data?.text("provider_id")==pWire && shared.data.text("model_id")==keys[1].jsonPrimitive.content
+                }
+                if(managed) return true
+            }
             if(v.deleted) {
                 require(table !in immutableNative)
                 db.execSQL("DELETE FROM `$table` WHERE " + pk.joinToString(" AND "){"`$it`=?"},
@@ -265,6 +301,21 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
             if(table !in listOf("providers","accounts","credentials","endpoints","my_models","credential_availability")) return true
             val keys=WorkspaceJson.parseToJsonElement(binding.text("nativeKeys")).jsonObject
             db.execSQL("DELETE FROM `$table` WHERE "+keys.keys.joinToString(" AND "){"`$it`=?"},keys.values.map{it.jsonPrimitive.content}.toTypedArray())
+            if(v.kind=="my_models") {
+                val identity=WorkspaceJson.parseToJsonElement(v.id).jsonArray
+                val nativeProvider=nativeID("providers",workspaceID(identity[0].jsonPrimitive.content))
+                val model=identity[3].jsonPrimitive.content
+                val owner=workspaceID(nativeProvider,model)
+                val live=db.workspaceRows("SELECT id FROM workspace_sync_records WHERE kind='my_models' AND id!=?",v.id).any { ref ->
+                    val other=db.workspaceText("workspace_sync_records","localJson","kind='my_models' AND id=?",ref.text("id"))?.let(::workspaceRecord)
+                    other!=null && !other.deleted && other.data.text("provider_id")==identity[0].jsonPrimitive.content && other.data.text("model_id")==model
+                }
+                val available=db.workspaceOne("SELECT COUNT(*) AS n FROM credential_availability a JOIN offerings o ON o.id=a.offeringId WHERE o.providerId=? AND o.modelId=?",nativeProvider,model)!!.number("n")
+                if(!live && available==0L && db.workspaceOne("SELECT wireId FROM workspace_sync_links WHERE kind='membership_owner' AND wireId=?",owner)!=null) {
+                    db.execSQL("DELETE FROM my_models WHERE providerId=? AND providerModelId=?",arrayOf(nativeProvider,model))
+                    db.execSQL("DELETE FROM workspace_sync_links WHERE kind='membership_owner' AND wireId=?",arrayOf(owner))
+                }
+            }
             return true
         }
         when(v.kind) {
@@ -278,15 +329,22 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
             }
             "accounts" -> {
                 val a=importedID(v)
+                requireOwner("accounts","accountId",a,"providerId",p)
                 db.workspacePut("accounts",workspaceMap("accountId" to a,"providerId" to p))
                 link(v.kind,v.id,a,"accounts",workspaceMap("accountId" to a))
             }
             "credentials" -> {
                 val c=importedID(v); val a=nativeID("accounts",workspaceID(pWire,d.text("account_id")))
+                requireOwner("credentials","credentialId",c,"accountId",a)
                 val old=db.workspaceOne("SELECT * FROM credentials WHERE credentialId=?",c)
-                val mode=if(d.text("_auth_mode")=="NONE") "NONE" else "BEARER"
+                val providerRecord=db.workspaceText("workspace_sync_records","localJson","kind='providers' AND id=?",workspaceID(pWire))?.let(::workspaceRecord)
+                val mode=if(d.text("_auth_mode").ifEmpty { providerRecord?.data?.text("auth_mode").orEmpty() }=="NONE") "NONE" else "BEARER"
+                if(mode=="NONE" && db.workspaceOne("SELECT providerId FROM provider_configurations WHERE providerId=?",p)==null) {
+                    val config=ProviderManualConfig(p,"workspace-anonymous-$p",AuthMode.NONE,authModeOverride=AuthMode.NONE,anonymousConfirmed=true).toEntity()
+                    db.workspacePut("provider_configurations",workspaceMap("providerId" to p,"workflowId" to config.workflowId,"authMode" to config.authMode,"snapshotJson" to config.snapshotJson))
+                }
                 db.workspacePut("credentials",JsonObject(old.orEmpty()+workspaceMap("credentialId" to c,"accountId" to a,
-                    "label" to d.text("label"),"enabled" to if(d.text("role")=="INFERENCE" && (hasSecret||mode=="NONE")) d.number("enabled") else 0,
+                    "label" to d.text("label"),"enabled" to if(d.text("role")=="INFERENCE" && hasSecret && mode!="NONE") d.number("enabled") else 0,
                     "note" to old?.get("note"),"group" to old?.get("group"),"priority" to (old?.number("priority")?:0),
                     "authMode" to mode,"headerName" to old?.get("headerName"),"headerPrefix" to old?.get("headerPrefix"),
                     "isSecret" to if(mode=="NONE") 0 else 1,"lastSuccessAt" to old?.get("lastSuccessAt"),"lastFailureAt" to old?.get("lastFailureAt"))))
@@ -294,6 +352,7 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
             }
             "endpoint_profiles" -> {
                 val e=importedID(v)
+                requireOwner("endpoints","endpointId",e,"providerId",p)
                 val providerRecord=db.workspaceOne("SELECT localJson FROM workspace_sync_records WHERE kind='providers' AND id=?",workspaceID(pWire))?.text("localJson")?.let(::workspaceRecord) ?: return false
                 db.workspacePut("endpoints",workspaceMap("endpointId" to e,"providerId" to p,"baseUrl" to providerRecord.data.text("base_url"),
                     "endpointUrl" to d.text("url"),"protocol" to d.text("operation")))
@@ -319,17 +378,27 @@ internal class WorkspaceProjection(private val db: SupportSQLiteDatabase) {
                     if(currentEndpoint==null) link("endpoint_profiles",workspaceID(pWire,endpoint),nativeEndpoint,"endpoints",workspaceMap("endpointId" to nativeEndpoint))
                     else link("selection_endpoint",v.id,nativeEndpoint,"endpoints",workspaceMap("endpointId" to nativeEndpoint))
                 }
-                val offering=nativeID("offering",workspaceID(pWire,model,endpoint))
+                val native=d["_native_android"] as? JsonObject
+                fun hinted(key: String): String?=native?.text(key)?.takeIf { it.matches(Regex("[A-Za-z0-9-]{1,128}")) }
+                val offering=hinted("offering_id") ?: nativeID("offering",workspaceID(pWire,model,nativeEndpoint))
+                requireOwner("offerings","id",offering,"providerId",p)
+                requireOwner("offerings","id",offering,"modelId",model)
+                requireOwner("offerings","id",offering,"endpointId",nativeEndpoint)
                 db.workspacePut("offerings",workspaceMap("id" to offering,"providerId" to p,"endpointId" to nativeEndpoint,
                     "modelId" to model,"manual" to 1,"source" to "SYNC","hidden" to 0,"verificationEvidenceId" to null))
-                val availability=nativeID("availability",v.id)
-                db.workspacePut("credential_availability",workspaceMap("id" to availability,"offeringId" to offering,"accountId" to account,
-                    "credentialId" to credential,"priceState" to "UNKNOWN","quotaState" to "UNKNOWN","group" to d.text("group_id"),
-                    "groupIdentity" to "v"+d.text("group_id")))
+                val anonymous=db.workspaceOne("SELECT authMode FROM credentials WHERE credentialId=?",credential)?.text("authMode")=="NONE"
+                val availability=hinted("availability_id") ?: nativeID("availability",v.id)
+                requireOwner("credential_availability","id",availability,"accountId",account)
+                requireOwner("credential_availability","id",availability,"credentialId",credential)
+                if(!anonymous) db.workspacePut("credential_availability",workspaceMap("id" to availability,"offeringId" to offering,"accountId" to account,
+                    "credentialId" to credential,"priceState" to "UNKNOWN","quotaState" to "UNKNOWN","group" to d.text("group_id"),"groupIdentity" to "v"+d.text("group_id")))
                 // This record is explicit membership from the same user; catalog
                 // discovery alone never creates a My Models row.
                 val member=db.workspaceOne("SELECT * FROM my_models WHERE providerId=? AND providerModelId=?",p,model)
-                if(member==null) db.workspacePut("my_models",workspaceMap("providerId" to p,"providerModelId" to model,"addedAt" to d.number("created_at"),"source" to "USER"))
+                if(member==null) {
+                    db.workspacePut("my_models",workspaceMap("providerId" to p,"providerModelId" to model,"addedAt" to d.number("created_at"),"source" to "USER"))
+                    link("membership_owner",workspaceID(p,model),model,"my_models",workspaceMap("providerId" to p,"providerModelId" to model))
+                }
                 link(v.kind,v.id,availability,"credential_availability",workspaceMap("id" to availability))
             }
             // Catalog, research, chat and scoped facts remain complete in the

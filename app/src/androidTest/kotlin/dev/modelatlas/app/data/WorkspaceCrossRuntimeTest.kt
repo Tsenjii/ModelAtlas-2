@@ -19,6 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.security.KeyStore
 import java.security.cert.CertificateFactory
+import java.util.UUID
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
@@ -62,9 +63,38 @@ class WorkspaceCrossRuntimeTest {
             assertEquals(0L,db.workspaceOne("SELECT COUNT(*) AS n FROM samples")!!.number("n"))
             val history=workspaceRecord(db.workspaceText("workspace_sync_records","localJson","kind='messages' AND id=?",workspaceID("native-history-message"))!!)
             assertEquals(4*1024*1024,history.data.text("content").length)
+            // Native-created records and secret travel through the actual Go hub
+            // to an independent native database, without duplicate connections.
+            val np=UUID.randomUUID().toString(); val na=UUID.randomUUID().toString(); val nc=UUID.randomUUID().toString()
+            val ne=UUID.randomUUID().toString(); val no=UUID.randomUUID().toString(); val nv=UUID.randomUUID().toString()
+            db.execSQL("INSERT INTO providers VALUES(?,'Native source','UNKNOWN','UNKNOWN',NULL,0,0,0)",arrayOf(np))
+            db.execSQL("INSERT INTO accounts VALUES(?,?)",arrayOf(na,np))
+            db.execSQL("INSERT INTO credentials(credentialId,accountId,label,enabled,authMode) VALUES(?,?,'Native key',1,'BEARER')",arrayOf(nc,na))
+            vault.store(nc,"https://native.example","native-synthetic-secret")
+            db.execSQL("INSERT INTO endpoints VALUES(?,?,'https://native.example/v1','https://native.example/v1/chat/completions','CHAT_COMPLETIONS')",arrayOf(ne,np))
+            db.execSQL("INSERT INTO offerings VALUES(?,?,?,'native-model',1,'MANUAL',0,NULL)",arrayOf(no,np,ne))
+            db.execSQL("INSERT INTO credential_availability(id,offeringId,accountId,credentialId,priceState,quotaState,`group`,groupIdentity) VALUES(?,?,?,?,'UNKNOWN','UNKNOWN','','v')",arrayOf(nv,no,na,nc))
+            db.execSQL("INSERT INTO my_models VALUES(?,'native-model',7,'USER')",arrayOf(np))
+            assertTrue(sync.syncNow())
+            assertEquals(1L,db.workspaceOne("SELECT enabled FROM credentials WHERE credentialId=?",nc)!!.number("enabled"))
+            val mirrorRoom=Room.inMemoryDatabaseBuilder(context,AtlasDatabase::class.java).build()
+            val mirrorVault=AndroidCredentialVault(context).apply { attachSyncDatabase { mirrorRoom.openHelper.writableDatabase } }
+            val mirror=DeviceWorkspaceSync(mirrorRoom,mirrorVault,WorkspaceTransport(client))
+            try {
+                assertTrue(mirror.connect(url,"Android mirror CI",pair())); assertTrue(mirror.syncNow())
+                val md=mirrorRoom.openHelper.writableDatabase
+                assertEquals("Native source",md.workspaceOne("SELECT name FROM providers WHERE providerId=?",np)!!.text("name"))
+                assertEquals("native-synthetic-secret",mirrorVault.bearerToken(nc,"https://native.example"))
+                assertEquals(1L,md.workspaceOne("SELECT enabled FROM credentials WHERE credentialId=?",nc)!!.number("enabled"))
+                assertEquals(1L,md.workspaceOne("SELECT COUNT(*) AS n FROM credential_availability WHERE credentialId=?",nc)!!.number("n"))
+                assertEquals(nv,md.workspaceOne("SELECT id FROM credential_availability WHERE credentialId=?",nc)!!.text("id"))
+                assertEquals(no,md.workspaceOne("SELECT offeringId FROM credential_availability WHERE credentialId=?",nc)!!.text("offeringId"))
+                assertEquals(2L,md.workspaceOne("SELECT COUNT(*) AS n FROM my_models")!!.number("n"))
+                mirror.disconnect()
+            } finally { mirrorRoom.close() }
             db.execSQL("UPDATE providers SET name='Android edited' WHERE providerId=?",arrayOf(p))
             assertTrue(sync.syncNow())
-            assertEquals("Android edited",admin("/providers").jsonArray.single().jsonObject.text("name"))
+            assertEquals("Android edited",admin("/providers").jsonArray.single{it.jsonObject.text("id")=="p"}.jsonObject.text("name"))
             // A real offline local edit races a real hub edit. Neither is lost.
             db.execSQL("UPDATE providers SET name='Android offline' WHERE providerId=?",arrayOf(p))
             val preview=admin("/assistant/actions/preview",workspaceMap("kind" to "PROVIDER","provider_id" to "p",
@@ -80,7 +110,7 @@ class WorkspaceCrossRuntimeTest {
             val device=devices.single { it.jsonObject.text("label")=="Android CI" }.jsonObject.text("id")
             admin("/workspace/revoke",workspaceMap("device_id" to device,"confirm" to JsonPrimitive(true)))
             assertFalse(sync.syncNow())
-            assertEquals(1L,db.workspaceOne("SELECT COUNT(*) AS n FROM my_models")!!.number("n"))
+            assertEquals(2L,db.workspaceOne("SELECT COUNT(*) AS n FROM my_models")!!.number("n"))
             assertEquals("top-secret-example-key",vault.bearerToken(credential.text("credentialId"),"https://provider.example"))
             assertEquals(0L,db.workspaceOne("SELECT COUNT(*) AS n FROM workspace_sync_records WHERE instr(localJson,?)>0 OR instr(baseJson,?)>0","top-secret-example-key","top-secret-example-key")!!.number("n"))
             assertEquals(0L,db.workspaceOne("SELECT COUNT(*) AS n FROM workspace_sync_conflicts WHERE instr(localJson,?)>0 OR instr(remoteJson,?)>0","top-secret-example-key","top-secret-example-key")!!.number("n"))

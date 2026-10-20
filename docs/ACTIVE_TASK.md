@@ -2,6 +2,7 @@
 
 ## 最新使用者指示：完成願望清單並優先解決跨平台同步（2026-10-19）
 
+- `2220229f4b8c6102dc705ab4587e46e2ad9ee58e` 已六項同 SHA SUCCESS：VPS `39402144371` 四項、Android `39402144405` build `118559196703`／device-tests `118559196220`。正式 Go HTTPS↔原生 Room／Keystore 的雙向編輯、4 MiB 歷史、衝突與撤銷已通過。接續同片補原生→中心→第二原生裝置、同名 Key 的不同帳號／origin、匿名連線與 scoped membership 移除；新候選仍重新完整 gate，不借用本基線。
 - 2026-10-20 接續核對：`fede52769a7cd76ae579d1097af3dd9739ffa7c7` 的 VPS `39356955335` 四項 SUCCESS、Android `39356955363` build SUCCESS／device-tests FAILURE（971 項、5 項既有 API skip、1 項真 Go↔Android 同步失敗）。Room migration 全部通過；憑證投影因 framework UPDATE 未引用 SQL 保留欄位 `group` 而失敗。本次修正引用欄位、補原生 insert/update/null/空字串回歸，投影失敗只保留不含參數／例外訊息的程式位置。新 SHA 必須重新六項 gate，仍不稱 SYNC-001 已驗收。
 - 使用者已授權實作 Part V 全部需求，並明確要求解決 Mac／VPS／Android 資料同步。先處理唯一整合切片 **SYNC-001**，其後依序接研究排程、未知站點解析、可量測 Reflection 與 authenticity；不在只寫文件後結束。
 - 同步採可選 VPS 中心＋各端本機離線資料、版本／游標增量、持久變更與明確衝突處理；裝置獨立配對／撤銷，Key 經認證 HTTPS 傳送並在目的端 vault 重新加密。秘密不進模型、log、同步 metadata 或 Git。
