@@ -1,5 +1,10 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-20 同步背景／手動競態修復（同片候選）
+
+- Mac `f0f6e802` 的 Universal build SUCCESS；`39404935751` arm64 `118570387444`／Intel `118570387783` 在新增真 packaged engine 同步測試都回 HTTP 409，因此不是九項全綠、未驗收。實際 App 的配對會 wake 真背景同步，緊接的手動同步因 TryLock 直接失敗；原 Go 測試未啟動該生命週期，不能以其綠燈掩蓋。
+- 補真 TLS 背景傳輸 barrier 的回歸測試，原程式確實失敗（手動同步在背景未完成時回 409）；改成可取消、有界等待的互斥，手動配對／同步／解除連線／衝突選擇會接續正在執行的工作。背景仍不重入；取消等待不消耗鎖。修後本機 Workspace race 全套 11.850s PASS、vet PASS，原測試／時間／工作量全部保留。兩分支新 HEAD 各自重新完整 gate，Mac 仍待九項與152圖＋28 frame，不稱已完成。
+
 ## 最新使用者指示：完成願望清單並優先解決跨平台同步（2026-10-19）
 
 - 2026-10-20 code `6ec46624f51e4bc4562e9decdff985eb876ead60` 已六項同 SHA SUCCESS：VPS `39403490771` 四項、Android `39403490790` build `118563699088`／device `118563698831`；973 項、0 failure／0 error、5 項既有 API skip。新增第二台原生端、精確原生 Offering／Availability ID、跨帳號 origin、匿名與 scoped 移除全部通過。21 Browser／288 圖成功，新同步 7 圖已檢查，原 workload 峰值 180,740,096 bytes。原始證據見 `vps/verification/20261020/6ec4662-sync-baseline.json`；新文件 HEAD 另驗。Mac `f0f6e802`／PR #21 正在九項整合驗證，不借本基線，完整願望清單仍未完成。
