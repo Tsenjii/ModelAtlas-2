@@ -2,7 +2,7 @@
 
 目前使用與開發順序：**VPS 第一、Mac 第二、Android 第三**（D-014）。三平台由同一個來源 commit 交付；同一 Release 必須同時包含 VPS AMD64／ARM64、Mac Universal DMG／ZIP 與 Android APK，不以只有單一平台的產物標為完整 Release。
 
-下載：[GitHub Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)。目前版本線為 **0.8.0 預覽版**；實際已公開版本、來源 commit 與附件以該頁為準。CI 中／失敗或只有草稿不算已發布。
+下載：[GitHub Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)。目前版本線為 **0.8.x 預覽版**；實際已公開版本、來源 commit 與附件以該頁為準。CI 中／失敗或只有草稿不算已發布。
 
 ## 取得與更新
 
