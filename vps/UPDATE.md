@@ -12,7 +12,7 @@
 
 ```sh
 sha256sum -c modelatlas-vps-linux-amd64.tar.gz.sha256
-tar -xzf modelatlas-vps-linux-amd64.tar.gz
+tar --no-same-owner -xzf modelatlas-vps-linux-amd64.tar.gz
 cd modelatlas-vps-linux-amd64
 sha256sum -c SHA256SUMS.txt
 ```
@@ -30,7 +30,7 @@ sudo sh deploy/install.sh "$PWD"
 日後可從既有套件取得部署工具，以明確 tag 下載到新目錄，工具自動選架構並校驗完整套件，不會停止或安裝服務：
 
 ```sh
-sh deploy/download.sh v0.8.0-preview.1 ../modelatlas-0.8.0-preview.1
+sh deploy/download.sh v0.8.1-preview.1 ../modelatlas-0.8.1-preview.1
 ```
 
 選擇之後要更新的實際 tag，已存在的輸出目錄會拒絕覆寫。每次下載並解開新套件後，只需：

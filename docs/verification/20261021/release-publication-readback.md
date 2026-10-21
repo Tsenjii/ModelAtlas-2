@@ -9,3 +9,5 @@
 18項發布回歸包括fresh-draft延遲、完整11附件的真正local hash／九job表格→mock GitHub生命周期、只有一次create與upload、固定ID讀回／finalize，以及wrong-source零upload。API mock不是實際發布；真發布結果以公開Release與PR最新紀錄為準。
 
 來源與界線：GitHub REST釋出文件 https://docs.github.com/en/rest/releases/releases ，target_commitish在既有Git tag時不決定tag來源；本片仍保留原有該欄位的保守檢查，同時實際解析tag commit，不把說明欄位取代真正Git來源。公開tag與附件永不覆寫。
+
+真發布已完成：39533824607 attempt2 publish119011175699與release-checks119011177148成功，維持同一d12ee55與tag；三平台11附件公開，真HTTPS VPS下載及全部27檔／CLI校驗成功。manifest SHA256 4b63b3ee10e8ec63fdb280f8768ddc397bf3140f7c4574a374c9ebd8d2f89a38。控制修正只服務後續新draft，獨立新HEAD九項不可借此應用程式來源的結果；即時結果見PR #20。

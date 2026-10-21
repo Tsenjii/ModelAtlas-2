@@ -2,6 +2,8 @@
 
 ## 2026-10-21 發布讀回修正與已驗應用程式（同一 VPS-RESEARCH-RETRY-009）
 
+- **0.8.1-preview.1已公開**：release419090377，tag固定d12ee55，11附件完整校驗。39533824607 attempt2的publish119011175699／release-checks119011177148 SUCCESS，真公開VPS下載／27檔hash／CLI bundle-check成功；本機另在受限root環境以新下載器重驗成功。RELEASE-MANIFEST.json SHA256 4b63b3ee10e8ec63fdb280f8768ddc397bf3140f7c4574a374c9ebd8d2f89a38。首attempt失敗保留，不當成功。README／發布與Mac說明更新為此實際公開版本；手動解壓指令也不還原CI uid/gid。
+
 - 應用程式來源 `d12ee55b660979dbc84557cd5f6fe532313094ea` 已同SHA九項SUCCESS：VPS39533829322（119005709936／119005710209／119005710289／119005710317）、Android39533829316（119005709994／119005709673）、Mac39533829348（119005710026／119007434866／119007434965）。完整race238.007s／vet、真systemd40.364s、24 Browser218.477s／311 PNG通過；8張新CI實圖已下載核對artifact digest並逐張檢視。Android真XML976／0 failure／0 error／5原skip；Mac82核心／每架構76靜態圖與14frame的全部原門檻保留。
 - 本機重試原五分鐘Browser全集，無其他測試同時競爭後24個流程270.858s成功；先前300s逾時仍保留，不刪測試、不放寬上限。CI原expanded workload不減，PID待機23,515,136／峰值204,873,728 bytes；排除OS／proxy／browser，非目標VPS實測。main89e84c83b5ad5d9ee893f451041df6c712efd705僅RELEASES.md的一行版本線，39533551770兩項成功。
 - 完整三平台產物校驗已在發布39533824607成功；首publish119006459484在建立新draft後的首次collection讀回拒絕（created draft identity mismatch），沒有公開、不當成功。稍後真API確認draft419090377仍未公開、0附件、prerelease=true、target與實際tag均固定上述d12ee55。這支持「新draft讀回尚未穩定」的判斷，未證明當時哪個欄位暫時不可見。
