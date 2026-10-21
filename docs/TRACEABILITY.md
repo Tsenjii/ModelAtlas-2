@@ -1,5 +1,9 @@
 # ModelAtlas Public — TRACEABILITY
 
+## VPS-UPDATE-PROVENANCE-010（2026-10-21 候選）
+
+正式發布 caller `release/prepare.py` → `verified_jobs`／`select_artifacts`／`collect` → 完整 Linux／Mac／Android 資產與 manifest。固定 producer、同 run／source 及成功 job 時間窗的唯一產物；保留重跑後未重新執行的成功 build，失敗舊 QA 不能補新 QA 缺失，歧義直接停止。`release/test_artifact_provenance.py` 九項含真 GitHub39536170097重跑／24排序、9個工作與9產物、來源／時間／過期／歧義拒絕及下載前拒絕；原18項完整保留。新 HEAD 的九項＋27發布回歸及真套件重驗前 CANDIDATE，實際驗收 SHA／run／job 見 PR #20。0.8.1 tag／附件不改；不等於已部署主機／完整願望完成。
+
 ## MAC-PROVIDER-012（2026-10-18 候選）
 
 Providers → ProviderDetailView → ProviderAccountsView／新增帳戶與Key表單／CredentialRow → ProviderWriteController → 正式 `/accounts`、`/credentials`、`/credentials/toggle`、`/credentials/rotate`。AtlasStore按Provider保留工作區，跨分區／關閉重開仍共用帳戶lease與草稿；只在記憶體。ProviderManagement核心持有完整identity、已知enabled的精確bulk、快照、正確role／固定origin與分開的秘密值／版本payload，保存後的新稿不被清除或重用已提交ID。

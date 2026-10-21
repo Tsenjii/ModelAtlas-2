@@ -1,5 +1,15 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-21 VPS 更新來源驗證（VPS-UPDATE-PROVENANCE-010）
+
+- 使用者續要求優化 VPS。本片只補後續三平台更新發布的產物來源驗證；0.8.1-preview.1 及其 tag／11附件保持原值，不重發為另一個來源、不修改應用程式／DB／排程。原願望與已驗功能保留，PR #20 維持 Draft、不 merge、未部署目標主機。
+- 開工重查 main cba901d187aa5312cc71f5c2440b23fa04104aee、39536090788 attempt2 SUCCESS，FEATURE FREEZE=OFF。前 controller ffbb697 已自己的 VPS39536170156／Android39536170293／Mac39536170097 attempt2 九項成功；Mac 首次 Intel composer 縮窗失敗仍追蹤，未假稱根因已修。
+- 真 GitHub metadata 顯示 Mac39536170097 同時留有失敗 QA12318516718 及成功重跑 QA12317604113；失敗檔 ID 反而較大。舊 dictionary 選取在24種回傳排序中12種誤選。本片依固定 workflow producer、成功 job 的原始執行時間窗、run ID／head SHA，要求每種產物唯一符合；保留未重跑成功 build 的原始時間。缺失／歧義／錯來源／過期／缺時間／digest 停止，不猜最新，也不刪失敗證據。
+- 正式 caller release/prepare.py → collect／select_artifacts，manifest 新增 job source／time 與 artifact producer／created_at；原9項成功、全部套件內外hash／實際binary／版本／簽署及11附件 gate 保留。GitHub 未直接回傳 artifact job ID，時間窗為固定 workflow 宣告之驗證約束，不宣稱額外的簽章證明。
+- 新增9項真公開 metadata 與拒絕路徑回歸，連原18項共27項本機通過；新 HEAD 仍須自己的九項與 release-checks，全綠前 CANDIDATE。最終 SHA／run／job／實際套件重驗記於 PR #20，不用前片綠燈或文件快照代替。沒有 release/request.json 變更，本片不自動另發應用程式版本。
+
+以下為先前已交付切片與歷史證據。
+
 ## 2026-10-21 發布讀回修正與已驗應用程式（同一 VPS-RESEARCH-RETRY-009）
 
 - **0.8.1-preview.1已公開**：release419090377，tag固定d12ee55，11附件完整校驗。39533824607 attempt2的publish119011175699／release-checks119011177148 SUCCESS，真公開VPS下載／27檔hash／CLI bundle-check成功；本機另在受限root環境以新下載器重驗成功。RELEASE-MANIFEST.json SHA256 4b63b3ee10e8ec63fdb280f8768ddc397bf3140f7c4574a374c9ebd8d2f89a38。首attempt失敗保留，不當成功。README／發布與Mac說明更新為此實際公開版本；手動解壓指令也不還原CI uid/gid。

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Publish only intact artifacts produced and tested from one exact Git commit."""
 import argparse
+from datetime import datetime
 import hashlib
 import io
 import json
@@ -23,6 +24,23 @@ CHECKS = {
     ".github/workflows/vps.yml": {"vps-test", "vps-browser", "vps-linux-amd64", "vps-linux-arm64"},
     ".github/workflows/android.yml": {"build", "device-tests"},
     ".github/workflows/macos-native.yml": {"macos-build", "macos-test (macos-15, arm64)", "macos-test (macos-15-intel, x86_64)"},
+}
+ARTIFACT_JOBS = {
+    ".github/workflows/vps.yml": {
+        "modelatlas-vps-linux-amd64": "vps-linux-amd64",
+        "modelatlas-vps-linux-arm64": "vps-linux-arm64",
+        "modelatlas-vps-footprint": "vps-test",
+        "modelatlas-vps-browser": "vps-browser",
+    },
+    ".github/workflows/android.yml": {
+        "modelatlas-debug-and-reports": "build",
+        "modelatlas-device-test-reports": "device-tests",
+    },
+    ".github/workflows/macos-native.yml": {
+        "ModelAtlas-macOS-Universal": "macos-build",
+        "ModelAtlas-macOS-QA-arm64": "macos-test (macos-15, arm64)",
+        "ModelAtlas-macOS-QA-x86_64": "macos-test (macos-15-intel, x86_64)",
+    },
 }
 MAX_ARCHIVE = 512 * 1024 * 1024
 
@@ -98,14 +116,50 @@ def select_run(runs, workflow, commit):
     matching = [run for run in runs if run.get("head_sha") == commit and run.get("path", "").split("@")[0] == workflow and run.get("event") in {"pull_request", "push", "workflow_dispatch"} and (run.get("head_repository") or {}).get("full_name") == REPOSITORY]
     return max(matching, key=lambda run: (run["id"], run.get("run_attempt", 1)), default=None)
 
+def ci_time(value):
+    require(isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})", value) is not None, "invalid CI timestamp")
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
 def verified_jobs(run, jobs, expected, commit):
     require(run.get("head_sha") == commit, "CI source mismatch")
     require(run["status"] == "completed" and run["conclusion"] == "success", "CI workflow is not successful")
     actual = {job["name"]: job for job in jobs}
     require(expected <= actual.keys(), "missing mandatory CI job")
     for name in expected:
-        require(actual[name]["status"] == "completed" and actual[name]["conclusion"] == "success", "mandatory CI job did not pass")
-    return [{"id": actual[name]["id"], "name": name, "conclusion": "success"} for name in sorted(expected)]
+        require(sum(job["name"] == name for job in jobs) == 1, "ambiguous mandatory CI job")
+        job = actual[name]
+        require(job["status"] == "completed" and job["conclusion"] == "success", "mandatory CI job did not pass")
+        require(job.get("run_id") == run["id"] and job.get("head_sha") == commit, "CI job source/run mismatch")
+        require(ci_time(job.get("started_at")) <= ci_time(job.get("completed_at")), "invalid CI job execution window")
+    return [{key: actual[name][key] for key in ("id", "name", "conclusion", "run_id", "head_sha", "started_at", "completed_at")} for name in sorted(expected)]
+
+def select_artifacts(workflow, run, artifacts, commit):
+    # GitHub retains same-name uploads from failed attempts. IDs and response
+    # ordering are not chronological. Bind each upload to its successful
+    # producer's original execution window, including carried-over jobs.
+    jobs = {job["name"]: job for job in run["jobs"]}
+    selected = {}
+    for name, producer in ARTIFACT_JOBS[workflow].items():
+        job = jobs[producer]
+        require(job["conclusion"] == "success" and job["run_id"] == run["id"] and job["head_sha"] == commit, "artifact producer source/run mismatch")
+        start, end = ci_time(job["started_at"]), ci_time(job["completed_at"])
+        matches = []
+        for item in artifacts:
+            source = item.get("workflow_run") or {}
+            if item.get("name") != name or item.get("expired") or source.get("id") != run["id"] or source.get("head_sha") != commit:
+                continue
+            if start <= ci_time(item.get("created_at")) <= end:
+                matches.append(item)
+        require(len(matches) == 1, "missing or ambiguous artifact from successful producer: " + name)
+        require(re.fullmatch(r"sha256:[a-f0-9]{64}", matches[0].get("digest") or "") is not None, "artifact digest is missing: " + name)
+        selected[name] = matches[0]
+    return selected
+
+def artifact_provenance(workflow, run, item):
+    producer = ARTIFACT_JOBS[workflow][item["name"]]
+    job = next(job for job in run["jobs"] if job["name"] == producer)
+    return {"name": item["name"], "id": item["id"], "digest": item["digest"], "run_id": run["id"],
+            "producer_job_id": job["id"], "producer_job_name": producer, "created_at": item["created_at"]}
 
 def wait_for_ci(api, commit, minutes):
     deadline = time.monotonic() + minutes * 60
@@ -189,18 +243,12 @@ def linux_bundle(raw, arch, commit, tag):
     return files, version
 
 def collect(api, commit, checks, out):
+    require(set(checks) == set(CHECKS), "incomplete platform CI evidence")
     props = properties()
     artifacts = {}
     for workflow, run in checks.items():
         values = api.pages("/repos/" + REPOSITORY + "/actions/runs/" + str(run["id"]) + "/artifacts", "artifacts")
-        artifacts[workflow] = {item["name"]: item for item in values if not item.get("expired")}
-    expected = {
-        ".github/workflows/vps.yml": ["modelatlas-vps-linux-amd64", "modelatlas-vps-linux-arm64", "modelatlas-vps-footprint", "modelatlas-vps-browser"],
-        ".github/workflows/android.yml": ["modelatlas-debug-and-reports", "modelatlas-device-test-reports"],
-        ".github/workflows/macos-native.yml": ["ModelAtlas-macOS-Universal", "ModelAtlas-macOS-QA-arm64", "ModelAtlas-macOS-QA-x86_64"],
-    }
-    for workflow, names in expected.items():
-        require(set(names) <= artifacts[workflow].keys(), "missing platform package or QA evidence")
+        artifacts[workflow] = select_artifacts(workflow, run, values, commit)
     assets = {}
     provenance = []
     archives = out / "downloaded"
@@ -209,7 +257,7 @@ def collect(api, commit, checks, out):
         item = artifacts[workflow][name]
         path = archives / (name + ".zip")
         api.download(item, path)
-        provenance.append({"name": name, "id": item["id"], "digest": item["digest"], "run_id": checks[workflow]["id"]})
+        provenance.append(artifact_provenance(workflow, checks[workflow], item))
         return read_zip(path)
     def asset(name, data):
         require("/" not in name and name not in assets, "invalid or duplicate release asset")
@@ -258,11 +306,9 @@ def collect(api, commit, checks, out):
         asset("ModelAtlas-Android.json", (json.dumps(metadata, ensure_ascii=False, indent=2) + "\n").encode())
     # Keep QA artifacts bound to their successful source runs in the manifest.
     evidence = []
-    for workflow, names in expected.items():
-        for name in names:
-            item = artifacts[workflow][name]
-            require(re.fullmatch(r"sha256:[a-f0-9]{64}", item.get("digest", "")) is not None, "QA artifact digest is missing")
-            evidence.append({"name": name, "id": item["id"], "digest": item["digest"], "run_id": checks[workflow]["id"]})
+    for workflow, values in artifacts.items():
+        for item in values.values():
+            evidence.append(artifact_provenance(workflow, checks[workflow], item))
     manifest = {"schema": 1, "repository": REPOSITORY, "tag": props["tag"], "commit": commit, "prerelease": True, "platform_order": ["vps", "macos", "android"], "checks": checks, "source_artifacts": evidence, "downloaded_artifacts": provenance, "assets": assets}
     (out / "RELEASE-MANIFEST.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     checksums = dict(assets)

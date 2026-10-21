@@ -86,7 +86,8 @@ class ReleaseBoundaryTests(unittest.TestCase):
 
     def test_exact_source_and_real_job_success_required(self):
         run = valid_run()
-        jobs = [{"id": index, "name": name, "status": "completed", "conclusion": "success"} for index, name in enumerate(prepare.CHECKS[run["path"]])]
+        jobs = [{"id": index, "name": name, "status": "completed", "conclusion": "success", "run_id": run["id"], "head_sha": COMMIT,
+                 "started_at": "2026-10-21T03:00:00Z", "completed_at": "2026-10-21T03:10:00Z"} for index, name in enumerate(prepare.CHECKS[run["path"]])]
         self.assertEqual(len(prepare.verified_jobs(run, jobs, prepare.CHECKS[run["path"]], COMMIT)), 4)
         for conclusion in ["skipped", "cancelled", "failure", None]:
             broken = copy.deepcopy(jobs)

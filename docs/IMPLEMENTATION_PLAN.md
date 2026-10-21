@@ -1,5 +1,7 @@
 # ModelAtlas Implementation Plan
 
+2026-10-21 唯一接續片 VPS-UPDATE-PROVENANCE-010：0.8.1已公開、ffbb697 controller九項成功後，補 CI 重跑的固定 producer／成功時間窗產物選取，防舊失敗QA冒充新成功證據。應用程式版本／既有公開附件不變；新HEAD獨立九項＋27發布回歸及真套件重驗，範圍與即時驗收見ACTIVE_TASK／PR #20。以下為歷史切片。
+
 2026-10-21 唯一接續片 VPS-RESEARCH-RETRY-009：三平台0.8.0已公開、controller3219ecf九項成功後，補公開GET的持久延後重試與可讀紀錄；同SHA九項及完整發布再交付0.8.1預覽。範圍／後續缺口見ACTIVE_TASK與vps/RESEARCH_SCHEDULES.md，原願望與測試不減。
 
 最新 D-014／VPS-RELEASE-008：VPS 第一、Mac 第二、Android 第三。先統一三平台來源／版本／完整發布、更新首頁與 VPS 下載更新入口；九項同 SHA 及完整性 gate 後才公開預覽版。原願望與平台優點保留，詳 ACTIVE_TASK、TRACEABILITY、RELEASES.md。以下優先序為歷史。
