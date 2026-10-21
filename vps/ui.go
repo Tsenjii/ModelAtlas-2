@@ -68,6 +68,11 @@ const homeHTML = `<!doctype html>
 <button type="button" role="tab" id="assistant-panel-tab" aria-controls="assistant-panel" aria-selected="false" tabindex="-1" data-icon="spark">Assistant</button>
 </div>
 <div id="work-chat" class="workspace-panel" role="tabpanel" aria-labelledby="work-chat-tab" data-workspace-panel="playground">
+<section id="conversation-create-state" class="conversation-create-state" role="status" aria-live="polite" aria-labelledby="conversation-create-title" hidden>
+<span data-icon="chat" aria-hidden="true"></span>
+<div><strong id="conversation-create-title"></strong><p id="conversation-create-copy"></p><small id="conversation-create-scope"></small></div>
+<button id="conversation-create-retry" class="ghost" type="button" data-icon="refresh">重新讀取清單</button>
+</section>
 <div class="card chat-card">
 <div class="toolbar target-bar">
 <button id="model-picker-open" disabled class="ghost model-picker-trigger" type="button" aria-label="選擇模型" aria-haspopup="dialog" aria-controls="model-picker" data-icon="models"><span id="model-picker-title">正在讀取模型…</span><kbd>⌘ / Ctrl K</kbd></button>

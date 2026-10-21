@@ -136,3 +136,8 @@ Playground「對話紀錄」可全文搜尋、置頂、命名、封存／恢復�
 ### 工作區連線與恢復
 
 0.8.2候選改善首次載入、離線與讀取失敗的持續提示、手機重新整理入口、保留上次資料／草稿、合併刷新與20秒JSON GET期限；不自動重送寫入／推論。詳[WORKSPACE_RECOVERY.md](WORKSPACE_RECOVERY.md)，實際發布以Releases為準。
+
+
+### 新對話的確認與恢復
+
+0.8.3候選改善建立成功後的立即切換、失敗時草稿／附件保留、只讀清單恢復及每次明確操作的請求識別，避免HTTP傳輸重送重複寫入。schema仍19，詳[CONVERSATION_CREATION.md](CONVERSATION_CREATION.md)。

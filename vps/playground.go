@@ -51,9 +51,22 @@ func (s *Server) listSessions(w http.ResponseWriter, r *http.Request) {
 	s.searchSessions(w, r)
 }
 func (s *Server) addSession(w http.ResponseWriter, r *http.Request) {
-	var x Session
-	if !decodeJSON(w, r, &x) {
+	var input struct {
+		Session
+		ClientRequestID string `json:"client_request_id"`
+	}
+	if !decodeJSON(w, r, &input) {
 		return
+	}
+	x := input.Session
+	var requestID string
+	if input.ClientRequestID != "" {
+		var err error
+		requestID, err = conversationRequestID(input.ClientRequestID)
+		if err != nil {
+			http.Error(w, "invalid conversation request id", 400)
+			return
+		}
 	}
 	if x.Endpoint == "" {
 		x.Endpoint = "CHAT_COMPLETIONS"
@@ -74,14 +87,59 @@ func (s *Server) addSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	x.ID = newID()
+	if requestID != "" {
+		x.ID = requestID
+	}
 	x.CreatedAt = now()
 	x.UpdatedAt = x.CreatedAt
-	_, err := s.Store.DB.ExecContext(r.Context(), "INSERT INTO sessions(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at) VALUES(?,?,?,?,?,?,?,?,?)", x.ID, x.ProviderID, x.AccountID, x.CredentialID, x.ModelID, x.Group, x.Endpoint, x.Title, x.CreatedAt)
+	statement := "INSERT INTO sessions(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at) VALUES(?,?,?,?,?,?,?,?,?)"
+	if requestID != "" {
+		statement += " ON CONFLICT(id) DO NOTHING"
+	}
+	result, err := s.Store.DB.ExecContext(r.Context(), statement, x.ID, x.ProviderID, x.AccountID, x.CredentialID, x.ModelID, x.Group, x.Endpoint, x.Title, x.CreatedAt)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
+	if requestID != "" {
+		inserted, err := result.RowsAffected()
+		if err != nil {
+			http.Error(w, "database error", 500)
+			return
+		}
+		if inserted == 0 {
+			var stored Session
+			err = s.Store.DB.QueryRowContext(r.Context(), `SELECT s.id,s.provider_id,s.account_id,s.credential_id,s.model_id,s.group_id,s.endpoint,s.title,s.created_at,MAX(s.created_at,COALESCE(sm.updated_at,0),COALESCE((SELECT MAX(created_at) FROM messages WHERE session_id=s.id),0)),COALESCE(sm.pinned,0),COALESCE(sm.archived,0),COALESCE(sm.revision,0),(SELECT COUNT(*) FROM messages WHERE session_id=s.id) FROM sessions s LEFT JOIN session_metadata sm ON sm.session_id=s.id WHERE s.id=?`, requestID).Scan(&stored.ID, &stored.ProviderID, &stored.AccountID, &stored.CredentialID, &stored.ModelID, &stored.Group, &stored.Endpoint, &stored.Title, &stored.CreatedAt, &stored.UpdatedAt, &stored.Pinned, &stored.Archived, &stored.Revision, &stored.MessageCount)
+			if err != nil {
+				http.Error(w, "database error", 500)
+				return
+			}
+			if stored.Selection != x.Selection || stored.Title != x.Title || stored.Archived {
+				http.Error(w, "conversation request id already used", 409)
+				return
+			}
+			x = stored
+			w.Header().Set("Idempotent-Replayed", "true")
+		}
+	}
 	jsonOK(w, 201, x)
+}
+
+// UUID v4 request identities have their own session-ID namespace. SQLite's
+// existing primary key makes transport retries atomic across restarts; this
+// applies only to conversation creation, never inference or other writes.
+func conversationRequestID(value string) (string, error) {
+	if len(value) != 36 || value[8] != '-' || value[13] != '-' || value[18] != '-' || value[23] != '-' || value[14] != '4' || !strings.ContainsRune("89ab", rune(value[19])) || value != strings.ToLower(value) {
+		return "", errors.New("invalid conversation request id")
+	}
+	packed := strings.ReplaceAll(value, "-", "")
+	if len(packed) != 32 {
+		return "", errors.New("invalid conversation request id")
+	}
+	if _, err := hex.DecodeString(packed); err != nil {
+		return "", errors.New("invalid conversation request id")
+	}
+	return "r-" + packed, nil
 }
 func (s *Server) history(ctx context.Context, id string) ([]Message, error) {
 	var count int

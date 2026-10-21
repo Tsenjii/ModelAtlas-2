@@ -1,5 +1,7 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-21 VPS-CONVERSATION-RECOVERY-012候選：VPS網頁新對話ack後即時可用、草稿／附件保留、清單只讀恢復及scope guard；同源引擎可選UUID請求識別，不改DB格式或舊客戶端預設。Mac／Android原生建立入口尚未採用該可選識別，不冒稱新網頁流程已移植；各平台既有caller／tests保留。優先序VPS→Mac→Android，0.8.2前片已公開，新0.8.3仍須本HEAD全部驗收。
+
 2026-10-21 VPS-WORKSPACE-RECOVERY-011候選：VPS網頁新增持續連線提示、last-good／草稿恢復、手機48px刷新、併發合併及GET有界取消。保留Mac中性色／側欄與原生優點；本片網頁行為不冒充已移植Mac／Android原生UI。VPS第一、Mac第二、Android第三；新同SHA九項及三平台0.8.2實際發布前仍候選。
 
 2026-10-21 VPS-RESEARCH-RETRY-009候選：公開GET退避由現有Go引擎持久保存，網頁呈現等待及恢復紀錄；Mac內建引擎同源取得後端能力，原生重試／排程專用呈現仍待對應。Android維持原生能力，不將新網頁UI冒充已移植。0.8.0已公開，controller3219ecf獨立九項成功；新片仍須自己的九項及三平台發布。

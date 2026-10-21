@@ -1,5 +1,7 @@
 # ModelAtlas 原生 macOS App
 
+本版準備 **0.8.3（build17，預覽）**，內建同源引擎增加可選的新對話請求識別；原生UI維持原caller。須新HEAD自己的九項與全部套件／公開下載後交付，實際公開狀態以[Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)為準。前版0.8.2／build16已由3d7629a公開，下文保留歷史。
+
 本版準備 **0.8.2（build16，預覽）**，與VPS／Android同一來源；需新HEAD自己的九項及全部實際套件驗證後發布。VPS工作區恢復是網頁介面改善，不冒充已移植到原生UI。實際公開狀態以[Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)為準；以下保留前版來源與歷史。
 
 2026-10-21：目前已公開 **0.8.1（build15，預覽）**，與VPS／Android同來源d12ee55；0.8.0保留歷史下載，使用與開發優先序為 VPS → Mac → Android。原生 App 由已驗0.7.0／build13（e408262）的完整功能接續，與最新 VPS／Android 放在同一來源建置；後續整合候選仍須重新通過同 SHA 九項後才發布，不借用原分支結果。下載見 [三平台 Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)，正式附件／來源／驗收見 RELEASE-MANIFEST.json 及 [發布說明](../docs/RELEASES.md)。

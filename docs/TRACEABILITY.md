@@ -1,5 +1,12 @@
 # ModelAtlas Public — TRACEABILITY
 
+## VPS-CONVERSATION-RECOVERY-012（2026-10-21 候選）
+
+正式caller：新對話按鈕／快捷鍵／模型入口 → ui_js_conversation_creation.go newConversation → POST /sessions client_request_id → playground.go addSession／conversationRequestID → 原SQLite sessions主鍵；ack後applySessionRows即時呈現，再以sessionSelectRefresh只讀清單。rereadConversationCreation／持續提示不重播寫入；sessionListVersion與scope guard保留使用者選擇／草稿。無schema變更，舊客戶端保持原新ID語意。
+
+conversation_creation_test.go六項race覆蓋同請求／8路並發、不同scope／title與archive拒絕、重開DB保留history／metadata、非法UUID及legacy caller。conversation_creation_browser_test.go＋e2e/conversation-creation.cjs使用真Handler／SQLite／TLS與測試外層故障，驗確認commit後503、部分body未知結果、header前斷線與傳輸層重送去重、只讀重試、late session／account guard及晚A commit／B草稿。原25／322全部保留，新增1流程／9圖，預期26／331。新HEAD自己的九項＋27發布回歸與三平台實際套件／公開下載前CANDIDATE；完整願望及未部署界線不變。
+
+
 ## VPS-WORKSPACE-RECOVERY-011（2026-10-21 候選）
 
 正式caller `vps/ui_browser.go` api／apiPages → `ui_js_workspace_recovery.go` refresh／workspaceReadStatus → `ui_js_views.go` refreshWorkspaceSnapshot，配合home狀態卡及手機／桌面CSS。只重讀工作區、不重放寫入／推論；核心資料未完整前不覆蓋last-good。`workspace_recovery_browser_test.go`＋`e2e/workspace-recovery.cjs`使用真production handler與測試外層fault barrier，驗503／併發快照／離線／20秒部分JSON取消／提交POST保留與零自動推論，11實圖。原Workspace回歸不改斷言，修正Settings→返回時初始pane可見性；全部原24／311保留，預期25／322。新SHA九項＋27發布回歸／實套件與公開下載前CANDIDATE，驗收見PR #20。schema仍19，完整願望及未部署界線保留。

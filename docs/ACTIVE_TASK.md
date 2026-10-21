@@ -1,5 +1,19 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-21 新對話確認與防重複（VPS-CONVERSATION-RECOVERY-012）
+
+- 使用者繼續要求VPS穩定／好用／UI好看。前片0.8.2-preview.1已公開：來源3d7629a776634108fcfb24205546a89f18c4236b，release419422579／11附件；發布39583272110／119165885169 SUCCESS。VPS39583278053四項、Android39583277869兩項、Mac39583277935三項首次同SHA全SUCCESS；真公開11檔／兩Linux各28內檔／實際AMD64 CLI與服務、schema19／vault／認證／手機UI及正式下載器已重驗。manifest SHA256 5c28116dbc1759cb8897571c7ba831ca17028b88c44d0a049ed91aa1f25cafdc，舊版本不變。
+- 唯一新片VPS-CONVERSATION-RECOVERY-012：新對話確認後立即可用、清單只讀恢復、失敗草稿／附件／工具保留、晚回應scope guard與HTTP傳輸重送防重複。維持VPS第一、Mac第二、Android第三；原28項完整願望／P8–P10不提前勾選。PR #20維持Draft、不merge，未有目標VPS存取資料、未遠端部署。
+- 本機先以原production caller重現2.083s失敗：POST實際commit後GET503，UI仍指向舊對話。再捕捉到Chrome在回應header前斷線時自行重送POST，原無請求識別會重複寫入。此為實際產品缺口，不把測試假設或文件當修復。
+- addSession接受可選UUIDv4 client_request_id，映射獨立r-主鍵；SQLite原唯一鍵及ON CONFLICT使相同請求跨並發／重啟只寫一筆，scope／title不符或已封存拒絕409，原歷史／metadata不覆寫。無新表或遷移，舊客戶端不傳識別仍各建立新ID；此保護不延伸為自動推論重試。
+- 網頁每個明確操作產生一次識別，已ack的Session先呈現，之後只讀清單；未ack不宣稱未commit。錯誤提示按scope保存，重試只有GET；新建立不再重讀無關工作區metadata。使用者選擇對話會使舊清單ticket失效，晚到A建立也不清B草稿。
+- 新6項後端race測試含8路並行、跨scope／title拒絕、重開DB／歷史／pin與封存、非法UUID及舊客戶端；6項5.908s PASS。新真Browser流程14.811s通過：503仍能一次明確TLS推論、草稿／PDF／工具／設定、同scope選擇／跨帳戶晚讀、部分body／header前斷線、busy重複呼叫及真模型隱藏後的晚A commit；5次明確建立意圖僅4筆新對話（另1次拒絕），9實圖。
+- 完整本機26 Browser在原五分鐘上限229.230s成功，331 PNG／零failure圖；27發布回歸PASS。新增9圖已檢查手機／深色／200%與輸入可達性；完整Go race及新HEAD九項另跑，不把尚未完成當成功。
+- 完整Go race164.450s／vet通過。實圖另發現錯誤提示時桌面flex子項縮窄，補明確寬度及320／375／1280的提示卡與聊天卡左右邊緣回歸；修後新增流程14.603s成功。最終完整Browser及新HEAD CI仍重新驗，保留修前實圖／失敗紀錄，不把前一版面全套結果冒充本修正。
+- 準備0.8.3-preview.1（Mac17／Android8004）；保留原25 Browser／322圖，預期26／331及原五分鐘上限、27發布回歸、全部工作量。完整本機／新SHA自己的九項與實際發布前仍CANDIDATE，最終SHA／run／job／附件見PR #20／manifest，不借前片綠燈。
+
+以下保留前片及歷史證據。
+
 ## 2026-10-21 VPS 日常工作區恢復（VPS-WORKSPACE-RECOVERY-011）
 
 - 使用者要求VPS穩定能用、好用且UI好看；依D-014維持VPS第一、Mac第二、Android第三。唯一新片是工作區載入／離線／讀取失敗恢復及手機操作，不疊研究或原生UI新功能。PR #20保持Draft、不merge，尚無目標VPS存取資料，未部署主機。
