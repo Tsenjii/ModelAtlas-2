@@ -1,6 +1,6 @@
 # ModelAtlas 原生 macOS App
 
-2026-10-20：目前版本線為 **0.8.0（build14，預覽）**，使用與開發優先序為 VPS → Mac → Android。原生 App 由已驗0.7.0／build13（e408262）的完整功能接續，與最新 VPS／Android 放在同一來源建置；整合候選重新通過同 SHA 九項後才發布，不借用原分支結果。下載見 [三平台 Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)，正式附件／來源／驗收見 RELEASE-MANIFEST.json 及 [發布說明](../docs/RELEASES.md)。
+2026-10-21：目前候選版本線為 **0.8.1（build15，預覽）**；0.8.0已公開，使用與開發優先序為 VPS → Mac → Android。原生 App 由已驗0.7.0／build13（e408262）的完整功能接續，與最新 VPS／Android 放在同一來源建置；整合候選重新通過同 SHA 九項後才發布，不借用原分支結果。下載見 [三平台 Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)，正式附件／來源／驗收見 RELEASE-MANIFEST.json 及 [發布說明](../docs/RELEASES.md)。
 
 SwiftUI／AppKit 原生介面，加上內建同源 Go／SQLite 本機引擎、Keychain 與離線資料。保持完整 Playground、Provider／模型管理、來源／圖表／歷史、媒體、研究、Assistant 及安全跨裝置同步。沒有 WebView、Electron 或常駐 Node；不依賴外部 VPS 才能開啟。VPS 的公開排程 UI 尚未移植到 Mac，不承諾睡眠期間24/7可靠排程。
 

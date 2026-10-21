@@ -2,6 +2,6 @@
   "schema": 1,
   "publish": true,
   "prerelease": true,
-  "tag": "v0.8.0-preview.1",
+  "tag": "v0.8.1-preview.1",
   "notes": "release/NOTES.md"
 }

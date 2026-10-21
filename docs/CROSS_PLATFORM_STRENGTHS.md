@@ -1,5 +1,7 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-21 VPS-RESEARCH-RETRY-009候選：公開GET退避由現有Go引擎持久保存，網頁呈現等待及恢復紀錄；Mac內建引擎同源取得後端能力，原生重試／排程專用呈現仍待對應。Android維持原生能力，不將新網頁UI冒充已移植。0.8.0已公開，controller3219ecf獨立九項成功；新片仍須自己的九項及三平台發布。
+
 2026-10-20 最新 D-014：**VPS 第一、Mac 第二、Android 第三**。VPS-RELEASE-008 將 Mac e408262 的完整原生 App 子樹帶入最新 VPS／Android 交付來源，保留全部平台的原 caller／tests；整合 HEAD 必須重新九項，不借原分支綠燈。Release 同時提供 Linux 兩架構、Mac Universal 與 Android APK，簽署／原生 UI／生命週期及尚未完成差異繼續明示。以下較舊順序為歷史。
 
 2026-10-20 接續 VPS-RESEARCH-SCHEDULE-007：維運 code `034e775` 同 SHA 六項成功；新公開研究排程僅在目前引擎明確啟用，關閉瀏覽器仍由 VPS 服務執行，排程意圖／HTTP 保留量不隨同步帶到另一端。Mac／Android 原生排程管理及 OS 背景能力尚未對應；候選、證據與歷史仍同步，既有各平台優點保留。

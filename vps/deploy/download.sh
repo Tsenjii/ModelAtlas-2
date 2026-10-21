@@ -32,7 +32,9 @@ for file in "$bundle.tar.gz" "$bundle.tar.gz.sha256"; do
         --connect-timeout 15 --max-time 300 --retry 3 --output "$tmp/$file" "$url/$file"
 done
 (cd "$tmp" && sha256sum -c "$bundle.tar.gz.sha256")
-tar -xzf "$tmp/$bundle.tar.gz" -C "$tmp"
+# The archive builder's uid/gid are not deployment identities. In particular,
+# root inside a user namespace may not be able to chown to the CI builder uid.
+tar --no-same-owner -xzf "$tmp/$bundle.tar.gz" -C "$tmp"
 (cd "$tmp/$bundle" && sha256sum -c SHA256SUMS.txt)
 "$tmp/$bundle/bin/$bundle" ops bundle-check --directory "$tmp/$bundle"
 [ ! -e "$destination" ] && [ ! -L "$destination" ] || { echo 'output appeared during download; nothing installed' >&2; exit 1; }

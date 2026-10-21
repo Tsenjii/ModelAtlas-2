@@ -126,7 +126,7 @@ func (s *Server) publicFetch(ctx context.Context, raw string) ([]byte, string, i
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return nil, "", resp.StatusCode, errors.New("public endpoint unavailable")
+		return nil, "", resp.StatusCode, publicHTTPFailure(resp.StatusCode, resp.Header, s.scheduleTime())
 	}
 	rawBody, e := readBounded(resp.Body, 1<<20)
 	return rawBody, resp.Header.Get("Content-Type"), resp.StatusCode, e

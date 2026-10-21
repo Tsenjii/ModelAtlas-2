@@ -93,6 +93,7 @@ var searchQueries = map[string]string{"en": "recurring free strong coding reason
 type researchPlannedTask struct {
 	kind, dedupe string
 	input        taskInput
+	retry        *researchRetryState
 }
 type researchPlanError struct {
 	status  int
@@ -121,16 +122,16 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 		if e != nil || !src.Enabled {
 			return v, nil, &researchPlanError{422, "source unavailable"}
 		}
-		tasks = append(tasks, researchPlannedTask{"SOURCE", "source:" + id, taskInput{SourceID: id, SourceSnapshot: &src}})
+		tasks = append(tasks, researchPlannedTask{kind: "SOURCE", dedupe: "source:" + id, input: taskInput{SourceID: id, SourceSnapshot: &src}})
 	}
 	for i := range v.Selections {
 		scope := v.Selections[i]
 		if !s.validateSelection(ctx, scope) || !s.groupBound(ctx, scope) || !conversationOperation(s.operation(ctx, scope)) {
 			return v, nil, &researchPlanError{422, "explicit inference selection unavailable"}
 		}
-		tasks = append(tasks, researchPlannedTask{"CATALOG", "catalog:" + scopeKey(scope), taskInput{Selection: &scope}})
+		tasks = append(tasks, researchPlannedTask{kind: "CATALOG", dedupe: "catalog:" + scopeKey(scope), input: taskInput{Selection: &scope}})
 		if v.MinimalInference {
-			tasks = append(tasks, researchPlannedTask{"MINIMAL_INFERENCE", "infer:" + scopeKey(scope), taskInput{Selection: &scope}})
+			tasks = append(tasks, researchPlannedTask{kind: "MINIMAL_INFERENCE", dedupe: "infer:" + scopeKey(scope), input: taskInput{Selection: &scope}})
 		}
 	}
 	for _, id := range v.CandidateIDs {
@@ -138,7 +139,7 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 		if e != nil || !publicURL(c.Website) {
 			return v, nil, &researchPlanError{422, "candidate website unavailable"}
 		}
-		tasks = append(tasks, researchPlannedTask{"INSPECT", "inspect:" + id, taskInput{CandidateID: id, URL: c.Website}})
+		tasks = append(tasks, researchPlannedTask{kind: "INSPECT", dedupe: "inspect:" + id, input: taskInput{CandidateID: id, URL: c.Website}})
 	}
 	if v.Search {
 		if len(v.Queries) == 0 {
@@ -151,14 +152,14 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 			}
 		}
 		for lang, q := range v.Queries {
-			tasks = append(tasks, researchPlannedTask{"SEARCH", "search:" + lang, taskInput{Language: lang, Query: q}})
+			tasks = append(tasks, researchPlannedTask{kind: "SEARCH", dedupe: "search:" + lang, input: taskInput{Language: lang, Query: q}})
 		}
 	}
 	if v.RefreshAA {
-		tasks = append(tasks, researchPlannedTask{"AA", "aa", taskInput{}})
+		tasks = append(tasks, researchPlannedTask{kind: "AA", dedupe: "aa"})
 	}
 	if v.LMSpeedSeeds {
-		tasks = append(tasks, researchPlannedTask{"LMSPEED_SEEDS", "lmspeed", taskInput{}})
+		tasks = append(tasks, researchPlannedTask{kind: "LMSPEED_SEEDS", dedupe: "lmspeed"})
 	}
 	// Learned priorities only reorder work the user explicitly selected.
 	weights := map[string]float64{}
@@ -197,7 +198,12 @@ func insertResearchRun(ctx context.Context, tx *sql.Tx, id string, v ResearchOpt
 	}
 	for _, task := range tasks {
 		raw, _ := json.Marshal(task.input)
-		if _, err := tx.ExecContext(ctx, "INSERT INTO research_tasks(id,run_id,kind,dedupe,payload_json,status,created_at) VALUES(?,?,?,?,?,'QUEUED',?) ON CONFLICT(run_id,dedupe) DO NOTHING", newID(), id, task.kind, task.dedupe, string(raw), now()); err != nil {
+		result := "{}"
+		if task.retry != nil {
+			encoded, _ := json.Marshal(map[string]any{"retry": task.retry})
+			result = string(encoded)
+		}
+		if _, err := tx.ExecContext(ctx, "INSERT INTO research_tasks(id,run_id,kind,dedupe,payload_json,status,result_json,created_at) VALUES(?,?,?,?,?,'QUEUED',?,?) ON CONFLICT(run_id,dedupe) DO NOTHING", newID(), id, task.kind, task.dedupe, string(raw), result, now()); err != nil {
 			return err
 		}
 	}
@@ -360,11 +366,12 @@ func (s *Server) runResearchPending(parent context.Context) {
 	defer s.workMu.Unlock()
 	for count := 0; count < 4; count++ {
 		var t ResearchTask
-		var payload string
-		e := s.Store.DB.QueryRowContext(parent, "SELECT t.id,t.run_id,t.kind,t.payload_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') ORDER BY t.rowid LIMIT 1").Scan(&t.ID, &t.RunID, &t.Kind, &payload)
+		var payload, previous string
+		e := s.Store.DB.QueryRowContext(parent, "SELECT t.id,t.run_id,t.kind,t.payload_json,t.result_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? ORDER BY t.rowid LIMIT 1", s.scheduleTime().UnixMilli()).Scan(&t.ID, &t.RunID, &t.Kind, &payload, &previous)
 		if e != nil {
 			return
 		}
+		t.Result = json.RawMessage(previous)
 		flight := "research:" + t.RunID
 		if t.Kind != "MINIMAL_INFERENCE" && !s.beginFlight(flight) {
 			return
@@ -429,8 +436,9 @@ func (s *Server) runResearchPending(parent context.Context) {
 			status = "BUDGET_EXHAUSTED"
 			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='BUDGET_EXHAUSTED' WHERE id=? AND status='RUNNING'", t.RunID)
 		}
+		result, status = s.researchRetryResult(t, taskErr, result, status)
 		raw, _ := json.Marshal(result)
-		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET status=?,result_json=?,finished_at=? WHERE id=?", status, string(raw), now(), t.ID)
+		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET status=?,result_json=?,finished_at=CASE WHEN ?='QUEUED' THEN NULL ELSE ? END WHERE id=?", status, string(raw), status, now(), t.ID)
 		var queued int
 		_ = s.Store.DB.QueryRowContext(saveCtx, "SELECT COUNT(*) FROM research_tasks WHERE run_id=? AND status IN ('QUEUED','RUNNING','INTERRUPTED','BUDGET_EXHAUSTED')", t.RunID).Scan(&queued)
 		if queued == 0 && runState == "RUNNING" {
@@ -461,6 +469,13 @@ func (s *Server) updateResearchSummary(ctx context.Context, id string) {
 		counts[k] = n
 	}
 	rows.Close()
+	var retryWaiting int
+	var retryAt sql.NullInt64
+	_ = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*),MIN(json_extract(result_json,'$.retry.next_attempt_at')) FROM research_tasks WHERE run_id=? AND status='QUEUED' AND json_extract(result_json,'$.retry.next_attempt_at')>0", id).Scan(&retryWaiting, &retryAt)
+	summary["retry_waiting_count"] = retryWaiting
+	if retryAt.Valid {
+		summary["next_retry_at"] = retryAt.Int64
+	}
 	summary["task_count"] = counts["SUCCESS"] + counts["FAILED"] + counts["CANCELLED"]
 	states := map[string]int{}
 	rows, e = s.Store.DB.QueryContext(ctx, "SELECT c.state,COUNT(DISTINCT c.id) FROM research_candidates c JOIN research_evidence e ON e.candidate_id=c.id JOIN research_evidence_details d ON d.evidence_id=e.id WHERE json_extract(d.details_json,'$.run_id')=? GROUP BY c.state", id)

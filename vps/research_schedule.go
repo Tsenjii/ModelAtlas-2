@@ -671,7 +671,7 @@ func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researc
 	if running > 0 {
 		return nil, true, nil
 	}
-	rows, err := tx.QueryContext(ctx, "SELECT kind,dedupe,payload_json FROM research_tasks WHERE run_id=? AND status IN ('QUEUED','INTERRUPTED','BUDGET_EXHAUSTED') ORDER BY rowid LIMIT 128", run)
+	rows, err := tx.QueryContext(ctx, "SELECT kind,dedupe,payload_json,result_json FROM research_tasks WHERE run_id=? AND status IN ('QUEUED','INTERRUPTED','BUDGET_EXHAUSTED') ORDER BY rowid LIMIT 128", run)
 	if err != nil {
 		return nil, false, err
 	}
@@ -679,13 +679,16 @@ func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researc
 	tasks := []researchPlannedTask{}
 	for rows.Next() {
 		var task researchPlannedTask
-		var raw string
-		if err = rows.Scan(&task.kind, &task.dedupe, &raw); err != nil {
+		var raw, result string
+		if err = rows.Scan(&task.kind, &task.dedupe, &raw, &result); err != nil {
 			return nil, false, err
 		}
 		if json.Unmarshal([]byte(raw), &task.input) != nil || task.input.Selection != nil || !oneOf(task.kind, "SOURCE", "SEARCH", "INSPECT", "INSPECT_LINK", "AA", "LMSPEED_SEEDS") {
 			return nil, false, errors.New("invalid scheduled public task")
 		}
+		// Continuation grants a new HTTP budget, not a new retry allowance or
+		// permission to ignore a remote Retry-After deadline.
+		task.retry = readResearchRetry([]byte(result))
 		tasks = append(tasks, task)
 	}
 	return tasks, false, rows.Err()
@@ -715,7 +718,7 @@ func (s *Server) recoverScheduledRun(ctx context.Context, v researchSchedule, at
 		return
 	}
 	// Automatic replay of an interrupted network attempt remains bounded.
-	if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='FAILED',result_json='{"+`"reason":"restart retry limit reached"`+"}' WHERE run_id=? AND status='INTERRUPTED' AND attempts>=3", v.LastRunID); err != nil {
+	if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='FAILED',result_json=json_set(result_json,'$.reason','restart retry limit reached') WHERE run_id=? AND status='INTERRUPTED' AND attempts>=3", v.LastRunID); err != nil {
 		return
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='QUEUED' WHERE run_id=? AND status IN ('INTERRUPTED','BUDGET_EXHAUSTED')", v.LastRunID); err != nil {

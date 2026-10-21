@@ -40,10 +40,23 @@ schema19 以三張新增表保存定義、輪次意圖與每日保留量。這�
 
 每輪建立時讀取目前已明確啟用的研究 query／source weight 版本，再凍結實際任務；tentative 提案不會自行啟用。沿用現有反思紀錄，不將它說成已完成跨輪品質評估或自動修改程式碼。
 
+
+## 公開來源暫時故障恢復
+
+VPS-RESEARCH-RETRY-009：SOURCE／INSPECT／INSPECT_LINK 的公開HTTPS GET收到429／502／503／504，會保存本次狀態並延後重試，最多兩次自動重試。等待時會繼續處理其他到期任務；使用原worker的30秒tick，不增加常駐服務或等待中的HTTP連線。實際時間可能晚於畫面上的最早重試時間。
+
+第一、第二次等待為30／60秒加0–5秒分散；有效Retry-After的秒數或HTTP日期是下限。站方要求超過24小時就停止自動重試並顯示原因，不把它截短後提前連線。401／403／404、其他HTTP錯誤、解析／連線／timeout錯誤不在這個自動重試範圍。
+
+每次實際連線仍先保留每輪、排程每日與全域每日額度，失敗／取消不退額度。額度不足時沿用原等待／明確追加規則；接續到下一個預算輪不重設等待期限或兩次重試上限。重啟保留期限，只有原本已批准的本機排程能自動恢復；手動研究仍須明確恢復。暫停、取消、停用與來源變動的原限制全部保留。
+
+「執行紀錄」顯示等待期限、恢復／停止原因及每次HTTP狀態／時間，可按「更新執行紀錄」讀取最新結果；成功後不抹去先前失敗。紀錄同步到另一台裝置只作歷史，不會自動執行。原始錯誤body與Retry-After header不進紀錄；不自動重放模型推論、私人catalog、Brave搜尋或AA分頁。
+
+此範圍以任務／接續鏈為單位；不同任務或全新週期尚未共用origin冷卻。Brave／AA逐頁checkpoint與退避、全域站點冷卻及完整研究預算仍為後續項目，不表示整體爬蟲已完成。
+
 ## 驗證與仍待完成
 
 `research_schedule_test.go` 使用正式 Handler／SQLite、真 TLS upstream，驗證預設關閉、到期／並發去重、每輪接續／每日及全域上限、UTC 跨日、完整關閉再開啟 DB、手動暫停意圖、真 HTTP 取消、來源改動、兩台引擎的真 HTTPS 同步／自己的 ACK、策略正式啟用與 v18 遷移前備份。`research_schedule_browser_test.go` → `e2e/research-schedules.cjs` 走實際 UI／worker／HTTP／候選與上限，包含等待防重、提交後刷新失敗、草稿、紀錄、停用／編輯保留當日量，以及 320／375／1280 深淺色、200% 共 8 圖。
 
 code `b1e0c669ffea48575875e0c16b7da6980aca5552` 已同 SHA VPS 四項＋Android 兩項 SUCCESS；完整 race／vet、真 systemd、14 個新增後端情境、23 Browser／303圖及原 expanded workload 已通過，Android 976／0 failure／0 error／5 原 skip。新增8圖已目視檢查。詳細 job／artifact／SHA256／完整 workload 在 `docs/verification/20261020/vps-scheduler-ci-baseline.json`。後續 HEAD／驗收文件提交各自重新六項 CI，最新結果以 PR #20 checks 為準；不借用前一 SHA 的綠燈。
 
-完整 WISH-CRAWL-001 尚缺每輪／每日推論與費用、實際逐憑證 quota、地區／可調並行、429／502 自動退避及更完整的高價值／過期重驗策略；Mac／Android 原生排程設定與各自 OS 生命週期尚未對應。未知站點 Connector、具品質／成本對照的 Reflection、authenticity、真站長跑／目標 VPS／實機驗收全部保留。通知仍預設 OFF。
+完整 WISH-CRAWL-001 尚缺每輪／每日推論與費用、實際逐憑證 quota、地區／可調並行、跨任務共同origin冷卻、Brave／AA逐頁退避及更完整的高價值／過期重驗策略；Mac／Android 原生排程設定與各自 OS 生命週期尚未對應。未知站點 Connector、具品質／成本對照的 Reflection、authenticity、真站長跑／目標 VPS／實機驗收全部保留。通知仍預設 OFF。
