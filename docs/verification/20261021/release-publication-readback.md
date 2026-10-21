@@ -1,0 +1,11 @@
+# 三平台發布新草稿讀回
+
+應用程式：d12ee55b660979dbc84557cd5f6fe532313094ea；v0.8.1-preview.1；draft419090377。九項正式CI、238.007s完整Go race、24 Browser／311 PNG、真systemd及全部平台產物已驗。Android artifact12316503715的真XML976項／零failure與error／5原skip，ZIP SHA256 36196844e459bddd3e221d6b9b39b88c882ef7fc49ebeae73cbd783113164e68。
+
+39533824607首publish119006459484已完成prepare，在新draft首次讀回以created draft identity mismatch停止。稍後官方API collection可查到draft、target與實際tag都是d12ee55，prerelease=true且尚無附件；因此新草稿讀回有短暫不可見或未穩定的可能，當時回應沒有完整保存，不能武斷指稱是哪一個欄位。
+
+修正只重試collection讀取，不重複create。最多6次，等待1／2／4／8／8秒；找到後立刻沿用原draft／source檢查，錯來源不upload。六次皆不可見則保守停止。既有draft保留固定ID，上傳後的精確tag／digest／完整平台檢查不變。
+
+18項發布回歸包括fresh-draft延遲、完整11附件的真正local hash／九job表格→mock GitHub生命周期、只有一次create與upload、固定ID讀回／finalize，以及wrong-source零upload。API mock不是實際發布；真發布結果以公開Release與PR最新紀錄為準。
+
+來源與界線：GitHub REST釋出文件 https://docs.github.com/en/rest/releases/releases ，target_commitish在既有Git tag時不決定tag來源；本片仍保留原有該欄位的保守檢查，同時實際解析tag commit，不把說明欄位取代真正Git來源。公開tag與附件永不覆寫。

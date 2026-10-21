@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import time
 
 from prepare import CHECKS, REPOSITORY, ROOT, digest, properties, require, sums
 
@@ -58,6 +59,18 @@ def release_for_tag(tag):
             return matches[0] if matches else None
     raise ValueError("release collection exceeds the verified pagination bound")
 
+def created_draft(tag):
+    # Creation can succeed before the collection exposes the new draft. Retry
+    # only this read (six reads, at most 23 seconds of backoff); never repeat creation or relax the
+    # source/draft/digest checks. Existing drafts retain their exact release ID.
+    for attempt in range(6):
+        value = release_for_tag(tag)
+        if value is not None:
+            return value
+        if attempt < 5:
+            time.sleep(min(1 << attempt, 8))
+    raise ValueError("created draft is still unavailable after bounded read retries")
+
 def tag_commit(tag):
     ref = gh("api", "repos/" + REPOSITORY + "/git/ref/tags/" + tag, optional=True)
     if ref is None:
@@ -99,7 +112,7 @@ def main():
         gh("release", "create", tag, "--repo", REPOSITORY, "--target", commit,
            "--title", "ModelAtlas " + tag + "｜VPS · Mac · Android",
            "--draft", "--prerelease", "--verify-tag", "--notes-file", str(out / "RELEASE-NOTES.md"))
-    existing = release_for_tag(tag)
+        existing = created_draft(tag)
     require(existing is not None and existing["draft"] and existing["target_commitish"] == commit, "created draft identity mismatch")
     endpoint = "repos/" + REPOSITORY + "/releases/" + str(existing["id"])
     require(tag_commit(tag) == commit, "created release tag source mismatch")

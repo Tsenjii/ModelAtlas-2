@@ -218,5 +218,65 @@ class ReleaseBoundaryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             publish.verify_uploaded(release, expected)
 
+    def test_created_draft_visibility_reads_are_bounded_without_recreating(self):
+        draft = {"id": 419090377, "tag_name": "wanted", "draft": True, "target_commitish": COMMIT}
+        with patch.object(publish, "release_for_tag", side_effect=[None, None, draft]) as lookup, patch.object(publish.time, "sleep") as sleep:
+            self.assertEqual(publish.created_draft("wanted"), draft)
+            self.assertEqual(lookup.call_count, 3)
+            self.assertEqual([c.args[0] for c in sleep.call_args_list], [1, 2])
+        with patch.object(publish, "release_for_tag", return_value=None) as lookup, patch.object(publish.time, "sleep") as sleep:
+            with self.assertRaisesRegex(ValueError, "bounded read retries"):
+                publish.created_draft("wanted")
+            self.assertEqual(lookup.call_count, 6)
+            self.assertEqual(sum(c.args[0] for c in sleep.call_args_list), 23)
+
+    def test_new_draft_visibility_delay_preserves_complete_publish_lifecycle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            out = root / "release-output"
+            out.mkdir()
+            tag = prepare.properties()["tag"]
+            assets = {}
+            for name in publish.PAYLOADS:
+                raw = name.encode()
+                (out / name).write_bytes(raw)
+                assets[name] = {"sha256": prepare.digest(raw), "size": len(raw)}
+            checks = {workflow: {"jobs": [{"name": name, "conclusion": "success"} for name in expected]} for workflow, expected in prepare.CHECKS.items()}
+            manifest = {"repository": prepare.REPOSITORY, "tag": tag, "commit": COMMIT, "prerelease": True, "checks": checks, "assets": assets}
+            (out / "RELEASE-MANIFEST.json").write_text(json.dumps(manifest))
+            checksums = {name: info["sha256"] for name, info in assets.items()}
+            checksums["RELEASE-MANIFEST.json"] = prepare.digest((out / "RELEASE-MANIFEST.json").read_bytes())
+            (out / "SHA256SUMS.txt").write_text("".join(value + "  " + name + "\n" for name, value in checksums.items()))
+            (out / "RELEASE-NOTES.md").write_text("preview")
+            _, expected = publish.validate_output(out, COMMIT)
+            draft = {"id": 419090377, "tag_name": tag, "draft": True, "prerelease": True, "target_commitish": COMMIT}
+            uploaded = dict(draft, assets=[{"name": name, "size": info["size"], "digest": "sha256:" + info["sha256"]} for name, info in expected.items()])
+            final = dict(uploaded, draft=False, html_url="https://github.com/" + prepare.REPOSITORY + "/releases/tag/" + tag)
+            calls = []
+            def api(*args, **kwargs):
+                calls.append(args)
+                if args[:2] == ("release", "create"):
+                    return {}
+                if args[1:3] == ("--method", "PATCH"):
+                    return final
+                if args == ("api", "repos/" + prepare.REPOSITORY + "/releases/419090377"):
+                    return uploaded
+                self.fail("unexpected API operation: " + repr(args))
+            with patch.dict(publish.os.environ, {"MODELATLAS_REPOSITORY": prepare.REPOSITORY, "MODELATLAS_SOURCE_COMMIT": COMMIT}), patch.object(publish, "ROOT", root), patch.object(publish, "tag_commit", return_value=COMMIT), patch.object(publish, "release_for_tag", side_effect=[None, None, None, draft]), patch.object(publish.time, "sleep"), patch.object(publish, "gh", side_effect=api), patch("builtins.print") as printed, patch.object(publish.subprocess, "run") as upload:
+                publish.main()
+            printed.assert_called_once_with("Published all three verified platforms: " + final["html_url"])
+            self.assertEqual(sum(args[:2] == ("release", "create") for args in calls), 1)
+            self.assertEqual(upload.call_count, 1)
+            self.assertEqual({Path(name).name for name in upload.call_args.args[0][7:]}, set(expected))
+            self.assertEqual(json.loads((out / "finalize-request.json").read_text()), {"draft": False, "prerelease": True, "make_latest": "false"})
+
+    def test_delayed_new_draft_cannot_upload_a_different_source(self):
+        tag = prepare.properties()["tag"]
+        wrong = {"id": 12, "tag_name": tag, "draft": True, "prerelease": True, "target_commitish": "b" * 40}
+        with patch.dict(publish.os.environ, {"MODELATLAS_REPOSITORY": prepare.REPOSITORY, "MODELATLAS_SOURCE_COMMIT": COMMIT}), patch.object(publish, "validate_output", return_value=({"tag": tag}, {})), patch.object(publish, "tag_commit", return_value=COMMIT), patch.object(publish, "release_for_tag", side_effect=[None, None, wrong]), patch.object(publish.time, "sleep"), patch.object(publish, "gh"), patch.object(publish.subprocess, "run") as upload:
+            with self.assertRaisesRegex(ValueError, "created draft identity mismatch"):
+                publish.main()
+            upload.assert_not_called()
+
 if __name__ == "__main__":
     unittest.main()

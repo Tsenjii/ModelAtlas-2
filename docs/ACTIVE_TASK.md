@@ -1,5 +1,17 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-21 發布讀回修正與已驗應用程式（同一 VPS-RESEARCH-RETRY-009）
+
+- 應用程式來源 `d12ee55b660979dbc84557cd5f6fe532313094ea` 已同SHA九項SUCCESS：VPS39533829322（119005709936／119005710209／119005710289／119005710317）、Android39533829316（119005709994／119005709673）、Mac39533829348（119005710026／119007434866／119007434965）。完整race238.007s／vet、真systemd40.364s、24 Browser218.477s／311 PNG通過；8張新CI實圖已下載核對artifact digest並逐張檢視。Android真XML976／0 failure／0 error／5原skip；Mac82核心／每架構76靜態圖與14frame的全部原門檻保留。
+- 本機重試原五分鐘Browser全集，無其他測試同時競爭後24個流程270.858s成功；先前300s逾時仍保留，不刪測試、不放寬上限。CI原expanded workload不減，PID待機23,515,136／峰值204,873,728 bytes；排除OS／proxy／browser，非目標VPS實測。main89e84c83b5ad5d9ee893f451041df6c712efd705僅RELEASES.md的一行版本線，39533551770兩項成功。
+- 完整三平台產物校驗已在發布39533824607成功；首publish119006459484在建立新draft後的首次collection讀回拒絕（created draft identity mismatch），沒有公開、不當成功。稍後真API確認draft419090377仍未公開、0附件、prerelease=true、target與實際tag均固定上述d12ee55。這支持「新draft讀回尚未穩定」的判斷，未證明當時哪個欄位暫時不可見。
+- 本片只補發布控制：新draft建立後最多6次唯讀查詢，額外backoff合計最多23秒；絕不重複建立、不放寬draft／來源／9 CI／全部hash檢查。既有draft沿用已驗release ID，仍在上傳後重驗。新增延遲可見／上限、完整fresh-draft生命周期、錯來源零upload三項回歸，共18項PASS；應用程式Go／Swift／Kotlin及已驗套件來源不變。
+- 原D12發布只重跑失敗job，在同一來源／九項及原完整產物重驗後續行，不改tag或假借controller SHA。修正後controller HEAD仍獨立重跑自己的九項與18發布回歸，結果見PR #20；其綠燈不能由D12挪用。未修改release/request.json，因此不會把同tag重發為另一個應用程式來源。詳細可見verification/20261021/release-publication-readback.md。
+- 公開0.8.0來源44c8cd1及11個附件保持原hash。完整願望／P8–P10與目標VPS部署／實機限制仍照下節，不因此勾選全部功能。保持VPS第一、Mac第二、Android第三；PR未merge。
+
+以下保留應用程式切片與過程證據。
+
+
 ## 2026-10-21 VPS 公開來源延後重試（VPS-RESEARCH-RETRY-009）
 
 - 前片三平台發布已完成：`v0.8.0-preview.1` 固定應用程式來源 `44c8cd1003a286ccecc47fb654a44414311065f7`、11個附件。恢復發布39466069760／118777690886成功，重驗全部原雜湊後公開並通過真HTTPS下載。原失敗publish保留為失敗，不覆寫tag／附件。發布控制修正 `3219ecfaa5d72926f97056f630aa7682c0768976` 另獨立九項SUCCESS：VPS39465895100（118777082597／118777082921／118777082682／118777082863）、Android39465895070（118777079841／118777080150）、Mac39465895102（118777079519／118778946308／118778946358）；15發布回歸成功。兩個SHA用途不同，不互借結果。
