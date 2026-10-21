@@ -20,7 +20,7 @@ ModelAtlas 整合 **AI Provider／多帳戶與 API Key 管理、模型情報、P
 - **Providers**：Quick／Advanced onboarding、可恢復 Review、多帳戶／Key、角色與 origin 隔離、New API／專用整合、簽到與來源分區。帳戶 PAT 與推論 Key 分開，不自動換 Key 或跨供應商路由。
 - **Models**：Catalog 與 My Models 分開；搜尋／分類、價格與額度來源、個人效能、站方／外部資料、詳情與歷史、明確加入及比較。未知價格／額度不當成零或免費。
 - **VPS 日常維運**：固定資料庫／master key／管理密碼、完整一致備份、在副本試跑 schema 遷移、版本／認證／儲存健康檢查、更新失敗回復與中斷復原；之後使用明確版本套件更新。
-- **VPS 公開研究排程**：保存後預設關閉，明確啟用才執行；每輪／每日 HTTP 上限、重啟接續、啟停與完整紀錄、來源變更確認。關閉瀏覽器後仍由服務工作，不自動花用模型 Key。
+- **VPS 公開研究排程**：保存後預設關閉，明確啟用才執行；每輪／每日 HTTP 上限、重啟接續、啟停與完整紀錄、來源變更確認；公開來源暫時故障的有限延後重試與恢復紀錄。關閉瀏覽器後仍由服務工作，不自動花用模型 Key。
 - **研究與 Assistant 基礎**：來源／候選漏斗／證據、正式工具操作、Review／Undo、版本化知識／Recipe／反思提案；敏感資料由本機安全層處理，raw Key／PAT 不進模型提示或日誌。
 
 VPS 詳細操作：[安裝與更新](https://github.com/Tsenjii/ModelAtlas-2/blob/feature/vps-rebuild-20261014/vps/UPDATE.md)、[排程](https://github.com/Tsenjii/ModelAtlas-2/blob/feature/vps-rebuild-20261014/vps/RESEARCH_SCHEDULES.md)。Mac：[原生 App 說明](https://github.com/Tsenjii/ModelAtlas-2/blob/feature/vps-rebuild-20261014/macos/README.md)。
