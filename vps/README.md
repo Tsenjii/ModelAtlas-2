@@ -131,3 +131,8 @@ Playground「對話紀錄」可全文搜尋、置頂、命名、封存／恢復�
 頁面分類、外觀偏好與這輪 UI 交接見 [WORKSPACE_UI.md](WORKSPACE_UI.md)。完整 V1 功能與資料語意保留，最新候選仍需完整六項 CI。
 
 詳情頁分區、來源與時間窗操作、錯誤及晚回應處理，見 [DETAIL_UI.md](DETAIL_UI.md)。
+
+
+### 工作區連線與恢復
+
+0.8.2候選改善首次載入、離線與讀取失敗的持續提示、手機重新整理入口、保留上次資料／草稿、合併刷新與20秒JSON GET期限；不自動重送寫入／推論。詳[WORKSPACE_RECOVERY.md](WORKSPACE_RECOVERY.md)，實際發布以Releases為準。

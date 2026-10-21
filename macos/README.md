@@ -1,5 +1,7 @@
 # ModelAtlas 原生 macOS App
 
+本版準備 **0.8.2（build16，預覽）**，與VPS／Android同一來源；需新HEAD自己的九項及全部實際套件驗證後發布。VPS工作區恢復是網頁介面改善，不冒充已移植到原生UI。實際公開狀態以[Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)為準；以下保留前版來源與歷史。
+
 2026-10-21：目前已公開 **0.8.1（build15，預覽）**，與VPS／Android同來源d12ee55；0.8.0保留歷史下載，使用與開發優先序為 VPS → Mac → Android。原生 App 由已驗0.7.0／build13（e408262）的完整功能接續，與最新 VPS／Android 放在同一來源建置；後續整合候選仍須重新通過同 SHA 九項後才發布，不借用原分支結果。下載見 [三平台 Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)，正式附件／來源／驗收見 RELEASE-MANIFEST.json 及 [發布說明](../docs/RELEASES.md)。
 
 SwiftUI／AppKit 原生介面，加上內建同源 Go／SQLite 本機引擎、Keychain 與離線資料。保持完整 Playground、Provider／模型管理、來源／圖表／歷史、媒體、研究、Assistant 及安全跨裝置同步。沒有 WebView、Electron 或常駐 Node；不依賴外部 VPS 才能開啟。VPS 的公開排程 UI 尚未移植到 Mac，不承諾睡眠期間24/7可靠排程。

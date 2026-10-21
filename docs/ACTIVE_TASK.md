@@ -1,5 +1,17 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-21 VPS 日常工作區恢復（VPS-WORKSPACE-RECOVERY-011）
+
+- 使用者要求VPS穩定能用、好用且UI好看；依D-014維持VPS第一、Mac第二、Android第三。唯一新片是工作區載入／離線／讀取失敗恢復及手機操作，不疊研究或原生UI新功能。PR #20保持Draft、不merge，尚無目標VPS存取資料，未部署主機。
+- 基線8871f542e83a721f03b4e563df70de9962372eb4已自己的九項SUCCESS：VPS39542238271、Android39542238339、Mac39542238333 attempt2；27發布回歸及真套件重驗成功。Intel首輪既有縮窗失敗仍保留，不假稱根因已修。開工重查main cba901d187aa5312cc71f5c2440b23fa04104aee／39536090788 attempt2兩項SUCCESS，FEATURE FREEZE=OFF。
+- 正式caller是瀏覽器api／refreshWorkspaceSnapshot／refresh與工作區狀態卡：JSON GET涵蓋body的20秒期限；並行刷新合併、期間變更要求下一個新快照、失敗取消同批GET；資料／草稿／scope保留，online／visibility／pageshow只讀恢復。POST／推論串流無新增期限、不自動重送，無新poller、無schema變更。
+- 首次資料未到前保留導航／外觀操作，避免空白composer；核心資料取得即呈現，設定未取得前避免預設值誤寫。新真production Browser驗證503／部分body中斷、提交中的POST、併發後新快照、離線／恢復及草稿／焦點，新增11圖；保留全部原24流程／311圖，預期25流程／322圖及原五分鐘上限。
+- 上輪本機完整Browser287.442s有24／25通過，原Workspace在重新載入後Settings→返回遇初始pane被隱藏，屬真回歸；改只隱藏空chat-card並即時呈現核心資料，保留原測試／斷言／timeout。環境重建後從8871還原本片，完整測試重新執行，未把失敗或消失的本機輸出當作成功。
+- 環境還原後完整Go race 220.716s／vet、27發布回歸、兩項Workspace焦點回歸10.817s通過；完整25個Browser在原五分鐘上限218.933s成功，322 PNG、零failure圖，新增11實圖已逐張檢視。原載入回歸與首輪失敗仍照上節保留，不改原測試或降低門檻。
+- 準備三平台0.8.2-preview.1（Mac16／Android8003）；新HEAD須自己的九項、27發布回歸、全部套件與實際公開下載後才驗收。當前CANDIDATE，精確SHA／run／job／附件與最終本機結果記於PR #20及manifest。前0.8.1與更舊tag／附件不修改；完整願望／P8–P10仍PARTIAL，不提前勾選原28項。
+
+以下保留前片與歷史證據。
+
 ## 2026-10-21 VPS 更新來源驗證（VPS-UPDATE-PROVENANCE-010）
 
 - 使用者續要求優化 VPS。本片只補後續三平台更新發布的產物來源驗證；0.8.1-preview.1 及其 tag／11附件保持原值，不重發為另一個來源、不修改應用程式／DB／排程。原願望與已驗功能保留，PR #20 維持 Draft、不 merge、未部署目標主機。

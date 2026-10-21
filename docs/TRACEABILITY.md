@@ -1,5 +1,10 @@
 # ModelAtlas Public — TRACEABILITY
 
+## VPS-WORKSPACE-RECOVERY-011（2026-10-21 候選）
+
+正式caller `vps/ui_browser.go` api／apiPages → `ui_js_workspace_recovery.go` refresh／workspaceReadStatus → `ui_js_views.go` refreshWorkspaceSnapshot，配合home狀態卡及手機／桌面CSS。只重讀工作區、不重放寫入／推論；核心資料未完整前不覆蓋last-good。`workspace_recovery_browser_test.go`＋`e2e/workspace-recovery.cjs`使用真production handler與測試外層fault barrier，驗503／併發快照／離線／20秒部分JSON取消／提交POST保留與零自動推論，11實圖。原Workspace回歸不改斷言，修正Settings→返回時初始pane可見性；全部原24／311保留，預期25／322。新SHA九項＋27發布回歸／實套件與公開下載前CANDIDATE，驗收見PR #20。schema仍19，完整願望及未部署界線保留。
+
+
 ## VPS-UPDATE-PROVENANCE-010（2026-10-21 候選）
 
 正式發布 caller `release/prepare.py` → `verified_jobs`／`select_artifacts`／`collect` → 完整 Linux／Mac／Android 資產與 manifest。固定 producer、同 run／source 及成功 job 時間窗的唯一產物；保留重跑後未重新執行的成功 build，失敗舊 QA 不能補新 QA 缺失，歧義直接停止。`release/test_artifact_provenance.py` 九項含真 GitHub39536170097重跑／24排序、9個工作與9產物、來源／時間／過期／歧義拒絕及下載前拒絕；原18項完整保留。新 HEAD 的九項＋27發布回歸及真套件重驗前 CANDIDATE，實際驗收 SHA／run／job 見 PR #20。0.8.1 tag／附件不改；不等於已部署主機／完整願望完成。

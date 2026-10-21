@@ -1,5 +1,7 @@
 # ModelAtlas Implementation Plan
 
+2026-10-21 唯一新片 VPS-WORKSPACE-RECOVERY-011：從已驗8871九項基線補日常載入／離線恢復、手機刷新與有界讀取。先修原Workspace返回回歸，完整原測試與工作量保留；新HEAD自己的九項及全部三平台套件／公開下載後交付0.8.2預覽。範圍與候選狀態見ACTIVE_TASK／PR #20，原願望不減。
+
 2026-10-21 唯一接續片 VPS-UPDATE-PROVENANCE-010：0.8.1已公開、ffbb697 controller九項成功後，補 CI 重跑的固定 producer／成功時間窗產物選取，防舊失敗QA冒充新成功證據。應用程式版本／既有公開附件不變；新HEAD獨立九項＋27發布回歸及真套件重驗，範圍與即時驗收見ACTIVE_TASK／PR #20。以下為歷史切片。
 
 2026-10-21 唯一接續片 VPS-RESEARCH-RETRY-009：三平台0.8.0已公開、controller3219ecf九項成功後，補公開GET的持久延後重試與可讀紀錄；同SHA九項及完整發布再交付0.8.1預覽。範圍／後續缺口見ACTIVE_TASK與vps/RESEARCH_SCHEDULES.md，原願望與測試不減。

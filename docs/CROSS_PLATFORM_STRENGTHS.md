@@ -1,5 +1,7 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-21 VPS-WORKSPACE-RECOVERY-011候選：VPS網頁新增持續連線提示、last-good／草稿恢復、手機48px刷新、併發合併及GET有界取消。保留Mac中性色／側欄與原生優點；本片網頁行為不冒充已移植Mac／Android原生UI。VPS第一、Mac第二、Android第三；新同SHA九項及三平台0.8.2實際發布前仍候選。
+
 2026-10-21 VPS-RESEARCH-RETRY-009候選：公開GET退避由現有Go引擎持久保存，網頁呈現等待及恢復紀錄；Mac內建引擎同源取得後端能力，原生重試／排程專用呈現仍待對應。Android維持原生能力，不將新網頁UI冒充已移植。0.8.0已公開，controller3219ecf獨立九項成功；新片仍須自己的九項及三平台發布。
 
 2026-10-20 最新 D-014：**VPS 第一、Mac 第二、Android 第三**。VPS-RELEASE-008 將 Mac e408262 的完整原生 App 子樹帶入最新 VPS／Android 交付來源，保留全部平台的原 caller／tests；整合 HEAD 必須重新九項，不借原分支綠燈。Release 同時提供 Linux 兩架構、Mac Universal 與 Android APK，簽署／原生 UI／生命週期及尚未完成差異繼續明示。以下較舊順序為歷史。

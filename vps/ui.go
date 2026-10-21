@@ -16,7 +16,7 @@ func (s *Server) script(w http.ResponseWriter, r *http.Request) {
 }
 
 const homeHTML = `<!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-workspace-ready="false">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -42,8 +42,20 @@ const homeHTML = `<!doctype html>
 <div id="sidebar-chat-section" class="sidebar-chat-section">
 <div class="sidebar-tools"><span class="sidebar-caption">最近對話</span><div class="sidebar-tools-actions"><details class="sidebar-filters"><summary aria-label="篩選對話" data-icon="filter"></summary><div class="sidebar-filter-menu"><label>對話狀態<select id="sidebar-session-state"><option value="ACTIVE">使用中</option><option value="ARCHIVED">已封存</option><option value="ALL">全部狀態</option></select></label><label class="check"><input id="sidebar-session-current" type="checkbox">僅目前模型連線</label></div></details><button id="sidebar-new-session" class="ghost icon-button" type="button" aria-label="建立新對話" data-icon="plus"></button></div></div>
 <label class="sidebar-search"><span class="sr-only">搜尋近期對話</span><input id="sidebar-conversation-search" type="search" placeholder="搜尋對話"></label><div id="sidebar-session-status" class="sidebar-session-status" role="status" aria-live="polite"></div><div id="sidebar-conversations" class="sidebar-conversations"></div><button id="sidebar-session-more" type="button" class="sidebar-more" hidden>載入更多對話</button><button id="sidebar-history" class="sidebar-more" type="button" data-icon="history">管理對話紀錄</button>
-</div><span class="sidebar-footer">VPS 工作區</span></aside>
+</div><span class="sidebar-footer">VPS 工作區<span id="workspace-read-status" class="workspace-read-status">正在連接…</span></span></aside>
 <main id="main-content">
+<section id="workspace-state" class="workspace-state" role="status" aria-live="polite" aria-labelledby="workspace-state-title" aria-busy="true" data-state="loading">
+<span class="workspace-state-icon" data-icon="refresh" aria-hidden="true"></span>
+<div class="workspace-state-content">
+<p class="workspace-state-eyebrow">ModelAtlas 工作區</p>
+<h2 id="workspace-state-title">正在連接工作區</h2>
+<p id="workspace-state-copy">正在讀取你的供應商、模型與對話。</p>
+<p id="workspace-state-problem" class="workspace-state-problem" hidden></p>
+<small id="workspace-state-time" hidden></small>
+<div id="workspace-state-progress" class="workspace-state-progress" aria-hidden="true"><span></span><span></span><span></span></div>
+</div>
+<button id="workspace-retry" type="button" class="ghost" data-icon="refresh" disabled>重新連線</button>
+</section>
 <p id="notice" role="status" aria-live="polite">
 </p>
 <section id="playground" class="pane" aria-labelledby="playground-title">

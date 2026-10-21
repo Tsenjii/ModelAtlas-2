@@ -1,6 +1,6 @@
 package main
 
-const appJS = jsCore + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsResearchSchedules + jsDetailWorkspace + jsProviderForms + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts + jsStreaming + jsCatalog + jsWorkspace + jsModelPicker + jsMacAlignment + jsIntelligence + jsCheckins + jsMacParity + jsModelConnections + jsModelViews + jsWorkspaceSync + jsSystemStatus
+const appJS = jsCore + jsWorkspaceRecovery + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsResearchSchedules + jsDetailWorkspace + jsProviderForms + jsDetails + jsOnboard + jsAssistant + jsKnowledge + jsModels + jsConversations + jsReceipts + jsStreaming + jsCatalog + jsWorkspace + jsModelPicker + jsMacAlignment + jsIntelligence + jsCheckins + jsMacParity + jsModelConnections + jsModelViews + jsWorkspaceSync + jsSystemStatus
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);
@@ -10,8 +10,21 @@ let mediaAttachment=null,mediaRequestID=null,mediaResultURLs=[],fileReadVersion=
 const selectedCompare=new Map();
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function notice(msg,bad=false){clearTimeout(noticeTimer);$("notice").textContent=msg;$("notice").classList.toggle("error",bad);$("notice").classList.add("notice-visible");if(!bad)noticeTimer=setTimeout(()=>$("notice").classList.remove("notice-visible"),5000);}
-async function api(path,opts={}){const r=await fetch("/api/v1"+path,{credentials:"same-origin",cache:"no-store",...opts});if(!r.ok)throw Error(readableProblem(await r.text(),r.status));return r.json();}
-async function apiPages(path){const out=[];for(let offset=0;;offset+=200){const rows=await api(path+(path.includes("?")?"&":"?")+"limit=200&offset="+offset);out.push(...rows);if(rows.length<200)return out;}}
+async function api(path,opts={}){
+ const reading=String(opts.method||"GET").toUpperCase()==="GET",readController=reading?new AbortController():null,sourceSignal=opts.signal;let timedOut=false;
+ const abort=()=>readController?.abort(),timer=reading?setTimeout(()=>{timedOut=true;readController.abort();},20000):null;
+ if(reading){sourceSignal?.addEventListener("abort",abort,{once:true});if(sourceSignal?.aborted)abort();}
+ try{
+  const r=await fetch("/api/v1"+path,{credentials:"same-origin",cache:"no-store",...opts,signal:readController?.signal||sourceSignal});
+  if(!r.ok){const error=Error(readableProblem(await r.text(),r.status));error.status=r.status;throw error;}
+  return await r.json();
+ }catch(error){
+  if(timedOut){const timeout=Error("讀取逾時，請重試連線。");timeout.code="READ_TIMEOUT";throw timeout;}
+  if(reading&&error instanceof SyntaxError)throw Error("暫時無法讀取伺服器回應，請重試。");
+  throw error;
+ }finally{if(timer!==null)clearTimeout(timer);if(reading)sourceSignal?.removeEventListener("abort",abort);}
+}
+async function apiPages(path,opts={}){const out=[];for(let offset=0;;offset+=200){const rows=await api(path+(path.includes("?")?"&":"?")+"limit=200&offset="+offset,opts);out.push(...rows);if(rows.length<200)return out;}}
 async function submit(path,value,method="POST"){return api(path,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(value)});}
 function data(form){return Object.fromEntries(new FormData(form).entries());}
 function option(select,value,title){const n=el("option",title);n.value=value;select.append(n);}

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "tag": "v0.8.1-preview.1",
+  "tag": "v0.8.2-preview.1",
   "prerelease": true,
   "publish": true,
   "notes": "release/NOTES.md"
