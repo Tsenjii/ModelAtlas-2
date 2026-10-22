@@ -2,12 +2,9 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 )
@@ -89,93 +86,22 @@ func (s *Server) fetchAA(ctx context.Context, origin, key string) (snapshot AASn
 			_, _ = s.Store.DB.ExecContext(save, "INSERT OR IGNORE INTO aa_snapshots VALUES(?,?,'FAILED',?,?,0,'')", snapshot.ID, version, snapshot.Source, snapshot.ObservedAt)
 		}
 	}()
-	allBytes := []byte{}
-	seen := map[string]bool{}
-	p := Provider{BaseURL: origin, AuthMode: "API_KEY"}
-	cfg := ProviderConfig{AuthMode: "API_KEY", AuthHeader: "x-api-key"}
-	for page := 1; page <= 10; page++ {
-		if e := s.chargeIntegrationWindow(ctx, "AA", 100); e != nil {
-			return snapshot, e
-		}
-		root, _, e := s.getJSON(context.WithValue(ctx, integrationHeaderKey{}, "AA"), p, cfg, origin+aaPath+fmt.Sprintf("?page=%d", page), key, 1<<20)
+	checkpoint := &aaResearchCheckpoint{Snapshot: snapshot, NextPage: 1}
+	for checkpoint.TotalPages == 0 || checkpoint.NextPage <= checkpoint.TotalPages {
+		p := Provider{BaseURL: origin, AuthMode: "API_KEY"}
+		cfg := ProviderConfig{AuthMode: "API_KEY", AuthHeader: "x-api-key"}
+		root, _, e := s.getJSON(context.WithValue(ctx, integrationHeaderKey{}, "AA"), p, cfg, origin+aaPath+fmt.Sprintf("?page=%d", checkpoint.NextPage), key, 1<<20)
 		if e != nil {
-			return snapshot, e
+			return checkpoint.Snapshot, e
 		}
-		var version json.Number
-		if json.Unmarshal(root["intelligence_index_version"], &version) != nil || decimal(version.String()) == nil {
-			return snapshot, errors.New("AA index version missing")
-		}
-		if snapshot.IndexVersion != "" && snapshot.IndexVersion != version.String() {
-			return snapshot, errors.New("AA versions changed between pages")
-		}
-		snapshot.IndexVersion = version.String()
-		var pagination struct {
-			Page       int   `json:"page"`
-			TotalPages int   `json:"total_pages"`
-			HasMore    *bool `json:"has_more"`
-		}
-		if json.Unmarshal(root["pagination"], &pagination) != nil || pagination.Page != page || pagination.HasMore == nil || pagination.TotalPages < page || pagination.TotalPages > 10 {
-			return snapshot, errors.New("AA incomplete pagination")
-		}
-		var data []struct {
-			ID          string              `json:"id"`
-			Slug        string              `json:"slug"`
-			Name        string              `json:"name"`
-			Evaluations map[string]*float64 `json:"evaluations"`
-		}
-		if json.Unmarshal(root["data"], &data) != nil || data == nil || len(data) > 200 {
-			return snapshot, errors.New("AA invalid model page")
-		}
-		for _, v := range data {
-			score := v.Evaluations["artificial_analysis_intelligence_index"]
-			if score == nil {
-				continue
-			}
-			if !validID(v.ID) || !validID(v.Slug) || safeText(v.Name, 200, key) != v.Name || v.Name == "" || *score < 0 || *score > 100 || math.IsNaN(*score) || math.IsInf(*score, 0) || seen[v.ID] {
-				return snapshot, errors.New("AA model schema conflict")
-			}
-			seen[v.ID] = true
-			snapshot.Models = append(snapshot.Models, AAModel{ID: v.ID, Slug: v.Slug, Name: v.Name, Score: *score})
-		}
-		pageRaw, _ := json.Marshal(root)
-		allBytes = append(allBytes, []byte(contentHash(pageRaw))...)
-		if !*pagination.HasMore {
-			if pagination.TotalPages != page {
-				return snapshot, errors.New("AA pagination conflict")
-			}
-			break
-		}
-		if page == 10 {
-			return snapshot, errors.New("AA page budget exhausted")
+		if e = checkpoint.acceptPage(root, key); e != nil {
+			return checkpoint.Snapshot, e
 		}
 	}
-	if len(snapshot.Models) < 4 {
-		return snapshot, errors.New("AA leaderboard has fewer than four scored models")
-	}
-	sort.Slice(snapshot.Models, func(i, j int) bool {
-		if snapshot.Models[i].Score == snapshot.Models[j].Score {
-			return snapshot.Models[i].ID < snapshot.Models[j].ID
-		}
-		return snapshot.Models[i].Score > snapshot.Models[j].Score
-	})
-	for i := range snapshot.Models {
-		snapshot.Models[i].Rank = i + 1
-	}
-	tx, e := s.Store.DB.BeginTx(ctx, nil)
-	if e != nil {
-		return snapshot, e
-	}
-	defer tx.Rollback()
-	if _, e = tx.ExecContext(ctx, "INSERT INTO aa_snapshots VALUES(?,?,'VALID',?,?,?,?)", snapshot.ID, snapshot.IndexVersion, snapshot.Source, snapshot.ObservedAt, snapshot.ValidUntil, contentHash(allBytes)); e != nil {
-		return snapshot, e
-	}
-	for _, v := range snapshot.Models {
-		if _, e = tx.ExecContext(ctx, "INSERT INTO aa_models VALUES(?,?,?,?,?,?)", snapshot.ID, v.ID, v.Slug, v.Name, v.Rank, v.Score); e != nil {
-			return snapshot, e
-		}
-	}
-	return snapshot, tx.Commit()
+	snapshot = checkpoint.Snapshot
+	return snapshot, s.commitAARanking(ctx, &snapshot, checkpoint.Hashes, "", nil)
 }
+
 func (s *Server) syncAA(w http.ResponseWriter, r *http.Request) {
 	if !s.beginFlight("AA_SYNC") {
 		http.Error(w, "AA sync busy", 409)

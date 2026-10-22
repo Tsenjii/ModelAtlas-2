@@ -671,7 +671,7 @@ func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researc
 	if running > 0 {
 		return nil, true, nil
 	}
-	rows, err := tx.QueryContext(ctx, "SELECT kind,dedupe,payload_json,result_json FROM research_tasks WHERE run_id=? AND status IN ('QUEUED','INTERRUPTED','BUDGET_EXHAUSTED') ORDER BY rowid LIMIT 128", run)
+	rows, err := tx.QueryContext(ctx, "SELECT t.kind,t.dedupe,t.payload_json,t.result_json,COALESCE(a.state_json,'') FROM research_tasks t LEFT JOIN research_aa_checkpoints a ON a.task_id=t.id WHERE t.run_id=? AND t.status IN ('QUEUED','INTERRUPTED','BUDGET_EXHAUSTED') ORDER BY t.rowid LIMIT 128", run)
 	if err != nil {
 		return nil, false, err
 	}
@@ -679,8 +679,8 @@ func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researc
 	tasks := []researchPlannedTask{}
 	for rows.Next() {
 		var task researchPlannedTask
-		var raw, result string
-		if err = rows.Scan(&task.kind, &task.dedupe, &raw, &result); err != nil {
+		var raw, result, aaState string
+		if err = rows.Scan(&task.kind, &task.dedupe, &raw, &result, &aaState); err != nil {
 			return nil, false, err
 		}
 		if json.Unmarshal([]byte(raw), &task.input) != nil || task.input.Selection != nil || !oneOf(task.kind, "SOURCE", "SEARCH", "INSPECT", "INSPECT_LINK", "AA", "LMSPEED_SEEDS") {
@@ -690,6 +690,13 @@ func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researc
 		// permission to ignore a remote Retry-After deadline.
 		task.retry = readResearchRetry([]byte(result))
 		task.originWait = readResearchOriginWait([]byte(result))
+		if task.kind == "AA" && aaState != "" {
+			var checkpoint aaResearchCheckpoint
+			if json.Unmarshal([]byte(aaState), &checkpoint) != nil {
+				return nil, false, errors.New("invalid AA continuation checkpoint")
+			}
+			task.aaCheckpoint = &checkpoint
+		}
 		tasks = append(tasks, task)
 	}
 	return tasks, false, rows.Err()
@@ -719,7 +726,7 @@ func (s *Server) recoverScheduledRun(ctx context.Context, v researchSchedule, at
 		return
 	}
 	// Automatic replay of an interrupted network attempt remains bounded.
-	if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='FAILED',result_json=json_set(result_json,'$.reason','restart retry limit reached') WHERE run_id=? AND status='INTERRUPTED' AND attempts>=3", v.LastRunID); err != nil {
+	if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='FAILED',result_json=json_set(result_json,'$.reason','restart retry limit reached') WHERE run_id=? AND status='INTERRUPTED' AND attempts>=3 AND (kind!='AA' OR NOT EXISTS(SELECT 1 FROM research_aa_checkpoints a WHERE a.task_id=research_tasks.id))", v.LastRunID); err != nil {
 		return
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='QUEUED' WHERE run_id=? AND status IN ('INTERRUPTED','BUDGET_EXHAUSTED')", v.LastRunID); err != nil {

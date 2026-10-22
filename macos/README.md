@@ -1,5 +1,8 @@
 # ModelAtlas 原生 macOS App
 
+本版準備 **0.8.5（build19，預覽）**，內建同源Go研究引擎增加AA逐頁持久恢復與配額的一次性核准；原生直接AA更新按鈕仍為明確同步，專用進度UI尚未對應。需本來源自己的九項CI與全部套件／公開下載驗證後發布，實際狀態以[Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)及manifest為準。前0.8.4／build18已公開，以下保留歷史。
+
+
 本版準備 **0.8.4（build18，預覽）**，內建同源引擎增加公開來源跨任務／輪次的持久共同冷卻，原生UI保留既有caller。須新HEAD自己的九項與全部套件／公開下載後交付，實際公開狀態以[Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)為準。前版0.8.3／build17已公開，下文保留歷史。
 
 本版準備 **0.8.2（build16，預覽）**，與VPS／Android同一來源；需新HEAD自己的九項及全部實際套件驗證後發布。VPS工作區恢復是網頁介面改善，不冒充已移植到原生UI。實際公開狀態以[Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)為準；以下保留前版來源與歷史。

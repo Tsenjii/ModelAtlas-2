@@ -20,11 +20,17 @@ func (s *Server) chargeIntegrationWindow(ctx context.Context, name string, defau
 		return e
 	}
 	defer tx.Rollback()
-	stamp := now()
+	if e = s.chargeIntegrationWindowTx(ctx, tx, name, defaultLimit); e != nil {
+		return e
+	}
+	return tx.Commit()
+}
+func (s *Server) chargeIntegrationWindowTx(ctx context.Context, tx *sql.Tx, name string, defaultLimit int) error {
+	stamp := s.scheduleTime().UnixMilli()
 	var start, reset int64
 	var used, limit int
 	var remaining sql.NullInt64
-	e = tx.QueryRowContext(ctx, "SELECT window_start,reset_at,used,request_limit,provider_remaining FROM integration_windows WHERE name=?", name).Scan(&start, &reset, &used, &limit, &remaining)
+	e := tx.QueryRowContext(ctx, "SELECT window_start,reset_at,used,request_limit,provider_remaining FROM integration_windows WHERE name=?", name).Scan(&start, &reset, &used, &limit, &remaining)
 	if e != nil && e != sql.ErrNoRows {
 		return e
 	}
@@ -50,7 +56,7 @@ func (s *Server) chargeIntegrationWindow(ctx context.Context, name string, defau
 	if e != nil {
 		return e
 	}
-	return tx.Commit()
+	return nil
 }
 func (s *Server) observeIntegrationHeaders(ctx context.Context, name string, h http.Header) {
 	limit, e1 := strconv.ParseInt(h.Get("X-RateLimit-Limit"), 10, 64)

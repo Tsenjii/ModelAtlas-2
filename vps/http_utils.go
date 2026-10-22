@@ -82,7 +82,11 @@ func (s *Server) getStructured(ctx context.Context, p Provider, c ProviderConfig
 	}
 	client := *selectedClient
 	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	if err := s.chargeNetwork(ctx, false); err != nil {
+	if name, _ := ctx.Value(integrationHeaderKey{}).(string); name == "AA" {
+		if err := s.chargeAARequest(ctx); err != nil {
+			return nil, 0, err
+		}
+	} else if err := s.chargeNetwork(ctx, false); err != nil {
 		return nil, 0, err
 	}
 	resp, err := client.Do(req)
@@ -97,6 +101,10 @@ func (s *Server) getStructured(ctx context.Context, p Provider, c ProviderConfig
 	defer resp.Body.Close()
 	if name, _ := ctx.Value(integrationHeaderKey{}).(string); name != "" {
 		s.observeIntegrationHeaders(ctx, name, resp.Header)
+	}
+	if name, _ := ctx.Value(integrationHeaderKey{}).(string); name == "AA" && (resp.StatusCode == 429 || resp.StatusCode == 502 || resp.StatusCode == 503 || resp.StatusCode == 504) {
+		failure := publicHTTPFailure(resp.StatusCode, resp.Header, s.scheduleTime()).(*researchHTTPFailure)
+		return nil, resp.StatusCode, &aaHTTPFailure{*failure}
 	}
 	if resp.StatusCode != 200 {
 		return nil, resp.StatusCode, &providerReadError{Code: "UPSTREAM_HTTP", UpstreamStatus: resp.StatusCode}

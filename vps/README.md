@@ -141,3 +141,8 @@ Playground「對話紀錄」可全文搜尋、置頂、命名、封存／恢復�
 ### 新對話的確認與恢復
 
 0.8.3候選改善建立成功後的立即切換、失敗時草稿／附件保留、只讀清單恢復及每次明確操作的請求識別，避免HTTP傳輸重送重複寫入。schema仍19，詳[CONVERSATION_CREATION.md](CONVERSATION_CREATION.md)。
+
+
+### AA 逐頁持久恢復
+
+0.8.5候選將全球研究與設定服務的更新榜單接至可恢復任務：已完成頁面不重抓、每頁最多初次＋2次自動重試、跨重啟／排程預算接續保留上限與等待。AA固定window、研究與排程每日HTTP一次核准；部分榜單、換Key／版本／頁數衝突或過期均不取代last-good。詳[RESEARCH_SCHEDULES.md](RESEARCH_SCHEDULES.md)；原生專用UI、Brave與完整Crawler仍有待辦，實際公開狀態以Releases為準。

@@ -2,7 +2,7 @@
 
 目前使用與開發順序：**VPS 第一、Mac 第二、Android 第三**（D-014）。三平台由同一個來源 commit 交付；同一 Release 必須同時包含 VPS AMD64／ARM64、Mac Universal DMG／ZIP 與 Android APK，不以只有單一平台的產物標為完整 Release。
 
-下載：[GitHub Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)。本版準備 **0.8.3-preview.1**，改善新對話的確認／只讀恢復及HTTP重送防重複；須新HEAD同SHA九項與實際套件／公開下載驗證。已公開[0.8.2-preview.1](https://github.com/Tsenjii/ModelAtlas-2/releases/tag/v0.8.2-preview.1)固定來源 `3d7629a776634108fcfb24205546a89f18c4236b`，0.8.1及更早歷史下載保留。實際公開版本／來源／附件以Releases與manifest為準，CI中／失敗或只有草稿不算已發布。
+下載：[GitHub Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)。本版準備 **0.8.5-preview.1**，改善AA逐頁持久恢復與配額的一次性核准；須新HEAD同SHA九項與實際套件／公開下載驗證。已公開[0.8.4-preview.1](https://github.com/Tsenjii/ModelAtlas-2/releases/tag/v0.8.4-preview.1)固定來源 `e6b06135510c63e6ccd65a2ce8928d2396ffcb19`，0.8.3及更早歷史下載保留。實際公開版本／來源／附件以Releases與manifest為準，CI中／失敗或只有草稿不算已發布。
 
 ## 取得與更新
 
@@ -31,7 +31,7 @@ sudo sh deploy/install.sh "$PWD"
 往後可使用套件 deploy/download.sh，指定明確 tag 與新的輸出目錄。它自動選 CPU 架構，只下載與校驗，不停止／安裝服務。例如：
 
 ```sh
-sh deploy/download.sh v0.8.3-preview.1 ./modelatlas-0.8.3-preview.1
+sh deploy/download.sh v0.8.4-preview.1 ./modelatlas-0.8.4-preview.1
 ```
 
 第一次產生的 /etc/modelatlas/modelatlas.env 必須另行安全備份；DB／master key／管理密碼不要放進 Git、網址或聊天。預設 listen 為 127.0.0.1:8787；用 SSH tunnel 或受信任 HTTPS 入口連接。完整操作及持久磁碟需求在套件 UPDATE.md、PLATFORM_DEPLOY.md。

@@ -1,5 +1,19 @@
 # ModelAtlas Public — TRACEABILITY
 
+## VPS-AA-RECOVERY-014（2026-10-22 候選）
+
+正式caller：全球研究／服務更新榜單 → POST research/start → runResearchPending → executeAAResearchTask → getJSON／chargeAARequest → 單transaction研究HTTP／排程每日／AA window／頁次attempt → 真GET → 每頁checkpoint → 完整commitAARanking。直接AA sync API仍為明確同步相容入口；沒有將私人catalog或推論改成自動重放。
+
+| 驗收面向 | 程式與實際測試 | 狀態 |
+| --- | --- | --- |
+| 部分頁面／重啟／排程接續 | research_aa.go、research_jobs.go、research_schedule.go；research_aa_test.go真TLS、SQLite及Handler | 本機race成功，最終同SHA九項待驗 |
+| 用量與有界恢復 | chargeAARequest＋chargeResearchNetworkTx＋chargeIntegrationWindowTx；run／window／每日拒絕全部回滾其他meter，429／503、每頁3次、飛行中斷重啟不清上限 | 本機race成功 |
+| 有效排名／時效／安全 | 版本／頁數／duplicate／secret echo／無效JSON／401、Key變更含最後一頁飛行、24h過期、超長Retry-After、完整commit後重播零HTTP；last-good及原期限保留 | 本機race成功 |
+| 升級／同步與生命週期 | schema20→21一致快照，公開歷史同步不帶checkpoint／credential revision或intent，儲存缺失不重抓第1頁，direct sync與worker互斥 | 本機race成功 |
+| 真實介面與視覺 | ui_js_research.go／ui_js_mac_parity.go兩個更新入口、research_aa_browser_test.go→e2e/research-aa.cjs；預算恢復、暫停過deadline、只重試第2頁、完整排名更新 | 新Browser13.50s，8圖已檢查 |
+
+前片0.8.4來源e6b0613已同SHA九項SUCCESS並公開11附件，詳ACTIVE_TASK與PR #20。原27 Browser／339圖及五分鐘上限、全部原生與擴大負載保留；新預期28／347。仍不將AA分頁驗收外推為完整WISH-CRAWL-001、Brave、未知站點或完整願望已完成；新片CANDIDATE，不merge／不部署。
+
 ## VPS-RESEARCH-ORIGIN-013（2026-10-22 候選）
 
 正式 caller：全球研究／排程 → runResearchPending → sourceTask／inspect → publicFetch → chargeResearchNetwork → checkResearchOrigin → SQLite用量保留。真429／502／503／504 → recordResearchOriginFailure持久保存共同下限 → 後續任務origin_wait → 原worker到期再檢查。來源失敗與本機等待分開；等待不生成HTTP、扣額、attempts或失敗evidence。

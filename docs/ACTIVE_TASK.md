@@ -1,5 +1,23 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-22 AA 逐頁持久恢復（VPS-AA-RECOVERY-014）
+
+- 使用者要求繼續開發直到穩定與完整。維持 VPS → Mac → Android，唯一新片為 WISH-CRAWL-001 的 AA 分頁 checkpoint／限次恢復。前片 **0.8.4-preview.1 已公開驗收**，來源 `e6b06135510c63e6ccd65a2ce8928d2396ffcb19`：VPS39719294100四項、Android39719294101兩項、Mac39719294093三項均首次 SUCCESS；發布39719289283／119628801054成功，11附件、公開下載器／實際AMD64服務重驗，manifest SHA256 `5d80c556887602d16df3d5f1d752cf0062b4c520a7b942798d8d066bbbf60248`。前節候選與失敗原樣作歷史保留。
+- 本輪重新查 main `cba901d187aa5312cc71f5c2440b23fa04104aee`／39536090788 attempt2，build119016886469及device119016884592 SUCCESS，FEATURE FREEZE=OFF。PR #20維持Draft、不merge；未有目標VPS資料，未遠端部署。
+- 真production caller＋TLS先重現0.177s失敗：第1頁200、第2頁429，AA任務直接FAILED並丟失已完成頁面。新增schema21本機 `research_aa_checkpoints`，每頁驗證後提交；研究run／排程接續／程序重啟均從未完成頁繼續。每頁最多3次已核准連線（初次＋2次自動恢復），429／502／503／504遵守Retry-After及30／60秒分散等待，無阻塞sleep；已送出但程序中斷的頁面仍計入此上限。
+- AA固定window、每輪HTTP、排程每日HTTP及page attempt在同一SQLite transaction保留；任何本機拒絕不消耗其他meter。暫停／取消／來源確認、原排程intent、同步不執行仍保留；同步只帶公開進度／歷史，不帶部分頁面、憑證revision或本機執行控制。較舊直接AA sync API保留明確同步語意，私人catalog／推論／Brave沒有新增隱式重試。
+- 完整榜單才原子寫入有效snapshot與完成checkpoint。版本／總頁數／has_more／重複ID／schema不符、換Key或首頁24h期限已過均停止，保留last-good原有效期；即使最後一頁飛行中換Key也不發布。指標版本與頁數一致不是站方提供的跨頁資料庫snapshot isolation，不額外宣稱同一瞬間資料。完整commit後、worker寫terminal狀態前重啟不再發HTTP。
+- VPS全球研究與設定→服務的兩個更新按鈕均進入此正式runner；紀錄顯示已保存頁數、下一頁、等待／預算／暫停／停止與完整歷史。沿用原dialog、48px操作與同一poller。Mac內建同源研究引擎取得後端能力；Mac原生直接更新按鈕與Android專用逐頁UI仍待對應。
+- 本機AA後端race21.253s成功：8個新函式含10種終止情境、原AA測試、真TLS／配額兩向回滾／逐頁與排程續鏈／重啟／取消飛行／換Key晚回應／完整commit重播／同步隔離／v20升級快照。新Browser13.50s成功、8圖已檢查，涵蓋320／375／1280深淺色與200%。首輪瀏覽器缺固定Chromium及字型已補齊；另首次測試未展開AA榜單而等待隱藏內容，修為真實展開操作，不當成產品修復或成功驗收。
+- 首完整Go race263.485s失敗：原TestResearchScheduleIntegrationAdmissionWaitDoesNotSpin要求保留一次未完成AA更新歷史，新checkpoint流程漏存。已恢復每次未完成execution的獨立FAILED archive（包含本機配額拒絕／取消），保留checkpoint未來VALID的ID與last-good，原斷言／timeout不改；新增測試也核對每次失敗不消失。修後聚焦與完整Go／Browser仍重新驗證，不把首失敗當通過。
+- 修後聚焦AA／原IntegrationWait／v19升級race27.542s成功；完整Go race214.055s及vet成功，27發布回歸成功。完整Browser與本來源CI仍獨立重新驗證。
+- 原27 Browser／339 PNG、全部Go／原生測試／負載與原timeout保留，追加第28流程及8圖。完整本機／新HEAD自己的九項與實際發布前仍 **CANDIDATE**，精確最終SHA／run／job／附件見PR #20與manifest；不得借前片綠燈。
+- Brave逐頁恢復、逐憑證推論／token／費用預算、未知站點自動解析、可量測Reflection、authenticity、大型分塊同步／部分原生呈現、目標VPS與實機／真站長跑仍未完成；完整原願望／P8–P10仍PARTIAL。
+
+- 準備0.8.5-preview.1三平台同源預覽版（Mac19／Android8006）；只有本來源九項、27發布回歸、全部附件與實際公開下載驗證後才接受，不覆寫0.8.4或舊tag。
+
+以下保留已交付切片與原始失敗證據。
+
 ## 2026-10-22 公開研究共同來源冷卻（VPS-RESEARCH-ORIGIN-013）
 
 - 最新公開基線為 `0.8.3-preview.1`／`74eccabc2e3d8e3ee24e9a7e053327948143c3d4`；PR #20 所列 VPS39589656964、Android39589656970、Mac39589656938 的九項均 SUCCESS。開工另查 main `cba901d187aa5312cc71f5c2440b23fa04104aee`／39536090788 attempt2，build119016886469 與 device119016884592 SUCCESS，FEATURE FREEZE=OFF。

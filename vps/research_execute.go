@@ -323,17 +323,6 @@ func (s *Server) searchTask(ctx context.Context, run string, v taskInput) (map[s
 }
 func (s *Server) executeResearchTask(ctx context.Context, run, kind string, input taskInput) (map[string]any, error) {
 	switch kind {
-	case "AA":
-		key, e := s.integrationKey(ctx, "AA")
-		if e != nil {
-			return nil, e
-		}
-		snapshot, e := s.fetchAA(ctx, aaOrigin, key)
-		if e != nil {
-			return nil, e
-		}
-		s.reconcileAllCandidates(ctx)
-		return map[string]any{"snapshot_id": snapshot.ID, "models": len(snapshot.Models), "index_version": snapshot.IndexVersion}, nil
 	case "LMSPEED_SEEDS":
 		rows, e := s.Store.DB.QueryContext(ctx, "SELECT canonical_id,facts_json,observed_at FROM external_models WHERE source='LMSPEED' ORDER BY rowid DESC LIMIT 20")
 		if e != nil {

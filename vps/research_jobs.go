@@ -57,15 +57,24 @@ func (s *Server) chargeResearchNetwork(ctx context.Context, probe bool, publicOr
 		return e
 	}
 	defer tx.Rollback()
-	if e = s.checkResearchOrigin(ctx, tx, publicOrigin); e != nil {
+	if e = s.chargeResearchNetworkTx(ctx, tx, probe, publicOrigin); e != nil {
+		return e
+	}
+	return tx.Commit()
+}
+
+// Integration admission reserves its quota and the HTTP meter atomically.
+func (s *Server) chargeResearchNetworkTx(ctx context.Context, tx *sql.Tx, probe bool, publicOrigin string) error {
+	run, _ := ctx.Value(researchBudgetKey{}).(string)
+	if e := s.checkResearchOrigin(ctx, tx, publicOrigin); e != nil {
 		return e
 	}
 	if run == "" {
-		return tx.Commit()
+		return nil
 	}
 	var status string
 	var budget, used, probeBudget, probeUsed int
-	if e = tx.QueryRowContext(ctx, "SELECT r.status,o.budget,o.used,o.probe_budget,o.probes_used FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", run).Scan(&status, &budget, &used, &probeBudget, &probeUsed); e != nil {
+	if e := tx.QueryRowContext(ctx, "SELECT r.status,o.budget,o.used,o.probe_budget,o.probes_used FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", run).Scan(&status, &budget, &used, &probeBudget, &probeUsed); e != nil {
 		return e
 	}
 	if !oneOf(status, "QUEUED", "RUNNING") {
@@ -77,13 +86,13 @@ func (s *Server) chargeResearchNetwork(ctx context.Context, probe bool, publicOr
 	if probe && probeUsed >= probeBudget {
 		return errors.New("research inference budget exhausted")
 	}
-	if e = s.scheduledNetworkCharge(ctx, tx, run, probe); e != nil {
+	if e := s.scheduledNetworkCharge(ctx, tx, run, probe); e != nil {
 		return e
 	}
-	if _, e = tx.ExecContext(ctx, "UPDATE research_run_options SET used=used+1,probes_used=probes_used+? WHERE run_id=?", map[bool]int{true: 1, false: 0}[probe], run); e != nil {
+	if _, e := tx.ExecContext(ctx, "UPDATE research_run_options SET used=used+1,probes_used=probes_used+? WHERE run_id=?", map[bool]int{true: 1, false: 0}[probe], run); e != nil {
 		return e
 	}
-	return tx.Commit()
+	return nil
 }
 func (s *Server) wakeWorker() {
 	s.flightMu.Lock()
@@ -104,6 +113,7 @@ type researchPlannedTask struct {
 	input        taskInput
 	retry        *researchRetryState
 	originWait   *researchOriginWait
+	aaCheckpoint *aaResearchCheckpoint
 }
 type researchPlanError struct {
 	status  int
@@ -220,8 +230,14 @@ func insertResearchRun(ctx context.Context, tx *sql.Tx, id string, v ResearchOpt
 			encoded, _ := json.Marshal(envelope)
 			result = string(encoded)
 		}
-		if _, err := tx.ExecContext(ctx, "INSERT INTO research_tasks(id,run_id,kind,dedupe,payload_json,status,result_json,created_at) VALUES(?,?,?,?,?,'QUEUED',?,?) ON CONFLICT(run_id,dedupe) DO NOTHING", newID(), id, task.kind, task.dedupe, string(raw), result, now()); err != nil {
+		taskID := newID()
+		if _, err := tx.ExecContext(ctx, "INSERT INTO research_tasks(id,run_id,kind,dedupe,payload_json,status,result_json,created_at) VALUES(?,?,?,?,?,'QUEUED',?,?) ON CONFLICT(run_id,dedupe) DO NOTHING", taskID, id, task.kind, task.dedupe, string(raw), result, now()); err != nil {
 			return err
+		}
+		if task.aaCheckpoint != nil {
+			if err := saveAACheckpointTx(ctx, tx, taskID, task.aaCheckpoint); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -293,7 +309,7 @@ func (s *Server) controlResearch(w http.ResponseWriter, r *http.Request) {
 	if v.Action == "RESUME" {
 		next = "QUEUED"
 		var remaining int
-		tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM research_tasks WHERE run_id=? AND (status IN ('QUEUED','INTERRUPTED','BUDGET_EXHAUSTED') OR (?=1 AND status='FAILED' AND attempts<3))", v.ID, v.RetryFailed).Scan(&remaining)
+		tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM research_tasks WHERE run_id=? AND (status IN ('QUEUED','INTERRUPTED','BUDGET_EXHAUSTED') OR (?=1 AND status='FAILED' AND attempts<3 AND COALESCE(json_extract(result_json,'$.aa_progress.stopped_reason'),'')=''))", v.ID, v.RetryFailed).Scan(&remaining)
 		if remaining == 0 {
 			http.Error(w, "nothing to resume; start a new run", 409)
 			return
@@ -307,7 +323,7 @@ func (s *Server) controlResearch(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "database error", 500)
 			return
 		}
-		_, e = tx.ExecContext(r.Context(), "UPDATE research_tasks SET status='QUEUED' WHERE run_id=? AND (status IN ('INTERRUPTED','BUDGET_EXHAUSTED') OR (?=1 AND status='FAILED' AND attempts<3))", v.ID, v.RetryFailed)
+		_, e = tx.ExecContext(r.Context(), "UPDATE research_tasks SET status='QUEUED' WHERE run_id=? AND (status IN ('INTERRUPTED','BUDGET_EXHAUSTED') OR (?=1 AND status='FAILED' AND attempts<3 AND COALESCE(json_extract(result_json,'$.aa_progress.stopped_reason'),'')=''))", v.ID, v.RetryFailed)
 		if e != nil {
 			http.Error(w, "database error", 500)
 			return
@@ -385,7 +401,7 @@ func (s *Server) runResearchPending(parent context.Context) {
 		var t ResearchTask
 		var payload, previous string
 		stamp := s.scheduleTime().UnixMilli()
-		e := s.Store.DB.QueryRowContext(parent, "SELECT t.id,t.run_id,t.kind,t.payload_json,t.result_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.origin_wait.next_attempt_at'),0)<=? ORDER BY t.rowid LIMIT 1", stamp, stamp).Scan(&t.ID, &t.RunID, &t.Kind, &payload, &previous)
+		e := s.Store.DB.QueryRowContext(parent, "SELECT t.id,t.run_id,t.kind,t.payload_json,t.result_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.origin_wait.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.aa_progress.next_attempt_at'),0)<=? ORDER BY t.rowid LIMIT 1", stamp, stamp, stamp).Scan(&t.ID, &t.RunID, &t.Kind, &payload, &previous)
 		if e != nil {
 			return
 		}
@@ -418,6 +434,8 @@ func (s *Server) runResearchPending(parent context.Context) {
 		}
 		if scheduled > 0 {
 			taskErr = errors.New("automatic schedule cannot use private model credentials")
+		} else if t.Kind == "AA" {
+			result, taskErr = s.executeAAResearchTask(ctx, t)
 		} else {
 			result, taskErr = s.executeResearchTask(ctx, t.RunID, t.Kind, input)
 		}
@@ -464,6 +482,9 @@ func (s *Server) runResearchPending(parent context.Context) {
 				status = "QUEUED"
 			}
 		}
+		if t.Kind == "AA" {
+			result, status = s.aaResearchResult(saveCtx, t.ID, result, status, taskErr)
+		}
 		raw, _ := json.Marshal(result)
 		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET status=?,result_json=?,finished_at=CASE WHEN ?='QUEUED' THEN NULL ELSE ? END WHERE id=?", status, string(raw), status, now(), t.ID)
 		var queued int
@@ -509,6 +530,13 @@ func (s *Server) updateResearchSummary(ctx context.Context, id string) {
 	summary["origin_waiting_count"] = originWaiting
 	if originAt.Valid {
 		summary["next_origin_at"] = originAt.Int64
+	}
+	var aaWaiting int
+	var aaAt sql.NullInt64
+	_ = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*),MIN(json_extract(result_json,'$.aa_progress.next_attempt_at')) FROM research_tasks WHERE run_id=? AND status='QUEUED' AND json_extract(result_json,'$.aa_progress.next_attempt_at')>0", id).Scan(&aaWaiting, &aaAt)
+	summary["aa_waiting_count"] = aaWaiting
+	if aaAt.Valid {
+		summary["next_aa_at"] = aaAt.Int64
 	}
 	summary["task_count"] = counts["SUCCESS"] + counts["FAILED"] + counts["CANCELLED"]
 	states := map[string]int{}

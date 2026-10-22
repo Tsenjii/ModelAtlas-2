@@ -68,3 +68,14 @@ VPS-RESEARCH-ORIGIN-013候選另補跨任務／跨新週期的共同origin冷卻
 code `b1e0c669ffea48575875e0c16b7da6980aca5552` 已同 SHA VPS 四項＋Android 兩項 SUCCESS；完整 race／vet、真 systemd、14 個新增後端情境、23 Browser／303圖及原 expanded workload 已通過，Android 976／0 failure／0 error／5 原 skip。新增8圖已目視檢查。詳細 job／artifact／SHA256／完整 workload 在 `docs/verification/20261020/vps-scheduler-ci-baseline.json`。後續 HEAD／驗收文件提交各自重新六項 CI，最新結果以 PR #20 checks 為準；不借用前一 SHA 的綠燈。
 
 完整 WISH-CRAWL-001 尚缺每輪／每日推論與費用、實際逐憑證 quota、地區／可調並行、Brave／AA逐頁退避及更完整的高價值／過期重驗策略；共同origin冷卻為本片候選。Mac／Android 原生排程設定與各自 OS 生命週期尚未對應。未知站點 Connector、具品質／成本對照的 Reflection、authenticity、真站長跑／目標 VPS／實機驗收全部保留。通知仍預設 OFF。
+
+
+## AA 逐頁恢復（VPS-AA-RECOVERY-014 候選）
+
+全球研究與設定服務的更新榜單進入同一持久研究runner。每頁最多200筆、最多10頁；驗證指標版本、固定總頁數、has_more及跨頁模型ID後才保存。只在完整且至少4個評分模型時原子安裝榜單，部分／失敗不更新Top-4，不延長last-good期限。
+
+429／502／503／504每頁最多自動恢復2次，等待30／60秒及固定分散值，以Retry-After為下限。程序重啟、排程預算續鏈不重抓已完成頁、不重設逐頁上限；飛行中的已核准請求也保存attempt。超過24h等待、首頁觀測24h已過、換Key（含最後一頁回應前）、版本／分頁／模型衝突停止並要求新一輪；其他網路／認證／schema錯誤不隱式重試。時效從首頁開始，不因接續刷新期限。AA API沒有提供本機可驗證的跨頁snapshot isolation；一致version／頁數及唯一ID檢查不等於瞬間一致保證。
+
+研究HTTP、排程每日HTTP、AA固定window與逐頁attempt在一次transaction保留，任一拒絕全回滾。同步僅帶公開進度／錯誤狀態與時間，schema21本機checkpoint含正規化資料與加密credential revision的hash，不帶到其他端或portable backup。整個DB一致快照仍包含本機狀態，還原不改原intent／暫停與取消約束。Direct sync API保留明確同步相容性；Mac原生更新按鈕與Android逐頁UI、Brave分頁及其他Crawler完整待辦仍需接續。
+
+AA契約來源：[官方API reference](https://artificialanalysis.ai/data-api/docs/reference)、[固定24h quota與header](https://artificialanalysis.ai/data-api/docs)，於2026-10-22核對。

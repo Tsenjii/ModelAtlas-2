@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -264,10 +265,10 @@ func TestResearchOriginCooldownV19UpgradeAndUnavailableStore(t *testing.T) {
 		t.Fatal(err)
 	}
 	s = reopenScheduleStore(t, s)
-	assertSQLInt(t, s, 20, "PRAGMA user_version")
+	assertSQLInt(t, s, schemaVersion, "PRAGMA user_version")
 	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM research_origin_cooldowns")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM research_runs WHERE id=?", run)
-	backups, err := filepath.Glob(filepath.Join(filepath.Dir(s.Store.path), "upgrade-backups", "schema-19-to-20-*.sqlite"))
+	backups, err := filepath.Glob(filepath.Join(filepath.Dir(s.Store.path), "upgrade-backups", fmt.Sprintf("schema-19-to-%d-*.sqlite", schemaVersion)))
 	if err != nil || len(backups) != 1 {
 		t.Fatal("pre-migration consistent snapshot missing", err, backups)
 	}
