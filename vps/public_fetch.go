@@ -100,7 +100,8 @@ func newPublicClient() *http.Client {
 	return &http.Client{Transport: transport, Timeout: 20 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 }
 func (s *Server) publicFetch(ctx context.Context, raw string) ([]byte, string, int, error) {
-	if !publicURL(raw) {
+	origin := researchPublicOrigin(raw)
+	if origin == "" {
 		return nil, "", 0, errors.New("public HTTPS URL required")
 	}
 	request, e := http.NewRequestWithContext(ctx, "GET", raw, nil)
@@ -117,7 +118,6 @@ func (s *Server) publicFetch(ctx context.Context, raw string) ([]byte, string, i
 	s.flightMu.Unlock()
 	copyClient := *client
 	copyClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	origin := researchPublicOrigin(raw)
 	if e = s.chargeResearchNetwork(ctx, false, origin); e != nil {
 		return nil, "", 0, e
 	}

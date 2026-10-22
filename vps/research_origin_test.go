@@ -107,13 +107,16 @@ func TestResearchOriginCooldownLongRemoteWaitIsNeverShortened(t *testing.T) {
 
 func TestResearchOriginCooldownCanonicalScopeAndLateSuccess(t *testing.T) {
 	s := testServer(t)
-	for _, raw := range []string{"https://Provider.Example/one?view=public", "https://provider.example:443/two", "https://provider.example./three"} {
+	for _, raw := range []string{"https://Provider.Example/one?view=public", "https://provider.example:443/two", "https://provider.example:00443/four", "https://provider.example./three"} {
 		if researchPublicOrigin(raw) != "https://provider.example" {
 			t.Fatal("equivalent origins did not share admission", raw)
 		}
 	}
 	if researchPublicOrigin("https://provider.example:8443/test") == researchPublicOrigin("https://provider.example/test") {
 		t.Fatal("distinct ports shared a cooldown")
+	}
+	if researchPublicOrigin("https://provider.example:08443/test") != researchPublicOrigin("https://provider.example:8443/test") || researchPublicOrigin("https://provider.example:65536/test") != "" || researchPublicOrigin("https://provider.example:0/test") != "" {
+		t.Fatal("numeric port normalization or invalid port boundary lost")
 	}
 	if researchPublicOrigin("https://localhost/test") != "" || researchPublicOrigin("https://provider.example/?token=private") != "" {
 		t.Fatal("unsafe public origin accepted")

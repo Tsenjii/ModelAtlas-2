@@ -7,8 +7,10 @@
 - 已用原 production caller／真 TLS 重現：同站第一任務收到429／Retry-After120秒，第二任務仍立刻連線。新增本機 `research_origin_cooldowns`，在同一個 SQLite transaction 先查共同等待，再保留每輪／排程每日 HTTP 用量。429／502／503／504 的等待會跨新輪、程序重啟及日期保存；同站後續任務不發 HTTP、不扣額、不增加 attempts 或來源失敗證據，其他 origin 繼續執行。
 - schema20 是 additive migration；啟動前一致快照、升級／回復流程保留。共同冷卻不進 metadata sync／portable backup；同步任務紀錄不能在目的端取得執行意圖。超過24h仍停止該任務自動重試，但其他任務不能把共同等待截短為24h；極端數值不溢位或提前重試。晚成功回應不能清掉較新的冷卻。
 - 正式研究清單與紀錄新增「等待網站恢復」、下次可連線時間、零 HTTP 用量與暫停說明。沿用原生 dialog、48px按鈕及同一個輪詢，不新增 poller；Mac 內建同源引擎取得後端控制，Mac／Android 原生專用呈現仍未移植。
-- 本機新增7個後端情境與原 Retry／Schedule 完整 race 測試40.516s成功，27個發布回歸成功；新增真 Browser14.529s成功。首截圖發現環境缺CJK字型，已補字型，完整Browser／實圖重新驗證；不把缺字截圖當視覺驗收。完整Go race228.247s／vet已通過；新增真TLS並行晚成功另驗，新HEAD九項與資源工作量仍在驗證。
-- 當前 CANDIDATE；精確最終SHA／CI／實圖見 PR #20。原26 Browser／331圖、全部原生測試、負載與timeout保留；預期追加第27流程及8圖。PR維持Draft、不merge；沒有目標VPS存取資料，未遠端部署。完整願望／P8–P10仍PARTIAL。
+- 本機新增7個後端情境與原 Retry／Schedule 完整 race 測試40.516s成功，27個發布回歸成功；新增真 Browser14.529s成功。首截圖發現環境缺CJK字型，已補字型，完整Browser／實圖重新驗證；不把缺字截圖當視覺驗收。首完整Go race228.247s／vet已通過；第7個真TLS並行晚成功1.689s成功。完整27 Browser227.077s／339PNG／零failure圖，補CJK後8張新增圖及375／200%原圖已檢查。原expanded workload21.100s成功，PID峰值137,555,968 bytes、待機73,404,416 bytes；非目標VPS或整機成本，不將波動冒稱RAM優化。
+- 當前 CANDIDATE；精確最終SHA／CI／實圖見 PR #20。原26 Browser／331圖、全部原生測試、負載與timeout保留，追加第27流程及8圖。原九項候選cd5ac20的CI仍在跑時，審查補上numeric port正規化（00443同443、08443同8443）與無效port拒絕，最終HEAD必須重新九項，不借cd5結果。PR維持Draft、不merge；沒有目標VPS存取資料，未遠端部署。完整願望／P8–P10仍PARTIAL。
+
+- 真匿名Kilo測試19.386s成功：實際0價格catalog檢查、聊天、工具呼叫／結果接續、Assistant pending→共用Review→持久membership，6次HTTP；只測試可用性，不證明身份／台灣資格／recurring quota。
 
 以下保留已交付切片與原始失敗證據。
 

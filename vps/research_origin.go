@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,6 +33,13 @@ func researchPublicOrigin(raw string) string {
 	}
 	host := strings.TrimSuffix(strings.ToLower(u.Hostname()), ".")
 	port := u.Port()
+	if port != "" {
+		n, err := strconv.ParseUint(port, 10, 16)
+		if err != nil || n == 0 {
+			return ""
+		}
+		port = strconv.FormatUint(n, 10)
+	}
 	if port != "" && port != "443" {
 		host = net.JoinHostPort(host, port)
 	} else if strings.Contains(host, ":") {
