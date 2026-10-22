@@ -71,6 +71,28 @@ func (c *braveResearchCheckpoint) progress() map[string]any {
 	return map[string]any{"checkpoint_id": c.ID, "completed_pages": len(c.Hashes), "page_limit": c.PageLimit, "next_offset": c.NextOffset, "candidate_count": len(c.CandidateIDs), "duplicate_hits": c.DuplicateHits, "skipped_hits": c.SkippedHits, "country": c.Country, "started_at": c.StartedAt, "valid_until": c.ValidUntil, "next_attempt_at": c.NextAttemptAt, "stopped_reason": c.StoppedReason, "end_reason": c.EndReason, "complete": c.Complete, "history": c.History}
 }
 
+func (c *braveResearchCheckpoint) retryAt(at int64) int64 {
+	jitter := int64([]byte(contentHash([]byte(c.ID)))[0] % 6)
+	return at + (int64(30*(1<<(min(max(c.Attempts, 1), researchRetryLimit)-1)))+jitter)*1000
+}
+
+func (s *Server) braveTransportFailure(task string, c *braveResearchCheckpoint, status int) error {
+	at := s.scheduleTime().UnixMilli()
+	event := bravePageEvent{Offset: c.NextOffset, Attempt: c.Attempts, HTTPStatus: status, Kind: "TRANSPORT", ObservedAt: at}
+	if c.Attempts >= researchRetryLimit {
+		c.StoppedReason = "ATTEMPT_LIMIT"
+		c.NextAttemptAt = 0
+	} else {
+		c.NextAttemptAt = max(c.NextAttemptAt, c.retryAt(at))
+		event.RetryAt = c.NextAttemptAt
+	}
+	c.History = append(c.History, event)
+	if s.saveBraveCheckpoint(task, c) != nil {
+		return errors.New("Brave checkpoint storage unavailable")
+	}
+	return nil
+}
+
 func (s *Server) braveUsage(ctx context.Context, q scheduleQuerier) (map[string]any, error) {
 	day := s.scheduleTime().Format("2006-01-02")
 	var shared int
@@ -178,8 +200,7 @@ func (s *Server) chargeBraveRequest(ctx context.Context, task string, c *braveRe
 	}
 	before := *c
 	c.Attempts++
-	jitter := int64([]byte(contentHash([]byte(c.ID)))[0] % 6)
-	c.NextAttemptAt = s.scheduleTime().UnixMilli() + (int64(30*(1<<(c.Attempts-1)))+jitter)*1000
+	c.NextAttemptAt = c.retryAt(s.scheduleTime().UnixMilli())
 	if err = saveBraveCheckpointTx(ctx, tx, task, c); err == nil {
 		err = tx.Commit()
 	}
@@ -415,6 +436,11 @@ func (s *Server) executeBraveResearchTask(ctx context.Context, task ResearchTask
 				resp.Body.Close()
 			}
 			if ctx.Err() != nil {
+				if ctx.Err() == context.DeadlineExceeded {
+					if err := s.braveTransportFailure(task.ID, c, status); err != nil {
+						return nil, err
+					}
+				}
 				return result(), ctx.Err()
 			}
 			if e == nil && failure == nil {
@@ -427,6 +453,7 @@ func (s *Server) executeBraveResearchTask(ctx context.Context, task ResearchTask
 				}
 			}
 			event := bravePageEvent{Offset: c.NextOffset, Attempt: c.Attempts, HTTPStatus: status, Kind: kind, ObservedAt: s.scheduleTime().UnixMilli()}
+			c.NextAttemptAt = max(c.NextAttemptAt, c.retryAt(event.ObservedAt))
 			if failure != nil {
 				c.NextAttemptAt = max(c.NextAttemptAt, failure.NotBefore)
 			}
@@ -450,20 +477,21 @@ func (s *Server) executeBraveResearchTask(ctx context.Context, task ResearchTask
 		resp.Body.Close()
 		if readErr != nil {
 			if ctx.Err() != nil {
+				if ctx.Err() == context.DeadlineExceeded {
+					if err := s.braveTransportFailure(task.ID, c, 200); err != nil {
+						return nil, err
+					}
+				}
 				return result(), ctx.Err()
 			}
 			if readErr.Error() == "response limit" {
 				return stop("INVALID_RESPONSE", errors.New("Brave response too large"))
 			}
-			event := bravePageEvent{Offset: c.NextOffset, Attempt: c.Attempts, HTTPStatus: 200, Kind: "TRANSPORT", ObservedAt: s.scheduleTime().UnixMilli()}
-			if c.Attempts >= researchRetryLimit {
-				c.History = append(c.History, event)
-				return stop("ATTEMPT_LIMIT", errors.New("Brave response interrupted"))
+			if err := s.braveTransportFailure(task.ID, c, 200); err != nil {
+				return nil, err
 			}
-			event.RetryAt = c.NextAttemptAt
-			c.History = append(c.History, event)
-			if s.saveBraveCheckpoint(task.ID, c) != nil {
-				return nil, errors.New("Brave checkpoint storage unavailable")
+			if c.StoppedReason != "" {
+				return result(), errors.New("Brave response interrupted; recovery limit reached")
 			}
 			return result(), errBraveWaiting
 		}
