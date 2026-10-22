@@ -10,6 +10,8 @@ Mac／Android專用原生UI、主動深度probe／預算、語意品質指紋與
 
 - b9e8dd3候選已同來源九項、完整32 Browser288.378s／380圖及全部產物核對；仍因追加圖片模型入口7.174s真反例不接受。文字套件現在對非對話操作呈現限制、不顯示分析操作或發清單GET；修後4.000s成功。原全部情境保留，最後新來源獨立九項；詳vps/AUTHENTICITY.md及verification/20261023/authenticity-candidate-b9.json。
 
+- 951候選八項成功，但Browser首次依賴安裝逾時、attempt2的原MacAlignment等待Key回饋失敗（全套31過／261.041s FAIL）。已核對失敗附件12451301729／SHA256 91067710c41f8b0bcd45b5f8532f3d6fc9d7c1830d6e90d612c5a688deff7dad與原圖，並以晚POST回覆及真關閉／刷新／重開32.810s確定重現：DB新值visible不代表帳戶寫入已完成。保留互斥並強化斷言，等按鈕enabled後再送原兩筆rotation；修後10.256s成功，原timeout／所有情境與寫入次數不減。最後新來源另驗，不借951的八項或b9的九項。
+
 ## CONNECTOR-DISCOVERY-015C（2026-10-22 所列範圍已驗）
 
 已驗來源294f6aba62c0cf6c27e31a5894476e8dd1116d12／tree681f784d53ca5f00f06f4c0a4a69955b5a2e6f92；同來源九項及實際產物核對見verification/20261023/connector-discovery-baseline.json與PR #20。下列候選過程／失敗保留，不外推全部WISH-CRAWL-002完成。

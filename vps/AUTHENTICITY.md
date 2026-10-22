@@ -52,6 +52,16 @@ b9e8dd3f3e697e65cb6e3467b57eae1d156937f8／tree7ce53f738394ac3d30fa1c529f5e8a8e4
 
 但不作最終驗收：新增非文字模型正式Models入口的7.174s真Browser反例，圖片模型仍出現只支援文字對話的分析操作。改為明確呈現目前限制、保留原請求歷史；不提供不支援的操作，也不發兩個分析清單GET。原正例、矛盾／不足、失敗讀取恢復、啟用、Undo及全部畫面斷言不減，追加圖片入口與零讀取／零外部HTTP檢查。修後新Browser4.000s成功。失敗圖SHA256 8c40a88f55855d20361fb743cd5e1e4a309354f9e44e1ce762bcf97896e1539f保留；最後新來源另跑九項，不能借b9的綠燈。
 
+## 951來源CI與既有表單的交錯驗證
+
+來源951b5c6b9026af827563d8af7cee287d4117ca41／tree299fab2439d88f532d70f06a2277bd0009103ad6的VPS test／兩架構、Android兩項、Mac三項均SUCCESS；Go race407.955s／vet、真systemd41.563s、原expanded workload24.678s，Android579／976（5原skip），Mac各82核心／90圖與其全部套件／QA hash及來源已驗。本機完整32 Browser294.057s成功，但本來源沒有全綠，不能接受。
+
+首次Browser120016555620在系統依賴安裝階段耗14m56s，於原15min上限CANCELLED，沒有執行任何TestBrowser。只重跑該工作；attempt2／120025104102有31流程成功，原MacAlignment於32.30s等待Key更新status失敗，全套261.041s FAIL。失敗附件12451301729（23,612,965 bytes，SHA256 91067710c41f8b0bcd45b5f8532f3d6fc9d7c1830d6e90d612c5a688deff7dad）已驗大小／hash及364張圖，實際失敗畫面仍是帳戶保存互斥訊息。完整日誌與失敗保留，不盲目重跑。
+
+加入真實畫面操作與受控POST回覆barrier：切換已在DB commit，POST尚未送達頁面時，使用者關閉／刷新／重開能讀到最新Key狀態，但帳戶仍被原寫入持有。以原本只等「啟用」按鈕visible的條件確定重現32.810s相同FAIL；第一次新增barrier因route.fetch未明示測試認證導致31.990s fixture錯誤，修正後才完成上述重現，沒有當作產品修復。
+
+帳戶互斥本身正確。測試追加「新值可見但按鈕仍disabled」、「草稿保留」及「第二筆變更仍為0」斷言，再釋放原POST回覆，確認按鈕enabled後執行原Key更新／version1還原。原兩次rotation、一筆account與一筆Key、0 inference、237筆archive及所有原畫面／大字／暗色／外部連線斷言完全保留；沒有增加sleep或timeout、沒有降低assertion。修後原MacAlignment 10.256s成功；最後新來源仍須獨立九項。
+
 ## 尚未完成
 
 沒有主動deeper probe、回答品質／語意benchmark、統計身份指紋或真站可信基準長跑；完整token／費用預算需後續切片。Mac內建同源Go引擎取得API，Mac／Android專用原生呈現尚未移植。沒有目標VPS或實體裝置驗收。全WISH-AUTH-001、Part V與下一版接近完整功能的門檻仍為PARTIAL，不能因本片局部成功提前勾完。
