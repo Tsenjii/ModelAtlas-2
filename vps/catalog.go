@@ -12,6 +12,7 @@ import (
 type Provider struct {
 	CredentialMode    string          `json:"-"`
 	CredentialVersion int             `json:"-"`
+	CredentialStamp   string          `json:"-"`
 	AuthFields        []AuthField     `json:"-"`
 	ID                string          `json:"id"`
 	Name              string          `json:"name"`
@@ -544,6 +545,7 @@ func (s *Server) endpointAuth(ctx context.Context, provider, account, credential
 	if err != nil || enabled != 1 || !validateHTTPS(p.BaseURL) {
 		return Provider{}, "", sql.ErrNoRows
 	}
+	p.CredentialStamp = credentialMaterialStamp(enc, fields)
 	cfg := s.config(ctx, p)
 	p.AuthMode = cfg.AuthMode
 	if p.AuthMode == "NONE" {

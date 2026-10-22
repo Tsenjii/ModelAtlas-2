@@ -1,5 +1,7 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-23 AUTHENTICITY-015D候選：VPS Models歷史可分析既有流量、建立同Canonical跨origin參考Review、明確啟用與跨重啟Undo；Assistant／研究共用零額外HTTP分析。保留既有導航／六分區、scope／Unknown與低資源分段編碼。Mac同源引擎有API，Mac／Android專用原生UI尚未移植；原生／完整願望不提前驗收。
+
 2026-10-22 CONNECTOR-DISCOVERY-015C候選：VPS研究知識正式表單及Assistant共用公開來源辨識／宣告草稿／fixture／真HTTP Review，原connector操作保留並增加跨重啟Undo。Mac內建同源Go引擎取得API，Mac／Android專用原生辨識與Review尚未移植；原功能／tests／負載不減，不能以網頁替代原生驗收。015B已由480bdeac同SHA九項驗所列範圍，本片仍須獨立九項。
 
 2026-10-22 RESEARCH-BRAVE-015B候選：VPS正式研究／排程表單可選搜尋地區及每語言1–10頁、顯示本機共享／目前Key版本每日admission用量與持久恢復紀錄；Mac內建同源Go引擎取得執行能力，Mac／Android專用設定與進度UI尚未移植。原生功能與全部測試／負載保留，不以網頁實圖替代原生驗收。015A已由e384646同SHA九項成功驗所列範圍；本片自己的九項仍待驗，完整研究願望仍PARTIAL。

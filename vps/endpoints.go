@@ -29,15 +29,18 @@ func (s *Server) operation(ctx context.Context, v Selection) string {
 	return op
 }
 func (s *Server) requestEndpoint(ctx context.Context, p Provider, c ProviderConfig, id, model string) (string, error) {
+	return requestEndpointFrom(ctx, s.Store.DB, p, c, id, model)
+}
+func requestEndpointFrom(ctx context.Context, q queryRows, p Provider, c ProviderConfig, id, model string) (string, error) {
 	var raw string
-	err := s.Store.DB.QueryRowContext(ctx, "SELECT url FROM endpoint_bindings WHERE provider_id=? AND endpoint_id=?", p.ID, id).Scan(&raw)
+	err := q.QueryRowContext(ctx, "SELECT url FROM endpoint_bindings WHERE provider_id=? AND endpoint_id=?", p.ID, id).Scan(&raw)
 	if err == nil {
 		return modelEndpoint(raw, model)
 	}
 	if _, ok := endpointNames[id]; ok {
 		return endpointURL(p, c, id, model)
 	}
-	err = s.Store.DB.QueryRowContext(ctx, "SELECT url FROM endpoint_profiles WHERE provider_id=? AND id=?", p.ID, id).Scan(&raw)
+	err = q.QueryRowContext(ctx, "SELECT url FROM endpoint_profiles WHERE provider_id=? AND id=?", p.ID, id).Scan(&raw)
 	if err != nil {
 		return "", err
 	}

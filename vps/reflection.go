@@ -231,12 +231,22 @@ func activeVersion(ctx context.Context, q queryRows, family, kind, subject strin
 	var id string
 	if family == "KNOWLEDGE" {
 		q.QueryRowContext(ctx, "SELECT version_id FROM knowledge_active WHERE kind=? AND subject=?", kind, subject).Scan(&id)
+	} else if family == "AUTHENTICITY" {
+		q.QueryRowContext(ctx, "SELECT version_id FROM authenticity_reference_active WHERE target_scope=?", kind).Scan(&id)
 	} else {
 		q.QueryRowContext(ctx, "SELECT version_id FROM connector_active WHERE provider_id=? AND name=?", kind, subject).Scan(&id)
 	}
 	return id
 }
 func setActiveVersion(ctx context.Context, tx *sql.Tx, family, kind, subject, id string) error {
+	if family == "AUTHENTICITY" {
+		if id == "" {
+			_, e := tx.ExecContext(ctx, "DELETE FROM authenticity_reference_active WHERE target_scope=?", kind)
+			return e
+		}
+		_, e := tx.ExecContext(ctx, "INSERT INTO authenticity_reference_active VALUES(?,?) ON CONFLICT(target_scope) DO UPDATE SET version_id=excluded.version_id", kind, id)
+		return e
+	}
 	if family == "KNOWLEDGE" {
 		if id == "" {
 			if _, e := tx.ExecContext(ctx, "DELETE FROM knowledge_active WHERE kind=? AND subject=?", kind, subject); e != nil {

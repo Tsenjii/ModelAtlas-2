@@ -80,9 +80,12 @@ func oneOf(s string, values ...string) bool {
 	return false
 }
 func (s *Server) config(ctx context.Context, p Provider) ProviderConfig {
+	return providerConfiguration(ctx, s.Store.DB, p)
+}
+func providerConfiguration(ctx context.Context, q queryRows, p Provider) ProviderConfig {
 	c := ProviderConfig{Adapter: "GENERIC", AuthMode: p.AuthMode}
 	var raw string
-	if s.Store.DB.QueryRowContext(ctx, "SELECT config_json FROM provider_config WHERE provider_id=?", p.ID).Scan(&raw) == nil {
+	if q.QueryRowContext(ctx, "SELECT config_json FROM provider_config WHERE provider_id=?", p.ID).Scan(&raw) == nil {
 		_ = json.Unmarshal([]byte(raw), &c)
 	}
 	if c.Adapter == "" {
@@ -92,7 +95,7 @@ func (s *Server) config(ctx context.Context, p Provider) ProviderConfig {
 		c.AuthMode = p.AuthMode
 	}
 	var recipeRaw string
-	if s.Store.DB.QueryRowContext(ctx, "SELECT v.recipe_json FROM recipe_versions v JOIN recipe_active a ON a.provider_id=v.provider_id AND a.version=v.version WHERE v.provider_id=?", p.ID).Scan(&recipeRaw) == nil {
+	if q.QueryRowContext(ctx, "SELECT v.recipe_json FROM recipe_versions v JOIN recipe_active a ON a.provider_id=v.provider_id AND a.version=v.version WHERE v.provider_id=?", p.ID).Scan(&recipeRaw) == nil {
 		var recipe map[string]any
 		if json.Unmarshal([]byte(recipeRaw), &recipe) == nil {
 			if c.Endpoints == nil {

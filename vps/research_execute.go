@@ -365,7 +365,7 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 		if e != nil || !s.validateSelection(ctx, v) || !s.groupBound(ctx, v) {
 			return nil, errors.New("current inference scope unavailable")
 		}
-		c, e := s.ensureCandidate(ctx, p.ID, v.ModelID, run, p.BaseURL)
+		c, e := s.ensureCandidate(ctx, p.ID, v.ModelID, run, selected.BaseURL)
 		if e != nil {
 			return nil, e
 		}
@@ -390,7 +390,17 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 		var parsed map[string]any
 		json.Unmarshal([]byte(details), &parsed)
 		normalized := map[string]any{"selection": v, "outcome": outcome, "observed_at": at, "reused_local_traffic": reused, "probe_version": "minimal-inference-v1", "response_model_id": parsed["response_model_id"], "authenticity": "BEHAVIOR_OBSERVED_IDENTITY_NOT_PROVEN"}
-		_, e = s.recordEvidence(ctx, c.ID, "SCOPED_INFERENCE", p.BaseURL, "scoped inference outcome: "+outcome, outcome == "SUCCESS", EvidenceDetails{RunID: run, Normalized: normalized, Confidence: 0.65, ParserVersion: "minimal-inference-v1"})
+		// Analyze only saved traffic; this caller never adds an authenticity probe
+		// or upgrades eligibility/identity because a request happened to succeed.
+		if report, _, err := s.analyzeAuthenticity(ctx, authenticityAnalysisRequest{ID: "auth-" + contentHash([]byte(run+scopeKey(v))), Selection: v}); err == nil {
+			normalized["authenticity_report_id"] = report.ID
+			normalized["authenticity_suite_version"] = report.Suite
+			normalized["authenticity_observation_status"] = report.Status
+			normalized["identity_status"] = report.Identity
+		} else {
+			normalized["authenticity_suite_status"] = "UNAVAILABLE"
+		}
+		_, e = s.recordEvidence(ctx, c.ID, "SCOPED_INFERENCE", selected.BaseURL, "scoped inference outcome: "+outcome, outcome == "SUCCESS", EvidenceDetails{RunID: run, Normalized: normalized, Confidence: 0.65, ParserVersion: "minimal-inference-v1"})
 		s.reconcileCandidate(ctx, c.ID)
 		if e != nil {
 			return nil, e

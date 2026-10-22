@@ -1,5 +1,16 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-23 模型真實性證據（AUTHENTICITY-015D）
+
+- 使用者要求繼續直到主要功能齊全。依D-015暫不修改公開版本／release/request.json／tag／附件；PR #20維持Draft、不merge、不部署。
+- 前片015C所列範圍已驗收：來源294f6aba62c0cf6c27e31a5894476e8dd1116d12／tree681f784d53ca5f00f06f4c0a4a69955b5a2e6f92，VPS39805462791四項、Android39805462786兩項、Mac39805462819三項SUCCESS；精確job及產物核對見PR #20與verification/20261023/connector-discovery-baseline.json。31 Browser278.407s／371圖、Go race369.796s／vet、真systemd41.615s及原expanded workload24.881s；原候選失敗歷史全部保留。
+- 開工重新查main仍cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 attempt2 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。
+- 當前唯一整合片015D：既有正常流量的本機來源憑據→獨立版本化suite→可用性／能力／身份分開→另一origin且同Canonical的使用者確認參考Review／啟用／持久Undo→正式Models及Assistant入口。先重用零額外HTTP的觀測；完整預算及逐級主動probe仍保留，不因此新增隱式推論。
+- 初始真TLS／正式Handler反例0.069s FAIL：既有推論成功後沒有authenticity分析入口（404）。17函式race33.416s、追加來源隔離與原生協定／舊研究重用聚焦45.531s、vet及27發布回歸0.036s成功；4個新舊Browser13.831s／9新圖已檢查。本片尚為候選；完整本機、反例及自己的同來源九項成功前不接受、不接下一片。
+- 舊／同步telemetry若沒有本機來源憑據、Key／來源／設定已變更、取消／中斷、不同請求條件均不借作身份證據。身份可一直UNPROVEN；Unknown費用不當0或Free。原31 Browser／371圖、原生測試、完整資源負載及原timeout保持。
+
+以下保留原片過程，驗收以較新來源與PR #20的精確證據為準。
+
 ## 2026-10-22 未知站點擷取草稿（CONNECTOR-DISCOVERY-015C）
 
 - 使用者持續要求完成主要功能。依D-015，本輪不變更公開版本、release/request.json、tag／附件；PR #20維持Draft、不merge、不部署。

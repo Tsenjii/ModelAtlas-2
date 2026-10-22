@@ -369,12 +369,12 @@ func TestConnectorDiscoverySchema24UpgradeAndSyncDoNotCopyExecutionAuthority(t *
 		t.Fatal(err)
 	}
 	s.Store = store
-	assertSQLInt(t, s, 25, "PRAGMA user_version")
+	assertSQLInt(t, s, schemaVersion, "PRAGMA user_version")
 	if err := s.connectorExecutionBound(context.Background(), "legacy-local", legacy); err != nil {
 		t.Fatal("upgrade did not preserve the previously approved local definition", err)
 	}
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM credentials")
-	files, err := filepath.Glob(filepath.Join(filepath.Dir(path), "upgrade-backups", "schema-24-to-25-*.sqlite"))
+	files, err := filepath.Glob(filepath.Join(filepath.Dir(path), "upgrade-backups", fmt.Sprintf("schema-24-to-%d-*.sqlite", schemaVersion)))
 	if err != nil || len(files) != 1 {
 		t.Fatal("consistent migration snapshot missing")
 	}

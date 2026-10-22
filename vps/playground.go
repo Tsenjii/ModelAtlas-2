@@ -592,6 +592,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			return result, 500
 		}
 	}
+	conditionHash := authenticityCondition(payload, operation, body.size)
 	started := time.Now()
 	sampleID := newID()
 	receipt, err := s.newReceipt(ctx, scope, provider, started.UnixMilli(), secrets)
@@ -667,6 +668,10 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		_, err := s.Store.DB.ExecContext(saveCtx, "UPDATE telemetry SET outcome=?,status_code=?,ttfb_ms=?,ttft_ms=?,latency_ms=?,input_tokens=?,output_tokens=?,details_json=? WHERE id=?", result.Outcome, status, ttfb, ttft, latency, inputs, outputs, string(raw), sampleID)
 		if err != nil {
 			result.Outcome = "TELEMETRY_SAVE"
+		} else {
+			// Missing auxiliary proof leaves the sample unverified. It must never
+			// turn a saved answer/history into a failed inference.
+			_ = s.captureAuthenticity(saveCtx, sampleID, provider.CredentialStamp, authenticityCapture{ConditionHash: conditionHash, ConfigHash: connectorHash(cfg), EndpointHash: authenticityEndpointHash(endpoint, operation), PayloadBytes: body.size, MaxOutputTokens: v.MaxTokens, ToolsOffered: len(tools), ValidToolCalls: len(result.ToolCalls), TextBytes: text.Len(), ReasoningBytes: reasoning.Len()}, authenticityTraffic{ID: sampleID, Selection: scope, Operation: operation, Source: source, Outcome: result.Outcome, CredentialVersion: provider.CredentialVersion, At: started.UnixMilli(), Input: inputs, Output: outputs, Details: string(raw)})
 		}
 	}()
 	client := *s.Client

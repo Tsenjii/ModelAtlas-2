@@ -1,6 +1,16 @@
 # ModelAtlas Public — TRACEABILITY
 
-## CONNECTOR-DISCOVERY-015C（2026-10-22 候選）
+## AUTHENTICITY-015D（2026-10-23 候選）
+
+正式caller：Models詳情／歷史 → 共用既有流量分析／參考Review API → 完整scope與本機來源憑據 → traffic-fingerprint-v1 → 不可變報告／參考版本 → 明確CAS啟用／ledger持久Undo。Assistant及原研究最小推論亦用相同零額外HTTP分析。程式為authenticity.go／capture／reference、playground.go、ui_js_authenticity.go；完整規則、失敗歷史與限制見`../vps/AUTHENTICITY.md`。
+
+18個後端函式含追加綁定origin反例，前17函式race33.416s／含原生協定與舊研究重用45.531s成功；4個新舊Browser13.831s成功，9新圖已檢查含200%確認。資料不足／一致／矛盾與UNPROVEN身份分開；Unknown費用不為0，同步／舊版／取消／換Key不借來源憑據。schema26本機表、v25一致升級、精確USD與真0、跨重啟Undo及輔助DB失敗保留答案已測。原31 Browser／371圖保留，新增後32／380，仍須本來源完整回歸及同SHA九項才接受。
+
+Mac／Android專用原生UI、主動深度probe／預算、語意品質指紋與真站可信基準長跑仍待補，整體WISH-AUTH-001與下一版近完整門檻仍PARTIAL。PR #20保持Draft，發布請求／版本／tag／附件不變。
+
+## CONNECTOR-DISCOVERY-015C（2026-10-22 所列範圍已驗）
+
+已驗來源294f6aba62c0cf6c27e31a5894476e8dd1116d12／tree681f784d53ca5f00f06f4c0a4a69955b5a2e6f92；同來源九項及實際產物核對見verification/20261023/connector-discovery-baseline.json與PR #20。下列候選過程／失敗保留，不外推全部WISH-CRAWL-002完成。
 
 正式caller：Models／研究知識辨識表單或Assistant discover_connectors → generateConnectorDrafts → publicFetch／共站冷卻 → 確定性scope／單位映射 → 原子版本／來源proof／fixture → 既有connectors/test與Review → 本機receipt／CAS啟用 → enrichConnectors實際Intelligence → ledger持久Undo。詳`../vps/CONNECTOR_DISCOVERY.md`。
 

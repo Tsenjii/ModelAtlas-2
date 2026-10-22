@@ -44,6 +44,8 @@ func assistantTools() []ToolDefinition {
 		{"propose_extension", "Save an evidence-backed knowledge or declarative GET connector draft. It cannot activate itself; user tests/reviews and confirms in the app.", toolSchema(map[string]any{"family": map[string]any{"type": "string", "enum": []string{"KNOWLEDGE", "CONNECTOR"}}, "definition": map[string]any{"type": "object"}}, "family", "definition")},
 		{"discover_connectors", "Inspect observed same-origin public metadata for an active My Models scope, generate evidence/fixture-backed declarative drafts for shared Review. No credentials/inference/activation; at most remaining web budget (4 reads). Reuse request ID when recovering an uncertain response. Missing units/scope remain unknown.", toolSchema(map[string]any{"id": stringSchema(), "selection": selectionSchema(), "source_path": stringSchema()}, "id", "selection", "source_path")},
 		{"query_history", "Read scoped local telemetry history with 1h/24h/7d/30d/all window; never borrow another key/group/endpoint.", toolSchema(map[string]any{"selection": selectionSchema(), "window": map[string]any{"type": "string", "enum": []string{"1h", "24h", "7d", "30d", "all"}}}, "selection", "window")},
+		{"analyze_authenticity", "Save a versioned analysis of existing local request evidence for this exact active scope. Zero additional provider requests. Usability/capability observations do not prove model identity; preserve insufficient/conflicting evidence, unknown costs and current reference version. Reuse ID for uncertain responses.", toolSchema(map[string]any{"id": stringSchema(), "selection": selectionSchema()}, "id", "selection")},
+		{"preview_authenticity_reference", "Prepare an immutable user Review comparing same-canonical existing traffic from another provider and origin. No new inference and no activation. User must independently review the source and confirm in Models; identity remains unproven.", toolSchema(map[string]any{"id": stringSchema(), "target": selectionSchema(), "reference": selectionSchema(), "reason": stringSchema()}, "id", "target", "reference", "reason")},
 	}
 	out := []ToolDefinition{}
 	for _, d := range defs {
@@ -77,6 +79,19 @@ func (s *Server) assistantTool(ctx context.Context, run string, call ToolCall, b
 		}
 	}
 	switch call.Function.Name {
+	case "analyze_authenticity":
+		var v authenticityAnalysisRequest
+		if e := strictArguments(call.Function.Arguments, &v); e != nil {
+			return nil, e
+		}
+		report, _, e := s.analyzeAuthenticity(ctx, v)
+		return report, e
+	case "preview_authenticity_reference":
+		var v authenticityReferenceRequest
+		if e := strictArguments(call.Function.Arguments, &v); e != nil {
+			return nil, e
+		}
+		return s.localAPI(ctx, "POST", "/authenticity/references/preview", v)
 	case "discover_connectors":
 		var v connectorDiscoveryRequest
 		if e := strictArguments(call.Function.Arguments, &v); e != nil {
