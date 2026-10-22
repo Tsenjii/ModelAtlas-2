@@ -6,7 +6,7 @@
 
 Models → 任一已加入模型 → 歷史 → 展開「模型真實性證據」。此區才讀取分析／參考歷史，沒有新增輪詢器或自動推論。
 
-1. 「分析既有請求紀錄」保存 `traffic-fingerprint-v1` 的不可變快照。
+1. 「分析既有請求紀錄」保存 `traffic-fingerprint-v2` 的不可變快照。
 2. 分開檢視可用性、能力與模型身份。觀測結果為資料不足、觀測一致或觀測有矛盾；身份一律仍為 `UNPROVEN`／低信心，沒有替換機率或100%身份保證。
 3. 選擇另一 Provider、另一 origin、同一 Canonical Model 的實際連線，寫下來源確認理由，建立參考版本 Review。草稿尚未啟用；來源由使用者確認，不冒充自動驗證的官方身份。
 4. 檢視完整來源、Key版本、條件、資料、衝突／未知及成本，明確確認啟用。CAS拒絕過期選取，Undo跨重整與引擎重啟保留；每版／每份報告永久保存並可分頁查閱。
@@ -19,7 +19,8 @@ Assistant 的 `analyze_authenticity` 與 `preview_authenticity_reference` 走相
 
 - 只取最近七日、Provider × Account × Credential × Model × Group × Endpoint × Operation × credential revision精確一致的最多32筆紀錄。超出本次檢視標示truncated，完整請求歷史不刪除。
 - 共用推論管線保存本機來源憑據：實際使用的憑證密文材料指紋、設定／端點hash、最終telemetry hash及條件／行為計數。指紋不含明文秘密；不把prompt、回答、reasoning內容或tool arguments複製進此套件資料。
-- 條件hash包含operation及完整編碼payload，只移除頂層model欄位，以便同Canonical來源比較；指示、歷史、媒體、工具、輸出上限及stream模式不同就不能相配。沿用分段JSON編碼，不複製整份長context成第二個wire body。CUSTOM任意mapping不產生可比較的條件hash。
+- v2條件hash包含operation、實際stream模式、Anthropic授權完成後的有效API版本及完整編碼payload，只移除頂層model欄位，以便同Canonical來源比較。Gemini串流雖放在URL，仍不能與非串流相配；Adapter覆寫前的設定版本不當作實際版本。指示、歷史、媒體、工具及輸出上限不同也不能相配。沿用分段JSON編碼，不複製整份長context成第二個wire body；不保存原始header或認證query。CUSTOM任意mapping不產生可比較的條件hash。
+- v1 capture／參考不自動升格至v2：舊樣本標示條件已變，舊active參考標示STALE、不能重新啟用；歷史報告、原始請求、參考版本、原request ID重播與持久Undo保留。
 - 本機憑據必須與目前材料、設定、端點、receipt來源／revision及原始紀錄相符。舊資料、外端同步紀錄、改寫資料及換Key後的舊流量不能借本機sample ID取得權威。取消／中斷／RUNNING另列排除，不進可用性分母。
 - 回應名稱只與明確request model／Canonical／使用者別名比較。不同名稱保存弱衝突及sample ID，不能據此證明替換。站方／手動metadata聲明與實際觀測分開顯示。
 - 工具只計入已提供名稱與現有格式驗證通過的實際呼叫。沒有呼叫不代表不支援；隱藏reasoning同樣不能當作不具推理能力。輸入位元組／站方回報token只代表觀察量，沒有評分理解能力或宣稱最大Context。
@@ -61,6 +62,16 @@ b9e8dd3f3e697e65cb6e3467b57eae1d156937f8／tree7ce53f738394ac3d30fa1c529f5e8a8e4
 加入真實畫面操作與受控POST回覆barrier：切換已在DB commit，POST尚未送達頁面時，使用者關閉／刷新／重開能讀到最新Key狀態，但帳戶仍被原寫入持有。以原本只等「啟用」按鈕visible的條件確定重現32.810s相同FAIL；第一次新增barrier因route.fetch未明示測試認證導致31.990s fixture錯誤，修正後才完成上述重現，沒有當作產品修復。
 
 帳戶互斥本身正確。測試追加「新值可見但按鈕仍disabled」、「草稿保留」及「第二筆變更仍為0」斷言，再釋放原POST回覆，確認按鈕enabled後執行原Key更新／version1還原。原兩次rotation、一筆account與一筆Key、0 inference、237筆archive及所有原畫面／大字／暗色／外部連線斷言完全保留；沒有增加sleep或timeout、沒有降低assertion。修後原MacAlignment 10.256s成功；最後新來源仍須獨立九項。
+
+## 原生請求條件的v2反例與修正
+
+09d67db候選的本機完整32 Browser296.678s、CI Browser291.223s成功，原MacAlignment新增受控交錯亦通過；但後端條件審查另發現兩個真TLS反例，仍不接受v1。原始失敗0.221s：Gemini的完全相同JSON以不同URL模式傳送，仍取得相同condition hash；Anthropic不同有效API版本的三組JSON仍被判為3筆相配／CONSISTENT_OBSERVATIONS。
+
+改為`traffic-fingerprint-v2`／`local-request-v2`，共用execute在authorizeUpstream完成後，把實際stream及有效anthropic-version納入分段雜湊。未改原協定、帳戶互斥、推論次數、DB schema、歷史或公開版本。現有HTTPS／endpoint／safePath規則拒絕預設URL查詢；Gemini傳輸query及認證query不被當作可跨來源保存的資料。
+
+新增三個真實管線回歸：Gemini同內容不同模式不可比；Anthropic設定值不同但有效版本相同可比、有效版本不同不可比，逐筆核對wire JSON與9次HTTP；v1證據／active參考跨重啟不升格，原報告逐欄與原JSON保持、原ID重播不改寫、Undo保留且重新啟用被拒，無額外HTTP。全片增為21個後端函式，最後新來源完整回歸與九項仍須獨立驗證；不借09d或更舊候選的綠燈。
+
+全21函式加原生協定／工具接續聚焦race43.812s成功；追加逐筆wire JSON斷言後三個新函式race5.126s及vet成功。完整測試、32 Browser及最後來源的九項／實際附件仍分開驗，不以聚焦結果當完成。
 
 ## 尚未完成
 

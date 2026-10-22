@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-const authenticitySuiteVersion = "traffic-fingerprint-v1"
-const authenticityCaptureVersion = "local-request-v1"
+const authenticitySuiteVersion = "traffic-fingerprint-v2"
+const authenticityCaptureVersion = "local-request-v2"
 
 // These receipts and activation authority are local. Metadata sync/import cannot
 // turn a foreign telemetry row into an attested request or activate a reference.
@@ -41,10 +41,12 @@ func credentialMaterialStamp(cipher, fields string) string {
 	return contentHash([]byte(cipher + "\x00" + fields))
 }
 
-// Hash the complete request conditions without retaining prompt, reply or tool
-// arguments. Only the model identifier is omitted for same-canonical comparison.
-// The segmented encoder keeps the existing full-context memory boundary.
-func authenticityCondition(payload map[string]any, operation string, size int64) string {
+// Hash the payload and effective protocol conditions without retaining prompt,
+// reply, tool arguments or headers. Gemini carries stream mode in its URL; an
+// Anthropic adapter may override the configured version during authorization.
+// Only the model identifier is omitted for same-canonical comparison. The
+// segmented encoder keeps the existing full-context memory boundary.
+func authenticityCondition(payload map[string]any, operation string, stream bool, apiVersion string, size int64) string {
 	if operation == "CUSTOM" {
 		return ""
 	} // Arbitrary mappings lack comparable semantics.
@@ -54,7 +56,11 @@ func authenticityCondition(payload map[string]any, operation string, size int64)
 			normalized[k] = v
 		}
 	}
-	body, err := encodeRequestJSON(map[string]any{"operation": operation, "payload": normalized}, size+4096)
+	conditions := map[string]any{"operation": operation, "stream": stream, "payload": normalized}
+	if operation == "ANTHROPIC_MESSAGES" {
+		conditions["anthropic_version"] = apiVersion
+	}
+	body, err := encodeRequestJSON(conditions, size+4096)
 	if err != nil {
 		return ""
 	}

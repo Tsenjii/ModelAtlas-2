@@ -2,7 +2,9 @@
 
 ## AUTHENTICITY-015D（2026-10-23 候選）
 
-正式caller：Models詳情／歷史 → 共用既有流量分析／參考Review API → 完整scope與本機來源憑據 → traffic-fingerprint-v1 → 不可變報告／參考版本 → 明確CAS啟用／ledger持久Undo。Assistant及原研究最小推論亦用相同零額外HTTP分析。程式為authenticity.go／capture／reference、playground.go、ui_js_authenticity.go；完整規則、失敗歷史與限制見`../vps/AUTHENTICITY.md`。
+正式caller：Models詳情／歷史 → 共用既有流量分析／參考Review API → 完整scope與本機來源憑據 → traffic-fingerprint-v2 → 不可變報告／參考版本 → 明確CAS啟用／ledger持久Undo。Assistant及原研究最小推論亦用相同零額外HTTP分析。程式為authenticity.go／capture／reference、playground.go、ui_js_authenticity.go；完整規則、失敗歷史與限制見`../vps/AUTHENTICITY.md`。
+
+v2追加3個真TLS管線函式（合計21）：0.221s確定重現Gemini不同wire stream模式／Anthropic不同有效版本被v1誤配，修為授權完成後雜湊實際條件；同實際版本仍可比。v1樣本／參考不升格，跨重啟保留原報告、JSON、request ID重播與Undo，舊參考不能重新啟用。09d本機32 Browser296.678s／CI291.223s只作舊候選記錄，最終新來源仍獨立九項。
 
 18個後端函式含追加綁定origin反例，前17函式race33.416s／含原生協定與舊研究重用45.531s成功；4個新舊Browser13.831s成功，9新圖已檢查含200%確認。資料不足／一致／矛盾與UNPROVEN身份分開；Unknown費用不為0，同步／舊版／取消／換Key不借來源憑據。schema26本機表、v25一致升級、精確USD與真0、跨重啟Undo及輔助DB失敗保留答案已測。原31 Browser／371圖保留，新增後32／380，仍須本來源完整回歸及同SHA九項才接受。
 

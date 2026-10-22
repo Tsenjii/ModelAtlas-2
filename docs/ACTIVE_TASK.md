@@ -8,6 +8,7 @@
 - 當前唯一整合片015D：既有正常流量的本機來源憑據→獨立版本化suite→可用性／能力／身份分開→另一origin且同Canonical的使用者確認參考Review／啟用／持久Undo→正式Models及Assistant入口。先重用零額外HTTP的觀測；完整預算及逐級主動probe仍保留，不因此新增隱式推論。
 - 初始真TLS／正式Handler反例0.069s FAIL：既有推論成功後沒有authenticity分析入口（404）。17函式race33.416s、追加來源隔離與原生協定／舊研究重用聚焦45.531s、vet及27發布回歸0.036s成功；4個新舊Browser13.831s／9新圖已檢查。本片尚為候選；完整本機、反例及自己的同來源九項成功前不接受、不接下一片。
 - 舊／同步telemetry若沒有本機來源憑據、Key／來源／設定已變更、取消／中斷、不同請求條件均不借作身份證據。身份可一直UNPROVEN；Unknown費用不當0或Free。原31 Browser／371圖、原生測試、完整資源負載及原timeout保持。
+- 同片v2審查：09d候選完整本機32 Browser296.678s／CI291.223s成功後，新增真TLS0.221s FAIL：Gemini不同stream URL模式、Anthropic不同有效API版本仍被v1當成相同條件。現改traffic-fingerprint-v2／local-request-v2，雜湊實際stream與授權後有效版本；原v1報告／歷史／Undo保留、樣本與參考不能升格。三個追加管線回歸涵蓋實際wire JSON／模式／版本與跨重啟舊政策隔離，最終新來源另驗九項；不接新片、不變公開版本。完整規則及失敗見vps/AUTHENTICITY.md。
 
 以下保留原片過程，驗收以較新來源與PR #20的精確證據為準。
 

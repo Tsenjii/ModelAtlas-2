@@ -592,7 +592,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			return result, 500
 		}
 	}
-	conditionHash := authenticityCondition(payload, operation, body.size)
+	conditionHash := authenticityCondition(payload, operation, stream, upstream.Header.Get("anthropic-version"), body.size)
 	started := time.Now()
 	sampleID := newID()
 	receipt, err := s.newReceipt(ctx, scope, provider, started.UnixMilli(), secrets)
