@@ -16,6 +16,11 @@ func TestBrowserAuthenticityEvidenceReviewAndPersistentUndo(t *testing.T) {
 	f := newAuthenticityFixture(t)
 	f.populate(t, f.Target)
 	f.populate(t, f.Reference)
+	requireCode(t, req(t, f.Server, "POST", "/api/v1/models", Model{ProviderID: f.Target.ProviderID, ID: "image-model", DisplayName: "Image Model"}), 201)
+	image := f.Target
+	image.ModelID = "image-model"
+	image.Endpoint = "IMAGES_GENERATION"
+	requireCode(t, req(t, f.Server, "POST", "/api/v1/my-models", image), 201)
 	handler := f.Server.Handler()
 	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/__authenticity_fixture/state" {

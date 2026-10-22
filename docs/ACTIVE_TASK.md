@@ -11,6 +11,8 @@
 
 以下保留原片過程，驗收以較新來源與PR #20的精確證據為準。
 
+- b9e8dd3候選已同來源九項、完整32 Browser288.378s／380圖及全部產物核對；仍因追加圖片模型入口7.174s真反例不接受。文字套件現在對非對話操作呈現限制、不顯示分析操作或發清單GET；修後4.000s成功。原全部情境保留，最後新來源獨立九項；詳vps/AUTHENTICITY.md及verification/20261023/authenticity-candidate-b9.json。
+
 ## 2026-10-22 未知站點擷取草稿（CONNECTOR-DISCOVERY-015C）
 
 - 使用者持續要求完成主要功能。依D-015，本輪不變更公開版本、release/request.json、tag／附件；PR #20維持Draft、不merge、不部署。

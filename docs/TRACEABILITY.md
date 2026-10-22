@@ -8,6 +8,8 @@
 
 Mac／Android專用原生UI、主動深度probe／預算、語意品質指紋與真站可信基準長跑仍待補，整體WISH-AUTH-001與下一版近完整門檻仍PARTIAL。PR #20保持Draft，發布請求／版本／tag／附件不變。
 
+- b9e8dd3候選已同來源九項、完整32 Browser288.378s／380圖及全部產物核對；仍因追加圖片模型入口7.174s真反例不接受。文字套件現在對非對話操作呈現限制、不顯示分析操作或發清單GET；修後4.000s成功。原全部情境保留，最後新來源獨立九項；詳vps/AUTHENTICITY.md及verification/20261023/authenticity-candidate-b9.json。
+
 ## CONNECTOR-DISCOVERY-015C（2026-10-22 所列範圍已驗）
 
 已驗來源294f6aba62c0cf6c27e31a5894476e8dd1116d12／tree681f784d53ca5f00f06f4c0a4a69955b5a2e6f92；同來源九項及實際產物核對見verification/20261023/connector-discovery-baseline.json與PR #20。下列候選過程／失敗保留，不外推全部WISH-CRAWL-002完成。

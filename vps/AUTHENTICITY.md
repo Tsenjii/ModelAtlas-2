@@ -46,6 +46,12 @@ API：POST `/authenticity/analyze`，GET `/authenticity/reports`；POST `/authen
 
 - 來源審查追加0.113s真TLS反例：研究的舊最小推論證據錯借Provider主要URL，與所選Key綁定origin不同。改用同次endpointAuth的實際origin；分析與研究證據保持一致，沒有新增HTTP。新增第18個後端函式；含原生協定及舊研究重用的聚焦race45.531s／vet成功，最後來源完整驗證另核對。
 
+## 最後入口審查（同片新候選）
+
+b9e8dd3f3e697e65cb6e3467b57eae1d156937f8／tree7ce53f738394ac3d30fa1c529f5e8a8e48d660b7已同來源九項SUCCESS，全部九份QA／套件附件已驗hash、來源及原測試／實圖；精確證據見docs/verification/20261023/authenticity-candidate-b9.json。CI Go race356.726s、systemd41.805s、原expanded workload21.765s；32 Browser288.378s／380圖；本機最終Go343.606s及完整Browser288.402s成功。
+
+但不作最終驗收：新增非文字模型正式Models入口的7.174s真Browser反例，圖片模型仍出現只支援文字對話的分析操作。改為明確呈現目前限制、保留原請求歷史；不提供不支援的操作，也不發兩個分析清單GET。原正例、矛盾／不足、失敗讀取恢復、啟用、Undo及全部畫面斷言不減，追加圖片入口與零讀取／零外部HTTP檢查。修後新Browser4.000s成功。失敗圖SHA256 8c40a88f55855d20361fb743cd5e1e4a309354f9e44e1ce762bcf97896e1539f保留；最後新來源另跑九項，不能借b9的綠燈。
+
 ## 尚未完成
 
 沒有主動deeper probe、回答品質／語意benchmark、統計身份指紋或真站可信基準長跑；完整token／費用預算需後續切片。Mac內建同源Go引擎取得API，Mac／Android專用原生呈現尚未移植。沒有目標VPS或實體裝置驗收。全WISH-AUTH-001、Part V與下一版接近完整功能的門檻仍為PARTIAL，不能因本片局部成功提前勾完。

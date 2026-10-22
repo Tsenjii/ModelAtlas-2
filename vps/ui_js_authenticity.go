@@ -34,6 +34,7 @@ function authenticityReferenceDetail(ref,m){
 }
 function modelAuthenticity(parent,m,ticket){
  const section=el("details"),summary=el("summary","模型真實性證據"),body=el("div");section.dataset.authenticity="true";section.append(summary,el("p","重用既有流量，分開檢視可用性、能力與身份。分析不會新增外部 HTTP 或推論。","section-description"),body);parent.append(section);
+ if(!chatOperation(targetOperation(m))){body.append(el("p","目前套件支援文字對話操作；此連線的原始請求紀錄仍保留。","section-description"));return;}
  let loaded=false,reading=false,writing=false,reportOffset=0,referenceOffset=0;
  const pendingKey=key(m),current=()=>detailCurrent(ticket),recovery=el("div"),content=el("div"),commands=el("div",undefined,"actions");body.append(commands,recovery,content);
  const previousDisabled=new Map(),setBusy=value=>{body.setAttribute("aria-busy",String(value));if(value){body.querySelectorAll("input,select,textarea,button").forEach(n=>{if(!previousDisabled.has(n))previousDisabled.set(n,n.disabled);n.disabled=true;});}else{previousDisabled.forEach((disabled,n)=>{if(n.isConnected)n.disabled=disabled;});previousDisabled.clear();}};
