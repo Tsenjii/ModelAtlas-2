@@ -12,6 +12,8 @@
 
 - 真匿名Kilo測試19.386s成功：實際0價格catalog檢查、聊天、工具呼叫／結果接續、Assistant pending→共用Review→持久membership，6次HTTP；只測試可用性，不證明身份／台灣資格／recurring quota。
 
+- 審查後本機Retry／Schedule及7個origin情境37.872s成功；準備0.8.4-preview.1（Mac18／Android8005），最終來源九項與實際三平台發布仍須獨立驗證。c77bcb9只是port候選；新版本不覆寫既有0.8.3。真公開研究本機28.028s失敗：DNS-pinned public client在此環境DNS不可用，7次public admission僅失敗線索／evidence、無成功來源；保留診斷，不改SSRF／proxy政策換通過，需另在原生網路驗證。
+
 以下保留已交付切片與原始失敗證據。
 
 ## 2026-10-21 新對話確認與防重複（VPS-CONVERSATION-RECOVERY-012）
