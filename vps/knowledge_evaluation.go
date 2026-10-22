@@ -109,7 +109,7 @@ func currentResearchScope(ctx context.Context, q researchQueryer, v KnowledgeVer
 }
 
 func currentResearchPlan(ctx context.Context, q researchQueryer) (map[string]KnowledgeVersion, error) {
-	rows, err := q.QueryContext(ctx, `SELECT v.id,v.kind,v.subject,v.data_json FROM knowledge_active a JOIN knowledge_versions v ON v.id=a.version_id WHERE a.kind IN ('SOURCE_RELIABILITY','RESEARCH_STRATEGY') AND v.status!='IMPORTED' ORDER BY a.kind,a.subject LIMIT 1000`)
+	rows, err := q.QueryContext(ctx, `SELECT v.id,v.kind,v.subject,v.data_json,COALESCE(e.epoch_id,'') FROM knowledge_active a JOIN knowledge_versions v ON v.id=a.version_id LEFT JOIN knowledge_activation_epochs e ON e.kind=a.kind AND e.subject=a.subject WHERE a.kind IN ('SOURCE_RELIABILITY','RESEARCH_STRATEGY') AND v.status!='IMPORTED' ORDER BY a.kind,a.subject LIMIT 1000`)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func currentResearchPlan(ctx context.Context, q researchQueryer) (map[string]Kno
 	for rows.Next() {
 		var v KnowledgeVersion
 		var raw string
-		if err = rows.Scan(&v.ID, &v.Kind, &v.Subject, &raw); err != nil {
+		if err = rows.Scan(&v.ID, &v.Kind, &v.Subject, &raw, &v.ActiveEpoch); err != nil {
 			return nil, err
 		}
 		if json.Unmarshal([]byte(raw), &v.Data) != nil {
@@ -361,7 +361,7 @@ func monitorKnowledge(v KnowledgeVersion, evaluation *knowledgeEvaluation, histo
 		m.Baseline = evaluation.Target
 	}
 	for _, q := range history {
-		if q.VersionID != v.ID || q.MetricKey != knowledgeMetricKey(v.Kind, v.Subject) || !usableResearchQuality(q) || evaluation != nil && q.ScopeHash != evaluation.ScopeHash {
+		if q.VersionID != v.ID || q.EpochID != v.ActiveEpoch || q.MetricKey != knowledgeMetricKey(v.Kind, v.Subject) || !usableResearchQuality(q) || evaluation != nil && q.ScopeHash != evaluation.ScopeHash {
 			continue
 		}
 		m.Observed.add(q)

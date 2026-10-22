@@ -265,7 +265,7 @@ func TestKnowledgeQualityAdmissionCancellationSyncAndV21Migration(t *testing.T) 
 	peer := testServer(t)
 	workspacePairForTest(t, s, peer, host, false)
 	workspaceRunForTest(t, peer)
-	for _, table := range []string{"research_plan_bindings", "research_task_usage", "research_local_evidence", "research_quality_observations", "knowledge_evaluations", "knowledge_activation_evaluations"} {
+	for _, table := range []string{"research_plan_bindings", "research_task_usage", "research_local_evidence", "research_quality_observations", "knowledge_evaluations", "knowledge_activation_evaluations", "knowledge_activation_epochs"} {
 		assertSQLInt(t, peer, 0, "SELECT COUNT(*) FROM "+table)
 		for _, synced := range workspaceTables {
 			if table == synced {
@@ -279,7 +279,7 @@ func TestKnowledgeQualityAdmissionCancellationSyncAndV21Migration(t *testing.T) 
 	// Upgrade the actual prior schema, including history and a vault credential.
 	legacy := testServer(t)
 	seed(t, legacy, "https://quality.example/v1")
-	for _, table := range []string{"knowledge_activation_evaluations", "knowledge_evaluations", "research_quality_observations", "research_local_evidence", "research_task_usage", "research_plan_bindings"} {
+	for _, table := range []string{"knowledge_activation_epochs", "knowledge_activation_evaluations", "knowledge_evaluations", "research_quality_observations", "research_local_evidence", "research_task_usage", "research_plan_bindings"} {
 		if _, err := legacy.Store.DB.Exec("DROP TABLE " + table); err != nil {
 			t.Fatal(err)
 		}
@@ -298,6 +298,73 @@ func TestKnowledgeQualityAdmissionCancellationSyncAndV21Migration(t *testing.T) 
 	if strings.Contains(req(t, s, "GET", "/api/v1/research/knowledge", nil).Body.String(), "top-secret-example-key") {
 		t.Fatal("secret entered research assessment")
 	}
+}
+
+func TestKnowledgeRestoredVersionStartsNewMonitoringEpoch(t *testing.T) {
+	s, _, calls := qualityFixture(t)
+	qualityRounds(t, s, 3)
+	v := latestQualityVersion(t, s, "useful")
+	e := qualityEvaluation(t, s, v)
+	r := req(t, s, "POST", "/api/v1/research/knowledge/activate", versionActivation{ID: v.ID, EvaluationID: e.ID, Confirm: true})
+	requireCode(t, r, 200)
+	v = latestQualityVersion(t, s, "useful")
+	if v.ActiveEpoch == "" {
+		t.Fatal("activation has no local epoch")
+	}
+	originalEpoch := v.ActiveEpoch
+	old := researchRunID(t, s, ResearchOptions{SourceIDs: []string{"empty", "useful"}, Budget: 4})
+	manual := KnowledgeVersion{Kind: v.Kind, Subject: v.Subject, Data: map[string]any{"source_id": v.Subject, "weight": 2}, EvidenceIDs: v.EvidenceIDs, Reason: "temporary explicit comparison trial"}
+	r = req(t, s, "POST", "/api/v1/research/knowledge", manual)
+	requireCode(t, r, 201)
+	json.Unmarshal(r.Body.Bytes(), &manual)
+	r = req(t, s, "POST", "/api/v1/research/knowledge/activate", versionActivation{ID: manual.ID, ExpectedID: v.ID, Confirm: true})
+	requireCode(t, r, 200)
+	var action map[string]any
+	json.Unmarshal(r.Body.Bytes(), &action)
+	requireCode(t, req(t, s, "POST", "/api/v1/versions/undo", map[string]any{"id": action["action_id"], "confirm": true}), 200)
+	// Restoring the same ID is a new observation period. The old queued task
+	// still executes its approved version/epoch, but cannot inflate this trial.
+	s.runResearchPending(context.Background())
+	var raw string
+	s.Store.DB.QueryRow("SELECT payload_json FROM research_tasks WHERE run_id=? ORDER BY rowid LIMIT 1", old).Scan(&raw)
+	var input taskInput
+	json.Unmarshal([]byte(raw), &input)
+	if input.Strategy == nil || input.Strategy.EpochID != originalEpoch {
+		t.Fatal("pending task epoch was rewritten", raw)
+	}
+	s = reopenScheduleStore(t, s)
+	r = req(t, s, "GET", "/api/v1/research/knowledge", nil)
+	requireCode(t, r, 200)
+	var all []KnowledgeVersion
+	json.Unmarshal(r.Body.Bytes(), &all)
+	for _, current := range all {
+		if current.ID != v.ID {
+			continue
+		}
+		if !current.Active || current.ActiveEpoch == originalEpoch || current.ActiveEpoch == "" || current.Monitor == nil || current.Monitor.Observed.Runs != 0 {
+			t.Fatal("old activation results mixed into restored trial", current)
+		}
+	}
+	qualityRounds(t, s, 3)
+	r = req(t, s, "GET", "/api/v1/research/knowledge", nil)
+	requireCode(t, r, 200)
+	json.Unmarshal(r.Body.Bytes(), &all)
+	for _, current := range all {
+		if current.ID == v.ID && (current.Monitor == nil || current.Monitor.Observed.Runs != 3) {
+			t.Fatal("new epoch lost actual results", current)
+		}
+	}
+	if calls.Load() != 14 {
+		t.Fatal("epoch tracking triggered HTTP", calls.Load())
+	}
+	// Upgrade an internal v22 candidate with an active version and old receipts.
+	if _, err := s.Store.DB.Exec("DROP TABLE knowledge_activation_epochs; PRAGMA user_version=22"); err != nil {
+		t.Fatal(err)
+	}
+	s = reopenScheduleStore(t, s)
+	assertSQLInt(t, s, schemaVersion, "PRAGMA user_version")
+	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM knowledge_activation_epochs")
+	assertSQLInt(t, s, 14, "SELECT COUNT(*) FROM research_quality_observations")
 }
 
 func TestKnowledgeEvaluationKeepsAgedHistoryAndExplainsChangedActiveSource(t *testing.T) {

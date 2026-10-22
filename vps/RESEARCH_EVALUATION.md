@@ -24,7 +24,7 @@ Mac 知識頁亦有原生評估、差異／限制、監測與持久回復入口�
 
 ## 持久化與安全
 
-schema22以additive migration新增本機plan bindings、task usage、實際證據receipt、品質觀測、評估及啟用比較關聯；升級前保留一致快照。資料永久保存，查詢使用有界近期視窗，不做歷史清除。原AA schema21恢復與所有歷史保留。
+schema22先以additive migration新增本機plan bindings、task usage、實際證據receipt、品質觀測、評估及啟用比較關聯；升級前保留一致快照。資料永久保存，查詢使用有界近期視窗，不做歷史清除。原AA schema21恢復與所有歷史保留。審查再追加schema23本機啟用時期ID：每次啟用或Undo還原都產生新ID，佇列固定該ID，監測只取當前時期；相同版本被重新啟用亦不能借前次成績。內部v22升級時替現行版本建立新時期，不回填舊觀測為新試用證據。
 
 HTTP總量、排程每日量、AA window等原子admission連同task usage一起提交或回滾。收到回應時保存不可變的品質證據receipt；後續候選review、metadata或同步不能回寫這份觀測。以上本機控制／評估表不在workspaceTables及portable config backup中；同步只帶公開提案／反思歷史，不授予目的端執行或本機評估權。完整SQLite備份保留全部資料。
 
@@ -36,6 +36,6 @@ knowledge_evaluation_test.go使用真Handler／SQLite／TLS，覆蓋空200反例
 
 保留原28 Browser／347PNG與原五分鐘上限，新增第29流程／8圖；所有原生測試及expanded workload不減。首空200回歸0.070s真失敗後才修正。首新Browser2.628s抓到共用action finally錯誤解鎖「已保存但讀取失敗」操作，已用局部guard修復，沒有改低斷言。另一次33.834s因測試誤用「關閉」而非真aria-label「關閉詳情」失敗，已改實際入口。後續新測試的async waitForFunction將Promise視為truthy而提前返回，已核對固定1.56.1本機實作，改有界狀態輪詢；原成功斷言與timeout保留，修後3次4.05／3.92／3.66s成功。這些失敗不當成產品或完整驗收通過。
 
-本機首完整Go race285.057s／vet、27發布回歸成功；新增與排程／AA原有聚焦race36.156s成功，追加時效／接續後16.650s成功。首完整29 Browser在原五分鐘上限271.965s成功；之後新增付費／試用／衝突去重反例，正向效益不再獎勵負面結果。最終同來源九項及Mac原生結果仍待本候選CI，精確SHA與job記於PR #20。
+本機首完整Go race285.057s／vet，政策收斂後第二次完整race220.603s、27發布回歸成功；新增與排程／AA原有聚焦race36.156s成功，追加時效／接續後16.650s成功。首完整29 Browser在原五分鐘上限271.965s成功；之後新增付費／試用／衝突去重反例，正向效益不再獎勵負面結果。9ea0085候選已啟動九項CI，審查後新增啟用時期隔離／v22升級／舊佇列晚執行反例，最終新SHA必須重新九項與Mac原生驗證，不借9ea結果，精確SHA與job記於PR #20。時期隔離後聚焦race42.406s、原知識與新Browser5.510s及vet成功。
 
 尚缺跨地區／新query／extraction等提案的有界真站比較、token／貨幣預算與完整原生研究對應，WISH-REFL-001不提前升為完整ACCEPTED。

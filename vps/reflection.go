@@ -237,10 +237,17 @@ func activeVersion(ctx context.Context, q queryRows, family, kind, subject strin
 func setActiveVersion(ctx context.Context, tx *sql.Tx, family, kind, subject, id string) error {
 	if family == "KNOWLEDGE" {
 		if id == "" {
-			_, e := tx.ExecContext(ctx, "DELETE FROM knowledge_active WHERE kind=? AND subject=?", kind, subject)
+			if _, e := tx.ExecContext(ctx, "DELETE FROM knowledge_active WHERE kind=? AND subject=?", kind, subject); e != nil {
+				return e
+			}
+			_, e := tx.ExecContext(ctx, "DELETE FROM knowledge_activation_epochs WHERE kind=? AND subject=?", kind, subject)
 			return e
 		}
 		_, e := tx.ExecContext(ctx, "INSERT INTO knowledge_active VALUES(?,?,?) ON CONFLICT(kind,subject) DO UPDATE SET version_id=excluded.version_id", kind, subject, id)
+		if e != nil {
+			return e
+		}
+		_, e = tx.ExecContext(ctx, "INSERT INTO knowledge_activation_epochs VALUES(?,?,?) ON CONFLICT(kind,subject) DO UPDATE SET epoch_id=excluded.epoch_id", kind, subject, newID())
 		return e
 	}
 	if id == "" {

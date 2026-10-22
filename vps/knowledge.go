@@ -26,6 +26,7 @@ type KnowledgeVersion struct {
 	Evaluation         *knowledgeEvaluation `json:"evaluation,omitempty"`
 	Monitor            *knowledgeMonitor    `json:"monitor,omitempty"`
 	ActivationActionID string               `json:"activation_action_id,omitempty"`
+	ActiveEpoch        string               `json:"active_epoch,omitempty"`
 }
 
 var knowledgeFields = map[string]string{
@@ -138,7 +139,10 @@ func (s *Server) proposeKnowledge(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &v) {
 		return
 	}
-	if v.Evaluation!=nil || v.Monitor!=nil || v.ActivationActionID!="" {http.Error(w,"derived evaluation fields are read only",422);return}
+	if v.Evaluation != nil || v.Monitor != nil || v.ActivationActionID != "" || v.ActiveEpoch != "" {
+		http.Error(w, "derived evaluation fields are read only", 422)
+		return
+	}
 	secrets, e := s.knownSecrets(r.Context())
 	if e != nil {
 		http.Error(w, "vault unavailable", 503)
@@ -176,7 +180,7 @@ func (s *Server) proposeKnowledge(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, v)
 }
 func (s *Server) listKnowledge(w http.ResponseWriter, r *http.Request) {
-	rows, e := s.Store.DB.QueryContext(r.Context(), "SELECT v.id,v.kind,v.subject,v.version,v.data_json,v.evidence_json,v.reason,v.status,v.run_id,v.created_at,COALESCE(a.version_id,'') FROM knowledge_versions v LEFT JOIN knowledge_active a ON a.kind=v.kind AND a.subject=v.subject WHERE (?='' OR v.kind=?) ORDER BY v.rowid DESC LIMIT 200", r.URL.Query().Get("kind"), r.URL.Query().Get("kind"))
+	rows, e := s.Store.DB.QueryContext(r.Context(), "SELECT v.id,v.kind,v.subject,v.version,v.data_json,v.evidence_json,v.reason,v.status,v.run_id,v.created_at,COALESCE(a.version_id,''),COALESCE(e.epoch_id,'') FROM knowledge_versions v LEFT JOIN knowledge_active a ON a.kind=v.kind AND a.subject=v.subject LEFT JOIN knowledge_activation_epochs e ON e.kind=a.kind AND e.subject=a.subject WHERE (?='' OR v.kind=?) ORDER BY v.rowid DESC LIMIT 200", r.URL.Query().Get("kind"), r.URL.Query().Get("kind"))
 	if e != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -186,7 +190,7 @@ func (s *Server) listKnowledge(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var v KnowledgeVersion
 		var data, evidence string
-		if rows.Scan(&v.ID, &v.Kind, &v.Subject, &v.Version, &data, &evidence, &v.Reason, &v.Status, &v.RunID, &v.CreatedAt, &v.ActiveID) == nil {
+		if rows.Scan(&v.ID, &v.Kind, &v.Subject, &v.Version, &data, &evidence, &v.Reason, &v.Status, &v.RunID, &v.CreatedAt, &v.ActiveID, &v.ActiveEpoch) == nil {
 			json.Unmarshal([]byte(data), &v.Data)
 			json.Unmarshal([]byte(evidence), &v.EvidenceIDs)
 			v.Active = v.ID == v.ActiveID

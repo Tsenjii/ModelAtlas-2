@@ -22,6 +22,9 @@ const researchEvaluationSchema = `
  CREATE INDEX IF NOT EXISTS knowledge_evaluation_history ON knowledge_evaluations(version_id,created_at);
  CREATE TABLE IF NOT EXISTS knowledge_activation_evaluations(action_id TEXT PRIMARY KEY REFERENCES action_ledger(id),evaluation_id TEXT NOT NULL REFERENCES knowledge_evaluations(id));`
 
+const knowledgeEpochSchema = `CREATE TABLE IF NOT EXISTS knowledge_activation_epochs(kind TEXT NOT NULL,subject TEXT NOT NULL,epoch_id TEXT NOT NULL,PRIMARY KEY(kind,subject));
+ INSERT OR IGNORE INTO knowledge_activation_epochs SELECT kind,subject,lower(hex(randomblob(16))) FROM knowledge_active;`
+
 type researchTaskBudgetKey struct{}
 
 type researchKnowledgeBinding struct {
@@ -34,12 +37,13 @@ type researchKnowledgeBinding struct {
 	QueryApplied     bool    `json:"query_applied"`
 	IgnoredVersionID string  `json:"ignored_version_id,omitempty"`
 	Reason           string  `json:"reason,omitempty"`
+	EpochID          string  `json:"epoch_id"`
 }
 
 func knowledgeMetricKey(kind, subject string) string { return kind + ":" + subject }
 
 func (s *Server) researchKnowledgeSnapshot(ctx context.Context) (map[string]KnowledgeVersion, error) {
-	rows, err := s.Store.DB.QueryContext(ctx, `SELECT v.id,v.kind,v.subject,v.data_json FROM knowledge_active a JOIN knowledge_versions v ON v.id=a.version_id WHERE a.kind IN ('SOURCE_RELIABILITY','RESEARCH_STRATEGY') AND v.status!='IMPORTED' ORDER BY a.kind,a.subject LIMIT 1000`)
+	rows, err := s.Store.DB.QueryContext(ctx, `SELECT v.id,v.kind,v.subject,v.data_json,COALESCE(e.epoch_id,'') FROM knowledge_active a JOIN knowledge_versions v ON v.id=a.version_id LEFT JOIN knowledge_activation_epochs e ON e.kind=a.kind AND e.subject=a.subject WHERE a.kind IN ('SOURCE_RELIABILITY','RESEARCH_STRATEGY') AND v.status!='IMPORTED' ORDER BY a.kind,a.subject LIMIT 1000`)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +52,7 @@ func (s *Server) researchKnowledgeSnapshot(ctx context.Context) (map[string]Know
 	for rows.Next() {
 		var v KnowledgeVersion
 		var raw string
-		if err = rows.Scan(&v.ID, &v.Kind, &v.Subject, &raw); err != nil {
+		if err = rows.Scan(&v.ID, &v.Kind, &v.Subject, &raw, &v.ActiveEpoch); err != nil {
 			return nil, err
 		}
 		if json.Unmarshal([]byte(raw), &v.Data) != nil {
@@ -83,6 +87,7 @@ func bindResearchKnowledge(task *researchPlannedTask, learned map[string]Knowled
 	}
 	if v.ID != "" {
 		b.VersionID, b.QueryApplied = v.ID, queryApplied
+		b.EpochID = v.ActiveEpoch
 		if n := decimal(json.Number(numberText(v.Data["weight"]))); n != nil {
 			f, _ := n.Float64()
 			if !math.IsNaN(f) && !math.IsInf(f, 0) && f >= .25 && f <= 4 {

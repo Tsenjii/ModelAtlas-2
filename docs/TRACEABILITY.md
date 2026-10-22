@@ -8,8 +8,8 @@
 |---|---|---|
 | 具體多輪提案與反例 | reflection.go／research_quality.go／research_knowledge.go；knowledge_evaluation_test.go 空200、3輪recurring／負面／未知與去重 | 本機成功，整片仍候選 |
 | 比較、Review與過期拒絕 | knowledge_evaluation.go／knowledge.go；提案／scope／dataset／active-plan hash，同transaction啟用；不足／regression／新資料／來源變更拒絕 | 本機成功 |
-| 實際使用、監測與持久回復 | research_jobs.go／research_schedule.go；舊佇列與排程接續版本固定、新輪使用、3輪下降、重啟Undo、scope改變與30日時效 | 本機成功 |
-| 保存與安全 | schema22、原子usage回滾、不可變本機證據receipt、同步不複製執行／評估權、v21一致升級／全部歷史與vault保留 | 本機成功 |
+| 實際使用、監測與持久回復 | research_jobs.go／research_schedule.go；舊佇列與排程接續版本／啟用時期固定、新輪使用、3輪下降、重啟Undo、scope改變與30日時效 | 本機成功 |
+| 保存與安全 | schema22／23、原子usage回滾、不可變本機證據receipt、同步不複製執行／評估權、v21一致升級／全部歷史與vault保留 | 本機成功 |
 | VPS正式介面 | ui_js_knowledge.go → knowledge_evaluation_browser_test.go／e2e/knowledge-evaluation.cjs；503後只讀、跨重整Review／回復、14實際TLS、8圖 | 聚焦3次及首完整29流程271.965s成功，最終政策由新SHA CI重驗 |
 | Mac原生 | KnowledgeView.swift評估／差異與監測／持久Undo；NativeParity保留全部51圖，09圖加入真零樣本評估與新Controller回復 | 本來源Mac CI待驗 |
 | Android／完整願望 | 原JVM／device及所有既有原生功能保留；新增研究評估專用UI尚未接Android | 不外推完整WISH-REFL-001或P8–P10驗收 |

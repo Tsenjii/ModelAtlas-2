@@ -18,6 +18,7 @@ type researchQuality struct {
 	Subject         string   `json:"subject"`
 	ScopeHash       string   `json:"scope_hash"`
 	VersionID       string   `json:"version_id"`
+	EpochID         string   `json:"epoch_id"`
 	TaskID          string   `json:"task_id"`
 	Order           int      `json:"order"`
 	Status          string   `json:"status"`
@@ -116,7 +117,7 @@ func researchQualitySnapshot(ctx context.Context, tx *sql.Tx, run string) ([]res
 		if !ok || b.ScopeHash != researchInputScope(kind, in) {
 			continue
 		}
-		q := researchQuality{RunID: run, MetricKey: key, Kind: metricKind, Subject: subject, ScopeHash: b.ScopeHash, VersionID: b.VersionID, TaskID: id, Order: len(out), Status: status, HTTP: http, Inference: inference, Weight: b.Weight, Priority: b.Priority, EvidenceIDs: []string{}, Truncated: truncated, ObservedAt: observedAt}
+		q := researchQuality{RunID: run, MetricKey: key, Kind: metricKind, Subject: subject, ScopeHash: b.ScopeHash, VersionID: b.VersionID, EpochID: b.EpochID, TaskID: id, Order: len(out), Status: status, HTTP: http, Inference: inference, Weight: b.Weight, Priority: b.Priority, EvidenceIDs: []string{}, Truncated: truncated, ObservedAt: observedAt}
 		var res map[string]any
 		json.Unmarshal([]byte(result), &res)
 		ids := map[string]bool{}
