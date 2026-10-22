@@ -52,3 +52,6 @@ schema25 additive新增connector_discoveries、connector_generated_versions、co
 - 完整Go／Browser與同來源九項仍各自執行，不借015B或本機聚焦綠燈。真公開未知站點、目標VPS及實體裝置長跑尚未取得，不冒稱已驗。
 
 - 完整Go race第一次372.366s成功；最後審查再以真TLS重現已啟用version row的mapping被改後，下一次Intelligence仍執行變更內容（1.136s FAIL）。同片增加本機connector_execution_bindings，在啟用transaction保存確認過的設定，metadata修改不能借舊active pointer；每次正式enrichment／Catalog執行前重查。升級先保存既有本機已啟用設定，保留舊v1能力；Undo沿用原設定綁定。修後16個後端函式與原DeclarativeConnector聚焦26.599s成功；最終來源完整Go／Browser及九項重新驗證，不借修前372.366s結果。
+
+- 6e25c55候選本機完整Go race303.798s／vet／27發布回歸0.027s成功，但不能接受：CI Browser119899276577的舊策略監測流程34.27s失敗，畫面顯示啟用後0輪，之後全套在300.022s逾時；失敗附件12434849226（354PNG，SHA256 53c13420e1aeab163d7d78fbe83eb727c6c341e29dff4ee312a88ba06ac007f8）已獨立下載核對並檢視失敗原圖。本機同候選監測5.48s通過，但完整全套仍於30流程後300.022s逾時，原上限保留。
+- 已以延後GET的既有Browser流程確定重現5.914s FAIL：按更新後舊版本卡片仍可開啟，Modal捕捉舊0輪，完成讀取不更新該Modal。修為只在最新讀取期間停用四個研究清單的舊卡片，標示aria-busy；成功後新卡片可用，失敗則原last-good卡片恢復。既有14HTTP／3輪退步／Undo斷言與timeout完全保留，追加明確pending gate反例。修後原Knowledge3.46s、新辨識4.92s、原策略監測5.37s（合計14.776s）成功；新來源重新完整Browser及全部九項，不借6e25結果。

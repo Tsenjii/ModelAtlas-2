@@ -14,6 +14,9 @@
 
 原30 Browser／363圖、全部原生／Go／負載與timeout不減；新31／371及完整九項獨立驗證，不變更公開版本／request／tag／附件。
 
+- 6e25c55候選本機完整Go race303.798s／vet／27發布回歸0.027s成功，但不能接受：CI Browser119899276577的舊策略監測流程34.27s失敗，畫面顯示啟用後0輪，之後全套在300.022s逾時；失敗附件12434849226（354PNG，SHA256 53c13420e1aeab163d7d78fbe83eb727c6c341e29dff4ee312a88ba06ac007f8）已獨立下載核對並檢視失敗原圖。本機同候選監測5.48s通過，但完整全套仍於30流程後300.022s逾時，原上限保留。
+- 已以延後GET的既有Browser流程確定重現5.914s FAIL：按更新後舊版本卡片仍可開啟，Modal捕捉舊0輪，完成讀取不更新該Modal。修為只在最新讀取期間停用四個研究清單的舊卡片，標示aria-busy；成功後新卡片可用，失敗則原last-good卡片恢復。既有14HTTP／3輪退步／Undo斷言與timeout完全保留，追加明確pending gate反例。修後原Knowledge3.46s、新辨識4.92s、原策略監測5.37s（合計14.776s）成功；新來源重新完整Browser及全部九項，不借6e25結果。
+
 ## RESEARCH-BRAVE-015B（2026-10-22 所列範圍已驗）
 
 最終來源480bdeac4a468754315747b8e0b0593f4cf67709已同SHA九項SUCCESS：VPS39789581672 attempt2、Android39789581690、Mac39789581662；30 Browser249.331s／363圖、Android579／976（5原skip）、Mac各82／90圖與完整workload均保留。精確job、成功附件hash與首輪infra取消歷史見ACTIVE_TASK及PR #20。以下本機階段紀錄保留；不外推完整WISH-CRAWL-001完成。
