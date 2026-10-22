@@ -42,6 +42,7 @@ func assistantTools() []ToolDefinition {
 		{"select_target", "Select an enabled exact Playground target in the user interface. No routing or fallback.", toolSchema(map[string]any{"selection": selectionSchema()}, "selection")},
 		{"prepare_credential", "Prepare a new credential or rotation with an origin-bound safe secret reference. User confirms; role and origin cannot change.", toolSchema(map[string]any{"kind": map[string]any{"type": "string", "enum": []string{"CREDENTIAL_ADD", "CREDENTIAL_ROTATE"}}, "provider_id": stringSchema(), "account_id": stringSchema(), "credential_id": stringSchema(), "safe_secret_ref": stringSchema(), "label": stringSchema(), "group": stringSchema()}, "kind", "provider_id", "account_id", "safe_secret_ref")},
 		{"propose_extension", "Save an evidence-backed knowledge or declarative GET connector draft. It cannot activate itself; user tests/reviews and confirms in the app.", toolSchema(map[string]any{"family": map[string]any{"type": "string", "enum": []string{"KNOWLEDGE", "CONNECTOR"}}, "definition": map[string]any{"type": "object"}}, "family", "definition")},
+		{"discover_connectors", "Inspect observed same-origin public metadata for an active My Models scope, generate evidence/fixture-backed declarative drafts for shared Review. No credentials/inference/activation; at most remaining web budget (4 reads). Reuse request ID when recovering an uncertain response. Missing units/scope remain unknown.", toolSchema(map[string]any{"id": stringSchema(), "selection": selectionSchema(), "source_path": stringSchema()}, "id", "selection", "source_path")},
 		{"query_history", "Read scoped local telemetry history with 1h/24h/7d/30d/all window; never borrow another key/group/endpoint.", toolSchema(map[string]any{"selection": selectionSchema(), "window": map[string]any{"type": "string", "enum": []string{"1h", "24h", "7d", "30d", "all"}}}, "selection", "window")},
 	}
 	out := []ToolDefinition{}
@@ -76,6 +77,21 @@ func (s *Server) assistantTool(ctx context.Context, run string, call ToolCall, b
 		}
 	}
 	switch call.Function.Name {
+	case "discover_connectors":
+		var v connectorDiscoveryRequest
+		if e := strictArguments(call.Function.Arguments, &v); e != nil {
+			return nil, e
+		}
+		if budget.web >= 4 {
+			return nil, errors.New("web tool budget exhausted")
+		}
+		report, _, e := s.generateConnectorDrafts(ctx, v, 4-budget.web)
+		used := report.Attempts
+		if used < 1 {
+			used = 1
+		}
+		budget.web += used
+		return report, e
 	case "add_model":
 		var v struct {
 			Selection   Selection `json:"selection"`

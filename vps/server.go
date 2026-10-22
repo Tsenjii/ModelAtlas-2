@@ -305,6 +305,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /versions/undo", s.undoVersion)
 	api.HandleFunc("GET /connectors", s.listConnectors)
 	api.HandleFunc("POST /connectors", s.proposeConnector)
+	api.HandleFunc("POST /connectors/discover", s.discoverConnectors)
+	api.HandleFunc("GET /connectors/discoveries", s.listConnectorDiscoveries)
 	api.HandleFunc("POST /connectors/test", s.testConnector)
 	api.HandleFunc("POST /connectors/activate", s.activateConnector)
 	api.HandleFunc("POST /assistant/config", s.setAssistantConfig)

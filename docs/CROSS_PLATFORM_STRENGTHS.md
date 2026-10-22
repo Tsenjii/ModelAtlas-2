@@ -1,5 +1,7 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-22 CONNECTOR-DISCOVERY-015C候選：VPS研究知識正式表單及Assistant共用公開來源辨識／宣告草稿／fixture／真HTTP Review，原connector操作保留並增加跨重啟Undo。Mac內建同源Go引擎取得API，Mac／Android專用原生辨識與Review尚未移植；原功能／tests／負載不減，不能以網頁替代原生驗收。015B已由480bdeac同SHA九項驗所列範圍，本片仍須獨立九項。
+
 2026-10-22 RESEARCH-BRAVE-015B候選：VPS正式研究／排程表單可選搜尋地區及每語言1–10頁、顯示本機共享／目前Key版本每日admission用量與持久恢復紀錄；Mac內建同源Go引擎取得執行能力，Mac／Android專用設定與進度UI尚未移植。原生功能與全部測試／負載保留，不以網頁實圖替代原生驗收。015A已由e384646同SHA九項成功驗所列範圍；本片自己的九項仍待驗，完整研究願望仍PARTIAL。
 
 2026-10-22 NEAR-FULL-015依使用者新要求，下一版須接近完整主要功能；詳NEXT_RELEASE。當前015A候選補本機多輪品質／策略版本固定／可重現排序評估與明確試用／真下一輪監測／持久回復。VPS有正式網頁流程；Mac知識頁有SwiftUI入口，NativeParity原51圖及原測試保留，09圖增加實際評估與新Controller回復；Android仍缺此專用呈現，不借同源後端或網頁當作已移植。新HEAD仍須自己的九項，不單獨發布小修版本；原0.8.5已九項及11附件公開驗收。

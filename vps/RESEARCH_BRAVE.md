@@ -45,3 +45,6 @@ Mac內建同源後端取得此控制，Mac／Android專用新設定與進度UI�
 - 最後審查補上LMSpeed衍生query沿用此輪明確地區／頁數，避免回到TW／1；正式caller新增聚焦race2.126s成功。此修正後最終來源的完整CI另驗，不借修正前本機全套。vet與27個發布回歸已通過（0.033s），公開release控制檔未變更。
 
 - 9e75ff0初候選本機完整30 Browser289.058s成功；審查追加慢速回應（虛擬時鐘經過120秒才中斷）的真TLS反例1.227s FAIL：原從admission起算的30秒已過，worker在同次tick立即送第二次。修成每次觀察失敗後重算30／60秒下限，仍保留送出前的crash等待，timeout亦保存redacted失敗journal。修後Brave／原多語／Knowledge Evaluation聚焦race41.063s與vet成功。新來源仍需自己的全部CI，9e75ff0與其已跑結果只作被取代候選保留，不借綠燈。
+
+
+2026-10-22最終來源480bdeac4a468754315747b8e0b0593f4cf67709所列範圍已同來源九項驗收：VPS39789581672 attempt2、Android39789581690、Mac39789581662；30 Browser249.331s／363PNG。完整job、成功產物hash與保留的首infra取消／本機逾時見ACTIVE_TASK及PR #20。上述候選與失敗過程保留，不外推完整願望已完成。

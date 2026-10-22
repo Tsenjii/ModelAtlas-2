@@ -121,6 +121,9 @@ func (s *Server) publicFetch(ctx context.Context, raw string) ([]byte, string, i
 	if e = s.chargeResearchNetwork(ctx, false, origin); e != nil {
 		return nil, "", 0, e
 	}
+	if meter, ok := ctx.Value(connectorDiscoveryMeterKey{}).(*int); ok {
+		*meter++
+	}
 	admittedAt := s.scheduleTime().UnixMilli()
 	resp, e := copyClient.Do(request)
 	if e != nil {

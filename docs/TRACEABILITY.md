@@ -1,6 +1,22 @@
 # ModelAtlas Public — TRACEABILITY
 
-## RESEARCH-BRAVE-015B（2026-10-22 內部候選）
+## CONNECTOR-DISCOVERY-015C（2026-10-22 候選）
+
+正式caller：Models／研究知識辨識表單或Assistant discover_connectors → generateConnectorDrafts → publicFetch／共站冷卻 → 確定性scope／單位映射 → 原子版本／來源proof／fixture → 既有connectors/test與Review → 本機receipt／CAS啟用 → enrichConnectors實際Intelligence → ledger持久Undo。詳`../vps/CONNECTOR_DISCOVERY.md`。
+
+| 面向 | 程式與證據 | 狀態 |
+|---|---|---|
+| 來源辨識／宣告草稿 | connector_discovery.go／connector_schema.go；有界同站HTML／字面線索／OpenAPI GET，family／version僅線索；缺單位／scope不猜 | 本機候選 |
+| fixture／真HTTP／失敗保留 | 16個後端函式含TLS與DB故障、精確數值、錯單位／缺欄／認證、衝突／新版本、換Key／origin／取消、request去重與共站冷卻 | 聚焦成功；完整回歸待完成 |
+| Review／啟用／回退 | connectors.go、ui_js_connector_discovery.go；本機設定／context／TTL receipt與每次執行前的啟用設定綁定，現有applyVersion／Undo，GET失敗只讀恢復 | 新Browser5.69s與原Knowledge4.29s成功；8新圖已檢查 |
+| 保存／同步／升級 | schema25 additive與一致快照；本機reservation／fixture／receipt不移植執行權，原定義同步保留 | 本機候選 |
+| 跨平台與界線 | Mac內建同源後端取得API；Mac／Android專用原生介面未移植。私人auth／任意schema／外站source、資格／recurring／身份仍待補 | 整體WISH-CRAWL-002 PARTIAL；同來源九項前不接受本片 |
+
+原30 Browser／363圖、全部原生／Go／負載與timeout不減；新31／371及完整九項獨立驗證，不變更公開版本／request／tag／附件。
+
+## RESEARCH-BRAVE-015B（2026-10-22 所列範圍已驗）
+
+最終來源480bdeac4a468754315747b8e0b0593f4cf67709已同SHA九項SUCCESS：VPS39789581672 attempt2、Android39789581690、Mac39789581662；30 Browser249.331s／363圖、Android579／976（5原skip）、Mac各82／90圖與完整workload均保留。精確job、成功附件hash與首輪infra取消歷史見ACTIVE_TASK及PR #20。以下本機階段紀錄保留；不外推完整WISH-CRAWL-001完成。
 
 正式 caller：全球研究／持久排程表單 → research/start／schedules → planResearch 凍結語言、query、地區與頁數 → runResearchPending → executeBraveResearchTask → 同 transaction 核准研究／排程每日／Brave共享UTC日／憑證revision用量及page attempt → 真POST → candidate／evidence／本機品質receipt／inspect任務／checkpoint整頁原子提交。詳 `../vps/RESEARCH_BRAVE.md`。
 

@@ -1,5 +1,14 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-22 未知站點擷取草稿（CONNECTOR-DISCOVERY-015C）
+
+- 使用者持續要求完成主要功能。依D-015，本輪不變更公開版本、release/request.json、tag／附件；PR #20維持Draft、不merge、不部署。
+- 前片015B所列範圍已驗收：來源480bdeac4a468754315747b8e0b0593f4cf67709／tree2cedcdf0a3879532dc61a19caaf22c32ac005b5b。同來源VPS39789581672 attempt2四項、Android39789581690兩項、Mac39789581662三項SUCCESS；精確job見PR #20。Go race344.531s／vet、真systemd41.406s、原expanded workload24.650s；30 Browser249.331s／363PNG／0 failure圖，成功producer119870565453、附件12432556534／SHA256 e8dd0b5c4a57318e0d3d12c33a127332764ce9197a29b6b9c8f1286297e530e6已獨立核對。Android579 JVM／976 device（5原skip）、Mac各82核心／90圖保留。首Browser因下載依賴逾15min取消、慢body退避修前反例與本機300.027s逾時均保留，不能抹掉失敗。
+- 開工重查main仍cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 attempt2 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。
+- 當前唯一整合片015C：有界公開來源辨識→具來源hash／scope／單位與Unknown的宣告式草稿→本機fixture→既有真HTTP實測／Review→明確啟用與跨重啟回退。先補現有手動JSON落差，因此從015B後接此片；排程剩餘預算與全願望不刪除。只接受實際明確支援的資料形狀，不宣稱所有站點／私人入口都自動相容。
+- 本片仍開發候選，須正式caller、反例、完整本機與同來源九項後才接受。原30 Browser／363圖、全部原生測試、負載、5min測試及15min job上限保留。
+- 本機新Browser5.69s／8圖及原Knowledge4.29s成功；最初完整Go race372.366s成功後，再以1.136s FAIL重現同步改動已啟用version row可借舊active執行。已補本機啟用設定綁定與升級保留，16個後端函式／原Connector聚焦26.599s成功；最後來源完整Go／Browser及九項重新驗，不借修前結果。
+
 ## 2026-10-22 Brave 持久分頁（RESEARCH-BRAVE-015B）
 
 - 最新要求繼續直到下一版主要功能齊全，依 D-015 不發單片小版本；release/request.json、版本、公開 tag／附件保持原值，PR #20 保持 Draft、不 merge、不部署。

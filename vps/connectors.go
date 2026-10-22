@@ -21,25 +21,36 @@ type ConnectorConfig struct {
 	Unit        string            `json:"unit"`
 	FixedAbsent bool              `json:"fixed_charge_absent"`
 	Effective   bool              `json:"prices_are_effective"`
+	Parser      string            `json:"parser_version,omitempty"`
+	Freshness   int64             `json:"freshness_seconds,omitempty"`
+	FieldUnits  map[string]string `json:"field_units,omitempty"`
+	Checks      map[string]string `json:"row_checks,omitempty"`
+	RootChecks  map[string]string `json:"root_checks,omitempty"`
+	Origin      string            `json:"origin,omitempty"`
 }
 type ConnectorVersion struct {
-	ID          string          `json:"id"`
-	ProviderID  string          `json:"provider_id"`
-	Name        string          `json:"name"`
-	Version     int             `json:"version"`
-	Config      ConnectorConfig `json:"config"`
-	EvidenceIDs []string        `json:"evidence_ids"`
-	Reason      string          `json:"reason"`
-	Status      string          `json:"status"`
-	Test        map[string]any  `json:"test"`
-	TestedAt    *int64          `json:"tested_at"`
-	Active      bool            `json:"active"`
-	ActiveID    string          `json:"active_id"`
+	ID                 string                   `json:"id"`
+	ProviderID         string                   `json:"provider_id"`
+	Name               string                   `json:"name"`
+	Version            int                      `json:"version"`
+	Config             ConnectorConfig          `json:"config"`
+	EvidenceIDs        []string                 `json:"evidence_ids"`
+	Reason             string                   `json:"reason"`
+	Status             string                   `json:"status"`
+	Test               map[string]any           `json:"test"`
+	TestedAt           *int64                   `json:"tested_at"`
+	Active             bool                     `json:"active"`
+	ActiveID           string                   `json:"active_id"`
+	ActivationActionID string                   `json:"activation_action_id,omitempty"`
+	Discovery          *connectorDiscoveryProof `json:"discovery,omitempty"`
 }
 
 var connectorFields = map[string]string{"CATALOG": "model_id name group", "PRICING": "model_id group input output cache fixed", "QUOTA": "model_id group rpd tpd rpm tpm remaining used reset_at", "BALANCE": "model_id group balance used remaining", "USAGE": "model_id group requests tokens input_tokens output_tokens used", "PERFORMANCE": "model_id group tps ttft_ms latency_ms success_rate sample_count", "NOTICE": "model_id group notice"}
 
 func safeConnector(c ConnectorConfig) bool {
+	if !safeConnectorSchema(c) {
+		return false
+	}
 	if c.Effective && (c.Kind != "PRICING" || c.Scope != "MODEL_KEY_GROUP" || c.Role != "INFERENCE") {
 		return false
 	}
@@ -82,11 +93,15 @@ func (s *Server) connectorAuth(ctx context.Context, c ConnectorConfig, v Selecti
 	if e != nil {
 		return p, ProviderConfig{}, "", e
 	}
+	if c.Origin != "" && p.BaseURL != c.Origin {
+		return p, ProviderConfig{}, "", errors.New("connector discovery origin differs from selected credential origin")
+	}
 	cfg := s.config(ctx, p)
 	if c.Role == "NONE" {
 		cfg.AuthMode = "NONE"
 		cfg.AuthHeader = ""
 		cfg.AuthQuery = ""
+		cfg.Headers = nil
 		p.AuthFields = nil
 		key = ""
 	}
@@ -111,9 +126,22 @@ func (s *Server) connectorRows(ctx context.Context, c ConnectorConfig, v Selecti
 		return nil, e
 	}
 	path := strings.ReplaceAll(c.Path, "{model}", url.PathEscape(v.ModelID))
+	if c.Parser == "declarative-get-v2" && c.Role == "NONE" {
+		ctx = context.WithValue(ctx, publicAnonymousOnboardKey{}, true)
+	}
 	root, _, e := s.getStructured(ctx, p, cfg, originPath(p, path), key, 2<<20)
 	if e != nil {
 		return nil, e
+	}
+	if c.Parser == "declarative-get-v2" {
+		secrets, err := s.knownSecrets(ctx)
+		if err != nil {
+			return nil, errors.New("vault unavailable")
+		}
+		root = connectorStripRawSecrets(cleanSecretEcho(root, secrets, 0), 0)
+	}
+	if !connectorChecks(root, c.RootChecks) {
+		return nil, errors.New("connector root units or scope changed; retest required")
 	}
 	value := root
 	value = pointer(value, c.Root)
@@ -127,6 +155,17 @@ func (s *Server) connectorRows(ctx context.Context, c ConnectorConfig, v Selecti
 	return rows, nil
 }
 func extractConnector(c ConnectorConfig, v Selection, rows []any) (map[string]any, error) {
+	if c.Parser == "declarative-get-v2" && oneOf(c.Scope, "MODEL_PROVIDER", "MODEL_KEY_GROUP", "CATALOG") {
+		matches := 0
+		for _, row := range rows {
+			if str(pointer(row, c.Fields["model_id"])) == v.ModelID && (c.Scope != "MODEL_KEY_GROUP" || pointer(row, c.Fields["group"]) != nil && str(pointer(row, c.Fields["group"])) == v.Group) {
+				matches++
+			}
+		}
+		if matches > 1 {
+			return nil, errors.New("multiple matching model/group rows; manual review required")
+		}
+	}
 	for _, row := range rows {
 		if oneOf(c.Scope, "MODEL_KEY_GROUP", "MODEL_PROVIDER", "CATALOG") && str(pointer(row, c.Fields["model_id"])) != v.ModelID {
 			continue
@@ -137,7 +176,20 @@ func extractConnector(c ConnectorConfig, v Selection, rows []any) (map[string]an
 				continue
 			}
 		}
-		facts := map[string]any{"scope_kind": c.Scope, "unit": c.Unit, "parser_version": "declarative-get-v1"}
+		if !connectorChecks(row, c.Checks) {
+			return nil, errors.New("connector row units or scope changed; retest required")
+		}
+		parser := c.Parser
+		if parser == "" {
+			parser = "declarative-get-v1"
+		}
+		facts := map[string]any{"scope_kind": c.Scope, "unit": c.Unit, "parser_version": parser}
+		if len(c.FieldUnits) > 0 {
+			facts["field_units"] = c.FieldUnits
+		}
+		if c.Freshness > 0 {
+			facts["freshness_seconds"] = c.Freshness
+		}
 		known := 0
 		if c.Kind == "CATALOG" {
 			facts["availability"] = "CATALOG_LISTED"
@@ -148,6 +200,9 @@ func extractConnector(c ConnectorConfig, v Selection, rows []any) (map[string]an
 				continue
 			}
 			value := pointer(row, path)
+			if c.Parser == "declarative-get-v2" && value == nil {
+				return nil, errors.New("mapped field disappeared; revalidation required")
+			}
 			facts[name] = nil
 			if name == "notice" {
 				text := str(value)
@@ -158,8 +213,13 @@ func extractConnector(c ConnectorConfig, v Selection, rows []any) (map[string]an
 				continue
 			}
 			if n := decimal(value); n != nil && n.Sign() >= 0 {
+				if c.Parser == "declarative-get-v2" && (oneOf(name, "rpd", "tpd", "rpm", "tpm", "requests", "tokens", "input_tokens", "output_tokens", "reset_at", "sample_count") && !n.IsInt() || name == "success_rate" && n.Cmp(decimal("1")) > 0) {
+					return nil, errors.New("mapped metric unit or shape changed")
+				}
 				facts[name] = *exactString(n)
 				known++
+			} else if c.Parser == "declarative-get-v2" {
+				return nil, errors.New("mapped numeric field changed; revalidation required")
 			}
 		}
 		if known == 0 {
@@ -253,7 +313,7 @@ func (s *Server) proposeConnector(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, v)
 }
 func (s *Server) listConnectors(w http.ResponseWriter, r *http.Request) {
-	rows, e := s.Store.DB.QueryContext(r.Context(), "SELECT v.id,v.provider_id,v.name,v.version,v.config_json,v.evidence_json,v.reason,v.status,v.test_json,v.tested_at,COALESCE(a.version_id,'') FROM connector_versions v LEFT JOIN connector_active a ON a.provider_id=v.provider_id AND a.name=v.name WHERE (?='' OR v.provider_id=?) ORDER BY v.rowid DESC LIMIT 200", r.URL.Query().Get("provider_id"), r.URL.Query().Get("provider_id"))
+	rows, e := s.Store.DB.QueryContext(r.Context(), `SELECT v.id,v.provider_id,v.name,v.version,v.config_json,v.evidence_json,v.reason,v.status,v.test_json,v.tested_at,COALESCE(a.version_id,''),COALESCE(g.proof_json,''),COALESCE((SELECT d.action_id FROM version_action_details d JOIN action_ledger l ON l.id=d.action_id WHERE d.family='CONNECTOR' AND d.kind=v.provider_id AND d.subject=v.name AND d.after_id=v.id AND a.version_id=v.id AND l.state='CONFIRMED' ORDER BY l.rowid DESC LIMIT 1),'') FROM connector_versions v LEFT JOIN connector_active a ON a.provider_id=v.provider_id AND a.name=v.name LEFT JOIN connector_generated_versions g ON g.version_id=v.id WHERE (?='' OR v.provider_id=?) ORDER BY v.rowid DESC LIMIT 200`, r.URL.Query().Get("provider_id"), r.URL.Query().Get("provider_id"))
 	if e != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -262,11 +322,14 @@ func (s *Server) listConnectors(w http.ResponseWriter, r *http.Request) {
 	out := []ConnectorVersion{}
 	for rows.Next() {
 		var v ConnectorVersion
-		var cfg, proof, test string
-		if rows.Scan(&v.ID, &v.ProviderID, &v.Name, &v.Version, &cfg, &proof, &v.Reason, &v.Status, &test, &v.TestedAt, &v.ActiveID) == nil {
+		var cfg, proof, test, discovery string
+		if rows.Scan(&v.ID, &v.ProviderID, &v.Name, &v.Version, &cfg, &proof, &v.Reason, &v.Status, &test, &v.TestedAt, &v.ActiveID, &discovery, &v.ActivationActionID) == nil {
 			json.Unmarshal([]byte(cfg), &v.Config)
 			json.Unmarshal([]byte(proof), &v.EvidenceIDs)
 			json.Unmarshal([]byte(test), &v.Test)
+			if discovery != "" {
+				json.Unmarshal([]byte(discovery), &v.Discovery)
+			}
 			v.Active = v.ID == v.ActiveID
 			out = append(out, v)
 		}
@@ -308,10 +371,20 @@ func (s *Server) testConnector(w http.ResponseWriter, r *http.Request) {
 	hash, e := connectorContext(ctx, s.Store.DB, cfg, v.Selection)
 	var facts map[string]any
 	if e == nil {
+		e = s.validateConnectorFixture(ctx, v.ID, cfg, v.Selection, hash)
+	}
+	if e == nil {
 		var rows []any
 		rows, e = s.connectorRows(ctx, cfg, v.Selection)
 		if e == nil {
 			facts, e = extractConnector(cfg, v.Selection, rows)
+		}
+	}
+	if e == nil {
+		current, err := connectorContext(ctx, s.Store.DB, cfg, v.Selection)
+		if err != nil || current != hash {
+			e = errors.New("scope changed during test; retest required")
+			facts = nil
 		}
 	}
 	status := "VALIDATED"
@@ -320,8 +393,6 @@ func (s *Server) testConnector(w http.ResponseWriter, r *http.Request) {
 		status = "FAILED"
 		reason = excerpt(e.Error(), 250)
 	}
-	result := safeAssistantData(map[string]any{"selection": v.Selection, "context_hash": hash, "facts": facts, "reason": reason, "http_method": "GET", "inference_requests": 0}, secrets)
-	data, _ := json.Marshal(result)
 	save, finish := context.WithTimeout(context.Background(), 5*time.Second)
 	defer finish()
 	tx, err := s.Store.DB.BeginTx(save, nil)
@@ -330,11 +401,32 @@ func (s *Server) testConnector(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	if _, err = tx.ExecContext(save, "UPDATE connector_versions SET status=?,test_json=?,tested_at=? WHERE id=?", status, string(data), now(), v.ID); err != nil {
+	testedAt := now()
+	if _, err = tx.ExecContext(save, "DELETE FROM connector_test_receipts WHERE version_id=?", v.ID); err != nil {
+		http.Error(w, "test receipt persistence failed", 500)
+		return
+	}
+	if status == "VALIDATED" {
+		current, contextErr := connectorContext(save, tx, cfg, v.Selection)
+		if contextErr != nil || current != hash || !connectorMemberCurrent(save, tx, v.Selection) {
+			status = "FAILED"
+			reason = "scope changed during test; retest required"
+			facts = nil
+		}
+		if status == "VALIDATED" {
+			if _, err = tx.ExecContext(save, "INSERT INTO connector_test_receipts VALUES(?,?,?,?)", v.ID, hash, connectorHash(cfg), testedAt); err != nil {
+				http.Error(w, "test receipt persistence failed", 500)
+				return
+			}
+		}
+	}
+	result := safeAssistantData(map[string]any{"selection": v.Selection, "context_hash": hash, "config_hash": connectorHash(cfg), "facts": facts, "reason": reason, "http_method": "GET", "inference_requests": 0}, secrets)
+	data, _ := json.Marshal(result)
+	if _, err = tx.ExecContext(save, "UPDATE connector_versions SET status=?,test_json=?,tested_at=? WHERE id=?", status, string(data), testedAt, v.ID); err != nil {
 		http.Error(w, "test persistence failed", 500)
 		return
 	}
-	if _, err = tx.ExecContext(save, "INSERT INTO connector_test_history VALUES(?,?,?,?,?)", newID(), v.ID, status, string(data), now()); err != nil || tx.Commit() != nil {
+	if _, err = tx.ExecContext(save, "INSERT INTO connector_test_history VALUES(?,?,?,?,?)", newID(), v.ID, status, string(data), testedAt); err != nil || tx.Commit() != nil {
 		http.Error(w, "test history persistence failed", 500)
 		return
 	}
@@ -369,7 +461,14 @@ func (s *Server) activateConnector(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal([]byte(raw), &cfg)
 	json.Unmarshal([]byte(test), &t)
 	hash, e := connectorContext(r.Context(), tx, cfg, t.Selection)
-	if status != "VALIDATED" || now()-at > int64(24*time.Hour/time.Millisecond) || e != nil || hash != t.Hash {
+	var receiptHash, configHash string
+	var receiptAt int64
+	receiptErr := tx.QueryRowContext(r.Context(), "SELECT context_hash,config_hash,tested_at FROM connector_test_receipts WHERE version_id=?", v.ID).Scan(&receiptHash, &configHash, &receiptAt)
+	ttl := int64(24 * time.Hour / time.Second)
+	if cfg.Freshness > 0 && cfg.Freshness < ttl {
+		ttl = cfg.Freshness
+	}
+	if status != "VALIDATED" || now() < at || now()-at > ttl*1000 || e != nil || hash != t.Hash || receiptErr != nil || receiptHash != hash || configHash != connectorHash(cfg) || receiptAt != at || !safeConnector(cfg) || !connectorMemberCurrent(r.Context(), tx, t.Selection) {
 		http.Error(w, "test this version with current scope before activation", 409)
 		return
 	}
@@ -384,6 +483,10 @@ func (s *Server) activateConnector(w http.ResponseWriter, r *http.Request) {
 	id, e := applyVersion(r.Context(), tx, "CONNECTOR", provider, name, v.ID, v.ExpectedID)
 	if e != nil {
 		http.Error(w, e.Error(), 409)
+		return
+	}
+	if _, e = tx.ExecContext(r.Context(), "INSERT INTO connector_execution_bindings VALUES(?,?) ON CONFLICT(version_id) DO UPDATE SET config_json=excluded.config_json", v.ID, raw); e != nil {
+		http.Error(w, "activation binding persistence failed", 500)
 		return
 	}
 	if tx.Commit() != nil {
@@ -411,7 +514,11 @@ func (s *Server) enrichConnectors(ctx context.Context, v Selection) map[string]s
 		if c.Kind == "CATALOG" {
 			continue
 		}
-		rows, e := s.connectorRows(ctx, c, v)
+		e := s.connectorExecutionBound(ctx, id, c)
+		var rows []any
+		if e == nil {
+			rows, e = s.connectorRows(ctx, c, v)
+		}
 		var facts map[string]any
 		if e == nil {
 			facts, e = extractConnector(c, v, rows)
@@ -420,6 +527,9 @@ func (s *Server) enrichConnectors(ctx context.Context, v Selection) map[string]s
 		if e != nil {
 			status = "FAILED"
 			facts = map[string]any{"reason": excerpt(e.Error(), 250), "scope_kind": c.Scope}
+		}
+		if status == "SUCCESS" && c.Freshness > 0 {
+			facts["valid_until"] = now() + c.Freshness*1000
 		}
 		scope := v
 		if c.Scope == "ACCOUNT" {
@@ -444,6 +554,9 @@ func (s *Server) connectorCatalog(ctx context.Context, v syncRequest) ([]Catalog
 	var cfg ConnectorConfig
 	json.Unmarshal([]byte(raw), &cfg)
 	selection := Selection{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: v.CredentialID}
+	if e = s.connectorExecutionBound(ctx, id, cfg); e != nil {
+		return nil, true, e
+	}
 	rows, e := s.connectorRows(ctx, cfg, selection)
 	if e != nil {
 		return nil, true, e
