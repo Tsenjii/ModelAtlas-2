@@ -689,6 +689,7 @@ func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researc
 		// Continuation grants a new HTTP budget, not a new retry allowance or
 		// permission to ignore a remote Retry-After deadline.
 		task.retry = readResearchRetry([]byte(result))
+		task.originWait = readResearchOriginWait([]byte(result))
 		tasks = append(tasks, task)
 	}
 	return tasks, false, rows.Err()

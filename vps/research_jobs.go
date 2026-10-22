@@ -45,8 +45,11 @@ type taskInput struct {
 type researchBudgetKey struct{}
 
 func (s *Server) chargeNetwork(ctx context.Context, probe bool) error {
+	return s.chargeResearchNetwork(ctx, probe, "")
+}
+func (s *Server) chargeResearchNetwork(ctx context.Context, probe bool, publicOrigin string) error {
 	run, _ := ctx.Value(researchBudgetKey{}).(string)
-	if run == "" {
+	if run == "" && publicOrigin == "" {
 		return nil
 	}
 	tx, e := s.Store.DB.BeginTx(ctx, nil)
@@ -54,6 +57,12 @@ func (s *Server) chargeNetwork(ctx context.Context, probe bool) error {
 		return e
 	}
 	defer tx.Rollback()
+	if e = s.checkResearchOrigin(ctx, tx, publicOrigin); e != nil {
+		return e
+	}
+	if run == "" {
+		return tx.Commit()
+	}
 	var status string
 	var budget, used, probeBudget, probeUsed int
 	if e = tx.QueryRowContext(ctx, "SELECT r.status,o.budget,o.used,o.probe_budget,o.probes_used FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", run).Scan(&status, &budget, &used, &probeBudget, &probeUsed); e != nil {
@@ -94,6 +103,7 @@ type researchPlannedTask struct {
 	kind, dedupe string
 	input        taskInput
 	retry        *researchRetryState
+	originWait   *researchOriginWait
 }
 type researchPlanError struct {
 	status  int
@@ -199,8 +209,15 @@ func insertResearchRun(ctx context.Context, tx *sql.Tx, id string, v ResearchOpt
 	for _, task := range tasks {
 		raw, _ := json.Marshal(task.input)
 		result := "{}"
-		if task.retry != nil {
-			encoded, _ := json.Marshal(map[string]any{"retry": task.retry})
+		if task.retry != nil || task.originWait != nil {
+			envelope := map[string]any{}
+			if task.retry != nil {
+				envelope["retry"] = task.retry
+			}
+			if task.originWait != nil {
+				envelope["origin_wait"] = task.originWait
+			}
+			encoded, _ := json.Marshal(envelope)
 			result = string(encoded)
 		}
 		if _, err := tx.ExecContext(ctx, "INSERT INTO research_tasks(id,run_id,kind,dedupe,payload_json,status,result_json,created_at) VALUES(?,?,?,?,?,'QUEUED',?,?) ON CONFLICT(run_id,dedupe) DO NOTHING", newID(), id, task.kind, task.dedupe, string(raw), result, now()); err != nil {
@@ -367,7 +384,8 @@ func (s *Server) runResearchPending(parent context.Context) {
 	for count := 0; count < 4; count++ {
 		var t ResearchTask
 		var payload, previous string
-		e := s.Store.DB.QueryRowContext(parent, "SELECT t.id,t.run_id,t.kind,t.payload_json,t.result_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? ORDER BY t.rowid LIMIT 1", s.scheduleTime().UnixMilli()).Scan(&t.ID, &t.RunID, &t.Kind, &payload, &previous)
+		stamp := s.scheduleTime().UnixMilli()
+		e := s.Store.DB.QueryRowContext(parent, "SELECT t.id,t.run_id,t.kind,t.payload_json,t.result_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.origin_wait.next_attempt_at'),0)<=? ORDER BY t.rowid LIMIT 1", stamp, stamp).Scan(&t.ID, &t.RunID, &t.Kind, &payload, &previous)
 		if e != nil {
 			return
 		}
@@ -437,6 +455,15 @@ func (s *Server) runResearchPending(parent context.Context) {
 			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='BUDGET_EXHAUSTED' WHERE id=? AND status='RUNNING'", t.RunID)
 		}
 		result, status = s.researchRetryResult(t, taskErr, result, status)
+		var originWait *researchOriginWait
+		if errors.As(taskErr, &originWait) {
+			// An admission wait sent no HTTP request and is not a failed probe.
+			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
+			result["origin_wait"] = originWait
+			if status == "FAILED" {
+				status = "QUEUED"
+			}
+		}
 		raw, _ := json.Marshal(result)
 		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET status=?,result_json=?,finished_at=CASE WHEN ?='QUEUED' THEN NULL ELSE ? END WHERE id=?", status, string(raw), status, now(), t.ID)
 		var queued int
@@ -475,6 +502,13 @@ func (s *Server) updateResearchSummary(ctx context.Context, id string) {
 	summary["retry_waiting_count"] = retryWaiting
 	if retryAt.Valid {
 		summary["next_retry_at"] = retryAt.Int64
+	}
+	var originWaiting int
+	var originAt sql.NullInt64
+	_ = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*),MIN(json_extract(result_json,'$.origin_wait.next_attempt_at')) FROM research_tasks WHERE run_id=? AND status='QUEUED' AND json_extract(result_json,'$.origin_wait.next_attempt_at')>0", id).Scan(&originWaiting, &originAt)
+	summary["origin_waiting_count"] = originWaiting
+	if originAt.Valid {
+		summary["next_origin_at"] = originAt.Int64
 	}
 	summary["task_count"] = counts["SUCCESS"] + counts["FAILED"] + counts["CANCELLED"]
 	states := map[string]int{}

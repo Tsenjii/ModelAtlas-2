@@ -18,7 +18,8 @@ import (
 
 // Local admission control and user cancellation are not upstream failures.
 func researchTransportStopped(ctx context.Context, err error) bool {
-	return ctx.Err() != nil || errors.Is(err, errScheduledDailyBudget) || errors.Is(err, errScheduledDefinitionChanged) || err != nil && oneOf(err.Error(), "research run paused", "scheduled research paused", "research HTTP budget exhausted", "research inference budget exhausted")
+	var originWait *researchOriginWait
+	return ctx.Err() != nil || errors.As(err, &originWait) || errors.Is(err, errScheduledDailyBudget) || errors.Is(err, errScheduledDefinitionChanged) || err != nil && oneOf(err.Error(), "public cooldown storage unavailable", "research run paused", "scheduled research paused", "research HTTP budget exhausted", "research inference budget exhausted")
 }
 
 func excerpt(v string, max int) string {

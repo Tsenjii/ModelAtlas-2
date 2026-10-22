@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -33,14 +34,15 @@ func publicHTTPFailure(status int, h http.Header, stamp time.Time) error {
 	// delay beyond 24h stops automatic retries rather than retrying too early.
 	if value != "" && strings.Trim(value, "0123456789") == "" {
 		seconds, err := strconv.ParseUint(value, 10, 64)
-		if err != nil || seconds > 86400 {
-			e.WaitTooLong = true
+		e.WaitTooLong = err != nil || seconds > 86400
+		if err != nil || seconds > uint64((math.MaxInt64-stamp.UnixMilli())/1000) {
+			e.NotBefore = math.MaxInt64
 		} else {
-			e.NotBefore = stamp.Add(time.Duration(seconds) * time.Second).UnixMilli()
+			e.NotBefore = stamp.UnixMilli() + int64(seconds)*1000
 		}
 	} else if date, err := http.ParseTime(value); err == nil {
 		e.WaitTooLong = date.After(stamp.Add(24 * time.Hour))
-		if !e.WaitTooLong && date.After(stamp) {
+		if date.After(stamp) {
 			e.NotBefore = date.UnixMilli()
 		}
 	}

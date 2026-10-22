@@ -1,5 +1,19 @@
 # ModelAtlas Public — TRACEABILITY
 
+## VPS-RESEARCH-ORIGIN-013（2026-10-22 候選）
+
+正式 caller：全球研究／排程 → runResearchPending → sourceTask／inspect → publicFetch → chargeResearchNetwork → checkResearchOrigin → SQLite用量保留。真429／502／503／504 → recordResearchOriginFailure持久保存共同下限 → 後續任務origin_wait → 原worker到期再檢查。來源失敗與本機等待分開；等待不生成HTTP、扣額、attempts或失敗evidence。
+
+| 驗收面向 | 程式／測試與真實範圍 | 狀態 |
+| --- | --- | --- |
+| 跨任務／輪次／重啟／不同網站 | research_origin.go、research_origin_test.go 真TLS／Handler／SQLite；120秒下限、新輪、手動接續、其他origin繼續 | 本機race成功，新HEAD九項待驗 |
+| 超長等待／晚回應／scope | 25h與極端數值、相同origin大小寫／443／尾點、不同port隔離、晚成功不清新失敗 | 本機race成功 |
+| 排程與同步 | 0 HTTP／attempts、真暫停重啟／明確恢復、同步只歷史與本機冷卻隔離 | 本機race成功 |
+| 升級與儲存錯誤 | schema19→20一致快照／歷史保留／無自動啟用；控制資料缺失時不發HTTP | 本機race成功 |
+| 研究UI | ui_js_research.go／ui_css.go → 等待網站恢復、時限、零用量、取消／暫停、恢復清除過期提示；research_origin_browser_test.go → e2e/research-origin.cjs，真UI與TLS | 新增Browser成功；補CJK後完整27流程／339PNG與實圖待驗 |
+
+這是 WISH-CRAWL-001 的增量控制，完整項目仍 PARTIAL；Brave／AA逐頁checkpoint與retry、逐憑證quota／推論費用、未知站點、可量測Reflection、authenticity和真站／目標主機／實機仍待完成。原有26 Browser／331PNG、所有原生與資源工作量不減，PR仍Draft、未部署。
+
 ## VPS-CONVERSATION-RECOVERY-012（2026-10-21 候選）
 
 正式caller：新對話按鈕／快捷鍵／模型入口 → ui_js_conversation_creation.go newConversation → POST /sessions client_request_id → playground.go addSession／conversationRequestID → 原SQLite sessions主鍵；ack後applySessionRows即時呈現，再以sessionSelectRefresh只讀清單。rereadConversationCreation／持續提示不重播寫入；sessionListVersion與scope guard保留使用者選擇／草稿。無schema變更，舊客戶端保持原新ID語意。

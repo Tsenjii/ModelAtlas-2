@@ -117,18 +117,28 @@ func (s *Server) publicFetch(ctx context.Context, raw string) ([]byte, string, i
 	s.flightMu.Unlock()
 	copyClient := *client
 	copyClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	if e = s.chargeNetwork(ctx, false); e != nil {
+	origin := researchPublicOrigin(raw)
+	if e = s.chargeResearchNetwork(ctx, false, origin); e != nil {
 		return nil, "", 0, e
 	}
+	admittedAt := s.scheduleTime().UnixMilli()
 	resp, e := copyClient.Do(request)
 	if e != nil {
 		return nil, "", 0, errors.New("public fetch failed")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return nil, "", resp.StatusCode, publicHTTPFailure(resp.StatusCode, resp.Header, s.scheduleTime())
+		failure := publicHTTPFailure(resp.StatusCode, resp.Header, s.scheduleTime())
+		var transient *researchHTTPFailure
+		if errors.As(failure, &transient) {
+			failure = errors.Join(failure, s.recordResearchOriginFailure(origin, transient))
+		}
+		return nil, "", resp.StatusCode, failure
 	}
 	rawBody, e := readBounded(resp.Body, 1<<20)
+	if e == nil {
+		s.researchOriginSucceeded(origin, admittedAt)
+	}
 	return rawBody, resp.Header.Get("Content-Type"), resp.StatusCode, e
 }
 func contentHash(b []byte) string { sum := sha256.Sum256(b); return hex.EncodeToString(sum[:]) }

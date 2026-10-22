@@ -52,4 +52,5 @@ dialog{max-width:760px;width:calc(100% - 32px);max-height:88dvh;padding:24px;bor
 .catalog-selection-summary{margin:12px 0}.catalog-selection-summary>summary{min-height:48px;cursor:pointer;padding-block:12px}.catalog-selection-summary .detail-rows{margin-bottom:12px}
 #catalog .model-id{overflow-wrap:anywhere}
 #catalog-manual{margin-top:20px}
+.research-origin-wait-panel{min-width:0;overflow-wrap:anywhere}
 ` + modelPickerCSS + macAlignmentCSS + macParityCSS + mobileAlignmentCSS + modelViewsCSS + systemStatusCSS + researchScheduleCSS + workspaceRecoveryCSS + conversationCreationCSS

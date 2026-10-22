@@ -51,7 +51,15 @@ VPS-RESEARCH-RETRY-009：SOURCE／INSPECT／INSPECT_LINK 的公開HTTPS GET收�
 
 「執行紀錄」顯示等待期限、恢復／停止原因及每次HTTP狀態／時間，可按「更新執行紀錄」讀取最新結果；成功後不抹去先前失敗。紀錄同步到另一台裝置只作歷史，不會自動執行。原始錯誤body與Retry-After header不進紀錄；不自動重放模型推論、私人catalog、Brave搜尋或AA分頁。
 
-此範圍以任務／接續鏈為單位；不同任務或全新週期尚未共用origin冷卻。Brave／AA逐頁checkpoint與退避、全域站點冷卻及完整研究預算仍為後續項目，不表示整體爬蟲已完成。
+VPS-RESEARCH-ORIGIN-013候選另補跨任務／跨新週期的共同origin冷卻；下節列實際控制。Brave／AA逐頁checkpoint與退避及完整研究預算仍為後續項目，不表示整體爬蟲已完成。
+
+## 共同網站等待
+
+公開來源GET收到429／502／503／504後，同一HTTPS網站的其他研究會等待既有下限。大小寫、預設443與主機尾點會對應同一origin；不同port及其他網站獨立。沒有有效Retry-After時，網站連續失敗採30秒起的有界指數退避及固定分散，最長本機退避32分5秒；有效Retry-After仍可更長。成功讀取後恢復正常，較早送出的晚成功不能清掉新失敗的等待。
+
+等待中的任務顯示「等待網站恢復」與最早連線時間，不扣每輪／每日HTTP、不增加實際嘗試次數或來源失敗證據，也不阻塞其他網站。暫停、取消、來源確認和剩餘預算仍同時生效；到期不代表繞過原執行意圖。服務重啟、新輪及UTC跨日均不清等待；排程預算接續保留原任務等待與重試歷史。
+
+原單一任務仍最多兩次自動重試。超過24小時會停止該任務自動重試，其他任務也不能在網站期限前連線；極端超大數值停止自動恢復並顯示無法排定時間，不溢位成立即連線。本機冷卻不隨metadata同步或portable備份搬移；同步任務仍只作歷史。schema20新增控制表，保留啟動前一致快照及既有更新回復流程；無新增預設啟用或常駐服務。
 
 ## 驗證與仍待完成
 
@@ -59,4 +67,4 @@ VPS-RESEARCH-RETRY-009：SOURCE／INSPECT／INSPECT_LINK 的公開HTTPS GET收�
 
 code `b1e0c669ffea48575875e0c16b7da6980aca5552` 已同 SHA VPS 四項＋Android 兩項 SUCCESS；完整 race／vet、真 systemd、14 個新增後端情境、23 Browser／303圖及原 expanded workload 已通過，Android 976／0 failure／0 error／5 原 skip。新增8圖已目視檢查。詳細 job／artifact／SHA256／完整 workload 在 `docs/verification/20261020/vps-scheduler-ci-baseline.json`。後續 HEAD／驗收文件提交各自重新六項 CI，最新結果以 PR #20 checks 為準；不借用前一 SHA 的綠燈。
 
-完整 WISH-CRAWL-001 尚缺每輪／每日推論與費用、實際逐憑證 quota、地區／可調並行、跨任務共同origin冷卻、Brave／AA逐頁退避及更完整的高價值／過期重驗策略；Mac／Android 原生排程設定與各自 OS 生命週期尚未對應。未知站點 Connector、具品質／成本對照的 Reflection、authenticity、真站長跑／目標 VPS／實機驗收全部保留。通知仍預設 OFF。
+完整 WISH-CRAWL-001 尚缺每輪／每日推論與費用、實際逐憑證 quota、地區／可調並行、Brave／AA逐頁退避及更完整的高價值／過期重驗策略；共同origin冷卻為本片候選。Mac／Android 原生排程設定與各自 OS 生命週期尚未對應。未知站點 Connector、具品質／成本對照的 Reflection、authenticity、真站長跑／目標 VPS／實機驗收全部保留。通知仍預設 OFF。

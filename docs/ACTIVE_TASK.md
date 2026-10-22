@@ -1,5 +1,17 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-22 公開研究共同來源冷卻（VPS-RESEARCH-ORIGIN-013）
+
+- 最新公開基線為 `0.8.3-preview.1`／`74eccabc2e3d8e3ee24e9a7e053327948143c3d4`；PR #20 所列 VPS39589656964、Android39589656970、Mac39589656938 的九項均 SUCCESS。開工另查 main `cba901d187aa5312cc71f5c2440b23fa04104aee`／39536090788 attempt2，build119016886469 與 device119016884592 SUCCESS，FEATURE FREEZE=OFF。
+- 使用者要求持續開發直到穩定與功能齊全。維持 VPS → Mac → Android；本片補 WISH-CRAWL-001 的跨任務／跨輪次共同 origin 冷卻，不把完整爬蟲、未知站點、Reflection 或原願望清單提前驗收。
+- 已用原 production caller／真 TLS 重現：同站第一任務收到429／Retry-After120秒，第二任務仍立刻連線。新增本機 `research_origin_cooldowns`，在同一個 SQLite transaction 先查共同等待，再保留每輪／排程每日 HTTP 用量。429／502／503／504 的等待會跨新輪、程序重啟及日期保存；同站後續任務不發 HTTP、不扣額、不增加 attempts 或來源失敗證據，其他 origin 繼續執行。
+- schema20 是 additive migration；啟動前一致快照、升級／回復流程保留。共同冷卻不進 metadata sync／portable backup；同步任務紀錄不能在目的端取得執行意圖。超過24h仍停止該任務自動重試，但其他任務不能把共同等待截短為24h；極端數值不溢位或提前重試。晚成功回應不能清掉較新的冷卻。
+- 正式研究清單與紀錄新增「等待網站恢復」、下次可連線時間、零 HTTP 用量與暫停說明。沿用原生 dialog、48px按鈕及同一個輪詢，不新增 poller；Mac 內建同源引擎取得後端控制，Mac／Android 原生專用呈現仍未移植。
+- 本機新增7個後端情境與原 Retry／Schedule 完整 race 測試40.516s成功，27個發布回歸成功；新增真 Browser14.529s成功。首截圖發現環境缺CJK字型，已補字型，完整Browser／實圖重新驗證；不把缺字截圖當視覺驗收。完整Go race228.247s／vet已通過；新增真TLS並行晚成功另驗，新HEAD九項與資源工作量仍在驗證。
+- 當前 CANDIDATE；精確最終SHA／CI／實圖見 PR #20。原26 Browser／331圖、全部原生測試、負載與timeout保留；預期追加第27流程及8圖。PR維持Draft、不merge；沒有目標VPS存取資料，未遠端部署。完整願望／P8–P10仍PARTIAL。
+
+以下保留已交付切片與原始失敗證據。
+
 ## 2026-10-21 新對話確認與防重複（VPS-CONVERSATION-RECOVERY-012）
 
 - 使用者繼續要求VPS穩定／好用／UI好看。前片0.8.2-preview.1已公開：來源3d7629a776634108fcfb24205546a89f18c4236b，release419422579／11附件；發布39583272110／119165885169 SUCCESS。VPS39583278053四項、Android39583277869兩項、Mac39583277935三項首次同SHA全SUCCESS；真公開11檔／兩Linux各28內檔／實際AMD64 CLI與服務、schema19／vault／認證／手機UI及正式下載器已重驗。manifest SHA256 5c28116dbc1759cb8897571c7ba831ca17028b88c44d0a049ed91aa1f25cafdc，舊版本不變。

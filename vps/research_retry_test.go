@@ -105,6 +105,8 @@ func TestPublicResearchRetryTLSBudgetsAndOtherTasksProceed(t *testing.T) {
 		w.Write([]byte(`{"data":[{"model_id":"retained-model","rpd":100,"tpd":1000000}]}`))
 	})
 	sourcesForSchedule(t, s, "retry", "healthy")
+	// Unrelated origins must still proceed while provider.example cools down.
+	requireCode(t, req(t, s, "POST", "/api/v1/research/sources", ResearchSource{ID: "healthy", Name: "healthy", Kind: "JSON", URL: "https://healthy.example/healthy", Language: "en", Enabled: true, Config: SourceConfig{ItemsPointer: "/data"}}), 200)
 	run := researchRunID(t, s, ResearchOptions{SourceIDs: []string{"retry", "healthy"}, Budget: 5})
 	s.runResearchPending(context.Background())
 	r := retryForTest(t, s, run)

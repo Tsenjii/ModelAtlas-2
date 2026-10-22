@@ -434,7 +434,7 @@ func TestResearchScheduleV18UpgradeKeepsManualHistoryAndDefaultsOff(t *testing.T
 	}
 	s = reopenScheduleStore(t, s)
 	s.workerTick(context.Background())
-	assertSQLInt(t, s, 19, "PRAGMA user_version")
+	assertSQLInt(t, s, schemaVersion, "PRAGMA user_version")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM research_runs WHERE id=? AND status='PAUSED'", run)
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM research_tasks WHERE run_id=?", run)
 	if calls.Load() != 0 || len(schedulesForTest(t, s).Schedules) != 0 || schedulesForTest(t, s).DailyLimit != 100 {
