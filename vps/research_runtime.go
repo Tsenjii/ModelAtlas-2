@@ -111,16 +111,26 @@ func (s *Server) candidate(ctx context.Context, id string) (Candidate, error) {
 	return c, err
 }
 func (s *Server) recordEvidence(ctx context.Context, candidate, kind, source, claim string, verified bool, details EvidenceDetails) (string, error) {
-	if safeText(claim, 4000) != claim || (!validateHTTPS(source) && !publicURL(source)) {
-		return "", errors.New("unsafe evidence")
-	}
-	id := newID()
-	raw, _ := json.Marshal(details)
 	tx, e := s.Store.DB.BeginTx(ctx, nil)
 	if e != nil {
 		return "", e
 	}
 	defer tx.Rollback()
+	id, e := recordResearchEvidenceTx(ctx, tx, candidate, kind, source, claim, verified, details)
+	if e != nil {
+		return "", e
+	}
+	return id, tx.Commit()
+}
+
+// A discovery page and all of its evidence/checkpoint commit together.
+func recordResearchEvidenceTx(ctx context.Context, tx *sql.Tx, candidate, kind, source, claim string, verified bool, details EvidenceDetails) (string, error) {
+	if safeText(claim, 4000) != claim || (!validateHTTPS(source) && !publicURL(source)) {
+		return "", errors.New("unsafe evidence")
+	}
+	id := newID()
+	raw, _ := json.Marshal(details)
+	var e error
 	if _, e = tx.ExecContext(ctx, "INSERT INTO research_evidence VALUES(?,?,?,?,?,?,?)", id, candidate, kind, source, claim, verified, now()); e != nil {
 		return "", e
 	}
@@ -139,7 +149,7 @@ func (s *Server) recordEvidence(ctx context.Context, candidate, kind, source, cl
 			return "", e
 		}
 	}
-	return id, tx.Commit()
+	return id, nil
 }
 func (s *Server) saveResearchSource(w http.ResponseWriter, r *http.Request) {
 	var v ResearchSource

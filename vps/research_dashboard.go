@@ -100,9 +100,14 @@ func (s *Server) researchDashboard(w http.ResponseWriter, r *http.Request) {
 			counts[state] = 0
 		}
 	}
+	searchUsage, e := s.braveUsage(ctx, tx)
+	if e != nil {
+		http.Error(w, "search usage unavailable", 500)
+		return
+	}
 	if e = tx.Commit(); e != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
-	jsonOK(w, 200, map[string]any{"candidates": candidates, "sources": sources, "runs": runs, "funnel": map[string]any{"states": counts}})
+	jsonOK(w, 200, map[string]any{"candidates": candidates, "sources": sources, "runs": runs, "funnel": map[string]any{"states": counts}, "search_usage": searchUsage})
 }

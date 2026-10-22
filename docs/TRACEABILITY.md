@@ -1,20 +1,34 @@
 # ModelAtlas Public — TRACEABILITY
 
-## RESEARCH-EVALUATION-015A（2026-10-22 內部候選）
+## RESEARCH-BRAVE-015B（2026-10-22 內部候選）
+
+正式 caller：全球研究／持久排程表單 → research/start／schedules → planResearch 凍結語言、query、地區與頁數 → runResearchPending → executeBraveResearchTask → 同 transaction 核准研究／排程每日／Brave共享UTC日／憑證revision用量及page attempt → 真POST → candidate／evidence／本機品質receipt／inspect任務／checkpoint整頁原子提交。詳 `../vps/RESEARCH_BRAVE.md`。
+
+| 面向 | 程式與驗證 | 狀態 |
+|---|---|---|
+| 逐頁、重啟與排程接續 | research_brave.go／jobs／schedule；SEARCH checkpoint與原retry／AA機制共存，固定頁號與24h期限、每頁3次 | 本機聚焦成功；整片仍候選 |
+| 原子用量與失敗 | schema24、chargeBraveRequest／chargeResearchNetworkTx；兩向額度與DB故障回滾、共站冷卻、429／503／body中斷、跨日／換Key共享cap | 本機33.910s與storage3.034s成功；完整驗證待記 |
+| 信任與scope | 同步只帶redacted history；本機checkpoint與revision counter不執行同步權；地區／頁數加入策略scope及提案、HTTP200不驗證資格／身份 | 本機真TLS、同步與v23一致升級成功 |
+| VPS正式操作 | ui_js_research.go／schedules與dashboard用量；research_brave_browser_test.go→e2e/research-brave.cjs，正式排程設定→429→預算／暫停→reload→只補第二頁 | 聚焦9.55s／8實圖已檢查，完整30流程／363圖待驗 |
+| 跨平台／整體 | Mac內建Go引擎同源能力；Mac／Android專用地區與分頁UI仍待對應。原全部測試、負載及timeout保留 | 新來源九項待驗，WISH-CRAWL-001與完整願望仍PARTIAL |
+
+不變更公開版本、release/request.json、tag或附件；PR #20仍Draft、不merge、不部署。未量測token／貨幣／站方剩餘quota，不能把本機1000次保護上限宣稱Brave帳戶額度。來源頁面不提供跨頁快照隔離；只聲明保留實際已完成頁面的證據。
+
+## RESEARCH-EVALUATION-015A（2026-10-22 所列範圍已驗）
 
 依D-015先完成接近完整版本的主要功能，暫不另發小修版本。公開基線0.8.5／699d4d5已九項SUCCESS與11附件驗收。當前片正式caller為網頁研究知識／Mac原生VersionController → POST research/knowledge/evaluate → 本機真HTTP品質receipt與歷史排序重播 → 明確試用／原子重新核對 → 新研究plan固定版本 → 真正使用版本的監測 → 原Undo跨重啟回復。詳細語意、公式、限制與失敗歷史見 `../vps/RESEARCH_EVALUATION.md`。
 
 | 面向 | 程式與測試 | 狀態 |
 |---|---|---|
-| 具體多輪提案與反例 | reflection.go／research_quality.go／research_knowledge.go；knowledge_evaluation_test.go 空200、3輪recurring／負面／未知與去重 | 本機成功，整片仍候選 |
+| 具體多輪提案與反例 | reflection.go／research_quality.go／research_knowledge.go；knowledge_evaluation_test.go 空200、3輪recurring／負面／未知與去重 | ACCEPTED（所列範圍） |
 | 比較、Review與過期拒絕 | knowledge_evaluation.go／knowledge.go；提案／scope／dataset／active-plan hash，同transaction啟用；不足／regression／新資料／來源變更拒絕 | 本機成功 |
 | 實際使用、監測與持久回復 | research_jobs.go／research_schedule.go；舊佇列與排程接續版本／啟用時期固定、新輪使用、3輪下降、重啟Undo、scope改變與30日時效 | 本機成功 |
 | 保存與安全 | schema22／23、原子usage回滾、不可變本機證據receipt、同步不複製執行／評估權、v21一致升級／全部歷史與vault保留 | 本機成功 |
-| VPS正式介面 | ui_js_knowledge.go → knowledge_evaluation_browser_test.go／e2e/knowledge-evaluation.cjs；503後只讀、跨重整Review／回復、14實際TLS、8圖 | 聚焦3次及首完整29流程271.965s成功，最終政策由新SHA CI重驗 |
-| Mac原生 | KnowledgeView.swift評估／差異與監測／持久Undo；NativeParity保留全部51圖，09圖加入真零樣本評估與新Controller回復 | 本來源Mac CI待驗 |
+| VPS正式介面 | ui_js_knowledge.go → knowledge_evaluation_browser_test.go／e2e/knowledge-evaluation.cjs；503後只讀、跨重整Review／回復、14實際TLS、8圖 | 最終CI29流程269.426s／355圖成功，新8圖已檢查 |
+| Mac原生 | KnowledgeView.swift評估／差異與監測／持久Undo；NativeParity保留全部51圖，09圖加入真零樣本評估與新Controller回復 | 最終Mac兩架構各82核心／90圖成功 |
 | Android／完整願望 | 原JVM／device及所有既有原生功能保留；新增研究評估專用UI尚未接Android | 不外推完整WISH-REFL-001或P8–P10驗收 |
 
-原28 Browser／347圖、原timeout、全部原生測試與expanded workload保留，新增後預期29／355；最終同SHA九項仍待驗，結果見PR #20。維持Draft、不merge、不部署、不更動release/request.json或公開tag／附件。
+原28 Browser／347圖、原timeout、全部原生測試與expanded workload保留，新增後預期29／355；最終同SHA `e384646a1435ce72fad2661070dd73a34d44a3d1` 九項已成功：VPS39763537520 attempt2、Android39763537488、Mac39763537343；release-checks39763537367／27回歸成功、publish SKIPPED。首Browser job因依賴下載9m22s觸及原15min而CANCELLED，保留歷史；成功重跑119780617449與成功附件12419494946已獨立驗SHA256。完整job、artifact與原負載見PR #20。維持Draft、不merge、不部署、不更動release/request.json或公開tag／附件。
 
 ## VPS-AA-RECOVERY-014（2026-10-22 候選）
 

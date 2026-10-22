@@ -99,7 +99,11 @@ func currentResearchScope(ctx context.Context, q researchQueryer, v KnowledgeVer
 		if !researchLanguage(v.Subject) || str(v.Data["language"]) != v.Subject || str(v.Data["query"]) == "" {
 			return "", errors.New("query must bind the exact language")
 		}
-		return researchInputScope("SEARCH", taskInput{Language: v.Subject, Query: str(v.Data["query"])}), nil
+		pages := 0
+		if n := quotaInteger(json.Number(numberText(v.Data["search_pages"]))); n != nil {
+			pages = int(*n)
+		}
+		return researchInputScope("SEARCH", taskInput{Language: v.Subject, Query: str(v.Data["query"]), SearchCountry: str(v.Data["search_country"]), SearchPages: pages}), nil
 	}
 	var src ResearchSource
 	var raw string

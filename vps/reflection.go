@@ -78,7 +78,7 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 		metricKey := kind + ":" + input.SourceID + ":" + input.Language
 		m := metrics[metricKey]
 		if m == nil {
-			m = map[string]any{"task_kind": kind, "source_id": input.SourceID, "language": input.Language, "query": input.Query, "success": 0, "failure": 0, "cancelled": 0, "attempts": 0}
+			m = map[string]any{"task_kind": kind, "source_id": input.SourceID, "language": input.Language, "query": input.Query, "search_country": input.SearchCountry, "search_pages": input.SearchPages, "success": 0, "failure": 0, "cancelled": 0, "attempts": 0}
 			metrics[metricKey] = m
 		}
 		m["attempts"] = m["attempts"].(int) + attempts
@@ -159,6 +159,8 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 			}
 			if str(m["language"]) != "" && str(m["task_kind"]) == "SEARCH" {
 				data := map[string]any{"language": m["language"], "query": m["query"], "success": m["success"], "failure": m["failure"], "attempts": m["attempts"], "weight": 1, "priority": 1, "confidence": "TENTATIVE"}
+				pages, country := braveSearchOptions(taskInput{SearchPages: m["search_pages"].(int), SearchCountry: str(m["search_country"])})
+				data["search_country"], data["search_pages"] = country, pages
 				key := knowledgeMetricKey("RESEARCH_STRATEGY", str(m["language"]))
 				if q, ok := qualityByKey[key]; ok {
 					data["scope_hash"] = q.ScopeHash

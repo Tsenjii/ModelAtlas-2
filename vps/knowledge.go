@@ -31,7 +31,7 @@ type KnowledgeVersion struct {
 
 var knowledgeFields = map[string]string{
 	"SOURCE_RELIABILITY":   "source_id retrieval_success retrieval_failure attempts evidence_count rejected_trials freshness_days weight confidence scope_hash",
-	"RESEARCH_STRATEGY":    "language query success failure attempts hits api_ready cost_http priority weight confidence scope_hash",
+	"RESEARCH_STRATEGY":    "language query success failure attempts hits api_ready cost_http priority weight confidence scope_hash search_country search_pages",
 	"ENDPOINT_PATTERN":     "provider_id path operation observed_at source_url confidence",
 	"AUTH_PATTERN":         "provider_id auth_kind source_url observed_at confidence",
 	"DISCOVERY_PATH":       "source_id source_url path operation status evidence_count confidence",
@@ -98,6 +98,15 @@ func validKnowledge(v KnowledgeVersion) bool {
 		}
 		if k == "scope_hash" && (len(str(x)) != 64 || !validID(str(x))) {
 			return false
+		}
+		if k == "search_country" && !validBraveCountry(str(x)) {
+			return false
+		}
+		if k == "search_pages" {
+			n := quotaInteger(json.Number(fmt.Sprint(x)))
+			if n == nil || *n < 1 || *n > 10 {
+				return false
+			}
 		}
 		if k == "language" && !researchLanguage(str(x)) {
 			return false

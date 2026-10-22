@@ -1,5 +1,15 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-22 Brave 持久分頁（RESEARCH-BRAVE-015B）
+
+- 最新要求繼續直到下一版主要功能齊全，依 D-015 不發單片小版本；release/request.json、版本、公開 tag／附件保持原值，PR #20 保持 Draft、不 merge、不部署。
+- 開工重新查 main `cba901d187aa5312cc71f5c2440b23fa04104aee`／39536090788 attempt2：build119016886469、device119016884592 SUCCESS，FEATURE FREEZE=OFF。
+- 前片015A所列範圍已驗收：最終來源 `e384646a1435ce72fad2661070dd73a34d44a3d1`／tree `4f9219579a49d0d7ea378ec5832a32de78dd19b0`；VPS39763537520 attempt2四項、Android39763537488兩項、Mac39763537343三項SUCCESS。Browser首工作因下載依賴耗9m22s觸及原15min job上限而CANCELLED，保留歷史；成功重跑119780617449為29流程269.426s／355圖。Go race237.339s／vet、真systemd40.42s及原expanded workload、Android579 JVM／976 device（5原skip）、Mac各82核心／90圖全保留。全部精確job、附件hash及實圖見PR #20；015A不外推完整WISH-REFL-001完成。
+- 當前唯一整合片015B：正式研究／排程入口的Brave頁數與地區、逐頁checkpoint／重啟／限次恢復、共同冷卻與原子HTTP／每日／憑證revision用量、同步只讀隔離。先完成本片與同來源九項，再進未知站點解析等後續功能。
+- 真production caller＋TLS先重現0.065s失敗：429直接FAILED而未保存等待。首新多頁測試也發現測試誤用POST runs／202（舊API應start／201），此測試錯誤已改正，不當作產品修復。當前開發候選，不能把新增schema或本機聚焦通過當作驗收。
+
+以下015A候選過程保留為歷史；最終接受證據以上節與PR #20為準。
+
 ## 2026-10-22 下一版完整功能週期（NEAR-FULL-015）
 
 - 最新使用者指示為「目標是全部做完，下一版要完成幾乎所有功能」，依 D-015 調高下一個公開版本的完成門檻。開發／驗證持續進行，暫不再因單一小片更新應用程式版本；release/request.json 與所有公開 tag／附件保持原值。總驗收清單見 `NEXT_RELEASE.md`。

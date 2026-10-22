@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -254,72 +253,15 @@ func (s *Server) inspectCandidateBody(ctx context.Context, run string, c Candida
 	return map[string]any{"candidate_ids": []string{c.ID}, "endpoint_paths": paths, "links": links, "characters": len(text)}, nil
 }
 func (s *Server) searchTask(ctx context.Context, run string, v taskInput) (map[string]any, error) {
-	key, e := s.integrationKey(ctx, "BRAVE_SEARCH")
-	if e != nil {
-		return nil, errors.New("Brave search key is not configured")
+	task, _ := ctx.Value(researchTaskBudgetKey{}).(string)
+	if task == "" {
+		return nil, errors.New("Brave search requires a local research task")
 	}
-	if e = s.chargeDaily(ctx, "BRAVE_SEARCH", 1000); e != nil {
-		return nil, e
+	var previous string
+	if err := s.Store.DB.QueryRowContext(ctx, "SELECT result_json FROM research_tasks WHERE id=? AND run_id=? AND kind='SEARCH'", task, run).Scan(&previous); err != nil {
+		return nil, err
 	}
-	if e = s.chargeNetwork(ctx, false); e != nil {
-		return nil, e
-	}
-	languages := map[string]string{"en": "en", "zh": "zh-hant", "ru": "ru", "ja": "ja", "ko": "ko", "es": "es", "pt": "pt-br", "id": "id"}
-	payload, _ := json.Marshal(map[string]any{"q": v.Query, "country": "TW", "search_lang": languages[v.Language], "count": 10})
-	request, e := http.NewRequestWithContext(ctx, "POST", braveOrigin+"/res/v1/web/search", bytes.NewReader(payload))
-	if e != nil {
-		return nil, e
-	}
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("X-Subscription-Token", key)
-	client := *s.Client
-	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	resp, e := client.Do(request)
-	if e != nil {
-		return nil, errors.New("search unavailable")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("search HTTP %d: %s", resp.StatusCode, classifyHTTP(resp.StatusCode))
-	}
-	raw, e := readBounded(resp.Body, 1<<20)
-	if e != nil {
-		return nil, e
-	}
-	var root struct {
-		Web struct {
-			Results []struct {
-				URL         string `json:"url"`
-				Title       string `json:"title"`
-				Description string `json:"description"`
-			} `json:"results"`
-		} `json:"web"`
-	}
-	if json.Unmarshal(raw, &root) != nil || root.Web.Results == nil {
-		return nil, errors.New("search schema invalid")
-	}
-	ids := []string{}
-	for _, item := range root.Web.Results[:min(10, len(root.Web.Results))] {
-		if !publicURL(item.URL) || safeText(item.URL, 4096, key) != item.URL {
-			continue
-		}
-		c, e := s.ensureCandidate(ctx, providerFromURL(item.URL), "UNKNOWN", run, item.URL)
-		if e != nil {
-			return nil, e
-		}
-		description := excerpt(item.Title+" "+item.Description, 3800)
-		if safeText(description, 3800, key) != description {
-			continue
-		}
-		_, e = s.recordEvidence(ctx, c.ID, "SEARCH_DISCOVERY", item.URL, description, false, EvidenceDetails{RunID: run, SourceID: "BRAVE_SEARCH", Language: v.Language, Normalized: map[string]any{"query": v.Query, "title": item.Title}, Confidence: 0.2, ContentHash: contentHash(raw), ParserVersion: "brave-web-v1"})
-		if e != nil {
-			return nil, e
-		}
-		s.enqueueResearch(ctx, run, "INSPECT", "inspect:"+c.ProviderID, taskInput{CandidateID: c.ID, URL: item.URL, SourceID: "BRAVE_SEARCH", Language: v.Language})
-		ids = append(ids, c.ID)
-	}
-	return map[string]any{"candidate_ids": ids, "language": v.Language, "query": v.Query}, nil
+	return s.executeBraveResearchTask(ctx, ResearchTask{ID: task, RunID: run, Kind: "SEARCH", Result: json.RawMessage(previous)}, v)
 }
 func (s *Server) executeResearchTask(ctx context.Context, run, kind string, input taskInput) (map[string]any, error) {
 	switch kind {
@@ -345,7 +287,7 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 		if options.Search {
 			for _, h := range hints[:min(3, len(hints))] {
 				model := str(h["model_id"])
-				s.enqueueResearch(ctx, run, "SEARCH", "lms-search:"+model, taskInput{Language: "en", Query: model + " recurring free API quota provider"})
+				s.enqueueResearch(ctx, run, "SEARCH", "lms-search:"+model, taskInput{Language: "en", Query: model + " recurring free API quota provider", SearchPages: options.SearchPages, SearchCountry: options.SearchCountry})
 			}
 		}
 		return map[string]any{"seed_hints": hints, "unresolved_count": len(hints)}, nil

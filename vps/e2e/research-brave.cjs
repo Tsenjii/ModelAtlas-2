@@ -1,0 +1,37 @@
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const assert=require('node:assert/strict'),fs=require('node:fs/promises');
+(async()=>{
+ const browser=await chromium.launch({headless:true}),origin=process.argv[2];
+ const context=await browser.newContext({httpCredentials:{username:'admin',password:process.env.MODELATLAS_TEST_TOKEN},viewport:{width:375,height:1000},reducedMotion:'reduce'});
+ const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await fs.mkdir('e2e/screenshots',{recursive:true});
+ const readRuns=()=>page.evaluate(async()=>{await loadResearch();return researchRuns;});
+ const waitRun=async(status,used)=>{
+  await page.evaluate(async({status,used})=>{const end=Date.now()+12000;while(Date.now()<end){await loadResearch();if(researchRuns.some(r=>r.status===status&&(used===null||r.used===used)))return;await new Promise(r=>setTimeout(r,100));}throw Error('No run '+status+'/'+used);},{status,used});
+ };
+ try{
+  await page.goto(origin);await page.waitForFunction(()=>modelPickerReady);await page.getByRole('button',{name:'Models',exact:true}).click();await page.getByRole('tab',{name:'我的模型',exact:true}).click();await page.getByRole('tab',{name:'全球研究',exact:true}).click();
+  const surface=page.locator('#research-schedule-card'),form=page.locator('#research-schedule-form');
+  await surface.getByRole('button',{name:'新增排程',exact:true}).click();await form.getByLabel('排程名稱',{exact:true}).fill('多頁日本公開探索');await form.getByLabel('間隔（分鐘）',{exact:true}).fill('15');await form.getByLabel('每輪 HTTP 上限',{exact:true}).fill('2');await form.getByLabel('每日 HTTP 上限',{exact:true}).fill('20');await form.locator('input[name=search]').check();await form.getByLabel('探索語言',{exact:true}).selectOption('en');await form.getByLabel('每語言最多搜尋頁數',{exact:true}).fill('2');await form.getByLabel('搜尋地區',{exact:true}).selectOption('JP');await form.getByRole('button',{name:'保存排程',exact:true}).click();
+  const card=page.locator('.research-schedule-row').filter({has:page.getByRole('heading',{name:'多頁日本公開探索',exact:true})});await card.getByText('已停用',{exact:true}).waitFor();
+  let state=await (await context.request.get(origin+'/api/v1/research/schedules')).json();assert.equal(state.schedules[0].options.search_pages,2);assert.equal(state.schedules[0].options.search_country,'JP');assert.deepEqual(state.schedules[0].languages,['en']);assert.equal(state.today_used,0);
+  await card.getByRole('button',{name:'啟用排程',exact:true}).click();await waitRun('BUDGET_EXHAUSTED',2);
+  const runID=(await readRuns())[0].id,runCard=page.locator('#research-runs .item').first();await runCard.getByRole('button',{name:'執行紀錄',exact:true}).click();
+  const task=page.locator('#detail-content > details').filter({has:page.locator('summary').filter({hasText:/^SEARCH ·/})});await task.locator('summary').first().click();const panel=page.locator('.research-brave-panel');
+  await panel.getByText('已保存 1 / 最多 2 頁 · 0 個來源線索 · 地區 JP',{exact:true}).waitFor();await panel.getByText(/第 2 頁暫時無法連線/).waitFor();await panel.getByText(/目前額度已用完/).waitFor();assert.equal(await panel.locator('li').count(),1);
+  let tasks=await (await context.request.get(origin+'/api/v1/research/tasks?run_id='+runID)).json();assert.equal(tasks[0].result.brave_progress.completed_pages,1);assert(!JSON.stringify(tasks).includes('credential_stamp'));assert(!JSON.stringify(tasks).includes('private-search-error-body'));assert(!JSON.stringify(tasks).includes('brave-fixture-key'));
+  await page.waitForFunction(()=>!document.querySelector('#notice').classList.contains('notice-visible'));
+  for(const width of [320,375,1280])for(const theme of ['light','dark']){
+   await page.setViewportSize({width,height:1000});await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;document.documentElement.style.fontSize='100%';},theme);await panel.scrollIntoViewIfNeeded();assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}/${theme} page overflow`);assert(await panel.evaluate(n=>n.scrollWidth<=n.clientWidth),`${width}/${theme} search progress overflow`);await page.locator('#detail').screenshot({path:`e2e/screenshots/research-brave-${width}-${theme}.png`,animations:'disabled'});
+  }
+  await page.setViewportSize({width:375,height:1000});await page.evaluate(()=>document.documentElement.style.fontSize='200%');await panel.scrollIntoViewIfNeeded();assert(await panel.evaluate(n=>n.scrollWidth<=n.clientWidth),'200% search progress overflow');await page.locator('#detail').screenshot({path:'e2e/screenshots/research-brave-375-large.png',animations:'disabled'});await page.evaluate(()=>document.documentElement.style.fontSize='100%');
+  await page.locator('#detail-content').getByLabel('追加 HTTP 預算',{exact:true}).fill('3');await page.locator('#detail-content').getByRole('button',{name:'確認恢復研究',exact:true}).click();await waitRun('QUEUED',2);await runCard.getByRole('button',{name:'暫停',exact:true}).click();await waitRun('PAUSED',2);
+  assert.equal((await context.request.post(origin+'/test/advance-brave-clock')).status(),204);await readRuns();assert.equal((await readRuns()).find(r=>r.id===runID).used,2,'paused search issued HTTP');
+  await page.reload();await page.waitForFunction(()=>modelPickerReady);await page.getByRole('button',{name:'Models',exact:true}).click();await page.getByRole('tab',{name:'我的模型',exact:true}).click();await page.getByRole('tab',{name:'全球研究',exact:true}).click();await waitRun('PAUSED',2);
+  await runCard.getByRole('button',{name:'恢復研究',exact:true}).click();await task.locator('summary').first().click();await panel.getByText(/研究已暫停/).waitFor();await page.locator('#detail-content').getByRole('button',{name:'確認恢復研究',exact:true}).click();await waitRun('COMPLETED',5);
+  await runCard.getByRole('button',{name:'執行紀錄',exact:true}).click();await task.locator('summary').first().click();await panel.getByText('搜尋服務表示沒有後續結果；此輪已完成。',{exact:true}).waitFor();await panel.getByText('已保存 2 / 最多 2 頁 · 2 個來源線索 · 地區 JP',{exact:true}).waitFor();await panel.getByText('重複網址 1 · 略過不安全或無效線索 0',{exact:true}).waitFor();assert.equal(await panel.locator('li').count(),1);await page.locator('#detail').screenshot({path:'e2e/screenshots/research-brave-recovered-375.png',animations:'disabled'});
+  for(const button of await page.locator('#detail button:visible').all()){const box=await button.boundingBox();assert(box.height>=48,'48px search recovery action');}
+  await page.locator('#detail-close').click();await page.locator('#research-search-usage').getByText(/目前 Key 版本 3 次 · 所有 Key 共 3 \/ 1000/).waitFor();
+  const usage=(await (await context.request.get(origin+'/api/v1/research/dashboard')).json()).search_usage;assert.equal(usage.credential_revision_used,3);assert.equal(usage.shared_used,3);assert.equal(usage.currency_cost,null);assert.equal(usage.provider_remaining,null);
+  assert.deepEqual(errors,[]);console.log('PASS: real schedule UI saves region/page bounds, explicit enable -> TLS page 1 -> 429/page 2, durable pause and reload, budget resume and page-2-only recovery, exact local credential/global/day meters, dedup/unverified discovery, 320/375/1280 light/dark and 200%, 8 screenshots.');
+ }catch(error){await page.screenshot({path:'e2e/screenshots/research-brave-failure.png',fullPage:true}).catch(()=>{});throw error;}finally{await context.close();await browser.close();}
+})().catch(error=>{console.error(error);process.exit(1)});

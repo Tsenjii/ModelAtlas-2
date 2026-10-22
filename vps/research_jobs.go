@@ -17,6 +17,8 @@ type ResearchOptions struct {
 	CandidateIDs     []string          `json:"candidate_ids"`
 	Queries          map[string]string `json:"queries"`
 	Search           bool              `json:"search"`
+	SearchPages      int               `json:"search_pages,omitempty"`
+	SearchCountry    string            `json:"search_country,omitempty"`
 	MinimalInference bool              `json:"minimal_inference"`
 	Budget           int               `json:"budget"`
 	ProbeBudget      int               `json:"probe_budget"`
@@ -39,6 +41,8 @@ type taskInput struct {
 	Selection      *Selection                `json:"selection,omitempty"`
 	Language       string                    `json:"language,omitempty"`
 	Query          string                    `json:"query,omitempty"`
+	SearchPages    int                       `json:"search_pages,omitempty"`
+	SearchCountry  string                    `json:"search_country,omitempty"`
 	URL            string                    `json:"url,omitempty"`
 	Strategy       *researchKnowledgeBinding `json:"strategy,omitempty"`
 }
@@ -114,12 +118,13 @@ func (s *Server) wakeWorker() {
 var searchQueries = map[string]string{"en": "recurring free strong coding reasoning model API daily token quota", "zh": "免費 強模型 API 每日 額度 推理 程式 註冊 台灣", "ru": "бесплатный API сильные модели ежедневная квота токены", "ja": "無料 高性能 AI モデル API 毎日 トークン 制限", "ko": "무료 고성능 AI 모델 API 일일 토큰 할당량", "es": "API modelos IA gratuitos cuota diaria programación", "pt": "API modelos IA grátis cota diária raciocínio", "id": "API model AI gratis kuota token harian coding"}
 
 type researchPlannedTask struct {
-	kind, dedupe string
-	input        taskInput
-	retry        *researchRetryState
-	originWait   *researchOriginWait
-	aaCheckpoint *aaResearchCheckpoint
-	binding      *researchKnowledgeBinding
+	kind, dedupe    string
+	input           taskInput
+	retry           *researchRetryState
+	originWait      *researchOriginWait
+	aaCheckpoint    *aaResearchCheckpoint
+	braveCheckpoint *braveResearchCheckpoint
+	binding         *researchKnowledgeBinding
 }
 type researchPlanError struct {
 	status  int
@@ -128,6 +133,9 @@ type researchPlanError struct {
 
 func (e *researchPlanError) Error() string { return e.message }
 func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchOptions, []researchPlannedTask, error) {
+	if v.SearchPages < 0 || v.SearchPages > 10 || !validBraveCountry(v.SearchCountry) {
+		return v, nil, &researchPlanError{400, "invalid search page limit or country"}
+	}
 	if v.Budget == 0 {
 		v.Budget = 40
 	}
@@ -190,7 +198,7 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 		}
 		sort.Strings(languages)
 		for _, lang := range languages {
-			task := researchPlannedTask{kind: "SEARCH", dedupe: "search:" + lang, input: taskInput{Language: lang, Query: v.Queries[lang]}}
+			task := researchPlannedTask{kind: "SEARCH", dedupe: "search:" + lang, input: taskInput{Language: lang, Query: v.Queries[lang], SearchPages: v.SearchPages, SearchCountry: v.SearchCountry}}
 			bindResearchKnowledge(&task, learned, defaultQueries)
 			tasks = append(tasks, task)
 		}
@@ -248,6 +256,11 @@ func insertResearchRun(ctx context.Context, tx *sql.Tx, id string, v ResearchOpt
 		}
 		if task.aaCheckpoint != nil {
 			if err := saveAACheckpointTx(ctx, tx, taskID, task.aaCheckpoint); err != nil {
+				return err
+			}
+		}
+		if task.braveCheckpoint != nil {
+			if err := saveBraveCheckpointTx(ctx, tx, taskID, task.braveCheckpoint); err != nil {
 				return err
 			}
 		}
@@ -321,7 +334,7 @@ func (s *Server) controlResearch(w http.ResponseWriter, r *http.Request) {
 	if v.Action == "RESUME" {
 		next = "QUEUED"
 		var remaining int
-		tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM research_tasks WHERE run_id=? AND (status IN ('QUEUED','INTERRUPTED','BUDGET_EXHAUSTED') OR (?=1 AND status='FAILED' AND attempts<3 AND COALESCE(json_extract(result_json,'$.aa_progress.stopped_reason'),'')=''))", v.ID, v.RetryFailed).Scan(&remaining)
+		tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM research_tasks WHERE run_id=? AND (status IN ('QUEUED','INTERRUPTED','BUDGET_EXHAUSTED') OR (?=1 AND status='FAILED' AND attempts<3 AND COALESCE(json_extract(result_json,'$.aa_progress.stopped_reason'),'')='' AND COALESCE(json_extract(result_json,'$.brave_progress.stopped_reason'),'')=''))", v.ID, v.RetryFailed).Scan(&remaining)
 		if remaining == 0 {
 			http.Error(w, "nothing to resume; start a new run", 409)
 			return
@@ -335,7 +348,7 @@ func (s *Server) controlResearch(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "database error", 500)
 			return
 		}
-		_, e = tx.ExecContext(r.Context(), "UPDATE research_tasks SET status='QUEUED' WHERE run_id=? AND (status IN ('INTERRUPTED','BUDGET_EXHAUSTED') OR (?=1 AND status='FAILED' AND attempts<3 AND COALESCE(json_extract(result_json,'$.aa_progress.stopped_reason'),'')=''))", v.ID, v.RetryFailed)
+		_, e = tx.ExecContext(r.Context(), "UPDATE research_tasks SET status='QUEUED' WHERE run_id=? AND (status IN ('INTERRUPTED','BUDGET_EXHAUSTED') OR (?=1 AND status='FAILED' AND attempts<3 AND COALESCE(json_extract(result_json,'$.aa_progress.stopped_reason'),'')='' AND COALESCE(json_extract(result_json,'$.brave_progress.stopped_reason'),'')=''))", v.ID, v.RetryFailed)
 		if e != nil {
 			http.Error(w, "database error", 500)
 			return
@@ -413,7 +426,7 @@ func (s *Server) runResearchPending(parent context.Context) {
 		var t ResearchTask
 		var payload, previous string
 		stamp := s.scheduleTime().UnixMilli()
-		e := s.Store.DB.QueryRowContext(parent, "SELECT t.id,t.run_id,t.kind,t.payload_json,t.result_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.origin_wait.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.aa_progress.next_attempt_at'),0)<=? ORDER BY t.rowid LIMIT 1", stamp, stamp, stamp).Scan(&t.ID, &t.RunID, &t.Kind, &payload, &previous)
+		e := s.Store.DB.QueryRowContext(parent, "SELECT t.id,t.run_id,t.kind,t.payload_json,t.result_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.origin_wait.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.aa_progress.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.brave_progress.next_attempt_at'),0)<=? ORDER BY t.rowid LIMIT 1", stamp, stamp, stamp, stamp).Scan(&t.ID, &t.RunID, &t.Kind, &payload, &previous)
 		if e != nil {
 			return
 		}
@@ -498,6 +511,9 @@ func (s *Server) runResearchPending(parent context.Context) {
 		if t.Kind == "AA" {
 			result, status = s.aaResearchResult(saveCtx, t.ID, result, status, taskErr)
 		}
+		if t.Kind == "SEARCH" {
+			result, status = s.braveResearchResult(saveCtx, t.ID, result, status, taskErr)
+		}
 		raw, _ := json.Marshal(result)
 		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET status=?,result_json=?,finished_at=CASE WHEN ?='QUEUED' THEN NULL ELSE ? END WHERE id=?", status, string(raw), status, now(), t.ID)
 		var queued int
@@ -550,6 +566,13 @@ func (s *Server) updateResearchSummary(ctx context.Context, id string) {
 	summary["aa_waiting_count"] = aaWaiting
 	if aaAt.Valid {
 		summary["next_aa_at"] = aaAt.Int64
+	}
+	var braveWaiting int
+	var braveAt sql.NullInt64
+	_ = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*),MIN(json_extract(result_json,'$.brave_progress.next_attempt_at')) FROM research_tasks WHERE run_id=? AND status='QUEUED' AND json_extract(result_json,'$.brave_progress.next_attempt_at')>0", id).Scan(&braveWaiting, &braveAt)
+	summary["brave_waiting_count"] = braveWaiting
+	if braveAt.Valid {
+		summary["next_brave_at"] = braveAt.Int64
 	}
 	summary["task_count"] = counts["SUCCESS"] + counts["FAILED"] + counts["CANCELLED"]
 	states := map[string]int{}

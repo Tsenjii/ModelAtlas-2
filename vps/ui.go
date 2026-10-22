@@ -559,6 +559,7 @@ const homeHTML = `<!doctype html>
 </details>
 <form id="research-run-form">
 <h2>開始一輪研究</h2>
+<p id="research-search-usage" class="section-description"></p>
 <label>已保存來源<select name="source_ids" id="research-run-sources" multiple>
 </select>
 </label>
@@ -570,6 +571,7 @@ const homeHTML = `<!doctype html>
 <input name="minimal_inference" type="checkbox">必要時做一次小型推論驗證</label>
 <label class="check">
 <input name="search" type="checkbox">多語網路探索（需 Brave Search Key）</label>
+<div class="toolbar"><label>每語言最多搜尋頁數<input name="search_pages" type="number" value="1" min="1" max="10" required></label><label>搜尋地區<select name="search_country" aria-label="搜尋地區"><option value="TW">台灣</option><option value="ALL">全球</option><option value="US">美國</option><option value="JP">日本</option><option value="KR">韓國</option><option value="DE">德國</option><option value="FR">法國</option><option value="GB">英國</option><option value="CA">加拿大</option><option value="AU">澳洲</option><option value="BR">巴西</option><option value="IN">印度</option></select></label></div><p class="section-description">每頁最多 10 筆線索；只有搜尋服務明示仍有結果才會續頁。搜尋地區不代表已驗證台灣資格。</p>
 <label class="check">
 <input name="lmspeed_seeds" type="checkbox">使用已保存的 LMSpeed 發現線索</label>
 <label class="check">

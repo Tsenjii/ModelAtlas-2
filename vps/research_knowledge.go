@@ -68,7 +68,13 @@ func researchInputScope(kind string, in taskInput) string {
 		return snapshotHash(map[string]any{"source": in.SourceSnapshot})
 	}
 	if kind == "SEARCH" {
-		return snapshotHash(map[string]any{"language": in.Language, "query": in.Query, "country": "TW"})
+		pages, country := braveSearchOptions(in)
+		scope := map[string]any{"language": in.Language, "query": in.Query, "country": country}
+		// Preserve the exact historical one-page scope for existing plans.
+		if pages > 1 {
+			scope["pages"] = pages
+		}
+		return snapshotHash(scope)
 	}
 	return ""
 }
