@@ -9,19 +9,21 @@ import (
 	"sort"
 )
 
-const knowledgeEvaluationPolicy = "research-priority-replay-v1"
+const knowledgeEvaluationPolicy = "research-priority-replay-v2"
 
 type researchYield struct {
-	Runs            int     `json:"runs"`
-	HTTP            int     `json:"http_requests"`
-	Candidates      int     `json:"candidates"`
-	NewCandidates   int     `json:"new_candidates"`
-	RecurringClaims int     `json:"recurring_claims"`
-	NegativeClaims  int     `json:"negative_claims"`
-	Unresolved      int     `json:"unresolved"`
-	Failures        int     `json:"failures"`
-	Utility         float64 `json:"utility"`
-	PerHTTP         float64 `json:"utility_per_http"`
+	Runs             int      `json:"runs"`
+	HTTP             int      `json:"http_requests"`
+	Candidates       int      `json:"candidates"`
+	NewCandidates    int      `json:"new_candidates"`
+	RecurringClaims  int      `json:"recurring_claims"`
+	NegativeClaims   int      `json:"negative_claims"`
+	Unresolved       int      `json:"unresolved"`
+	DuplicateHits    int      `json:"duplicate_hits"`
+	ReusedCandidates int      `json:"reused_candidates"`
+	Failures         int      `json:"failures"`
+	Utility          float64  `json:"utility"`
+	PerHTTP          *float64 `json:"utility_per_http"`
 }
 
 func (y *researchYield) add(q researchQuality) {
@@ -32,12 +34,15 @@ func (y *researchYield) add(q researchQuality) {
 	y.RecurringClaims += q.RecurringClaims
 	y.NegativeClaims += q.NegativeClaims
 	y.Unresolved += q.Unresolved
+	y.DuplicateHits += q.DuplicateHits
+	y.ReusedCandidates += q.ReusedCandidates
 	if q.Status == "FAILED" {
 		y.Failures++
 	}
 	y.Utility += q.Utility
 	if y.HTTP > 0 {
-		y.PerHTTP = y.Utility / float64(y.HTTP)
+		rate := y.Utility / float64(y.HTTP)
+		y.PerHTTP = &rate
 	}
 }
 
@@ -48,6 +53,8 @@ func (y *researchYield) merge(other researchYield) {
 	y.RecurringClaims += other.RecurringClaims
 	y.NegativeClaims += other.NegativeClaims
 	y.Unresolved += other.Unresolved
+	y.DuplicateHits += other.DuplicateHits
+	y.ReusedCandidates += other.ReusedCandidates
 	y.Failures += other.Failures
 	y.Utility += other.Utility
 }
@@ -276,10 +283,12 @@ func computeKnowledgeEvaluation(ctx context.Context, tx *sql.Tx, v KnowledgeVers
 	out.Baseline.Runs = out.ComparableRuns
 	out.Proposed.Runs = out.ComparableRuns
 	if out.Baseline.HTTP > 0 {
-		out.Baseline.PerHTTP = out.Baseline.Utility / float64(out.Baseline.HTTP)
+		rate := out.Baseline.Utility / float64(out.Baseline.HTTP)
+		out.Baseline.PerHTTP = &rate
 	}
 	if out.Proposed.HTTP > 0 {
-		out.Proposed.PerHTTP = out.Proposed.Utility / float64(out.Proposed.HTTP)
+		rate := out.Proposed.Utility / float64(out.Proposed.HTTP)
+		out.Proposed.PerHTTP = &rate
 	}
 	out.Reason = "至少需要3輪同範圍且包含其他來源／查詢的完整研究，才能比較排序。"
 	if out.Target.Runs >= 3 && out.Target.HTTP >= 3 && out.ComparableRuns >= 3 {
@@ -356,6 +365,9 @@ func monitorKnowledge(v KnowledgeVersion, evaluation *knowledgeEvaluation, histo
 	if !v.Active || !oneOf(v.Kind, "SOURCE_RELIABILITY", "RESEARCH_STRATEGY") {
 		return nil
 	}
+	if evaluation != nil && evaluation.Policy != knowledgeEvaluationPolicy {
+		evaluation = nil
+	}
 	m := &knowledgeMonitor{Status: "INSUFFICIENT", Reason: "等待至少3輪實際使用此版本的同範圍完整研究；舊佇列與其他版本不混入。"}
 	if evaluation != nil {
 		m.Baseline = evaluation.Target
@@ -375,7 +387,7 @@ func monitorKnowledge(v KnowledgeVersion, evaluation *knowledgeEvaluation, histo
 		if evaluation == nil || m.Baseline.HTTP == 0 {
 			m.Status = "NO_BASELINE"
 			m.Reason = "此版本為手動試用，沒有已保存的可比較基線。"
-		} else if m.Baseline.PerHTTP > 0 && m.Observed.PerHTTP < m.Baseline.PerHTTP*.5 {
+		} else if m.Baseline.PerHTTP != nil && m.Observed.PerHTTP != nil && *m.Baseline.PerHTTP > 0 && *m.Observed.PerHTTP < *m.Baseline.PerHTTP*.5 {
 			m.Status = "DEGRADED"
 			m.Reason = "最近最多32輪同範圍研究的每HTTP效益低於試用前50%；請Review，可回復啟用前版本。"
 		}
@@ -402,6 +414,10 @@ func (s *Server) enrichKnowledge(ctx context.Context, versions []KnowledgeVersio
 		}
 		var e knowledgeEvaluation
 		if json.Unmarshal([]byte(raw), &e) == nil {
+			if e.Policy != knowledgeEvaluationPolicy {
+				e.Status = "POLICY_CHANGED"
+				e.Reason = "比較政策已更新；舊評估保留，請用目前政策重新研究及評估。"
+			}
 			evaluations[id] = &e
 		}
 	}

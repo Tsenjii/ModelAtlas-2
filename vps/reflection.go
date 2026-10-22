@@ -114,7 +114,7 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 	if e != nil {
 		return e
 	}
-	report["quality_policy"] = "research-yield-v1"
+	report["quality_policy"] = researchQualityPolicy
 	report["quality_observations"] = quality
 	report["cost"] = nil
 	report["cost_status"] = "NOT_MEASURED"

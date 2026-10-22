@@ -149,7 +149,7 @@ struct VersionDetailView: View {
             }
         }
     }
-    private func evaluationTitle(_ status: String) -> String { ["READY_FOR_TRIAL":"可確認試用", "INSUFFICIENT":"比較資料不足", "REGRESSION":"發現退步", "SOURCE_CHANGED":"來源版本已變", "DEGRADED":"研究成效下降", "OBSERVED":"持續觀察中", "NO_BASELINE":"尚無比較基線"][status] ?? status }
+    private func evaluationTitle(_ status: String) -> String { ["POLICY_CHANGED":"需重新評估", "READY_FOR_TRIAL":"可確認試用", "INSUFFICIENT":"比較資料不足", "REGRESSION":"發現退步", "SOURCE_CHANGED":"來源版本已變", "DEGRADED":"研究成效下降", "OBSERVED":"持續觀察中", "NO_BASELINE":"尚無比較基線"][status] ?? status }
 }
 
 struct MappingEditor: View {

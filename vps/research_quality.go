@@ -11,33 +11,37 @@ import (
 
 // These are observed research yields, not provider truth/identity scores. Only
 // local plan receipts plus admitted work can enter an evaluation dataset.
+const researchQualityPolicy = "research-yield-v2"
+
 type researchQuality struct {
-	RunID           string   `json:"run_id"`
-	MetricKey       string   `json:"metric_key"`
-	Kind            string   `json:"kind"`
-	Subject         string   `json:"subject"`
-	ScopeHash       string   `json:"scope_hash"`
-	VersionID       string   `json:"version_id"`
-	EpochID         string   `json:"epoch_id"`
-	TaskID          string   `json:"task_id"`
-	Order           int      `json:"order"`
-	Status          string   `json:"status"`
-	HTTP            int      `json:"http_requests"`
-	Inference       int      `json:"inference_requests"`
-	Candidates      int      `json:"candidates"`
-	NewCandidates   int      `json:"new_candidates"`
-	NewUnresolved   int      `json:"new_unresolved"`
-	RecurringClaims int      `json:"recurring_claims"`
-	NegativeClaims  int      `json:"negative_claims"`
-	Unresolved      int      `json:"unresolved"`
-	DuplicateHits   int      `json:"duplicate_hits"`
-	EvidenceCount   int      `json:"evidence_count"`
-	EvidenceIDs     []string `json:"evidence_ids"`
-	Utility         float64  `json:"utility"`
-	Weight          float64  `json:"weight"`
-	Priority        int      `json:"priority"`
-	Truncated       bool     `json:"truncated"`
-	ObservedAt      int64    `json:"observed_at"`
+	Policy           string   `json:"policy"`
+	RunID            string   `json:"run_id"`
+	MetricKey        string   `json:"metric_key"`
+	Kind             string   `json:"kind"`
+	Subject          string   `json:"subject"`
+	ScopeHash        string   `json:"scope_hash"`
+	VersionID        string   `json:"version_id"`
+	EpochID          string   `json:"epoch_id"`
+	TaskID           string   `json:"task_id"`
+	Order            int      `json:"order"`
+	Status           string   `json:"status"`
+	HTTP             int      `json:"http_requests"`
+	Inference        int      `json:"inference_requests"`
+	Candidates       int      `json:"candidates"`
+	NewCandidates    int      `json:"new_candidates"`
+	NewUnresolved    int      `json:"new_unresolved"`
+	RecurringClaims  int      `json:"recurring_claims"`
+	NegativeClaims   int      `json:"negative_claims"`
+	Unresolved       int      `json:"unresolved"`
+	DuplicateHits    int      `json:"duplicate_hits"`
+	ReusedCandidates int      `json:"reused_candidates"`
+	EvidenceCount    int      `json:"evidence_count"`
+	EvidenceIDs      []string `json:"evidence_ids"`
+	Utility          float64  `json:"utility"`
+	Weight           float64  `json:"weight"`
+	Priority         int      `json:"priority"`
+	Truncated        bool     `json:"truncated"`
+	ObservedAt       int64    `json:"observed_at"`
 }
 
 type qualityEvidenceRecord struct {
@@ -51,7 +55,7 @@ type qualityEvidenceRecord struct {
 	Facts       map[string]any `json:"facts"`
 }
 type qualityEvidence struct {
-	id string
+	id, taskID string
 	qualityEvidenceRecord
 }
 
@@ -62,7 +66,7 @@ func researchQualitySnapshot(ctx context.Context, tx *sql.Tx, run string) ([]res
 	}
 	// Read only evidence produced by this run; current mutable candidate labels
 	// and evidence from other accounts/runs cannot retroactively improve its score.
-	rows, err := tx.QueryContext(ctx, `SELECT evidence_id,record_json FROM research_local_evidence WHERE run_id=? ORDER BY rowid LIMIT 4001`, run)
+	rows, err := tx.QueryContext(ctx, `SELECT evidence_id,task_id,record_json FROM research_local_evidence WHERE run_id=? ORDER BY rowid LIMIT 4001`, run)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +74,7 @@ func researchQualitySnapshot(ctx context.Context, tx *sql.Tx, run string) ([]res
 	for rows.Next() {
 		var e qualityEvidence
 		var raw string
-		if err = rows.Scan(&e.id, &raw); err != nil {
+		if err = rows.Scan(&e.id, &e.taskID, &raw); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -90,6 +94,14 @@ func researchQualitySnapshot(ctx context.Context, tx *sql.Tx, run string) ([]res
 	truncated := len(evidence) > 4000
 	if truncated {
 		evidence = evidence[:4000]
+	}
+	byCandidate := map[string][]qualityEvidence{}
+	firstTask := map[string]string{}
+	for _, e := range evidence {
+		byCandidate[e.CandidateID] = append(byCandidate[e.CandidateID], e)
+		if firstTask[e.CandidateID] == "" {
+			firstTask[e.CandidateID] = e.taskID
+		}
 	}
 	rows, err = tx.QueryContext(ctx, `SELECT t.id,t.kind,t.payload_json,t.status,t.result_json,COALESCE(u.http_requests,0),COALESCE(u.inference_requests,0),COALESCE(t.finished_at,0) FROM research_tasks t LEFT JOIN research_task_usage u ON u.task_id=t.id WHERE t.run_id=? AND t.kind IN ('SOURCE','SEARCH') ORDER BY t.rowid LIMIT 128`, run)
 	if err != nil {
@@ -117,7 +129,7 @@ func researchQualitySnapshot(ctx context.Context, tx *sql.Tx, run string) ([]res
 		if !ok || b.ScopeHash != researchInputScope(kind, in) {
 			continue
 		}
-		q := researchQuality{RunID: run, MetricKey: key, Kind: metricKind, Subject: subject, ScopeHash: b.ScopeHash, VersionID: b.VersionID, EpochID: b.EpochID, TaskID: id, Order: len(out), Status: status, HTTP: http, Inference: inference, Weight: b.Weight, Priority: b.Priority, EvidenceIDs: []string{}, Truncated: truncated, ObservedAt: observedAt}
+		q := researchQuality{Policy: researchQualityPolicy, RunID: run, MetricKey: key, Kind: metricKind, Subject: subject, ScopeHash: b.ScopeHash, VersionID: b.VersionID, EpochID: b.EpochID, TaskID: id, Order: len(out), Status: status, HTTP: http, Inference: inference, Weight: b.Weight, Priority: b.Priority, EvidenceIDs: []string{}, Truncated: truncated, ObservedAt: observedAt}
 		var res map[string]any
 		json.Unmarshal([]byte(result), &res)
 		ids := map[string]bool{}
@@ -142,14 +154,14 @@ func researchQualitySnapshot(ctx context.Context, tx *sql.Tx, run string) ([]res
 		for cid := range ids {
 			newLead, recurring, negative := false, false, false
 			seen := false
-			for _, e := range evidence {
-				if e.CandidateID != cid || kind == "SOURCE" && e.SourceID != in.SourceID {
+			for _, e := range byCandidate[cid] {
+				if kind == "SOURCE" && e.SourceID != in.SourceID {
 					continue
 				}
 				seen = true
 				q.EvidenceCount++
 				q.EvidenceIDs = append(q.EvidenceIDs, e.id)
-				newLead = newLead || e.CreatedRun == run
+				newLead = newLead || e.CreatedRun == run && firstTask[cid] == id
 				// Verified here describes the official source of a structured claim.
 				// This deliberately does not say that the model identity is verified.
 				if e.Verified && oneOf(e.Kind, "OFFICIAL_STRUCTURED_CLAIM", "OFFICIAL_RECURRING_POLICY", "OFFICIAL_RECURRING_QUOTA") && e.ModelID != "UNKNOWN" {
@@ -170,6 +182,8 @@ func researchQualitySnapshot(ctx context.Context, tx *sql.Tx, run string) ([]res
 			q.Candidates++
 			if newLead {
 				q.NewCandidates++
+			} else {
+				q.ReusedCandidates++
 			}
 			// A conflicting negative is retained and never counted as a positive.
 			if negative {
@@ -251,5 +265,5 @@ func observedResearchWeight(data []researchQuality, key, scope string) float64 {
 }
 
 func usableResearchQuality(q researchQuality) bool {
-	return q.HTTP > 0 && !q.Truncated && oneOf(q.Status, "SUCCESS", "FAILED") && q.ObservedAt > 0 && q.ObservedAt <= now() && now()-q.ObservedAt <= 30*24*60*60000
+	return q.Policy == researchQualityPolicy && q.HTTP > 0 && !q.Truncated && oneOf(q.Status, "SUCCESS", "FAILED") && q.ObservedAt > 0 && q.ObservedAt <= now() && now()-q.ObservedAt <= 30*24*60*60000
 }

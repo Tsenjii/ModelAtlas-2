@@ -365,6 +365,25 @@ func TestKnowledgeRestoredVersionStartsNewMonitoringEpoch(t *testing.T) {
 	assertSQLInt(t, s, schemaVersion, "PRAGMA user_version")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM knowledge_activation_epochs")
 	assertSQLInt(t, s, 14, "SELECT COUNT(*) FROM research_quality_observations")
+	if _, err := s.Store.DB.Exec("UPDATE knowledge_evaluations SET report_json=json_set(report_json,'$.policy','research-priority-replay-v1')"); err != nil {
+		t.Fatal(err)
+	}
+	r = req(t, s, "GET", "/api/v1/research/knowledge", nil)
+	requireCode(t, r, 200)
+	json.Unmarshal(r.Body.Bytes(), &all)
+	found := false
+	for _, current := range all {
+		if current.ID != v.ID {
+			continue
+		}
+		found = true
+		if current.Evaluation == nil || current.Evaluation.Status != "POLICY_CHANGED" || current.Monitor == nil || current.Monitor.Baseline.HTTP != 0 || current.Monitor.Baseline.PerHTTP != nil {
+			t.Fatal("legacy evaluation reused as current-policy baseline", current)
+		}
+	}
+	if !found {
+		t.Fatal("restored version missing after migration")
+	}
 }
 
 func TestKnowledgeEvaluationKeepsAgedHistoryAndExplainsChangedActiveSource(t *testing.T) {
@@ -396,6 +415,17 @@ func TestKnowledgeEvaluationKeepsAgedHistoryAndExplainsChangedActiveSource(t *te
 	// Expiry changes comparison eligibility; it does not purge source history.
 	src.URL = "https://quality.example/useful"
 	requireCode(t, req(t, s, "POST", "/api/v1/research/sources", src), 200)
+	// Versioned measurement policies cannot borrow old scoring semantics.
+	if _, err := s.Store.DB.Exec("UPDATE research_quality_observations SET observation_json=json_set(observation_json,'$.policy','research-yield-v1')"); err != nil {
+		t.Fatal(err)
+	}
+	legacyEvaluation := qualityEvaluation(t, s, v)
+	if legacyEvaluation.Status != "INSUFFICIENT" || legacyEvaluation.Target.Runs != 0 {
+		t.Fatal("mixed research measurement policies", legacyEvaluation)
+	}
+	if _, err := s.Store.DB.Exec("UPDATE research_quality_observations SET observation_json=json_set(observation_json,'$.policy',?)", researchQualityPolicy); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := s.Store.DB.Exec("UPDATE research_quality_observations SET observation_json=json_set(observation_json,'$.observed_at',?)", now()-31*24*60*60000); err != nil {
 		t.Fatal(err)
 	}
@@ -478,4 +508,40 @@ func TestKnowledgeQualityRetainsFalseFreeCounterexamplesWithoutReward(t *testing
 	}
 	assertSQLInt(t, s, 36, "SELECT COUNT(*) FROM research_local_evidence WHERE json_extract(record_json,'$.source_id')='empty'")
 	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM knowledge_active")
+}
+
+func TestKnowledgeQualityAttributesSharedDiscoveryOnlyOnce(t *testing.T) {
+	s, _, _ := qualityFixture(t)
+	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"data":[{"model_id":"same-unresolved-model"}]}`))
+	}))
+	defer up.Close()
+	s.PublicClient = mappedFixture(up)
+	runs := qualityRounds(t, s, 3)
+	for index, run := range runs {
+		rows, err := s.Store.DB.Query("SELECT observation_json FROM research_quality_observations WHERE run_id=? ORDER BY rowid", run)
+		if err != nil {
+			t.Fatal(err)
+		}
+		found := map[string]researchQuality{}
+		for rows.Next() {
+			var raw string
+			if err = rows.Scan(&raw); err != nil {
+				t.Fatal(err)
+			}
+			var q researchQuality
+			json.Unmarshal([]byte(raw), &q)
+			found[q.Subject] = q
+		}
+		rows.Close()
+		expected := 0
+		if index == 0 {
+			expected = 1
+		}
+		if found["empty"].NewCandidates != expected || found["useful"].NewCandidates != 0 || found["useful"].DuplicateHits != 0 || found["useful"].ReusedCandidates != 1 || found["useful"].Utility != 0 {
+			t.Fatal("same provider/model credited as new to multiple sources", found)
+		}
+	}
+	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM research_candidates WHERE model_id='same-unresolved-model'")
 }
