@@ -12,6 +12,10 @@
 - 已以延後GET的既有Browser流程確定重現5.914s FAIL：按更新後舊版本卡片仍可開啟，Modal捕捉舊0輪，完成讀取不更新該Modal。修為只在最新讀取期間停用四個研究清單的舊卡片，標示aria-busy；成功後新卡片可用，失敗則原last-good卡片恢復。既有14HTTP／3輪退步／Undo斷言與timeout完全保留，追加明確pending gate反例。修後原Knowledge3.46s、新辨識4.92s、原策略監測5.37s（合計14.776s）成功；新來源重新完整Browser及全部九項，不借6e25結果。
 
 
+- 5f42580候選的完整Browser CI為31流程294.230s／371PNG／零failure圖，成功附件12437525019（24,261,810 bytes，SHA256 5bdc074a130059533d21e2202f03dc78daf3a261518b37ff916d422b217fdc08）已下載核對與檢視新8圖、原三輪下降實圖；本機完整Go322.929s成功。UI修正後的本機全套在27流程通過後300.040s逾時，沒有assertion failure；原timeout與歷史保留，不宣稱本機全套通過。
+- 單位審查追加0.070s真TLS反例FAIL：pricing.fixed未明示單位時仍被當USD/request，可能把全0但固定費範圍未知的來源當已知零價格。自動生成改為只在pricing.fixed_unit明示USD/request時映射fixed，並保存literal檢查；缺單位保持Unknown，改成USD/month後實測FAILED。17個後端函式與原Connector聚焦26.198s成功。新來源重新九項；5f42580不是最終驗收，不借其綠燈。
+
+
 ## 2026-10-22 Brave 持久分頁（RESEARCH-BRAVE-015B）
 
 - 最新要求繼續直到下一版主要功能齊全，依 D-015 不發單片小版本；release/request.json、版本、公開 tag／附件保持原值，PR #20 保持 Draft、不 merge、不部署。

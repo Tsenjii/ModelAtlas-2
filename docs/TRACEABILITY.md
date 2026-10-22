@@ -7,7 +7,7 @@
 | 面向 | 程式與證據 | 狀態 |
 |---|---|---|
 | 來源辨識／宣告草稿 | connector_discovery.go／connector_schema.go；有界同站HTML／字面線索／OpenAPI GET，family／version僅線索；缺單位／scope不猜 | 本機候選 |
-| fixture／真HTTP／失敗保留 | 16個後端函式含TLS與DB故障、精確數值、錯單位／缺欄／認證、衝突／新版本、換Key／origin／取消、request去重與共站冷卻 | 聚焦成功；完整回歸待完成 |
+| fixture／真HTTP／失敗保留 | 17個後端函式含TLS與DB故障、精確數值、錯單位／缺欄／認證、衝突／新版本、換Key／origin／取消、request去重與共站冷卻 | 聚焦成功；完整回歸待完成 |
 | Review／啟用／回退 | connectors.go、ui_js_connector_discovery.go；本機設定／context／TTL receipt與每次執行前的啟用設定綁定，現有applyVersion／Undo，GET失敗只讀恢復 | 新Browser5.69s與原Knowledge4.29s成功；8新圖已檢查 |
 | 保存／同步／升級 | schema25 additive與一致快照；本機reservation／fixture／receipt不移植執行權，原定義同步保留 | 本機候選 |
 | 跨平台與界線 | Mac內建同源後端取得API；Mac／Android專用原生介面未移植。私人auth／任意schema／外站source、資格／recurring／身份仍待補 | 整體WISH-CRAWL-002 PARTIAL；同來源九項前不接受本片 |
@@ -16,6 +16,10 @@
 
 - 6e25c55候選本機完整Go race303.798s／vet／27發布回歸0.027s成功，但不能接受：CI Browser119899276577的舊策略監測流程34.27s失敗，畫面顯示啟用後0輪，之後全套在300.022s逾時；失敗附件12434849226（354PNG，SHA256 53c13420e1aeab163d7d78fbe83eb727c6c341e29dff4ee312a88ba06ac007f8）已獨立下載核對並檢視失敗原圖。本機同候選監測5.48s通過，但完整全套仍於30流程後300.022s逾時，原上限保留。
 - 已以延後GET的既有Browser流程確定重現5.914s FAIL：按更新後舊版本卡片仍可開啟，Modal捕捉舊0輪，完成讀取不更新該Modal。修為只在最新讀取期間停用四個研究清單的舊卡片，標示aria-busy；成功後新卡片可用，失敗則原last-good卡片恢復。既有14HTTP／3輪退步／Undo斷言與timeout完全保留，追加明確pending gate反例。修後原Knowledge3.46s、新辨識4.92s、原策略監測5.37s（合計14.776s）成功；新來源重新完整Browser及全部九項，不借6e25結果。
+
+- 5f42580候選的完整Browser CI為31流程294.230s／371PNG／零failure圖，成功附件12437525019（24,261,810 bytes，SHA256 5bdc074a130059533d21e2202f03dc78daf3a261518b37ff916d422b217fdc08）已下載核對與檢視新8圖、原三輪下降實圖；本機完整Go322.929s成功。UI修正後的本機全套在27流程通過後300.040s逾時，沒有assertion failure；原timeout與歷史保留，不宣稱本機全套通過。
+- 單位審查追加0.070s真TLS反例FAIL：pricing.fixed未明示單位時仍被當USD/request，可能把全0但固定費範圍未知的來源當已知零價格。自動生成改為只在pricing.fixed_unit明示USD/request時映射fixed，並保存literal檢查；缺單位保持Unknown，改成USD/month後實測FAILED。17個後端函式與原Connector聚焦26.198s成功。新來源重新九項；5f42580不是最終驗收，不借其綠燈。
+
 
 ## RESEARCH-BRAVE-015B（2026-10-22 所列範圍已驗）
 

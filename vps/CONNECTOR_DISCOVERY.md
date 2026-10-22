@@ -16,7 +16,7 @@ Models → 我的模型 → 研究知識 → 辨識站點資料，選擇已加�
 
 可產生CATALOG、PRICING、QUOTA、PERFORMANCE、USAGE、BALANCE、NOTICE中有實際支持的草稿。除Catalog外，必須有明確MODEL_PROVIDER或MODEL_KEY_GROUP scope；群組還須精確匹配。ACCOUNT及沒有scope的公開資料不自動冒充所選Key或帳戶資料。
 
-價格只接受明示USD/token、USD/1K tokens或USD/1M tokens；currency若另有聲明，必須一致。固定費沒有證據時保持未知，不設定fixed_charge_absent或effective。rpd／tpd／rpm／tpm等指標有各自field_units；reset_at只由明示reset_at_ms映射，success_rate還需RATIO標記，不能把秒當毫秒或99%當0.99。缺欄不猜為0或免費。
+價格只接受明示USD/token、USD/1K tokens或USD/1M tokens；currency若另有聲明，必須一致。固定費必須另有明示fixed_unit=USD/request才映射，沒有此單位時保持未知，不設定fixed_charge_absent或effective。rpd／tpd／rpm／tpm等指標有各自field_units；reset_at只由明示reset_at_ms映射，success_rate還需RATIO標記，不能把秒當毫秒或99%當0.99。缺欄不猜為0或免費。
 
 自動Mapping為刻意保守的確定性形狀辨識，不宣稱所有自訂schema、渲染頁、外站GitHub源碼或私人端點已相容；其他形狀顯示原因並保留手動宣告入口。後續可增補經fixture與真HTTP驗過的版本化形狀。
 
@@ -44,7 +44,7 @@ schema25 additive新增connector_discoveries、connector_generated_versions、co
 
 ## 驗證與保留的失敗
 
-- 修前正式Handler真TLS反例0.065s FAIL：自動辨識API為404。新增後16個後端測試函式含多個子情境，使用Handler／TLS／SQLite，涵蓋樣本→實測→正式Intelligence→重啟Undo、Unknown、精確單位、scope／憑證／origin、request重送、共站等待、衝突與版本、原子DB失敗、取消、Assistant web上限、schema24一致升級與同步隔離。
+- 修前正式Handler真TLS反例0.065s FAIL：自動辨識API為404。新增後17個後端測試函式含多個子情境，使用Handler／TLS／SQLite，涵蓋樣本→實測→正式Intelligence→重啟Undo、Unknown、精確單位、scope／憑證／origin、request重送、共站等待、衝突與版本、原子DB失敗、取消、Assistant web上限、schema24一致升級與同步隔離。
 - 首次聚焦16.837s FAIL：新樣本空root map與讀回nil被當不同；另測試把cipher直接改成無法解密字串，實際應503而非測試期望的普通換Key。修正語意相等比較及測試使用真encrypt的輪替，沒有降低fixture或vault條件。
 - 後續17.126s／16.171s聚焦FAIL：struct內嵌PriceLegs與讀回map的key順序造成hash偽差異，數值fixture又需UseNumber；改用正規化hash與精確重播。新source測試也曾把既有Intelligence正常認證讀取誤當匿名辨識，改成只在新公開入口斷言不傳秘密，原Intelligence流程保留。
 - 18.724s聚焦成功；追加本機receipt／過期／成員檢查時20.740s FAIL，測試UPDATE了尚不存在的membership_state列，改成真正保存ARCHIVED再核對原409。後續21.725s聚焦成功。編譯期曾誤用雜湊helper參數型別及ToolFunctionCall名稱，已更正，均不當作產品驗收。
@@ -55,3 +55,6 @@ schema25 additive新增connector_discoveries、connector_generated_versions、co
 
 - 6e25c55候選本機完整Go race303.798s／vet／27發布回歸0.027s成功，但不能接受：CI Browser119899276577的舊策略監測流程34.27s失敗，畫面顯示啟用後0輪，之後全套在300.022s逾時；失敗附件12434849226（354PNG，SHA256 53c13420e1aeab163d7d78fbe83eb727c6c341e29dff4ee312a88ba06ac007f8）已獨立下載核對並檢視失敗原圖。本機同候選監測5.48s通過，但完整全套仍於30流程後300.022s逾時，原上限保留。
 - 已以延後GET的既有Browser流程確定重現5.914s FAIL：按更新後舊版本卡片仍可開啟，Modal捕捉舊0輪，完成讀取不更新該Modal。修為只在最新讀取期間停用四個研究清單的舊卡片，標示aria-busy；成功後新卡片可用，失敗則原last-good卡片恢復。既有14HTTP／3輪退步／Undo斷言與timeout完全保留，追加明確pending gate反例。修後原Knowledge3.46s、新辨識4.92s、原策略監測5.37s（合計14.776s）成功；新來源重新完整Browser及全部九項，不借6e25結果。
+
+- 5f42580候選的完整Browser CI為31流程294.230s／371PNG／零failure圖，成功附件12437525019（24,261,810 bytes，SHA256 5bdc074a130059533d21e2202f03dc78daf3a261518b37ff916d422b217fdc08）已下載核對與檢視新8圖、原三輪下降實圖；本機完整Go322.929s成功。UI修正後的本機全套在27流程通過後300.040s逾時，沒有assertion failure；原timeout與歷史保留，不宣稱本機全套通過。
+- 單位審查追加0.070s真TLS反例FAIL：pricing.fixed未明示單位時仍被當USD/request，可能把全0但固定費範圍未知的來源當已知零價格。自動生成改為只在pricing.fixed_unit明示USD/request時映射fixed，並保存literal檢查；缺單位保持Unknown，改成USD/month後實測FAILED。17個後端函式與原Connector聚焦26.198s成功。新來源重新九項；5f42580不是最終驗收，不借其綠燈。

@@ -534,6 +534,12 @@ func inferConnectorMappings(root any, path string, v Selection) ([]connectorGene
 					fieldPath = "/name"
 				}
 				value := pointer(selected, fieldPath)
+				if kind == "PRICING" && field == "fixed" && value != nil {
+					if str(pointer(selected, prefix+"/fixed_unit")) != "USD/request" {
+						continue
+					}
+					cfg.Checks[prefix+"/fixed_unit"] = "USD/request"
+				}
 				if field == "notice" {
 					if prefix == "/notice" {
 						fieldPath = "/notice"

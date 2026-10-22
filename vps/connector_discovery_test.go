@@ -560,3 +560,43 @@ func TestConnectorDiscoveryChangedActiveDefinitionNeedsNewReview(t *testing.T) {
 		t.Fatal("changed active definition reached HTTP without a new Review")
 	}
 }
+func TestConnectorDiscoveryFixedFeeNeedsExplicitPerRequestUnit(t *testing.T) {
+	var fixedUnit atomic.Int32
+	s, _ := connectorDiscoveryFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		unit := ""
+		if fixedUnit.Load() == 1 {
+			unit = `,"fixed_unit":"USD/request"`
+		}
+		if fixedUnit.Load() == 2 {
+			unit = `,"fixed_unit":"USD/month"`
+		}
+		w.Write([]byte(`{"data":[{"model_id":"m","scope":"MODEL_PROVIDER","pricing":{"unit":"USD/1M tokens","input":"0","output":"0","cache":"0","fixed":"0"` + unit + `}}]}`))
+	})
+	v := seed(t, s, "https://unknown.example/v1")
+	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
+	id := discoverForTest(t, s, "unknown-fixed", "/api/pricing", v).DraftIDs[0]
+	draft := discoveredVersion(t, s, id)
+	if draft.Config.Fields["fixed"] != "" {
+		t.Fatal("fixed fee silently treated as USD/request without an explicit unit")
+	}
+	requireCode(t, req(t, s, "POST", "/api/v1/connectors/test", map[string]any{"id": id, "selection": v}), 200)
+	if discoveredVersion(t, s, id).Test["facts"].(map[string]any)["nominal_price_state"] != "UNKNOWN" {
+		t.Fatal("missing fixed fee unit became known free")
+	}
+	fixedUnit.Store(1)
+	id = discoverForTest(t, s, "known-fixed", "/api/pricing", v).DraftIDs[0]
+	draft = discoveredVersion(t, s, id)
+	if draft.Config.Fields["fixed"] != "/pricing/fixed" || draft.Config.Checks["/pricing/fixed_unit"] != "USD/request" {
+		t.Fatal("explicit per-request unit lost")
+	}
+	requireCode(t, req(t, s, "POST", "/api/v1/connectors/test", map[string]any{"id": id, "selection": v}), 200)
+	if discoveredVersion(t, s, id).Status != "VALIDATED" {
+		t.Fatal("explicit fixed unit did not validate")
+	}
+	fixedUnit.Store(2)
+	requireCode(t, req(t, s, "POST", "/api/v1/connectors/test", map[string]any{"id": id, "selection": v}), 200)
+	if discoveredVersion(t, s, id).Status != "FAILED" {
+		t.Fatal("changed monthly fee unit passed per-request test")
+	}
+}
