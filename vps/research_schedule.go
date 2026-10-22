@@ -664,6 +664,10 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 // Transfer only unexecuted public tasks into the next bounded round, retaining
 // the old task results and explicit lineage. No missed time slots are backfilled.
 func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researchPlannedTask, bool, error) {
+	bindings, err := researchBindings(ctx, tx, run)
+	if err != nil {
+		return nil, false, err
+	}
 	var running int
 	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_tasks WHERE run_id=? AND status='RUNNING'", run).Scan(&running); err != nil {
 		return nil, false, err
@@ -685,6 +689,15 @@ func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researc
 		}
 		if json.Unmarshal([]byte(raw), &task.input) != nil || task.input.Selection != nil || !oneOf(task.kind, "SOURCE", "SEARCH", "INSPECT", "INSPECT_LINK", "AA", "LMSPEED_SEEDS") {
 			return nil, false, errors.New("invalid scheduled public task")
+		}
+		if task.input.Strategy != nil {
+			key := knowledgeMetricKey(task.input.Strategy.Kind, task.input.Strategy.Subject)
+			if binding, ok := bindings[key]; ok && binding.ScopeHash == researchInputScope(task.kind, task.input) {
+				task.binding = &binding
+				task.input.Strategy = &binding
+			} else {
+				task.input.Strategy = nil
+			}
 		}
 		// Continuation grants a new HTTP budget, not a new retry allowance or
 		// permission to ignore a remote Retry-After deadline.

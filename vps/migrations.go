@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 21
+const schemaVersion = 22
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -196,6 +196,14 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 		if _, err = tx.Exec("PRAGMA user_version=21"); err != nil {
+			return err
+		}
+	}
+	if version < 22 {
+		if _, err = tx.Exec(researchEvaluationSchema); err != nil {
+			return err
+		}
+		if _, err = tx.Exec("PRAGMA user_version=22"); err != nil {
 			return err
 		}
 	}

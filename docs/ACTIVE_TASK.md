@@ -1,5 +1,15 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-22 下一版完整功能週期（NEAR-FULL-015）
+
+- 最新使用者指示為「目標是全部做完，下一版要完成幾乎所有功能」，依 D-015 調高下一個公開版本的完成門檻。開發／驗證持續進行，暫不再因單一小片更新應用程式版本；release/request.json 與所有公開 tag／附件保持原值。總驗收清單見 `NEXT_RELEASE.md`。
+- 0.8.5-preview.1 **已公開驗收**，來源 `699d4d57ff8264506c2b2f6e5eed0021327bf602`：VPS39746388040四項、Android39746387862兩項、Mac39746387882三項首次 SUCCESS；發布39746376859／119715783372成功。11個公開附件、manifest `1624476118fe9aa318cd8100b7fda7cc76cf156e1f66b7fe56c9c6435b505e44`、正式下載器與實際舊版→schema21升級均已驗。以下0.8.5候選與失敗留作歷史。
+- 開工重新查 main `cba901d187aa5312cc71f5c2440b23fa04104aee`／39536090788 attempt2，build119016886469及device119016884592 SUCCESS，FEATURE FREEZE=OFF。PR #20維持Draft、不merge、不部署目標主機。
+- 當前唯一整合片 **RESEARCH-EVALUATION-015A**：持久保存實際使用的策略版本、多輪品質與成本觀察、提案相對基線的本機評估、明確 Review／啟用、後續實際研究監測與跨重啟回退。先補完整流程，再接下一片；當前尚未驗收，不能宣稱 WISH-REFL-001 全部完成。
+- 已落地schema22、本機不可變證據／admission receipt、最多32輪／30日有界比較與stale gate、版本固定含排程接續、3輪下降及跨重啟回復；VPS網頁與Mac原生評估入口。完整Go race285.057s／vet、27發布回歸、含原排程與AA聚焦36.156s及追加時效／接續16.650s成功。新Browser首readonly按鈕bug與測試locator／Promise等待失敗原樣記於vps/RESEARCH_EVALUATION.md，修後3次聚焦成功；首完整29 Browser在原五分鐘上限271.965s成功；負面效益政策收斂後另加真TLS反例，最終同SHA九項仍待驗。貨幣／token成本未知，完整改進願望仍PARTIAL。
+
+以下保留先前已交付切片與失敗證據。
+
 ## 2026-10-22 AA 逐頁持久恢復（VPS-AA-RECOVERY-014）
 
 - 使用者要求繼續開發直到穩定與完整。維持 VPS → Mac → Android，唯一新片為 WISH-CRAWL-001 的 AA 分頁 checkpoint／限次恢復。前片 **0.8.4-preview.1 已公開驗收**，來源 `e6b06135510c63e6ccd65a2ce8928d2396ffcb19`：VPS39719294100四項、Android39719294101兩項、Mac39719294093三項均首次 SUCCESS；發布39719289283／119628801054成功，11附件、公開下載器／實際AMD64服務重驗，manifest SHA256 `5d80c556887602d16df3d5f1d752cf0062b4c520a7b942798d8d066bbbf60248`。前節候選與失敗原樣作歷史保留。

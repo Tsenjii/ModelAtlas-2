@@ -9,17 +9,26 @@ import SwiftUI
     @Published var undoID: String?
     @Published var notice: String?
     @Published var needsReload = false
-    init(api: AtlasClient, value: JSONValue, connector: Bool) { self.api = api; self.value = value; self.connector = connector }
+    init(api: AtlasClient, value: JSONValue, connector: Bool) { self.api = api; self.value = value; self.connector = connector; let action = value["activation_action_id"].string; undoID = action.isEmpty ? nil : action }
+    var measured: Bool { !connector && ["SOURCE_RELIABILITY", "RESEARCH_STRATEGY"].contains(value["kind"].string) }
+    var needsEvaluation: Bool { measured && !value["data"]["scope_hash"].string.isEmpty }
+    var evaluationReady: Bool { value["evaluation"]["status"].string == "READY_FOR_TRIAL" && value["evaluation"]["baseline_id"].string == value["active_id"].string }
     func reload() async throws {
         let values = try await api.get(connector ? "/connectors" : "/research/knowledge").requiredArray()
         guard let latest = values.first(where: { $0["id"] == value["id"] }) else { throw AtlasError.invalidResponse }; value = latest
+        if !connector { let action = latest["activation_action_id"].string; undoID = action.isEmpty ? nil : action }
     }
     func activate() async {
         guard !busy, !needsReload else { return }; busy = true; problem = nil; defer { busy = false }
         do {
-            let result = try await api.call(connector ? "/connectors/activate" : "/research/knowledge/activate", method: "POST", body: .object(["id": value["id"], "expected_active_id": .string(value["active_id"].string), "confirm": .bool(true)]))
+            let result = try await api.call(connector ? "/connectors/activate" : "/research/knowledge/activate", method: "POST", body: .object(["id": value["id"], "expected_active_id": .string(value["active_id"].string), "evaluation_id": .string(evaluationReady ? value["evaluation"]["id"].string : ""), "confirm": .bool(true)]))
             undoID = result["action_id"].string; value["active"] = .bool(true); notice = "這個版本已啟用"; await refreshAfterWrite()
         } catch { problem = error.localizedDescription }
+    }
+    func evaluate() async {
+        guard !busy, !needsReload, measured else { return }; busy = true; problem = nil; defer { busy = false }
+        do { value["evaluation"] = try await api.call("/research/knowledge/evaluate", method: "POST", body: .object(["id": value["id"]])); notice = "研究策略評估已保存"; await refreshAfterWrite() }
+        catch { problem = error.localizedDescription }
     }
     func undo() async {
         guard !busy, !needsReload, let undoID else { return }; busy = true; problem = nil; defer { busy = false }
@@ -107,20 +116,40 @@ struct VersionDetailView: View {
             HStack { SmallBadge(text: "v" + controller.value["version"].display); SmallBadge(text: controller.value["active"].boolean ? "已啟用" : controller.value["status"].string, color: atlasAccent); Spacer(); Button("修訂新版本") { editing = true }.disabled(controller.busy) }
             if let notice = controller.notice { Text(notice).font(.callout) }
             if let problem = controller.problem { Text(problem).foregroundStyle(.red); if controller.needsReload { Button("重新讀取") { Task { await controller.retryLoad() } }.disabled(controller.busy) } }
-            ScrollView { VStack(alignment: .leading, spacing: 18) { Text(controller.value["reason"].string); JSONTree(value: controller.value[controller.connector ? "config" : "data"]); DisclosureGroup("證據與測試") { JSONTree(value: controller.value["evidence_ids"]); JSONTree(value: controller.value["test"]); Text("版本 ID：" + controller.value["id"].string).font(.caption).textSelection(.enabled) } } }
+            ScrollView { VStack(alignment: .leading, spacing: 18) { Text(controller.value["reason"].string); if controller.measured { evaluationSection }; JSONTree(value: controller.value[controller.connector ? "config" : "data"]); DisclosureGroup("證據與測試") { JSONTree(value: controller.value["evidence_ids"]); JSONTree(value: controller.value["test"]); Text("版本 ID：" + controller.value["id"].string).font(.caption).textSelection(.enabled) } } }
             if controller.connector {
                 Picker("測試使用的精確連線", selection: $scopeID) { Text("選擇連線").tag(""); ForEach(store.activeModels.filter { $0["provider_id"] == controller.value["provider_id"] }, id: \.self) { Text($0["model_id"].string + " · " + store.scopeTitle($0) + " · " + $0["endpoint"].string).tag(ModelScope($0).id) } }
                 Button("測試資料擷取") { if let model = store.activeModels.first(where: { ModelScope($0).id == scopeID }) { Task { await controller.test(ModelScope(model)) } } }.disabled(controller.busy || controller.needsReload || scopeID.isEmpty)
             }
             HStack {
                 if controller.busy { ProgressView().controlSize(.small) }
-                if let _ = controller.undoID { Button("復原這次啟用") { Task { await controller.undo(); await store.refresh() } }.disabled(controller.busy) }
+                if let _ = controller.undoID { Button("復原這次啟用") { Task { await controller.undo(); await store.refresh() } }.disabled(controller.busy || controller.needsReload) }
                 Spacer()
-                if !controller.value["active"].boolean { Button("確認啟用此版本") { Task { await controller.activate(); await store.refresh() } }.buttonStyle(AtlasActionStyle(prominent: true)).disabled(controller.busy || controller.needsReload || (controller.connector && controller.value["status"].string != "VALIDATED")) }
+                if !controller.value["active"].boolean { Button(controller.needsEvaluation ? "確認試用此版本" : "確認啟用此版本") { Task { await controller.activate(); await store.refresh() } }.buttonStyle(AtlasActionStyle(prominent: true)).disabled(controller.busy || controller.needsReload || controller.value["status"].string == "IMPORTED" || (controller.connector && controller.value["status"].string != "VALIDATED") || (controller.needsEvaluation && !controller.evaluationReady)) }
             }
         }.padding(24).frame(width: 780, height: 700)
         .sheet(isPresented: $editing) { Group { if controller.connector { ConnectorEditor(store: store, initial: controller.value) } else { KnowledgeEditor(store: store, initial: controller.value) } }.atlasModal(store) }
     }
+    private var evaluationSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("策略評估").font(.headline)
+            if !controller.value["evaluation"]["id"].string.isEmpty {
+                let evaluation = controller.value["evaluation"]
+                Text(evaluationTitle(evaluation["status"].string)).font(.subheadline.weight(.semibold))
+                Text(evaluation["reason"].string).foregroundStyle(.secondary)
+                Text(evaluation["target_observations"]["runs"].display + " 輪同範圍研究 · " + evaluation["target_observations"]["http_requests"].display + " 次 HTTP").font(.callout)
+                DisclosureGroup("提案差異、比較範圍與限制") { JSONTree(value: evaluation) }
+            } else { Text("比較多輪本機研究後確認試用。手動優先序及HTTP成功本身不表示研究品質已改善。").foregroundStyle(.secondary) }
+            Button("評估這個提案") { Task { await controller.evaluate() } }.disabled(controller.busy || controller.needsReload || controller.value["status"].string == "IMPORTED")
+            if !controller.value["monitor"]["status"].string.isEmpty {
+                let monitor = controller.value["monitor"]
+                Text("啟用後的實際研究 · " + evaluationTitle(monitor["status"].string)).font(.headline)
+                Text(monitor["reason"].string).foregroundStyle(.secondary)
+                DisclosureGroup("實際使用版本的觀測") { JSONTree(value: monitor) }
+            }
+        }
+    }
+    private func evaluationTitle(_ status: String) -> String { ["READY_FOR_TRIAL":"可確認試用", "INSUFFICIENT":"比較資料不足", "REGRESSION":"發現退步", "SOURCE_CHANGED":"來源版本已變", "DEGRADED":"研究成效下降", "OBSERVED":"持續觀察中", "NO_BASELINE":"尚無比較基線"][status] ?? status }
 }
 
 struct MappingEditor: View {

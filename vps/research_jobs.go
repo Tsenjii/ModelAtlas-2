@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -34,13 +33,14 @@ type ResearchTask struct {
 	Result   json.RawMessage `json:"result"`
 }
 type taskInput struct {
-	SourceSnapshot *ResearchSource `json:"source_snapshot,omitempty"`
-	SourceID       string          `json:"source_id,omitempty"`
-	CandidateID    string          `json:"candidate_id,omitempty"`
-	Selection      *Selection      `json:"selection,omitempty"`
-	Language       string          `json:"language,omitempty"`
-	Query          string          `json:"query,omitempty"`
-	URL            string          `json:"url,omitempty"`
+	SourceSnapshot *ResearchSource           `json:"source_snapshot,omitempty"`
+	SourceID       string                    `json:"source_id,omitempty"`
+	CandidateID    string                    `json:"candidate_id,omitempty"`
+	Selection      *Selection                `json:"selection,omitempty"`
+	Language       string                    `json:"language,omitempty"`
+	Query          string                    `json:"query,omitempty"`
+	URL            string                    `json:"url,omitempty"`
+	Strategy       *researchKnowledgeBinding `json:"strategy,omitempty"`
 }
 type researchBudgetKey struct{}
 
@@ -92,6 +92,11 @@ func (s *Server) chargeResearchNetworkTx(ctx context.Context, tx *sql.Tx, probe 
 	if _, e := tx.ExecContext(ctx, "UPDATE research_run_options SET used=used+1,probes_used=probes_used+? WHERE run_id=?", map[bool]int{true: 1, false: 0}[probe], run); e != nil {
 		return e
 	}
+	if task, _ := ctx.Value(researchTaskBudgetKey{}).(string); task != "" {
+		if _, e := tx.ExecContext(ctx, "INSERT INTO research_task_usage VALUES(?,1,?) ON CONFLICT(task_id) DO UPDATE SET http_requests=http_requests+1,inference_requests=inference_requests+excluded.inference_requests", task, map[bool]int{true: 1, false: 0}[probe]); e != nil {
+			return e
+		}
+	}
 	return nil
 }
 func (s *Server) wakeWorker() {
@@ -114,6 +119,7 @@ type researchPlannedTask struct {
 	retry        *researchRetryState
 	originWait   *researchOriginWait
 	aaCheckpoint *aaResearchCheckpoint
+	binding      *researchKnowledgeBinding
 }
 type researchPlanError struct {
 	status  int
@@ -136,13 +142,19 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 			return v, nil, &researchPlanError{400, "invalid query"}
 		}
 	}
+	learned, err := s.researchKnowledgeSnapshot(ctx)
+	if err != nil {
+		return v, nil, err
+	}
 	tasks := []researchPlannedTask{}
 	for _, id := range v.SourceIDs {
 		src, e := s.source(ctx, id)
 		if e != nil || !src.Enabled {
 			return v, nil, &researchPlanError{422, "source unavailable"}
 		}
-		tasks = append(tasks, researchPlannedTask{kind: "SOURCE", dedupe: "source:" + id, input: taskInput{SourceID: id, SourceSnapshot: &src}})
+		task := researchPlannedTask{kind: "SOURCE", dedupe: "source:" + id, input: taskInput{SourceID: id, SourceSnapshot: &src}}
+		bindResearchKnowledge(&task, learned, false)
+		tasks = append(tasks, task)
 	}
 	for i := range v.Selections {
 		scope := v.Selections[i]
@@ -162,17 +174,25 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 		tasks = append(tasks, researchPlannedTask{kind: "INSPECT", dedupe: "inspect:" + id, input: taskInput{CandidateID: id, URL: c.Website}})
 	}
 	if v.Search {
+		defaultQueries := len(v.Queries) == 0
 		if len(v.Queries) == 0 {
 			v.Queries = map[string]string{}
 			for lang, q := range searchQueries {
-				if learned := s.activeKnowledge(ctx, "RESEARCH_STRATEGY", lang); str(learned["query"]) != "" {
-					q = str(learned["query"])
+				if rule := learned[knowledgeMetricKey("RESEARCH_STRATEGY", lang)]; str(rule.Data["query"]) != "" {
+					q = str(rule.Data["query"])
 				}
 				v.Queries[lang] = q
 			}
 		}
-		for lang, q := range v.Queries {
-			tasks = append(tasks, researchPlannedTask{kind: "SEARCH", dedupe: "search:" + lang, input: taskInput{Language: lang, Query: q}})
+		languages := make([]string, 0, len(v.Queries))
+		for lang := range v.Queries {
+			languages = append(languages, lang)
+		}
+		sort.Strings(languages)
+		for _, lang := range languages {
+			task := researchPlannedTask{kind: "SEARCH", dedupe: "search:" + lang, input: taskInput{Language: lang, Query: v.Queries[lang]}}
+			bindResearchKnowledge(&task, learned, defaultQueries)
+			tasks = append(tasks, task)
 		}
 	}
 	if v.RefreshAA {
@@ -182,27 +202,13 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 		tasks = append(tasks, researchPlannedTask{kind: "LMSPEED_SEEDS", dedupe: "lmspeed"})
 	}
 	// Learned priorities only reorder work the user explicitly selected.
-	weights := map[string]float64{}
-	for _, task := range tasks {
-		weight := 1.0
-		var learned map[string]any
-		if task.input.SourceID != "" {
-			learned = s.activeKnowledge(ctx, "SOURCE_RELIABILITY", task.input.SourceID)
+	weight := func(task researchPlannedTask) float64 {
+		if task.binding != nil {
+			return task.binding.Weight * float64(task.binding.Priority)
 		}
-		if task.input.Language != "" {
-			learned = s.activeKnowledge(ctx, "RESEARCH_STRATEGY", task.input.Language)
-		}
-		if n := decimal(json.Number(fmt.Sprint(learned["weight"]))); n != nil {
-			weight, _ = n.Float64()
-		}
-		if task.input.Language != "" {
-			if n := quotaInteger(json.Number(fmt.Sprint(learned["priority"]))); n != nil {
-				weight *= float64(*n)
-			}
-		}
-		weights[task.dedupe] = weight
+		return 1
 	}
-	sort.SliceStable(tasks, func(i, j int) bool { return weights[tasks[i].dedupe] > weights[tasks[j].dedupe] })
+	sort.SliceStable(tasks, func(i, j int) bool { return weight(tasks[i]) > weight(tasks[j]) })
 	if len(tasks) == 0 {
 		return v, nil, &researchPlanError{400, "select sources, providers, candidates or search"}
 	}
@@ -217,6 +223,12 @@ func insertResearchRun(ctx context.Context, tx *sql.Tx, id string, v ResearchOpt
 		return err
 	}
 	for _, task := range tasks {
+		if task.binding != nil {
+			binding, _ := json.Marshal(task.binding)
+			if _, err := tx.ExecContext(ctx, "INSERT INTO research_plan_bindings VALUES(?,?,?) ON CONFLICT(run_id,metric_key) DO NOTHING", id, knowledgeMetricKey(task.binding.Kind, task.binding.Subject), string(binding)); err != nil {
+				return err
+			}
+		}
 		raw, _ := json.Marshal(task.input)
 		result := "{}"
 		if task.retry != nil || task.originWait != nil {
@@ -410,7 +422,8 @@ func (s *Server) runResearchPending(parent context.Context) {
 		if t.Kind != "MINIMAL_INFERENCE" && !s.beginFlight(flight) {
 			return
 		}
-		ctx, cancel := context.WithTimeout(context.WithValue(parent, researchBudgetKey{}, t.RunID), 40*time.Second)
+		budgetCtx := context.WithValue(context.WithValue(parent, researchBudgetKey{}, t.RunID), researchTaskBudgetKey{}, t.ID)
+		ctx, cancel := context.WithTimeout(budgetCtx, 40*time.Second)
 		s.flightMu.Lock()
 		if s.cancels == nil {
 			s.cancels = map[string]context.CancelFunc{}

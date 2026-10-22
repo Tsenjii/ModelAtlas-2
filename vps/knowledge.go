@@ -11,23 +11,26 @@ import (
 )
 
 type KnowledgeVersion struct {
-	ID          string         `json:"id"`
-	Kind        string         `json:"kind"`
-	Subject     string         `json:"subject"`
-	Version     int            `json:"version"`
-	Data        map[string]any `json:"data"`
-	EvidenceIDs []string       `json:"evidence_ids"`
-	Reason      string         `json:"reason"`
-	Status      string         `json:"status"`
-	RunID       string         `json:"run_id,omitempty"`
-	Active      bool           `json:"active"`
-	ActiveID    string         `json:"active_id"`
-	CreatedAt   int64          `json:"created_at"`
+	ID                 string               `json:"id"`
+	Kind               string               `json:"kind"`
+	Subject            string               `json:"subject"`
+	Version            int                  `json:"version"`
+	Data               map[string]any       `json:"data"`
+	EvidenceIDs        []string             `json:"evidence_ids"`
+	Reason             string               `json:"reason"`
+	Status             string               `json:"status"`
+	RunID              string               `json:"run_id,omitempty"`
+	Active             bool                 `json:"active"`
+	ActiveID           string               `json:"active_id"`
+	CreatedAt          int64                `json:"created_at"`
+	Evaluation         *knowledgeEvaluation `json:"evaluation,omitempty"`
+	Monitor            *knowledgeMonitor    `json:"monitor,omitempty"`
+	ActivationActionID string               `json:"activation_action_id,omitempty"`
 }
 
 var knowledgeFields = map[string]string{
-	"SOURCE_RELIABILITY":   "source_id retrieval_success retrieval_failure attempts evidence_count rejected_trials freshness_days weight confidence",
-	"RESEARCH_STRATEGY":    "language query success failure attempts hits api_ready cost_http priority weight confidence",
+	"SOURCE_RELIABILITY":   "source_id retrieval_success retrieval_failure attempts evidence_count rejected_trials freshness_days weight confidence scope_hash",
+	"RESEARCH_STRATEGY":    "language query success failure attempts hits api_ready cost_http priority weight confidence scope_hash",
 	"ENDPOINT_PATTERN":     "provider_id path operation observed_at source_url confidence",
 	"AUTH_PATTERN":         "provider_id auth_kind source_url observed_at confidence",
 	"DISCOVERY_PATH":       "source_id source_url path operation status evidence_count confidence",
@@ -92,6 +95,9 @@ func validKnowledge(v KnowledgeVersion) bool {
 		if k == "confidence" && !oneOf(str(x), "TENTATIVE", "EVIDENCE_BACKED") {
 			return false
 		}
+		if k == "scope_hash" && (len(str(x)) != 64 || !validID(str(x))) {
+			return false
+		}
 		if k == "language" && !researchLanguage(str(x)) {
 			return false
 		}
@@ -132,6 +138,7 @@ func (s *Server) proposeKnowledge(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &v) {
 		return
 	}
+	if v.Evaluation!=nil || v.Monitor!=nil || v.ActivationActionID!="" {http.Error(w,"derived evaluation fields are read only",422);return}
 	secrets, e := s.knownSecrets(r.Context())
 	if e != nil {
 		http.Error(w, "vault unavailable", 503)
@@ -186,13 +193,23 @@ func (s *Server) listKnowledge(w http.ResponseWriter, r *http.Request) {
 			out = append(out, v)
 		}
 	}
+	if e = rows.Err(); e != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	rows.Close()
+	if e = s.enrichKnowledge(r.Context(), out); e != nil {
+		http.Error(w, "evaluation history unavailable", 503)
+		return
+	}
 	jsonOK(w, 200, out)
 }
 
 type versionActivation struct {
-	ID         string `json:"id"`
-	ExpectedID string `json:"expected_active_id"`
-	Confirm    bool   `json:"confirm"`
+	ID           string `json:"id"`
+	ExpectedID   string `json:"expected_active_id"`
+	Confirm      bool   `json:"confirm"`
+	EvaluationID string `json:"evaluation_id,omitempty"`
 }
 
 func (s *Server) activateKnowledge(w http.ResponseWriter, r *http.Request) {
@@ -221,6 +238,13 @@ func (s *Server) activateKnowledge(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "imported knowledge requires a new evidence-backed proposal before activation", 422)
 		return
 	}
+	k.ID = v.ID
+	if oneOf(k.Kind, "SOURCE_RELIABILITY", "RESEARCH_STRATEGY") && (str(k.Data["scope_hash"]) != "" || v.EvaluationID != "") {
+		if e = checkKnowledgeEvaluation(r.Context(), tx, k, v.EvaluationID); e != nil {
+			http.Error(w, e.Error(), 409)
+			return
+		}
+	}
 	if k.Kind == "MODEL_ALIAS_RULE" {
 		var count int
 		if k.Subject != str(k.Data["provider_id"])+"/"+str(k.Data["raw_id"]) || tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM models WHERE provider_id=? AND id=?", str(k.Data["provider_id"]), str(k.Data["raw_id"])).Scan(&count) != nil || count != 1 {
@@ -241,6 +265,12 @@ func (s *Server) activateKnowledge(w http.ResponseWriter, r *http.Request) {
 	if e != nil {
 		http.Error(w, e.Error(), 409)
 		return
+	}
+	if v.EvaluationID != "" && oneOf(k.Kind, "SOURCE_RELIABILITY", "RESEARCH_STRATEGY") {
+		if _, e = tx.ExecContext(r.Context(), "INSERT INTO knowledge_activation_evaluations VALUES(?,?)", id, v.EvaluationID); e != nil {
+			http.Error(w, "evaluation link failed", 500)
+			return
+		}
 	}
 	if tx.Commit() != nil {
 		http.Error(w, "database error", 500)

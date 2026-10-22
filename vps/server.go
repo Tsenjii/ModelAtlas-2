@@ -300,6 +300,7 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /research/reflections", s.listReflections)
 	api.HandleFunc("GET /research/knowledge", s.listKnowledge)
 	api.HandleFunc("POST /research/knowledge", s.proposeKnowledge)
+	api.HandleFunc("POST /research/knowledge/evaluate", s.evaluateKnowledge)
 	api.HandleFunc("POST /research/knowledge/activate", s.activateKnowledge)
 	api.HandleFunc("POST /versions/undo", s.undoVersion)
 	api.HandleFunc("GET /connectors", s.listConnectors)

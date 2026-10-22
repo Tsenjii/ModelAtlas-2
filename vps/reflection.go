@@ -39,9 +39,18 @@ func (s *Server) retryMissingReflections(ctx context.Context) {
 }
 
 func (s *Server) reflectResearch(ctx context.Context, run string) error {
+	secrets, e := s.knownSecrets(ctx)
+	if e != nil {
+		return e
+	}
+	tx, e := s.Store.DB.BeginTx(ctx, nil)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback()
 	var state, summary, checkpoint string
 	var used, probes int
-	if e := s.Store.DB.QueryRowContext(ctx, "SELECT r.status,o.summary_json,o.used,o.probes_used,r.checkpoint FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", run).Scan(&state, &summary, &used, &probes, &checkpoint); e != nil {
+	if e := tx.QueryRowContext(ctx, "SELECT r.status,o.summary_json,o.used,o.probes_used,r.checkpoint FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", run).Scan(&state, &summary, &used, &probes, &checkpoint); e != nil {
 		return e
 	}
 	if !oneOf(state, "COMPLETED", "CANCELLED", "BUDGET_EXHAUSTED") {
@@ -52,7 +61,7 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 	json.Unmarshal([]byte(summary), &result)
 	delete(result, "at")
 	report["outcomes"] = result
-	rows, e := s.Store.DB.QueryContext(ctx, "SELECT id,kind,status,attempts,payload_json,result_json FROM research_tasks WHERE run_id=? ORDER BY rowid LIMIT 128", run)
+	rows, e := tx.QueryContext(ctx, "SELECT id,kind,status,attempts,payload_json,result_json FROM research_tasks WHERE run_id=? ORDER BY rowid LIMIT 128", run)
 	if e != nil {
 		return e
 	}
@@ -99,20 +108,20 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 	report["tasks"] = tasks
 	report["source_query_metrics"] = metrics
 	var reuse, observations int
-	s.Store.DB.QueryRowContext(ctx, `SELECT COUNT(*),COALESCE(SUM(CASE WHEN json_extract(d.details_json,'$.normalized.reused_local_traffic')=1 THEN 1 ELSE 0 END),0) FROM research_evidence e JOIN research_evidence_details d ON d.evidence_id=e.id WHERE json_extract(d.details_json,'$.run_id')=? AND e.source_type='SCOPED_INFERENCE'`, run).Scan(&observations, &reuse)
+	tx.QueryRowContext(ctx, `SELECT COUNT(*),COALESCE(SUM(CASE WHEN json_extract(d.details_json,'$.normalized.reused_local_traffic')=1 THEN 1 ELSE 0 END),0) FROM research_evidence e JOIN research_evidence_details d ON d.evidence_id=e.id WHERE json_extract(d.details_json,'$.run_id')=? AND e.source_type='SCOPED_INFERENCE'`, run).Scan(&observations, &reuse)
 	report["probe_value"] = map[string]any{"observations": observations, "reused_existing": reuse, "new_requests": probes, "repeated_probes": max(0, probes-(observations-reuse)), "identity_proven": false}
-	secrets, e := s.knownSecrets(ctx)
+	quality, e := researchQualitySnapshot(ctx, tx, run)
 	if e != nil {
 		return e
 	}
+	report["quality_policy"] = "research-yield-v1"
+	report["quality_observations"] = quality
+	report["cost"] = nil
+	report["cost_status"] = "NOT_MEASURED"
+	report["cost_note"] = "HTTP counts are admitted requests; public/search billing and token costs are not inferred from HTTP success."
 	report = safeAssistantData(report, secrets).(map[string]any)
 	raw, _ := json.Marshal(report)
 	fingerprint := contentHash(raw)
-	tx, e := s.Store.DB.BeginTx(ctx, nil)
-	if e != nil {
-		return e
-	}
-	defer tx.Rollback()
 	if _, e = tx.ExecContext(ctx, "INSERT INTO reflection_receipts VALUES(?,?,?,?,?) ON CONFLICT(run_id) DO UPDATE SET status=excluded.status,used=excluded.used,checkpoint=excluded.checkpoint,reflected_at=excluded.reflected_at", run, state, used, checkpoint, now()); e != nil {
 		return e
 	}
@@ -124,16 +133,37 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 	if _, e = tx.ExecContext(ctx, "INSERT INTO research_reflections VALUES(?,?,?,?,?)", id, run, fingerprint, string(raw), now()); e != nil {
 		return e
 	}
+	if e = saveResearchQuality(ctx, tx, id, quality); e != nil {
+		return e
+	}
 	if state == "COMPLETED" {
+		history, err := loadResearchQuality(ctx, tx)
+		if err != nil {
+			return err
+		}
+		qualityByKey := map[string]researchQuality{}
+		for _, q := range quality {
+			qualityByKey[q.MetricKey] = q
+		}
 		for _, m := range metrics {
 			if str(m["source_id"]) != "" {
 				data := map[string]any{"source_id": m["source_id"], "retrieval_success": m["success"], "retrieval_failure": m["failure"], "attempts": m["attempts"], "weight": 1, "confidence": "TENTATIVE"}
-				if _, e = appendKnowledge(ctx, tx, KnowledgeVersion{Kind: "SOURCE_RELIABILITY", Subject: str(m["source_id"]), Data: data, EvidenceIDs: []string{id}, Reason: "本輪來源取得成效；不等於主張真實性，待比較其他輪次。", RunID: run}); e != nil {
+				key := knowledgeMetricKey("SOURCE_RELIABILITY", str(m["source_id"]))
+				if q, ok := qualityByKey[key]; ok {
+					data["scope_hash"] = q.ScopeHash
+					data["weight"] = observedResearchWeight(history, key, q.ScopeHash)
+				}
+				if _, e = appendKnowledge(ctx, tx, KnowledgeVersion{Kind: "SOURCE_RELIABILITY", Subject: str(m["source_id"]), Data: data, EvidenceIDs: []string{id}, Reason: "依最多32輪同一來源版本的本機觀測估計研究優先序；HTTP 200本身不增加品質分數，先評估再確認試用。", RunID: run}); e != nil {
 					return e
 				}
 			}
-			if str(m["language"]) != "" {
+			if str(m["language"]) != "" && str(m["task_kind"]) == "SEARCH" {
 				data := map[string]any{"language": m["language"], "query": m["query"], "success": m["success"], "failure": m["failure"], "attempts": m["attempts"], "weight": 1, "priority": 1, "confidence": "TENTATIVE"}
+				key := knowledgeMetricKey("RESEARCH_STRATEGY", str(m["language"]))
+				if q, ok := qualityByKey[key]; ok {
+					data["scope_hash"] = q.ScopeHash
+					data["weight"] = observedResearchWeight(history, key, q.ScopeHash)
+				}
 				if _, e = appendKnowledge(ctx, tx, KnowledgeVersion{Kind: "RESEARCH_STRATEGY", Subject: str(m["language"]), Data: data, EvidenceIDs: []string{id}, Reason: "本輪語言與查詢成效；取消不記為失敗。", RunID: run}); e != nil {
 					return e
 				}

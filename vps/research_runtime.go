@@ -127,6 +127,18 @@ func (s *Server) recordEvidence(ctx context.Context, candidate, kind, source, cl
 	if _, e = tx.ExecContext(ctx, "INSERT INTO research_evidence_details VALUES(?,?)", id, string(raw)); e != nil {
 		return "", e
 	}
+	if task, _ := ctx.Value(researchTaskBudgetKey{}).(string); task != "" {
+		var model, metadata string
+		if e = tx.QueryRowContext(ctx, "SELECT c.model_id,COALESCE(d.details_json,'{}') FROM research_candidates c LEFT JOIN research_candidate_details d ON d.candidate_id=c.id WHERE c.id=?", candidate).Scan(&model, &metadata); e != nil {
+			return "", e
+		}
+		var c CandidateDetails
+		json.Unmarshal([]byte(metadata), &c)
+		receipt, _ := json.Marshal(qualityEvidenceRecord{CandidateID: candidate, Kind: kind, Verified: verified, SourceID: details.SourceID, Language: details.Language, ModelID: model, CreatedRun: c.CreatedRun, Facts: details.Normalized})
+		if _, e = tx.ExecContext(ctx, "INSERT INTO research_local_evidence VALUES(?,?,?,?)", id, details.RunID, task, string(receipt)); e != nil {
+			return "", e
+		}
+	}
 	return id, tx.Commit()
 }
 func (s *Server) saveResearchSource(w http.ResponseWriter, r *http.Request) {

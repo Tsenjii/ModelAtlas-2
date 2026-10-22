@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -336,7 +337,7 @@ func TestAAResearchCheckpointSyncIsHistoryOnlyAndUpgradeRetainsData(t *testing.T
 	assertSQLInt(t, legacy, schemaVersion, "PRAGMA user_version")
 	assertSQLInt(t, legacy, 0, "SELECT COUNT(*) FROM research_aa_checkpoints")
 	assertSQLInt(t, legacy, 1, "SELECT COUNT(*) FROM aa_snapshots WHERE id='aa-last-good'")
-	backups, e := filepath.Glob(filepath.Join(filepath.Dir(legacy.Store.path), "upgrade-backups", "schema-20-to-21-*.sqlite"))
+	backups, e := filepath.Glob(filepath.Join(filepath.Dir(legacy.Store.path), "upgrade-backups", fmt.Sprintf("schema-20-to-%d-*.sqlite", schemaVersion)))
 	if e != nil || len(backups) != 1 || verifySnapshot(backups[0]) != nil {
 		t.Fatal("missing consistent pre-upgrade snapshot", backups, e)
 	}
