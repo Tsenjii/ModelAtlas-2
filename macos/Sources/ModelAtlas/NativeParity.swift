@@ -744,6 +744,10 @@ import SwiftUI
         // TextKit can publish a container width after its view frame. Isolate
         // that ordering with the real native editor, leaving text/frame intact.
         checkpoint = "container-width-before-frame"
+        let originalScrollerStyle = scroll.scrollerStyle
+        scroll.scrollerStyle = .overlay
+        let containerBaseline = try await composerWideBaseline(store, window: window, editor: editor, scroll: scroll, text: wrapping)
+        baselineHeight = containerBaseline; baselineWidth = editor.bounds.width; baselineContainerWidth = editor.textContainer?.containerSize.width
         guard let container = editor.textContainer else { throw AtlasError.invalidResponse }
         let originalContainerSize = container.containerSize, originalEditorWidth = editor.bounds.width
         let containerTarget = originalContainerSize.width * 0.65
@@ -753,12 +757,16 @@ import SwiftUI
         editor.setFrameSize(NSSize(width: originalEditorWidth, height: editor.frame.height))
         scroll.needsLayout = true; scroll.layoutSubtreeIfNeeded()
         try require(abs(editor.bounds.width - originalEditorWidth) < 0.5 && abs(container.containerSize.width - containerTarget) < 0.5)
-        try await wait { scroll.bounds.height > wideHeight + 8 && scroll.bounds.height <= 145 }
+        try await wait { abs(editor.bounds.width - originalEditorWidth) < 0.5 && scroll.bounds.height > containerBaseline + 8 && scroll.bounds.height <= 145 }
         try require(store.draft == wrapping && editor.string == wrapping)
         checkpoint = "restore-container-tracking"
         container.widthTracksTextView = true; container.containerSize = originalContainerSize
         scroll.needsLayout = true; scroll.layoutSubtreeIfNeeded()
+        try await wait { abs(scroll.bounds.height - containerBaseline) < 2 }
+        scroll.scrollerStyle = originalScrollerStyle
+        scroll.needsLayout = true; scroll.layoutSubtreeIfNeeded()
         try await wait { abs(scroll.bounds.height - wideHeight) < 2 }
+        baselineHeight = wideHeight; baselineWidth = editor.bounds.width; baselineContainerWidth = container.containerSize.width
         expectedContainerWidth = nil
         checkpoint = "narrow-resize"
         window.setContentSize(NSSize(width: 920, height: 800))
