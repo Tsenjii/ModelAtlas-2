@@ -499,6 +499,13 @@ func (s *Server) runResearchPending(parent context.Context) {
 			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='BUDGET_EXHAUSTED' WHERE id=? AND status='RUNNING'", t.RunID)
 		}
 		result, status = s.researchRetryResult(t, taskErr, result, status)
+		var inferenceLimit *researchInferenceBudgetError
+		if errors.As(taskErr, &inferenceLimit) {
+			result["inference_budget"] = inferenceLimit
+			// No inference was admitted: waiting for local authorization must not
+			// consume the original bounded upstream retry allowance.
+			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
+		}
 		var originWait *researchOriginWait
 		if errors.As(taskErr, &originWait) {
 			// An admission wait sent no HTTP request and is not a failed probe.

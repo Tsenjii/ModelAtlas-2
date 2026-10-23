@@ -1,5 +1,7 @@
 # 研究推論原子入場（RESEARCH-ADMISSION-015E）
 
+所列範圍已由ba069a1dea4e904d8be4e55b2f8f353c0079f1e9同來源九項與九份實際產物驗收；精確證據見../docs/verification/20261023/research-admission-baseline.json與PR #20。以下候選／失敗過程保留。完整研究預算與下一版仍PARTIAL；015F才接每日核准，不能借本片綠燈。
+
 本片修正既有研究推論的本機拒絕、預算保留及失敗恢復。完整每日／逐憑證token與USD限制、私人排程opt-in、逐級probe仍待後續完成；公開版本保持0.8.5-preview.1，PR #20維持Draft。
 
 ## 正式流程與保存

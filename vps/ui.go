@@ -495,7 +495,7 @@ const homeHTML = `<!doctype html>
 <h2>全球免費強模研究</h2>
 <p>追蹤來源、驗證證據，保留完整研究歷程。</p>
 </div>
-` + researchScheduleHTML + `<div id="research-funnel" class="metrics">
+` + researchScheduleHTML + researchInferenceBudgetHTML + `<div id="research-funnel" class="metrics">
 </div>
 <div class="toolbar">
 <label>研究狀態<select id="research-filter">

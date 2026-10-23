@@ -1,5 +1,13 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-23 研究每日與逐憑證推論核准（RESEARCH-DAILY-015F）
+
+- D-015維持：下一公開版須接近主要功能齊全，公開0.8.5-preview.1、release/request.json／版本／tag／附件保持原值；PR #20維持Draft，不merge、不部署。
+- 前片015E所列範圍已驗收：來源ba069a1dea4e904d8be4e55b2f8f353c0079f1e9／tree86cd35227d55594a90fa1cf4619e9424f3ed5565。同來源VPS39905594895四項、Android39905594910兩項、Mac39905594912三項首次SUCCESS；九份實際產物來源／成功producer時間窗／SHA256／內層／原報告及13實圖核對完成，精確證據見verification/20261023/research-admission-baseline.json及PR #20。完整Go race本機368.990s／CI432.357s，32 Browser本機272.503s／CI284.210s、380PNG／零failure圖；真systemd41.739s與原expanded workload25.279s、Android579 JVM／976 device（5原skip）、Mac各82核心／90圖全部保留。
+- 開工重新核對main仍cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 attempt2 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。015E驗收已寫入Draft PR，才接此片。
+- 當前唯一整合片015F：正式研究工作區的每日總推論／逐憑證上限與用量、穩定Provider×Account×Credential跨版本計數、跨輪／並行／重啟／UTC日界、原子入場與明確恢復；設定CAS與不可變變更紀錄、讀取失敗保留草稿／last-good、僅本機授權。schema27一致升級先保留原快照。新來源完整本機與自己的九項／實際產物前仍候選。
+- 每輪原HTTP／probe及公開排程禁私人推論保持。預設每日總100／逐憑證20次為本機核准次數，不是官方quota或精確付費；0明確禁止新核准。Token／USD預算、共用Account／Project等quota pool、私人排程opt-in、逐級probe、大資料同步與原生完整流程仍待補；不以本片提前勾完WISH-CRAWL-001。
+
 ## 2026-10-23 研究推論原子入場與恢復（RESEARCH-ADMISSION-015E）
 
 - D-015保持：下一公開版以接近主要功能齊全為門檻。公開0.8.5-preview.1、release/request.json／版本／tag／附件不變；PR #20維持Draft，不merge、不部署。

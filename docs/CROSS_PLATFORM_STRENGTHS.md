@@ -1,5 +1,7 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-23最新：015E來源ba069a1同來源九項／九份實際產物已驗（verification/20261023/research-admission-baseline.json）。015F候選補VPS正式每日推論／逐憑證設定、用量／歷史及恢復，Mac內建同源引擎取得後端；Mac／Android專用原生每日設定仍待對應。原全部功能／負載／原生及Browser測試保留，新來源獨立九項；不外推token／USD或私人排程已完成。
+
 2026-10-23最新：015D所列範圍已由97bcd81同來源九項及全部產物驗收（verification/20261023/authenticity-baseline-v2.json）；當前015E候選修正VPS正式研究／共用對話管線的原子入場、本機故障不扣額與重試新證據。Mac內建同源引擎取得後端修正；Android專用對應及其他原生缺口保留。原功能、測試、負載與timeout不減，015E完整新來源九項前不接受。以下為既有過程。
 
 2026-10-23 AUTHENTICITY-015D候選：VPS Models歷史可分析既有流量、建立同Canonical跨origin參考Review、明確啟用與跨重啟Undo；Assistant／研究共用零額外HTTP分析。保留既有導航／六分區、scope／Unknown與低資源分段編碼。Mac同源引擎有API，Mac／Android專用原生UI尚未移植；原生／完整願望不提前驗收。

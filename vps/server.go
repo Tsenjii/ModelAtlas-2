@@ -280,6 +280,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /telemetry/detail", s.telemetryDetail)
 	api.HandleFunc("GET /telemetry/export", s.exportTelemetry)
 	api.HandleFunc("GET /research/dashboard", s.researchDashboard)
+	api.HandleFunc("GET /research/inference-budget", s.getResearchInferenceBudget)
+	api.HandleFunc("POST /research/inference-budget", s.setResearchInferenceBudget)
 	api.HandleFunc("GET /research/sources", s.listResearchSources)
 	api.HandleFunc("POST /research/sources", s.saveResearchSource)
 	api.HandleFunc("POST /research/start", s.startResearch)
