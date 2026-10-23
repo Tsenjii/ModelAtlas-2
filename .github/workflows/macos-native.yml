@@ -8,7 +8,7 @@ on:
       - "docs/ACTIVE_TASK.md"
       - "release/**"
   push:
-    branches: [main]
+    branches: [main, verify/native-container-015f]
     paths:
       - "macos/**"
       - "vps/**"
