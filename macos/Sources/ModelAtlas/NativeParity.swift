@@ -6,6 +6,7 @@ import SwiftUI
 // Separate opt-in process/data directory. The original 25-frame acceptance
 // remains intact; this phase exercises the newly added production workflows.
 @MainActor enum NativeParity {
+    private static var composerGeometryTrace: [JSONValue] = []
     static func run(store: AtlasStore, output: URL) async {
         var stage = "bootstrap"
         do {
@@ -743,6 +744,7 @@ import SwiftUI
         let wideHeight = try await composerWideBaseline(store, window: window, editor: editor, scroll: scroll, text: wrapping)
         baselineHeight = wideHeight; baselineWidth = editor.bounds.width; baselineContainerWidth = editor.textContainer?.containerSize.width
         originalWideHeight = wideHeight; originalWideWidth = editor.bounds.width; originalWideContainer = editor.textContainer?.containerSize.width
+        try require(!scroll.hasVerticalScroller)
         // TextKit can publish a container width after its view frame. Isolate
         // that ordering with the real native editor, leaving text/frame intact.
         checkpoint = "container-width-before-frame"
@@ -785,6 +787,7 @@ import SwiftUI
         checkpoint = "long-text-scroll"
         editor.insertText(longText, replacementRange: NSRange(location: NSNotFound, length: 0))
         try await wait { store.draft == longText && scroll.bounds.height >= 130 && scroll.bounds.height <= 145 }
+        try require(scroll.hasVerticalScroller)
         editor.scrollRangeToVisible(NSRange(location: (longText as NSString).length, length: 0))
         try require(scroll.contentView.bounds.origin.y > 0)
         try await captureWorkspace(store, output, "18-composer-multiline-light", dark: false)
@@ -819,7 +822,8 @@ import SwiftUI
                 "expected_container_width": expectedContainerWidth.map { JSONValue.number(Double($0)) } ?? .null,
                 "original_wide_height": originalWideHeight.map { JSONValue.number(Double($0)) } ?? .null,
                 "original_wide_editor_width": originalWideWidth.map { JSONValue.number(Double($0)) } ?? .null,
-                "original_wide_container_width": originalWideContainer.map { JSONValue.number(Double($0)) } ?? .null])
+                "original_wide_container_width": originalWideContainer.map { JSONValue.number(Double($0)) } ?? .null,
+                "geometry_trace": .array(composerGeometryTrace)])
             try? JSONEncoder().encode(report).write(to: output.appendingPathComponent("composer.diagnostics.log"), options: .atomic)
             try? await captureWorkspace(store, output, "composer-failure", dark: false)
             throw DraftProblem("輸入框驗證失敗：" + checkpoint)
@@ -828,12 +832,15 @@ import SwiftUI
     private static func composerWideBaseline(_ store: AtlasStore, window: NSWindow, editor: NSTextView, scroll: NSScrollView, text: String) async throws -> CGFloat {
         let end = Date().addingTimeInterval(4)
         var previous: [CGFloat] = [], stableSince = Date()
+        composerGeometryTrace = []
         while Date() < end {
             window.contentView?.layoutSubtreeIfNeeded()
             let sample = [editor.bounds.width, editor.textContainer?.containerSize.width ?? -1, scroll.bounds.height]
             let ready = store.draft == text && editor.string == text && sample[0] > 800 && sample[1] > 790 && sample[2] > 35 && sample[2] < 140
             if !ready || previous.count != sample.count || zip(previous, sample).contains(where: { abs($0.0 - $0.1) > 0.5 }) { stableSince = Date() }
             else if Date().timeIntervalSince(stableSince) >= 0.45 { return sample[2] }
+            composerGeometryTrace.append(.object(["view_width": .number(Double(sample[0])), "container_width": .number(Double(sample[1])), "height": .number(Double(sample[2])), "ready": .bool(ready), "draft_matches": .bool(store.draft == text), "editor_matches": .bool(editor.string == text), "scroller": .bool(scroll.hasVerticalScroller)]))
+            if composerGeometryTrace.count > 16 { composerGeometryTrace.removeFirst() }
             previous = sample
             try await Task.sleep(nanoseconds: 20_000_000)
         }
