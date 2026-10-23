@@ -40,6 +40,10 @@ MINIMAL_INFERENCE優先重用原有同scope／來源／憑證版本的有效觀�
 
 跨日重新展開反例修後，新Browser7.494s（流程6.48s）成功，原所有情境與9圖不減。
 
+2015e5a候選完整Go race359.498s成功，但完整33 Browser不能接受：原模型連線的簽到跨日鍵盤操作等待30秒失敗（36.36s），全套在28流程成功後300.021s觸及原上限。失敗原圖顯示舊日按鈕仍在但焦點已丟失；同來源單跑8.415s成功，不能抹去全套反例。追加真GET延遲後6.388s確定重現同日讀取重建按鈕而丟焦點；production只在原焦點位於本帳戶操作時，恢復同一帳戶／同種新操作。已完成／消失／過日的操作不恢復成可寫舊按鈕，改保留資訊焦點。原兩次推論、一次簽到POST、stale day不POST與所有選取／排序／scope／圖／timeout斷言不減。原MacAlignment、強化ModelConnections與新每日Browser合計24.604s成功（11.17／6.61／5.80s）。
+
+2015來源CI的Browser120275350443／run39911458705在原15min上限取消，沒有執行測試或上傳圖；紀錄顯示Ubuntu依賴下載先耗6m40s，61.2MB CJK字型再卡8min。此片將CI內已觀測的Azure HTTP Ubuntu鏡像換為官方HTTPS archive，APT連線／資料等待30秒、最多1次額外下載重試；保留原npm lock、完整Chromium／headless shell、CJK字型、全部工作量、5min測試及15min job上限。不改應用程式網路政策。YAML／bash -n／實際APT選項解析、vet及27發布回歸0.036s成功；參考[APT官方設定](https://manpages.debian.org/stretch/apt/apt.conf.5.en.html)與[Ubuntu HTTPS archive](https://archive.ubuntu.com/ubuntu/)。修後新來源必須完整本機與同來源九項，不能借2015其他八項或先前任何候選綠燈。
+
 最終聚焦含原015E、原生協定／工具接續與原研究真實性caller的race42.758s成功；vet及27發布回歸0.030s成功。新Browser最終6.973s（流程5.96s）成功，9張實圖已檢查；原32流程／380圖保持，完整新來源另驗。
 
 完整Go race／vet、發布27回歸、原32 Browser／380圖加新流程、Android JVM／device、Mac兩架構、真systemd與原expanded workload都保留。原Browser Go timeout5min及job15min不變；最終來源獨立九項與全部實際產物前仍候選，不借015E或任何修前來源的綠燈。

@@ -4,6 +4,8 @@
 
 同片審查：ae57b1f候選5.914s真Browser確認跨日重新展開仍留昨天用量；已補展開／前景與原15秒檢查的重讀。原9圖、全部情境／次數與timeout保持，ae候選不接受，修後來源獨立九項。
 
+同片穩定審查：2015e5a完整Go359.498s成功，但全Browser原ModelConnections丟簽到焦點／36.36s FAIL後，28流程成功仍於300.021s逾時；單跑8.415s不能取代全套失敗。追加真GET延遲6.388s確定重現，production保留原同帳戶操作焦點、stale／已完成不恢復舊寫入，原全部操作／請求數／timeout保留；含原MacAlignment與新每日聚焦24.604s成功。2015 CI Browser因Ubuntu套件／CJK下載15min取消、未開始測試；新增CI官方HTTPS鏡像與有界APT下載等待，完整依賴與原job／測試上限不變。詳vps/RESEARCH_DAILY_BUDGET.md；2015不接受，最終新來源獨立全部九項／實際產物。
+
 
 - D-015維持：下一公開版須接近主要功能齊全，公開0.8.5-preview.1、release/request.json／版本／tag／附件保持原值；PR #20維持Draft，不merge、不部署。
 - 前片015E所列範圍已驗收：來源ba069a1dea4e904d8be4e55b2f8f353c0079f1e9／tree86cd35227d55594a90fa1cf4619e9424f3ed5565。同來源VPS39905594895四項、Android39905594910兩項、Mac39905594912三項首次SUCCESS；九份實際產物來源／成功producer時間窗／SHA256／內層／原報告及13實圖核對完成，精確證據見verification/20261023/research-admission-baseline.json及PR #20。完整Go race本機368.990s／CI432.357s，32 Browser本機272.503s／CI284.210s、380PNG／零failure圖；真systemd41.739s與原expanded workload25.279s、Android579 JVM／976 device（5原skip）、Mac各82核心／90圖全部保留。

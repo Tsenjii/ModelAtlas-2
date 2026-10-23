@@ -4,6 +4,8 @@
 
 同片審查：ae57b1f候選5.914s真Browser確認跨日重新展開仍留昨天用量；已補展開／前景與原15秒檢查的重讀。原9圖、全部情境／次數與timeout保持，ae候選不接受，修後來源獨立九項。
 
+同片穩定審查：2015e5a完整Go359.498s成功，但全Browser原ModelConnections丟簽到焦點／36.36s FAIL後，28流程成功仍於300.021s逾時；單跑8.415s不能取代全套失敗。追加真GET延遲6.388s確定重現，production保留原同帳戶操作焦點、stale／已完成不恢復舊寫入，原全部操作／請求數／timeout保留；含原MacAlignment與新每日聚焦24.604s成功。2015 CI Browser因Ubuntu套件／CJK下載15min取消、未開始測試；新增CI官方HTTPS鏡像與有界APT下載等待，完整依賴與原job／測試上限不變。詳vps/RESEARCH_DAILY_BUDGET.md；2015不接受，最終新來源獨立全部九項／實際產物。
+
 
 正式caller：全球研究／Settings研究 → 每日上限／逐憑證設定／變更紀錄API → 原MINIMAL_INFERENCE → execute本機檢查 → 同transaction原run／task HTTP與probe、每日本機ledger、訊息／工具／receipt → 真HTTP。超額保存具scope／用量／UTC reset的BUDGET_EXHAUSTED，尚未發送不扣次數、不消耗網路重試機會；跨日或加上限仍須明確恢復。重用既有流量不重扣，日常聊天不受此研究上限影響。
 
