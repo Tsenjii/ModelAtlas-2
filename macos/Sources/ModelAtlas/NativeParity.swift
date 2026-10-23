@@ -705,6 +705,7 @@ import SwiftUI
     }
     private static func verifyComposer(_ store: AtlasStore, output: URL) async throws {
         var checkpoint = "find-active-editor"
+        var baselineHeight: CGFloat? = nil, baselineWidth: CGFloat? = nil, baselineContainerWidth: CGFloat? = nil, expectedContainerWidth: CGFloat? = nil
         do {
         guard let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }),
               let editor = find(window.contentView, "chat-composer") as? NSTextView,
@@ -738,8 +739,35 @@ import SwiftUI
         let wrapping = String(repeating: "寬度變更與中文自動換行 ", count: 16)
         checkpoint = "wrapped-text-height"
         editor.insertText(wrapping, replacementRange: NSRange(location: NSNotFound, length: 0))
-        try await wait { store.draft == wrapping && scroll.bounds.height > 35 && scroll.bounds.height < 140 }
-        let wideHeight = scroll.bounds.height
+        let wideHeight = try await composerWideBaseline(store, window: window, editor: editor, scroll: scroll, text: wrapping)
+        baselineHeight = wideHeight; baselineWidth = editor.bounds.width; baselineContainerWidth = editor.textContainer?.containerSize.width
+        // TextKit can publish a container width after its view frame. Isolate
+        // that ordering with the real native editor, leaving text/frame intact.
+        checkpoint = "container-width-before-frame"
+        let originalScrollerStyle = scroll.scrollerStyle
+        scroll.scrollerStyle = .overlay
+        let containerBaseline = try await composerWideBaseline(store, window: window, editor: editor, scroll: scroll, text: wrapping)
+        baselineHeight = containerBaseline; baselineWidth = editor.bounds.width; baselineContainerWidth = editor.textContainer?.containerSize.width
+        guard let container = editor.textContainer else { throw AtlasError.invalidResponse }
+        let originalContainerSize = container.containerSize, originalEditorWidth = editor.bounds.width
+        let containerTarget = originalContainerSize.width * 0.65
+        expectedContainerWidth = containerTarget
+        container.widthTracksTextView = false
+        container.containerSize = NSSize(width: containerTarget, height: originalContainerSize.height)
+        editor.setFrameSize(NSSize(width: originalEditorWidth, height: editor.frame.height))
+        scroll.needsLayout = true; scroll.layoutSubtreeIfNeeded()
+        try require(abs(editor.bounds.width - originalEditorWidth) < 0.5 && abs(container.containerSize.width - containerTarget) < 0.5)
+        try await wait { abs(editor.bounds.width - originalEditorWidth) < 0.5 && scroll.bounds.height > containerBaseline + 8 && scroll.bounds.height <= 145 }
+        try require(store.draft == wrapping && editor.string == wrapping)
+        checkpoint = "restore-container-tracking"
+        container.widthTracksTextView = true; container.containerSize = originalContainerSize
+        scroll.needsLayout = true; scroll.layoutSubtreeIfNeeded()
+        try await wait { abs(scroll.bounds.height - containerBaseline) < 2 }
+        scroll.scrollerStyle = originalScrollerStyle
+        scroll.needsLayout = true; scroll.layoutSubtreeIfNeeded()
+        try await wait { abs(scroll.bounds.height - wideHeight) < 2 }
+        baselineHeight = wideHeight; baselineWidth = editor.bounds.width; baselineContainerWidth = container.containerSize.width
+        expectedContainerWidth = nil
         checkpoint = "narrow-resize"
         window.setContentSize(NSSize(width: 920, height: 800))
         try await wait { scroll.bounds.height > wideHeight + 8 && scroll.bounds.height <= 145 }
@@ -781,11 +809,29 @@ import SwiftUI
                 "marked_text": .bool(editor?.hasMarkedText() ?? false), "can_undo": .bool(editor?.undoManager?.canUndo ?? false),
                 "draft_characters": .number(Double(store.draft.count)), "editor_characters": .number(Double(editor?.string.count ?? -1)),
                 "scroll_height": .number(Double(editor?.enclosingScrollView?.bounds.height ?? -1)), "editor_width": .number(Double(editor?.bounds.width ?? -1)),
-                "container_width": .number(Double(editor?.textContainer?.containerSize.width ?? -1)), "generating": .bool(store.generating), "has_session": .bool(store.sessionID != nil)])
+                "container_width": .number(Double(editor?.textContainer?.containerSize.width ?? -1)), "generating": .bool(store.generating), "has_session": .bool(store.sessionID != nil),
+                "baseline_height": baselineHeight.map { JSONValue.number(Double($0)) } ?? .null,
+                "baseline_editor_width": baselineWidth.map { JSONValue.number(Double($0)) } ?? .null,
+                "baseline_container_width": baselineContainerWidth.map { JSONValue.number(Double($0)) } ?? .null,
+                "expected_container_width": expectedContainerWidth.map { JSONValue.number(Double($0)) } ?? .null])
             try? JSONEncoder().encode(report).write(to: output.appendingPathComponent("composer.diagnostics.log"), options: .atomic)
             try? await captureWorkspace(store, output, "composer-failure", dark: false)
             throw DraftProblem("輸入框驗證失敗：" + checkpoint)
         }
+    }
+    private static func composerWideBaseline(_ store: AtlasStore, window: NSWindow, editor: NSTextView, scroll: NSScrollView, text: String) async throws -> CGFloat {
+        let end = Date().addingTimeInterval(4)
+        var previous: [CGFloat] = [], stableSince = Date()
+        while Date() < end {
+            window.contentView?.layoutSubtreeIfNeeded()
+            let sample = [editor.bounds.width, editor.textContainer?.containerSize.width ?? -1, scroll.bounds.height]
+            let ready = store.draft == text && editor.string == text && sample[0] > 800 && sample[1] > 790 && sample[2] > 35 && sample[2] < 140
+            if !ready || previous.count != sample.count || zip(previous, sample).contains(where: { abs($0.0 - $0.1) > 0.5 }) { stableSince = Date() }
+            else if Date().timeIntervalSince(stableSince) >= 0.15 { return sample[2] }
+            previous = sample
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        throw AtlasError.invalidResponse
     }
     private static func wait(_ condition: () -> Bool) async throws {
         let end = Date().addingTimeInterval(4)

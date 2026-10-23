@@ -44,6 +44,12 @@ MINIMAL_INFERENCE優先重用原有同scope／來源／憑證版本的有效觀�
 
 2015來源CI的Browser120275350443／run39911458705在原15min上限取消，沒有執行測試或上傳圖；紀錄顯示Ubuntu依賴下載先耗6m40s，61.2MB CJK字型再卡8min。此片將CI內已觀測的Azure HTTP Ubuntu鏡像換為官方HTTPS archive，APT連線／資料等待30秒、最多1次額外下載重試；保留原npm lock、完整Chromium／headless shell、CJK字型、全部工作量、5min測試及15min job上限。不改應用程式網路政策。YAML／bash -n／實際APT選項解析、vet及27發布回歸0.036s成功；參考[APT官方設定](https://manpages.debian.org/stretch/apt/apt.conf.5.en.html)與[Ubuntu HTTPS archive](https://archive.ubuntu.com/ubuntu/)。修後新來源必須完整本機與同來源九項，不能借2015其他八項或先前任何候選綠燈。
 
+34814ce候選的本機完整Go357.458s與33 Browser288.143s／389PNG／零failure圖成功，但仍不能接受：CI Intel Mac120285741828／39914109890的82核心通過後，在原native-composer narrow-resize失敗；原始41PNG附件12484881303（SHA256 07bca8255c506554838516ceba8059fb5f2e544346895f024d709a8e6e7bf6b2）已核對、讀取FAILURE／composer診斷並檢視實圖。診斷editor651／container643／height78、草稿與editor均192字且IME未組字，舊報告沒有寬窗baseline，不能直接當作基礎設施重跑後忽略。
+
+同片新增穩定寬窗量測：在原4秒內要求實際view／container寬度與高度連續穩定150ms，再保留原縮至920／回1200的>8及<2高度差斷言。新增真AppKit容器先變寬度、view frame不變的隔離案例，用overlay避免捲軸改變寬度干擾，完成後恢復原scroll style，再跑原視窗／IME／20行全文／捲動／sidebar與歷史保留。Production快取同時比較實際TextKit container width，量測後才保存key；沒有取消原文字／寬度快取或減低原場景。舊production的獨立診斷來源a9ddd4c341ab6ed6a87ae6e71c478bd38693f978／verify/native-container-015f只改QA與該分支Mac push入口，用真Mac runner判別新容器案例，結果另記，不作產品驗收來源。最終產品來源仍須自己的全部九項；82核心／90圖／14 motion／原4秒與原生timeout全部保留。TextKit契約見[Apple](https://developer.apple.com/documentation/appkit/nstextcontainer/widthtrackstextview)。
+
+34814 CI Browser120283619447仍在15min安裝期取消、未執行測試；實際log證明Runner用mirror+file:/etc/apt/apt-mirrors.txt，前次只改sources檔沒有覆蓋該鏡像清單，實際GET仍為Azure HTTP。現同時處理實際mirror+file指向與/etc/apt/*mirrors*.txt，改官方HTTPS archive；保留完整依賴／字型／Chromium、原測試與job上限。不能把語法通過當成套件實際走HTTPS，最終CI log與全部測試仍須獨立確認。[APT鏡像清單契約](https://manpages.debian.org/testing/apt/apt-transport-mirror.1.en.html)。
+
 最終聚焦含原015E、原生協定／工具接續與原研究真實性caller的race42.758s成功；vet及27發布回歸0.030s成功。新Browser最終6.973s（流程5.96s）成功，9張實圖已檢查；原32流程／380圖保持，完整新來源另驗。
 
 完整Go race／vet、發布27回歸、原32 Browser／380圖加新流程、Android JVM／device、Mac兩架構、真systemd與原expanded workload都保留。原Browser Go timeout5min及job15min不變；最終來源獨立九項與全部實際產物前仍候選，不借015E或任何修前來源的綠燈。

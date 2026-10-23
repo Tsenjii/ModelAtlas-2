@@ -6,6 +6,8 @@
 
 同片穩定審查：2015e5a完整Go359.498s成功，但全Browser原ModelConnections丟簽到焦點／36.36s FAIL後，28流程成功仍於300.021s逾時；單跑8.415s不能取代全套失敗。追加真GET延遲6.388s確定重現，production保留原同帳戶操作焦點、stale／已完成不恢復舊寫入，原全部操作／請求數／timeout保留；含原MacAlignment與新每日聚焦24.604s成功。2015 CI Browser因Ubuntu套件／CJK下載15min取消、未開始測試；新增CI官方HTTPS鏡像與有界APT下載等待，完整依賴與原job／測試上限不變。詳vps/RESEARCH_DAILY_BUDGET.md；2015不接受，最終新來源獨立全部九項／實際產物。
 
+34814ce候選完整本機Go357.458s／33 Browser288.143s／389圖成功，但Intel native原narrow-resize失敗（82核心通過、41圖失敗附件12484881303／SHA256 07bca8255c506554838516ceba8059fb5f2e544346895f024d709a8e6e7bf6b2已讀原報告與實圖），故不接受。補穩定寬窗基準與真TextKit container-only/frame不變的額外案例，production快取納實際container width；原IME／縮放／20行全文／90圖／4s等待保留。舊production獨立Mac診斷來源a9ddd4c，不作最終驗收。CI Browser亦因未涵蓋mirror+file清單仍下載HTTP而15min取消，現補實際清單／URI，完整依賴與原上限不減；新來源重新全部九項與產物，詳RESEARCH_DAILY_BUDGET.md。
+
 
 - D-015維持：下一公開版須接近主要功能齊全，公開0.8.5-preview.1、release/request.json／版本／tag／附件保持原值；PR #20維持Draft，不merge、不部署。
 - 前片015E所列範圍已驗收：來源ba069a1dea4e904d8be4e55b2f8f353c0079f1e9／tree86cd35227d55594a90fa1cf4619e9424f3ed5565。同來源VPS39905594895四項、Android39905594910兩項、Mac39905594912三項首次SUCCESS；九份實際產物來源／成功producer時間窗／SHA256／內層／原報告及13實圖核對完成，精確證據見verification/20261023/research-admission-baseline.json及PR #20。完整Go race本機368.990s／CI432.357s，32 Browser本機272.503s／CI284.210s、380PNG／零failure圖；真systemd41.739s與原expanded workload25.279s、Android579 JVM／976 device（5原skip）、Mac各82核心／90圖全部保留。

@@ -1,5 +1,7 @@
 # 跨平台優點與持續補齊清單
 
+015F穩定接續：34814本機33流程全綠仍因Intel Mac原窄窗輸入框驗收失敗而不接受；新增實際TextKit container/frame分開量測與原4秒內穩定baseline，保留全部IME／全文／視窗／sidebar／90圖。原Mac優點與專用每日UI缺口不減，VPS簽到焦點修正亦保留；最終來源自己的九項／實際產物前仍候選。
+
 2026-10-23最新：015E來源ba069a1同來源九項／九份實際產物已驗（verification/20261023/research-admission-baseline.json）。015F候選補VPS正式每日推論／逐憑證設定、用量／歷史及恢復，Mac內建同源引擎取得後端；Mac／Android專用原生每日設定仍待對應。原全部功能／負載／原生及Browser測試保留，新來源獨立九項；不外推token／USD或私人排程已完成。
 
 2026-10-23最新：015D所列範圍已由97bcd81同來源九項及全部產物驗收（verification/20261023/authenticity-baseline-v2.json）；當前015E候選修正VPS正式研究／共用對話管線的原子入場、本機故障不扣額與重試新證據。Mac內建同源引擎取得後端修正；Android專用對應及其他原生缺口保留。原功能、測試、負載與timeout不減，015E完整新來源九項前不接受。以下為既有過程。
