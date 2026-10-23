@@ -2,6 +2,9 @@
 
 ## RESEARCH-DAILY-015F（2026-10-23 候選）
 
+同片審查：ae57b1f候選5.914s真Browser確認跨日重新展開仍留昨天用量；已補展開／前景與原15秒檢查的重讀。原9圖、全部情境／次數與timeout保持，ae候選不接受，修後來源獨立九項。
+
+
 正式caller：全球研究／Settings研究 → 每日上限／逐憑證設定／變更紀錄API → 原MINIMAL_INFERENCE → execute本機檢查 → 同transaction原run／task HTTP與probe、每日本機ledger、訊息／工具／receipt → 真HTTP。超額保存具scope／用量／UTC reset的BUDGET_EXHAUSTED，尚未發送不扣次數、不消耗網路重試機會；跨日或加上限仍須明確恢復。重用既有流量不重扣，日常聊天不受此研究上限影響。
 
 程式：research_inference_budget.go、conversation_admission.go、playground.go、research_jobs.go／execute、ui_js_research_inference_budget.go與原UI／server；8個後端函式涵蓋跨輪、40個真請求工作／原4-flight、飛行中全域及憑證原子限制、Key版本／模型／Group／端點、不同Account／Key、UTC跨日、DB故障回滾／讀取失敗不授權、503／取消跨重啟不退款、正式worker等待／明確恢復／正常流量重用、真正HTTPS同步／portable與v26一致升級、102憑證分頁／55筆政策變更歷史。新Browser走正式設定→真TLS→拒絕／恢復、409草稿、讀取失敗、跨日reload與原生控制尺寸。失敗與限制見../vps/RESEARCH_DAILY_BUDGET.md；新來源九項及全部產物前不能接受或接下一片。

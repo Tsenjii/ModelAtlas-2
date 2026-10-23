@@ -59,6 +59,8 @@ function renderResearchInferenceLimit(box,task,run){
  const b=task.result?.inference_budget;if(!b)return;const panel=el("section",undefined,"detail-section research-inference-limit-panel");panel.append(el("h3","研究推論每日上限"),el("p",(b.scope==="CREDENTIAL"?"此憑證":"全部研究")+"已核准 "+b.used+" / "+b.limit+" 次。此任務尚未發送推論，沒有新增用量。"),el("p","每日重設："+new Date(b.reset_at).toLocaleString()+"。調整上限或跨日後，仍須明確恢復這輪研究。"));if(run.status==="CANCELLED")panel.append(el("p","研究已取消；上限紀錄保留。"));box.append(panel);
 }
 function bindResearchInferenceBudget(){
+ $("research-inference-budget").addEventListener("toggle",()=>{if($("research-inference-budget").open)loadResearchInferenceBudget();});
+ document.addEventListener("visibilitychange",()=>{if(researchScheduleVisible()&&$("research-inference-budget").open)loadResearchInferenceBudget();});
  const f=$("research-inference-policy-form");f.addEventListener("input",()=>researchInferenceDirty=true);f.addEventListener("submit",e=>{e.preventDefault();saveResearchInferenceBudget({action:"POLICY",revision:researchInferenceRevision,daily_limit:Number(f.elements.daily_limit.value),default_credential_limit:Number(f.elements.default_credential_limit.value)},receipt=>{researchInferenceDirty=false;researchInferenceRevision=receipt.revision;});});
  $("research-inference-refresh").addEventListener("click",()=>loadResearchInferenceBudget());$("research-inference-reset").addEventListener("click",()=>{researchInferenceDirty=false;loadResearchInferenceBudget();});$("research-inference-more").addEventListener("click",()=>loadResearchInferenceBudget(true));$("research-inference-history").addEventListener("click",researchInferenceHistory);
 }

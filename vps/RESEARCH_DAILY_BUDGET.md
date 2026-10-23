@@ -35,7 +35,10 @@ MINIMAL_INFERENCE優先重用原有同scope／來源／憑證版本的有效觀�
 - 擴充18.244s FAIL為新fixture未明確加入另一模型／端點與不同Account／Key，以及誤認原portable restore的201為200。改由真My Models操作、保持完整scope驗證並使用原201契約，不改產品保護。修後8個後端函式race21.489s成功，涵蓋兩組各20工作／原4-flight及三個TLS飛行中barrier。
 - 新Browser的全部JS操作成功後6.627s FAIL：Go fixture只預期兩次研究catalog，漏算原加入兩個模型自動enrichment的兩次。補獨立初始catalog=2／inference=0及最終catalog=4／inference=2精確斷言；不減自動enrichment、操作或工作量。
 - 追加初始基準0.869s FAIL確認enrichment仍在待執行佇列，不能把加入操作已返回當作HTTP已完成。fixture改先由原runPending正式執行既有兩項enrichment，再驗初始與最終兩個精確基準；不偽造完成或刪待辦。
+- ae57b1f候選補查5.914s真Browser反例FAIL：服務跨UTC日後，重新收合／展開每日面板仍顯示前一日1次，不發新GET。已補展開與回到前景時重讀，沿用既有15秒研究排程檢查在面板可見且UTC重設已到時更新，不新增高頻計時器或Provider HTTP。原次數／暫停／reload／實際請求斷言、9圖及整體timeout保持；修後新來源獨立完整回歸／九項，ae來源不接受、不借綠燈。
 - 後端另驗本機DB入場與政策journal失敗全回滾、讀取失敗不授權、503／取消跨重啟不退款、Key版本／模型／Group／端點不重置、Account／Key隔離、UTC跨日、正式worker多次等待不耗retry／明確恢復／零額重用流量、真HTTPS同步／portable隔離、v26一致升級與原AA保留、102憑證及55筆歷史分頁。
+
+跨日重新展開反例修後，新Browser7.494s（流程6.48s）成功，原所有情境與9圖不減。
 
 最終聚焦含原015E、原生協定／工具接續與原研究真實性caller的race42.758s成功；vet及27發布回歸0.030s成功。新Browser最終6.973s（流程5.96s）成功，9張實圖已檢查；原32流程／380圖保持，完整新來源另驗。
 
