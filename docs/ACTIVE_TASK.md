@@ -2,6 +2,8 @@
 
 ## 2026-10-23 研究每日與逐憑證推論核准（RESEARCH-DAILY-015F）
 
+最新穩定修正：ef69cca本機完整Go365.105s／33 Browser292.804s／389圖及CI Browser300.099s、Go312.717s、真systemd40.791s／原負載16.291s成功，但Intel native恢復容器失敗，仍不接受。舊production的a9ddd4c真反例確認view871與文字不變、container863→560.95而height仍61；833a80a第一次修正仍未形成穩定寬窗基準，兩者失敗保留。最終Mac修正移除app重複量測快取，使用TextKit增量layout；自然高度超過原144上限才啟用原生捲軸，避免成長期legacy捲軸改寬回饋。原4秒內基準加嚴為450ms，追加短輸入無捲軸／20行有捲軸及有界幾何診斷，原場景與timeout不減。獨立診斷422d5634fc80526faf1babdbfd9d740739daf53a／39922377324兩架構各82核心／90圖SUCCESS，原報告、hash與composer實圖已核對，精確對照見verification/20261023/native-composer-diagnostic.json。PR整合來源仍須自己的全部九項與實際產物，不借診斷或ef69綠燈、不接新功能。
+
 同片審查：ae57b1f候選5.914s真Browser確認跨日重新展開仍留昨天用量；已補展開／前景與原15秒檢查的重讀。原9圖、全部情境／次數與timeout保持，ae候選不接受，修後來源獨立九項。
 
 同片穩定審查：2015e5a完整Go359.498s成功，但全Browser原ModelConnections丟簽到焦點／36.36s FAIL後，28流程成功仍於300.021s逾時；單跑8.415s不能取代全套失敗。追加真GET延遲6.388s確定重現，production保留原同帳戶操作焦點、stale／已完成不恢復舊寫入，原全部操作／請求數／timeout保留；含原MacAlignment與新每日聚焦24.604s成功。2015 CI Browser因Ubuntu套件／CJK下載15min取消、未開始測試；新增CI官方HTTPS鏡像與有界APT下載等待，完整依賴與原job／測試上限不變。詳vps/RESEARCH_DAILY_BUDGET.md；2015不接受，最終新來源獨立全部九項／實際產物。

@@ -12,7 +12,7 @@ struct ComposerTextEditor: NSViewRepresentable {
         let scroll = ComposerScrollView()
         scroll.identifier = NSUserInterfaceItemIdentifier("chat-composer-scroll")
         scroll.drawsBackground = false; scroll.borderType = .noBorder
-        scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true
+        scroll.hasVerticalScroller = false; scroll.autohidesScrollers = true
         let editor = NSTextView()
         editor.identifier = NSUserInterfaceItemIdentifier("chat-composer")
         editor.setAccessibilityLabel("訊息草稿")
@@ -44,9 +44,6 @@ struct ComposerTextEditor: NSViewRepresentable {
     @MainActor final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ComposerTextEditor
         private var lastHeight: CGFloat = 30
-        private var measuredText: String?
-        private var measuredWidth: CGFloat = 0
-        private var measuredContainerWidth: CGFloat = 0
         private var heightRevision = 0
         private var focusedRequest = 0
         private var pendingFocus: Int?
@@ -72,16 +69,20 @@ struct ComposerTextEditor: NSViewRepresentable {
             }
         }
         private func measure(_ editor: NSTextView) {
-            // Transcript updates share the window layout pass. Recalculate the
-            // input only when its own text or available width changes. TextKit
-            // can publish its container width on a later pass than the view.
+            // TextKit owns incremental layout invalidation. A manual text/frame
+            // cache misses container-only reflow and scrollbar layout passes.
             guard let layout = editor.layoutManager, let container = editor.textContainer else { return }
-            guard measuredText != editor.string || abs(measuredWidth - editor.bounds.width) > 0.5 || abs(measuredContainerWidth - container.containerSize.width) > 0.5 else { return }
             layout.ensureLayout(for: container)
-            measuredText = editor.string; measuredWidth = editor.bounds.width; measuredContainerWidth = container.containerSize.width
             let extra = layout.extraLineFragmentTextContainer === container ? layout.extraLineFragmentRect.maxY : 0
             let content = max(layout.usedRect(for: container).maxY, extra)
-            let height = min(144, max(30, ceil(content + editor.textContainerInset.height * 2)))
+            let naturalHeight = ceil(content + editor.textContainerInset.height * 2)
+            // Growing input needs no scrollbar. Enable it at the height cap,
+            // avoiding legacy scrollbar width/height feedback while wrapping.
+            if let scroll = editor.enclosingScrollView {
+                let needsScroller = naturalHeight > 144
+                if scroll.hasVerticalScroller != needsScroller { scroll.hasVerticalScroller = needsScroller }
+            }
+            let height = min(144, max(30, naturalHeight))
             if abs(lastHeight - height) > 0.5 {
                 lastHeight = height; heightRevision += 1
                 let revision = heightRevision

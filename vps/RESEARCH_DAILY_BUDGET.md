@@ -46,9 +46,19 @@ MINIMAL_INFERENCE優先重用原有同scope／來源／憑證版本的有效觀�
 
 34814ce候選的本機完整Go357.458s與33 Browser288.143s／389PNG／零failure圖成功，但仍不能接受：CI Intel Mac120285741828／39914109890的82核心通過後，在原native-composer narrow-resize失敗；原始41PNG附件12484881303（SHA256 07bca8255c506554838516ceba8059fb5f2e544346895f024d709a8e6e7bf6b2）已核對、讀取FAILURE／composer診斷並檢視實圖。診斷editor651／container643／height78、草稿與editor均192字且IME未組字，舊報告沒有寬窗baseline，不能直接當作基礎設施重跑後忽略。
 
-同片新增穩定寬窗量測：在原4秒內要求實際view／container寬度與高度連續穩定150ms，再保留原縮至920／回1200的>8及<2高度差斷言。新增真AppKit容器先變寬度、view frame不變的隔離案例，用overlay避免捲軸改變寬度干擾，完成後恢復原scroll style，再跑原視窗／IME／20行全文／捲動／sidebar與歷史保留。Production快取同時比較實際TextKit container width，量測後才保存key；沒有取消原文字／寬度快取或減低原場景。舊production的獨立診斷來源a9ddd4c341ab6ed6a87ae6e71c478bd38693f978／verify/native-container-015f只改QA與該分支Mac push入口，用真Mac runner判別新容器案例，結果另記，不作產品驗收來源。最終產品來源仍須自己的全部九項；82核心／90圖／14 motion／原4秒與原生timeout全部保留。TextKit契約見[Apple](https://developer.apple.com/documentation/appkit/nstextcontainer/widthtrackstextview)。
+ef69修前嘗試新增穩定寬窗量測：在原4秒內要求實際view／container寬度與高度連續穩定150ms，再保留原縮至920／回1200的>8及<2高度差斷言。新增真AppKit容器先變寬度、view frame不變的隔離案例，用overlay避免捲軸改變寬度干擾，完成後恢復原scroll style，再跑原視窗／IME／20行全文／捲動／sidebar與歷史保留。當時production快取加上實際TextKit container width，量測後才保存key，結果仍不穩定，詳下列失敗紀錄。舊production的獨立診斷來源a9ddd4c341ab6ed6a87ae6e71c478bd38693f978／verify/native-container-015f只改QA與該分支Mac push入口，用真Mac runner判別新容器案例，不作產品驗收來源。最終產品來源仍須自己的全部九項；82核心／90圖／14 motion／原4秒與原生timeout全部保留。TextKit契約見[Apple](https://developer.apple.com/documentation/appkit/nstextcontainer/widthtrackstextview)。
 
 34814 CI Browser120283619447仍在15min安裝期取消、未執行測試；實際log證明Runner用mirror+file:/etc/apt/apt-mirrors.txt，前次只改sources檔沒有覆蓋該鏡像清單，實際GET仍為Azure HTTP。現同時處理實際mirror+file指向與/etc/apt/*mirrors*.txt，改官方HTTPS archive；保留完整依賴／字型／Chromium、原測試與job上限。不能把語法通過當成套件實際走HTTPS，最終CI log與全部測試仍須獨立確認。[APT鏡像清單契約](https://manpages.debian.org/testing/apt/apt-transport-mirror.1.en.html)。
+
+ef69ccabf71970133b1c66187eb2cf3e5d2b2918候選完整本機Go365.105s、33 Browser292.804s／389PNG成功；CI Browser120295763659／39917894323為33流程300.099s成功，原始log確認實際套件與CJK從HTTPS archive下載。CI Go312.717s、真systemd40.791s與原expanded workload16.291s亦成功。這些結果不構成接受：Intel native120297792261／39917894425的82核心成功後，在新增restore-container-tracking失敗；附件12486397040（SHA256 6bbe35bca13a1212a7a9375faa3de59c27193790ca94af2d1b509a5d7d876b7f）已讀原報告與實圖。當時overlay基準view871／container863／height61與最後相同，但原scroll style基準未記錄，不能把架構差異當infra忽略。
+
+舊production的a9ddd4c真原生反例已確認：39917487754／ARM120297212328在container-width-before-frame失敗，view維持871、container由863變560.95、文字與草稿192字且未組字，高度仍61。附件12486401513（2,567,168 bytes，SHA256 3a969fbbf4ca0cece0dab94abd68a6df4dfd51bdbd13bfaa212dd046bc612ba3）已驗hash、讀原診斷及實圖。這證明只依文字與view frame快取會漏容器重排，不刪除此新增反例。
+
+第一個正向診斷833a80a2c4feff2a0c93df867ab43c7a31c712b1改於ensureLayout前固定幾何快照並合併下一輪量測，但39920001260／ARM120305034661仍在wrapped-text-height失敗；附件12486179434（SHA256 eeef255704741d340b6c4eb134efdabf9c8b258dbf3e7b73aebcace595ce6356）已讀，view856／container848／height61尚未形成穩定基準。此嘗試不算成功，也沒有整合為PR接受來源。
+
+最終Mac修正沿用TextKit自身增量layout invalidation，移除app重複的文字／frame／container量測快取；仍只量測composer容器，非全文歷史。自然高度超過原144上限才啟用原生捲軸，保留系統scroll style與長文字捲動，避免成長期legacy捲軸引入15px寬度回饋。高度發布原heightRevision合併仍保留。原4秒內的寬窗基準加嚴為連續450ms，新增短輸入無捲軸、原20行長輸入有捲軸斷言；失敗額外保存原style基準與最多16筆真幾何狀態，不保存使用者文字。原920／1200視窗斷言、IME、undo、焦點、全文、捲動、sidebar、scope／history與全部90圖不減。
+
+獨立診斷422d5634fc80526faf1babdbfd9d740739daf53a／39922377324的通用編譯120310434440、ARM120312769462、Intel120312769384均首次SUCCESS；兩架構各82核心／90PNG（25原UI＋51parity＋14motion）、原生報告PASS與composer實圖已核對，通用app與內建引擎雙架構及內外hash已驗。精確來源／producer時間窗／附件與反例見../docs/verification/20261023/native-composer-diagnostic.json。兩份Native檔與此診斷逐byte一致才整合；此Mac-only對照不是015F最終接受來源，最終PR來源仍必須自己的全部九項及實際產物，不借ef69或診斷綠燈。
 
 最終聚焦含原015E、原生協定／工具接續與原研究真實性caller的race42.758s成功；vet及27發布回歸0.030s成功。新Browser最終6.973s（流程5.96s）成功，9張實圖已檢查；原32流程／380圖保持，完整新來源另驗。
 
