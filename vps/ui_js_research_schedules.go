@@ -102,6 +102,6 @@ function bindResearchSchedules(){
   mutateResearchSchedule("/research/schedules",draft,()=>resetResearchScheduleEditor(),"排程已保存，尚未啟用。");
  });
  $("research-schedule-limit-form").addEventListener("input",()=>researchScheduleLimitDirty=true);$("research-schedule-limit-form").addEventListener("submit",event=>{event.preventDefault();mutateResearchSchedule("/research/schedules/limit",{daily_http_limit:Number(event.target.elements.daily_http_limit.value)},receipt=>{researchScheduleLimitDirty=false;if(researchScheduleState){researchScheduleState.daily_http_limit=receipt.daily_http_limit;renderResearchSchedules();}},"全部排程的每日上限已保存。");});
- setInterval(()=>{if(!busy&&researchScheduleVisible()){loadResearchSchedules();if($("research-inference-budget").open&&researchInferenceState?.reset_at<=Date.now())loadResearchInferenceBudget();}},15000);
+ setInterval(()=>{if(!busy&&researchScheduleVisible()){loadResearchSchedules();if($("research-inference-budget").open&&researchInferenceState?.reset_at<=Date.now())loadResearchInferenceBudget();if($("research-resource-budget").open&&researchResourceState?.reset_at<=Date.now())loadResearchResourceBudget();}},15000);
 }
 `

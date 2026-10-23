@@ -385,6 +385,9 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 			details = string(raw)
 			at = now()
 			if outcome == "RESEARCH_BUDGET_EXHAUSTED" {
+				if limit, ok := result.Details["research_resource_budget"].(*researchResourceBudgetError); ok {
+					return nil, limit
+				}
 				if limit, ok := result.Details["research_inference_budget"].(*researchInferenceBudgetError); ok {
 					return nil, limit
 				}

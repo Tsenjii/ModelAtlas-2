@@ -247,6 +247,7 @@ type wireChunk struct {
 		Input         *int64          `json:"prompt_tokens"`
 		Output        *int64          `json:"completion_tokens"`
 		Total         *int64          `json:"total_tokens"`
+		ToolPrompt    *int64          `json:"tool_prompt_tokens"`
 		Cost          json.RawMessage `json:"cost"`
 		PromptDetails struct {
 			Cache  *int64 `json:"cached_tokens"`
@@ -601,7 +602,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if v.Tools != nil {
 		updatedTools = tools
 	}
-	record := requestRecord{ID: sampleID, Selection: scope, Operation: operation, Source: source, At: started.UnixMilli(), CredentialVersion: provider.CredentialVersion, SessionID: v.SessionID, RetryID: v.RetryID, MessageIDs: messageIDs, Details: result.Details}
+	record := requestRecord{ID: sampleID, Selection: scope, Operation: operation, Source: source, At: started.UnixMilli(), CredentialVersion: provider.CredentialVersion, SessionID: v.SessionID, RetryID: v.RetryID, MessageIDs: messageIDs, Details: result.Details, MaxOutputTokens: v.MaxTokens}
 	if err = s.admitConversation(ctx, record, pendingMessages, updatedTools); err != nil {
 		delete(result.Details, "sample_id")
 		delete(result.Details, "receipt")
@@ -609,6 +610,10 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		var limit *researchInferenceBudgetError
 		if errors.As(err, &limit) {
 			result.Details["research_inference_budget"] = limit
+		}
+		var resourceLimit *researchResourceBudgetError
+		if errors.As(err, &resourceLimit) {
+			result.Details["research_resource_budget"] = resourceLimit
 		}
 		var admissionError *conversationAdmissionError
 		if errors.As(err, &admissionError) {
@@ -681,6 +686,11 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		if err != nil {
 			result.Outcome = "TELEMETRY_SAVE"
 		} else {
+			if source == "CRAWLER_VERIFY" {
+				if err := s.settleResearchResources(saveCtx, sampleID, operation, result.Outcome, inputs, outputs, result.Details); err != nil {
+					result.Details["resource_budget_settlement"] = "UNAVAILABLE_RESERVATION_RETAINED"
+				}
+			}
 			// Missing auxiliary proof leaves the sample unverified. It must never
 			// turn a saved answer/history into a failed inference.
 			_ = s.captureAuthenticity(saveCtx, sampleID, provider.CredentialStamp, authenticityCapture{ConditionHash: conditionHash, ConfigHash: connectorHash(cfg), EndpointHash: authenticityEndpointHash(endpoint, operation), PayloadBytes: body.size, MaxOutputTokens: v.MaxTokens, ToolsOffered: len(tools), ValidToolCalls: len(result.ToolCalls), TextBytes: text.Len(), ReasoningBytes: reasoning.Len()}, authenticityTraffic{ID: sampleID, Selection: scope, Operation: operation, Source: source, Outcome: result.Outcome, CredentialVersion: provider.CredentialVersion, At: started.UnixMilli(), Input: inputs, Output: outputs, Details: string(raw)})
@@ -784,9 +794,16 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 				result.Details["finish_reason"] = safeText(*choice.FinishReason, 64, secrets...)
 			}
 		}
-		counts := map[string]*int64{"total_tokens": chunk.Usage.Total, "reasoning_tokens": chunk.Usage.OutputDetails.Reasoning, "cache_read_tokens": chunk.Usage.PromptDetails.Cache, "cache_write_tokens": chunk.Usage.PromptDetails.Writes}
+		counts := map[string]*int64{"total_tokens": chunk.Usage.Total, "tool_prompt_tokens": chunk.Usage.ToolPrompt, "reasoning_tokens": chunk.Usage.OutputDetails.Reasoning, "cache_read_tokens": chunk.Usage.PromptDetails.Cache, "cache_write_tokens": chunk.Usage.PromptDetails.Writes}
+		for _, count := range []*int64{chunk.Usage.Input, chunk.Usage.Output, chunk.Usage.Total, chunk.Usage.ToolPrompt, chunk.Usage.OutputDetails.Reasoning, chunk.Usage.PromptDetails.Cache, chunk.Usage.PromptDetails.Writes} {
+			if count != nil && *count < 0 {
+				result.Details["resource_usage_invalid"] = true
+			}
+		}
 		if charge := reportedCharge(chunk.Usage.Cost, provider); charge != nil {
 			result.Details["provider_charge"] = charge
+		} else if len(chunk.Usage.Cost) > 0 && string(chunk.Usage.Cost) != "null" {
+			result.Details["resource_cost_invalid"] = true
 		}
 		for name, count := range counts {
 			if count != nil && *count >= 0 {

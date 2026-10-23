@@ -1,3 +1,5 @@
+> 2026-10-23最新：015F由1d4fc7f同來源九項與九份實際產物／17實圖驗收，精確證據見verification/20261023/research-daily-baseline.json。當前唯一片RESEARCH-RESOURCE-015G，補正式token／USD本機預留、回報結算、未知保留與恢復。完整quota pool／私人排程／其餘願望不減，公開版本不變，新來源自己的九項前候選。
+
 > 2026-10-23最新：015E由ba069a1同來源九項與九份實際產物驗收明列範圍（verification/20261023/research-admission-baseline.json）。當前唯一片RESEARCH-DAILY-015F，補正式每日總／逐憑證推論核准、原子用量與明確恢復；自己的完整九項前候選。Token／USD、共用quota pool、私人排程與完整下一版缺口不減，公開版本不變。
 
 > 2026-10-23最新：015D來源97bcd81同來源九項及全部產物已驗收明列範圍。當前唯一整合片RESEARCH-ADMISSION-015E：本機拒絕不扣額，對話／工具／HTTP與probe reservation／請求紀錄原子提交及恢復；完整token／USD、私人排程與其餘NEXT_RELEASE缺口保留。新來源自己的完整九項前仍候選，公開版本不變。

@@ -332,7 +332,14 @@ func object(v any) map[string]any {
 }
 func list(v any) []any { a, _ := v.([]any); return a }
 func str(v any) string { s, _ := v.(string); return s }
-func num(v any) int    { n, _ := v.(float64); return int(n) }
+func num(v any) int {
+	if n, ok := v.(json.Number); ok {
+		value, _ := n.Int64()
+		return int(value)
+	}
+	n, _ := v.(float64)
+	return int(n)
+}
 func (p *nativeParser) send(text, think, model, finish string, usage map[string]any, calls []ToolCall) error {
 	msg := map[string]any{"content": text, "reasoning_content": think, "tool_calls": calls}
 	choice := map[string]any{"index": 0, "delta": msg}
@@ -354,6 +361,9 @@ func usageNative(root map[string]any, op string) map[string]any {
 	mapping := map[string]string{"input_tokens": "prompt_tokens", "output_tokens": "completion_tokens", "total_tokens": "total_tokens"}
 	if op == "GEMINI_NATIVE" {
 		mapping = map[string]string{"promptTokenCount": "prompt_tokens", "candidatesTokenCount": "completion_tokens", "totalTokenCount": "total_tokens"}
+		if v, ok := u["toolUsePromptTokenCount"]; ok {
+			out["tool_prompt_tokens"] = v
+		}
 	}
 	for f, t := range mapping {
 		if v, ok := u[f]; ok {
@@ -370,13 +380,21 @@ func usageNative(root map[string]any, op string) map[string]any {
 		cache = u["cachedContentTokenCount"]
 		reason = u["thoughtsTokenCount"]
 	}
-	out["prompt_tokens_details"] = map[string]any{"cached_tokens": cache}
+	promptDetails := map[string]any{"cached_tokens": cache}
+	if op == "ANTHROPIC_MESSAGES" {
+		if v, ok := u["cache_creation_input_tokens"]; ok {
+			promptDetails["cache_write_tokens"] = v
+		}
+	}
+	out["prompt_tokens_details"] = promptDetails
 	out["completion_tokens_details"] = map[string]any{"reasoning_tokens": reason}
 	return out
 }
 func (p *nativeParser) accept(raw []byte) error {
 	var root map[string]any
-	if json.Unmarshal(raw, &root) != nil || root == nil || root["error"] != nil {
+	decoder := json.NewDecoder(strings.NewReader(string(raw)))
+	decoder.UseNumber()
+	if !json.Valid(raw) || decoder.Decode(&root) != nil || root == nil || root["error"] != nil {
 		return errors.New("invalid upstream response")
 	}
 	switch p.op {

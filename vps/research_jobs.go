@@ -506,6 +506,11 @@ func (s *Server) runResearchPending(parent context.Context) {
 			// consume the original bounded upstream retry allowance.
 			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
 		}
+		var resourceLimit *researchResourceBudgetError
+		if errors.As(taskErr, &resourceLimit) {
+			result["resource_budget"] = resourceLimit
+			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
+		}
 		var originWait *researchOriginWait
 		if errors.As(taskErr, &originWait) {
 			// An admission wait sent no HTTP request and is not a failed probe.

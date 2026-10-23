@@ -1,5 +1,15 @@
 # ModelAtlas Public — TRACEABILITY
 
+## 2026-10-23 研究 token／USD 預留與回報結算（RESEARCH-RESOURCE-015G）
+
+- 前片015F所列範圍已驗收：來源1d4fc7f223d2411086354655d4126d00269785f8／tree9ebb56024778df1a51e91cbc2821b6b76c35ea89，VPS39938829132四項、Android39938829135兩項、Mac39938829109三項attempt1 SUCCESS；九份實際產物及17張實圖已核對，精確證據見verification/20261023/research-daily-baseline.json與Draft PR #20。完整Go race本機428.416s／CI303.530s、33 Browser298.802s／294.865s與389圖、真systemd40.691s及原負載15.170s成功；Android579／976（5原skip）、Mac兩架構各82／90圖保留。以下015F候選敘述保留歷史。
+- 開工重查main仍cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 attempt2 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。前片驗收已持久寫入PR，才接015G。
+- 當前唯一片015G：正式VPS研究設定的每日全域／逐憑證token與USD本機預算；每次先以明確政策預留、與原HTTP／probe／每日次數及訊息同transaction核准，結束才用同request供應商回報結算。Unknown不當零，未回報／未明幣別／失敗／取消／中斷保留預留；超出預留保存原回報並計入後續核准。不是Provider帳單硬上限或token估算；原正常聊天／零額外HTTP流量重用不扣研究預算。
+- 原始功能、全部測試／負載／timeout及失敗歷史保留。schema28本機政策／admission／settlement不經sync或portable移植執行權，升級先存一致快照；正式caller、反例、完整本機與自己的同來源九項／全部實際產物前仍候選，不接下一片。
+- D-015維持：公開0.8.5-preview.1、release/request.json／version.properties／tag／11附件不變，PR #20保持Draft、不merge、不部署。共用Account／Project等quota pool、私人排程opt-in、逐級probe、完整站點辨識／Reflection、語意真實性、大資料同步與專用原生／實機仍待補；不外推完整願望已完成。
+
+- 015G本機完整Go race412.629s、最終十個預算函式race41.098s、vet與27發布回歸0.037s成功。原生用量／精度1.117s及午夜日界0.092s真反例與修後證據見vps/RESEARCH_RESOURCE_BUDGET.md；正式Browser聚焦6.800s、原9圖加6圖，完整33流程／395圖及新來源九項仍候選。
+
 ## RESEARCH-DAILY-015F（2026-10-23 候選）
 
 最新穩定修正：ef69cca本機完整Go365.105s／33 Browser292.804s／389圖及CI Browser300.099s、Go312.717s、真systemd40.791s／原負載16.291s成功，但Intel native恢復容器失敗，仍不接受。舊production的a9ddd4c真反例確認view871與文字不變、container863→560.95而height仍61；833a80a第一次修正仍未形成穩定寬窗基準，兩者失敗保留。最終Mac修正移除app重複量測快取，使用TextKit增量layout；自然高度超過原144上限才啟用原生捲軸，避免成長期legacy捲軸改寬回饋。原4秒內基準加嚴為450ms，追加短輸入無捲軸／20行有捲軸及有界幾何診斷，原場景與timeout不減。獨立診斷422d5634fc80526faf1babdbfd9d740739daf53a／39922377324兩架構各82核心／90圖SUCCESS，原報告、hash與composer實圖已核對，精確對照見verification/20261023/native-composer-diagnostic.json。PR整合來源仍須自己的全部九項與實際產物，不借診斷或ef69綠燈、不接新功能。

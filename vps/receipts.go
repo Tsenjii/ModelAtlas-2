@@ -415,7 +415,7 @@ func reportedCharge(raw json.RawMessage, p Provider) map[string]any {
 		unit = "USD"
 		source = "OPENROUTER_USAGE"
 	}
-	return map[string]any{"amount": *exactString(n), "unit": unit, "source": source}
+	return map[string]any{"amount": resourceDecimal(n), "unit": unit, "source": source}
 }
 func responseRateHeaders(headers http.Header, secrets []string) map[string]string {
 	out := map[string]string{}
@@ -459,6 +459,7 @@ type requestRecord struct {
 	SessionID, RequestID, RetryID string
 	MessageIDs                    []string
 	Details                       map[string]any
+	MaxOutputTokens               int
 }
 
 func (v requestRecord) insert(ctx context.Context, tx *sql.Tx) error {

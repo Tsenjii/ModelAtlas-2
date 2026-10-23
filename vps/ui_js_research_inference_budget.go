@@ -16,7 +16,7 @@ const researchInferenceBudgetHTML = `
 <h3>逐憑證用量與上限</h3><p>同一 Provider／帳戶／憑證的模型、Group、端點及 Key 版本共同計數；不同憑證仍受全部研究上限約束。</p>
 <div id="research-inference-credentials" class="cards"></div><button id="research-inference-more" type="button" class="ghost" hidden>顯示更多憑證</button>
 <p id="research-inference-started" class="section-description"></p>
-<p class="section-description">這是本機核准次數，不代表供應商實際收費或剩餘額度。Token 與費用尚未量測；共用帳戶／Project 額度及私人自動排程仍待補。</p>
+<p class="section-description">這是本機核准次數，不代表供應商實際收費或剩餘額度。此處只記核准次數，token 與費用另見研究預算；共用帳戶／Project 額度及私人自動排程仍待補。</p>
 </details>`
 
 const jsResearchInferenceBudget = `
