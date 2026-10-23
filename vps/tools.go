@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"regexp"
@@ -93,18 +94,29 @@ func (s *Server) sessionTools(ctx context.Context, id string, tools []ToolDefini
 	}
 	return tools, nil
 }
+
+type statementExecutor interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+}
+
 func (s *Server) saveSessionTools(ctx context.Context, id string, tools []ToolDefinition) error {
+	return saveSessionTools(ctx, s.Store.DB, id, tools)
+}
+func saveSessionTools(ctx context.Context, q statementExecutor, id string, tools []ToolDefinition) error {
 	raw, _ := json.Marshal(tools)
-	_, err := s.Store.DB.ExecContext(ctx, "INSERT INTO session_options VALUES(?,?) ON CONFLICT(session_id) DO UPDATE SET tools_json=excluded.tools_json", id, string(raw))
+	_, err := q.ExecContext(ctx, "INSERT INTO session_options VALUES(?,?) ON CONFLICT(session_id) DO UPDATE SET tools_json=excluded.tools_json", id, string(raw))
 	return err
 }
 func (s *Server) saveMessage(ctx context.Context, session string, m Message) error {
+	return saveMessage(ctx, s.Store.DB, session, m)
+}
+func saveMessage(ctx context.Context, q statementExecutor, session string, m Message) error {
 	if m.ID == "" {
 		m.ID = newID()
 	}
 	media, _ := json.Marshal(metadataOnly(m.Attachments))
 	state, _ := json.Marshal(m.MessageState)
-	_, err := s.Store.DB.ExecContext(ctx, "INSERT INTO messages(id,session_id,role,content,media_metadata,structured_json,created_at) VALUES(?,?,?,?,?,?,?)", m.ID, session, m.Role, m.Content, string(media), string(state), now())
+	_, err := q.ExecContext(ctx, "INSERT INTO messages(id,session_id,role,content,media_metadata,structured_json,created_at) VALUES(?,?,?,?,?,?,?)", m.ID, session, m.Role, m.Content, string(media), string(state), now())
 	return err
 }
 func (s *Server) saveMessageWithRequest(ctx context.Context, session string, m Message, sample string) error {

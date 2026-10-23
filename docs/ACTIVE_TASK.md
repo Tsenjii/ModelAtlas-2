@@ -1,6 +1,17 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-23 研究推論原子入場與恢復（RESEARCH-ADMISSION-015E）
+
+- D-015保持：下一公開版以接近主要功能齊全為門檻。公開0.8.5-preview.1、release/request.json／版本／tag／附件不變；PR #20維持Draft，不merge、不部署。
+- 前片015D明列範圍已驗收：來源97bcd81c572def925583ce524682bae07ab3eccb／tree64f0f05c96e396b2cdb3d1b56252d74513cc4fbd；VPS39842902224四項、Android39842902193兩項、Mac39842902388三項首次SUCCESS，九份實際產物來源／hash／內層／報告與實圖已驗。恢復時重新核對相同來源與producer時間窗；精確證據見verification/20261023/authenticity-baseline-v2.json。
+- 015D完整Go race本機332.338s／CI409.646s，vet／27發布回歸、真systemd41.539s與原expanded workload24.331s；32 Browser本機293.688s／CI236.334s、380圖／9新圖／零failure圖。Android579 JVM／976 device（5原skip），Mac兩架構各82核心／90圖保留。完整WISH-AUTH-001仍PARTIAL。
+- 開工重查main仍cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 attempt2 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。
+- 當前唯一整合片015E：研究正式推論caller本機拒絕不扣額；對話／工具／請求紀錄與HTTP／probe reservation同transaction，預算不足／DB故障不留下部分資料；實際入場後的失敗／取消保留用量。真TLS反例0.062s、接續恢復後0.057s均FAIL：外部HTTP=0，但HTTP與probe都已扣1。原測試、負載與timeout不減，自己的同來源九項前仍候選。
+- 每日／逐憑證token／USD、私人排程明確opt-in、逐級probe、完整同步與原生流程仍須後續補齊，不以本片修正提前勾完。
+
 ## 2026-10-23 模型真實性證據（AUTHENTICITY-015D）
+
+本片明列範圍已由97bcd81同來源九項及全部產物驗收；以verification/20261023/authenticity-baseline-v2.json與上節為準。以下保留候選與失敗歷史。
 
 - 使用者要求繼續直到主要功能齊全。依D-015暫不修改公開版本／release/request.json／tag／附件；PR #20維持Draft、不merge、不部署。
 - 前片015C所列範圍已驗收：來源294f6aba62c0cf6c27e31a5894476e8dd1116d12／tree681f784d53ca5f00f06f4c0a4a69955b5a2e6f92，VPS39805462791四項、Android39805462786兩項、Mac39805462819三項SUCCESS；精確job及產物核對見PR #20與verification/20261023/connector-discovery-baseline.json。31 Browser278.407s／371圖、Go race369.796s／vet、真systemd41.615s及原expanded workload24.881s；原候選失敗歷史全部保留。

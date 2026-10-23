@@ -443,28 +443,50 @@ func (s *Server) startRequestRecord(ctx context.Context, id string, v Selection,
 		return e
 	}
 	defer tx.Rollback()
-	raw, _ := json.Marshal(details)
-	_, e = tx.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at,credential_version,details_json) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?,?,?)", id, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, op, source, at, epoch, string(raw))
+	record := requestRecord{ID: id, Selection: v, Operation: op, Source: source, At: at, CredentialVersion: epoch, SessionID: session, RequestID: request, RetryID: retry, MessageIDs: messageIDs, Details: details}
+	if e = record.insert(ctx, tx); e != nil {
+		return e
+	}
+	return tx.Commit()
+}
+
+type requestRecord struct {
+	ID                            string
+	Selection                     Selection
+	Operation, Source             string
+	At                            int64
+	CredentialVersion             int
+	SessionID, RequestID, RetryID string
+	MessageIDs                    []string
+	Details                       map[string]any
+}
+
+func (v requestRecord) insert(ctx context.Context, tx *sql.Tx) error {
+	raw, e := json.Marshal(v.Details)
+	if e != nil {
+		return e
+	}
+	_, e = tx.ExecContext(ctx, "INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at,credential_version,details_json) VALUES(?,?,?,?,?,?,?,?,?,'RUNNING',?,?,?)", v.ID, v.Selection.ProviderID, v.Selection.AccountID, v.Selection.CredentialID, v.Selection.ModelID, v.Selection.Group, v.Selection.Endpoint, v.Operation, v.Source, v.At, v.CredentialVersion, string(raw))
 	if e != nil {
 		return e
 	}
 	var sessionValue any
-	if session != "" {
-		sessionValue = session
+	if v.SessionID != "" {
+		sessionValue = v.SessionID
 	}
 	var retryValue any
-	if retry != "" {
-		retryValue = retry
+	if v.RetryID != "" {
+		retryValue = v.RetryID
 	}
-	if _, e = tx.ExecContext(ctx, "INSERT INTO request_context VALUES(?,?,?,?)", id, sessionValue, request, retryValue); e != nil {
+	if _, e = tx.ExecContext(ctx, "INSERT INTO request_context VALUES(?,?,?,?)", v.ID, sessionValue, v.RequestID, retryValue); e != nil {
 		return e
 	}
-	for _, message := range messageIDs {
-		if _, e = tx.ExecContext(ctx, "INSERT INTO message_requests VALUES(?,?)", message, id); e != nil {
+	for _, message := range v.MessageIDs {
+		if _, e = tx.ExecContext(ctx, "INSERT INTO message_requests VALUES(?,?)", message, v.ID); e != nil {
 			return e
 		}
 	}
-	return tx.Commit()
+	return nil
 }
 func (s *Server) telemetryDetail(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")

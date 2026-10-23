@@ -1,6 +1,14 @@
 # ModelAtlas Public — TRACEABILITY
 
-## AUTHENTICITY-015D（2026-10-23 候選）
+## RESEARCH-ADMISSION-015E（2026-10-23 候選）
+
+正式caller：研究/start → 既有MINIMAL_INFERENCE → 共用execute → 本機內容檢查 → 對話／工具／HTTP與probe reservation／request record原子提交 → 真HTTP與原結果保存。真TLS0.062s與恢復重現0.057s均確認：本機秘密內容拒絕、HTTP=0，卻已扣HTTP／probe各1。修正與必要故障／並行回歸仍待自己的完整同來源九項。完整token／USD與私人排程未完成。
+
+程式：conversation_admission.go、playground.go、tools.go、receipts.go、attachments.go、research_execute.go；5個新函式涵蓋六處DB故障、原20工作／4並行的飛行中預算barrier、503／取消保留量、跨重啟明確恢復與正式worker成功重試新報告。追加worker真反例11.495s原用空報告，修後強化barrier的聚焦race13.795s、vet／27發布回歸成功；規則與失敗歷史見../vps/RESEARCH_ADMISSION.md。原32 Browser／380圖、全部原生與負載保留，新來源獨立驗。
+
+## AUTHENTICITY-015D（2026-10-23 所列範圍已驗）
+
+已驗來源97bcd81c572def925583ce524682bae07ab3eccb／tree64f0f05c96e396b2cdb3d1b56252d74513cc4fbd；同來源九項首次SUCCESS與全部九份產物核對見verification/20261023/authenticity-baseline-v2.json。完整Go race本機332.338s／CI409.646s；32 Browser本機293.688s／CI236.334s、380圖／9新圖，全部原生測試與原負載保留。以下為候選歷史，不外推完整WISH-AUTH-001或原生專用UI完成。
 
 正式caller：Models詳情／歷史 → 共用既有流量分析／參考Review API → 完整scope與本機來源憑據 → traffic-fingerprint-v2 → 不可變報告／參考版本 → 明確CAS啟用／ledger持久Undo。Assistant及原研究最小推論亦用相同零額外HTTP分析。程式為authenticity.go／capture／reference、playground.go、ui_js_authenticity.go；完整規則、失敗歷史與限制見`../vps/AUTHENTICITY.md`。
 

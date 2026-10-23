@@ -1,3 +1,5 @@
+> 2026-10-23最新：015D來源97bcd81同來源九項及全部產物已驗收明列範圍。當前唯一整合片RESEARCH-ADMISSION-015E：本機拒絕不扣額，對話／工具／HTTP與probe reservation／請求紀錄原子提交及恢復；完整token／USD、私人排程與其餘NEXT_RELEASE缺口保留。新來源自己的完整九項前仍候選，公開版本不變。
+
 > 2026-10-22 接續：015B由480bdeac同源九項驗所列範圍；當前唯一整合片CONNECTOR-DISCOVERY-015C，公開來源→有證據與單位／scope的宣告草稿→fixture／實測→共用Review→持久Undo。VPS先補手動JSON落差，原研究剩餘預算與全願望保留；本片完整回歸及九項前仍候選，不變更公開版本。
 
 2026-10-23接續AUTHENTICITY-015D：015C來源294f6ab已九項驗收；本片先用現有正常流量建立版本化證據、使用者確認參考Review／持久Undo與Models／Assistant入口。完整規則見vps/AUTHENTICITY.md；新來源九項前仍候選。完整預算／逐級probe、站點剩餘相容、大資料同步及原生流程仍保留。

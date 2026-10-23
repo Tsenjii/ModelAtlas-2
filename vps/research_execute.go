@@ -369,9 +369,9 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 		if e != nil {
 			return nil, e
 		}
-		var outcome, details string
+		var sampleID, outcome, details string
 		var at int64
-		e = s.Store.DB.QueryRowContext(ctx, "SELECT outcome,details_json,created_at FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND credential_version=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED') AND created_at>=? ORDER BY rowid DESC LIMIT 1", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, selected.CredentialVersion, now()-int64(24*time.Hour/time.Millisecond)).Scan(&outcome, &details, &at)
+		e = s.Store.DB.QueryRowContext(ctx, "SELECT id,outcome,details_json,created_at FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND credential_version=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED') AND created_at>=? ORDER BY rowid DESC LIMIT 1", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, selected.CredentialVersion, now()-int64(24*time.Hour/time.Millisecond)).Scan(&sampleID, &outcome, &details, &at)
 		reused := e == nil
 		if !reused {
 			id, e := s.createTestSession(ctx, v)
@@ -380,6 +380,7 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 			}
 			result, _ := s.execute(ctx, inferRequest{SessionID: id, Prompt: "Reply OK.", MaxTokens: 16}, "CRAWLER_VERIFY", func(string, any) error { return nil })
 			outcome = result.Outcome
+			sampleID = str(result.Details["sample_id"])
 			raw, _ := json.Marshal(result.Details)
 			details = string(raw)
 			at = now()
@@ -392,7 +393,24 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 		normalized := map[string]any{"selection": v, "outcome": outcome, "observed_at": at, "reused_local_traffic": reused, "probe_version": "minimal-inference-v1", "response_model_id": parsed["response_model_id"], "authenticity": "BEHAVIOR_OBSERVED_IDENTITY_NOT_PROVEN"}
 		// Analyze only saved traffic; this caller never adds an authenticity probe
 		// or upgrades eligibility/identity because a request happened to succeed.
-		if report, _, err := s.analyzeAuthenticity(ctx, authenticityAnalysisRequest{ID: "auth-" + contentHash([]byte(run+scopeKey(v))), Selection: v}); err == nil {
+		// Each actual task attempt and observation keeps its own immutable report.
+		// A successful retry must not replay the first local failure's empty report.
+		taskID, _ := ctx.Value(researchTaskBudgetKey{}).(string)
+		attempt := 0
+		var reportErr error
+		if taskID != "" {
+			reportErr = s.Store.DB.QueryRowContext(ctx, "SELECT attempts FROM research_tasks WHERE id=? AND run_id=?", taskID, run).Scan(&attempt)
+		}
+		reportID := "auth-" + connectorHash(struct {
+			Run, Task, Sample, Outcome, Suite string
+			Selection                         Selection
+			Attempt                           int
+		}{run, taskID, sampleID, outcome, authenticitySuiteVersion, v, attempt})
+		var report authenticityReport
+		if reportErr == nil {
+			report, _, reportErr = s.analyzeAuthenticity(ctx, authenticityAnalysisRequest{ID: reportID, Selection: v})
+		}
+		if reportErr == nil {
 			normalized["authenticity_report_id"] = report.ID
 			normalized["authenticity_suite_version"] = report.Suite
 			normalized["authenticity_observation_status"] = report.Status

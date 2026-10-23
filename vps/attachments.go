@@ -94,3 +94,13 @@ func (s *Server) mediaFor(id string) []Attachment {
 	defer s.flightMu.Unlock()
 	return append([]Attachment(nil), s.media[id]...)
 }
+
+// Only release media belonging to a conversation request that never committed.
+func (s *Server) forgetMedia(id string) {
+	s.flightMu.Lock()
+	defer s.flightMu.Unlock()
+	for _, attachment := range s.media[id] {
+		s.mediaBytes -= len(attachment.Data)
+	}
+	delete(s.media, id)
+}

@@ -1,5 +1,7 @@
 # 跨平台優點與持續補齊清單
 
+2026-10-23最新：015D所列範圍已由97bcd81同來源九項及全部產物驗收（verification/20261023/authenticity-baseline-v2.json）；當前015E候選修正VPS正式研究／共用對話管線的原子入場、本機故障不扣額與重試新證據。Mac內建同源引擎取得後端修正；Android專用對應及其他原生缺口保留。原功能、測試、負載與timeout不減，015E完整新來源九項前不接受。以下為既有過程。
+
 2026-10-23 AUTHENTICITY-015D候選：VPS Models歷史可分析既有流量、建立同Canonical跨origin參考Review、明確啟用與跨重啟Undo；Assistant／研究共用零額外HTTP分析。保留既有導航／六分區、scope／Unknown與低資源分段編碼。Mac同源引擎有API，Mac／Android專用原生UI尚未移植；原生／完整願望不提前驗收。
 
 2026-10-22 CONNECTOR-DISCOVERY-015C候選：VPS研究知識正式表單及Assistant共用公開來源辨識／宣告草稿／fixture／真HTTP Review，原connector操作保留並增加跨重啟Undo。Mac內建同源Go引擎取得API，Mac／Android專用原生辨識與Review尚未移植；原功能／tests／負載不減，不能以網頁替代原生驗收。015B已由480bdeac同SHA九項驗所列範圍，本片仍須獨立九項。

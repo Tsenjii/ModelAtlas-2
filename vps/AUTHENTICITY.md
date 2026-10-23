@@ -1,5 +1,7 @@
 # 模型真實性證據（AUTHENTICITY-015D）
 
+本文件明列範圍已由97bcd81c572def925583ce524682bae07ab3eccb／tree64f0f05c96e396b2cdb3d1b56252d74513cc4fbd首次同來源九項與全部產物驗收；證據見docs/verification/20261023/authenticity-baseline-v2.json。Go race本機332.338s／CI409.646s，32 Browser本機293.688s／CI236.334s、380圖／9新圖，Android579／976（5原skip）、Mac各82核心／90圖與原負載保留。以下候選及失敗歷史保留，完整WISH-AUTH-001仍PARTIAL。
+
 本片是既有流量的版本化觀測，不等同完整 WISH-AUTH-001。公開版本保持 0.8.5-preview.1；PR #20 維持 Draft。自己的同來源九項與產物驗證完成前仍為候選。
 
 ## 正式操作

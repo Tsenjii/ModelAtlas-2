@@ -554,10 +554,6 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if err = s.authorizeUpstream(upstream, provider, key, cfg); err != nil {
 		return result, 422
 	}
-	if err = s.chargeNetwork(ctx, source == "CRAWLER_VERIFY"); err != nil {
-		result.Outcome = "RESEARCH_BUDGET_EXHAUSTED"
-		return result, 429
-	}
 	userID := newID()
 	if body.containsSecret(secrets) {
 		result.Outcome = "SECRET_IN_REQUEST_CONTENT"
@@ -573,12 +569,14 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		result.Outcome = "ATTACHMENT_MEMORY_LIMIT"
 		return result, 413
 	}
-	if v.Tools != nil {
-		if err = s.saveSessionTools(ctx, v.SessionID, tools); err != nil {
-			return result, 500
+	admitted := false
+	defer func() {
+		if !admitted && len(v.Attachments) > 0 {
+			s.forgetMedia(userID)
 		}
-	}
+	}()
 	messageIDs := []string{}
+	pendingMessages := []Message{}
 	for _, turn := range turns[len(history):] {
 		if turn.Role == "user" {
 			turn.ID = userID
@@ -587,10 +585,7 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			turn.ID = newID()
 		}
 		messageIDs = append(messageIDs, turn.ID)
-		if err = s.saveMessage(ctx, v.SessionID, turn); err != nil {
-			result.Outcome = "HISTORY_SAVE"
-			return result, 500
-		}
+		pendingMessages = append(pendingMessages, turn)
 	}
 	conditionHash := authenticityCondition(payload, operation, stream, upstream.Header.Get("anthropic-version"), body.size)
 	started := time.Now()
@@ -602,10 +597,23 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	}
 	result.Details["sample_id"] = sampleID
 	result.Details["receipt"] = receipt
-	if err = s.startRequestRecord(ctx, sampleID, scope, operation, source, started.UnixMilli(), provider.CredentialVersion, v.SessionID, "", v.RetryID, messageIDs, result.Details); err != nil {
+	var updatedTools []ToolDefinition
+	if v.Tools != nil {
+		updatedTools = tools
+	}
+	record := requestRecord{ID: sampleID, Selection: scope, Operation: operation, Source: source, At: started.UnixMilli(), CredentialVersion: provider.CredentialVersion, SessionID: v.SessionID, RetryID: v.RetryID, MessageIDs: messageIDs, Details: result.Details}
+	if err = s.admitConversation(ctx, record, pendingMessages, updatedTools); err != nil {
+		delete(result.Details, "sample_id")
+		delete(result.Details, "receipt")
 		result.Outcome = "TELEMETRY_SAVE"
+		var admissionError *conversationAdmissionError
+		if errors.As(err, &admissionError) {
+			result.Outcome = admissionError.Outcome
+			return result, admissionError.Status
+		}
 		return result, 500
 	}
+	admitted = true
 
 	result.Outcome = "NETWORK"
 	var ttfb, ttft, lastGenerated *int64
