@@ -46,7 +46,9 @@ struct ComposerTextEditor: NSViewRepresentable {
         private var lastHeight: CGFloat = 30
         private var measuredText: String?
         private var measuredWidth: CGFloat = 0
+        private var measuredContainerWidth: CGFloat = 0
         private var heightRevision = 0
+        private var measurementPending = false
         private var focusedRequest = 0
         private var pendingFocus: Int?
         init(_ parent: ComposerTextEditor) { self.parent = parent }
@@ -72,11 +74,25 @@ struct ComposerTextEditor: NSViewRepresentable {
         }
         private func measure(_ editor: NSTextView) {
             // Transcript updates share the window layout pass. Recalculate the
-            // input only when its own text or available width changes.
-            guard measuredText != editor.string || abs(measuredWidth - editor.bounds.width) > 0.5,
-                  let layout = editor.layoutManager, let container = editor.textContainer else { return }
-            measuredText = editor.string; measuredWidth = editor.bounds.width
+            // input only when its own text or available width changes. TextKit
+            // can publish its container width on a later pass than the view.
+            guard let layout = editor.layoutManager, let container = editor.textContainer else { return }
+            guard measuredText != editor.string || abs(measuredWidth - editor.bounds.width) > 0.5 || abs(measuredContainerWidth - container.containerSize.width) > 0.5 else { return }
+            let width = editor.bounds.width, containerWidth = container.containerSize.width
+            measuredText = editor.string; measuredWidth = width; measuredContainerWidth = containerWidth
             layout.ensureLayout(for: container)
+            // A scroller/layout pass can change geometry while TextKit is
+            // laying out. Never bind that result to the newly observed width.
+            if abs(editor.bounds.width - width) > 0.5 || abs(container.containerSize.width - containerWidth) > 0.5 {
+                if !measurementPending {
+                    measurementPending = true
+                    DispatchQueue.main.async { [weak self, weak editor] in
+                        guard let self else { return }; self.measurementPending = false
+                        if let editor { self.measure(editor) }
+                    }
+                }
+                return
+            }
             let extra = layout.extraLineFragmentTextContainer === container ? layout.extraLineFragmentRect.maxY : 0
             let content = max(layout.usedRect(for: container).maxY, extra)
             let height = min(144, max(30, ceil(content + editor.textContainerInset.height * 2)))

@@ -705,6 +705,7 @@ import SwiftUI
     }
     private static func verifyComposer(_ store: AtlasStore, output: URL) async throws {
         var checkpoint = "find-active-editor"
+        var originalWideHeight: CGFloat? = nil, originalWideWidth: CGFloat? = nil, originalWideContainer: CGFloat? = nil
         var baselineHeight: CGFloat? = nil, baselineWidth: CGFloat? = nil, baselineContainerWidth: CGFloat? = nil, expectedContainerWidth: CGFloat? = nil
         do {
         guard let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }),
@@ -741,6 +742,7 @@ import SwiftUI
         editor.insertText(wrapping, replacementRange: NSRange(location: NSNotFound, length: 0))
         let wideHeight = try await composerWideBaseline(store, window: window, editor: editor, scroll: scroll, text: wrapping)
         baselineHeight = wideHeight; baselineWidth = editor.bounds.width; baselineContainerWidth = editor.textContainer?.containerSize.width
+        originalWideHeight = wideHeight; originalWideWidth = editor.bounds.width; originalWideContainer = editor.textContainer?.containerSize.width
         // TextKit can publish a container width after its view frame. Isolate
         // that ordering with the real native editor, leaving text/frame intact.
         checkpoint = "container-width-before-frame"
@@ -763,6 +765,7 @@ import SwiftUI
         container.widthTracksTextView = true; container.containerSize = originalContainerSize
         scroll.needsLayout = true; scroll.layoutSubtreeIfNeeded()
         try await wait { abs(scroll.bounds.height - containerBaseline) < 2 }
+        checkpoint = "restore-original-scroll-style"
         scroll.scrollerStyle = originalScrollerStyle
         scroll.needsLayout = true; scroll.layoutSubtreeIfNeeded()
         try await wait { abs(scroll.bounds.height - wideHeight) < 2 }
@@ -813,7 +816,10 @@ import SwiftUI
                 "baseline_height": baselineHeight.map { JSONValue.number(Double($0)) } ?? .null,
                 "baseline_editor_width": baselineWidth.map { JSONValue.number(Double($0)) } ?? .null,
                 "baseline_container_width": baselineContainerWidth.map { JSONValue.number(Double($0)) } ?? .null,
-                "expected_container_width": expectedContainerWidth.map { JSONValue.number(Double($0)) } ?? .null])
+                "expected_container_width": expectedContainerWidth.map { JSONValue.number(Double($0)) } ?? .null,
+                "original_wide_height": originalWideHeight.map { JSONValue.number(Double($0)) } ?? .null,
+                "original_wide_editor_width": originalWideWidth.map { JSONValue.number(Double($0)) } ?? .null,
+                "original_wide_container_width": originalWideContainer.map { JSONValue.number(Double($0)) } ?? .null])
             try? JSONEncoder().encode(report).write(to: output.appendingPathComponent("composer.diagnostics.log"), options: .atomic)
             try? await captureWorkspace(store, output, "composer-failure", dark: false)
             throw DraftProblem("輸入框驗證失敗：" + checkpoint)
@@ -827,7 +833,7 @@ import SwiftUI
             let sample = [editor.bounds.width, editor.textContainer?.containerSize.width ?? -1, scroll.bounds.height]
             let ready = store.draft == text && editor.string == text && sample[0] > 800 && sample[1] > 790 && sample[2] > 35 && sample[2] < 140
             if !ready || previous.count != sample.count || zip(previous, sample).contains(where: { abs($0.0 - $0.1) > 0.5 }) { stableSince = Date() }
-            else if Date().timeIntervalSince(stableSince) >= 0.15 { return sample[2] }
+            else if Date().timeIntervalSince(stableSince) >= 0.45 { return sample[2] }
             previous = sample
             try await Task.sleep(nanoseconds: 20_000_000)
         }
