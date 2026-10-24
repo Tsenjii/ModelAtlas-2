@@ -454,16 +454,28 @@ func (s *Server) runResearchPending(parent context.Context) {
 		json.Unmarshal([]byte(payload), &input)
 		var result map[string]any
 		var taskErr error
-		var scheduled int
 		if oneOf(t.Kind, "MINIMAL_INFERENCE", "CATALOG") {
-			_ = s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_schedule_runs WHERE run_id=?", t.RunID).Scan(&scheduled)
+			var owner, definition string
+			grantErr := s.Store.DB.QueryRowContext(ctx, "SELECT s.id,s.definition_json FROM research_schedule_runs r JOIN research_schedules s ON s.id=r.schedule_id WHERE r.run_id=?", t.RunID).Scan(&owner, &definition)
+			if grantErr == nil {
+				var d scheduleDefinition
+				if json.Unmarshal([]byte(definition), &d) != nil || d.Private == nil {
+					taskErr = errors.New("automatic schedule cannot use private model credentials")
+				} else if input.Selection == nil || !privateScheduleScopeAllowed(d, *input.Selection) || t.Kind == "MINIMAL_INFERENCE" && !d.Options.MinimalInference || !s.scheduleApproved(ctx, s.Store.DB, owner, d) {
+					taskErr = errScheduledDefinitionChanged
+				} else {
+					ctx = context.WithValue(ctx, privateScheduleCredentialKey{}, *input.Selection)
+				}
+			} else if grantErr != sql.ErrNoRows {
+				taskErr = grantErr
+			}
 		}
-		if scheduled > 0 {
-			taskErr = errors.New("automatic schedule cannot use private model credentials")
-		} else if t.Kind == "AA" {
-			result, taskErr = s.executeAAResearchTask(ctx, t)
-		} else {
-			result, taskErr = s.executeResearchTask(ctx, t.RunID, t.Kind, input)
+		if taskErr == nil {
+			if t.Kind == "AA" {
+				result, taskErr = s.executeAAResearchTask(ctx, t)
+			} else {
+				result, taskErr = s.executeResearchTask(ctx, t.RunID, t.Kind, input)
+			}
 		}
 		status := "SUCCESS"
 		if taskErr != nil {

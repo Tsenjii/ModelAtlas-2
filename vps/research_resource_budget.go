@@ -252,15 +252,17 @@ func readResourceUsageWhere(ctx context.Context, tx *sql.Tx, day, predicate stri
 }
 
 type researchResourceBudgetError struct {
-	PoolID      string `json:"pool_id,omitempty"`
-	PoolLabel   string `json:"pool_label,omitempty"`
-	Metric      string `json:"metric"`
-	Scope       string `json:"scope"`
-	Used        string `json:"used"`
-	Limit       string `json:"limit"`
-	Reservation string `json:"reservation"`
-	Day         string `json:"day"`
-	ResetAt     int64  `json:"reset_at"`
+	ScheduleID   string `json:"schedule_id,omitempty"`
+	ScheduleName string `json:"schedule_name,omitempty"`
+	PoolID       string `json:"pool_id,omitempty"`
+	PoolLabel    string `json:"pool_label,omitempty"`
+	Metric       string `json:"metric"`
+	Scope        string `json:"scope"`
+	Used         string `json:"used"`
+	Limit        string `json:"limit"`
+	Reservation  string `json:"reservation"`
+	Day          string `json:"day"`
+	ResetAt      int64  `json:"reset_at"`
 	researchInferenceScope
 }
 

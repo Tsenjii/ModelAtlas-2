@@ -79,7 +79,7 @@ func (s *Server) reserveResearchInference(ctx context.Context, tx *sql.Tx, recor
 	if err = tx.QueryRowContext(ctx, "SELECT daily_limit FROM research_inference_limits WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&limit); err != nil && err != sql.ErrNoRows {
 		return err
 	}
-	instant := s.scheduleTime()
+	instant := s.researchAdmissionTime(ctx)
 	day := instant.Format("2006-01-02")
 	var all, credential int
 	if err = tx.QueryRowContext(ctx, "SELECT COUNT(*),COALESCE(SUM(provider_id=? AND account_id=? AND credential_id=?),0) FROM research_inference_admissions WHERE day=?", v.ProviderID, v.AccountID, v.CredentialID, day).Scan(&all, &credential); err != nil {

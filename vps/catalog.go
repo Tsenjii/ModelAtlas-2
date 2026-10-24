@@ -538,6 +538,9 @@ func (s *Server) syncModels(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 200, map[string]any{"models_seen": count, "my_models_unchanged": true})
 }
 func (s *Server) endpointAuth(ctx context.Context, provider, account, credential string) (Provider, string, error) {
+	if approved, restricted := ctx.Value(privateScheduleCredentialKey{}).(Selection); restricted && (approved.ProviderID != provider || approved.AccountID != account || approved.CredentialID != credential) {
+		return Provider{}, "", errors.New("private research credential differs from reviewed scope")
+	}
 	var p Provider
 	var enc, fields string
 	var enabled int

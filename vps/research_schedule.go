@@ -24,9 +24,10 @@ var errScheduledDailyBudget = errors.New("research daily HTTP budget exhausted")
 var errScheduledDefinitionChanged = errors.New("scheduled research sources changed; local review required")
 
 type scheduleDefinition struct {
-	Options            ResearchOptions `json:"options"`
-	Languages          []string        `json:"languages"`
-	SourcesFingerprint string          `json:"sources_fingerprint"`
+	Private            *schedulePrivatePolicy `json:"private,omitempty"`
+	Options            ResearchOptions        `json:"options"`
+	Languages          []string               `json:"languages"`
+	SourcesFingerprint string                 `json:"sources_fingerprint"`
 }
 type researchSchedule struct {
 	ID              string `json:"id"`
@@ -36,18 +37,21 @@ type researchSchedule struct {
 	IntervalMinutes int    `json:"interval_minutes"`
 	DailyHTTPLimit  int    `json:"daily_http_limit"`
 	scheduleDefinition
-	NextAt        int64           `json:"next_at"`
-	LastRunID     string          `json:"last_run_id"`
-	LastStartedAt *int64          `json:"last_started_at"`
-	LastReason    string          `json:"last_reason"`
-	RunStatus     string          `json:"run_status"`
-	TodayUsed     int             `json:"today_used"`
-	RunUsed       int             `json:"run_used"`
-	RunBudget     int             `json:"run_budget"`
-	Summary       json.RawMessage `json:"summary"`
-	ResumeAt      int64           `json:"resume_at"`
-	AutoResume    bool            `json:"auto_resume"`
-	State         string          `json:"state"`
+	NextAt         int64           `json:"next_at"`
+	LastRunID      string          `json:"last_run_id"`
+	LastStartedAt  *int64          `json:"last_started_at"`
+	LastReason     string          `json:"last_reason"`
+	RunStatus      string          `json:"run_status"`
+	TodayUsed      int             `json:"today_used"`
+	RunUsed        int             `json:"run_used"`
+	RunBudget      int             `json:"run_budget"`
+	RunProbes      int             `json:"run_probes"`
+	RunProbeBudget int             `json:"run_probe_budget"`
+	PrivateUsage   map[string]any  `json:"private_usage,omitempty"`
+	Summary        json.RawMessage `json:"summary"`
+	ResumeAt       int64           `json:"resume_at"`
+	AutoResume     bool            `json:"auto_resume"`
+	State          string          `json:"state"`
 }
 
 func (s *Server) scheduleTime() time.Time {
@@ -120,14 +124,31 @@ func (s *Server) scheduledNetworkCharge(ctx context.Context, tx *sql.Tx, run str
 	if enabled != 1 || intent != 1 {
 		return errors.New("scheduled research paused")
 	}
-	if probe {
-		return errors.New("scheduled model inference is disabled")
-	}
 	var d scheduleDefinition
-	if json.Unmarshal([]byte(definition), &d) != nil || !scheduleSourcesApproved(ctx, tx, d) {
+	if json.Unmarshal([]byte(definition), &d) != nil {
 		return errScheduledDefinitionChanged
 	}
-	day := s.scheduleTime().Format("2006-01-02")
+	if probe && (d.Private == nil || !d.Options.MinimalInference) {
+		return errors.New("scheduled model inference is disabled")
+	}
+	if !s.scheduleApproved(ctx, tx, id, d) {
+		return errScheduledDefinitionChanged
+	}
+	if d.Private != nil {
+		if task, _ := ctx.Value(researchTaskBudgetKey{}).(string); task != "" {
+			var payload string
+			if tx.QueryRowContext(ctx, "SELECT payload_json FROM research_tasks WHERE id=? AND run_id=?", task, run).Scan(&payload) != nil {
+				return errScheduledDefinitionChanged
+			}
+			var input taskInput
+			if json.Unmarshal([]byte(payload), &input) != nil || input.Selection != nil && !privateScheduleScopeAllowed(d, *input.Selection) || probe && input.Selection == nil {
+				return errScheduledDefinitionChanged
+			}
+		} else if probe {
+			return errScheduledDefinitionChanged
+		}
+	}
+	day := s.researchAdmissionTime(ctx).Format("2006-01-02")
 	if scheduleUsage(ctx, tx, day, "global") >= scheduleDailyLimit(ctx, tx) || scheduleUsage(ctx, tx, day, "schedule:"+id) >= daily {
 		return errScheduledDailyBudget
 	}
@@ -141,8 +162,11 @@ func (s *Server) scheduledNetworkCharge(ctx context.Context, tx *sql.Tx, run str
 
 func (s *Server) scheduleOptions(ctx context.Context, d scheduleDefinition) (ResearchOptions, error) {
 	v := d.Options
-	if v.MinimalInference || v.ProbeBudget != 0 || len(v.Selections) > 0 || len(d.Languages) > 8 {
+	if len(d.Languages) > 8 || d.Private == nil && (v.MinimalInference || v.ProbeBudget != 0 || len(v.Selections) > 0) {
 		return v, errors.New("automatic schedules accept public discovery only; use a manual run for model inference")
+	}
+	if d.Private != nil && (!d.Private.valid() || len(v.Selections) == 0 || len(v.Selections) > 32 || v.MinimalInference && (v.ProbeBudget < 1 || v.ProbeBudget > 10) || !v.MinimalInference && v.ProbeBudget != 0) {
+		return v, errors.New("explicit private selections and bounded inference policy required")
 	}
 	seen := map[string]bool{}
 	for _, lang := range d.Languages {
@@ -168,7 +192,7 @@ func (s *Server) readSchedules(ctx context.Context) ([]researchSchedule, error) 
 	instant := s.scheduleTime()
 	day := instant.Format("2006-01-02")
 	globalUsed, globalLimit := scheduleUsage(ctx, s.Store.DB, day, "global"), scheduleDailyLimit(ctx, s.Store.DB)
-	rows, err := s.Store.DB.QueryContext(ctx, `SELECT s.id,s.name,s.revision,s.enabled,s.interval_minutes,s.daily_http_limit,s.definition_json,s.next_at,s.last_run_id,s.last_started_at,s.last_reason,COALESCE(r.status,''),COALESCE(o.used,0),COALESCE(o.budget,0),COALESCE(o.summary_json,'{}'),COALESCE(p.resume_at,0),COALESCE(p.intent,0),COALESCE(d.used,0)
+	rows, err := s.Store.DB.QueryContext(ctx, `SELECT s.id,s.name,s.revision,s.enabled,s.interval_minutes,s.daily_http_limit,s.definition_json,s.next_at,s.last_run_id,s.last_started_at,s.last_reason,COALESCE(r.status,''),COALESCE(o.used,0),COALESCE(o.budget,0),COALESCE(o.summary_json,'{}'),COALESCE(p.resume_at,0),COALESCE(p.intent,0),COALESCE(d.used,0),COALESCE(o.probes_used,0),COALESCE(o.probe_budget,0)
  FROM research_schedules s LEFT JOIN research_runs r ON r.id=s.last_run_id LEFT JOIN research_run_options o ON o.run_id=r.id LEFT JOIN research_schedule_runs p ON p.run_id=r.id LEFT JOIN research_schedule_daily d ON d.scope='schedule:'||s.id AND d.day=? ORDER BY s.next_at,s.created_at,s.id LIMIT 32`, day)
 	if err != nil {
 		return nil, err
@@ -178,7 +202,7 @@ func (s *Server) readSchedules(ctx context.Context) ([]researchSchedule, error) 
 	for rows.Next() {
 		var v researchSchedule
 		var raw, summary string
-		if err = rows.Scan(&v.ID, &v.Name, &v.Revision, &v.Enabled, &v.IntervalMinutes, &v.DailyHTTPLimit, &raw, &v.NextAt, &v.LastRunID, &v.LastStartedAt, &v.LastReason, &v.RunStatus, &v.RunUsed, &v.RunBudget, &summary, &v.ResumeAt, &v.AutoResume, &v.TodayUsed); err != nil {
+		if err = rows.Scan(&v.ID, &v.Name, &v.Revision, &v.Enabled, &v.IntervalMinutes, &v.DailyHTTPLimit, &raw, &v.NextAt, &v.LastRunID, &v.LastStartedAt, &v.LastReason, &v.RunStatus, &v.RunUsed, &v.RunBudget, &summary, &v.ResumeAt, &v.AutoResume, &v.TodayUsed, &v.RunProbes, &v.RunProbeBudget); err != nil {
 			return nil, err
 		}
 		if err = json.Unmarshal([]byte(raw), &v.scheduleDefinition); err != nil {
@@ -201,12 +225,42 @@ func (s *Server) readSchedules(ctx context.Context) ([]researchSchedule, error) 
 			}
 		case oneOf(v.RunStatus, "QUEUED", "RUNNING"):
 			v.State = v.RunStatus
-		case v.RunStatus == "BUDGET_EXHAUSTED" && v.RunUsed >= v.RunBudget:
+		case v.RunStatus == "BUDGET_EXHAUSTED" && scheduleRoundFull(v):
 			v.State = "ROUND_LIMIT"
 		}
 		list = append(list, v)
 	}
-	return list, rows.Err()
+	rowErr := rows.Err()
+	rows.Close()
+	if rowErr != nil {
+		return nil, rowErr
+	}
+	for i := range list {
+		v := &list[i]
+		if v.Private == nil {
+			continue
+		}
+		tx, e := s.Store.DB.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+		if e != nil {
+			return nil, e
+		}
+		u, e := schedulePrivateUsage(ctx, tx, v.ID, day, "")
+		tx.Rollback()
+		if e != nil {
+			return nil, e
+		}
+		v.PrivateUsage = u.view()
+		if !v.Enabled && v.Private.ApprovalID == "" {
+			v.State = "NEEDS_REVIEW"
+		}
+		if v.Enabled && v.RunStatus == "BUDGET_EXHAUSTED" && v.ResumeAt > instant.UnixMilli() {
+			v.State = "INFERENCE_WAIT"
+		}
+		if v.Enabled && v.RunStatus == "BUDGET_EXHAUSTED" && !v.AutoResume && !scheduleRoundFull(*v) {
+			v.State = "INFERENCE_LIMIT"
+		}
+	}
+	return list, nil
 }
 func (s *Server) listResearchSchedules(w http.ResponseWriter, r *http.Request) {
 	list, err := s.readSchedules(r.Context())
@@ -215,17 +269,18 @@ func (s *Server) listResearchSchedules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t := s.scheduleTime()
-	jsonOK(w, 200, map[string]any{"schedules": list, "daily_http_limit": scheduleDailyLimit(r.Context(), s.Store.DB), "today_used": scheduleUsage(r.Context(), s.Store.DB, t.Format("2006-01-02"), "global"), "reset_at": nextBudgetDay(t), "max_active": 1, "inference_enabled": false, "lifecycle": "THIS_ENGINE"})
+	jsonOK(w, 200, map[string]any{"schedules": list, "daily_http_limit": scheduleDailyLimit(r.Context(), s.Store.DB), "today_used": scheduleUsage(r.Context(), s.Store.DB, t.Format("2006-01-02"), "global"), "reset_at": nextBudgetDay(t), "max_active": 1, "inference_enabled": false, "private_inference_opt_in_available": true, "lifecycle": "THIS_ENGINE"})
 }
 func (s *Server) saveResearchSchedule(w http.ResponseWriter, r *http.Request) {
 	var v struct {
-		ID              string          `json:"id"`
-		Name            string          `json:"name"`
-		Revision        int64           `json:"revision"`
-		IntervalMinutes int             `json:"interval_minutes"`
-		DailyHTTPLimit  int             `json:"daily_http_limit"`
-		Options         ResearchOptions `json:"options"`
-		Languages       []string        `json:"languages"`
+		ID              string                 `json:"id"`
+		Name            string                 `json:"name"`
+		Revision        int64                  `json:"revision"`
+		IntervalMinutes int                    `json:"interval_minutes"`
+		DailyHTTPLimit  int                    `json:"daily_http_limit"`
+		Options         ResearchOptions        `json:"options"`
+		Languages       []string               `json:"languages"`
+		Private         *schedulePrivatePolicy `json:"private"`
 	}
 	if !decodeJSON(w, r, &v) {
 		return
@@ -234,7 +289,11 @@ func (s *Server) saveResearchSchedule(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bounded schedule definition required", 400)
 		return
 	}
-	d := scheduleDefinition{Options: v.Options, Languages: v.Languages}
+	d := scheduleDefinition{Options: v.Options, Languages: v.Languages, Private: v.Private}
+	if d.Private != nil {
+		d.Private.ApprovalID = ""
+		d.Private.ScopesFingerprint = ""
+	}
 	known, secretErr := s.knownSecrets(r.Context())
 	if secretErr != nil {
 		http.Error(w, "vault unavailable", 503)
@@ -258,10 +317,18 @@ func (s *Server) saveResearchSchedule(w http.ResponseWriter, r *http.Request) {
 	}
 	// Keep language templates dynamic; the actual run freezes its planned options.
 	d.Options.Budget = options.Budget
+	d.Options.ProbeBudget = options.ProbeBudget
 	d.SourcesFingerprint, err = scheduleSourcesFingerprint(r.Context(), s.Store.DB, options.SourceIDs)
 	if err != nil {
 		http.Error(w, "selected research sources unavailable", 422)
 		return
+	}
+	if d.Private != nil {
+		d.Private.ScopesFingerprint, err = s.privateScheduleFingerprint(r.Context(), s.Store.DB, d)
+		if err != nil {
+			http.Error(w, "private model scopes unavailable", 422)
+			return
+		}
 	}
 	raw, _ := json.Marshal(d)
 	at := s.scheduleTime().UnixMilli()
@@ -377,9 +444,11 @@ func (s *Server) cancelScheduledFlights(ids []string) {
 }
 func (s *Server) controlResearchSchedule(w http.ResponseWriter, r *http.Request) {
 	var v struct {
-		ID       string `json:"id"`
-		Revision int64  `json:"revision"`
-		Action   string `json:"action"`
+		ID                         string `json:"id"`
+		Revision                   int64  `json:"revision"`
+		Action                     string `json:"action"`
+		ConfirmPrivate             bool   `json:"confirm_private"`
+		ExpectedPrivateFingerprint string `json:"expected_private_fingerprint"`
 	}
 	if !decodeJSON(w, r, &v) {
 		return
@@ -403,6 +472,10 @@ func (s *Server) controlResearchSchedule(w http.ResponseWriter, r *http.Request)
 		}
 		if err != nil {
 			http.Error(w, "selected research sources or options unavailable", 422)
+			return
+		}
+		if v.Action == "ENABLE" && d.Private != nil && !v.ConfirmPrivate {
+			http.Error(w, "explicit private schedule confirmation required", 409)
 			return
 		}
 	}
@@ -453,6 +526,32 @@ func (s *Server) controlResearchSchedule(w http.ResponseWriter, r *http.Request)
 			}
 		}
 		d.SourcesFingerprint = fingerprint
+		if d.Private != nil && v.Action == "ENABLE" {
+			current, e := s.privateScheduleFingerprint(r.Context(), tx, d)
+			if e != nil {
+				http.Error(w, "private model scopes unavailable", 422)
+				return
+			}
+			if current != v.ExpectedPrivateFingerprint {
+				http.Error(w, "private scopes changed; review current connections again", 409)
+				return
+			}
+			if current != d.Private.ScopesFingerprint {
+				var stopped []string
+				stopped, err = stopScheduleRuns(r.Context(), tx, v.ID, true, at)
+				ids = append(ids, stopped...)
+				if err == nil {
+					_, err = tx.ExecContext(r.Context(), "UPDATE research_schedules SET last_run_id='' WHERE id=?", v.ID)
+				}
+			}
+			if err == nil {
+				err = s.approvePrivateSchedule(r.Context(), tx, v.ID, revision+1, &d)
+			}
+		}
+		if d.Private != nil && v.Action == "RUN_NOW" && !s.scheduleApproved(r.Context(), tx, v.ID, d) {
+			http.Error(w, "private scope changed; disable and review first", 409)
+			return
+		}
 		encoded, _ := json.Marshal(d)
 		stored = string(encoded)
 		enabled = 1
@@ -537,8 +636,14 @@ func (s *Server) scheduledRunControl(ctx context.Context, tx *sql.Tx, run, actio
 			return err
 		}
 		var d scheduleDefinition
-		if last != run || json.Unmarshal([]byte(raw), &d) != nil || !scheduleSourcesApproved(ctx, tx, d) {
+		if last != run || json.Unmarshal([]byte(raw), &d) != nil || !s.scheduleApproved(ctx, tx, owner, d) {
 			return errors.New("only the current approved schedule round may resume")
+		}
+		if d.Private != nil {
+			var httpCap, probeCap int
+			if tx.QueryRowContext(ctx, "SELECT budget,probe_budget FROM research_run_options WHERE run_id=?", run).Scan(&httpCap, &probeCap) != nil || httpCap > d.Options.Budget || probeCap > d.Options.ProbeBudget {
+				return errors.New("private round budgets cannot exceed the approved schedule definition")
+			}
 		}
 		var active int
 		if err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_schedule_runs p JOIN research_runs r ON r.id=p.run_id WHERE r.status IN ('QUEUED','RUNNING') AND r.id!=?", run).Scan(&active); err != nil {
@@ -567,7 +672,7 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 	}
 	// Recover approved local checkpoints before admitting a new periodic round.
 	resumeCandidate := func(v researchSchedule) bool {
-		return v.Enabled && v.AutoResume && (v.RunStatus == "PAUSED" || v.RunStatus == "BUDGET_EXHAUSTED" && v.RunUsed < v.RunBudget)
+		return v.Enabled && v.AutoResume && (v.RunStatus == "PAUSED" || v.RunStatus == "BUDGET_EXHAUSTED" && !scheduleRoundFull(v))
 	}
 	sort.SliceStable(list, func(i, j int) bool { return resumeCandidate(list[i]) && !resumeCandidate(list[j]) })
 	at := s.scheduleTime().UnixMilli()
@@ -579,7 +684,7 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 		if !v.Enabled {
 			continue
 		}
-		if !scheduleSourcesApproved(ctx, s.Store.DB, v.scheduleDefinition) {
+		if !s.scheduleApproved(ctx, s.Store.DB, v.ID, v.scheduleDefinition) {
 			s.suspendSchedule(ctx, v.ID, "SOURCES_CHANGED")
 			continue
 		}
@@ -587,7 +692,7 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 		if scheduleUsage(ctx, s.Store.DB, day, "global") >= scheduleDailyLimit(ctx, s.Store.DB) || v.TodayUsed >= v.DailyHTTPLimit {
 			continue
 		}
-		if v.LastRunID != "" && (oneOf(v.RunStatus, "QUEUED", "RUNNING", "PAUSED") || (v.RunStatus == "BUDGET_EXHAUSTED" && v.RunUsed < v.RunBudget)) {
+		if v.LastRunID != "" && (oneOf(v.RunStatus, "QUEUED", "RUNNING", "PAUSED") || (v.RunStatus == "BUDGET_EXHAUSTED" && !scheduleRoundFull(v))) {
 			s.recoverScheduledRun(ctx, v, at)
 			continue
 		}
@@ -607,7 +712,7 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 		if e != nil {
 			return
 		}
-		if !scheduleSourcesApproved(ctx, tx, v.scheduleDefinition) {
+		if !s.scheduleApproved(ctx, tx, v.ID, v.scheduleDefinition) {
 			tx.Rollback()
 			s.suspendSchedule(ctx, v.ID, "SOURCES_CHANGED")
 			continue
@@ -618,7 +723,7 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 			continue
 		}
 		continuedFrom := ""
-		if v.RunStatus == "BUDGET_EXHAUSTED" && v.RunUsed >= v.RunBudget {
+		if v.RunStatus == "BUDGET_EXHAUSTED" && scheduleRoundFull(v) {
 			remaining, busy, carryErr := carryScheduledTasks(ctx, tx, v.LastRunID)
 			if carryErr != nil || busy {
 				tx.Rollback()
@@ -664,6 +769,15 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 // Transfer only unexecuted public tasks into the next bounded round, retaining
 // the old task results and explicit lineage. No missed time slots are backfilled.
 func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researchPlannedTask, bool, error) {
+	var definition string
+	if err := tx.QueryRowContext(ctx, "SELECT s.definition_json FROM research_schedule_runs r JOIN research_schedules s ON s.id=r.schedule_id WHERE r.run_id=?", run).Scan(&definition); err != nil {
+		return nil, false, err
+	}
+	var approved scheduleDefinition
+	if json.Unmarshal([]byte(definition), &approved) != nil {
+		return nil, false, errScheduledDefinitionChanged
+	}
+
 	bindings, err := researchBindings(ctx, tx, run)
 	if err != nil {
 		return nil, false, err
@@ -687,8 +801,11 @@ func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researc
 		if err = rows.Scan(&task.kind, &task.dedupe, &raw, &result, &aaState, &braveState); err != nil {
 			return nil, false, err
 		}
-		if json.Unmarshal([]byte(raw), &task.input) != nil || task.input.Selection != nil || !oneOf(task.kind, "SOURCE", "SEARCH", "INSPECT", "INSPECT_LINK", "AA", "LMSPEED_SEEDS") {
+		if json.Unmarshal([]byte(raw), &task.input) != nil || !oneOf(task.kind, "SOURCE", "SEARCH", "INSPECT", "INSPECT_LINK", "AA", "LMSPEED_SEEDS", "CATALOG", "MINIMAL_INFERENCE") {
 			return nil, false, errors.New("invalid scheduled public task")
+		}
+		if task.input.Selection != nil && (approved.Private == nil || !privateScheduleScopeAllowed(approved, *task.input.Selection) || task.kind == "MINIMAL_INFERENCE" && !approved.Options.MinimalInference) || task.input.Selection == nil && oneOf(task.kind, "CATALOG", "MINIMAL_INFERENCE") {
+			return nil, false, errScheduledDefinitionChanged
 		}
 		if task.input.Strategy != nil {
 			key := knowledgeMetricKey(task.input.Strategy.Kind, task.input.Strategy.Subject)
@@ -745,6 +862,11 @@ func (s *Server) recoverScheduledRun(ctx context.Context, v researchSchedule, at
 	if tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_schedule_runs p JOIN research_runs r ON r.id=p.run_id WHERE r.status IN ('QUEUED','RUNNING')").Scan(&active) != nil || active > 0 {
 		return
 	}
+	if v.Private != nil {
+		if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='FAILED',result_json=json_set(result_json,'$.reason','interrupted private inference is never automatically replayed') WHERE run_id=? AND kind='MINIMAL_INFERENCE' AND status='INTERRUPTED'", v.LastRunID); err != nil {
+			return
+		}
+	}
 	// Automatic replay of an interrupted network attempt remains bounded.
 	if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='FAILED',result_json=json_set(result_json,'$.reason','restart retry limit reached') WHERE run_id=? AND status='INTERRUPTED' AND attempts>=3 AND (kind!='AA' OR NOT EXISTS(SELECT 1 FROM research_aa_checkpoints a WHERE a.task_id=research_tasks.id)) AND (kind!='SEARCH' OR NOT EXISTS(SELECT 1 FROM research_brave_checkpoints b WHERE b.task_id=research_tasks.id))", v.LastRunID); err != nil {
 		return
@@ -776,6 +898,9 @@ func (s *Server) recoverScheduledRun(ctx context.Context, v researchSchedule, at
 // new schedule-only HTTP meter.
 func (s *Server) scheduleBudgetWait(ctx context.Context, run, task string, err error) {
 	if err == nil {
+		return
+	}
+	if s.privateScheduleBudgetWait(ctx, run, task, err) {
 		return
 	}
 	wait := int64(0)

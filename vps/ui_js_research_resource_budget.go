@@ -54,7 +54,7 @@ function renderResearchResourceLimit(box,task,run){
  const b=task.result?.resource_budget;if(!b)return;const panel=el('section',undefined,'detail-section research-resource-limit-panel');panel.append(el('h3','研究 token／USD 預算'));
  if(b.metric==='UNAVAILABLE')panel.append(el('p','目前無法核對本機政策或用量，此任務尚未發送推論。請先恢復預算讀取。'));
  else if(b.metric==='OUTPUT_ENVELOPE')panel.append(el('p','請求最大輸出 '+b.used+' token 超過每次預留 '+b.limit+' token，請調整預留或請求設定。'));
- else panel.append(el('p',(b.scope==='POOL'?'共用池「'+b.pool_label+'」':b.scope==='CREDENTIAL'?'此憑證':'全部研究')+'已計入 '+b.used+' '+b.metric+'，下次需預留 '+b.reservation+'，超過每日上限 '+b.limit+'。此任務未發送推論，沒有新增預留。'));
+ else panel.append(el('p',(b.scope==='SCHEDULE'?'排程「'+b.schedule_name+'」':b.scope==='POOL'?'共用池「'+b.pool_label+'」':b.scope==='CREDENTIAL'?'此憑證':'全部研究')+'已計入 '+b.used+' '+b.metric+'，下次需預留 '+b.reservation+'，超過每日上限 '+b.limit+'。此任務未發送推論，沒有新增預留。'));
  panel.append(el('p','每日重設：'+new Date(b.reset_at).toLocaleString()+'。調整預算或跨日後仍須明確恢復研究，既有預留與原始回報保留。'));if(run.status==='CANCELLED')panel.append(el('p','研究已取消。'));box.append(panel);
 }
 function bindResearchResourceBudget(){

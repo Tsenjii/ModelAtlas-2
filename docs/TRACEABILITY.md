@@ -1,5 +1,15 @@
 # ModelAtlas Public — TRACEABILITY
 
+## 2026-10-24 私人模型研究排程（PRIVATE-RESEARCH-015I）
+
+- 015H所列範圍已驗收：來源9ba29050aca90e6e639cc36786edae3ce89a97da／tree1c64e4427c2c095d52e080316942eadb47f75ae3；VPS40074926904四項、Android40074926883兩項、Mac40074926876三項首次SUCCESS。九份實際ZIP／內層來源／hash／報告與16張實圖已核對，精確證據見verification/20261024/research-pool-baseline.json與Draft PR #20。完整Go本機400.090s／CI345.428s、33 Browser286.289s／299.698s及404PNG、systemd40.834s與原負載15.263s均保留。以下015H候選敘述只留歷史。
+- 開工main仍cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 attempt2 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。
+- 當前唯一片015I：正式私人排程opt-in、精確My Model／來源確認與交易內指紋、每日排程推論／token／USD原子核准、UTC獨立恢復意圖、飛行取消／中斷推論不自動重播、不可變確認歷史與本機權限隔離。schema30一致升級；公開排程原guard與全部功能保留。詳vps/RESEARCH_PRIVATE_SCHEDULES.md。
+- 本機完整Go race443.316s、vet、27發布回歸0.027s及後端聚焦43.541s成功；Browser下載／既有讀取競態的失敗與修後17.531s聚焦保留於指南，完整34流程與新來源CI重新驗。
+- 本機及自己的同來源九項、全部實際產物／實圖核對前仍候選；不借015H綠燈。D-015／D-016維持：公開0.8.5-preview.1、release/request.json／version.properties／tag／11附件不變，PR #20仍Draft，不merge、不部署。每片內部驗收後直接接下一個可獨立推進缺口，不結束等待使用者再說繼續。
+- 逐級probe／候選重驗、完整站點辨識／Reflection、語意真實性、大資料同步與Mac／Android專用原生流程（含PLAY-004）及真站／目標VPS／實體裝置仍待補；完整願望與下一版仍PARTIAL。
+
+
 ## 2026-10-24 研究共用額度池（RESEARCH-POOL-015H）
 
 - 015G所列範圍已驗收來源abcffa0a907484bb36454b1d73857e8c2b892014／tree24687c6cea24025151ed2d702212f19507d90846；本輪重新查三個workflow的九項job仍SUCCESS，既有產物驗收沿用Draft PR #20持久證據，精確重新讀取結果見verification/20261024/research-resource-baseline.json。以下015G候選敘述保留歷史。

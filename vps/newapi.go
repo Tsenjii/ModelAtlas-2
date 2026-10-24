@@ -34,6 +34,9 @@ type NewApiResult struct {
 }
 
 func (s *Server) accountPAT(ctx context.Context, q NewApiQuery) (Provider, string, error) {
+	if _, restricted := ctx.Value(privateScheduleCredentialKey{}).(Selection); restricted {
+		return Provider{}, "", errors.New("private research approval does not grant account PAT access")
+	}
 	var p Provider
 	var enc string
 	var enabled int
@@ -683,6 +686,9 @@ func enrichNewAPI(s *Server, ctx context.Context, v Selection, p Provider, c Pro
 	rows.Close()
 	if len(ids) == 1 {
 		pat = ids[0]
+	}
+	if _, restricted := ctx.Value(privateScheduleCredentialKey{}).(Selection); restricted {
+		pat = ""
 	}
 	q := NewApiQuery{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: pat, ModelID: v.ModelID, Hours: 168, Origin: p.BaseURL}
 	partial := false

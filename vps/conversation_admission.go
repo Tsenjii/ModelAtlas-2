@@ -1,6 +1,18 @@
 package main
 
-import "context"
+import (
+	"context"
+	"time"
+)
+
+type researchAdmissionClockKey struct{}
+
+func (s *Server) researchAdmissionTime(ctx context.Context) time.Time {
+	if instant, ok := ctx.Value(researchAdmissionClockKey{}).(time.Time); ok {
+		return instant.UTC()
+	}
+	return s.scheduleTime()
+}
 
 type conversationAdmissionError struct {
 	Outcome string
@@ -24,6 +36,9 @@ func (s *Server) admitConversation(ctx context.Context, record requestRecord, me
 		return failure("TELEMETRY_SAVE", 500, err)
 	}
 	defer tx.Rollback()
+	if record.Source == "CRAWLER_VERIFY" {
+		ctx = context.WithValue(ctx, researchAdmissionClockKey{}, s.scheduleTime())
+	}
 	if err = s.chargeResearchNetworkTx(ctx, tx, record.Source == "CRAWLER_VERIFY", ""); err != nil {
 		return failure("RESEARCH_BUDGET_EXHAUSTED", 429, err)
 	}
@@ -34,6 +49,9 @@ func (s *Server) admitConversation(ctx context.Context, record requestRecord, me
 		return failure("RESEARCH_BUDGET_EXHAUSTED", 429, err)
 	}
 	if err = s.reserveResearchQuotaPools(ctx, tx, record); err != nil {
+		return failure("RESEARCH_BUDGET_EXHAUSTED", 429, err)
+	}
+	if err = s.reserveScheduledInference(ctx, tx, record); err != nil {
 		return failure("RESEARCH_BUDGET_EXHAUSTED", 429, err)
 	}
 	if tools != nil {

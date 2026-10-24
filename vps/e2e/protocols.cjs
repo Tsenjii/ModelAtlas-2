@@ -1,3 +1,4 @@
+const {readDownload}=require('./download-helper.cjs');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises');
 const {chooseTarget}=require('./model-picker-helper.cjs');
@@ -7,7 +8,7 @@ const {chooseTarget}=require('./model-picker-helper.cjs');
  try{
   await page.goto(process.argv[2]);await page.locator('#media-ui:not([hidden])').waitFor();assert.equal(await page.locator('#speech-voice').inputValue(),'Kore');assert.equal(await page.locator('#speech-format').inputValue(),'wav');
   const play=async()=>{await page.getByRole('button',{name:'生成語音',exact:true}).click();await page.locator('#media-result audio').waitFor();await page.locator('#media-result audio').evaluate(async a=>{await a.play();});await page.waitForFunction(()=>document.querySelector('#media-result audio')?.currentTime>0);};
-  const download=async()=>{const pending=page.waitForEvent('download');await page.getByRole('link',{name:'下載語音',exact:true}).click();const bytes=await fs.readFile(await (await pending).path());assert.equal(bytes.subarray(0,4).toString(),'RIFF');assert.equal(bytes.readUInt32LE(24),24000);assert.equal(bytes.length,48044);};
+  const download=async()=>{const pending=page.waitForEvent('download');await page.getByRole('link',{name:'下載語音',exact:true}).click();const bytes=await readDownload(pending);assert.equal(bytes.subarray(0,4).toString(),'RIFF');assert.equal(bytes.readUInt32LE(24),24000);assert.equal(bytes.length,48044);};
   await page.locator('#media-prompt').fill('你好，這是語音測試');await play();await download();await page.screenshot({path:'e2e/screenshots/protocol-speech-375-light.png',fullPage:true});
   await page.getByText('進階語音設定',{exact:true}).click();await page.locator('#speech-dialect').selectOption('LEGACY');await page.locator('#speech-format').selectOption('pcm');await play();await download();
   await page.locator('#speech-dialect').selectOption('CURRENT');await page.getByText('雙人對話（選填）',{exact:true}).click();await page.locator('#speech-speakers').fill('bad JSON');await page.locator('#speech-turns').fill('[]');await page.getByRole('button',{name:'生成語音',exact:true}).click();await page.getByText('說話者或對話 JSON 格式有誤',{exact:true}).waitFor();
