@@ -14,6 +14,7 @@ func TestBrowserResearchRetryWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	var calls atomic.Int32
 	s, clock := retryFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		switch calls.Add(1) {

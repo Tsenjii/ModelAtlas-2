@@ -15,6 +15,7 @@ func TestBrowserAAResearchPageRecoveryWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	var first, second atomic.Int32
 	s, clock := aaResearchFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("x-api-key") != "aa-fixture-key" || r.URL.Path != aaPath {

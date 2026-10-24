@@ -19,6 +19,7 @@ func TestBrowserProductionWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	encoded := testPNG(t)
 	var mediaCalls atomic.Int32
 	var blockedMediaStarted atomic.Bool
@@ -150,6 +151,7 @@ func TestBrowserResearchWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "" {
 			t.Error("public source received a credential")
@@ -186,6 +188,7 @@ func TestBrowserAssistantWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	s := testServer(t)
 	var round atomic.Int32
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -241,6 +244,7 @@ func TestBrowserKnowledgeWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
@@ -284,6 +288,7 @@ func TestBrowserManagementWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	s := testServer(t)
 	v := seed(t, s, "https://provider.example/v1")
 	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
@@ -323,6 +328,7 @@ func TestBrowserOriginWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		if r.Header.Get("Authorization") != "Bearer top-secret-example-key" {
@@ -354,6 +360,7 @@ func TestBrowserProtocolAndSpeechWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in Browser CI")
 	}
+	parallelBrowserFlow(t)
 	var voices, customCalls atomic.Int32
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer top-secret-example-key" {

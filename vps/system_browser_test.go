@@ -11,6 +11,7 @@ func TestBrowserSystemStatusWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	s := testServer(t)
 	s.vaultVerified = true
 	seed(t, s, "https://no-inference.example/v1")

@@ -14,6 +14,7 @@ func TestBrowserConnectorDiscoveryReviewAndPersistentRollback(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	var changed atomic.Bool
 	var roots, metadata atomic.Int32
 	s, _ := connectorDiscoveryFixture(t, func(w http.ResponseWriter, r *http.Request) {

@@ -15,6 +15,7 @@ func TestBrowserMacAlignmentWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	var inference, publicCalls, rotations, accountWrites, keyWrites atomic.Int32
 	var armSavedRead, failProviderRead, armKey, keyReady atomic.Bool
 	var failNotice, windowReady, toggleReady, holdToggle atomic.Bool

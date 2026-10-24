@@ -19,6 +19,7 @@ func TestBrowserChatExperienceWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	first, second := strings.Builder{}, strings.Builder{}
 	first.WriteString("# 串流優化回應\n\n")
 	for i := 0; i < 2000; i++ {

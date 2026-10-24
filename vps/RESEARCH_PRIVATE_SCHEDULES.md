@@ -42,3 +42,7 @@ schema30增加不可變私人approval與schedule inference admission兩表，升
 完整Browser追加第34流程與11圖，保留原33流程／404圖的全部檔名、情境、操作與HTTP斷言。測試共用一個實際Chromium程序，每個原腳本仍各自連接、建立全新隔離context／page與獨立真HTTP fixture，結束斷開；不mock頁面／API、不減原5min測試與15min job上限。額外實測cookie／page隔離，並檢查非預期launch設定。原全部Go race／vet、Android、Mac、systemd與expanded workload仍必須通過。
 
 完整逐級probe／重驗、語意身份、任意站點、完整Reflection與大資料同步及專用原生流程仍是下一版待辦；本片不把完整願望提前勾選。精確最終來源、CI與實際產物見PR #20與後續verification紀錄。
+
+同片效能驗收：來源e6dd9baff8067b5dd7122e291a36201a965dc621本機完整34 Browser293.714s／415PNG成功，但CI120828673452在30個流程成功後仍於300.764s逾時，未接受。失敗附件12554043051／27,049,797 bytes／SHA256 094884472e98979f7d840106c937a51bb722029a4a9367a9a882bb33bb46c6c3實際下載、ZIP CRC與376PNG已核對，保留全部原檔；不是完整415圖成功。未增加5min或減少情境。
+
+最終harness只把獨立Go Browser fixture改為最多兩個同時執行；每份DB、HTTP server、browser context、page及原截圖路徑仍獨立。兩個會讀寫OS剪貼簿的原流程另以互斥鎖完整序列化；原全部34流程、415圖、HTTP／下載bytes、視覺與鍵盤斷言及timeout不改。追加同時存在的context cookie／page隔離檢查。正常非Browser Go測試仍在原opt-in guard後略過這個測試專用排程，production worker的原並行與expanded workload不減。最終來源重新自己的九項與全套，不借e6來源其餘成功工作。

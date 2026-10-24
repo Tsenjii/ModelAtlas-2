@@ -9,9 +9,27 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
+
+var browserFlowSlots = make(chan struct{}, 2)
+var browserClipboard sync.Mutex
+
+// Each flow owns its server, database, context, pages and screenshots. Bound
+// genuine browser work to two flows; clipboard readers share an OS resource.
+// Called only after the opt-in guard, so ordinary unit tests remain unchanged.
+func parallelBrowserFlow(t *testing.T) {
+	t.Helper()
+	t.Parallel()
+	if oneOf(t.Name(), "TestBrowserChatExperienceWorkflow", "TestBrowserConversationsWorkflow") {
+		browserClipboard.Lock()
+		t.Cleanup(browserClipboard.Unlock)
+	}
+	browserFlowSlots <- struct{}{}
+	t.Cleanup(func() { <-browserFlowSlots })
+}
 
 // Share only the actual browser process, never contexts, pages or app fixtures.
 // Preserve every original flow, screenshot, assertion, request and time limit.

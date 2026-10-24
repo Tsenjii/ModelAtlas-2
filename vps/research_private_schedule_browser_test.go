@@ -12,6 +12,7 @@ func TestBrowserPrivateResearchScheduleWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	s := f.Server
 	requireCode(t, req(t, s, "POST", "/api/v1/research/control", map[string]any{"id": f.RunID, "action": "CANCEL"}), 200)

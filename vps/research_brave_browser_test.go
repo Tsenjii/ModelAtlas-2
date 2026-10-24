@@ -15,6 +15,7 @@ func TestBrowserBraveResearchPageRecoveryWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	var first, second, reads atomic.Int32
 	s, clock := braveFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/res/v1/web/search" {

@@ -12,6 +12,7 @@ func TestBrowserWorkspaceSyncWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	hub, peer := testServer(t), testServer(t)
 	v := seed(t, hub, "https://no-inference.example/v1")
 	requireCode(t, req(t, hub, "POST", "/api/v1/my-models", v), 201)

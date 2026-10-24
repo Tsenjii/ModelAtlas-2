@@ -95,6 +95,7 @@ func TestBrowserConversationsWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	ticks := strings.Repeat(string(rune(96)), 3)
 	reply := "# 測試回應\n\n**繁體中文**與 `程式碼`\n\n" + ticks + "js\nconsole.log('<img src=x onerror=alert(1)>');\n" + ticks + "\n\n| 模型 | 狀態 |\n| --- | --- |\n| M | 可用 |\n\n[安全連結](https://example.org/docs)\n[危險連結](javascript:alert)\n<img src=https://example.org/tracker onerror=alert(1)>"
 	var calls atomic.Int32

@@ -13,6 +13,7 @@ func TestBrowserAuthenticityEvidenceReviewAndPersistentUndo(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	f := newAuthenticityFixture(t)
 	f.populate(t, f.Target)
 	f.populate(t, f.Reference)

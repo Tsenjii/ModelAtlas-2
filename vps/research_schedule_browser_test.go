@@ -12,6 +12,7 @@ func TestBrowserResearchScheduleWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	s, calls := scheduleFixture(t)
 	seed(t, s, "https://provider.example/v1")
 	sourcesForSchedule(t, s, "browser-one", "browser-two")

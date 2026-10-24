@@ -16,6 +16,7 @@ func TestBrowserScopedModelPickerWorkflow(t *testing.T) {
 	if os.Getenv("MODELATLAS_BROWSER_TEST") != "1" {
 		t.Skip("enable in browser CI job")
 	}
+	parallelBrowserFlow(t)
 	var inferenceCalls atomic.Int32
 	var initialReady atomic.Bool
 	var holdInitial atomic.Bool

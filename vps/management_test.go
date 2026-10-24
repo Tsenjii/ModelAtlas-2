@@ -75,7 +75,7 @@ func TestMetricHistoryUsesExactScopeWindowAndKeepsNonStreamingUnknown(t *testing
 	v := seed(t, s, "https://provider.example/v1")
 	for i, row := range []struct {
 		account, outcome, details string
-		at                       int
+		at                        int
 	}{
 		{"a", "SUCCESS", `{"tps":0}`, 100},
 		{"a", "RATE_LIMIT", `{"tps":"not numeric"}`, 200},
