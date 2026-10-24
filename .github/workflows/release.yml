@@ -1,0 +1,74 @@
+name: Three-platform Release
+
+on:
+  pull_request:
+    paths:
+      - "release/**"
+      - ".github/workflows/release.yml"
+      - ".github/workflows/android.yml"
+      - ".github/workflows/macos-native.yml"
+      - "vps/deploy/**"
+  push:
+    branches: [main, feature/vps-rebuild-20261014]
+    paths:
+      - "release/request.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: three-platform-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Release boundary and integrity regression tests
+        run: python3 -m unittest discover -s release -p 'test_*.py' -v
+      - name: Check deployment and macOS shell syntax
+        run: |
+          for script in vps/deploy/*.sh; do sh -n "$script"; done
+          bash -n macos/scripts/build.sh
+  publish:
+    if: github.event_name != 'pull_request' && github.repository == 'Tsenjii/ModelAtlas-2' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/vps-rebuild-20261014')
+    needs: release-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Wait for all nine checks on this exact source, verify all three platform artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODELATLAS_SOURCE_COMMIT: ${{ github.sha }}
+          MODELATLAS_REPOSITORY: ${{ github.repository }}
+        run: python3 release/prepare.py --wait-minutes 32
+      - name: Publish the complete release after integrity verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODELATLAS_SOURCE_COMMIT: ${{ github.sha }}
+          MODELATLAS_REPOSITORY: ${{ github.repository }}
+        run: python3 release/publish.py
+      - name: Verify the actual public VPS download
+        run: |
+          tag=$(sed -n 's/^tag=//p' release/version.properties)
+          sh vps/deploy/download.sh "$tag" "/tmp/modelatlas-public-${{ github.run_id }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-release-verification
+          path: |
+            release-output/RELEASE-MANIFEST.json
+            release-output/SHA256SUMS.txt
+            release-output/RELEASE-NOTES.md
+          if-no-files-found: warn

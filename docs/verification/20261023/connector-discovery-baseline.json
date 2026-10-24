@@ -1,0 +1,42 @@
+{
+  "source": "294f6aba62c0cf6c27e31a5894476e8dd1116d12",
+  "tree": "681f784d53ca5f00f06f4c0a4a69955b5a2e6f92",
+  "status": "ACCEPTED_SCOPED_SLICE",
+  "jobs": {
+    "39805462791": [
+      119917387696,
+      119917388317,
+      119917388384,
+      119917388527
+    ],
+    "39805462786": [
+      119917388368,
+      119917387984
+    ],
+    "39805462819": [
+      119917388431,
+      119921135117,
+      119921135272
+    ]
+  },
+  "all_nine": "SUCCESS; 2026-10-23重新讀取確認",
+  "browser": {
+    "flows": 31,
+    "seconds": 278.407,
+    "png": 371,
+    "artifact": 12438271548,
+    "bytes": 24229764,
+    "sha256": "26fdccbb704bf1e56912a7c8324bfc0a88369d107b8f16beb42c6a546df4ffec"
+  },
+  "go_race_seconds": 369.796,
+  "systemd_seconds": 41.615,
+  "footprint_seconds": 24.881,
+  "original_workload_preserved": true,
+  "artifact_review": "前輪下載核對內外層hash、來源、架構與實圖；精確完整紀錄見PR #20。",
+  "limits": [
+    "不是目標VPS、實體裝置或公開未知站點長跑",
+    "Mac與Android專用原生辨識介面未移植",
+    "完整願望／近完整版本尚未驗收"
+  ],
+  "pr": "https://github.com/Tsenjii/ModelAtlas-2/pull/20"
+}

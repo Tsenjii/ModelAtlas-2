@@ -1,0 +1,75 @@
+> 2026-10-24接續：015I已由970d566同來源九項、九份實際產物與17實圖驗收所列範圍（verification/20261024/private-schedule-baseline.json）。唯一新片015J逐級研究／候選重驗及有效流量重用，自己的新來源完整九項前候選。D-017要求下一版穩定可用且完成主要正式流程，原完整願望、專用原生缺口與版本凍結不變；詳ACTIVE_TASK。
+
+> 2026-10-24接續：015H已由9ba2905同來源九項、九份實際產物及16實圖驗收所列範圍（verification/20261024/research-pool-baseline.json）。唯一新片PRIVATE-RESEARCH-015I補明確私人排程／來源確認／排程每日預算／中斷不重播與本機確認歷史；Mac同源引擎取得後端，專用原生UI仍待補。自己的完整本機／九項與實際產物前候選；D-016要求片內驗收後連續推進，公開版本與原需求不變。詳ACTIVE_TASK、vps/RESEARCH_PRIVATE_SCHEDULES.md。
+
+> 2026-10-24：015G已由abcffa0同來源九項及PR #20持久證據驗所列範圍；本輪重查九項仍SUCCESS。唯一新片015H共用研究額度池，正式VPS設定／原子用量與恢復；Mac內建同源引擎取得後端，Mac／Android專用原生呈現仍待補。完整本機與自己的九項／產物前候選；公開版本不變，原功能與願望保留。詳ACTIVE_TASK、RESEARCH_QUOTA_POOLS.md。
+
+# 跨平台優點與持續補齊清單
+
+2026-10-23：015F已由1d4fc7f同來源九項及全部產物驗收，Mac原生重排修正與全部90圖保留。015G候選只增加VPS正式token／USD預留及回報結算；Mac同源Go引擎取得後端，Mac／Android專用原生設定仍待對應，不能用網頁或後端取代原生驗收。公開版本保持不變，詳ACTIVE_TASK與research-daily-baseline.json。
+
+015F穩定接續：34814本機33流程全綠仍因Intel Mac原窄窗輸入框驗收失敗而不接受；新增實際TextKit container/frame分開量測與原4秒內穩定baseline，保留全部IME／全文／視窗／sidebar／90圖。原Mac優點與專用每日UI缺口不減，VPS簽到焦點修正亦保留；最終來源自己的九項／實際產物前仍候選。
+
+2026-10-23最新：015E來源ba069a1同來源九項／九份實際產物已驗（verification/20261023/research-admission-baseline.json）。015F候選補VPS正式每日推論／逐憑證設定、用量／歷史及恢復，Mac內建同源引擎取得後端；Mac／Android專用原生每日設定仍待對應。原全部功能／負載／原生及Browser測試保留，新來源獨立九項；不外推token／USD或私人排程已完成。
+
+2026-10-23最新：015D所列範圍已由97bcd81同來源九項及全部產物驗收（verification/20261023/authenticity-baseline-v2.json）；當前015E候選修正VPS正式研究／共用對話管線的原子入場、本機故障不扣額與重試新證據。Mac內建同源引擎取得後端修正；Android專用對應及其他原生缺口保留。原功能、測試、負載與timeout不減，015E完整新來源九項前不接受。以下為既有過程。
+
+2026-10-23 AUTHENTICITY-015D候選：VPS Models歷史可分析既有流量、建立同Canonical跨origin參考Review、明確啟用與跨重啟Undo；Assistant／研究共用零額外HTTP分析。保留既有導航／六分區、scope／Unknown與低資源分段編碼。Mac同源引擎有API，Mac／Android專用原生UI尚未移植；原生／完整願望不提前驗收。
+
+2026-10-22 CONNECTOR-DISCOVERY-015C候選：VPS研究知識正式表單及Assistant共用公開來源辨識／宣告草稿／fixture／真HTTP Review，原connector操作保留並增加跨重啟Undo。Mac內建同源Go引擎取得API，Mac／Android專用原生辨識與Review尚未移植；原功能／tests／負載不減，不能以網頁替代原生驗收。015B已由480bdeac同SHA九項驗所列範圍，本片仍須獨立九項。
+
+2026-10-22 RESEARCH-BRAVE-015B候選：VPS正式研究／排程表單可選搜尋地區及每語言1–10頁、顯示本機共享／目前Key版本每日admission用量與持久恢復紀錄；Mac內建同源Go引擎取得執行能力，Mac／Android專用設定與進度UI尚未移植。原生功能與全部測試／負載保留，不以網頁實圖替代原生驗收。015A已由e384646同SHA九項成功驗所列範圍；本片自己的九項仍待驗，完整研究願望仍PARTIAL。
+
+2026-10-22 NEAR-FULL-015依使用者新要求，下一版須接近完整主要功能；詳NEXT_RELEASE。當前015A候選補本機多輪品質／策略版本固定／可重現排序評估與明確試用／真下一輪監測／持久回復。VPS有正式網頁流程；Mac知識頁有SwiftUI入口，NativeParity原51圖及原測試保留，09圖增加實際評估與新Controller回復；Android仍缺此專用呈現，不借同源後端或網頁當作已移植。新HEAD仍須自己的九項，不單獨發布小修版本；原0.8.5已九項及11附件公開驗收。
+
+2026-10-22 VPS-AA-RECOVERY-014候選：VPS兩個AA更新入口接正式持久任務，每頁checkpoint、限次恢復與原子配額、完整後才更新排名，新增真TLS／Browser8圖。Mac內建同源Go引擎的研究任務受益，但原生直接AA更新按鈕仍同步呼叫；Android原生專用UI未移植。三平台各自原caller／tests保留，新HEAD仍須自己的九項。前0.8.4／e6b0613已九項SUCCESS、公開11附件；不借其結果驗收新片。
+
+2026-10-22 VPS-RESEARCH-ORIGIN-013候選：共用Go引擎在公開來源GET送出前持久檢查共同網站冷卻；網頁新增等待原因／時間及零HTTP用量說明。Mac內建引擎取得同源後端控制，Mac／Android原生專用呈現尚未移植，不以此升級完整爬蟲或願望清單。新schema20保留一致升級備份，本機冷卻不透過同步執行或清除；新HEAD九項與全部原工作量待驗。
+
+2026-10-21 VPS-CONVERSATION-RECOVERY-012候選：VPS網頁新對話ack後即時可用、草稿／附件保留、清單只讀恢復及scope guard；同源引擎可選UUID請求識別，不改DB格式或舊客戶端預設。Mac／Android原生建立入口尚未採用該可選識別，不冒稱新網頁流程已移植；各平台既有caller／tests保留。優先序VPS→Mac→Android，0.8.2前片已公開，新0.8.3仍須本HEAD全部驗收。
+
+2026-10-21 VPS-WORKSPACE-RECOVERY-011候選：VPS網頁新增持續連線提示、last-good／草稿恢復、手機48px刷新、併發合併及GET有界取消。保留Mac中性色／側欄與原生優點；本片網頁行為不冒充已移植Mac／Android原生UI。VPS第一、Mac第二、Android第三；新同SHA九項及三平台0.8.2實際發布前仍候選。
+
+2026-10-21 VPS-RESEARCH-RETRY-009候選：公開GET退避由現有Go引擎持久保存，網頁呈現等待及恢復紀錄；Mac內建引擎同源取得後端能力，原生重試／排程專用呈現仍待對應。Android維持原生能力，不將新網頁UI冒充已移植。0.8.0已公開，controller3219ecf獨立九項成功；新片仍須自己的九項及三平台發布。
+
+2026-10-20 最新 D-014：**VPS 第一、Mac 第二、Android 第三**。VPS-RELEASE-008 將 Mac e408262 的完整原生 App 子樹帶入最新 VPS／Android 交付來源，保留全部平台的原 caller／tests；整合 HEAD 必須重新九項，不借原分支綠燈。Release 同時提供 Linux 兩架構、Mac Universal 與 Android APK，簽署／原生 UI／生命週期及尚未完成差異繼續明示。以下較舊順序為歷史。
+
+2026-10-20 接續 VPS-RESEARCH-SCHEDULE-007：維運 code `034e775` 同 SHA 六項成功；新公開研究排程僅在目前引擎明確啟用，關閉瀏覽器仍由 VPS 服務執行，排程意圖／HTTP 保留量不隨同步帶到另一端。Mac／Android 原生排程管理及 OS 背景能力尚未對應；候選、證據與歷史仍同步，既有各平台優點保留。
+
+2026-10-20 前片指示先 VPS 可用性與後續更新（VPS-OPS-006），原同步核心與各平台優點保留。VPS 增加完整架構套件、schema 前快照、預檢／健康／失敗及中斷復原；此輪只修改 VPS 及維運文件，未把結果外推為 Mac／Android 實機或目標主機部署。較舊優先序為歷史。
+
+
+2026-10-20同步核心已由VPS／Android `c9d1d33` 六項、Mac `f67cfa4` 九項同SHA驗證；三端各保留本機與離線資料、真目的端vault、持久游標及明確衝突。原生呈現未對應、大型分塊及實機仍PARTIAL；詳細矩陣與證據見`SYNC_CONTRACT.md`及`verification/20261020/sync-ci-baseline.json`。
+
+2026-10-20 較早優先序為 SYNC-001；依 D-012 接續 VPS／Android／Mac 的同步，取代下方歷史片的暫停順序。各平台既有優點和待辦保留；本片新候選同 SHA 九項前不外推全面互通。
+
+2026-10-18，依使用者「其他平台比我們好的留下來繼續搞」建立。這份清單與完整 Master Spec 同時維護；既有功能與各平台優點保留，不能為了外觀一致而刪除。比較必須能指到正式 caller 或真實驗收，不能只用有無 API／選單判斷功能已完成。
+
+依 D-010／D-011，先完成 VPS 的 Mac 0.6.1 正式 UI／操作對照，並保留 VPS 單 binary、持久 SQLite、完整歷史及低配置成本的優點；省資源與免費部署評估見 `vps/RESOURCE_HOSTING.md`。Android 保持暫停。狀態「候選」代表已實作或正在驗證，尚不能當作已交付。
+
+| 優點或落差 | 已核對的來源 | Mac 處理與接續驗收 |
+| --- | --- | --- |
+| VPS：同頁多表單的草稿、展開與精確選取保留 | `vps/ui_js_provider_forms.go`、`vps/e2e/provider-forms.cjs`、`vps/PROVIDER_FORMS_UI.md` | 012 候選先改善帳戶／Key；表單移出長清單，草稿由 Provider 工作區在記憶體保存，關閉重開仍可接續，成功時不抹等待期間的新稿。端點／Provider 設定及 Review 的全部情境仍須接續 |
+| VPS：每份表單有等待、保存成功、失敗及「已保存但刷新失敗」回饋 | 同上，正式 API commit 後刷新失敗的 Browser 驗證 | 012 候選加入局部回饋與只重新讀取清單；成功後不引導重複 POST。驗真 401、真 commit、讀取失敗、重試與關閉後晚完成 |
+| Android：清楚標示操作使用的帳戶／Key／群組／模型／端點，不把啟用當成可用性 | `app/src/main/kotlin/dev/modelatlas/app/ui/ProviderDetailScreen.kt` 的 ActionScope／DetailAccountsCard／SelectedScope、`ProviderDetailLoader.kt` | 0.6.0 已改善名稱與 Catalog 操作；012 候選的更新／恢復再次顯示完整帳戶／Key。每把 Key 的 last success／failure、availability／quota／stale 原生摘要仍列高優先，不能由 enabled 推定 healthy |
+| Android：busy 時保護互相衝突的動作，未選定 scope 有原因與指引 | 同檔 ProviderModelActions 與 scopeReady／busy guards | 012 候選將新增 Key／逐把啟停／帳戶批次啟停／秘密值更新串成帳戶共用鎖；另一帳戶仍可操作。模型測試／同步／Assistant 跨入口的全部情境仍需分項對照 |
+| VPS：Catalog 加入、來源與完整長名稱可辨識，失敗不清草稿 | `vps/CATALOG_UI.md`、`vps/e2e/catalog-experience.cjs`、`macos/Sources/ModelAtlas/CatalogDetailView.swift` | 保留目前精確 Key／Endpoint 加入與既有成員資格；繼續對照長名稱、空結果、缺設定引導與大字，不用 raw UUID 作主要標籤 |
+| VPS：永久觀測／請求歷史與完整匯出；大量資料有分頁與記憶體證據 | `vps/PARITY.md`、`vps/receipts.go`、`macos/CHARTS.md`、`ObservationArchiveController.swift` | Mac 已有原生分頁／圖表／收據；保留全量匯出及來源／scope，不為了動畫只保留最近資料。仍需持續驗大資料與各單位／來源的真可讀性 |
+| VPS：獨立服務可持續運行；Android 與 Mac 的生命週期不同 | `vps/PLATFORM_DEPLOY.md`、`macos/MASTER_SCOPE.md` | 保留 VPS 部署能力；Mac 休眠不承諾 24/7。背景排程、通知、資格及來源時效按平台實際能力呈現 |
+| Mac：原生 Keychain、薄輸入框、IME／Undo、鍵盤選模、分區來源與原生圖表 | `macos/MASTER_SCOPE.md`、`macos/PROVIDER_MOTION.md`、`NativeSmoke.swift`、`NativeParity.swift` | 原有 70 核心／136 實圖與 28 frame 全保留再增加驗證；其他平台改善時也不砍現有 scope、歷史、取消與 last-good |
+
+## 下一步優先序
+
+2026-10-19 接續：`b7444fe` 已同 SHA 六項 SUCCESS／19 Browser／263 PNG 核對，手機對齊與安全區保留。當前 VPS-MODEL-WORKFLOW-005 新增瀏覽器本機常用檢視、可移除篩選條件、最近使用／追蹤快捷鍵及精確連線直達（`vps/MODEL_VIEWS.md`）；屬新候選，不能外推前片驗收。這些流程可作後續 Mac／Android 的操作參考，尚未移植；保留兩平台現有優點與暫停狀態。
+
+1. VPS-MAC-ALIGN-001 已由 3aec657 同 SHA 六項／16 Browser 驗收。本輪 VPS-MAC-PARITY-002 對照全部 Mac caller，補正式表單／完整側欄／模型分區與編輯／來源／比較／服務；新 HEAD 須完整六項／原16 Browser＋新增流程及實圖，不借前片結果。
+2. 使用者最新要求本輪留在 VPS；Android 介面未開始，原有優點與待辦保留。
+3. 私人站點 adapter 逐站 schema／認證、多 Key availability／quota／stale、研究／Assistant／Reflection 及完整大綱仍追蹤，P1–P10 仍 PARTIAL。
+
+### 原 Mac 接續缺口（保留追蹤）
+
+1. 完成 012 帳戶／Key 的同 SHA 九項驗證及實圖，才更新此片為已交付。
+2. 高優先：Provider 設定／端點草稿與晚完成的局部回饋；私人帳戶 adapter 的逐站 schema／認證相容性；多 Key 的 availability、quota、stale 與同名 scope。不能略過版本／role／origin 限制冒充站點已支援。
+3. 接續 Catalog 缺設定引導、研究／Assistant／Reflection 的可讀流程及完整大綱 scenario。以 `macos/MASTER_SCOPE.md`、`docs/TRACEABILITY.md` 追蹤完整 P1–P10；仍為 PARTIAL。
+
+每次接續先讀此表與 ACTIVE_TASK，依新驗收證據更新來源、狀態與未驗情境。不得把別的平台未完成規劃當作既有能力；routing／fallback／自動 Key 輪替／Gateway 繼續 future-only。

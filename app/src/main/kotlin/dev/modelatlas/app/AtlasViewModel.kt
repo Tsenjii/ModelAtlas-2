@@ -183,10 +183,29 @@ class AtlasViewModel @JvmOverloads constructor(
     private val providerModelTestEngine: InferenceEngine? = null,
     private val compareTestEngine: InferenceEngine? = null,
     private val credentialEnableTestWriter: (suspend (String, Boolean) -> Unit)? = null,
+    private val myModelToggleReadObserver: (suspend (MyModelKey, Boolean) -> Unit)? = null,
 ) : AndroidViewModel(application) {
     private val app: AtlasApplication = application as AtlasApplication
 
     private fun string(id: Int): String = getApplication<Application>().getString(id)
+
+    val workspaceSyncStatus get() = app.workspaceSync.status
+    fun refreshWorkspaceSync() { viewModelScope.launch { app.workspaceSync.initialize() } }
+    fun connectWorkspace(url: String,label: String,code: String) {
+        viewModelScope.launch {
+            if(app.workspaceSync.connect(url,label,code)) {
+                dev.modelatlas.app.work.WorkspaceSyncWorker.schedule(app)
+                app.workspaceSync.syncNow()
+            }
+        }
+    }
+    fun syncWorkspace() { viewModelScope.launch { app.workspaceSync.syncNow() } }
+    fun disconnectWorkspace() { viewModelScope.launch {
+        app.workspaceSync.disconnect(); dev.modelatlas.app.work.WorkspaceSyncWorker.cancel(app)
+    } }
+    fun resolveWorkspaceConflict(id: String,hash: String,keepLocal: Boolean) { viewModelScope.launch {
+        if(app.workspaceSync.resolve(id,hash,keepLocal)) app.workspaceSync.syncNow()
+    } }
 
     // X-013 / D-005: app-owned durable choices; no permission request or automatic opt-in.
     val notificationSettings get() = app.notificationSettings.state
@@ -420,76 +439,7 @@ class AtlasViewModel @JvmOverloads constructor(
     private val bundleFlightMutex = kotlinx.coroutines.sync.Mutex()
     private val bundleFlights = mutableMapOf<BundleEnrichmentKey, CompletableDeferred<MyModelBundleResult>>()
 
-    init {
-        viewModelScope.launch {
-            app.ready.collect { readyCache = it }
-        }
-        viewModelScope.launch {
-            app.initializationError.collect { failed ->
-                initErrorCache = failed
-                if (failed) _state.update { it.copy(error = string(R.string.error_initialization)) }
-            }
-        }
-        viewModelScope.launch {
-            app.repository.connections
-                .catch {
-                    connectionsFirstLoaded = true
-                    _state.update { it.copy(error = string(R.string.error_load), connectionsLoading = false) }
-                }
-                .collect {
-                    connectionCache = it
-                    syncEvaluatedCache = emptySet()
-                    connectionsFirstLoaded = true
-                    refresh()
-                }
-        }
-        viewModelScope.launch {
-            app.repository.managementConnections
-                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
-                .collect {
-                    managementCache = it
-                    syncEvaluatedCache = emptySet()
-                    refresh()
-                }
-        }
-        viewModelScope.launch {
-            app.repository.samples
-                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
-                .collect {
-                    sampleCache = it
-                    refresh()
-                }
-        }
-        viewModelScope.launch {
-            app.repository.checkins
-                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
-                .collect {
-                    checkinCache = it
-                    refresh()
-                }
-        }
-        registerDateObservers()
-        // D-028 F1 V2 session hook（H1 形狀）：啟動時對持久化成員做一次 bounded
-        // SESSION_AUTO pass（生產預設：無 leg ports、無 observer、無 reader）。
-        // 預算在 [myModelRefreshPolicy] 內 per-exact-W；follower 併入、spent 抑制，
-        // 永不二次 charge。best-effort：失敗靜默，後續 membership emission 補跑（H2/H3）。
-        viewModelScope.launch {
-            try {
-                val keys = myModelsStore.myModelKeys()
-                for (k in keys) {
-                    requestMyModelRefresh(
-                        providerId = k.providerId,
-                        providerModelId = k.providerModelId,
-                        origin = RefreshOrigin.SESSION_AUTO,
-                    )
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                // Session pass best-effort：DAO 失敗 fail-closed，不在此重試。
-            }
-        }
-    }
+
 
     fun saveConnection(name: String, baseUrl: String, modelId: String, secret: String) {
         if (_state.value.saving) return
@@ -2804,53 +2754,7 @@ class AtlasViewModel @JvmOverloads constructor(
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
-    // ── FR-002：membership 變更 → 重跑 rows load（自觸發與初始 emission 的解法） ──
-    //
-    // 為什麼需要：`_pendingMemberRows` 只在 `loadModelRows` 跑完後才更新，而
-    // `toggleMyModel`（:2227）不呼叫 `refreshModelRows()`。既有可見列不會暴露這件事
-    // （visible offering 早已在 `_allModelRows`，combine 立刻接得住），hidden 成員列
-    // 會——這正是 FR-002 V2。
-    //
-    // 為什麼不用 `myModelKeys.drop(1)`：`drop(1)` 會把「collector 啟動瞬間的當前值」
-    // 當成初始值丟掉。若 membership 在首次 `all()` 讀取之後、collector 附加之前變更，
-    // 該次變更即被吞掉，pending 列永久缺一筆。StateFlow conflates＋replays，無
-    // drop 的 collector 附加時立即拿到當前值，與 marker 比較後自行決定是否補跑。
-    //
-    // 解法（write-back 比較，無 drop）：
-    //   - load 成功回填時把「本次實際使用的 membership」寫回 `modelRowsMembershipUsed`；
-    //   - collector 只在 `keys != modelRowsMembershipUsed` 時重跑；
-    //   - `modelRowsMembershipUsed` 是 `@Volatile var`，**collector 不收集它**，故
-    //     load 寫它不會產生 emission，不存在 load → 寫標記 → emission → load 的
-    //     迴圈（這是本設計唯一的自觸發陷阱，必須維持 var，不得改成 flow）。
-    //
-    // 時序結果（無 drop 漏洞、無無條件雙跑）：
-    //   · membership 空：首次 emission == 標記(emptySet) → 不重跑（零額外成本）。
-    //   · membership 非空且首次 load 已完成：標記 == emission → 不重跑（零額外成本）。
-    //   · membership 非空且首次 load 尚未完成：標記仍是 emptySet → 重跑一次；既有
-    //     `modelRowsDirty`（:1925-1927）讓在途 load 於 finally（:1957-1960）補跑，
-    //     token 守門丟棄先到的那批 → 收斂為同一結果。**至多一次**額外 load，且只在
-    //     使用者真的已有成員時發生。
-    //
-    // collect 經 suspension point 傳播取消（viewModelScope 於 VM 清除時自動取消）；
-    // 不得加 catch-and-swallow（會吞掉 scope 取消）。
-    init {
-        viewModelScope.launch {
-            myModelKeys.collect { keys ->
-                if (keys != modelRowsMembershipUsed) refreshModelRows()
-                // D-028 F1 V2 membership-emission gating（H2/H3）：每 session 可多次
-                // pass；每次 emission 逐 key 經 [requestMyModelRefresh] 的 per-W 預算機
-                // 器 gating（SESSION_AUTO）。不另起第二個 collector，不用 drop(1)；
-                // 本 load 不寫 membership，故無自觸發迴圈（A7）。
-                for (k in keys) {
-                    requestMyModelRefresh(
-                        providerId = k.providerId,
-                        providerModelId = k.providerModelId,
-                        origin = RefreshOrigin.SESSION_AUTO,
-                    )
-                }
-            }
-        }
-    }
+
 
     fun toggleMyModel(
         providerId: String,
@@ -2868,7 +2772,11 @@ class AtlasViewModel @JvmOverloads constructor(
                 _myModelToggleInFlight.value += key
                 _myModelToggleError.value -= key
                 try {
-                    if (myModelsStore.isMyModel(providerId, providerModelId)) {
+                    val wasMember = myModelsStore.isMyModel(providerId, providerModelId)
+                    // 裝置並行測試可在真 Room 讀取後等待另一讀取；正式 caller 不傳此觀察器。
+                    // 不替換 membership、不改寫入或 in-flight 語意，也不持有 DB transaction。
+                    myModelToggleReadObserver?.invoke(key, wasMember)
+                    if (wasMember) {
                         myModelsStore.removeFromMyModels(providerId, providerModelId)
                     } else {
                         val selected = recordFor(_state.value.selectedId)
@@ -4161,6 +4069,129 @@ class AtlasViewModel @JvmOverloads constructor(
     val myUptimeCurrentObservedRates: StateFlow<MyUptimeObservedRates?> =
         myUptimeLoaded.map { it?.current }
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    // 所有 instance fields 必須先完成，才註冊可能立即回呼的 observers。
+    // Main.immediate + 已快取的 membership 會在 launch 內同步進入 refresh；
+    // 若 init 放在中段，後方的 certified operations / wave registries 仍為 JVM null。
+    // 保留初始 emission、原預算與 cancellation，不用 delay / drop / catch 掩蓋。
+    init {
+        viewModelScope.launch {
+            app.ready.collect { readyCache = it }
+        }
+        viewModelScope.launch {
+            app.initializationError.collect { failed ->
+                initErrorCache = failed
+                if (failed) _state.update { it.copy(error = string(R.string.error_initialization)) }
+            }
+        }
+        viewModelScope.launch {
+            app.repository.connections
+                .catch {
+                    connectionsFirstLoaded = true
+                    _state.update { it.copy(error = string(R.string.error_load), connectionsLoading = false) }
+                }
+                .collect {
+                    connectionCache = it
+                    syncEvaluatedCache = emptySet()
+                    connectionsFirstLoaded = true
+                    refresh()
+                }
+        }
+        viewModelScope.launch {
+            app.repository.managementConnections
+                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
+                .collect {
+                    managementCache = it
+                    syncEvaluatedCache = emptySet()
+                    refresh()
+                }
+        }
+        viewModelScope.launch {
+            app.repository.samples
+                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
+                .collect {
+                    sampleCache = it
+                    refresh()
+                }
+        }
+        viewModelScope.launch {
+            app.repository.checkins
+                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
+                .collect {
+                    checkinCache = it
+                    refresh()
+                }
+        }
+        registerDateObservers()
+        // D-028 F1 V2 session hook（H1 形狀）：啟動時對持久化成員做一次 bounded
+        // SESSION_AUTO pass（生產預設：無 leg ports、無 observer、無 reader）。
+        // 預算在 [myModelRefreshPolicy] 內 per-exact-W；follower 併入、spent 抑制，
+        // 永不二次 charge。best-effort：失敗靜默，後續 membership emission 補跑（H2/H3）。
+        viewModelScope.launch {
+            try {
+                val keys = myModelsStore.myModelKeys()
+                for (k in keys) {
+                    requestMyModelRefresh(
+                        providerId = k.providerId,
+                        providerModelId = k.providerModelId,
+                        origin = RefreshOrigin.SESSION_AUTO,
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Session pass best-effort：DAO 失敗 fail-closed，不在此重試。
+            }
+        }
+    }
+
+    // ── FR-002：membership 變更 → 重跑 rows load（自觸發與初始 emission 的解法） ──
+    //
+    // 為什麼需要：`_pendingMemberRows` 只在 `loadModelRows` 跑完後才更新，而
+    // `toggleMyModel`（:2227）不呼叫 `refreshModelRows()`。既有可見列不會暴露這件事
+    // （visible offering 早已在 `_allModelRows`，combine 立刻接得住），hidden 成員列
+    // 會——這正是 FR-002 V2。
+    //
+    // 為什麼不用 `myModelKeys.drop(1)`：`drop(1)` 會把「collector 啟動瞬間的當前值」
+    // 當成初始值丟掉。若 membership 在首次 `all()` 讀取之後、collector 附加之前變更，
+    // 該次變更即被吞掉，pending 列永久缺一筆。StateFlow conflates＋replays，無
+    // drop 的 collector 附加時立即拿到當前值，與 marker 比較後自行決定是否補跑。
+    //
+    // 解法（write-back 比較，無 drop）：
+    //   - load 成功回填時把「本次實際使用的 membership」寫回 `modelRowsMembershipUsed`；
+    //   - collector 只在 `keys != modelRowsMembershipUsed` 時重跑；
+    //   - `modelRowsMembershipUsed` 是 `@Volatile var`，**collector 不收集它**，故
+    //     load 寫它不會產生 emission，不存在 load → 寫標記 → emission → load 的
+    //     迴圈（這是本設計唯一的自觸發陷阱，必須維持 var，不得改成 flow）。
+    //
+    // 時序結果（無 drop 漏洞、無無條件雙跑）：
+    //   · membership 空：首次 emission == 標記(emptySet) → 不重跑（零額外成本）。
+    //   · membership 非空且首次 load 已完成：標記 == emission → 不重跑（零額外成本）。
+    //   · membership 非空且首次 load 尚未完成：標記仍是 emptySet → 重跑一次；既有
+    //     `modelRowsDirty`（:1925-1927）讓在途 load 於 finally（:1957-1960）補跑，
+    //     token 守門丟棄先到的那批 → 收斂為同一結果。**至多一次**額外 load，且只在
+    //     使用者真的已有成員時發生。
+    //
+    // collect 經 suspension point 傳播取消（viewModelScope 於 VM 清除時自動取消）；
+    // 不得加 catch-and-swallow（會吞掉 scope 取消）。
+    init {
+        viewModelScope.launch {
+            myModelKeys.collect { keys ->
+                if (keys != modelRowsMembershipUsed) refreshModelRows()
+                // D-028 F1 V2 membership-emission gating（H2/H3）：每 session 可多次
+                // pass；每次 emission 逐 key 經 [requestMyModelRefresh] 的 per-W 預算機
+                // 器 gating（SESSION_AUTO）。不另起第二個 collector，不用 drop(1)；
+                // 本 load 不寫 membership，故無自觸發迴圈（A7）。
+                for (k in keys) {
+                    requestMyModelRefresh(
+                        providerId = k.providerId,
+                        providerModelId = k.providerModelId,
+                        origin = RefreshOrigin.SESSION_AUTO,
+                    )
+                }
+            }
+        }
+    }
 }
 
 /**

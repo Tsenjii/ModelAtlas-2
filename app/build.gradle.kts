@@ -1,9 +1,14 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     kotlin("android")
     id("org.jetbrains.kotlin.plugin.compose")
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
+}
+val atlasVersion = Properties().apply {
+    rootProject.file("release/version.properties").inputStream().use { load(it) }
 }
 android {
     namespace = "dev.modelatlas.app"
@@ -12,8 +17,8 @@ android {
         applicationId = "dev.modelatlas.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = atlasVersion.getProperty("androidVersionCode").toInt()
+        versionName = atlasVersion.getProperty("androidVersionName")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true }
@@ -51,6 +56,7 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.04.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.room:room-testing:2.7.1")

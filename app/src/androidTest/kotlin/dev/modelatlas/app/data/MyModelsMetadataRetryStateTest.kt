@@ -772,6 +772,34 @@ class MyModelsMetadataRetryStateTest {
         assertEquals(before, runBlocking { app.database.myModelsDao().all() })
     }
 
+    @Test
+    fun h5WarmMembershipAndCertifiedEndpointSurviveRepeatedVmConstruction() = runBlocking {
+        val f = saveFixture("h5-init")
+        val model = uniqueModel("h5-init")
+        val endpoint = seedOffering(f, model, "h5-init", "CHAT_COMPLETIONS")
+        addMembership(f.providerId, model)
+        val before = app.database.myModelsDao().all()
+        val samplesBefore = samplesCount(f.providerId)
+        repeat(4) {
+            // Constructor runs on real Main.immediate with persisted members.
+            // Its eager observers must only see fully initialized refresh state.
+            val vm = newVm()
+            await { vm.myModelKeys.first { keys -> MyModelKey(f.providerId, model) in keys } }
+            val rec = Rec()
+            assertEquals(
+                RefreshOutcome.SKIPPED_UNCAPABLE,
+                refresh(f, model, RefreshOrigin.SESSION_AUTO, uncapable(), rec, throwingFetcher(), vm = vm),
+            )
+            val evaluated = rec.all().filterIsInstance<RefreshAttemptEvent.Evaluated>().single()
+            assertEquals(endpoint, evaluated.w.endpointId)
+            assertEquals("CHAT_COMPLETIONS", evaluated.w.operation)
+            assertTrue(rec.all().none { it is RefreshAttemptEvent.ChargedAtStart })
+            onMain { extraStores.last().clear() }
+        }
+        assertEquals(before, app.database.myModelsDao().all())
+        assertEquals("constructor must not run inference", samplesBefore, samplesCount(f.providerId))
+    }
+
     // ===== Slice-union quota vector (SLICE-UNION, DECIDED) =====
 
     @Test

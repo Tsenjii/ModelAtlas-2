@@ -1,0 +1,47 @@
+package main
+
+const connectorDiscoveryHTML = `<section class="card"><h3>辨識站點資料</h3><p>從已選模型的公開網站或資料入口產生擷取草稿。每次最多讀取 6 個同站來源，不傳送 Key、不執行推論。草稿仍需實測與確認。</p><form id="connector-discovery-form"><label>辨識使用的模型<select id="connector-discovery-target" name="target" aria-label="辨識使用的模型" required></select></label><label>公開頁面或資料 Path<input name="source_path" value="/" maxlength="256" required placeholder="/docs 或 /api/pricing"></label><button>辨識站點並產生草稿</button></form><div id="connector-discovery-recovery" aria-live="polite"></div><div id="connector-discovery-list" class="cards"></div></section>`
+
+const jsConnectorDiscovery = `
+const connectorKindLabels={CATALOG:"模型清單",PRICING:"價格",QUOTA:"額度",BALANCE:"餘額",USAGE:"用量",PERFORMANCE:"站方效能",NOTICE:"公告"};
+const connectorStatusLabels={DRAFT:"待實測",VALIDATED:"實測通過",FAILED:"需重新驗證"};
+let connectorDiscoveryPending=null;
+function connectorTargets(select,providerID=""){const previous=select.value;select.replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled&&(!providerID||m.provider_id===providerID)).forEach(m=>option(select,key(m),(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" · "+m.model_id+" · "+connectionLabel(m)));if([...select.options].some(o=>o.value===previous))select.value=previous;}
+function renderConnectorDiscoveries(reports){
+ const target=$("connector-discovery-target");connectorTargets(target);const form=$("connector-discovery-form");if(!connectorDiscoveryPending)form.querySelector("button").disabled=!target.options.length;
+ const list=$("connector-discovery-list");list.replaceChildren();
+ reports.forEach(r=>item(list,"站點辨識 · "+({DRAFTS_READY:"已產生 "+r.draft_ids.length+" 個草稿",NO_SUPPORTED_MAPPING:"需要手動對照欄位",SCOPE_CHANGED:"選取範圍已變更",INTERRUPTED:"已中斷",RUNNING:"尚未完成"}[r.status]||r.status),new Date(r.observed_at).toLocaleString()+" · "+(r.status==="RUNNING"?"用量尚未完成記錄":r.http_requests+" 次 HTTP"),()=>connectorDiscoveryDetail(r)));
+ if(!list.children.length)item(list,"尚無辨識紀錄",target.options.length?"選擇公開來源後開始辨識。":"先在 Providers 的 Review 加入要使用的模型。");
+}
+function connectorDiscoveryDetail(r){
+ const box=modal("站點資料辨識");box.append(el("p",r.base_url),el("p",r.status==="RUNNING"?"此紀錄尚未完成，可能仍在執行或曾中斷。更新紀錄確認結果；重讀不會重新連線來源。":r.http_requests+" 次 HTTP · "+r.draft_ids.length+" 個草稿"),el("p","站點類型線索："+r.family_hint+" · 版本線索："+r.version_hint+"。這些是站方資料，尚未獨立驗證。"));
+ if(r.conflicting_kinds.length)box.append(el("p","來源資料不一致："+r.conflicting_kinds.map(k=>connectorKindLabels[k]||k).join("、")+"。請比較各來源後再選擇規則。","error"));
+ box.append(el("p","尚未驗證台灣資格、持續免費機制、有效扣費、私人帳戶資料與模型身份。"));
+ r.draft_ids.forEach(id=>{const v=connectorVersions.find(v=>v.id===id);if(v)action(box,"檢視"+(connectorKindLabels[v.config.kind]||v.config.kind)+"草稿",()=>connectorDetail(v));});
+ const sources=el("details"),summary=el("summary","來源、未判定欄位與限制");sources.append(summary);factsView(sources,"已保存辨識紀錄",r);box.append(sources);
+ action(box,"更新辨識紀錄",async()=>{const reports=await api("/connectors/discoveries?id="+encodeURIComponent(r.id));await loadKnowledge();if(reports[0])connectorDiscoveryDetail(reports[0]);});
+}
+function bindConnectorDiscovery(){
+ const form=$("connector-discovery-form"),recovery=$("connector-discovery-recovery");
+ const lock=value=>form.querySelectorAll("input,select,button").forEach(n=>n.disabled=value);
+ const recover=()=>{recovery.replaceChildren();recovery.append(el("p","請求結果尚未讀取完成。先讀取已保存紀錄，避免重複辨識。","error"));action(recovery,"讀取辨識結果",async()=>{const pending=connectorDiscoveryPending,ticket=detailVersion;if(!pending)return;const reports=await api("/connectors/discoveries?id="+encodeURIComponent(pending.id));if(!reports.length){notice("尚未找到紀錄；可用相同請求重試。",true);return;}await loadKnowledge();connectorDiscoveryPending=null;recovery.replaceChildren();lock(false);if(currentPane==="models"&&!$("knowledge-panel").hidden&&ticket===detailVersion)connectorDiscoveryDetail(reports[0]);});action(recovery,"用相同請求重試",()=>send(connectorDiscoveryPending));action(recovery,"返回修改來源",()=>{connectorDiscoveryPending=null;recovery.replaceChildren();lock(false);});};
+ const send=async request=>{if(!request)return;const ticket=detailVersion;connectorDiscoveryPending=request;lock(true);recovery.replaceChildren();try{const report=await submit("/connectors/discover",request);await loadKnowledge();connectorDiscoveryPending=null;lock(false);recovery.replaceChildren();if(currentPane==="models"&&!$("knowledge-panel").hidden&&ticket===detailVersion)connectorDiscoveryDetail(report);notice("辨識紀錄已保存；草稿尚未啟用");}catch(e){recover();notice(e.message,true);}};
+ form.addEventListener("submit",async e=>{e.preventDefault();if(connectorDiscoveryPending)return;const values=data(form);if(!values.target)return;await send({id:crypto.randomUUID(),selection:JSON.parse(values.target),source_path:values.source_path});});
+}
+function connectorDetail(v){
+ const kind=connectorKindLabels[v.config.kind]||v.config.kind,box=modal(kind+"擷取 · v"+v.version),ticket=detailVersion;const current=()=>$("detail").open&&ticket===detailVersion;let busy=false,needsReload=false;
+ const run=async callback=>{if(busy||needsReload)return;busy=true;const controls=[...box.querySelectorAll("button,input,select,textarea")].map(n=>[n,n.disabled]);controls.forEach(([n])=>n.disabled=true);try{await callback();}finally{busy=false;if(!needsReload)controls.forEach(([n,disabled])=>{if(n.isConnected)n.disabled=disabled;});}};
+ const guarded=(label,callback,ghost=true)=>{const button=el("button",label,ghost?"ghost":"");button.type="button";button.addEventListener("click",async()=>{try{await run(callback);}catch(e){notice(e.message,true);}});box.append(button);return button;};
+ const reload=async message=>{try{await loadKnowledge();const latest=connectorVersions.find(x=>x.id===v.id);if(current()&&latest)connectorDetail(latest);notice(message);}catch(e){if(!current())return;needsReload=true;box.querySelectorAll("button,input,select,textarea").forEach(n=>n.disabled=true);const recovery=el("div",undefined,"card");recovery.append(el("p","操作已保存，請重新讀取後再繼續。","error"));box.prepend(recovery);action(recovery,"重新讀取擷取版本",async()=>{await loadKnowledge();const latest=connectorVersions.find(x=>x.id===v.id);if(current()&&latest)connectorDetail(latest);});notice("操作已保存，畫面尚未更新",true);}};
+ box.append(el("p",(connectorStatusLabels[v.status]||v.status)+(v.active?" · 已啟用":" · 尚未啟用")),el("p","來源入口："+v.config.path),el("p","資料範圍："+({MODEL_PROVIDER:"此 Provider 的指定模型",MODEL_KEY_GROUP:"所選模型、Key 與群組",ACCOUNT:"指定帳戶",CATALOG:"僅模型清單"}[v.config.scope]||v.config.scope)+" · "+(v.config.credential_role==="NONE"?"公開讀取，不傳送憑證":v.config.credential_role)));
+ if(v.discovery){const proof=v.discovery;box.append(el("h3","辨識與草稿檢查"),el("p","欄位樣本檢查已通過；仍需重新讀取來源實測。"),el("p",proof.source_url),el("p","來源取得時間："+new Date(proof.observed_at).toLocaleString()),el("p","資料有效期："+(v.config.freshness_seconds/3600)+" 小時；改版、缺欄或單位變更時保留舊資料與失敗紀錄。"));const fields=el("dl");Object.entries(v.config.fields).filter(([name])=>!["model_id","group"].includes(name)).forEach(([name,path])=>{fields.append(el("dt",({input:"輸入價格",output:"輸出價格",cache:"快取價格",fixed:"固定請求費",rpd:"每日請求",tpd:"每日 Token",rpm:"每分鐘請求",tpm:"每分鐘 Token",notice:"公告"}[name]||name)+" · "+(v.config.field_units?.[name]||"")),el("dd",String(proof.fixture_expected[name]??"尚未提供")));});box.append(fields);if(v.config.kind==="PRICING"){const missing=["input","output","cache","fixed"].filter(k=>!v.config.fields[k]);if(missing.length)box.append(el("p","尚未提供："+missing.map(k=>({input:"輸入價",output:"輸出價",cache:"快取價",fixed:"固定費"}[k])).join("、")+"。缺少費用資料時不能認定完全免費。"));}box.append(el("p","資料為站方公開聲明，未驗證持續免費、台灣資格、有效扣費或模型身份。"));}
+ if(v.test?.reason)box.append(el("p","實測未通過："+v.test.reason,"error"));
+ const details=el("details");details.append(el("summary","欄位對照、來源證據與測試結果"));factsView(details,"規則版本",v);box.append(details);
+ const form=el("form"),label=el("label","測試使用的模型"),target=el("select");target.required=true;target.setAttribute("aria-label","測試使用的模型");connectorTargets(target,v.provider_id);const desired=v.discovery?.selection||v.test?.selection;if(desired&&[...target.options].some(o=>o.value===key(desired)))target.value=key(desired);label.append(target);const test=el("button","測試資料擷取");test.disabled=!target.options.length;form.append(label,test);box.append(form);
+ form.addEventListener("submit",async e=>{e.preventDefault();try{await run(async()=>{const result=await submit("/connectors/test",{id:v.id,selection:JSON.parse(target.value)});await reload(result.status==="VALIDATED"?"擷取測試通過":"擷取尚未通過，已保存原因");});}catch(e){notice(e.message,true);}});
+ if(v.status==="VALIDATED"&&!v.active)guarded("確認啟用擷取規則",async()=>{await submit("/connectors/activate",{id:v.id,expected_active_id:v.active_id||"",confirm:true});await reload("擷取規則已啟用");},false);
+ if(v.active&&v.activation_action_id)guarded("Undo 擷取規則啟用",async()=>{await submit("/versions/undo",{id:v.activation_action_id,confirm:true});await reload("擷取規則已還原");});
+ const revise=el("form"),config=field(revise,"修訂規則 JSON","textarea",JSON.stringify(v.config,null,2)),reason=field(revise,"修訂理由","textarea");reason.required=true;revise.append(el("button","保存規則新版本"));const advanced=el("details");advanced.append(el("summary","進階修訂"),revise);box.append(advanced);
+ revise.addEventListener("submit",async e=>{e.preventDefault();try{await run(async()=>{await submit("/connectors",{provider_id:v.provider_id,name:v.name,config:JSON.parse(config.value),evidence_ids:v.evidence_ids,reason:reason.value});await loadKnowledge();if(current())$("detail").close();notice("新規則仍需測試及確認");});}catch(e){notice(e.message,true);}});
+}
+`
