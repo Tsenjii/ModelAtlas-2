@@ -607,6 +607,14 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		delete(result.Details, "sample_id")
 		delete(result.Details, "receipt")
 		result.Outcome = "TELEMETRY_SAVE"
+		if errors.Is(err, errResearchProbeScopeChanged) || errors.Is(err, errResearchProbeApproval) {
+			result.Outcome = "RESEARCH_PLAN_CHANGED"
+			return result, 409
+		}
+		var runLimit *researchRunBudgetError
+		if errors.As(err, &runLimit) {
+			result.Details["research_run_budget"] = runLimit
+		}
 		var limit *researchInferenceBudgetError
 		if errors.As(err, &limit) {
 			result.Details["research_inference_budget"] = limit

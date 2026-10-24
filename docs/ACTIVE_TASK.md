@@ -1,5 +1,15 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-24 逐級研究與候選重驗（PROGRESSIVE-RESEARCH-015J）
+
+- 最新使用者明確要求「下一版一定要穩定能使用且完成 一定要」，依D-017守住完整功能與穩定發布門檻；不是單片全綠就發布。D-016維持片內驗收後連續推進，不等待再說繼續。
+- 前片015I所列範圍已驗收：來源970d566916cf4312d2d0573cd3efd2db1e8a137d／tree3e13414cdac6b46131f3ab940309e4ffe644f89f，VPS40079819262四項、Mac40079819268三項、Android40079819276兩項attempt1 SUCCESS。九份實際產物／成功producer原始時間窗／hash／報告與17實圖已核對；精確證據見verification/20261024/private-schedule-baseline.json與Draft PR #20。Go本機435.511s／CI568.281s、34 Browser178.063s／177.087s及415圖、systemd41.827s與原負載24.685s全部保留。原e6候選失敗不抹除。
+- 開工重新核對main仍cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 attempt2 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。
+- 當前唯一片015J：精確有效的既有流量重用、可操作的候選重驗／有界逐級計畫、使用者明確指定高價值連線的版本化低成本probe與語意／能力證據、原子預算與成本／歷史／恢復。先以真TLS檢查更換請求設定後誤借舊成功觀測的缺口；不在所有catalog上隱式推論、不把Reply OK或小型題目得分當身份證明。
+- 自己的新來源正式caller、反例／恢復、完整本機及同SHA九項／全部實際產物與實圖前仍候選，不借015I綠燈。原全部測試、34 Browser／415原圖、負載與timeout保留。公開0.8.5-preview.1、release/request.json／version.properties／tag／11附件不變，PR #20仍Draft，不merge、不部署。
+- 完整Reflection生成／規則與費用比較、未知站點family/version、分塊同步、專用原生UI（含Android PLAY-004）與真站／目標VPS／實體裝置／正式簽署仍在全願望清單；可獨立完成的程式工作先繼續，不以缺外部存取提前停下。
+
+
 ## 2026-10-24 私人模型研究排程（PRIVATE-RESEARCH-015I）
 
 - 015H所列範圍已驗收：來源9ba29050aca90e6e639cc36786edae3ce89a97da／tree1c64e4427c2c095d52e080316942eadb47f75ae3；VPS40074926904四項、Android40074926883兩項、Mac40074926876三項首次SUCCESS。九份實際ZIP／內層來源／hash／報告與16張實圖已核對，精確證據見verification/20261024/research-pool-baseline.json與Draft PR #20。完整Go本機400.090s／CI345.428s、33 Browser286.289s／299.698s及404PNG、systemd40.834s與原負載15.263s均保留。以下015H候選敘述只留歷史。

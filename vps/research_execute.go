@@ -18,7 +18,7 @@ import (
 // Local admission control and user cancellation are not upstream failures.
 func researchTransportStopped(ctx context.Context, err error) bool {
 	var originWait *researchOriginWait
-	return ctx.Err() != nil || errors.As(err, &originWait) || errors.Is(err, errScheduledDailyBudget) || errors.Is(err, errScheduledDefinitionChanged) || err != nil && oneOf(err.Error(), "public cooldown storage unavailable", "research run paused", "scheduled research paused", "research HTTP budget exhausted", "research inference budget exhausted")
+	return ctx.Err() != nil || errors.As(err, &originWait) || errors.Is(err, errScheduledDailyBudget) || errors.Is(err, errScheduledDefinitionChanged) || errors.Is(err, errResearchProbeScopeChanged) || errors.Is(err, errResearchProbeApproval) || err != nil && oneOf(err.Error(), "public cooldown storage unavailable", "research run paused", "scheduled research paused", "research HTTP budget exhausted", "research inference budget exhausted")
 }
 
 func excerpt(v string, max int) string {
@@ -250,6 +250,9 @@ func (s *Server) inspectCandidateBody(ctx context.Context, run string, c Candida
 		}
 	}
 	s.reconcileCandidate(ctx, c.ID)
+	if _, e = s.Store.DB.ExecContext(ctx, "INSERT INTO research_candidate_revalidations VALUES(?,?,?,?,?) ON CONFLICT(candidate_id,url) DO UPDATE SET source_hash=excluded.source_hash,checked_at=excluded.checked_at,parser_version=excluded.parser_version", c.ID, rawURL, contentHash(raw), now(), "public-html-v1"); e != nil {
+		return nil, e
+	}
 	return map[string]any{"candidate_ids": []string{c.ID}, "endpoint_paths": paths, "links": links, "characters": len(text)}, nil
 }
 func (s *Server) searchTask(ctx context.Context, run string, v taskInput) (map[string]any, error) {
@@ -264,7 +267,15 @@ func (s *Server) searchTask(ctx context.Context, run string, v taskInput) (map[s
 	return s.executeBraveResearchTask(ctx, ResearchTask{ID: task, RunID: run, Kind: "SEARCH", Result: json.RawMessage(previous)}, v)
 }
 func (s *Server) executeResearchTask(ctx context.Context, run, kind string, input taskInput) (map[string]any, error) {
+	ctx, grantErr := s.researchTaskProbeContext(ctx, run, kind, input)
+	if grantErr != nil {
+		return nil, grantErr
+	}
 	switch kind {
+	case "SEMANTIC_PROBE", "TOOL_PROBE":
+		return s.executeResearchProbe(ctx, run, kind, input)
+	case "REVALIDATE_CANDIDATE":
+		return s.revalidateResearchCandidate(ctx, run, input)
 	case "LMSPEED_SEEDS":
 		rows, e := s.Store.DB.QueryContext(ctx, "SELECT canonical_id,facts_json,observed_at FROM external_models WHERE source='LMSPEED' ORDER BY rowid DESC LIMIT 20")
 		if e != nil {
@@ -371,8 +382,17 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 		}
 		var sampleID, outcome, details string
 		var at int64
-		e = s.Store.DB.QueryRowContext(ctx, "SELECT id,outcome,details_json,created_at FROM telemetry WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=? AND credential_version=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED') AND created_at>=? ORDER BY rowid DESC LIMIT 1", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, selected.CredentialVersion, now()-int64(24*time.Hour/time.Millisecond)).Scan(&sampleID, &outcome, &details, &at)
-		reused := e == nil
+		minutes := researchObservationMinutes(input.ObservationMinutes)
+		if grant, ok := ctx.Value(researchProbeContextKey{}).(researchProbeGrant); ok {
+			minutes = grant.Minutes
+		}
+		observation, reused, e := s.reusableResearchTraffic(ctx, v, time.Duration(minutes)*time.Minute)
+		if e != nil {
+			return nil, e
+		}
+		if reused {
+			sampleID, outcome, details, at = observation.ID, observation.Outcome, observation.Details, observation.At
+		}
 		if !reused {
 			id, e := s.createTestSession(ctx, v)
 			if e != nil {
@@ -384,14 +404,11 @@ func (s *Server) executeResearchTask(ctx context.Context, run, kind string, inpu
 			raw, _ := json.Marshal(result.Details)
 			details = string(raw)
 			at = now()
+			if outcome == "RESEARCH_PLAN_CHANGED" {
+				return nil, errResearchProbeScopeChanged
+			}
 			if outcome == "RESEARCH_BUDGET_EXHAUSTED" {
-				if limit, ok := result.Details["research_resource_budget"].(*researchResourceBudgetError); ok {
-					return nil, limit
-				}
-				if limit, ok := result.Details["research_inference_budget"].(*researchInferenceBudgetError); ok {
-					return nil, limit
-				}
-				return nil, errors.New("research budget exhausted")
+				return nil, researchProbeBudgetError(result)
 			}
 		}
 		var parsed map[string]any

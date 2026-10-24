@@ -339,6 +339,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /research/schedules", s.listResearchSchedules)
 	api.HandleFunc("GET /research/schedules/review", s.reviewPrivateResearchSchedule)
 	api.HandleFunc("GET /research/schedules/private-history", s.privateResearchScheduleHistory)
+	api.HandleFunc("GET /research/probes", s.listResearchProbes)
+	api.HandleFunc("POST /research/plan", s.previewResearchPlan)
 	api.HandleFunc("POST /research/schedules", s.saveResearchSchedule)
 	api.HandleFunc("POST /research/schedules/control", s.controlResearchSchedule)
 	api.HandleFunc("POST /research/schedules/limit", s.setResearchScheduleLimit)

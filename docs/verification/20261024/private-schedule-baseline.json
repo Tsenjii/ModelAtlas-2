@@ -1,0 +1,314 @@
+{
+  "slice": "PRIVATE-RESEARCH-015I",
+  "status": "ACCEPTED_LISTED_SCOPE",
+  "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+  "tree": "3e13414cdac6b46131f3ab940309e4ffe644f89f",
+  "runs": [
+    {
+      "id": 40079819276,
+      "path": ".github/workflows/android.yml",
+      "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 120830839718,
+          "name": "build",
+          "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T08:53:53Z",
+          "completed_at": "2026-10-24T08:57:34Z"
+        },
+        {
+          "id": 120830839918,
+          "name": "device-tests",
+          "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T08:53:53Z",
+          "completed_at": "2026-10-24T09:04:25Z"
+        }
+      ]
+    },
+    {
+      "id": 40079819268,
+      "path": ".github/workflows/macos-native.yml",
+      "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 120830969017,
+          "name": "macos-build",
+          "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T08:54:34Z",
+          "completed_at": "2026-10-24T09:00:00Z"
+        },
+        {
+          "id": 120831990010,
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T09:00:03Z",
+          "completed_at": "2026-10-24T09:07:24Z"
+        },
+        {
+          "id": 120831990036,
+          "name": "macos-test (macos-15, arm64)",
+          "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T09:00:03Z",
+          "completed_at": "2026-10-24T09:03:48Z"
+        }
+      ]
+    },
+    {
+      "id": 40079819262,
+      "path": ".github/workflows/vps.yml",
+      "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 120831017735,
+          "name": "vps-linux-arm64",
+          "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T08:54:49Z",
+          "completed_at": "2026-10-24T08:55:44Z"
+        },
+        {
+          "id": 120831017912,
+          "name": "vps-linux-amd64",
+          "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T08:54:50Z",
+          "completed_at": "2026-10-24T08:56:03Z"
+        },
+        {
+          "id": 120831017935,
+          "name": "vps-test",
+          "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T08:54:49Z",
+          "completed_at": "2026-10-24T09:07:03Z"
+        },
+        {
+          "id": 120831017988,
+          "name": "vps-browser",
+          "head_sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T08:54:49Z",
+          "completed_at": "2026-10-24T08:58:45Z"
+        }
+      ]
+    }
+  ],
+  "verified_downloads": [
+    {
+      "id": 12553824730,
+      "name": "modelatlas-debug-and-reports",
+      "bytes": 17207575,
+      "sha256": "80236f3a74ca6a9cddd7ac9dccbd3616fe132f34650808c029039c962d59fa07",
+      "run_id": 40079819276,
+      "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "producer": {
+        "name": "modelatlas-debug-and-reports",
+        "id": 12553824730,
+        "digest": "sha256:80236f3a74ca6a9cddd7ac9dccbd3616fe132f34650808c029039c962d59fa07",
+        "run_id": 40079819276,
+        "producer_job_id": 120830839718,
+        "producer_job_name": "build",
+        "created_at": "2026-10-24T08:57:31Z"
+      }
+    },
+    {
+      "id": 12555101211,
+      "name": "modelatlas-device-test-reports",
+      "bytes": 1250876,
+      "sha256": "f5a0aae9ff13e981222e6889a3c52b86e4866a101f82de76ab7578d9cfd58e34",
+      "run_id": 40079819276,
+      "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "producer": {
+        "name": "modelatlas-device-test-reports",
+        "id": 12555101211,
+        "digest": "sha256:f5a0aae9ff13e981222e6889a3c52b86e4866a101f82de76ab7578d9cfd58e34",
+        "run_id": 40079819276,
+        "producer_job_id": 120830839918,
+        "producer_job_name": "device-tests",
+        "created_at": "2026-10-24T09:04:21Z"
+      }
+    },
+    {
+      "id": 12554912481,
+      "name": "ModelAtlas-macOS-Universal",
+      "bytes": 41704195,
+      "sha256": "3da15c780ec91aabd927179641f1e2ba733be2b9d77227d0e210f13681c37c85",
+      "run_id": 40079819268,
+      "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "producer": {
+        "name": "ModelAtlas-macOS-Universal",
+        "id": 12554912481,
+        "digest": "sha256:3da15c780ec91aabd927179641f1e2ba733be2b9d77227d0e210f13681c37c85",
+        "run_id": 40079819268,
+        "producer_job_id": 120830969017,
+        "producer_job_name": "macos-build",
+        "created_at": "2026-10-24T08:59:57Z"
+      }
+    },
+    {
+      "id": 12555275683,
+      "name": "ModelAtlas-macOS-QA-arm64",
+      "bytes": 5286883,
+      "sha256": "79bcb343cb97cd19401710d3c6a8903085ac41c72396e769e1d9cd29a77dd484",
+      "run_id": 40079819268,
+      "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "producer": {
+        "name": "ModelAtlas-macOS-QA-arm64",
+        "id": 12555275683,
+        "digest": "sha256:79bcb343cb97cd19401710d3c6a8903085ac41c72396e769e1d9cd29a77dd484",
+        "run_id": 40079819268,
+        "producer_job_id": 120831990036,
+        "producer_job_name": "macos-test (macos-15, arm64)",
+        "created_at": "2026-10-24T09:03:42Z"
+      }
+    },
+    {
+      "id": 12555210629,
+      "name": "ModelAtlas-macOS-QA-x86_64",
+      "bytes": 5418462,
+      "sha256": "c843cc0671ab32f2feca558cb7e738ef2801b5774960eb618f4593fed7ce7b80",
+      "run_id": 40079819268,
+      "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "producer": {
+        "name": "ModelAtlas-macOS-QA-x86_64",
+        "id": 12555210629,
+        "digest": "sha256:c843cc0671ab32f2feca558cb7e738ef2801b5774960eb618f4593fed7ce7b80",
+        "run_id": 40079819268,
+        "producer_job_id": 120831990010,
+        "producer_job_name": "macos-test (macos-15-intel, x86_64)",
+        "created_at": "2026-10-24T09:07:16Z"
+      }
+    },
+    {
+      "id": 12553859577,
+      "name": "modelatlas-vps-linux-amd64",
+      "bytes": 12562253,
+      "sha256": "52b48da36b2f688299ec781896078b430b563b7f6596f77f9b9e13594d7bf577",
+      "run_id": 40079819262,
+      "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "producer": {
+        "name": "modelatlas-vps-linux-amd64",
+        "id": 12553859577,
+        "digest": "sha256:52b48da36b2f688299ec781896078b430b563b7f6596f77f9b9e13594d7bf577",
+        "run_id": 40079819262,
+        "producer_job_id": 120831017912,
+        "producer_job_name": "vps-linux-amd64",
+        "created_at": "2026-10-24T08:55:59Z"
+      }
+    },
+    {
+      "id": 12553764887,
+      "name": "modelatlas-vps-linux-arm64",
+      "bytes": 11669940,
+      "sha256": "6773d36d075ed8a55a907fc202f1a335831d1c913832c8d7e47ea8612c90a146",
+      "run_id": 40079819262,
+      "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "producer": {
+        "name": "modelatlas-vps-linux-arm64",
+        "id": 12553764887,
+        "digest": "sha256:6773d36d075ed8a55a907fc202f1a335831d1c913832c8d7e47ea8612c90a146",
+        "run_id": 40079819262,
+        "producer_job_id": 120831017735,
+        "producer_job_name": "vps-linux-arm64",
+        "created_at": "2026-10-24T08:55:41Z"
+      }
+    },
+    {
+      "id": 12554772563,
+      "name": "modelatlas-vps-footprint",
+      "bytes": 1069,
+      "sha256": "c3d831b260b8566b5781cdfb94e7d2c9e73e21fe1dea5f73810e3d45fed66b09",
+      "run_id": 40079819262,
+      "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "producer": {
+        "name": "modelatlas-vps-footprint",
+        "id": 12554772563,
+        "digest": "sha256:c3d831b260b8566b5781cdfb94e7d2c9e73e21fe1dea5f73810e3d45fed66b09",
+        "run_id": 40079819262,
+        "producer_job_id": 120831017935,
+        "producer_job_name": "vps-test",
+        "created_at": "2026-10-24T09:06:57Z"
+      }
+    },
+    {
+      "id": 12554028817,
+      "name": "modelatlas-vps-browser",
+      "bytes": 29687341,
+      "sha256": "9521f55f9059cc16f33de506aed3798fdfd34e7bfadaa12ec28021d62da173a7",
+      "run_id": 40079819262,
+      "sha": "970d566916cf4312d2d0573cd3efd2db1e8a137d",
+      "producer": {
+        "name": "modelatlas-vps-browser",
+        "id": 12554028817,
+        "digest": "sha256:9521f55f9059cc16f33de506aed3798fdfd34e7bfadaa12ec28021d62da173a7",
+        "run_id": 40079819262,
+        "producer_job_id": 120831017988,
+        "producer_job_name": "vps-browser",
+        "created_at": "2026-10-24T08:58:42Z"
+      }
+    }
+  ],
+  "validation": {
+    "local_go_seconds": 435.511,
+    "ci_go_seconds": 568.281,
+    "local_browser_seconds": 178.063,
+    "ci_browser_seconds": 177.087,
+    "browser_flows": 34,
+    "browser_pngs": 415,
+    "preserved_original_pngs": 404,
+    "new_pngs": 11,
+    "visual_review_pngs": 17,
+    "android_jvm": {
+      "tests": 579,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "android_device": {
+      "tests": 976,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    },
+    "mac_core_each": 82,
+    "mac_png_each": 90,
+    "systemd_seconds": 41.827,
+    "footprint_seconds": 24.685,
+    "peak_rss_bytes": 210640896,
+    "linux_files_each": 38,
+    "schema": 30
+  },
+  "limits": "本機研究授權不是官方quota或帳單硬上限；Mac/Android專用原生私人排程等剩餘功能與真站/實機/目標VPS/正式signer未外推完成。e6候選CI timeout失敗保留於指南。"
+}

@@ -162,7 +162,7 @@ func (s *Server) scheduledNetworkCharge(ctx context.Context, tx *sql.Tx, run str
 
 func (s *Server) scheduleOptions(ctx context.Context, d scheduleDefinition) (ResearchOptions, error) {
 	v := d.Options
-	if len(d.Languages) > 8 || d.Private == nil && (v.MinimalInference || v.ProbeBudget != 0 || len(v.Selections) > 0) {
+	if len(d.Languages) > 8 || d.Private == nil && (v.MinimalInference || v.ProbeBudget != 0 || len(v.Selections) > 0 || len(v.DeeperSelections) > 0) {
 		return v, errors.New("automatic schedules accept public discovery only; use a manual run for model inference")
 	}
 	if d.Private != nil && (!d.Private.valid() || len(v.Selections) == 0 || len(v.Selections) > 32 || v.MinimalInference && (v.ProbeBudget < 1 || v.ProbeBudget > 10) || !v.MinimalInference && v.ProbeBudget != 0) {
@@ -733,6 +733,22 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 				continue
 			}
 			if len(remaining) > 0 {
+				// A schema30 private round already has an exact local approval.
+				// Bind its carried tasks to the current matching planned scope;
+				// do not grant deeper work or replay an interrupted inference.
+				current := map[string]taskInput{}
+				for _, planned := range tasks {
+					if planned.input.Selection != nil {
+						current[scopeKey(*planned.input.Selection)] = planned.input
+					}
+				}
+				for i := range remaining {
+					if selected := remaining[i].input.Selection; selected != nil && remaining[i].input.ProbeStamp == "" {
+						binding := current[scopeKey(*selected)]
+						remaining[i].input.ProbeStamp = binding.ProbeStamp
+						remaining[i].input.ObservationMinutes = binding.ObservationMinutes
+					}
+				}
 				tasks = remaining
 				continuedFrom = v.LastRunID
 			}
@@ -801,10 +817,10 @@ func carryScheduledTasks(ctx context.Context, tx *sql.Tx, run string) ([]researc
 		if err = rows.Scan(&task.kind, &task.dedupe, &raw, &result, &aaState, &braveState); err != nil {
 			return nil, false, err
 		}
-		if json.Unmarshal([]byte(raw), &task.input) != nil || !oneOf(task.kind, "SOURCE", "SEARCH", "INSPECT", "INSPECT_LINK", "AA", "LMSPEED_SEEDS", "CATALOG", "MINIMAL_INFERENCE") {
+		if json.Unmarshal([]byte(raw), &task.input) != nil || !oneOf(task.kind, "SOURCE", "SEARCH", "INSPECT", "INSPECT_LINK", "REVALIDATE_CANDIDATE", "AA", "LMSPEED_SEEDS", "CATALOG", "MINIMAL_INFERENCE", "SEMANTIC_PROBE", "TOOL_PROBE") {
 			return nil, false, errors.New("invalid scheduled public task")
 		}
-		if task.input.Selection != nil && (approved.Private == nil || !privateScheduleScopeAllowed(approved, *task.input.Selection) || task.kind == "MINIMAL_INFERENCE" && !approved.Options.MinimalInference) || task.input.Selection == nil && oneOf(task.kind, "CATALOG", "MINIMAL_INFERENCE") {
+		if task.input.Selection != nil && (approved.Private == nil || !privateScheduleScopeAllowed(approved, *task.input.Selection) || researchInferenceTask(task.kind) && !approved.Options.MinimalInference || researchDeeperTask(task.kind) && !researchDeeperSelection(approved.Options, *task.input.Selection)) || task.input.Selection == nil && (task.kind == "CATALOG" || researchInferenceTask(task.kind)) {
 			return nil, false, errScheduledDefinitionChanged
 		}
 		if task.input.Strategy != nil {
@@ -863,7 +879,7 @@ func (s *Server) recoverScheduledRun(ctx context.Context, v researchSchedule, at
 		return
 	}
 	if v.Private != nil {
-		if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='FAILED',result_json=json_set(result_json,'$.reason','interrupted private inference is never automatically replayed') WHERE run_id=? AND kind='MINIMAL_INFERENCE' AND status='INTERRUPTED'", v.LastRunID); err != nil {
+		if _, err = tx.ExecContext(ctx, "UPDATE research_tasks SET status='FAILED',result_json=json_set(result_json,'$.reason','interrupted private inference is never automatically replayed') WHERE run_id=? AND kind IN ('MINIMAL_INFERENCE','SEMANTIC_PROBE','TOOL_PROBE') AND status='INTERRUPTED'", v.LastRunID); err != nil {
 			return
 		}
 	}

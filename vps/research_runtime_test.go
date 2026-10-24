@@ -35,7 +35,22 @@ func mappedFixture(up *httptest.Server) *http.Client {
 }
 func researchRunID(t *testing.T, s *Server, v ResearchOptions) string {
 	t.Helper()
-	r := req(t, s, "POST", "/api/v1/research/start", v)
+	var body any = v
+	if len(v.DeeperSelections) > 0 {
+		preview := req(t, s, "POST", "/api/v1/research/plan", v)
+		requireCode(t, preview, 200)
+		var review struct {
+			Fingerprint string `json:"fingerprint"`
+		}
+		if json.Unmarshal(preview.Body.Bytes(), &review) != nil || len(review.Fingerprint) != 64 {
+			t.Fatal("invalid explicit probe review")
+		}
+		body = struct {
+			ResearchOptions
+			ReviewFingerprint string `json:"review_fingerprint"`
+		}{v, review.Fingerprint}
+	}
+	r := req(t, s, "POST", "/api/v1/research/start", body)
 	requireCode(t, r, 201)
 	var response struct {
 		ID string `json:"id"`
@@ -203,27 +218,34 @@ func TestPublicFetchBoundaryAndEvidenceGate(t *testing.T) {
 }
 func TestResearchResumeAfterInterruptedStoreAndReuseTraffic(t *testing.T) {
 	s := testServer(t)
+	var inferenceCalls atomic.Int32
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/models" {
 			w.Write([]byte(`{"data":[{"id":"m"}]}`))
 			return
 		}
-		t.Error("normal traffic should prevent extra inference")
+		if inferenceCalls.Add(1) > 1 {
+			t.Error("normal traffic should prevent extra inference")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"model":"m","choices":[{"message":{"content":"Existing normal user traffic"},"finish_reason":"stop"}]}`))
 	}))
 	defer up.Close()
 	s.Client = up.Client()
 	v := seed(t, s, up.URL+"/v1")
 	requireCode(t, req(t, s, "POST", "/api/v1/my-models", v), 201)
-	_, e := s.Store.DB.Exec("INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,created_at) VALUES('recent','p','a','c','m','','CHAT_COMPLETIONS','CHAT_COMPLETIONS','PLAYGROUND','SUCCESS',?)", now())
-	if e != nil {
-		t.Fatal(e)
-	}
+	// The original reuse assertions need an actual local wire receipt. A raw
+	// telemetry row (for example one received through sync) is not that proof.
+	authenticityNativeRequest(t, s, v, "Existing normal user traffic", false)
 	run := researchRunID(t, s, ResearchOptions{Selections: []Selection{v}, MinimalInference: true, Budget: 5, ProbeBudget: 1})
 	s.runResearchPending(context.Background())
 	var probes int
 	s.Store.DB.QueryRow("SELECT probes_used FROM research_run_options WHERE run_id=?", run).Scan(&probes)
 	if probes != 0 {
 		t.Fatal("reused request charged inference")
+	}
+	if inferenceCalls.Load() != 1 {
+		t.Fatal("research repeated the real prior user request")
 	}
 	var raw string
 	s.Store.DB.QueryRow("SELECT result_json FROM research_tasks WHERE run_id=? AND kind='MINIMAL_INFERENCE'", run).Scan(&raw)

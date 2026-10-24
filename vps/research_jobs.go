@@ -12,18 +12,20 @@ import (
 )
 
 type ResearchOptions struct {
-	SourceIDs        []string          `json:"source_ids"`
-	Selections       []Selection       `json:"selections"`
-	CandidateIDs     []string          `json:"candidate_ids"`
-	Queries          map[string]string `json:"queries"`
-	Search           bool              `json:"search"`
-	SearchPages      int               `json:"search_pages,omitempty"`
-	SearchCountry    string            `json:"search_country,omitempty"`
-	MinimalInference bool              `json:"minimal_inference"`
-	Budget           int               `json:"budget"`
-	ProbeBudget      int               `json:"probe_budget"`
-	RefreshAA        bool              `json:"refresh_aa"`
-	LMSpeedSeeds     bool              `json:"lmspeed_seeds"`
+	ObservationMinutes int               `json:"observation_minutes,omitempty"`
+	DeeperSelections   []Selection       `json:"deeper_selections,omitempty"`
+	SourceIDs          []string          `json:"source_ids"`
+	Selections         []Selection       `json:"selections"`
+	CandidateIDs       []string          `json:"candidate_ids"`
+	Queries            map[string]string `json:"queries"`
+	Search             bool              `json:"search"`
+	SearchPages        int               `json:"search_pages,omitempty"`
+	SearchCountry      string            `json:"search_country,omitempty"`
+	MinimalInference   bool              `json:"minimal_inference"`
+	Budget             int               `json:"budget"`
+	ProbeBudget        int               `json:"probe_budget"`
+	RefreshAA          bool              `json:"refresh_aa"`
+	LMSpeedSeeds       bool              `json:"lmspeed_seeds"`
 }
 type ResearchTask struct {
 	ID       string          `json:"id"`
@@ -35,18 +37,34 @@ type ResearchTask struct {
 	Result   json.RawMessage `json:"result"`
 }
 type taskInput struct {
-	SourceSnapshot *ResearchSource           `json:"source_snapshot,omitempty"`
-	SourceID       string                    `json:"source_id,omitempty"`
-	CandidateID    string                    `json:"candidate_id,omitempty"`
-	Selection      *Selection                `json:"selection,omitempty"`
-	Language       string                    `json:"language,omitempty"`
-	Query          string                    `json:"query,omitempty"`
-	SearchPages    int                       `json:"search_pages,omitempty"`
-	SearchCountry  string                    `json:"search_country,omitempty"`
-	URL            string                    `json:"url,omitempty"`
-	Strategy       *researchKnowledgeBinding `json:"strategy,omitempty"`
+	ProbeStamp         string                    `json:"probe_stamp,omitempty"`
+	ObservationMinutes int                       `json:"observation_minutes,omitempty"`
+	SourceSnapshot     *ResearchSource           `json:"source_snapshot,omitempty"`
+	SourceID           string                    `json:"source_id,omitempty"`
+	CandidateID        string                    `json:"candidate_id,omitempty"`
+	Selection          *Selection                `json:"selection,omitempty"`
+	Language           string                    `json:"language,omitempty"`
+	Query              string                    `json:"query,omitempty"`
+	SearchPages        int                       `json:"search_pages,omitempty"`
+	SearchCountry      string                    `json:"search_country,omitempty"`
+	URL                string                    `json:"url,omitempty"`
+	Strategy           *researchKnowledgeBinding `json:"strategy,omitempty"`
 }
 type researchBudgetKey struct{}
+
+type researchRunBudgetError struct {
+	RunID  string `json:"run_id"`
+	Metric string `json:"metric"`
+	Used   int    `json:"used"`
+	Limit  int    `json:"limit"`
+}
+
+func (e *researchRunBudgetError) Error() string {
+	if e.Metric == "INFERENCE" {
+		return "research inference budget exhausted"
+	}
+	return "research HTTP budget exhausted"
+}
 
 func (s *Server) chargeNetwork(ctx context.Context, probe bool) error {
 	return s.chargeResearchNetwork(ctx, probe, "")
@@ -69,6 +87,9 @@ func (s *Server) chargeResearchNetwork(ctx context.Context, probe bool, publicOr
 
 // Integration admission reserves its quota and the HTTP meter atomically.
 func (s *Server) chargeResearchNetworkTx(ctx context.Context, tx *sql.Tx, probe bool, publicOrigin string) error {
+	if err := s.validateResearchProbeAdmission(ctx, tx); err != nil {
+		return err
+	}
 	run, _ := ctx.Value(researchBudgetKey{}).(string)
 	if e := s.checkResearchOrigin(ctx, tx, publicOrigin); e != nil {
 		return e
@@ -85,10 +106,10 @@ func (s *Server) chargeResearchNetworkTx(ctx context.Context, tx *sql.Tx, probe 
 		return errors.New("research run paused")
 	}
 	if used >= budget {
-		return errors.New("research HTTP budget exhausted")
+		return &researchRunBudgetError{run, "HTTP", used, budget}
 	}
 	if probe && probeUsed >= probeBudget {
-		return errors.New("research inference budget exhausted")
+		return &researchRunBudgetError{run, "INFERENCE", probeUsed, probeBudget}
 	}
 	if e := s.scheduledNetworkCharge(ctx, tx, run, probe); e != nil {
 		return e
@@ -209,6 +230,10 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 	if v.LMSpeedSeeds {
 		tasks = append(tasks, researchPlannedTask{kind: "LMSPEED_SEEDS", dedupe: "lmspeed"})
 	}
+	tasks, err = s.progressiveResearchPlan(ctx, v, tasks)
+	if err != nil {
+		return v, nil, err
+	}
 	// Learned priorities only reorder work the user explicitly selected.
 	weight := func(task researchPlannedTask) float64 {
 		if task.binding != nil {
@@ -220,6 +245,15 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 	if len(tasks) == 0 {
 		return v, nil, &researchPlanError{400, "select sources, providers, candidates or search"}
 	}
+	secrets, secretErr := s.knownSecrets(ctx)
+	if secretErr != nil {
+		return v, nil, secretErr
+	}
+	for _, secret := range secrets {
+		if jsonContainsSecret(v, secret) {
+			return v, nil, &researchPlanError{422, "raw credentials are not research plan metadata"}
+		}
+	}
 	return v, tasks, nil
 }
 func insertResearchRun(ctx context.Context, tx *sql.Tx, id string, v ResearchOptions, tasks []researchPlannedTask) error {
@@ -228,6 +262,9 @@ func insertResearchRun(ctx context.Context, tx *sql.Tx, id string, v ResearchOpt
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, "INSERT INTO research_run_options(run_id,config_json,budget,probe_budget) VALUES(?,?,?,?)", id, string(config), v.Budget, v.ProbeBudget); err != nil {
+		return err
+	}
+	if err := insertResearchProbePlan(ctx, tx, id, v, tasks); err != nil {
 		return err
 	}
 	for _, task := range tasks {
@@ -268,11 +305,14 @@ func insertResearchRun(ctx context.Context, tx *sql.Tx, id string, v ResearchOpt
 	return nil
 }
 func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
-	var v ResearchOptions
-	if !decodeJSON(w, r, &v) {
+	var request struct {
+		ResearchOptions
+		ReviewFingerprint string `json:"review_fingerprint"`
+	}
+	if !decodeJSON(w, r, &request) {
 		return
 	}
-	v, tasks, err := s.planResearch(r.Context(), v)
+	v, tasks, err := s.planResearch(r.Context(), request.ResearchOptions)
 	if err != nil {
 		var issue *researchPlanError
 		if errors.As(err, &issue) {
@@ -289,6 +329,17 @@ func (s *Server) startResearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
+	if len(v.DeeperSelections) > 0 || request.ReviewFingerprint != "" {
+		plan, reviewErr := s.researchPlanReview(r.Context(), tx, v, tasks)
+		if reviewErr != nil {
+			http.Error(w, "research plan review unavailable", 503)
+			return
+		}
+		if request.ReviewFingerprint == "" || request.ReviewFingerprint != plan["fingerprint"] {
+			http.Error(w, "research plan changed; review current connections and allocations again", 409)
+			return
+		}
+	}
 	if err = insertResearchRun(r.Context(), tx, id, v, tasks); err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -432,7 +483,7 @@ func (s *Server) runResearchPending(parent context.Context) {
 		}
 		t.Result = json.RawMessage(previous)
 		flight := "research:" + t.RunID
-		if t.Kind != "MINIMAL_INFERENCE" && !s.beginFlight(flight) {
+		if !researchInferenceTask(t.Kind) && !s.beginFlight(flight) {
 			return
 		}
 		budgetCtx := context.WithValue(context.WithValue(parent, researchBudgetKey{}, t.RunID), researchTaskBudgetKey{}, t.ID)
@@ -454,14 +505,14 @@ func (s *Server) runResearchPending(parent context.Context) {
 		json.Unmarshal([]byte(payload), &input)
 		var result map[string]any
 		var taskErr error
-		if oneOf(t.Kind, "MINIMAL_INFERENCE", "CATALOG") {
+		if researchInferenceTask(t.Kind) || t.Kind == "CATALOG" {
 			var owner, definition string
 			grantErr := s.Store.DB.QueryRowContext(ctx, "SELECT s.id,s.definition_json FROM research_schedule_runs r JOIN research_schedules s ON s.id=r.schedule_id WHERE r.run_id=?", t.RunID).Scan(&owner, &definition)
 			if grantErr == nil {
 				var d scheduleDefinition
 				if json.Unmarshal([]byte(definition), &d) != nil || d.Private == nil {
 					taskErr = errors.New("automatic schedule cannot use private model credentials")
-				} else if input.Selection == nil || !privateScheduleScopeAllowed(d, *input.Selection) || t.Kind == "MINIMAL_INFERENCE" && !d.Options.MinimalInference || !s.scheduleApproved(ctx, s.Store.DB, owner, d) {
+				} else if input.Selection == nil || !privateScheduleScopeAllowed(d, *input.Selection) || researchInferenceTask(t.Kind) && !d.Options.MinimalInference || researchDeeperTask(t.Kind) && !researchDeeperSelection(d.Options, *input.Selection) || !s.scheduleApproved(ctx, s.Store.DB, owner, d) {
 					taskErr = errScheduledDefinitionChanged
 				} else {
 					ctx = context.WithValue(ctx, privateScheduleCredentialKey{}, *input.Selection)
@@ -480,7 +531,10 @@ func (s *Server) runResearchPending(parent context.Context) {
 		status := "SUCCESS"
 		if taskErr != nil {
 			status = "FAILED"
-			result = map[string]any{"reason": taskErr.Error()}
+			if result == nil {
+				result = map[string]any{}
+			}
+			result["reason"] = taskErr.Error()
 		}
 		if ctx.Err() != nil {
 			status = "INTERRUPTED"
@@ -490,7 +544,7 @@ func (s *Server) runResearchPending(parent context.Context) {
 			}
 		}
 		saveCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		if errors.Is(taskErr, errScheduledDefinitionChanged) {
+		if errors.Is(taskErr, errScheduledDefinitionChanged) || errors.Is(taskErr, errResearchProbeScopeChanged) || errors.Is(taskErr, errResearchProbeApproval) {
 			var owner string
 			if s.Store.DB.QueryRowContext(saveCtx, "SELECT schedule_id FROM research_schedule_runs WHERE run_id=?", t.RunID).Scan(&owner) == nil {
 				s.suspendSchedule(saveCtx, owner, "SOURCES_CHANGED")
@@ -641,6 +695,19 @@ func (s *Server) updateResearchSummary(ctx context.Context, id string) {
 	summary["grey_zone_count"] = states["HIGH_VALUE_GREY_ZONE"]
 	summary["rejected_count"] = states["REJECTED"]
 	summary["high_signal_count"] = states["VERIFIED"] + states["HIGH_VALUE_GREY_ZONE"]
+	resourceTx, err := s.Store.DB.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return
+	}
+	usage, _, resourceErr := readResourceUsageQuery(ctx, resourceTx, " WHERE a.run_id=?", []any{id})
+	if resourceErr != nil {
+		resourceTx.Rollback()
+		return
+	}
+	if resourceTx.Commit() != nil {
+		return
+	}
+	summary["research_resources"] = usage.view()
 	raw, _ := json.Marshal(summary)
 	_, _ = s.Store.DB.ExecContext(ctx, "UPDATE research_run_options SET summary_json=? WHERE run_id=?", string(raw), id)
 	_ = s.reflectResearch(ctx, id)

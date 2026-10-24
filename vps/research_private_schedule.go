@@ -81,7 +81,7 @@ func (s *Server) scheduleApproved(ctx context.Context, q queryRows, id string, d
 		return false
 	}
 	if d.Private == nil {
-		return !d.Options.MinimalInference && d.Options.ProbeBudget == 0 && len(d.Options.Selections) == 0
+		return !d.Options.MinimalInference && d.Options.ProbeBudget == 0 && len(d.Options.Selections) == 0 && len(d.Options.DeeperSelections) == 0
 	}
 	p := d.Private
 	if !validID(p.ApprovalID) {
@@ -142,13 +142,13 @@ func (s *Server) reserveScheduledInference(ctx context.Context, tx *sql.Tx, reco
 	if json.Unmarshal([]byte(raw), &d) != nil || d.Private == nil || !d.Options.MinimalInference || !privateScheduleScopeAllowed(d, record.Selection) || !s.scheduleApproved(ctx, tx, id, d) {
 		return issue
 	}
-	var payload string
+	var payload, kind string
 	task, _ := ctx.Value(researchTaskBudgetKey{}).(string)
-	if tx.QueryRowContext(ctx, "SELECT payload_json FROM research_tasks WHERE id=? AND run_id=? AND kind='MINIMAL_INFERENCE'", task, run).Scan(&payload) != nil {
+	if tx.QueryRowContext(ctx, "SELECT payload_json,kind FROM research_tasks WHERE id=? AND run_id=?", task, run).Scan(&payload, &kind) != nil || !researchInferenceTask(kind) {
 		return issue
 	}
 	var input taskInput
-	if json.Unmarshal([]byte(payload), &input) != nil || input.Selection == nil || *input.Selection != record.Selection {
+	if json.Unmarshal([]byte(payload), &input) != nil || input.Selection == nil || *input.Selection != record.Selection || researchDeeperTask(kind) && !researchDeeperSelection(d.Options, record.Selection) {
 		return issue
 	}
 	var day string
@@ -267,11 +267,16 @@ func (s *Server) reviewPrivateResearchSchedule(w http.ResponseWriter, r *http.Re
 		}
 		list = append(list, map[string]any{"selection": v, "origin": selected.Origin, "operation": selected.Operation, "credential_version": selected.CredentialVersion})
 	}
+	policy, err := readResearchResourcePolicy(r.Context(), tx)
+	if err != nil {
+		http.Error(w, "current allocations unavailable", 503)
+		return
+	}
 	if tx.Commit() != nil {
 		http.Error(w, "schedule review unavailable", 503)
 		return
 	}
-	jsonOK(w, 200, map[string]any{"id": id, "name": name, "revision": revision, "fingerprint": fingerprint, "scopes": list, "private": d.Private, "options": d.Options})
+	jsonOK(w, 200, map[string]any{"id": id, "name": name, "revision": revision, "fingerprint": fingerprint, "scopes": list, "private": d.Private, "options": d.Options, "reserve_tokens_per_inference": policy.ReserveTokens, "reserve_usd_per_inference": policy.ReserveUSD})
 }
 
 func (s *Server) privateResearchScheduleHistory(w http.ResponseWriter, r *http.Request) {

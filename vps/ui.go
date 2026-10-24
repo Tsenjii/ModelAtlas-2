@@ -569,6 +569,11 @@ const homeHTML = `<!doctype html>
 </label>
 <label class="check">
 <input name="minimal_inference" type="checkbox">必要時做一次小型推論驗證</label>
+<label class="check"><input name="deeper_probe" type="checkbox">深入驗證這份連線（另做語意與工具題）</label>
+<p class="section-description">預設不啟用深入驗證；先重用有效觀測，需要新請求時每層最多一次。開始前會列出目前來源與預留額供你確認。小型題目結果不能證明模型身份。</p>
+<label>重驗候選<select name="candidate_ids" id="research-run-candidates" multiple size="3"></select></label>
+<label>觀測有效期（分鐘）<input name="observation_minutes" type="number" value="1440" min="15" max="10080" required></label>
+<p class="section-description">只重驗選取的公開候選，優先處理已過期與待查證來源。有效期同時適用於本機流量與深入題目；Key、來源或請求設定變更後重新驗證。</p>
 <label class="check">
 <input name="search" type="checkbox">多語網路探索（需 Brave Search Key）</label>
 <div class="toolbar"><label>每語言最多搜尋頁數<input name="search_pages" type="number" value="1" min="1" max="10" required></label><label>搜尋地區<select name="search_country" aria-label="搜尋地區"><option value="TW">台灣</option><option value="ALL">全球</option><option value="US">美國</option><option value="JP">日本</option><option value="KR">韓國</option><option value="DE">德國</option><option value="FR">法國</option><option value="GB">英國</option><option value="CA">加拿大</option><option value="AU">澳洲</option><option value="BR">巴西</option><option value="IN">印度</option></select></label></div><p class="section-description">每頁最多 10 筆線索；只有搜尋服務明示仍有結果才會續頁。搜尋地區不代表已驗證台灣資格。</p>

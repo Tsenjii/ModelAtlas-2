@@ -1,5 +1,7 @@
 # ModelAtlas VPS — Go / SQLite
 
+逐級研究開發候選015J的正式入口、明確深入選取、精確流量重用、候選重驗、預算與歷史／恢復見 [RESEARCH_PROGRESSIVE.md](RESEARCH_PROGRESSIVE.md)。新來源仍須自己的完整本機與同來源九項／實際產物驗收，完整下一版願望尚未完成，公開版本與部署狀態不變。
+
 最新優先序是 **VPS 第一、Mac 第二、Android 第三**。同一來源的三平台下載見 [Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)，固定 tag／完整套件／發布檢查見 [RELEASES.md](../docs/RELEASES.md)。VPS 提供 AMD64／ARM64 tar.gz、VERSION.json／RELEASE.json、逐檔校驗與 install／update／download 工具；原備份、健康驗證與失敗／中斷回復保留。不使用自動安裝 HEAD 的更新方式。
 
 以下 SHA／量測是各切片歷史基線；最新整合版本以 Release 的來源 commit／RELEASE-MANIFEST.json 與 PR #20 同 SHA 九項為準，不把舊六項綠燈移作新版本證據。

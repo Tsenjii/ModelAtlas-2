@@ -109,7 +109,41 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 	report["source_query_metrics"] = metrics
 	var reuse, observations int
 	tx.QueryRowContext(ctx, `SELECT COUNT(*),COALESCE(SUM(CASE WHEN json_extract(d.details_json,'$.normalized.reused_local_traffic')=1 THEN 1 ELSE 0 END),0) FROM research_evidence e JOIN research_evidence_details d ON d.evidence_id=e.id WHERE json_extract(d.details_json,'$.run_id')=? AND e.source_type='SCOPED_INFERENCE'`, run).Scan(&observations, &reuse)
-	report["probe_value"] = map[string]any{"observations": observations, "reused_existing": reuse, "new_requests": probes, "repeated_probes": max(0, probes-(observations-reuse)), "identity_proven": false}
+	var deeperRequests int
+	if e := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_inference_admissions a JOIN research_tasks t ON t.id=a.task_id WHERE a.run_id=? AND t.kind IN ('SEMANTIC_PROBE','TOOL_PROBE')", run).Scan(&deeperRequests); e != nil {
+		return e
+	}
+	report["probe_value"] = map[string]any{"observations": observations, "reused_existing": reuse, "new_requests": probes, "new_deeper_requests": deeperRequests, "repeated_probes": max(0, probes-deeperRequests-(observations-reuse)), "identity_proven": false}
+	resources, _, e := readResourceUsageQuery(ctx, tx, " WHERE a.run_id=?", []any{run})
+	if e != nil {
+		return e
+	}
+	report["inference_resource_usage"] = resources.view()
+	probeRows, e := tx.QueryContext(ctx, "SELECT report_json FROM research_probe_observations WHERE run_id=? ORDER BY rowid LIMIT 128", run)
+	if e != nil {
+		return e
+	}
+	findings := []researchProbeReport{}
+	for probeRows.Next() {
+		var raw string
+		var finding researchProbeReport
+		if e = probeRows.Scan(&raw); e != nil {
+			break
+		}
+		if json.Unmarshal([]byte(raw), &finding) != nil || finding.RunID != run || finding.Identity != "UNPROVEN" {
+			e = errResearchProbeApproval
+			break
+		}
+		findings = append(findings, finding)
+	}
+	if e == nil {
+		e = probeRows.Err()
+	}
+	probeRows.Close()
+	if e != nil {
+		return e
+	}
+	report["progressive_probe_findings"] = findings
 	quality, e := researchQualitySnapshot(ctx, tx, run)
 	if e != nil {
 		return e
@@ -118,7 +152,7 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 	report["quality_observations"] = quality
 	report["cost"] = nil
 	report["cost_status"] = "NOT_MEASURED"
-	report["cost_note"] = "HTTP counts are admitted requests; public/search billing and token costs are not inferred from HTTP success."
+	report["cost_note"] = "HTTP counts are admitted requests. Inference provider-reported cost and unknown coverage are separate from reserved local allocations. Public/search billing remains unknown; no complete run total is inferred from HTTP success."
 	report = safeAssistantData(report, secrets).(map[string]any)
 	raw, _ := json.Marshal(report)
 	fingerprint := contentHash(raw)
