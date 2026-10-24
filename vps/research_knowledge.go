@@ -43,24 +43,7 @@ type researchKnowledgeBinding struct {
 func knowledgeMetricKey(kind, subject string) string { return kind + ":" + subject }
 
 func (s *Server) researchKnowledgeSnapshot(ctx context.Context) (map[string]KnowledgeVersion, error) {
-	rows, err := s.Store.DB.QueryContext(ctx, `SELECT v.id,v.kind,v.subject,v.data_json,COALESCE(e.epoch_id,'') FROM knowledge_active a JOIN knowledge_versions v ON v.id=a.version_id LEFT JOIN knowledge_activation_epochs e ON e.kind=a.kind AND e.subject=a.subject WHERE a.kind IN ('SOURCE_RELIABILITY','RESEARCH_STRATEGY') AND v.status!='IMPORTED' ORDER BY a.kind,a.subject LIMIT 1000`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := map[string]KnowledgeVersion{}
-	for rows.Next() {
-		var v KnowledgeVersion
-		var raw string
-		if err = rows.Scan(&v.ID, &v.Kind, &v.Subject, &raw, &v.ActiveEpoch); err != nil {
-			return nil, err
-		}
-		if json.Unmarshal([]byte(raw), &v.Data) != nil {
-			return nil, errors.New("invalid active research knowledge")
-		}
-		out[knowledgeMetricKey(v.Kind, v.Subject)] = v
-	}
-	return out, rows.Err()
+	return currentResearchPlan(ctx, s.Store.DB)
 }
 
 func researchInputScope(kind string, in taskInput) string {
@@ -86,6 +69,11 @@ func bindResearchKnowledge(task *researchPlannedTask, learned map[string]Knowled
 	}
 	b := &researchKnowledgeBinding{Kind: kind, Subject: subject, ScopeHash: researchInputScope(task.kind, task.input), Weight: 1, Priority: 1}
 	v := learned[knowledgeMetricKey(kind, subject)]
+	if task.kind == "SEARCH" && v.ID != "" && (!researchStrategyContextMatches(v, task.input) || str(v.Data["query_generation_id"]) != "" && str(v.Data["query"]) != task.input.Query) {
+		b.IgnoredVersionID = v.ID
+		b.Reason = "語言、地區、頁數或生成查詢不同，使用內建策略。"
+		v = KnowledgeVersion{}
+	}
 	if scope := str(v.Data["scope_hash"]); scope != "" && scope != b.ScopeHash {
 		b.IgnoredVersionID = v.ID
 		b.Reason = "來源或查詢已變，此任務使用內建優先序；需重新研究及評估原策略。"

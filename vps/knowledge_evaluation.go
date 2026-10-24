@@ -60,25 +60,26 @@ func (y *researchYield) merge(other researchYield) {
 }
 
 type knowledgeEvaluation struct {
-	ID             string         `json:"id"`
-	VersionID      string         `json:"version_id"`
-	BaselineID     string         `json:"baseline_id"`
-	Policy         string         `json:"policy"`
-	Status         string         `json:"status"`
-	ScopeHash      string         `json:"scope_hash"`
-	ProposalHash   string         `json:"proposal_hash"`
-	DatasetHash    string         `json:"dataset_hash"`
-	PlanHash       string         `json:"plan_hash"`
-	Target         researchYield  `json:"target_observations"`
-	Baseline       researchYield  `json:"baseline_replay"`
-	Proposed       researchYield  `json:"proposed_replay"`
-	ComparableRuns int            `json:"comparable_runs"`
-	Excluded       int            `json:"excluded_observations"`
-	Diff           map[string]any `json:"diff"`
-	RunIDs         []string       `json:"run_ids"`
-	Reason         string         `json:"reason"`
-	Limitations    []string       `json:"limitations"`
-	At             int64          `json:"at"`
+	Paired         *queryPairedEvaluation `json:"paired_query_measurements,omitempty"`
+	ID             string                 `json:"id"`
+	VersionID      string                 `json:"version_id"`
+	BaselineID     string                 `json:"baseline_id"`
+	Policy         string                 `json:"policy"`
+	Status         string                 `json:"status"`
+	ScopeHash      string                 `json:"scope_hash"`
+	ProposalHash   string                 `json:"proposal_hash"`
+	DatasetHash    string                 `json:"dataset_hash"`
+	PlanHash       string                 `json:"plan_hash"`
+	Target         researchYield          `json:"target_observations"`
+	Baseline       researchYield          `json:"baseline_replay"`
+	Proposed       researchYield          `json:"proposed_replay"`
+	ComparableRuns int                    `json:"comparable_runs"`
+	Excluded       int                    `json:"excluded_observations"`
+	Diff           map[string]any         `json:"diff"`
+	RunIDs         []string               `json:"run_ids"`
+	Reason         string                 `json:"reason"`
+	Limitations    []string               `json:"limitations"`
+	At             int64                  `json:"at"`
 }
 
 func readKnowledgeVersion(ctx context.Context, q researchQueryer, id string) (KnowledgeVersion, error) {
@@ -137,7 +138,18 @@ func currentResearchPlan(ctx context.Context, q researchQueryer) (map[string]Kno
 		}
 		out[knowledgeMetricKey(v.Kind, v.Subject)] = v
 	}
-	return out, rows.Err()
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	for _, v := range out {
+		if str(v.Data["query_generation_id"]) != "" {
+			if _, err = readQueryGeneration(ctx, q, v); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return out, nil
 }
 
 func priorityWeight(v KnowledgeVersion, scope string) float64 {
@@ -193,6 +205,9 @@ func replayResearchRound(observations []researchQuality, plan map[string]Knowled
 }
 
 func computeKnowledgeEvaluation(ctx context.Context, tx *sql.Tx, v KnowledgeVersion) (knowledgeEvaluation, error) {
+	if str(v.Data["query_generation_id"]) != "" {
+		return computePairedQueryEvaluation(ctx, tx, v)
+	}
 	out := knowledgeEvaluation{VersionID: v.ID, Policy: knowledgeEvaluationPolicy, Status: "INSUFFICIENT", ProposalHash: snapshotHash(v.Data), Diff: map[string]any{}, RunIDs: []string{}, Limitations: []string{
 		"僅比較最近30日最多32輪同一來源版本或精確語言／查詢的本機觀測；取消、未完成、零HTTP及同步歷史不作獨立樣本。",
 		"重播只模擬已完成擷取在半數HTTP預算內的排序；不預測未觀測回應，也不證明因果改善。",
@@ -326,7 +341,11 @@ func (s *Server) evaluateKnowledge(w http.ResponseWriter, r *http.Request) {
 	}
 	report, err := computeKnowledgeEvaluation(r.Context(), tx, v)
 	if err != nil {
-		http.Error(w, "a local proposal with an exact saved source/query is required", 422)
+		code := 422
+		if str(v.Data["query_generation_id"]) != "" && !errors.Is(err, errQueryInput) && !errors.Is(err, sql.ErrNoRows) {
+			code = 503
+		}
+		http.Error(w, "a local proposal with an exact saved source/query is required", code)
 		return
 	}
 	report.ID = newID()
@@ -369,7 +388,7 @@ func monitorKnowledge(v KnowledgeVersion, evaluation *knowledgeEvaluation, histo
 	if !v.Active || !oneOf(v.Kind, "SOURCE_RELIABILITY", "RESEARCH_STRATEGY") {
 		return nil
 	}
-	if evaluation != nil && evaluation.Policy != knowledgeEvaluationPolicy {
+	if evaluation != nil && evaluation.Policy != knowledgeEvaluationPolicy && evaluation.Policy != pairedQueryPolicy {
 		evaluation = nil
 	}
 	m := &knowledgeMonitor{Status: "INSUFFICIENT", Reason: "等待至少3輪實際使用此版本的同範圍完整研究；舊佇列與其他版本不混入。"}
@@ -418,7 +437,7 @@ func (s *Server) enrichKnowledge(ctx context.Context, versions []KnowledgeVersio
 		}
 		var e knowledgeEvaluation
 		if json.Unmarshal([]byte(raw), &e) == nil {
-			if e.Policy != knowledgeEvaluationPolicy {
+			if e.Policy != knowledgeEvaluationPolicy && e.Policy != pairedQueryPolicy {
 				e.Status = "POLICY_CHANGED"
 				e.Reason = "比較政策已更新；舊評估保留，請用目前政策重新研究及評估。"
 			}
@@ -462,9 +481,38 @@ func (s *Server) enrichKnowledge(ctx context.Context, versions []KnowledgeVersio
 	}
 	for i := range versions {
 		v := &versions[i]
+		if v.QueryGeneration, err = readQueryGeneration(ctx, tx, *v); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				v.QueryGenerationUnavailable = true
+			} else {
+				return err
+			}
+		}
 		v.Evaluation = evaluations[v.ID]
 		v.ActivationActionID = actions[v.ID]
-		v.Monitor = monitorKnowledge(*v, baselines[v.ID], history)
+		monitorHistory := history
+		if v.Active && str(v.Data["query_generation_id"]) != "" {
+			monitorHistory, err = pairedQueryMonitorHistory(ctx, tx, *v, history)
+			if err != nil {
+				return err
+			}
+		}
+		v.Monitor = monitorKnowledge(*v, baselines[v.ID], monitorHistory)
+		if v.Monitor != nil && baselines[v.ID] != nil && baselines[v.ID].Policy == pairedQueryPolicy && baselines[v.ID].Paired != nil && len(baselines[v.ID].Paired.Pairs) > 0 {
+			id := baselines[v.ID].Paired.Pairs[0].ComparisonID
+			var stamp string
+			if err = tx.QueryRowContext(ctx, "SELECT credential_stamp FROM research_query_comparisons WHERE id=?", id).Scan(&stamp); err != nil {
+				return err
+			}
+			current, e := currentQueryCredential(ctx, tx)
+			if e != nil {
+				return e
+			}
+			if current != stamp {
+				v.Monitor.Status = "SOURCE_CHANGED"
+				v.Monitor.Reason = "搜尋 Key 已變；舊試用基線不與新憑證混比，請重新建立對照。"
+			}
+		}
 		if v.Monitor != nil {
 			if scope, err := currentResearchScope(ctx, tx, *v); err != nil || str(v.Data["scope_hash"]) != "" && str(v.Data["scope_hash"]) != scope {
 				v.Monitor.Status = "SOURCE_CHANGED"

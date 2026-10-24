@@ -1,3 +1,5 @@
+> 2026-10-25 接續 REFLECTION-015K：015J來源 b3e27ba04f533e255390124a736e893129e77093／tree0355f4db780559ec7bfa14a785a77e0d3f601b88 已由同源九項及九份實際產物驗收所列範圍，精確證據保存在 Draft PR #20。main cba901d187aa5312cc71f5c2440b23fa04104aee／39536090788 build119016886469、device119016884592本輪重查SUCCESS，FEATURE FREEZE=OFF。目前唯一候選015K：本機公開證據生成具體查詢、精確語言／地區／頁數、明確預覽及有界成對實測、成本與Unknown、多輪評估／試用／監測／持久Undo。新來源自己的全部九項及實際產物前不接受、不接下一片。公開0.8.5-preview.1／發布請求／tag／11附件不變、不merge／部署；完整擷取規則／站點family/version／同步／原生與真站實機缺口保留。
+
 > 2026-10-24接續：015I已由970d566同來源九項、九份實際產物與17實圖驗收所列範圍（verification/20261024/private-schedule-baseline.json）。唯一新片015J逐級研究／候選重驗及有效流量重用，自己的新來源完整九項前候選。D-017要求下一版穩定可用且完成主要正式流程，原完整願望、專用原生缺口與版本凍結不變；詳ACTIVE_TASK。
 
 > 2026-10-24接續：015H已由9ba2905同來源九項、九份實際產物及16實圖驗收所列範圍（verification/20261024/research-pool-baseline.json）。唯一新片PRIVATE-RESEARCH-015I補明確私人排程／來源確認／排程每日預算／中斷不重播與本機確認歷史；Mac同源引擎取得後端，專用原生UI仍待補。自己的完整本機／九項與實際產物前候選；D-016要求片內驗收後連續推進，公開版本與原需求不變。詳ACTIVE_TASK、vps/RESEARCH_PRIVATE_SCHEDULES.md。

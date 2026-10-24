@@ -87,6 +87,9 @@ func (s *Server) chargeResearchNetwork(ctx context.Context, probe bool, publicOr
 
 // Integration admission reserves its quota and the HTTP meter atomically.
 func (s *Server) chargeResearchNetworkTx(ctx context.Context, tx *sql.Tx, probe bool, publicOrigin string) error {
+	if err := validateQueryComparisonAdmission(ctx, tx, probe); err != nil {
+		return err
+	}
 	if err := s.validateResearchProbeAdmission(ctx, tx); err != nil {
 		return err
 	}
@@ -207,8 +210,8 @@ func (s *Server) planResearch(ctx context.Context, v ResearchOptions) (ResearchO
 		if len(v.Queries) == 0 {
 			v.Queries = map[string]string{}
 			for lang, q := range searchQueries {
-				if rule := learned[knowledgeMetricKey("RESEARCH_STRATEGY", lang)]; str(rule.Data["query"]) != "" {
-					q = str(rule.Data["query"])
+				if text, ok := learnedResearchQuery(learned[knowledgeMetricKey("RESEARCH_STRATEGY", lang)], taskInput{Language: lang, SearchCountry: v.SearchCountry, SearchPages: v.SearchPages}); ok {
+					q = text
 				}
 				v.Queries[lang] = q
 			}
@@ -376,6 +379,10 @@ func (s *Server) controlResearch(w http.ResponseWriter, r *http.Request) {
 	var budget, used, probes int
 	if tx.QueryRowContext(r.Context(), "SELECT r.status,o.budget,o.used,o.probe_budget FROM research_runs r JOIN research_run_options o ON r.id=o.run_id WHERE r.id=?", v.ID).Scan(&status, &budget, &used, &probes) != nil {
 		http.Error(w, "run missing", 404)
+		return
+	}
+	if e = queryComparisonControl(r.Context(), tx, v.ID, v.Action, v.AdditionalBudget, v.AdditionalProbes, v.RetryFailed); e != nil {
+		http.Error(w, e.Error(), 409)
 		return
 	}
 	next := "PAUSED"
@@ -608,6 +615,14 @@ func (s *Server) runResearchPending(parent context.Context) {
 		if parent.Err() != nil {
 			return
 		}
+	}
+	// Continue a bounded batch when more explicitly queued work is ready. Keep
+	// four tasks per batch, the same admission meters and persisted retry floors;
+	// an eight-language run need not wait for the 30-second maintenance ticker.
+	stamp := s.scheduleTime().UnixMilli()
+	var ready bool
+	if parent.Err() == nil && s.Store.DB.QueryRowContext(parent, `SELECT EXISTS(SELECT 1 FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.origin_wait.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.aa_progress.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.brave_progress.next_attempt_at'),0)<=?)`, stamp, stamp, stamp, stamp).Scan(&ready) == nil && ready {
+		s.wakeWorker()
 	}
 }
 func (s *Server) updateResearchSummary(ctx context.Context, id string) {

@@ -11,27 +11,29 @@ import (
 )
 
 type KnowledgeVersion struct {
-	ID                 string               `json:"id"`
-	Kind               string               `json:"kind"`
-	Subject            string               `json:"subject"`
-	Version            int                  `json:"version"`
-	Data               map[string]any       `json:"data"`
-	EvidenceIDs        []string             `json:"evidence_ids"`
-	Reason             string               `json:"reason"`
-	Status             string               `json:"status"`
-	RunID              string               `json:"run_id,omitempty"`
-	Active             bool                 `json:"active"`
-	ActiveID           string               `json:"active_id"`
-	CreatedAt          int64                `json:"created_at"`
-	Evaluation         *knowledgeEvaluation `json:"evaluation,omitempty"`
-	Monitor            *knowledgeMonitor    `json:"monitor,omitempty"`
-	ActivationActionID string               `json:"activation_action_id,omitempty"`
-	ActiveEpoch        string               `json:"active_epoch,omitempty"`
+	QueryGenerationUnavailable bool                  `json:"query_generation_unavailable,omitempty"`
+	QueryGeneration            *queryGenerationProof `json:"query_generation,omitempty"`
+	ID                         string                `json:"id"`
+	Kind                       string                `json:"kind"`
+	Subject                    string                `json:"subject"`
+	Version                    int                   `json:"version"`
+	Data                       map[string]any        `json:"data"`
+	EvidenceIDs                []string              `json:"evidence_ids"`
+	Reason                     string                `json:"reason"`
+	Status                     string                `json:"status"`
+	RunID                      string                `json:"run_id,omitempty"`
+	Active                     bool                  `json:"active"`
+	ActiveID                   string                `json:"active_id"`
+	CreatedAt                  int64                 `json:"created_at"`
+	Evaluation                 *knowledgeEvaluation  `json:"evaluation,omitempty"`
+	Monitor                    *knowledgeMonitor     `json:"monitor,omitempty"`
+	ActivationActionID         string                `json:"activation_action_id,omitempty"`
+	ActiveEpoch                string                `json:"active_epoch,omitempty"`
 }
 
 var knowledgeFields = map[string]string{
 	"SOURCE_RELIABILITY":   "source_id retrieval_success retrieval_failure attempts evidence_count rejected_trials freshness_days weight confidence scope_hash",
-	"RESEARCH_STRATEGY":    "language query success failure attempts hits api_ready cost_http priority weight confidence scope_hash search_country search_pages",
+	"RESEARCH_STRATEGY":    "language query success failure attempts hits api_ready cost_http priority weight confidence scope_hash search_country search_pages query_generation_id",
 	"ENDPOINT_PATTERN":     "provider_id path operation observed_at source_url confidence",
 	"AUTH_PATTERN":         "provider_id auth_kind source_url observed_at confidence",
 	"DISCOVERY_PATH":       "source_id source_url path operation status evidence_count confidence",
@@ -114,7 +116,7 @@ func validKnowledge(v KnowledgeVersion) bool {
 		if k == "source_url" && !publicURL(str(x)) && !validateHTTPS(str(x)) {
 			return false
 		}
-		if oneOf(k, "raw_id", "canonical_id", "provider_id", "source_id") && !validID(str(x)) {
+		if oneOf(k, "raw_id", "canonical_id", "provider_id", "source_id", "query_generation_id") && !validID(str(x)) {
 			return false
 		}
 		if k == "query" && (str(x) == "" || len(str(x)) > 300) {
@@ -148,7 +150,7 @@ func (s *Server) proposeKnowledge(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &v) {
 		return
 	}
-	if v.Evaluation != nil || v.Monitor != nil || v.ActivationActionID != "" || v.ActiveEpoch != "" {
+	if v.QueryGenerationUnavailable || v.QueryGeneration != nil || v.Evaluation != nil || v.Monitor != nil || v.ActivationActionID != "" || v.ActiveEpoch != "" {
 		http.Error(w, "derived evaluation fields are read only", 422)
 		return
 	}
@@ -181,7 +183,16 @@ func (s *Server) proposeKnowledge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
+	proof, e := prepareQueryRevision(r.Context(), tx, &v)
+	if e != nil {
+		http.Error(w, "a local generated parent with unchanged context is required", 422)
+		return
+	}
 	v, e = appendKnowledge(r.Context(), tx, v)
+	if e == nil && proof != nil {
+		e = saveQueryGeneration(r.Context(), tx, proof, v, snapshotHash(map[string]any{"parent": proof.ParentID, "query": proof.Query}), snapshotHash(map[string]any{"revision": proof.ID}))
+		v.QueryGeneration = proof
+	}
 	if e != nil || tx.Commit() != nil {
 		http.Error(w, "knowledge persistence failed", 500)
 		return
@@ -252,7 +263,7 @@ func (s *Server) activateKnowledge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	k.ID = v.ID
-	if oneOf(k.Kind, "SOURCE_RELIABILITY", "RESEARCH_STRATEGY") && (str(k.Data["scope_hash"]) != "" || v.EvaluationID != "") {
+	if oneOf(k.Kind, "SOURCE_RELIABILITY", "RESEARCH_STRATEGY") && (str(k.Data["scope_hash"]) != "" || str(k.Data["query_generation_id"]) != "" || v.EvaluationID != "") {
 		if e = checkKnowledgeEvaluation(r.Context(), tx, k, v.EvaluationID); e != nil {
 			http.Error(w, e.Error(), 409)
 			return

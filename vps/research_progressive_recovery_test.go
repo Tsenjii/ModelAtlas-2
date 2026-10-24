@@ -53,7 +53,7 @@ func TestResearchProgressiveLocalAuthoritySyncPortableAndSchema30Upgrade(t *test
 		t.Fatal(err)
 	}
 	s = reopenScheduleStore(t, s)
-	assertSQLInt(t, s, 31, "PRAGMA user_version")
+	assertSQLInt(t, s, schemaVersion, "PRAGMA user_version")
 	assertSQLInt(t, s, 3, "SELECT COUNT(*) FROM telemetry")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM research_runs WHERE id=? AND status='COMPLETED'", run)
 	s.workerTick(context.Background())

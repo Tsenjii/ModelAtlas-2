@@ -233,6 +233,9 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 
 			}
 		}
+		if e = s.generateReflectionQueriesTx(ctx, tx, id, quality, secrets); e != nil {
+			return e
+		}
 		_, e = appendKnowledge(ctx, tx, KnowledgeVersion{Kind: "VERIFICATION_OUTCOME", Subject: run, Data: map[string]any{"reused_existing": reuse, "new_requests": probes, "observations": observations, "identity_proven": false, "confidence": "TENTATIVE"}, EvidenceIDs: []string{id}, Reason: "真實推論的驗證價值與重用成效；不把行為成功當身份證明。", RunID: run})
 		if e != nil {
 			return e
