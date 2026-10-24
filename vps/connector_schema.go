@@ -105,13 +105,16 @@ type connectorFixture struct {
 }
 
 func (s *Server) validateConnectorFixture(ctx context.Context, id string, c ConnectorConfig, v Selection, hash string) error {
+	return validateConnectorFixtureQuery(ctx, s.Store.DB, id, c, v, hash)
+}
+func validateConnectorFixtureQuery(ctx context.Context, q queryRows, id string, c ConnectorConfig, v Selection, hash string) error {
 	var raw string
-	err := s.Store.DB.QueryRowContext(ctx, "SELECT fixture_json FROM connector_generated_versions WHERE version_id=?", id).Scan(&raw)
+	err := q.QueryRowContext(ctx, "SELECT fixture_json FROM connector_generated_versions WHERE version_id=?", id).Scan(&raw)
 	if err == sql.ErrNoRows {
 		return nil
 	} // Existing/manual drafts retain their original real-test workflow.
 	if err != nil {
-		return errors.New("fixture unavailable")
+		return errors.Join(errors.New("fixture unavailable"), err)
 	}
 	var f connectorFixture
 	decoder := json.NewDecoder(strings.NewReader(raw))

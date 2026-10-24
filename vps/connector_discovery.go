@@ -23,9 +23,10 @@ const connectorDiscoverySchema = `
 `
 
 type connectorDiscoveryRequest struct {
-	ID         string    `json:"id"`
-	Selection  Selection `json:"selection"`
-	SourcePath string    `json:"source_path"`
+	ID            string    `json:"id"`
+	ReferenceURLs []string  `json:"reference_urls,omitempty"`
+	Selection     Selection `json:"selection"`
+	SourcePath    string    `json:"source_path"`
 }
 type connectorDiscoverySource struct {
 	URL        string   `json:"url"`
@@ -36,23 +37,24 @@ type connectorDiscoverySource struct {
 	Reason     string   `json:"reason,omitempty"`
 }
 type connectorDiscoveryReport struct {
-	ID           string                     `json:"id"`
-	Selection    Selection                  `json:"selection"`
-	SourcePath   string                     `json:"source_path"`
-	BaseURL      string                     `json:"base_url"`
-	Status       string                     `json:"status"`
-	Family       string                     `json:"family_hint"`
-	Version      string                     `json:"version_hint"`
-	ObservedAt   int64                      `json:"observed_at"`
-	FinishedAt   int64                      `json:"finished_at,omitempty"`
-	HTTPRequests *int                       `json:"http_requests"`
-	Attempts     int                        `json:"fetch_attempts"`
-	RequestLimit int                        `json:"request_limit"`
-	Sources      []connectorDiscoverySource `json:"sources"`
-	DraftIDs     []string                   `json:"draft_ids"`
-	Unknown      []string                   `json:"unknown_fields"`
-	Conflicts    []string                   `json:"conflicting_kinds"`
-	Limitations  []string                   `json:"limitations"`
+	FamilyEvidence []siteFamilyEvidence       `json:"family_evidence,omitempty"`
+	ID             string                     `json:"id"`
+	Selection      Selection                  `json:"selection"`
+	SourcePath     string                     `json:"source_path"`
+	BaseURL        string                     `json:"base_url"`
+	Status         string                     `json:"status"`
+	Family         string                     `json:"family_hint"`
+	Version        string                     `json:"version_hint"`
+	ObservedAt     int64                      `json:"observed_at"`
+	FinishedAt     int64                      `json:"finished_at,omitempty"`
+	HTTPRequests   *int                       `json:"http_requests"`
+	Attempts       int                        `json:"fetch_attempts"`
+	RequestLimit   int                        `json:"request_limit"`
+	Sources        []connectorDiscoverySource `json:"sources"`
+	DraftIDs       []string                   `json:"draft_ids"`
+	Unknown        []string                   `json:"unknown_fields"`
+	Conflicts      []string                   `json:"conflicting_kinds"`
+	Limitations    []string                   `json:"limitations"`
 }
 type connectorDiscoveryProof struct {
 	ReportID      string         `json:"report_id"`
@@ -143,6 +145,16 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 	if !validID(v.ID) || len(v.ID) > 120 || !connectorDiscoveryPath(v.SourcePath) || !validScope(v.Selection) || limit < 1 || limit > 6 {
 		return empty, false, errors.New("explicit request ID, model scope and read-only metadata path required")
 	}
+	if len(v.ReferenceURLs) > 2 {
+		return empty, false, errors.New("at most two explicit public source references")
+	}
+	refs := map[string]bool{}
+	for _, ref := range v.ReferenceURLs {
+		if !siteReferenceURL(ref) || refs[ref] {
+			return empty, false, errors.New("bounded raw GitHub source references required")
+		}
+		refs[ref] = true
+	}
 	secrets, err := s.knownSecrets(parent)
 	if err != nil {
 		return empty, false, errors.New("vault unavailable")
@@ -184,7 +196,7 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 		return empty, false, errors.New("provider discovery busy; read saved history before retrying")
 	}
 	defer s.endFlight(flight)
-	report := connectorDiscoveryReport{ID: v.ID, Selection: v.Selection, SourcePath: v.SourcePath, BaseURL: p.BaseURL, Status: "RUNNING", Family: "UNKNOWN", Version: "UNKNOWN", ObservedAt: now(), RequestLimit: limit, Sources: []connectorDiscoverySource{}, DraftIDs: []string{}, Unknown: []string{"Taiwan registration/access", "recurring reset and eligibility", "effective charges", "private account/PAT endpoints", "model identity"}, Conflicts: []string{}, Limitations: []string{"Public provider claims only; no credentials or inference are sent.", "Only observed same-origin read-only metadata paths are followed; maximum 6 requests and 30 seconds.", "Missing/ambiguous units or scope remain unknown. Fixture replay is not independent source verification.", "No automatic activation, membership changes, eligibility, or identity verification."}}
+	report := connectorDiscoveryReport{ID: v.ID, Selection: v.Selection, SourcePath: v.SourcePath, BaseURL: p.BaseURL, Status: "RUNNING", Family: "UNKNOWN", Version: "UNKNOWN", ObservedAt: now(), RequestLimit: limit, Sources: []connectorDiscoverySource{}, DraftIDs: []string{}, Unknown: []string{"Taiwan registration/access", "recurring reset and eligibility", "effective charges", "private account/PAT endpoints", "model identity"}, Conflicts: []string{}, Limitations: []string{"Public provider claims only; no credentials or inference are sent.", "Observed same-origin read-only metadata paths and up to two explicitly selected passive raw GitHub references; maximum 6 total requests and 30 seconds.", "Missing/ambiguous units or scope remain unknown. Fixture replay is not independent source verification.", "No automatic activation, membership changes, eligibility, or identity verification."}}
 	initial, _ := json.Marshal(report)
 	if _, err = s.Store.DB.ExecContext(parent, "INSERT INTO connector_discoveries VALUES(?,?,?,?,?)", v.ID, requestHash, v.Selection.ProviderID, string(initial), report.ObservedAt); err != nil {
 		return empty, false, errors.New("discovery reservation failed; read history before retrying")
@@ -193,13 +205,20 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 	defer cancel()
 	meter := 0
 	ctx = context.WithValue(ctx, connectorDiscoveryMeterKey{}, &meter)
-	queue := []string{v.SourcePath}
+	queue := append([]string{v.SourcePath}, v.ReferenceURLs...)
 	seen := map[string]bool{v.SourcePath: true}
+	for _, ref := range v.ReferenceURLs {
+		seen[ref] = true
+	}
 	drafts := []connectorGeneratedDraft{}
 	for len(queue) > 0 && report.Attempts < limit && ctx.Err() == nil {
 		path := queue[0]
 		queue = queue[1:]
 		target := originPath(p, path)
+		reference := siteReferenceURL(path)
+		if reference {
+			target = path
+		}
 		report.Attempts++
 		body, ctype, status, fetchErr := s.publicFetch(ctx, target)
 		source := connectorDiscoverySource{URL: target, HTTPStatus: status, DraftIDs: []string{}}
@@ -231,24 +250,20 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 			report.Sources = append(report.Sources, source)
 			continue
 		}
+		observations := siteFamilyObservations(target, source.Hash, root, body)
+		for _, observation := range observations {
+			if !containsKnownSecret(observation, secrets) {
+				report.FamilyEvidence = append(report.FamilyEvidence, observation)
+			}
+		}
 		if isJSON {
 			root = connectorStripRawSecrets(cleanSecretEcho(root, secrets, 0), 0)
 			family, version := connectorFamilyHint(root)
-			if family != "UNKNOWN" {
-				if report.Family != "UNKNOWN" && report.Family != family {
-					report.Family = "CONFLICTING"
-				} else {
-					report.Family = family
-				}
-			}
-			if version != "UNKNOWN" {
-				if report.Version != "UNKNOWN" && report.Version != version {
-					report.Version = "CONFLICTING"
-				} else {
-					report.Version = version
-				}
-			}
 			generated, reasons := inferConnectorMappings(root, path, v.Selection)
+			if reference {
+				generated = nil
+				reasons = []string{"Passive source reference only; provider endpoints require their own observed response and real test."}
+			}
 			source.Reason = strings.Join(reasons, "; ")
 			for _, draft := range generated {
 				if len(drafts) >= 12 {
@@ -278,11 +293,17 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 			}
 		} else {
 			_, links, paths := inspectHTML(body, target)
+			if reference {
+				paths = append(paths, siteLiteralMetadataPaths(body)...)
+			}
 			for _, path := range paths {
 				connectorQueuePath(&queue, seen, path, secrets)
 			}
 			base, _ := url.Parse(target)
 			for _, link := range links {
+				if reference {
+					continue
+				}
 				parsed, e := url.Parse(link)
 				if e == nil && strings.EqualFold(parsed.Host, base.Host) && parsed.Scheme == base.Scheme && parsed.RawQuery == "" {
 					connectorQueuePath(&queue, seen, parsed.Path, secrets)
@@ -292,6 +313,7 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 		}
 		report.Sources = append(report.Sources, source)
 	}
+	report.Family, report.Version = summarizeSiteFamily(report.FamilyEvidence)
 	report.HTTPRequests = &meter
 	report.FinishedAt = now()
 	report.Status = "NO_SUPPORTED_MAPPING"

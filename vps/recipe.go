@@ -7,12 +7,17 @@ import (
 )
 
 type Recipe struct {
-	ID         string         `json:"id"`
-	ProviderID string         `json:"provider_id"`
-	Version    int            `json:"version"`
-	Settings   map[string]any `json:"settings"`
-	Reason     string         `json:"reason"`
-	Active     bool           `json:"active"`
+	SiteDraft          *siteRecipeDocument   `json:"site_draft,omitempty"`
+	Test               *siteRecipeEvaluation `json:"test,omitempty"`
+	Status             string                `json:"status,omitempty"`
+	ActiveID           string                `json:"active_id,omitempty"`
+	ActivationActionID string                `json:"activation_action_id,omitempty"`
+	ID                 string                `json:"id"`
+	ProviderID         string                `json:"provider_id"`
+	Version            int                   `json:"version"`
+	Settings           map[string]any        `json:"settings"`
+	Reason             string                `json:"reason"`
+	Active             bool                  `json:"active"`
 }
 
 func safeRecipe(settings map[string]any) bool {
@@ -21,6 +26,10 @@ func safeRecipe(settings map[string]any) bool {
 	}
 	for k, v := range settings {
 		switch k {
+		case "generated_recipe_id":
+			if !validID(str(v)) {
+				return false
+			}
 		case "catalog_path", "chat_path":
 			if path, ok := v.(string); !ok || !safePath(path) {
 				return false
@@ -62,6 +71,15 @@ func (s *Server) listRecipes(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	if err = rows.Err(); err != nil {
+		http.Error(w, "recipe history unavailable", 503)
+		return
+	}
+	rows.Close()
+	if err = s.enrichSiteRecipes(r.Context(), out); err != nil {
+		http.Error(w, "recipe evidence unavailable", 503)
+		return
+	}
 	jsonOK(w, 200, out)
 }
 func (s *Server) addRecipe(w http.ResponseWriter, r *http.Request) {
@@ -71,6 +89,10 @@ func (s *Server) addRecipe(w http.ResponseWriter, r *http.Request) {
 		Reason     string         `json:"reason"`
 	}
 	if !decodeJSON(w, r, &v) {
+		return
+	}
+	if str(v.Settings["generated_recipe_id"]) != "" {
+		http.Error(w, "generated recipes require local source evidence", 422)
 		return
 	}
 	if !validID(v.ProviderID) || len(v.Reason) > 512 || !safeRecipe(v.Settings) {
@@ -103,6 +125,10 @@ func (s *Server) addRecipe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "database error", 500)
 		return
 	}
+	if err = bindLegacyRecipe(r.Context(), tx, id, string(raw)); err != nil {
+		http.Error(w, "recipe local approval unavailable", 503)
+		return
+	}
 	if _, err = tx.ExecContext(r.Context(), "INSERT INTO recipe_active(provider_id,version) VALUES(?,?) ON CONFLICT(provider_id) DO UPDATE SET version=excluded.version", v.ProviderID, version); err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -132,9 +158,13 @@ func (s *Server) rollbackRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	var id string
-	if tx.QueryRowContext(r.Context(), "SELECT id FROM recipe_versions WHERE provider_id=? AND version=?", v.ProviderID, v.Version).Scan(&id) != nil {
+	var id, raw string
+	if tx.QueryRowContext(r.Context(), "SELECT id,recipe_json FROM recipe_versions WHERE provider_id=? AND version=?", v.ProviderID, v.Version).Scan(&id, &raw) != nil {
 		http.Error(w, "version missing", 404)
+		return
+	}
+	if err = bindLegacyRecipe(r.Context(), tx, id, raw); err != nil {
+		http.Error(w, "recipe needs its own local review", 409)
 		return
 	}
 	var before int

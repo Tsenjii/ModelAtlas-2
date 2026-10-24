@@ -1,6 +1,6 @@
 package main
 
-const connectorDiscoveryHTML = `<section class="card"><h3>辨識站點資料</h3><p>從已選模型的公開網站或資料入口產生擷取草稿。每次最多讀取 6 個同站來源，不傳送 Key、不執行推論。草稿仍需實測與確認。</p><form id="connector-discovery-form"><label>辨識使用的模型<select id="connector-discovery-target" name="target" aria-label="辨識使用的模型" required></select></label><label>公開頁面或資料 Path<input name="source_path" value="/" maxlength="256" required placeholder="/docs 或 /api/pricing"></label><button>辨識站點並產生草稿</button></form><div id="connector-discovery-recovery" aria-live="polite"></div><div id="connector-discovery-list" class="cards"></div></section>`
+const connectorDiscoveryHTML = `<section class="card"><h3>辨識站點資料</h3><p>從已選模型的公開網站或資料入口產生擷取草稿。每次最多6個公開讀取，含可選程式碼參照；不傳送Key、不執行推論。草稿仍需實測與確認。</p><form id="connector-discovery-form"><label>辨識使用的模型<select id="connector-discovery-target" name="target" aria-label="辨識使用的模型" required></select></label><label>公開頁面或資料 Path<input name="source_path" value="/" maxlength="256" required placeholder="/docs 或 /api/pricing"></label><details><summary>公開程式碼參照（可選）</summary><label>Raw GitHub 來源網址（最多2個，每行一個）<textarea name="reference_urls" maxlength="1202" placeholder="https://raw.githubusercontent.com/owner/repo/ref/constants.ts"></textarea></label><p>只讀明確提供的公開原始檔；不執行程式碼，仍共用6次讀取上限。</p></details><button>辨識站點並產生草稿</button></form><div id="connector-discovery-recovery" aria-live="polite"></div><div id="connector-discovery-list" class="cards"></div></section>`
 
 const jsConnectorDiscovery = `
 const connectorKindLabels={CATALOG:"模型清單",PRICING:"價格",QUOTA:"額度",BALANCE:"餘額",USAGE:"用量",PERFORMANCE:"站方效能",NOTICE:"公告"};
@@ -17,16 +17,17 @@ function connectorDiscoveryDetail(r){
  const box=modal("站點資料辨識");box.append(el("p",r.base_url),el("p",r.status==="RUNNING"?"此紀錄尚未完成，可能仍在執行或曾中斷。更新紀錄確認結果；重讀不會重新連線來源。":r.http_requests+" 次 HTTP · "+r.draft_ids.length+" 個草稿"),el("p","站點類型線索："+r.family_hint+" · 版本線索："+r.version_hint+"。這些是站方資料，尚未獨立驗證。"));
  if(r.conflicting_kinds.length)box.append(el("p","來源資料不一致："+r.conflicting_kinds.map(k=>connectorKindLabels[k]||k).join("、")+"。請比較各來源後再選擇規則。","error"));
  box.append(el("p","尚未驗證台灣資格、持續免費機制、有效扣費、私人帳戶資料與模型身份。"));
+ if(r.draft_ids.length&&r.status==="DRAFTS_READY")action(box,"建立公開資料配方",()=>generateSiteRecipeDetail(r));siteFamilyEvidenceView(box,r.family_evidence);
  r.draft_ids.forEach(id=>{const v=connectorVersions.find(v=>v.id===id);if(v)action(box,"檢視"+(connectorKindLabels[v.config.kind]||v.config.kind)+"草稿",()=>connectorDetail(v));});
  const sources=el("details"),summary=el("summary","來源、未判定欄位與限制");sources.append(summary);factsView(sources,"已保存辨識紀錄",r);box.append(sources);
  action(box,"更新辨識紀錄",async()=>{const reports=await api("/connectors/discoveries?id="+encodeURIComponent(r.id));await loadKnowledge();if(reports[0])connectorDiscoveryDetail(reports[0]);});
 }
 function bindConnectorDiscovery(){
  const form=$("connector-discovery-form"),recovery=$("connector-discovery-recovery");
- const lock=value=>form.querySelectorAll("input,select,button").forEach(n=>n.disabled=value);
+ const lock=value=>form.querySelectorAll("input,select,textarea,button").forEach(n=>n.disabled=value);
  const recover=()=>{recovery.replaceChildren();recovery.append(el("p","請求結果尚未讀取完成。先讀取已保存紀錄，避免重複辨識。","error"));action(recovery,"讀取辨識結果",async()=>{const pending=connectorDiscoveryPending,ticket=detailVersion;if(!pending)return;const reports=await api("/connectors/discoveries?id="+encodeURIComponent(pending.id));if(!reports.length){notice("尚未找到紀錄；可用相同請求重試。",true);return;}await loadKnowledge();connectorDiscoveryPending=null;recovery.replaceChildren();lock(false);if(currentPane==="models"&&!$("knowledge-panel").hidden&&ticket===detailVersion)connectorDiscoveryDetail(reports[0]);});action(recovery,"用相同請求重試",()=>send(connectorDiscoveryPending));action(recovery,"返回修改來源",()=>{connectorDiscoveryPending=null;recovery.replaceChildren();lock(false);});};
  const send=async request=>{if(!request)return;const ticket=detailVersion;connectorDiscoveryPending=request;lock(true);recovery.replaceChildren();try{const report=await submit("/connectors/discover",request);await loadKnowledge();connectorDiscoveryPending=null;lock(false);recovery.replaceChildren();if(currentPane==="models"&&!$("knowledge-panel").hidden&&ticket===detailVersion)connectorDiscoveryDetail(report);notice("辨識紀錄已保存；草稿尚未啟用");}catch(e){recover();notice(e.message,true);}};
- form.addEventListener("submit",async e=>{e.preventDefault();if(connectorDiscoveryPending)return;const values=data(form);if(!values.target)return;await send({id:crypto.randomUUID(),selection:JSON.parse(values.target),source_path:values.source_path});});
+ form.addEventListener("submit",async e=>{e.preventDefault();if(connectorDiscoveryPending)return;const values=data(form);if(!values.target)return;await send({id:crypto.randomUUID(),selection:JSON.parse(values.target),source_path:values.source_path,reference_urls:(values.reference_urls||"").split(/[\n,]+/).map(s=>s.trim()).filter(Boolean)});});
 }
 function connectorDetail(v){
  const kind=connectorKindLabels[v.config.kind]||v.config.kind,box=modal(kind+"擷取 · v"+v.version),ticket=detailVersion;const current=()=>$("detail").open&&ticket===detailVersion;let busy=false,needsReload=false;

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -368,6 +369,10 @@ func (s *Server) testConnector(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, stop := context.WithTimeout(r.Context(), 20*time.Second)
 	defer stop()
+	publicHTTP := 0
+	if cfg.Role == "NONE" && cfg.Parser == "declarative-get-v2" {
+		ctx = context.WithValue(ctx, connectorDiscoveryMeterKey{}, &publicHTTP)
+	}
 	hash, e := connectorContext(ctx, s.Store.DB, cfg, v.Selection)
 	var facts map[string]any
 	if e == nil {
@@ -420,7 +425,11 @@ func (s *Server) testConnector(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	result := safeAssistantData(map[string]any{"selection": v.Selection, "context_hash": hash, "config_hash": connectorHash(cfg), "facts": facts, "reason": reason, "http_method": "GET", "inference_requests": 0}, secrets)
+	var measuredHTTP *int
+	if cfg.Role == "NONE" && cfg.Parser == "declarative-get-v2" {
+		measuredHTTP = &publicHTTP
+	}
+	result := safeAssistantData(map[string]any{"selection": v.Selection, "context_hash": hash, "config_hash": connectorHash(cfg), "facts": facts, "reason": reason, "http_method": "GET", "http_requests": measuredHTTP, "total_monetary_cost": nil, "inference_requests": 0}, secrets)
 	data, _ := json.Marshal(result)
 	if _, err = tx.ExecContext(save, "UPDATE connector_versions SET status=?,test_json=?,tested_at=? WHERE id=?", status, string(data), testedAt, v.ID); err != nil {
 		http.Error(w, "test persistence failed", 500)
@@ -515,6 +524,9 @@ func (s *Server) enrichConnectors(ctx context.Context, v Selection) map[string]s
 			continue
 		}
 		e := s.connectorExecutionBound(ctx, id, c)
+		if e == nil {
+			e = validateSiteRecipeConnectorUse(ctx, s.Store.DB, id, v)
+		}
 		var rows []any
 		if e == nil {
 			rows, e = s.connectorRows(ctx, c, v)
@@ -548,12 +560,18 @@ func (s *Server) enrichConnectors(ctx context.Context, v Selection) map[string]s
 func (s *Server) connectorCatalog(ctx context.Context, v syncRequest) ([]CatalogEntry, bool, error) {
 	var id, raw string
 	e := s.Store.DB.QueryRowContext(ctx, "SELECT x.id,x.config_json FROM connector_versions x JOIN connector_active a ON a.version_id=x.id WHERE a.provider_id=? AND json_extract(x.config_json,'$.kind')='CATALOG' ORDER BY x.name LIMIT 1", v.ProviderID).Scan(&id, &raw)
-	if e != nil {
+	if e == sql.ErrNoRows {
 		return nil, false, nil
+	}
+	if e != nil {
+		return nil, true, &providerReadError{Code: "RECIPE_STORAGE_UNAVAILABLE"}
 	}
 	var cfg ConnectorConfig
 	json.Unmarshal([]byte(raw), &cfg)
 	selection := Selection{ProviderID: v.ProviderID, AccountID: v.AccountID, CredentialID: v.CredentialID}
+	if e = validateSiteRecipeConnectorUse(ctx, s.Store.DB, id, selection); e != nil {
+		return nil, true, e
+	}
 	if e = s.connectorExecutionBound(ctx, id, cfg); e != nil {
 		return nil, true, e
 	}

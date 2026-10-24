@@ -450,11 +450,11 @@ func TestQueryComparisonLocalAuthoritySyncPortableAndSchema31Snapshot(t *testing
 	}
 	s.Store.DB.Exec("PRAGMA user_version=31")
 	s = reopenScheduleStore(t, s)
-	assertSQLInt(t, s, 32, "PRAGMA user_version")
+	assertSQLInt(t, s, schemaVersion, "PRAGMA user_version")
 	for _, table := range tables {
 		assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM "+table)
 	}
-	snapshots, e := filepath.Glob(filepath.Join(filepath.Dir(s.Store.path), "upgrade-backups", "schema-31-to-32-*.sqlite"))
+	snapshots, e := filepath.Glob(filepath.Join(filepath.Dir(s.Store.path), "upgrade-backups", fmt.Sprintf("schema-31-to-%d-*.sqlite", schemaVersion)))
 	if e != nil || len(snapshots) != 1 || verifySnapshot(snapshots[0]) != nil {
 		t.Fatal("schema31 upgrade lost consistent snapshot", e)
 	}

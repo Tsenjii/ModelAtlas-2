@@ -1,3 +1,7 @@
+> 015L本機候選進度：具體公開配方與來源別站型／版本證據、正式逐項實測／差異確認／原子整組啟用／持久共用Undo已接正式caller。15個後端race12.896s、含原Connector聚焦37.072s、三個Browser14.652s與15新實圖已檢視；完整Go race466.545s成功、vet與原27發布回歸0.030s成功；完整37 Browser187.592s／458PNG（原443+新增15）成功，自己的九項／全部產物仍待驗。新增真TLS反例與限制詳[vps/SITE_RECIPES.md](../vps/SITE_RECIPES.md)，原全部測試／負載／timeout及完整願望保留。
+
+> 2026-10-25 唯一新片 SITE-RECIPE-015L：015K來源b8c2080b3e0063accdbc5974043825b61c661ce7／treec27298d91ded21d2d28a49ba72616c93b06183b2已由同源九項attempt1及九份實際產物／20實圖驗收所列範圍，精確證據見verification/20261025/reflection-query-baseline.json。完整Go本機511.884s／CI578.042s、36 Browser183.268s／203.252s及443PNG、systemd41.979s與原負載24.552s均保留。main仍cba901d187aa5312cc71f5c2440b23fa04104aee／39536090788兩項SUCCESS，FEATURE FREEZE=OFF。015L先補本機配方執行綁定、逐來源family/version證據、具體草稿／正式驗證／確認及持久回退；自己的新來源全九項與實際產物前候選。公開版本與11附件不變、PR #20仍Draft、不merge／部署，原全部願望與原生／真站實機缺口保留。
+
 > 015K本機聚焦：10個後端函式race12.585s；正式新Browser11.589s、14實圖已檢視；完整36 Browser183.268s／443圖、vet及27發布回歸0.031s成功。完整Go與自己的同SHA九項／全部實際產物前仍候選，詳vps/RESEARCH_QUERY_COMPARISON.md。
 
 > 2026-10-25 接續 REFLECTION-015K：015J來源 b3e27ba04f533e255390124a736e893129e77093／tree0355f4db780559ec7bfa14a785a77e0d3f601b88 已由同源九項及九份實際產物驗收所列範圍，精確證據保存在 Draft PR #20。main cba901d187aa5312cc71f5c2440b23fa04104aee／39536090788 build119016886469、device119016884592本輪重查SUCCESS，FEATURE FREEZE=OFF。目前唯一候選015K：本機公開證據生成具體查詢、精確語言／地區／頁數、明確預覽及有界成對實測、成本與Unknown、多輪評估／試用／監測／持久Undo。新來源自己的全部九項及實際產物前不接受、不接下一片。公開0.8.5-preview.1／發布請求／tag／11附件不變、不merge／部署；完整擷取規則／站點family/version／同步／原生與真站實機缺口保留。

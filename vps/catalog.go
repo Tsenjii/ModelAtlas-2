@@ -550,6 +550,9 @@ func (s *Server) endpointAuth(ctx context.Context, provider, account, credential
 	}
 	p.CredentialStamp = credentialMaterialStamp(enc, fields)
 	cfg := s.config(ctx, p)
+	if cfg.RecipeProblem != "" {
+		return Provider{}, "", &providerReadError{Code: cfg.RecipeProblem}
+	}
 	p.AuthMode = cfg.AuthMode
 	if p.AuthMode == "NONE" {
 		return p, "", nil

@@ -89,6 +89,9 @@ func (s *Server) getStructured(ctx context.Context, p Provider, c ProviderConfig
 	} else if err := s.chargeNetwork(ctx, false); err != nil {
 		return nil, 0, err
 	}
+	if meter, ok := ctx.Value(connectorDiscoveryMeterKey{}).(*int); ok {
+		*meter++
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		code := "UPSTREAM_NETWORK"

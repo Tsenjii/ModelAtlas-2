@@ -35,6 +35,10 @@ func writeProviderProblem(w http.ResponseWriter, err error, operation string) {
 	}
 	status := http.StatusBadGateway
 	switch problem.Code {
+	case "RECIPE_STORAGE_UNAVAILABLE":
+		status = http.StatusServiceUnavailable
+	case "RECIPE_REVIEW_REQUIRED":
+		status = http.StatusConflict
 	case "CREDENTIAL_ROLE", "CREDENTIAL_ORIGIN", "UNSUPPORTED_PRIVATE_VERSION", "INVALID_WINDOW", "MODEL_REQUIRED":
 		status = http.StatusUnprocessableEntity
 	case "PROVIDER_NOT_FOUND":

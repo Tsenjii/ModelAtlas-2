@@ -266,7 +266,9 @@ func (s *Server) listReflections(w http.ResponseWriter, r *http.Request) {
 
 func activeVersion(ctx context.Context, q queryRows, family, kind, subject string) string {
 	var id string
-	if family == "KNOWLEDGE" {
+	if family == "RECIPE" {
+		q.QueryRowContext(ctx, "SELECT v.id FROM recipe_active a JOIN recipe_versions v ON v.provider_id=a.provider_id AND v.version=a.version WHERE a.provider_id=?", kind).Scan(&id)
+	} else if family == "KNOWLEDGE" {
 		q.QueryRowContext(ctx, "SELECT version_id FROM knowledge_active WHERE kind=? AND subject=?", kind, subject).Scan(&id)
 	} else if family == "AUTHENTICITY" {
 		q.QueryRowContext(ctx, "SELECT version_id FROM authenticity_reference_active WHERE target_scope=?", kind).Scan(&id)
@@ -276,6 +278,18 @@ func activeVersion(ctx context.Context, q queryRows, family, kind, subject strin
 	return id
 }
 func setActiveVersion(ctx context.Context, tx *sql.Tx, family, kind, subject, id string) error {
+	if family == "RECIPE" {
+		if id == "" {
+			_, e := tx.ExecContext(ctx, "DELETE FROM recipe_active WHERE provider_id=?", kind)
+			return e
+		}
+		var version int
+		if e := tx.QueryRowContext(ctx, "SELECT version FROM recipe_versions WHERE provider_id=? AND id=?", kind, id).Scan(&version); e != nil {
+			return e
+		}
+		_, e := tx.ExecContext(ctx, "INSERT INTO recipe_active VALUES(?,?) ON CONFLICT(provider_id) DO UPDATE SET version=excluded.version", kind, version)
+		return e
+	}
 	if family == "AUTHENTICITY" {
 		if id == "" {
 			_, e := tx.ExecContext(ctx, "DELETE FROM authenticity_reference_active WHERE target_scope=?", kind)

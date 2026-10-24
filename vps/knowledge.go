@@ -346,6 +346,12 @@ func (s *Server) undoVersion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "refuse stale version Undo", 409)
 		return
 	}
+	if family == "RECIPE" {
+		if e = undoSiteRecipeConnectors(r.Context(), tx, v.ID); e != nil {
+			http.Error(w, e.Error(), 409)
+			return
+		}
+	}
 	if e = setActiveVersion(r.Context(), tx, family, kind, subject, before); e != nil {
 		http.Error(w, "database error", 500)
 		return

@@ -160,6 +160,9 @@ func (s *Server) authenticityScope(ctx context.Context, q queryRows, v Selection
 		return out, errors.New("suite supports conversation operations only")
 	}
 	cfg := providerConfiguration(ctx, q, p)
+	if cfg.RecipeProblem != "" {
+		return out, &providerReadError{Code: cfg.RecipeProblem}
+	}
 	out.ConfigHash = connectorHash(cfg)
 	endpoint, err := requestEndpointFrom(ctx, q, p, cfg, v.Endpoint, v.ModelID)
 	if err != nil {

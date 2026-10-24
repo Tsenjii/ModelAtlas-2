@@ -32,6 +32,9 @@ func (s *Server) requestEndpoint(ctx context.Context, p Provider, c ProviderConf
 	return requestEndpointFrom(ctx, s.Store.DB, p, c, id, model)
 }
 func requestEndpointFrom(ctx context.Context, q queryRows, p Provider, c ProviderConfig, id, model string) (string, error) {
+	if c.RecipeProblem != "" {
+		return "", &providerReadError{Code: c.RecipeProblem}
+	}
 	var raw string
 	err := q.QueryRowContext(ctx, "SELECT url FROM endpoint_bindings WHERE provider_id=? AND endpoint_id=?", p.ID, id).Scan(&raw)
 	if err == nil {

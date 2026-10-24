@@ -11,6 +11,7 @@ import (
 )
 
 type ProviderConfig struct {
+	RecipeProblem   string            `json:"-"`
 	Adapter         string            `json:"adapter"`
 	AuthMode        string            `json:"auth_mode"`
 	AuthHeader      string            `json:"auth_header,omitempty"`
@@ -94,17 +95,15 @@ func providerConfiguration(ctx context.Context, q queryRows, p Provider) Provide
 	if c.AuthMode == "" {
 		c.AuthMode = p.AuthMode
 	}
-	var recipeRaw string
-	if q.QueryRowContext(ctx, "SELECT v.recipe_json FROM recipe_versions v JOIN recipe_active a ON a.provider_id=v.provider_id AND a.version=v.version WHERE v.provider_id=?", p.ID).Scan(&recipeRaw) == nil {
-		var recipe map[string]any
-		if json.Unmarshal([]byte(recipeRaw), &recipe) == nil {
-			if c.Endpoints == nil {
-				c.Endpoints = map[string]string{}
-			}
-			for k, kind := range map[string]string{"catalog_path": "MODELS", "chat_path": "CHAT_COMPLETIONS"} {
-				if path, ok := recipe[k].(string); ok && safePath(path) {
-					c.Endpoints[kind] = path
-				}
+	recipe, problem := localRecipeSettings(ctx, q, p)
+	c.RecipeProblem = problem
+	if problem == "" && recipe != nil {
+		if c.Endpoints == nil {
+			c.Endpoints = map[string]string{}
+		}
+		for k, kind := range map[string]string{"catalog_path": "MODELS", "chat_path": "CHAT_COMPLETIONS"} {
+			if path, ok := recipe[k].(string); ok && safePath(path) {
+				c.Endpoints[kind] = path
 			}
 		}
 	}
@@ -169,6 +168,9 @@ func (s *Server) provider(ctx context.Context, id string) (Provider, error) {
 	return p, err
 }
 func endpointURL(p Provider, c ProviderConfig, kind, model string) (string, error) {
+	if c.RecipeProblem != "" {
+		return "", &providerReadError{Code: c.RecipeProblem}
+	}
 	if !validateHTTPS(p.BaseURL) {
 		return "", errors.New("invalid base URL")
 	}
