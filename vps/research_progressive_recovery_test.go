@@ -11,7 +11,7 @@ import (
 )
 
 func TestResearchProgressiveLocalAuthoritySyncPortableAndSchema30Upgrade(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, true)
 	s := f.Server
 	run := researchRunID(t, s, f.options())
@@ -70,7 +70,7 @@ func TestResearchProgressiveLocalAuthoritySyncPortableAndSchema30Upgrade(t *test
 }
 
 func TestResearchProgressiveCancelRetainsAdmissionAndUngradedObservation(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, true)
 	s := f.Server
 	f.BlockSemantic.Store(true)
@@ -105,7 +105,7 @@ func TestResearchProgressiveCancelRetainsAdmissionAndUngradedObservation(t *test
 }
 
 func TestResearchProgressiveInterruptedPrivateDepthNeverAutomaticallyReplays(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, true)
 	s := f.Server
 	requireCode(t, req(t, s, "POST", "/api/v1/research/schedules", map[string]any{"id": "progressive", "name": "Progressive interruption", "interval_minutes": 15, "daily_http_limit": 20, "options": f.options(), "private": schedulePrivatePolicy{DailyInferences: 5}}), 200)

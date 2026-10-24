@@ -25,7 +25,7 @@ func probePlanFingerprint(t *testing.T, s *Server, v ResearchOptions) string {
 }
 
 func TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	for _, change := range []string{"connection", "allocation"} {
 		t.Run(change, func(t *testing.T) {
 			f := newResearchProbeFixture(t, true)
@@ -66,7 +66,7 @@ func TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation(t *test
 }
 
 func TestResearchProgressiveTaskPayloadCannotAuthorizeDeeperWork(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, true)
 	s, v := f.Server, f.options()
 	v.DeeperSelections = nil
@@ -84,7 +84,7 @@ func TestResearchProgressiveTaskPayloadCannotAuthorizeDeeperWork(t *testing.T) {
 }
 
 func TestResearchProgressiveTokenPrecisionAndPagedImmutableHistory(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, true)
 	f.InputTokens.Store(9007199254740993)
 	s := f.Server
@@ -147,7 +147,7 @@ func TestResearchProgressiveTokenPrecisionAndPagedImmutableHistory(t *testing.T)
 }
 
 func TestResearchProgressiveCandidateRevalidationUsesOnlyFreshLocalReceipt(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	var calls atomic.Int32
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)

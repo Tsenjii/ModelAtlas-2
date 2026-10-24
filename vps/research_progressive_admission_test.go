@@ -8,7 +8,7 @@ import (
 )
 
 func TestResearchProgressiveAdmissionRechecksScopeInsideTransaction(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	s := f.Server
 	s.runPending(context.Background())
@@ -34,7 +34,7 @@ func TestResearchProgressiveAdmissionRechecksScopeInsideTransaction(t *testing.T
 }
 
 func TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	for _, metric := range []string{"OUTPUT_ENVELOPE", "USD", "DB"} {
 		t.Run(metric, func(t *testing.T) {
 			f := newResearchProbeFixture(t, true)
@@ -78,7 +78,7 @@ func TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic(t
 }
 
 func TestResearchProgressiveOversizeCompletePlanIsRejectedBeforePartialEnqueue(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, false)
 	s := f.Server
 	v := ResearchOptions{Budget: 200, ProbeBudget: 10, MinimalInference: true, ObservationMinutes: 15}

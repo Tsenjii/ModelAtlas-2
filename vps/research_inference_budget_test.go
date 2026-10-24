@@ -65,6 +65,7 @@ func inferBudgetAttempt(t *testing.T, s *Server, ctx context.Context, scope Sele
 }
 
 func TestResearchInferenceDailyBudgetFormalSettingsEntry(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 5, 3)
 	w := req(t, f.Server, "GET", "/api/v1/research/inference-budget", nil)
 	requireCode(t, w, 200)
@@ -103,6 +104,7 @@ func TestResearchInferenceDailyBudgetFormalSettingsEntry(t *testing.T) {
 }
 
 func TestResearchInferenceDailyBudgetStableScopeRotationAndUTCDay(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 20, 10)
 	s := f.Server
 	instant := time.Date(2026, 10, 23, 23, 59, 59, 0, time.UTC)
@@ -188,6 +190,7 @@ func TestResearchInferenceDailyBudgetStableScopeRotationAndUTCDay(t *testing.T) 
 }
 
 func TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, bound := range []string{"ENGINE", "CREDENTIAL"} {
 		t.Run(bound, func(t *testing.T) {
 			f := newResearchAdmissionFixture(t, 20, 10)
@@ -271,6 +274,7 @@ func TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns(t *testing
 }
 
 func TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, table := range []string{"research_inference_admissions", "messages", "telemetry"} {
 		t.Run(table, func(t *testing.T) {
 			f := newResearchAdmissionFixture(t, 3, 2)
@@ -344,6 +348,7 @@ func TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection(t *testin
 }
 
 func TestResearchInferenceDailyBudgetWorkerWaitExplicitResumeAndTrafficReuse(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 8, 2)
 	s := f.Server
 	setInferencePolicyForTest(t, s, 0, 0)
@@ -394,6 +399,7 @@ func TestResearchInferenceDailyBudgetWorkerWaitExplicitResumeAndTrafficReuse(t *
 }
 
 func TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, mode := range []int32{1, 2} {
 		t.Run(fmt.Sprint(mode), func(t *testing.T) {
 			f := newResearchAdmissionFixture(t, 5, 3)
@@ -435,6 +441,7 @@ func TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart(t *testing
 }
 
 func TestResearchInferenceDailyBudgetLocalOnlySyncBackupAndMigration(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 5, 3)
 	hub := f.Server
 	setInferencePolicyForTest(t, hub, 1, 1)
@@ -495,6 +502,7 @@ func TestResearchInferenceDailyBudgetLocalOnlySyncBackupAndMigration(t *testing.
 }
 
 func TestResearchInferenceDailyBudgetPaginationAndImmutablePolicyHistory(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 5, 3)
 	s := f.Server
 	for i := 0; i < 101; i++ {

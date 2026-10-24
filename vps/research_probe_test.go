@@ -123,7 +123,7 @@ func probeReportsForTest(t *testing.T, s *Server, run string) []researchProbeRep
 }
 
 func TestResearchProgressiveRealProbesAndZeroHTTPReuse(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, true)
 	s := f.Server
 	run := researchRunID(t, s, f.options())
@@ -163,7 +163,7 @@ func TestResearchProgressiveRealProbesAndZeroHTTPReuse(t *testing.T) {
 }
 
 func TestResearchProgressiveWrongAnswerIsEvidenceWithoutAutomaticRetry(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, false)
 	f.BadAnswer.Store(true)
 	s := f.Server
@@ -194,7 +194,7 @@ func TestResearchProgressiveWrongAnswerIsEvidenceWithoutAutomaticRetry(t *testin
 }
 
 func TestResearchProgressiveDailyStopAndExplicitRecovery(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, true)
 	s := f.Server
 	setInferencePolicyForTest(t, s, 2, 2)
@@ -220,7 +220,7 @@ func TestResearchProgressiveDailyStopAndExplicitRecovery(t *testing.T) {
 }
 
 func TestResearchProgressivePrivateRoundCapCarriesUnadmittedProbe(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchProbeFixture(t, false)
 	s := f.Server
 	clock := time.Now().UTC()

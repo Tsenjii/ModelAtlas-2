@@ -2,6 +2,8 @@
 
 ## 2026-10-24 逐級研究與候選重驗（PROGRESSIVE-RESEARCH-015J）
 
+同片4bbc08d候選本機完整Go478.231s／35 Browser187.629s、429圖與CI Browser185.644s成功，但CI120882826820在原10分鐘到期600.026s失敗，其餘8項成功也不接受。保留原stack／來源／產物，未進下一片。現在同一有界兩路harness涵蓋原38個獨立預算測試與18新增逐級測試、另加政策／clock／重啟／真TLS隔離檢查，57流程race78.610s成功；四份原測試檔去掉唯一新增parallel呼叫後逐byte完全一致，全部原migration／HTTP／負載／斷言／timeout保留。修後新來源另跑完整本機與自己的九項／全部實際產物。
+
 - 最新使用者明確要求「下一版一定要穩定能使用且完成 一定要」，依D-017守住完整功能與穩定發布門檻；不是單片全綠就發布。D-016維持片內驗收後連續推進，不等待再說繼續。
 - 前片015I所列範圍已驗收：來源970d566916cf4312d2d0573cd3efd2db1e8a137d／tree3e13414cdac6b46131f3ab940309e4ffe644f89f，VPS40079819262四項、Mac40079819268三項、Android40079819276兩項attempt1 SUCCESS。九份實際產物／成功producer原始時間窗／hash／報告與17實圖已核對；精確證據見verification/20261024/private-schedule-baseline.json與Draft PR #20。Go本機435.511s／CI568.281s、34 Browser178.063s／177.087s及415圖、systemd41.827s與原負載24.685s全部保留。原e6候選失敗不抹除。
 - 開工重新核對main仍cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 attempt2 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。

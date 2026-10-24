@@ -67,6 +67,7 @@ func expectPoolLimit(t *testing.T, s *Server, ctx context.Context, scope Selecti
 }
 
 func TestResearchQuotaPoolFormalEntry(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	w := req(t, f.Server, "GET", "/api/v1/research/quota-pools", nil)
 	requireCode(t, w, 200)
@@ -80,6 +81,7 @@ func TestResearchQuotaPoolFormalEntry(t *testing.T) {
 }
 
 func TestResearchQuotaPoolAccountAcrossKeysRotationRestartAndDay(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 20, 10)
 	s := f.Server
 	instant := time.Date(2026, 10, 24, 23, 59, 59, 0, time.UTC)
@@ -126,6 +128,7 @@ func TestResearchQuotaPoolAccountAcrossKeysRotationRestartAndDay(t *testing.T) {
 }
 
 func TestResearchQuotaPoolMembershipRetainsSpendAndCountsBeforeAttachment(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 20, 10)
 	s := f.Server
 	second := addPoolKey(t, s, f.Scope, "a", "second")
@@ -168,6 +171,7 @@ func TestResearchQuotaPoolMembershipRetainsSpendAndCountsBeforeAttachment(t *tes
 }
 
 func TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, metric := range []string{"TOKENS", "USD"} {
 		t.Run(metric, func(t *testing.T) {
 			f := newResearchAdmissionFixture(t, 10, 5)
@@ -204,6 +208,7 @@ func TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservatio
 }
 
 func TestResearchQuotaPoolExactSettlementAcrossKeys(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	s := testServer(t)
 	scope := seed(t, s, "https://openrouter.ai/v1")
 	sessionForTest(t, s, scope)
@@ -243,6 +248,7 @@ func TestResearchQuotaPoolExactSettlementAcrossKeys(t *testing.T) {
 }
 
 func TestResearchQuotaPoolConcurrentInFlightKeys(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 20, 10)
 	s := f.Server
 	setInferencePolicyForTest(t, s, 100, 100)
@@ -315,6 +321,7 @@ func sessionForPoolConcurrency(t *testing.T, s *Server, scope Selection) string 
 }
 
 func TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	s := f.Server
 	p := accountPoolForTest()
@@ -377,6 +384,7 @@ func TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation(t *testing.T) {
 }
 
 func TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	t.Run("custom scopes", func(t *testing.T) {
 		f := newResearchAdmissionFixture(t, 20, 10)
 		s := f.Server
@@ -441,6 +449,7 @@ func TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope(t *testing.
 }
 
 func TestResearchQuotaPoolLocalAuthorityMigrationAndPagedHistory(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	s := f.Server
 	p := accountPoolForTest()

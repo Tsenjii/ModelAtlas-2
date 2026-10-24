@@ -42,6 +42,7 @@ func enablePrivateSchedule(t *testing.T, s *Server, id string) {
 }
 
 func TestResearchPrivateScheduleFormalEntry(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	requireCode(t, req(t, f.Server, "POST", "/api/v1/research/schedules", map[string]any{
 		"id": "private-schedule", "name": "Explicit model research", "interval_minutes": 15, "daily_http_limit": 10,
@@ -51,6 +52,7 @@ func TestResearchPrivateScheduleFormalEntry(t *testing.T) {
 }
 
 func TestResearchPrivateScheduleExplicitApprovalAndDailyStop(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := privateScheduleFixture(t, schedulePrivatePolicy{DailyInferences: 1}, true)
 	s := f.Server
 	s.workerTick(context.Background())
@@ -82,6 +84,7 @@ func TestResearchPrivateScheduleExplicitApprovalAndDailyStop(t *testing.T) {
 }
 
 func TestResearchPrivateScheduleReviewRejectsRotationRaceAndPreservesScope(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := privateScheduleFixture(t, schedulePrivatePolicy{DailyInferences: 5}, false)
 	s := f.Server
 	w := req(t, s, "GET", "/api/v1/research/schedules/review?id=private", nil)
@@ -108,6 +111,7 @@ func TestResearchPrivateScheduleReviewRejectsRotationRaceAndPreservesScope(t *te
 }
 
 func TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, automatic := range []bool{false, true} {
 		t.Run(fmt.Sprint(automatic), func(t *testing.T) {
 			f := privateScheduleFixture(t, schedulePrivatePolicy{DailyInferences: 1, ResumeAfterReset: automatic}, true)
@@ -143,6 +147,7 @@ func TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn(t *testing.T) {
 }
 
 func TestResearchPrivateScheduleInterruptedInferenceNeverAutoReplays(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := privateScheduleFixture(t, schedulePrivatePolicy{DailyInferences: 5}, false)
 	s := f.Server
 	enablePrivateSchedule(t, s, "private")
@@ -169,6 +174,7 @@ func TestResearchPrivateScheduleInterruptedInferenceNeverAutoReplays(t *testing.
 }
 
 func TestResearchPrivateScheduleAtomicFailuresAndResourceCaps(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, metric := range []string{"TOKENS", "USD", "DB"} {
 		t.Run(metric, func(t *testing.T) {
 			policy := schedulePrivatePolicy{DailyInferences: 10}
@@ -209,6 +215,7 @@ func TestResearchPrivateScheduleAtomicFailuresAndResourceCaps(t *testing.T) {
 }
 
 func TestResearchPrivateScheduleLocalAuthorityAndMigration(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := privateScheduleFixture(t, schedulePrivatePolicy{DailyInferences: 5}, false)
 	s := f.Server
 	enablePrivateSchedule(t, s, "private")
@@ -256,6 +263,7 @@ func TestResearchPrivateScheduleLocalAuthorityAndMigration(t *testing.T) {
 }
 
 func TestResearchPrivateScheduleDisableCancelsFlightAndKeepsAdmission(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := privateScheduleFixture(t, schedulePrivatePolicy{DailyInferences: 5}, false)
 	s := f.Server
 	enablePrivateSchedule(t, s, "private")
@@ -300,6 +308,7 @@ func TestResearchPrivateScheduleDisableCancelsFlightAndKeepsAdmission(t *testing
 }
 
 func TestResearchPrivateScheduleApprovalHistoryIsPagedAndAtomic(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := privateScheduleFixture(t, schedulePrivatePolicy{DailyInferences: 5}, false)
 	s := f.Server
 	if _, err := s.Store.DB.Exec("CREATE TRIGGER private_approval_fault BEFORE INSERT ON research_schedule_private_approvals BEGIN SELECT RAISE(ABORT,'injected approval failure'); END"); err != nil {
@@ -340,6 +349,7 @@ func TestResearchPrivateScheduleApprovalHistoryIsPagedAndAtomic(t *testing.T) {
 }
 
 func TestResearchPrivateScheduleSharesOneUTCAdmissionDay(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := privateScheduleFixture(t, schedulePrivatePolicy{DailyInferences: 1}, false)
 	s := f.Server
 	before := time.Date(2026, 10, 24, 23, 59, 59, 999000000, time.UTC)
@@ -372,6 +382,7 @@ func TestResearchPrivateScheduleSharesOneUTCAdmissionDay(t *testing.T) {
 }
 
 func TestResearchPrivateScheduleCannotBorrowAccountPATOrAnotherKey(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	var pats, accounts, inferences atomic.Int32
 	up := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") == "Bearer account-pat-secret" {

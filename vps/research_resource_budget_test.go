@@ -83,6 +83,7 @@ func setResourceCredentialForTest(t *testing.T, s *Server, scope Selection, toke
 }
 
 func TestResearchResourceBudgetFormalSettingsAndUnknownReservation(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	w := req(t, f.Server, "GET", "/api/v1/research/resource-budget", nil)
 	requireCode(t, w, 200)
@@ -130,6 +131,7 @@ func TestResearchResourceBudgetFormalSettingsAndUnknownReservation(t *testing.T)
 }
 
 func TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, tc := range []struct{ name, events, outcome, tokens, usd string }{
 		{"invalid-cost-sticky", `data: {"choices":[{"delta":{"content":"Observed"}}],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3,"cost":-1}}
 
@@ -181,6 +183,7 @@ data: [DONE]
 }
 
 func TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, tc := range []struct{ name, op, body, tokens string }{
 		{"chat-complete", "CHAT_COMPLETIONS", `{"choices":[{"message":{"content":"Observed"}}],"usage":{"prompt_tokens":4,"completion_tokens":3,"completion_tokens_details":{"reasoning_tokens":2},"cost":0}}`, "7"},
 		{"chat-partial", "CHAT_COMPLETIONS", `{"choices":[{"message":{"content":"Observed"}}],"usage":{"prompt_tokens":4,"cost":0}}`, ""},
@@ -238,6 +241,7 @@ func TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete(t *testing
 }
 
 func TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 5, 3)
 	v := resourceBudgetForTest(t, f.Server)
 	base := map[string]any{"action": "POLICY", "revision": v.Revision, "daily_tokens": nil, "daily_usd": nil, "credential_tokens": nil, "credential_usd": nil, "reserve_tokens": 32, "reserve_usd": "0.01"}
@@ -291,6 +295,7 @@ func TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites(t *testing
 }
 
 func TestResearchResourceBudgetUsesSameUTCAdmissionDayAtMidnight(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 5, 3)
 	before := time.Date(2026, 10, 23, 23, 59, 59, 999000000, time.UTC)
 	after := before.Add(time.Millisecond)
@@ -321,6 +326,7 @@ func TestResearchResourceBudgetUsesSameUTCAdmissionDayAtMidnight(t *testing.T) {
 }
 
 func TestResearchResourceBudgetExactReportedSettlementZeroOverrunAndRotation(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	s := testServer(t)
 	scope := seed(t, s, "https://openrouter.ai/v1")
 	_ = sessionForTest(t, s, scope)
@@ -427,6 +433,7 @@ func TestResearchResourceBudgetExactReportedSettlementZeroOverrunAndRotation(t *
 }
 
 func TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, table := range []string{"research_resource_admissions", "messages", "telemetry"} {
 		t.Run(table, func(t *testing.T) {
 			f := newResearchAdmissionFixture(t, 5, 3)
@@ -499,6 +506,7 @@ func TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements(t *testing
 }
 
 func TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, bound := range []string{"ENGINE", "CREDENTIAL"} {
 		t.Run(bound, func(t *testing.T) {
 			f := newResearchAdmissionFixture(t, 20, 10)
@@ -588,6 +596,7 @@ func TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending(t *testin
 }
 
 func TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	for _, mode := range []int32{1, 2} {
 		t.Run(fmt.Sprint(mode), func(t *testing.T) {
 			f := newResearchAdmissionFixture(t, 10, 5)
@@ -675,6 +684,7 @@ func TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume(t *tes
 }
 
 func TestResearchResourceBudgetLocalAuthorityMigrationAndPagedHistory(t *testing.T) {
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	hub := f.Server
 	setResourcePolicyForTest(t, hub, map[string]any{"daily_tokens": 32, "reserve_tokens": 32})

@@ -8,21 +8,10 @@ import (
 	"testing"
 )
 
-var progressiveTestSlots = make(chan struct{}, 2)
-
-// Only these new tests run together, with distinct stores, servers, clocks and
-// TLS fixtures. Keep every scenario and the original full-suite time limit.
-func parallelProgressiveTest(t *testing.T) {
-	t.Helper()
-	t.Parallel()
-	progressiveTestSlots <- struct{}{}
-	t.Cleanup(func() { <-progressiveTestSlots })
-}
-
 // A successful request in one provider project must not become a successful
 // observation of another project after the formal configuration is changed.
 func TestResearchProgressiveDoesNotReuseChangedRequestConfiguration(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	s := f.Server
 	s.runPending(context.Background())
@@ -69,7 +58,7 @@ func TestResearchProgressiveDoesNotReuseChangedRequestConfiguration(t *testing.T
 }
 
 func TestResearchProgressivePlannedConnectionChangeStopsBeforeHTTP(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	s := f.Server
 	s.runPending(context.Background())
@@ -93,7 +82,7 @@ func TestResearchProgressivePlannedConnectionChangeStopsBeforeHTTP(t *testing.T)
 }
 
 func TestResearchProgressiveForeignMetadataIsNotLocalTraffic(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	s := f.Server
 	s.runPending(context.Background())
@@ -112,7 +101,7 @@ func TestResearchProgressiveForeignMetadataIsNotLocalTraffic(t *testing.T) {
 }
 
 func TestResearchProgressiveObservationReadFailureDoesNotSpend(t *testing.T) {
-	parallelProgressiveTest(t)
+	parallelResearchBudgetTest(t)
 	f := newResearchAdmissionFixture(t, 10, 5)
 	s := f.Server
 	s.runPending(context.Background())
