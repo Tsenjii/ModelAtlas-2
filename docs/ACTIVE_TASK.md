@@ -1,5 +1,13 @@
 # ModelAtlas Public — ACTIVE TASK
 
+## 2026-10-24 研究共用額度池（RESEARCH-POOL-015H）
+
+- 015G所列範圍已驗收來源abcffa0a907484bb36454b1d73857e8c2b892014／tree24687c6cea24025151ed2d702212f19507d90846；本輪重新查三個workflow的九項job仍SUCCESS，既有產物驗收沿用Draft PR #20持久證據，精確重新讀取結果見verification/20261024/research-resource-baseline.json。以下015G候選敘述保留歷史。
+- 開工main仍cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 attempt2 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。
+- 當前唯一片015H：正式研究共用池的Provider／Account／明確Project與Custom成員、每日次數／token／USD聯合核准、既有用量歸屬／移除不退款、同transaction原子入場、CAS／last-good草稿與明確恢復。schema29四表只屬本機，不借sync／portable移植授權。詳vps/RESEARCH_QUOTA_POOLS.md。
+- 當前候選：本機與自己的同來源九項、實際產物及實圖全部核對前不接受，不接下一片；保留原全部tests／負載／timeout、失敗與原生功能。D-015維持公開0.8.5-preview.1及release/request.json／version.properties／tag／11附件不變；PR #20維持Draft，不merge、不部署。
+- 私人排程明確opt-in、逐級probe／重驗、完整站點辨識／Reflection、語意真實性、大資料同步、Mac／Android專用原生流程與真站／目標VPS／實體裝置仍待補，完整願望與下一版仍PARTIAL。
+
 ## 2026-10-23 研究 token／USD 預留與回報結算（RESEARCH-RESOURCE-015G）
 
 - 前片015F所列範圍已驗收：來源1d4fc7f223d2411086354655d4126d00269785f8／tree9ebb56024778df1a51e91cbc2821b6b76c35ea89，VPS39938829132四項、Android39938829135兩項、Mac39938829109三項attempt1 SUCCESS；九份實際產物及17張實圖已核對，精確證據見verification/20261023/research-daily-baseline.json與Draft PR #20。完整Go race本機428.416s／CI303.530s、33 Browser298.802s／294.865s與389圖、真systemd40.691s及原負載15.170s成功；Android579／976（5原skip）、Mac兩架構各82／90圖保留。以下015F候選敘述保留歷史。

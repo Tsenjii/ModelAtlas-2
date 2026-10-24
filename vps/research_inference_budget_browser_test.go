@@ -87,5 +87,8 @@ func TestBrowserResearchInferenceDailyBudgetWorkflow(t *testing.T) {
 	assertSQLInt(t, s, 2, "SELECT COUNT(*) FROM my_models")
 	assertSQLInt(t, s, 2, "SELECT COUNT(*) FROM research_resource_admissions WHERE reserve_tokens=32 AND reserve_usd='0.01'")
 	assertSQLInt(t, s, 2, "SELECT COUNT(*) FROM research_resource_settlements WHERE reported_tokens IS NULL AND reported_usd IS NULL AND accounted_tokens='32' AND accounted_usd='0.01' AND outcome='SUCCESS'")
+	assertSQLInt(t, s, 2, "SELECT COUNT(*) FROM research_quota_pool_admissions WHERE basis='ADMISSION'")
+	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM research_quota_pool_admissions WHERE basis='EXISTING_USAGE'")
+	assertSQLInt(t, s, 2, "SELECT COUNT(*) FROM research_quota_pools")
 	t.Log(string(out))
 }

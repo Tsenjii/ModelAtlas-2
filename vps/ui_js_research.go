@@ -8,6 +8,7 @@ async function loadResearch(){
  loadResearchSchedules();
  loadResearchInferenceBudget();
  if($("research-resource-budget").open)loadResearchResourceBudget();
+ if($("research-quota-pools").open)loadResearchQuotaPools();
  if(researchLoading)return;researchLoading=true;try{const [dashboard,aa]=await Promise.all([api("/research/dashboard"),api("/research/aa")]);const {candidates,sources,runs,funnel,search_usage}=dashboard;if(search_usage){const u=search_usage;$("research-search-usage").textContent="今日 Brave 用量：目前 Key 版本 "+(u.credential_revision_used===null?"未設定":u.credential_revision_used)+" 次 · 所有 Key 共 "+u.shared_used+" / "+u.local_daily_limit+" 次本機上限 · "+new Date(u.reset_at).toLocaleString()+" 重設。站方剩餘額度與費用尚未量測。";}[researchCandidates,researchSources,researchRuns]=[candidates,sources,runs];researchStamp=researchRunStamp(runs);renderResearch(funnel);renderAA(aa);}catch(e){notice(e.message,true);}finally{researchLoading=false;}
 }
 function renderResearch(funnel){
@@ -91,6 +92,7 @@ function bindResearch(){
  bindResearchSchedules();
  bindResearchInferenceBudget();
  bindResearchResourceBudget();
+ bindResearchQuotaPools();
  $("research-workspace").addEventListener("toggle",()=>{if($("research-workspace").open)loadResearch();});$("research-refresh").addEventListener("click",loadResearch);$("research-filter").addEventListener("change",()=>{researchLimit=100;renderResearchCandidates();});$("research-more").addEventListener("click",()=>{researchLimit+=100;renderResearchCandidates();});
  $("research-source-form").addEventListener("submit",async e=>{e.preventDefault();const f=e.target,v=data(f);try{await submit("/research/sources",{id:crypto.randomUUID(),name:v.name,url:v.url,kind:v.kind,language:v.language,enabled:true,config:{provider_id:v.provider_id,official:f.elements.official.checked,items_pointer:v.items_pointer,fields:v.fields?JSON.parse(v.fields):{}}});await loadResearch();notice("研究來源已保存");}catch(e){notice(e.message,true);}});
  $("research-run-form").addEventListener("submit",async e=>{e.preventDefault();const f=e.target;try{await submit("/research/start",{source_ids:[...f.elements.source_ids.selectedOptions].map(n=>n.value),selections:f.elements.selection.value?[JSON.parse(f.elements.selection.value)]:[],minimal_inference:f.elements.minimal_inference.checked,search:f.elements.search.checked,search_pages:Number(f.elements.search_pages.value),search_country:f.elements.search_country.value,lmspeed_seeds:f.elements.lmspeed_seeds.checked,refresh_aa:f.elements.refresh_aa.checked,budget:Number(f.elements.budget.value),probe_budget:Number(f.elements.probe_budget.value)});await loadResearch();notice("研究已排入佇列");}catch(e){notice(e.message,true);}});

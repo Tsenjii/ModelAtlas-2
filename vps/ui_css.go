@@ -53,4 +53,4 @@ dialog{max-width:760px;width:calc(100% - 32px);max-height:88dvh;padding:24px;bor
 #catalog .model-id{overflow-wrap:anywhere}
 #catalog-manual{margin-top:20px}
 .research-origin-wait-panel,.research-aa-panel{min-width:0;overflow-wrap:anywhere}
-` + modelPickerCSS + macAlignmentCSS + macParityCSS + mobileAlignmentCSS + modelViewsCSS + systemStatusCSS + researchScheduleCSS + researchInferenceBudgetCSS + workspaceRecoveryCSS + conversationCreationCSS
+` + modelPickerCSS + macAlignmentCSS + macParityCSS + mobileAlignmentCSS + modelViewsCSS + systemStatusCSS + researchScheduleCSS + researchInferenceBudgetCSS + workspaceRecoveryCSS + conversationCreationCSS + researchQuotaPoolCSS

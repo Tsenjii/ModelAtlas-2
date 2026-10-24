@@ -1,3 +1,5 @@
+> 2026-10-24：015G已由abcffa0同來源九項及PR #20持久證據驗所列範圍；本輪重查九項仍SUCCESS。唯一新片015H共用研究額度池，正式VPS設定／原子用量與恢復；Mac內建同源引擎取得後端，Mac／Android專用原生呈現仍待補。完整本機與自己的九項／產物前候選；公開版本不變，原功能與願望保留。詳ACTIVE_TASK、RESEARCH_QUOTA_POOLS.md。
+
 # 跨平台優點與持續補齊清單
 
 2026-10-23：015F已由1d4fc7f同來源九項及全部產物驗收，Mac原生重排修正與全部90圖保留。015G候選只增加VPS正式token／USD預留及回報結算；Mac同源Go引擎取得後端，Mac／Android專用原生設定仍待對應，不能用網頁或後端取代原生驗收。公開版本保持不變，詳ACTIVE_TASK與research-daily-baseline.json。

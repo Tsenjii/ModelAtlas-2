@@ -33,6 +33,9 @@ func (s *Server) admitConversation(ctx context.Context, record requestRecord, me
 	if err = s.reserveResearchResources(ctx, tx, record); err != nil {
 		return failure("RESEARCH_BUDGET_EXHAUSTED", 429, err)
 	}
+	if err = s.reserveResearchQuotaPools(ctx, tx, record); err != nil {
+		return failure("RESEARCH_BUDGET_EXHAUSTED", 429, err)
+	}
 	if tools != nil {
 		if err = saveSessionTools(ctx, tx, record.SessionID, tools); err != nil {
 			return failure("HISTORY_SAVE", 500, err)

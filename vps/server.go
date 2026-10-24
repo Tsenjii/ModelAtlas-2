@@ -284,6 +284,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /research/inference-budget", s.setResearchInferenceBudget)
 	api.HandleFunc("GET /research/resource-budget", s.getResearchResourceBudget)
 	api.HandleFunc("POST /research/resource-budget", s.setResearchResourceBudget)
+	api.HandleFunc("GET /research/quota-pools", s.getResearchQuotaPools)
+	api.HandleFunc("POST /research/quota-pools", s.setResearchQuotaPool)
 	api.HandleFunc("GET /research/sources", s.listResearchSources)
 	api.HandleFunc("POST /research/sources", s.saveResearchSource)
 	api.HandleFunc("POST /research/start", s.startResearch)

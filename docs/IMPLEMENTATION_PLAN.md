@@ -1,3 +1,5 @@
+> 2026-10-24：015G已由abcffa0同來源九項及PR #20持久證據驗所列範圍；本輪重查九項仍SUCCESS。唯一新片015H共用研究額度池，正式VPS設定／原子用量與恢復；Mac內建同源引擎取得後端，Mac／Android專用原生呈現仍待補。完整本機與自己的九項／產物前候選；公開版本不變，原功能與願望保留。詳ACTIVE_TASK、RESEARCH_QUOTA_POOLS.md。
+
 > 2026-10-23最新：015F由1d4fc7f同來源九項與九份實際產物／17實圖驗收，精確證據見verification/20261023/research-daily-baseline.json。當前唯一片RESEARCH-RESOURCE-015G，補正式token／USD本機預留、回報結算、未知保留與恢復。完整quota pool／私人排程／其餘願望不減，公開版本不變，新來源自己的九項前候選。
 
 > 2026-10-23最新：015E由ba069a1同來源九項與九份實際產物驗收明列範圍（verification/20261023/research-admission-baseline.json）。當前唯一片RESEARCH-DAILY-015F，補正式每日總／逐憑證推論核准、原子用量與明確恢復；自己的完整九項前候選。Token／USD、共用quota pool、私人排程與完整下一版缺口不減，公開版本不變。

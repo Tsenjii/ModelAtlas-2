@@ -174,7 +174,12 @@ func (u *researchResourceUsage) view() map[string]any {
 // One indexed day's rows; exact arbitrary-precision sums avoid SQLite SUM or
 // browser Number overflow, including hostile but valid int64 usage values.
 func readResourceUsage(ctx context.Context, tx *sql.Tx, day string) (*researchResourceUsage, map[researchInferenceScope]*researchResourceUsage, error) {
-	rows, err := tx.QueryContext(ctx, `SELECT a.provider_id,a.account_id,a.credential_id,r.reserve_tokens,r.reserve_usd,f.reported_tokens,f.reported_usd,f.accounted_tokens,f.accounted_usd,f.outcome FROM research_inference_admissions a JOIN research_resource_admissions r ON r.request_id=a.request_id LEFT JOIN research_resource_settlements f ON f.request_id=r.request_id WHERE a.day=?`, day)
+	return readResourceUsageWhere(ctx, tx, day, "", nil)
+}
+
+// predicate is an internal SQL fragment; all scope values remain parameters.
+func readResourceUsageWhere(ctx context.Context, tx *sql.Tx, day, predicate string, args []any) (*researchResourceUsage, map[researchInferenceScope]*researchResourceUsage, error) {
+	rows, err := tx.QueryContext(ctx, `SELECT a.provider_id,a.account_id,a.credential_id,r.reserve_tokens,r.reserve_usd,f.reported_tokens,f.reported_usd,f.accounted_tokens,f.accounted_usd,f.outcome FROM research_inference_admissions a JOIN research_resource_admissions r ON r.request_id=a.request_id LEFT JOIN research_resource_settlements f ON f.request_id=r.request_id WHERE a.day=?`+predicate, append([]any{day}, args...)...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -247,6 +252,8 @@ func readResourceUsage(ctx context.Context, tx *sql.Tx, day string) (*researchRe
 }
 
 type researchResourceBudgetError struct {
+	PoolID      string `json:"pool_id,omitempty"`
+	PoolLabel   string `json:"pool_label,omitempty"`
 	Metric      string `json:"metric"`
 	Scope       string `json:"scope"`
 	Used        string `json:"used"`
