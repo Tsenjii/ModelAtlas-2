@@ -266,7 +266,9 @@ func (s *Server) listReflections(w http.ResponseWriter, r *http.Request) {
 
 func activeVersion(ctx context.Context, q queryRows, family, kind, subject string) string {
 	var id string
-	if family == "RECIPE" {
+	if family == "EXTRACTION" {
+		q.QueryRowContext(ctx, "SELECT version_id FROM extraction_active WHERE scope_key=?", kind).Scan(&id)
+	} else if family == "RECIPE" {
 		q.QueryRowContext(ctx, "SELECT v.id FROM recipe_active a JOIN recipe_versions v ON v.provider_id=a.provider_id AND v.version=a.version WHERE a.provider_id=?", kind).Scan(&id)
 	} else if family == "KNOWLEDGE" {
 		q.QueryRowContext(ctx, "SELECT version_id FROM knowledge_active WHERE kind=? AND subject=?", kind, subject).Scan(&id)
@@ -278,6 +280,14 @@ func activeVersion(ctx context.Context, q queryRows, family, kind, subject strin
 	return id
 }
 func setActiveVersion(ctx context.Context, tx *sql.Tx, family, kind, subject, id string) error {
+	if family == "EXTRACTION" {
+		if id == "" {
+			_, e := tx.ExecContext(ctx, "DELETE FROM extraction_active WHERE scope_key=?", kind)
+			return e
+		}
+		_, e := tx.ExecContext(ctx, "INSERT INTO extraction_active VALUES(?,?) ON CONFLICT(scope_key) DO UPDATE SET version_id=excluded.version_id", kind, id)
+		return e
+	}
 	if family == "RECIPE" {
 		if id == "" {
 			_, e := tx.ExecContext(ctx, "DELETE FROM recipe_active WHERE provider_id=?", kind)

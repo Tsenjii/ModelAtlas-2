@@ -1,3 +1,5 @@
+> Kilo免Key出廠模型已完成三平台內部驗收，來源5bc886f／同源九項與九份產物。下一片015N公開資料擷取比較仍在驗收；下一公開版本尚未發布，完整需求仍PARTIAL。最新證據與缺口見docs/ACTIVE_TASK.md及docs/NEXT_RELEASE.md。
+
 > Kilo出廠預設候選：三平台新工作區可直接選用免Key模型，舊資料由設定明確加入且保留原連線。正在進行同源跨平台驗收；詳[vps/KILO_DEFAULTS.md](vps/KILO_DEFAULTS.md)。
 
 # ModelAtlas｜AI 模型情報與 Provider 工作區

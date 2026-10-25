@@ -1,3 +1,7 @@
+> 015N本機候選：完整Go race350.310s保留全部原557個case／subcase結果，當時383註冊案例337pass／46opt-in skip；全部574個case與subcase為528pass／46skip；之後新增0HTTP額度拒絕反例1.985s並修正LOCAL_WAIT，最後14個擷取函式race17.020s成功。完整39 Browser race197.183s／487圖（原473＋14）成功；飛行取消／不重開已關閉視窗／只讀恢復與48px／200%已驗，新來源自己384案例與九項／全部實際產物前仍候選。vet、原35發布回歸與4個coverage checker成功；原工作量／timeout及公開版本凍結不變。
+
+> 2026-10-25 唯一新片 EXTRACTION-015N：015M來源5bc886f98c2646c7e4f43948167b23b71c7e0613／tree8f51b1be90cf092fb84bc40ef0ee281bf098d3d1已由同源九項attempt1、九份實際ZIP及20實圖驗收所列Kilo出廠預設範圍，精確證據見verification/20261025/kilo-defaults-baseline.json及Draft PR #20。main仍cba901d／39536090788兩項SUCCESS，FEATURE FREEZE=OFF。接續擷取效率：精確公開規則的版本化合併讀取提案、三輪有界實際對照與Unknown成本、明確Review／試用、正式Intelligence使用與退化監測／共用持久Undo。原全部測試／負載／timeout與已驗Kilo功能保留；不改公開0.8.5-preview.1／11附件、不merge／部署；本片自己的完整回歸及同源九項／實際產物前仍候選，完整下一版仍PARTIAL。
+
 > 015M首輪歡迎卡修後完整38 Browser race186.450s成功，473圖保留原458＋15；首輪訊息的native-welcome必須為0，實際375px對話已重新檢視。原369 Go／557結果等價與全負載、全部原生情境保留；新來源自己的九項與實際產物前仍候選。
 
 > 015M實圖追加反例：f7e2af0f的九項CI已SUCCESS，但實際Browser首輪聊天仍殘留native welcome，375px標題被截斷；新增正式操作斷言2.055s重現，沒有把CI綠燈當完整UI驗收。bubble移除真正空白歡迎卡，保留原訊息／草稿與scope；含Kilo／原Production／ChatExperience／Conversations四流程race15.003s成功，新來源重跑完整38 Browser與自己的九項／實際產物。

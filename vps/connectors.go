@@ -122,6 +122,13 @@ func (s *Server) connectorAuth(ctx context.Context, c ConnectorConfig, v Selecti
 	return p, cfg, key, nil
 }
 func (s *Server) connectorRows(ctx context.Context, c ConnectorConfig, v Selection) ([]any, error) {
+	root, e := s.connectorRoot(ctx, c, v)
+	if e != nil {
+		return nil, e
+	}
+	return connectorRowsFromRoot(c, root)
+}
+func (s *Server) connectorRoot(ctx context.Context, c ConnectorConfig, v Selection) (any, error) {
 	p, cfg, key, e := s.connectorAuth(ctx, c, v)
 	if e != nil {
 		return nil, e
@@ -141,6 +148,9 @@ func (s *Server) connectorRows(ctx context.Context, c ConnectorConfig, v Selecti
 		}
 		root = connectorStripRawSecrets(cleanSecretEcho(root, secrets, 0), 0)
 	}
+	return root, nil
+}
+func connectorRowsFromRoot(c ConnectorConfig, root any) ([]any, error) {
 	if !connectorChecks(root, c.RootChecks) {
 		return nil, errors.New("connector root units or scope changed; retest required")
 	}
@@ -519,6 +529,7 @@ func (s *Server) enrichConnectors(ctx context.Context, v Selection) map[string]s
 	}
 	rows.Close()
 	out := map[string]string{}
+	batch := s.extractionReader(ctx, v, configs)
 	for id, c := range configs {
 		if c.Kind == "CATALOG" {
 			continue
@@ -529,7 +540,11 @@ func (s *Server) enrichConnectors(ctx context.Context, v Selection) map[string]s
 		}
 		var rows []any
 		if e == nil {
-			rows, e = s.connectorRows(ctx, c, v)
+			if batch != nil && batch.handles(id, c) {
+				rows, e = batch.rows(c)
+			} else {
+				rows, e = s.connectorRows(ctx, c, v)
+			}
 		}
 		var facts map[string]any
 		if e == nil {
@@ -553,6 +568,9 @@ func (s *Server) enrichConnectors(ctx context.Context, v Selection) map[string]s
 		}
 		_ = s.observe(ctx, scope, c.Kind, "DECLARATIVE_PROVIDER_META:"+id, status, facts)
 		out["connector:"+id] = status
+	}
+	if batch != nil {
+		out["extraction:"+batch.id] = batch.finish(out)
 	}
 	return out
 }

@@ -128,6 +128,10 @@ func openStore(path string, autoSnapshot bool, vaultKey ...[]byte) (*Store, erro
 		db.Close()
 		return nil, err
 	}
+	if _, err = db.Exec(`UPDATE extraction_comparisons SET status='INTERRUPTED',report_json=json_set(report_json,'$.status','INTERRUPTED','$.http_requests',NULL,'$.reason','Engine interrupted; in-flight HTTP is unknown and never automatically replayed.') WHERE status='RUNNING'; UPDATE extraction_observations SET status='INTERRUPTED',report_json=json_set(report_json,'$.status','INTERRUPTED','$.http_requests',NULL) WHERE status='RUNNING'`); err != nil {
+		db.Close()
+		return nil, err
+	}
 	success = true
 	return &Store{DB: db, lock: lock, path: path}, nil
 }
