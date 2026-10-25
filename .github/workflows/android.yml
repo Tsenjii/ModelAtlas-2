@@ -92,7 +92,10 @@ jobs:
           api-level: 29
           arch: x86_64
           disable-animations: true
-          script: gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.workspaceFixture="$WORKSPACE_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceCertificate="$WORKSPACE_FIXTURE_CERTIFICATE" -Pandroid.testInstrumentationRunnerArguments.workspaceAdmin="$WORKSPACE_FIXTURE_ADMIN" --no-daemon --console=plain
+          script: |
+            python3 release/android_emulator_preflight.py
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.expectedMaxHeapBytes=536870912 -Pandroid.testInstrumentationRunnerArguments.workspaceFixture="$WORKSPACE_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceCertificate="$WORKSPACE_FIXTURE_CERTIFICATE" -Pandroid.testInstrumentationRunnerArguments.workspaceAdmin="$WORKSPACE_FIXTURE_ADMIN" --no-daemon --console=plain
+            adb shell run-as dev.modelatlas.app cat cache/instrumentation-runtime.json > app/build/outputs/androidTest-results/instrumentation-runtime.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

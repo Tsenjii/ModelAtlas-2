@@ -1,3 +1,5 @@
+> 015M候選bcb9e87d未接受：VPS四項／Mac三項／Android build成功，但device121072635535原4MiB同步與Unicode儲存兩案例在ART程序16MiB上限OOM。啟動log配置512m；參考上游Android10冷啟動問題，測試前一次framework重啟、核對新zygote與package就緒，Runner必須實測536870912 bytes並存報告；不改VM屬性、不改產品largeHeap、不減984案例／5skip／負載／timeout、不重跑失敗測試。新增四個前置檢查反例，原27＋4發布回歸31項0.035s成功。自己的新來源九項與實際產物前仍候選；原始metadata見verification/20261025/kilo-android-coldboot-candidate.json。
+
 > 015M首輪歡迎卡修後完整38 Browser race186.450s成功，473圖保留原458＋15；首輪訊息的native-welcome必須為0，實際375px對話已重新檢視。原369 Go／557結果等價與全負載、全部原生情境保留；新來源自己的九項與實際產物前仍候選。
 
 > 015M實圖追加反例：f7e2af0f的九項CI已SUCCESS，但實際Browser首輪聊天仍殘留native welcome，375px標題被截斷；新增正式操作斷言2.055s重現，沒有把CI綠燈當完整UI驗收。bubble移除真正空白歡迎卡，保留原訊息／草稿與scope；含Kilo／原Production／ChatExperience／Conversations四流程race15.003s成功，新來源重跑完整38 Browser與自己的九項／實際產物。

@@ -53,3 +53,9 @@ VPS schema34 的 `factory_defaults` 只保存本機首次安裝意圖，33→34 
 f7e2af0f九項CI成功後，實際473圖仍發現首次聊天殘留空白welcome而在375px露出截斷標題；正式Browser新增斷言2.055s重現。修正正式bubble在首個訊息移除native-welcome，沒有靠測試隱藏或捲動遮住；Kilo與原Production／ChatExperience／Conversations四流程race15.003s成功並重新檢視清楚的首輪對話。新來源完整38流程及九項／全部實際產物再驗，先前綠燈不借用。
 
 首輪welcome修後完整38 Browser race186.450s成功，473圖保留原458＋15；真實聊天的native-welcome為0，375px首輪對話重新檢視清楚，沒有動到已保存訊息。兩次候選的原始CI／artifact metadata與不接受原因保存於`docs/verification/20261025/kilo-intermediate-candidates.json`。
+
+## Android冷啟動驗收反例
+
+來源bcb9e87dfc005100023528f8d20126988a51edff的VPS四項、Mac三項與Android build成功，但Android device121072635535兩個既有大型案例OOM，未接受。實際ZIP12586389171（1305714 bytes，SHA256 `837a70c99d726a700c97a9a7421f63249a5bb8a16460fb85f72abeac4cb95de8`）已下載核對CRC與XML：4MiB跨平台同步在ByteArrayOutputStream.grow、Unicode讀取在StringBuilder.grow，ART均回報growth limit16777216，啟動log則配置qemu.dalvik.vm.heapsize=512m。
+
+[Chromium上游2026-10-08修正](https://chromium.googlesource.com/chromium/src/tools/android/+/4a248be31b42dfb0cdabae6c7992ce565ea00fb2)記錄Android10冷啟動可能在VM屬性套用前啟動zygote而使用16MiB預設；本案目前是相符推斷，須用新CI實際程序上限與原全部測試驗證。前置程式只在任何instrumentation前核對512m設定、重啟一次framework、確認新zygote與package manager，正式Runner再核對maxMemory=536870912並把結果隨原報告上傳。不修改VM屬性或production largeHeap，不重試失敗測試，原984案例／5skip／4MiB／Unicode量與timeout不減。四個前置檢查反例＋原27發布回歸31項0.035s成功；新來源自己的全部九項與實際產物前仍候選。原始run／job／artifact metadata見`docs/verification/20261025/kilo-android-coldboot-candidate.json`。
