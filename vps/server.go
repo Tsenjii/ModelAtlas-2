@@ -365,6 +365,14 @@ func (s *Server) Handler() http.Handler {
 	root := http.NewServeMux()
 	root.HandleFunc("POST /api/workspace/pair", s.workspaceClaim)
 	root.Handle("/api/workspace/exchange", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceExchangeHTTP)))
+	root.Handle("/api/workspace/capabilities", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceCapabilitiesHTTP)))
+	root.Handle("/api/workspace/transfers/begin", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkBeginHTTP)))
+	root.Handle("/api/workspace/transfers/status", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkStatusHTTP)))
+	root.Handle("/api/workspace/transfers/part", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkPartHTTP)))
+	root.Handle("/api/workspace/transfers/finish", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkFinishHTTP)))
+	root.Handle("/api/workspace/transfers/reply", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkReplyHTTP)))
+	root.Handle("/api/workspace/transfers/ack", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkAckHTTP)))
+	root.Handle("/api/workspace/transfers/abort", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkAbortHTTP)))
 	root.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		security(w)
 		if err := s.Store.DB.PingContext(r.Context()); err != nil {

@@ -13,7 +13,7 @@ class WorkspaceSyncWorker(context: Context,params: WorkerParameters): CoroutineW
         val app=applicationContext as AtlasApplication
         app.ready.first { it }
         app.workspaceSync.initialize()
-        if(!app.workspaceSync.status.value.connected) return Result.success()
+        if(!app.workspaceSync.status.value.connected || app.workspaceSync.status.value.paused) return Result.success()
         return if(app.workspaceSync.syncNow()) Result.success()
             else if(runAttemptCount<5) Result.retry() else Result.failure()
     }

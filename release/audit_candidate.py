@@ -212,21 +212,21 @@ def main():
     with zipfile.ZipFile(baseline_browser) as z:
         prior_names = {Path(n).name for n in z.namelist() if n.endswith(".png")}
     with archive("modelatlas-vps-browser") as z:
-        names = pngs(z, 501)
+        names = pngs(z, 509)
         added = {Path(n).name for n in names}-prior_names
-        require(len(prior_names) == 487 and not prior_names-{Path(n).name for n in names} and len(added) == 14, "original browser images were removed")
-        require(all(name.startswith("connector-mapping-") and "failure" not in name for name in added), "unexpected new screenshot")
+        require(len(prior_names) == 501 and not prior_names-{Path(n).name for n in names} and len(added) == 8, "original browser images were removed")
+        require(all(name.startswith("workspace-chunks-") and "failure" not in name for name in added), "unexpected new screenshot")
         for name in names:
             if Path(name).name in added:
                 images.append(("browser/"+Path(name).name, z.read(name)))
-        report["browser_images"] = {"count":501,"preserved":487,"added":sorted(added)}
-    baseline = json.loads((ROOT/"docs/verification/20261025/extraction-baseline.json").read_text())
+        report["browser_images"] = {"count":509,"preserved":501,"added":sorted(added)}
+    baseline = json.loads((ROOT/"docs/verification/20261025/field-mapping-baseline.json").read_text())
     original_events = {row["test"]:row["action"] for row in baseline["verification"]["go_case_events"]}
-    require(len(original_events) == 575, "accepted Go baseline missing")
+    require(len(original_events) == 586, "accepted Go baseline missing")
     new_functions = set()
-    for path in ("vps/connector_mapping_test.go","vps/connector_mapping_browser_test.go"):
-        new_functions.update(re.findall(r"^func (Test\w+)\(", (ROOT/path).read_text(), re.M))
-    require(len(new_functions) == 11, "mapping test registry changed; review audit scope")
+    for path in (ROOT/"vps").glob("workspace_chunks*test.go"):
+        new_functions.update(re.findall(r"^func (Test\w+)\(", path.read_text(), re.M))
+    require(len(new_functions) == 12, "chunk test registry changed; review audit scope")
     expected_registry = {name for name in original_events if "/" not in name}|new_functions
     with archive("modelatlas-vps-footprint") as z:
         footprint = json.loads(p.member(z,"footprint.json"))
@@ -238,14 +238,14 @@ def main():
         suite = json.loads(p.member(z,"go-suite.json"))
         require(suite["result"] == "PASS" and suite["source"] == sha and suite["working_tree_dirty"] is False and suite["race"] is True, "Go suite source/result mismatch")
         require(suite["suite_deadline_seconds"] == 600 and suite["seconds"] < 600, "original suite deadline changed")
-        require(set(suite["registry"]) == expected_registry and len(suite["registry"]) == 395, "original Go registry changed")
+        require(set(suite["registry"]) == expected_registry and len(suite["registry"]) == 407, "original Go registry changed")
         require(p.digest("\n".join(sorted(suite["registry"])).encode()) == suite["registry_sha256"], "registry hash mismatch")
         sys.path.insert(0, str(ROOT/"vps"))
         from test_go import verify
         verify(suite["registry"], suite["processes"])
-        require(sorted(len(x["selected"]) for x in suite["processes"]) == [197,198], "original registry partition changed")
+        require(sorted(len(x["selected"]) for x in suite["processes"]) == [203,204], "original registry partition changed")
         actions = [value for process in suite["processes"] for value in process["completed"].values()]
-        require(actions.count("pass") == 348 and actions.count("skip") == 47, "Go terminal registry outcomes changed")
+        require(actions.count("pass") == 359 and actions.count("skip") == 48, "Go terminal registry outcomes changed")
         report["go_suite"] = {k:v for k,v in suite.items() if k not in ("processes","registry")}
     vps_jobs = checks[".github/workflows/vps.yml"]["jobs"]
     go_log = read_job_log(api, next(job for job in vps_jobs if job["name"] == "vps-test"))
@@ -261,17 +261,23 @@ def main():
         if item.get("Test") and item.get("Action") in ("pass","skip","fail"):
             require(item["Test"] not in events, "duplicate terminal Go case")
             events[item["Test"]] = item["Action"]
-    require(len(events) == 586 and list(events.values()).count("pass") == 539 and list(events.values()).count("skip") == 47, "complete Go case outcomes missing")
+    require(len(events) == 603 and list(events.values()).count("pass") == 555 and list(events.values()).count("skip") == 48, "complete Go case outcomes missing")
     require(all(events.get(name) == action for name,action in original_events.items()), "accepted Go case outcome regressed")
     (out/"go-case-events.json").write_text(json.dumps(events, indent=2)+"\n")
     browser_log = read_job_log(api, next(job for job in vps_jobs if job["name"] == "vps-browser"))
     browser_cases = re.findall(r"--- PASS: (TestBrowser\w+) \(([0-9.]+)s\)", browser_log)
-    require(len(browser_cases) == 40 and len({x[0] for x in browser_cases}) == 40, "complete browser results missing")
+    require(len(browser_cases) == 41 and len({x[0] for x in browser_cases}) == 41, "complete browser results missing")
     require({x[0] for x in browser_cases} == {name for name in expected_registry if name.startswith("TestBrowser")}, "browser registry mismatch")
     report["browser_cases"] = browser_cases
+    prior_core = download_baseline(api, config["core_inventory"], baselines)
+    with zipfile.ZipFile(prior_core) as z:
+        old_core_counts, old_core_cases = xml_cases(z)
+        require(old_core_counts == dict(tests=585,failures=0,errors=0,skipped=0), "accepted core baseline changed")
     with archive("modelatlas-debug-and-reports") as z:
-        counts, _ = xml_cases(z)
-        require(counts == dict(tests=585,failures=0,errors=0,skipped=0), "Android core JVM outcomes changed")
+        counts, core_cases = xml_cases(z)
+        expected_core = {"dev.modelatlas.core.workspace.WorkspaceChunksTest#"+name for name in re.findall(r"@Test fun (\w+)\(", (ROOT/"core/src/test/kotlin/dev/modelatlas/core/workspace/WorkspaceChunksTest.kt").read_text())}
+        require(len(expected_core)==6 and counts == dict(tests=591,failures=0,errors=0,skipped=0), "Android core JVM outcomes changed")
+        require(set(core_cases)-set(old_core_cases)==expected_core and all(core_cases.get(key)==action for key,action in old_core_cases.items()), "accepted core case removed or regressed")
         html = p.member(z,"reports/tests/testDebugUnitTest/index.html").decode()
         actual_counts = {key:int(re.search(r'id="'+key+r'">\s*<div class="counter">(\d+)</div>', html).group(1)) for key in ("tests","failures","ignored")}
         require(actual_counts == dict(tests=423,failures=0,ignored=0), "Android app JVM outcomes changed")
@@ -284,18 +290,22 @@ def main():
     prior_device = download_baseline(api, config["device_inventory"], baselines)
     with zipfile.ZipFile(prior_device) as z:
         old_counts, old_cases = xml_cases(z)
-        require(old_counts == dict(tests=984,failures=1,errors=0,skipped=5), "original test inventory source changed")
+        require(old_counts == dict(tests=985,failures=0,errors=0,skipped=5), "original test inventory source changed")
     with archive("modelatlas-device-test-reports") as z:
         counts, cases = xml_cases(z)
-        require(counts == dict(tests=985,failures=0,errors=0,skipped=5), "Android device outcomes changed")
-        expected_new = {"dev.modelatlas.app.CredentialRollbackFlowTest#disableBeforeManagementEmissionKeepsImmediateEnableAndRetiresBridge"}
+        require(counts == dict(tests=996,failures=0,errors=0,skipped=5), "Android device outcomes changed")
+        expected_new = set()
+        for name in ("WorkspaceChunkRuntimeTest","WorkspaceChunkStorageTest"):
+            methods = re.findall(r"@Test fun (\w+)\(", (ROOT/("app/src/androidTest/kotlin/dev/modelatlas/app/data/"+name+".kt")).read_text())
+            expected_new.update("dev.modelatlas.app.data."+name+"#"+method for method in methods)
+        require(len(expected_new)==11,"device chunk test inventory changed")
         require(set(cases)-set(old_cases) == expected_new and not set(old_cases)-set(cases), "original device cases removed")
-        require(all(cases[key] == ("pass" if action == "failure" else action) for key,action in old_cases.items()), "original device outcome regressed")
+        require(all(cases[key] == action for key,action in old_cases.items()), "original device outcome regressed")
         runtime = json.loads(p.member(z,"instrumentation-runtime.json"))
         preflight = json.loads(p.member(z,"emulator-preflight.json"))
         require(runtime["max_heap_bytes"] == runtime["expected_max_heap_bytes"] == 536870912 and runtime["stages"] == ["start","finish"] and runtime["pid"] > 0, "actual ART runtime heap/PID proof absent")
         require(preflight["configured_heap"] == "512m" and preflight["sdk"] == "29" and preflight["zygote_before"] != preflight["zygote_after"], "cold-boot proof absent")
-        report["android_device"] = {"counts":counts,"preserved_cases":984,"added":sorted(expected_new),"runtime":runtime,"preflight":preflight}
+        report["android_device"] = {"counts":counts,"preserved_cases":985,"added":sorted(expected_new),"runtime":runtime,"preflight":preflight}
     failed = download_baseline(api, config["rejected_device"], baselines)
     with zipfile.ZipFile(failed) as z:
         negative_counts, negative_cases = xml_cases(z)
@@ -328,8 +338,8 @@ def main():
                     require(raw.count((ROOT/"vps/defaults/kilo-anonymous.json").read_bytes()) >= 2, "Mac engine factory snapshot absent")
     for arch in ("amd64","arm64"):
         files, version = p.linux_bundle((package/("modelatlas-vps-linux-"+arch+".tar.gz")).read_bytes(), arch, sha, p.properties()["tag"])
-        require(version["schema"] == 36 and len(files) == 45 and "FIELD_MAPPING.md" in files, "Linux bundle scope mismatch")
-        report["linux_"+arch] = {"schema":36,"files":45,"version":version}
+        require(version["schema"] == 37 and len(files) == 46 and {"FIELD_MAPPING.md","WORKSPACE_CHUNKS.md"} <= set(files), "Linux bundle scope mismatch")
+        report["linux_"+arch] = {"schema":37,"files":46,"version":version}
     report["actual_binary"] = binary_smoke(package/"linux-check/bin/modelatlas-vps-linux-amd64", out)
     frozen = config["frozen"]
     release = api.get("/repos/"+p.REPOSITORY+"/releases/"+str(frozen["release_id"]))
@@ -363,7 +373,7 @@ def main():
         canvas.save(path,"JPEG",quality=82,optimize=True)
         print("MODELATLAS_AUDIT_CONTACT "+path.name+" "+base64.b64encode(path.read_bytes()).decode(), flush=True)
     (out/"audit.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n")
-    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":985,"go_cases":586,"browser_cases":40,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
+    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":603,"browser_cases":41,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
 
 if __name__ == "__main__":
     main()

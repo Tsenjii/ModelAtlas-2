@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -31,7 +32,7 @@ type WorkspaceRecord struct {
 
 func (v *WorkspaceRecord) UnmarshalJSON(raw []byte) error {
 	type record WorkspaceRecord
-	d := json.NewDecoder(strings.NewReader(string(raw)))
+	d := json.NewDecoder(bytes.NewReader(raw))
 	d.UseNumber()
 	return d.Decode((*record)(v))
 }
@@ -113,6 +114,8 @@ func (s *Server) workspaceIdentity(ctx context.Context) (device, workspace strin
 }
 func (s *Server) workspaceRoutes(api *http.ServeMux) {
 	api.HandleFunc("GET /workspace", s.workspaceStatus)
+	api.HandleFunc("POST /workspace/control", s.workspaceControl)
+	api.HandleFunc("POST /workspace/transfer/discard", s.workspaceDiscardTransfer)
 	api.HandleFunc("GET /workspace/conflict", s.workspaceConflictDetail)
 	api.HandleFunc("POST /workspace/pair", s.workspacePair)
 	api.HandleFunc("POST /workspace/revoke", s.workspaceRevoke)
@@ -269,10 +272,10 @@ func (s *Server) workspaceStatus(w http.ResponseWriter, r *http.Request) {
 	rows.Close()
 	result["devices"] = devices
 	var url, id, lastError string
-	var enabled, share, cursor int
+	var enabled, share, cursor, resumable int
 	var last sql.NullInt64
-	if s.Store.DB.QueryRowContext(r.Context(), "SELECT base_url,device_id,enabled,share_secrets,cursor,last_success,last_error FROM workspace_peer WHERE id=1").Scan(&url, &id, &enabled, &share, &cursor, &last, &lastError) == nil {
-		result["peer"] = map[string]any{"url": url, "device_id": id, "enabled": enabled == 1, "share_secrets": share == 1, "cursor": cursor, "last_success": nullableInt(last), "last_error": lastError}
+	if s.Store.DB.QueryRowContext(r.Context(), "SELECT base_url,device_id,enabled,share_secrets,cursor,last_success,last_error,resumable FROM workspace_peer WHERE id=1").Scan(&url, &id, &enabled, &share, &cursor, &last, &lastError, &resumable) == nil {
+		result["peer"] = map[string]any{"url": url, "device_id": id, "enabled": enabled == 1, "share_secrets": share == 1, "cursor": cursor, "last_success": nullableInt(last), "last_error": lastError, "resumable": resumable == 1}
 	}
 	var pending, conflicts int
 	_ = s.Store.DB.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM workspace_dirty").Scan(&pending)
@@ -292,7 +295,49 @@ func (s *Server) workspaceStatus(w http.ResponseWriter, r *http.Request) {
 		rows.Close()
 	}
 	result["conflicts"] = list
+	var outgoing, incoming int
+	if e = s.Store.DB.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM workspace_transfers WHERE role='OUT' AND state='ACKED'").Scan(&outgoing); e != nil {
+		workspaceWriteFailure(w, e)
+		return
+	}
+	if e = s.Store.DB.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM workspace_transfers WHERE role='IN' AND state='ACKED'").Scan(&incoming); e != nil {
+		workspaceWriteFailure(w, e)
+		return
+	}
+	result["transport_receipts"] = map[string]int{"outgoing_acked": outgoing, "incoming_acked": incoming}
+	if id != "" {
+		if transfer, pending, err := s.workspacePendingOutgoing(r.Context(), id); err == nil && pending {
+			var downloaded int64
+			_ = s.Store.DB.QueryRowContext(r.Context(), "SELECT COALESCE(SUM(bytes),0) FROM workspace_transfer_parts WHERE role='OUT' AND owner=? AND transfer_id=? AND side='reply'", id, transfer.ID).Scan(&downloaded)
+			result["transfer"] = map[string]any{"id": transfer.ID, "state": transfer.State, "request_bytes": transfer.RequestBytes, "progress_bytes": transfer.Progress, "reply_bytes": transfer.ReplyBytes, "downloaded_bytes": downloaded, "consumed": transfer.Consumed, "problem": transfer.Problem}
+		}
+	}
 	jsonOK(w, 200, result)
+}
+func (s *Server) workspaceControl(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Enabled   bool  `json:"enabled"`
+		Resumable *bool `json:"resumable"`
+	}
+	if !decodeJSON(w, r, &in) {
+		return
+	}
+	// Pause does not wait for the transfer mutex. The active request may finish;
+	// each following fragment and the destination commit recheck this flag.
+	var preference any
+	if in.Resumable != nil {
+		preference = boolInt(*in.Resumable)
+	}
+	result, e := s.Store.DB.ExecContext(r.Context(), "UPDATE workspace_peer SET enabled=?,next_at=0,resumable=COALESCE(?,resumable) WHERE id=1", boolInt(in.Enabled), preference)
+	if e != nil {
+		workspaceWriteFailure(w, e)
+		return
+	}
+	if n, _ := result.RowsAffected(); n != 1 {
+		http.Error(w, "connect a sync center first", 409)
+		return
+	}
+	jsonOK(w, 200, map[string]any{"enabled": in.Enabled, "local_data_retained": true})
 }
 func nullableInt(v sql.NullInt64) any {
 	if !v.Valid {
@@ -439,7 +484,10 @@ func workspaceReadRow(tx *sql.Tx, kind, id string) (WorkspaceRecord, error) {
 	return v, e
 }
 func workspaceAppend(tx *sql.Tx, v WorkspaceRecord) (WorkspaceRecord, error) {
-	raw := workspaceJSON(v.Data)
+	raw, e := workspaceDataJSON(v.Data, workspaceChunkRecordBytes)
+	if e != nil {
+		return v, e
+	}
 	row, e := tx.Exec("INSERT INTO workspace_changes(kind,id,revision,data_json,deleted,origin_device,created_at) VALUES(?,?,?,?,?,?,?)", v.Kind, v.ID, v.Revision, raw, boolInt(v.Deleted), v.Device, now())
 	if e != nil {
 		return v, e
@@ -452,6 +500,9 @@ func workspaceAppend(tx *sql.Tx, v WorkspaceRecord) (WorkspaceRecord, error) {
 	return v, e
 }
 func (s *Server) workspaceDirtyRecords(ctx context.Context, limit int) ([]WorkspaceRecord, map[string]WorkspaceSecret, error) {
+	return s.workspaceDirtyRecordsLimit(ctx, limit, workspacePageBytes)
+}
+func (s *Server) workspaceDirtyRecordsLimit(ctx context.Context, limit, pageBytes int) ([]WorkspaceRecord, map[string]WorkspaceSecret, error) {
 	// Dependency order is stable even after offline edits in arbitrary order.
 	order := "CASE kind "
 	for i, k := range workspaceTables {
@@ -491,7 +542,10 @@ func (s *Server) workspaceDirtyRecords(ctx context.Context, limit int) ([]Worksp
 		if e != nil && e != sql.ErrNoRows {
 			return nil, nil, e
 		}
-		payload := workspaceJSON(v.Data)
+		payload, payloadError := workspaceDataJSON(v.Data, pageBytes)
+		if payloadError != nil {
+			return nil, nil, errWorkspacePageTooLarge
+		}
 		if (e == sql.ErrNoRows && v.Deleted) || (e == nil && raw == payload && deleted == boolInt(v.Deleted)) {
 			_, e = s.Store.DB.ExecContext(ctx, "DELETE FROM workspace_dirty WHERE kind=? AND id=?", v.Kind, v.ID)
 			if e != nil {
@@ -503,10 +557,10 @@ func (s *Server) workspaceDirtyRecords(ctx context.Context, limit int) ([]Worksp
 		if secret != nil {
 			n += len(workspaceJSON(secret))
 		}
-		if n > workspacePageBytes {
-			return nil, nil, errors.New("sync record exceeds supported page; local data retained")
+		if n > pageBytes {
+			return nil, nil, errWorkspacePageTooLarge
 		}
-		if len(records) > 0 && size+n > workspacePageBytes {
+		if len(records) > 0 && size+n > pageBytes {
 			break
 		}
 		size += n
@@ -519,12 +573,15 @@ func (s *Server) workspaceDirtyRecords(ctx context.Context, limit int) ([]Worksp
 	return records, secrets, nil
 }
 func (s *Server) workspacePublishLocal(ctx context.Context) error {
+	return s.workspacePublishLocalLimit(ctx, workspacePageBytes)
+}
+func (s *Server) workspacePublishLocalLimit(ctx context.Context, limit int) error {
 	device, _, e := s.workspaceIdentity(ctx)
 	if e != nil {
 		return e
 	}
 	// One bounded batch per exchange. More queued data is explicitly advertised.
-	records, _, e := s.workspaceDirtyRecords(ctx, 100)
+	records, _, e := s.workspaceDirtyRecordsLimit(ctx, 100, limit)
 	if e != nil {
 		return e
 	}
@@ -533,7 +590,7 @@ func (s *Server) workspacePublishLocal(ctx context.Context) error {
 		return e
 	}
 	for _, v := range records {
-		if e = workspaceSafeMetadata(v, known); e != nil {
+		if e = workspaceSafeMetadataLimit(v, known, limit); e != nil {
 			return e
 		}
 	}
@@ -553,17 +610,21 @@ func (s *Server) workspacePublishLocal(ctx context.Context) error {
 	return tx.Commit()
 }
 func (s *Server) workspaceApply(tx *sql.Tx, v WorkspaceRecord, secret *WorkspaceSecret) error {
+	return s.workspaceApplyLimit(tx, v, secret, workspacePageBytes)
+}
+func (s *Server) workspaceApplyLimit(tx *sql.Tx, v WorkspaceRecord, secret *WorkspaceSecret, recordLimit int) error {
+	payload, payloadError := workspaceDataJSON(v.Data, recordLimit)
 	if !workspaceAllowed(v.Kind) || len(v.ID) > 8192 {
 		return errors.New("unsupported data kind")
 	}
 	if workspaceAndroidKind(v.Kind) {
-		if len(workspaceJSON(v.Data)) > workspacePageBytes || v.Data == nil {
+		if payloadError != nil || v.Data == nil {
 			return errors.New("invalid native observation")
 		}
 		if v.Deleted && workspaceImmutable(v.Kind) {
 			return errors.New("history is append-only")
 		}
-		_, e := tx.Exec("INSERT INTO workspace_native_archive VALUES(?,?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data_json=excluded.data_json,deleted=excluded.deleted,origin_device=excluded.origin_device,revision=excluded.revision,seq=excluded.seq", v.Kind, v.ID, workspaceJSON(v.Data), boolInt(v.Deleted), v.Device, v.Revision, v.Seq)
+		_, e := tx.Exec("INSERT INTO workspace_native_archive VALUES(?,?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data_json=excluded.data_json,deleted=excluded.deleted,origin_device=excluded.origin_device,revision=excluded.revision,seq=excluded.seq", v.Kind, v.ID, payload, boolInt(v.Deleted), v.Device, v.Revision, v.Seq)
 		return e
 	}
 	t, e := workspaceTableInfo(tx, v.Kind)
@@ -585,7 +646,7 @@ func (s *Server) workspaceApply(tx *sql.Tx, v WorkspaceRecord, secret *Workspace
 		_, e = tx.Exec("DELETE FROM "+v.Kind+" WHERE "+strings.Join(where, " AND "), keys...)
 		return e
 	}
-	if v.Data == nil || len(workspaceJSON(v.Data)) > workspacePageBytes {
+	if v.Data == nil || payloadError != nil {
 		return errors.New("invalid record")
 	}
 	allowed := map[string]bool{"_base_url": true, "_auth_mode": true, "_secret_digest": true, "_credential_version": true, "_native_android": true}
@@ -621,7 +682,7 @@ func (s *Server) workspaceApply(tx *sql.Tx, v WorkspaceRecord, secret *Workspace
 		if err != nil {
 			return err
 		}
-		if !previous.Deleted && workspaceJSON(previous.Data) != workspaceJSON(v.Data) {
+		if !previous.Deleted && !workspaceDataEqual(previous.Data, v.Data) {
 			return errors.New("immutable destination binding conflict")
 		}
 	}
@@ -779,7 +840,15 @@ func (s *Server) workspaceApply(tx *sql.Tx, v WorkspaceRecord, secret *Workspace
 	return nil
 }
 func workspaceConflict(tx *sql.Tx, device string, local, remote WorkspaceRecord) error {
-	_, e := tx.Exec("INSERT OR IGNORE INTO workspace_conflicts(id,device_id,kind,record_id,base_revision,local_json,remote_json,created_at) VALUES(?,?,?,?,?,?,?,?)", newID(), device, local.Kind, local.ID, local.Base, workspaceJSON(local), workspaceJSON(remote), now())
+	localJSON, e := workspaceRecordJSON(local)
+	if e != nil {
+		return e
+	}
+	remoteJSON, e := workspaceRecordJSON(remote)
+	if e != nil {
+		return e
+	}
+	_, e = tx.Exec("INSERT OR IGNORE INTO workspace_conflicts(id,device_id,kind,record_id,base_revision,local_json,remote_json,created_at) VALUES(?,?,?,?,?,?,?,?)", newID(), device, local.Kind, local.ID, local.Base, localJSON, remoteJSON, now())
 	return e
 }
 func (s *Server) workspaceExchangeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -792,16 +861,29 @@ func (s *Server) workspaceExchangeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !decodeLimit(w, r, &v, workspacePageBytes+(1<<20)) {
 		return
 	}
-	if v.Protocol != workspaceProtocol || v.Cursor < 0 || len(v.Changes) > 100 || len(v.Fetch) > 100 || (!d.ShareSecrets && len(v.Secrets) > 0) {
-		http.Error(w, "unsupported sync envelope", 400)
-		return
-	}
-	known, e := s.knownSecrets(r.Context())
+	reply, e := s.workspaceExchange(r.Context(), d, strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "), v, workspaceExchangeOptions{})
 	if e != nil {
-		http.Error(w, "vault unavailable", 503)
+		workspaceWriteFailure(w, e)
 		return
 	}
-	known = append(known, strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
+	jsonOK(w, 200, reply)
+}
+func (s *Server) workspaceExchange(ctx context.Context, d workspaceDevice, token string, v WorkspaceExchange, options workspaceExchangeOptions) (WorkspaceReply, error) {
+	limit := options.MaxBytes
+	if limit == 0 {
+		limit = workspacePageBytes
+	}
+	if limit != workspacePageBytes && limit != workspaceChunkRecordBytes {
+		return WorkspaceReply{}, workspaceProtocolFailure("unsupported sync limit", 400)
+	}
+	if v.Protocol != workspaceProtocol || v.Cursor < 0 || len(v.Changes) > 100 || len(v.Fetch) > 100 || (!d.ShareSecrets && len(v.Secrets) > 0) {
+		return WorkspaceReply{}, workspaceProtocolFailure("unsupported sync envelope", 400)
+	}
+	known, e := s.knownSecrets(ctx)
+	if e != nil {
+		return WorkspaceReply{}, workspaceProtocolFailure("vault unavailable", 503)
+	}
+	known = append(known, token)
 	for _, secret := range v.Secrets {
 		known = append(known, secret.Key)
 		for _, field := range secret.Fields {
@@ -809,38 +891,60 @@ func (s *Server) workspaceExchangeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	for _, record := range v.Changes {
-		if workspaceSafeMetadata(record, known) != nil {
-			http.Error(w, "secret or unsafe metadata rejected", 422)
-			return
+		if workspaceSafeMetadataLimit(record, known, limit) != nil {
+			return WorkspaceReply{}, workspaceProtocolFailure("secret or unsafe metadata rejected", 422)
 		}
 	}
-	s.workspaceMu.Lock()
-	defer s.workspaceMu.Unlock()
-	if e := s.workspacePublishLocal(r.Context()); e != nil {
-		http.Error(w, "local changes unavailable", 503)
-		return
+	if !options.Locked {
+		if !s.workspaceMu.lockContext(ctx) {
+			return WorkspaceReply{}, workspaceProtocolFailure("sync cancelled; local changes retained", 503)
+		}
+		defer s.workspaceMu.Unlock()
 	}
-	_, ws, e := s.workspaceIdentity(r.Context())
+	if e := workspaceDeviceCurrent(ctx, s.Store.DB, d, token); e != nil {
+		return WorkspaceReply{}, e
+	}
+	if options.Before != nil {
+		done, e := options.Before()
+		if e != nil {
+			return WorkspaceReply{}, e
+		}
+		if done {
+			return WorkspaceReply{}, nil
+		}
+	}
+	if e := s.workspacePublishLocalLimit(ctx, limit); e != nil {
+		if errors.Is(e, errWorkspacePageTooLarge) {
+			return WorkspaceReply{}, workspaceProtocolFailure("large local record requires chunked synchronization; local changes retained", 413)
+		}
+		return WorkspaceReply{}, workspaceProtocolFailure("local changes unavailable", 503)
+	}
+	_, ws, e := s.workspaceIdentity(ctx)
 	if e != nil {
-		http.Error(w, "workspace unavailable", 503)
-		return
+		return WorkspaceReply{}, workspaceProtocolFailure("workspace unavailable", 503)
 	}
 	reply := WorkspaceReply{Protocol: workspaceProtocol, Workspace: ws, Cursor: v.Cursor, Records: []WorkspaceRecord{}, Accepted: []WorkspaceRecord{}, Conflicts: []WorkspaceRecord{}, Secrets: map[string]WorkspaceSecret{}}
-	tx, e := s.Store.DB.BeginTx(r.Context(), nil)
+	tx, e := s.Store.DB.BeginTx(ctx, nil)
 	if e != nil {
-		http.Error(w, "workspace unavailable", 503)
-		return
+		return WorkspaceReply{}, workspaceProtocolFailure("workspace unavailable", 503)
 	}
 	defer tx.Rollback()
 	if _, e = tx.Exec("UPDATE workspace_importing SET active=1 WHERE id=1"); e != nil {
-		http.Error(w, "workspace unavailable", 503)
-		return
+		return WorkspaceReply{}, workspaceProtocolFailure("workspace unavailable", 503)
+	}
+	size := 0
+	reserve := func(record WorkspaceRecord) error {
+		body, e := workspaceRecordBody(record, int64(limit))
+		if e != nil || int64(size)+body.size > int64(limit+(1<<20)) {
+			return workspaceProtocolFailure("sync result exceeds supported page; local changes retained", 413)
+		}
+		size += int(body.size)
+		return nil
 	}
 	for _, change := range v.Changes {
 		current, e := workspaceReadRow(tx, change.Kind, change.ID)
 		if e != nil {
-			http.Error(w, "workspace unavailable", 503)
-			return
+			return WorkspaceReply{}, workspaceProtocolFailure("workspace unavailable", 503)
 		}
 		if change.Kind == "credentials" && !d.ShareSecrets {
 			if change.Data == nil {
@@ -857,14 +961,19 @@ func (s *Server) workspaceExchangeHTTP(w http.ResponseWriter, r *http.Request) {
 				change.Data["_credential_version"] = int64(0)
 			}
 		}
-		if current.Revision > 0 && current.Deleted == change.Deleted && workspaceJSON(current.Data) == workspaceJSON(change.Data) {
+		if current.Revision > 0 && current.Deleted == change.Deleted && workspaceDataEqual(current.Data, change.Data) {
+			if e = reserve(current); e != nil {
+				return WorkspaceReply{}, e
+			}
 			reply.Accepted = append(reply.Accepted, current)
 			continue
 		}
 		if change.Base != current.Revision {
+			if e = reserve(current); e != nil {
+				return WorkspaceReply{}, e
+			}
 			if e = workspaceConflict(tx, d.ID, change, current); e != nil {
-				http.Error(w, "conflict persistence failed", 503)
-				return
+				return WorkspaceReply{}, workspaceProtocolFailure("conflict persistence failed", 503)
 			}
 			reply.Conflicts = append(reply.Conflicts, current)
 			continue
@@ -888,130 +997,141 @@ func (s *Server) workspaceExchangeHTTP(w http.ResponseWriter, r *http.Request) {
 			valueCopy := value
 			secret = &valueCopy
 		}
-		if e = s.workspaceApply(tx, change, secret); e != nil {
-			http.Error(w, "record rejected; no changes applied", 422)
-			return
+		if e = s.workspaceApplyLimit(tx, change, secret, limit); e != nil {
+			return WorkspaceReply{}, workspaceProtocolFailure("record rejected; no changes applied", 422)
 		}
 		if change, e = workspaceAppend(tx, change); e != nil {
-			http.Error(w, "sync commit failed", 503)
-			return
+			return WorkspaceReply{}, workspaceProtocolFailure("sync commit failed", 503)
+		}
+		if e = reserve(change); e != nil {
+			return WorkspaceReply{}, e
 		}
 		reply.Accepted = append(reply.Accepted, change)
 		if _, e = tx.Exec("UPDATE workspace_conflicts SET state='LOCAL' WHERE device_id=? AND kind=? AND record_id=? AND state='OPEN'", d.ID, change.Kind, change.ID); e != nil {
-			http.Error(w, "conflict save failed", 503)
-			return
+			return WorkspaceReply{}, workspaceProtocolFailure("conflict save failed", 503)
 		}
 	}
 	if _, e = tx.Exec("UPDATE workspace_importing SET active=0 WHERE id=1"); e != nil {
-		http.Error(w, "sync commit failed", 503)
-		return
+		return WorkspaceReply{}, workspaceProtocolFailure("sync commit failed", 503)
 	}
 	if _, e = tx.Exec("UPDATE workspace_devices SET last_seen=? WHERE id=?", now(), d.ID); e != nil {
-		http.Error(w, "sync commit failed", 503)
-		return
+		return WorkspaceReply{}, workspaceProtocolFailure("sync commit failed", 503)
 	}
-	rows, e := tx.Query("SELECT seq,kind,id,revision,data_json,deleted,origin_device FROM workspace_changes WHERE seq>? ORDER BY seq LIMIT 100", v.Cursor)
+	rows, e := tx.Query("SELECT seq,kind,id,revision,length(CAST(data_json AS BLOB)),deleted,origin_device FROM workspace_changes WHERE seq>? ORDER BY seq LIMIT 100", v.Cursor)
 	if e != nil {
-		http.Error(w, "sync read failed", 503)
-		return
+		return WorkspaceReply{}, workspaceProtocolFailure("sync read failed", 503)
 	}
-	size := 0
-	acknowledged := map[string]int64{}
-	for _, record := range reply.Accepted {
-		size += len(workspaceJSON(record))
-		acknowledged[workspaceRecordKey(record)] = record.Revision
+	type eventHeader struct {
+		record  WorkspaceRecord
+		bytes   int
+		deleted int
 	}
+	headers := []eventHeader{}
 	for rows.Next() {
-		var x WorkspaceRecord
-		var raw string
-		var deleted int
-		if e = rows.Scan(&x.Seq, &x.Kind, &x.ID, &x.Revision, &raw, &deleted, &x.Device); e != nil {
+		var header eventHeader
+		if e = rows.Scan(&header.record.Seq, &header.record.Kind, &header.record.ID, &header.record.Revision, &header.bytes, &header.deleted, &header.record.Device); e != nil {
 			rows.Close()
-			http.Error(w, "sync read failed", 503)
-			return
+			return WorkspaceReply{}, workspaceProtocolFailure("sync read failed", 503)
 		}
-		decoder := json.NewDecoder(strings.NewReader(raw))
-		decoder.UseNumber()
-		if decoder.Decode(&x.Data) != nil {
-			rows.Close()
-			http.Error(w, "sync read failed", 503)
-			return
-		}
-		x.Deleted = deleted == 1
-		if acknowledged[workspaceRecordKey(x)] == x.Revision {
-			reply.Cursor = x.Seq
-			continue
-		}
-		if size+len(raw) > workspacePageBytes && (len(reply.Records) > 0 || len(reply.Accepted) > 0) {
-			break
-		}
-		size += len(raw)
-		reply.Records = append(reply.Records, x)
-		reply.Cursor = x.Seq
+		headers = append(headers, header)
 	}
 	e = rows.Err()
 	rows.Close()
 	if e != nil {
-		http.Error(w, "sync read failed", 503)
-		return
+		return WorkspaceReply{}, workspaceProtocolFailure("sync read failed", 503)
+	}
+	acknowledged := map[string]int64{}
+	for _, record := range reply.Accepted {
+		acknowledged[workspaceRecordKey(record)] = record.Revision
+	}
+	for _, header := range headers {
+		x := header.record
+		x.Deleted = header.deleted == 1
+		if acknowledged[workspaceRecordKey(x)] == x.Revision {
+			reply.Cursor = x.Seq
+			continue
+		}
+		if size+header.bytes > limit && (len(reply.Records) > 0 || len(reply.Accepted) > 0 || len(reply.Conflicts) > 0) {
+			break
+		}
+		if header.bytes > limit {
+			return WorkspaceReply{}, workspaceProtocolFailure("large retained record requires chunked synchronization", 413)
+		}
+		var raw string
+		if e = tx.QueryRow("SELECT data_json FROM workspace_changes WHERE seq=?", x.Seq).Scan(&raw); e != nil {
+			return WorkspaceReply{}, workspaceProtocolFailure("sync read failed", 503)
+		}
+		decoder := json.NewDecoder(strings.NewReader(raw))
+		decoder.UseNumber()
+		if decoder.Decode(&x.Data) != nil {
+			return WorkspaceReply{}, workspaceProtocolFailure("sync read failed", 503)
+		}
+		if e = reserve(x); e != nil {
+			return WorkspaceReply{}, e
+		}
+		reply.Records = append(reply.Records, x)
+		reply.Cursor = x.Seq
 	}
 	for _, want := range v.Fetch {
 		if !workspaceAllowed(want.Kind) || len(want.ID) > 8192 {
-			http.Error(w, "invalid requested record", 400)
-			return
+			return WorkspaceReply{}, workspaceProtocolFailure("invalid requested record", 400)
 		}
 		x, e := workspaceReadRow(tx, want.Kind, want.ID)
 		if e != nil {
-			http.Error(w, "sync read failed", 503)
-			return
+			return WorkspaceReply{}, workspaceProtocolFailure("sync read failed", 503)
 		}
 		if x.Revision > 0 {
-			if size+len(workspaceJSON(x)) > workspacePageBytes {
-				http.Error(w, "requested page too large; reduce fetch batch", 413)
-				return
+			if e = reserve(x); e != nil {
+				return WorkspaceReply{}, e
 			}
-			size += len(workspaceJSON(x))
 			reply.Records = append(reply.Records, x)
 		}
 		if _, e = tx.Exec("UPDATE workspace_conflicts SET state='REMOTE' WHERE device_id=? AND kind=? AND record_id=? AND state='OPEN'", d.ID, want.Kind, want.ID); e != nil {
-			http.Error(w, "conflict save failed", 503)
-			return
+			return WorkspaceReply{}, workspaceProtocolFailure("conflict save failed", 503)
 		}
 	}
 	var remaining, dirty int
 	_ = tx.QueryRow("SELECT COUNT(*) FROM workspace_changes WHERE seq>?", reply.Cursor).Scan(&remaining)
 	_ = tx.QueryRow("SELECT COUNT(*) FROM workspace_dirty").Scan(&dirty)
 	reply.More = remaining > 0 || dirty > 0
-	if e = tx.Commit(); e != nil {
-		http.Error(w, "sync commit failed", 503)
-		return
-	}
 	if d.ShareSecrets {
 		for _, x := range append(append([]WorkspaceRecord{}, reply.Records...), reply.Accepted...) {
 			if x.Kind != "credentials" || x.Deleted {
 				continue
 			}
-			live, secret, e := s.workspaceLocalRecord(r.Context(), x.Kind, x.ID)
+			live, secret, e := s.workspaceLocalRecordWith(ctx, tx, x.Kind, x.ID)
 			if e == nil && secret != nil && live.Data["_secret_digest"] == x.Data["_secret_digest"] {
 				reply.Secrets[workspaceRecordKey(x)] = *secret
 			}
 		}
 	}
-	jsonOK(w, 200, reply)
+	if options.Save != nil {
+		if e = options.Save(tx, &reply); e != nil {
+			return WorkspaceReply{}, e
+		}
+	}
+	if e = tx.Commit(); e != nil {
+		return WorkspaceReply{}, workspaceProtocolFailure("sync commit failed", 503)
+	}
+	return reply, nil
 }
 
 func workspaceSafeMetadata(v WorkspaceRecord, secrets []string) error {
+	return workspaceSafeMetadataLimit(v, secrets, workspacePageBytes)
+}
+func workspaceSafeMetadataLimit(v WorkspaceRecord, secrets []string, limit int) error {
 	if !workspaceAllowed(v.Kind) || len(v.ID) > 8192 {
 		return errors.New("unsupported record")
 	}
-	raw := workspaceJSON(v.Data)
-	if strings.Contains(raw, "matlas_device_") {
+	body, e := workspaceRecordBody(v, int64(limit))
+	if e != nil {
+		return errWorkspacePageTooLarge
+	}
+	if body.contains("matlas_device_") {
 		return errors.New("transport credential in metadata")
 	}
-	for _, secret := range secrets {
-		if secret != "" && jsonContainsSecret(v.Data, secret) {
-			return errors.New("secret in sync metadata")
-		}
+	if body.containsSecret(secrets) {
+		return errors.New("secret in sync metadata")
 	}
 	return nil
 }

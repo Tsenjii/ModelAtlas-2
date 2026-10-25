@@ -66,6 +66,7 @@ val workspaceNativeTables = listOf(
 /** Installed only after sync is explicitly configured. No JSON1 or modern UPSERT
  * dependency: this journal also runs on the app's oldest supported SQLite. */
 fun installWorkspaceJournal(db: SupportSQLiteDatabase) {
+    installWorkspaceHashJournal(db)
     for (table in workspaceNativeTables) {
         for (operation in listOf("INSERT", "UPDATE", "DELETE")) {
             val row = if (operation == "DELETE") "OLD.rowid" else "NEW.rowid"

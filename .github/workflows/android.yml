@@ -82,6 +82,7 @@ jobs:
               data = json.load(f)
           with open(os.environ['GITHUB_ENV'], 'a') as f:
               f.write('WORKSPACE_FIXTURE_URL=' + data['url'] + '\n')
+              f.write('WORKSPACE_CHUNKS_FIXTURE_URL=' + data['chunks_url'] + '\n')
               f.write('WORKSPACE_FIXTURE_CERTIFICATE=' + data['certificate'] + '\n')
               f.write('WORKSPACE_FIXTURE_ADMIN=' + data['admin'] + '\n')
           PY
@@ -94,7 +95,7 @@ jobs:
           disable-animations: true
           script: |
             python3 release/android_emulator_preflight.py
-            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.expectedMaxHeapBytes=536870912 -Pandroid.testInstrumentationRunnerArguments.workspaceFixture="$WORKSPACE_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceCertificate="$WORKSPACE_FIXTURE_CERTIFICATE" -Pandroid.testInstrumentationRunnerArguments.workspaceAdmin="$WORKSPACE_FIXTURE_ADMIN" --no-daemon --console=plain
+            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.expectedMaxHeapBytes=536870912 -Pandroid.testInstrumentationRunnerArguments.workspaceFixture="$WORKSPACE_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceChunksFixture="$WORKSPACE_CHUNKS_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceCertificate="$WORKSPACE_FIXTURE_CERTIFICATE" -Pandroid.testInstrumentationRunnerArguments.workspaceAdmin="$WORKSPACE_FIXTURE_ADMIN" --no-daemon --console=plain
             python3 release/android_emulator_preflight.py --capture-runtime
       - uses: actions/upload-artifact@v4
         if: always()

@@ -47,6 +47,32 @@ class AndroidCredentialVault(context: Context) : CredentialAccess {
         } finally { bytes.fill(0) }
     }
 
+    /** Fragment ciphertext has a separate authenticated domain from credentials.
+     * Call outside Room transactions to preserve the vault -> database lock order. */
+    @Synchronized
+    fun sealWorkspaceChunk(id: String,origin: String,binding: String,bytes: ByteArray): WorkspaceVaultCiphertext {
+        validateId(id);val bound=validatedOrigin(origin)
+        require(binding.matches(Regex("[a-f0-9]{64}")) && bytes.isNotEmpty() && bytes.size<=256*1024)
+        val cipher=Cipher.getInstance("AES/GCM/NoPadding").apply {
+            init(Cipher.ENCRYPT_MODE,key())
+            updateAAD("workspace-fragment-v1|$id|$bound|$binding".toByteArray(Charsets.UTF_8))
+        }
+        return WorkspaceVaultCiphertext(id,bound,Base64.encodeToString(cipher.iv,Base64.NO_WRAP),
+            Base64.encodeToString(cipher.doFinal(bytes),Base64.NO_WRAP))
+    }
+    @Synchronized
+    fun openWorkspaceChunk(value: WorkspaceVaultCiphertext,binding: String): ByteArray {
+        validateId(value.ref);val bound=validatedOrigin(value.origin)
+        require(!value.deleted && binding.matches(Regex("[a-f0-9]{64}")))
+        val nonce=Base64.decode(value.nonce,Base64.NO_WRAP);val encrypted=Base64.decode(value.ciphertext,Base64.NO_WRAP)
+        require(nonce.size==12 && encrypted.size in 17..(256*1024+16))
+        return Cipher.getInstance("AES/GCM/NoPadding").run {
+            init(Cipher.DECRYPT_MODE,key(),GCMParameterSpec(128,nonce))
+            updateAAD("workspace-fragment-v1|${value.ref}|$bound|$binding".toByteArray(Charsets.UTF_8))
+            doFinal(encrypted)
+        }
+    }
+
     fun putSyncedCiphertext(db: SupportSQLiteDatabase, sealed: WorkspaceVaultCiphertext) {
         validateId(sealed.ref); validatedOrigin(sealed.origin)
         val previous = databaseCiphertext(db, sealed.ref)

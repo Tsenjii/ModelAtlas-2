@@ -352,7 +352,7 @@
     <string name="workspace_sync_disconnect_help">本機資料與歷史都會保留。你也可以在同步中心撤銷這台裝置的權限。</string>
     <string name="workspace_sync_conflict">檢視 %1$s 的衝突</string>
     <string name="workspace_sync_conflict_title">選擇要保留的修改</string>
-    <string name="workspace_sync_conflict_help">兩份版本與衝突紀錄都會保留；送出時會再核對本機內容是否更新。</string>
+    <string name="workspace_sync_conflict_help">兩份版本與衝突紀錄都會保留；送出時會再核對本機內容是否更新。長內容顯示摘要，完整兩份資料仍保留。</string>
     <string name="workspace_sync_local">本機</string>
     <string name="workspace_sync_remote">同步中心</string>
     <string name="workspace_sync_keep_local">保留本機修改</string>

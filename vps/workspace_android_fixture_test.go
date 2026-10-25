@@ -66,7 +66,9 @@ func TestWorkspaceAndroidFixture(t *testing.T) {
 	server := &http.Server{Handler: s.Handler(), ReadHeaderTimeout: 10 * time.Second}
 	go server.Serve(tls.NewListener(listener, &tls.Config{Certificates: []tls.Certificate{pair}, MinVersion: tls.VersionTLS12}))
 	defer server.Close()
-	metadata := map[string]any{"url": "https://10.0.2.2:17888", "certificate": base64.StdEncoding.EncodeToString(der), "admin": s.Token}
+	chunksURL, closeChunks := workspaceAndroidChunkControl(t, pair, s.Token)
+	defer closeChunks()
+	metadata := map[string]any{"url": "https://10.0.2.2:17888", "chunks_url": chunksURL, "certificate": base64.StdEncoding.EncodeToString(der), "admin": s.Token}
 	if e = os.WriteFile(out, []byte(workspaceJSON(metadata)), 0600); e != nil {
 		t.Fatal(e)
 	}

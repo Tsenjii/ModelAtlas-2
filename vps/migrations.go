@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 36
+const schemaVersion = 37
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -321,6 +321,41 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 		if _, err = tx.Exec("PRAGMA user_version=36"); err != nil {
+			return err
+		}
+	}
+	if version < 37 {
+		rows, e := tx.Query("PRAGMA table_info(workspace_peer)")
+		if e != nil {
+			return e
+		}
+		hasPreference := false
+		for rows.Next() {
+			var cid, notNull, pk int
+			var name, kind string
+			var defaultValue any
+			if e = rows.Scan(&cid, &name, &kind, &notNull, &defaultValue, &pk); e != nil {
+				rows.Close()
+				return e
+			}
+			if name == "resumable" {
+				hasPreference = true
+			}
+		}
+		e = rows.Err()
+		rows.Close()
+		if e != nil {
+			return e
+		}
+		if !hasPreference {
+			if _, err = tx.Exec("ALTER TABLE workspace_peer ADD COLUMN resumable INTEGER NOT NULL DEFAULT 0 CHECK(resumable IN(0,1))"); err != nil {
+				return err
+			}
+		}
+		if _, err = tx.Exec(workspaceChunkSchema); err != nil {
+			return err
+		}
+		if _, err = tx.Exec("PRAGMA user_version=37"); err != nil {
 			return err
 		}
 	}

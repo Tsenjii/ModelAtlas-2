@@ -21,6 +21,9 @@ func workspaceURL(raw string) bool {
 	return e == nil && (u.Path == "" || u.Path == "/")
 }
 func (s *Server) workspaceCall(ctx context.Context, base, path, token string, body, target any) error {
+	return s.workspaceCallLimit(ctx, base, path, token, body, target, workspacePageBytes+(1<<20), workspacePageBytes+(8<<20))
+}
+func (s *Server) workspaceCallLimit(ctx context.Context, base, path, token string, body, target any, requestLimit, replyLimit int) error {
 	if !workspaceURL(base) {
 		return errors.New("sync center requires an HTTPS origin")
 	}
@@ -28,8 +31,8 @@ func (s *Server) workspaceCall(ctx context.Context, base, path, token string, bo
 	if e != nil {
 		return e
 	}
-	if len(b) > workspacePageBytes+(1<<20) {
-		return errors.New("sync page too large")
+	if len(b) > requestLimit {
+		return errWorkspacePageTooLarge
 	}
 	request, e := http.NewRequestWithContext(ctx, "POST", strings.TrimRight(base, "/")+"/api/workspace/"+path, bytes.NewReader(b))
 	if e != nil {
@@ -49,13 +52,13 @@ func (s *Server) workspaceCall(ctx context.Context, base, path, token string, bo
 	}
 	defer response.Body.Close()
 	if response.StatusCode == 401 || response.StatusCode == 403 {
-		return errors.New("device revoked or pairing expired")
+		return &workspaceHTTPError{response.StatusCode, "device revoked or pairing expired"}
 	}
 	if response.StatusCode != 200 {
-		return errors.New("sync center rejected this page; local changes retained")
+		return &workspaceHTTPError{response.StatusCode, "sync center rejected this page; local changes retained"}
 	}
-	raw, e := io.ReadAll(io.LimitReader(response.Body, workspacePageBytes+(8<<20)+1))
-	if e != nil || len(raw) > workspacePageBytes+(8<<20) {
+	raw, e := io.ReadAll(io.LimitReader(response.Body, int64(replyLimit)+1))
+	if e != nil || len(raw) > replyLimit {
 		return errors.New("invalid sync response")
 	}
 	if target == nil {
@@ -70,10 +73,11 @@ func (s *Server) workspaceCall(ctx context.Context, base, path, token string, bo
 }
 func (s *Server) workspaceConnect(w http.ResponseWriter, r *http.Request) {
 	var v struct {
-		URL      string `json:"url"`
-		Code     string `json:"code"`
-		Label    string `json:"label"`
-		Platform string `json:"platform"`
+		URL       string `json:"url"`
+		Code      string `json:"code"`
+		Label     string `json:"label"`
+		Platform  string `json:"platform"`
+		Resumable bool   `json:"resumable"`
 	}
 	if !decodeJSON(w, r, &v) {
 		return
@@ -124,7 +128,7 @@ func (s *Server) workspaceConnect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "local database unavailable", 503)
 		return
 	}
-	if _, e = tx.Exec("INSERT INTO workspace_peer(id,base_url,device_id,encrypted_token,share_secrets,enabled) VALUES(1,?,?,?,?,1)", strings.TrimRight(v.URL, "/"), claim.Device, encrypted, boolInt(claim.Share)); e != nil {
+	if _, e = tx.Exec("INSERT INTO workspace_peer(id,base_url,device_id,encrypted_token,share_secrets,enabled,resumable) VALUES(1,?,?,?,?,1,?)", strings.TrimRight(v.URL, "/"), claim.Device, encrypted, boolInt(claim.Share), boolInt(v.Resumable)); e != nil {
 		http.Error(w, "local database unavailable", 503)
 		return
 	}
@@ -158,7 +162,17 @@ func (s *Server) workspaceDisconnect(w http.ResponseWriter, r *http.Request) {
 	defer s.workspaceMu.Unlock()
 	// Forget the local transport credential. No product/history rows are removed;
 	// the center's independently visible device can still be revoked there.
-	if _, e := s.Store.DB.ExecContext(r.Context(), "DELETE FROM workspace_peer; DELETE FROM workspace_fetch"); e != nil {
+	tx, e := s.Store.DB.BeginTx(r.Context(), nil)
+	if e != nil {
+		http.Error(w, "disconnect failed", 503)
+		return
+	}
+	defer tx.Rollback()
+	if _, e = tx.ExecContext(r.Context(), "DELETE FROM workspace_transfer_parts WHERE role='OUT'; UPDATE workspace_transfers SET state='ABORTED',updated_at=? WHERE role='OUT' AND state!='ACKED'; DELETE FROM workspace_peer; DELETE FROM workspace_fetch", now()); e != nil {
+		http.Error(w, "disconnect failed", 503)
+		return
+	}
+	if e = tx.Commit(); e != nil {
 		http.Error(w, "disconnect failed", 503)
 		return
 	}
@@ -192,10 +206,17 @@ func (s *Server) workspaceTick(ctx context.Context) {
 	_, _ = s.workspaceSyncLocked(run)
 }
 func workspaceShadow(tx *sql.Tx, v WorkspaceRecord) error {
-	_, e := tx.Exec("INSERT INTO workspace_rows VALUES(?,?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET revision=excluded.revision,data_json=excluded.data_json,deleted=excluded.deleted,origin_device=excluded.origin_device,seq=excluded.seq", v.Kind, v.ID, v.Revision, workspaceJSON(v.Data), boolInt(v.Deleted), v.Device, v.Seq)
+	raw, e := workspaceDataJSON(v.Data, workspaceChunkRecordBytes)
+	if e != nil {
+		return e
+	}
+	_, e = tx.Exec("INSERT INTO workspace_rows VALUES(?,?,?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET revision=excluded.revision,data_json=excluded.data_json,deleted=excluded.deleted,origin_device=excluded.origin_device,seq=excluded.seq", v.Kind, v.ID, v.Revision, raw, boolInt(v.Deleted), v.Device, v.Seq)
 	return e
 }
 func (s *Server) workspaceConsume(ctx context.Context, request WorkspaceExchange, reply WorkspaceReply) error {
+	return s.workspaceConsumeWith(ctx, request, reply, workspacePageBytes, nil)
+}
+func (s *Server) workspaceConsumeWith(ctx context.Context, request WorkspaceExchange, reply WorkspaceReply, recordLimit int, save func(*sql.Tx) error) error {
 	if reply.Protocol != workspaceProtocol || reply.Cursor < request.Cursor || len(reply.Records) > 200 || len(reply.Accepted) > 100 {
 		return errors.New("incompatible sync response")
 	}
@@ -242,13 +263,13 @@ func (s *Server) workspaceConsume(ctx context.Context, request WorkspaceExchange
 			}
 			liveCompare, sentCompare = clone(live.Data), clone(sent.Data)
 		}
-		if live.Deleted == sent.Deleted && workspaceJSON(liveCompare) == workspaceJSON(sentCompare) {
+		if live.Deleted == sent.Deleted && workspaceDataEqual(liveCompare, sentCompare) {
 			var secret *WorkspaceSecret
 			if value, ok := reply.Secrets[key]; ok && str(v.Data["_secret_digest"]) == workspaceHash(workspaceJSON(value)) {
 				copy := value
 				secret = &copy
 			}
-			if e = s.workspaceApply(tx, v, secret); e != nil {
+			if e = s.workspaceApplyLimit(tx, v, secret, recordLimit); e != nil {
 				return e
 			}
 			if _, e = tx.Exec("DELETE FROM workspace_dirty WHERE kind=? AND id=?", v.Kind, v.ID); e != nil {
@@ -281,8 +302,8 @@ func (s *Server) workspaceConsume(ctx context.Context, request WorkspaceExchange
 		}
 		var dirty int
 		_ = tx.QueryRow("SELECT COUNT(*) FROM workspace_dirty WHERE kind=? AND id=?", v.Kind, v.ID).Scan(&dirty)
-		different := live.Deleted != shadow.Deleted || workspaceJSON(live.Data) != workspaceJSON(shadow.Data)
-		same := live.Deleted == v.Deleted && workspaceJSON(live.Data) == workspaceJSON(v.Data)
+		different := live.Deleted != shadow.Deleted || !workspaceDataEqual(live.Data, shadow.Data)
+		same := live.Deleted == v.Deleted && workspaceDataEqual(live.Data, v.Data)
 		if dirty > 0 && different && !same {
 			live.Base = shadow.Revision
 			if e = workspaceConflict(tx, device, live, v); e != nil {
@@ -295,7 +316,7 @@ func (s *Server) workspaceConsume(ctx context.Context, request WorkspaceExchange
 			copy := value
 			secret = &copy
 		}
-		if e = s.workspaceApply(tx, v, secret); e != nil {
+		if e = s.workspaceApplyLimit(tx, v, secret, recordLimit); e != nil {
 			return e
 		}
 		if e = workspaceShadow(tx, v); e != nil {
@@ -317,13 +338,18 @@ func (s *Server) workspaceConsume(ctx context.Context, request WorkspaceExchange
 	if _, e = tx.Exec("UPDATE workspace_importing SET active=0 WHERE id=1; UPDATE workspace_peer SET cursor=?,last_success=?,last_error='',next_at=? WHERE id=1", reply.Cursor, now(), now()+60000); e != nil {
 		return e
 	}
+	if save != nil {
+		if e = save(tx); e != nil {
+			return e
+		}
+	}
 	return tx.Commit()
 }
 func (s *Server) workspaceSyncLocked(ctx context.Context) (map[string]any, error) {
 	var base, encrypted string
-	var share, enabled int
+	var share, enabled, resumable int
 	var cursor int64
-	if e := s.Store.DB.QueryRowContext(ctx, "SELECT base_url,encrypted_token,share_secrets,enabled,cursor FROM workspace_peer WHERE id=1").Scan(&base, &encrypted, &share, &enabled, &cursor); e != nil {
+	if e := s.Store.DB.QueryRowContext(ctx, "SELECT base_url,encrypted_token,share_secrets,enabled,cursor,resumable FROM workspace_peer WHERE id=1").Scan(&base, &encrypted, &share, &enabled, &cursor, &resumable); e != nil {
 		return nil, errors.New("connect a sync center first")
 	}
 	if enabled != 1 {
@@ -339,9 +365,39 @@ func (s *Server) workspaceSyncLocked(ctx context.Context) (map[string]any, error
 		_, _ = s.Store.DB.ExecContext(context.WithoutCancel(ctx), "UPDATE workspace_peer SET last_error=?,next_at=? WHERE id=1", e.Error(), now()+60000)
 		return nil, e
 	}
+	chunked := func() (map[string]any, error) {
+		result, e := s.workspaceSyncChunksLocked(ctx, base, token, share)
+		if e != nil {
+			return fail(e)
+		}
+		result["sent"] = result["sent"].(int) + total
+		result["received"] = result["received"].(int) + received
+		return result, nil
+	}
+	var owner string
+	if e = s.Store.DB.QueryRowContext(ctx, "SELECT device_id FROM workspace_peer WHERE id=1").Scan(&owner); e != nil {
+		return fail(e)
+	}
+	if _, pending, e := s.workspacePendingOutgoing(ctx, owner); e != nil {
+		return fail(e)
+	} else if pending {
+		return chunked()
+	}
+	if resumable == 1 {
+		supported, e := s.workspaceChunkSupported(ctx, base, token)
+		if e != nil {
+			return fail(e)
+		}
+		if supported {
+			return chunked()
+		}
+	}
 	for page := 0; page < 20; page++ {
 		changes, secrets, e := s.workspaceDirtyRecords(ctx, 100)
 		if e != nil {
+			if errors.Is(e, errWorkspacePageTooLarge) {
+				return chunked()
+			}
 			return fail(e)
 		}
 		request := WorkspaceExchange{Protocol: workspaceProtocol, Cursor: cursor, Changes: changes, Secrets: secrets}
@@ -368,6 +424,10 @@ func (s *Server) workspaceSyncLocked(ctx context.Context) (map[string]any, error
 		}
 		var reply WorkspaceReply
 		if e = s.workspaceCall(ctx, base, "exchange", token, request, &reply); e != nil {
+			var response *workspaceHTTPError
+			if errors.Is(e, errWorkspacePageTooLarge) || (errors.As(e, &response) && response.status == 413) {
+				return chunked()
+			}
 			return fail(e)
 		}
 		if e = s.workspaceConsume(ctx, request, reply); e != nil {
@@ -414,8 +474,8 @@ func (s *Server) workspaceResolve(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "conflict already handled", 409)
 		return
 	}
-	var remote WorkspaceRecord
-	if json.Unmarshal([]byte(remoteRaw), &remote) != nil {
+	remote, decodeError := workspaceDecodeRecord(remoteRaw)
+	if decodeError != nil {
 		http.Error(w, "conflict invalid", 503)
 		return
 	}
@@ -424,7 +484,8 @@ func (s *Server) workspaceResolve(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "local record unavailable", 503)
 		return
 	}
-	if len(v.LocalHash) != 64 || v.LocalHash != workspaceHash(workspaceJSON(live)) {
+	liveHash, hashError := workspaceRecordDigest(live)
+	if hashError != nil || len(v.LocalHash) != 64 || v.LocalHash != liveHash {
 		http.Error(w, "local data changed; review the conflict again", 409)
 		return
 	}

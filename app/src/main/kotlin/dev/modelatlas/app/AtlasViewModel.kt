@@ -222,6 +222,11 @@ class AtlasViewModel @JvmOverloads constructor(
         }
     }
     fun syncWorkspace() { viewModelScope.launch { app.workspaceSync.syncNow() } }
+    fun pauseWorkspace(paused: Boolean) { viewModelScope.launch {
+        app.workspaceSync.pause(paused)
+        if(!paused) app.workspaceSync.syncNow()
+    } }
+    fun resetWorkspaceTransfer() { viewModelScope.launch { app.workspaceSync.discardPending() } }
     fun disconnectWorkspace() { viewModelScope.launch {
         app.workspaceSync.disconnect(); dev.modelatlas.app.work.WorkspaceSyncWorker.cancel(app)
     } }

@@ -91,6 +91,7 @@ data class WorkspacePairResult(
 }
 
 class WorkspaceTransport(client: OkHttpClient = OkHttpClient()) {
+    private val chunkCalls=java.util.concurrent.ConcurrentHashMap<okhttp3.Call,Boolean>()
     private val client = client.newBuilder().followRedirects(false).followSslRedirects(false)
         .callTimeout(35, TimeUnit.SECONDS).build()
 
@@ -124,8 +125,13 @@ class WorkspaceTransport(client: OkHttpClient = OkHttpClient()) {
                 it.accepted.size <= 100 && it.conflicts.size <= 100) { "同步回應版本或範圍不符" }
         }
     }
-    private fun call(base: String, path: String, token: String?, body: String): String {
-        require(body.toByteArray().size <= 33 * 1024 * 1024) { "同步頁面過大，本機資料已保留" }
+    fun cancelChunkCalls() { chunkCalls.keys.forEach { it.cancel() } }
+    fun chunk(base: String,path: String,token: String,body: JsonObject): JsonObject {
+        require(path in setOf("capabilities","transfers/begin","transfers/status","transfers/part","transfers/finish","transfers/reply","transfers/ack","transfers/abort"))
+        return WorkspaceJson.parseToJsonElement(call(base,path,token,body.toString(),384*1024,512*1024,true)).jsonObject
+    }
+    private fun call(base: String, path: String, token: String?, body: String,requestLimit: Int=33*1024*1024,replyLimit: Int=MAX_BYTES,chunked: Boolean=false): String {
+        if(body.toByteArray().size>requestLimit) throw WorkspacePageLimitException()
         val builder = Request.Builder().url(origin(base) + "/api/workspace/" + path)
             .post(body.toRequestBody("application/json".toMediaType())).header("Accept", "application/json")
         if (token != null) {
@@ -133,26 +139,22 @@ class WorkspaceTransport(client: OkHttpClient = OkHttpClient()) {
             builder.header("Authorization", "Bearer $token")
         }
         // Never include response bodies, URLs with credentials or tokens in errors.
-        client.newCall(builder.build()).execute().use { response ->
-            check(response.code == 200) {
-                when (response.code) {
-                    401, 403 -> "裝置權限已撤銷，或配對碼已過期"
-                    409 -> "同步資料有衝突，請先檢視"
-                    else -> "同步中心暫時無法接受資料（HTTP ${response.code}），本機修改已保留"
-                }
-            }
+        val call=client.newCall(builder.build())
+        if(chunked) chunkCalls[call]=true
+        try { call.execute().use { response ->
+            if(response.code!=200) throw WorkspaceHttpException(response.code)
             val source = response.body ?: error("同步回應不完整")
-            require(source.contentLength() <= MAX_BYTES) { "同步回應過大" }
+            require(source.contentLength() <= replyLimit) { "同步回應過大" }
             val out = ByteArrayOutputStream()
             source.byteStream().use { input ->
                 val buffer = ByteArray(8192)
                 while (true) {
                     val n = input.read(buffer); if (n < 0) break
-                    require(out.size() + n <= MAX_BYTES) { "同步回應過大" }
+                    require(out.size() + n <= replyLimit) { "同步回應過大" }
                     out.write(buffer, 0, n)
                 }
             }
             return out.toString("UTF-8")
-        }
+        } } finally { if(chunked) chunkCalls.remove(call) }
     }
 }

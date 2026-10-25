@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -21,10 +20,24 @@ func (s *Server) workspaceConflictDetail(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "local record unavailable", 503)
 		return
 	}
-	var original, other WorkspaceRecord
-	if json.Unmarshal([]byte(local), &original) != nil || json.Unmarshal([]byte(remote), &other) != nil {
+	original, originalError := workspaceDecodeRecord(local)
+	other, otherError := workspaceDecodeRecord(remote)
+	if originalError != nil || otherError != nil {
 		http.Error(w, "conflict unavailable", 503)
 		return
 	}
-	jsonOK(w, 200, map[string]any{"id": key, "kind": kind, "local": live, "original_local": original, "remote": other, "local_hash": workspaceHash(workspaceJSON(live))})
+	hash, e := workspaceRecordDigest(live)
+	if e != nil {
+		workspaceWriteFailure(w, e)
+		return
+	}
+	limited := false
+	if r.URL.Query().Get("preview") == "1" {
+		var a, b, c bool
+		live, a = workspacePreviewRecord(live)
+		original, b = workspacePreviewRecord(original)
+		other, c = workspacePreviewRecord(other)
+		limited = a || b || c
+	}
+	jsonOK(w, 200, map[string]any{"id": key, "kind": kind, "local": live, "original_local": original, "remote": other, "local_hash": hash, "preview_limited": limited})
 }

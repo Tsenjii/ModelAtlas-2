@@ -9,6 +9,7 @@ final class WorkspaceDraftTests: XCTestCase {
         XCTAssertEqual(draft.body["label"].string, "我的 Mac")
         XCTAssertEqual(draft.body["code"].string, code)
         XCTAssertEqual(draft.body["platform"].string, "macOS")
+        XCTAssertTrue(draft.body["resumable"].boolean)
         XCTAssertFalse(draft.description.contains(code))
     }
     func testRejectsCredentialsPathsQueriesAndNonHTTPS() {

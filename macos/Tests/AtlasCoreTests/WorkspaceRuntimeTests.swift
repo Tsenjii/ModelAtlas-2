@@ -40,6 +40,9 @@ final class WorkspaceRuntimeTests: XCTestCase {
             let draft = try WorkspaceDraft(url: fixture, label: "原生 Mac", code: pair["code"].string)
             _ = try await api.call("/workspace/connect", method: "POST", body: draft.body)
             _ = try await api.call("/workspace/sync", method: "POST", body: .object([:]))
+            let firstReceipt = try await api.get("/workspace")
+            XCTAssertTrue(firstReceipt["peer"]["resumable"].boolean)
+            XCTAssertTrue((firstReceipt["transport_receipts"]["outgoing_acked"].numeric ?? 0) > 0, "Native Settings draft must use the real durable transfer path")
             let imported = try await api.get("/my-models").requiredArray()
             XCTAssertEqual(imported.count, 1)
             guard let first = imported.first else { throw AtlasError.invalidResponse }
@@ -81,6 +84,8 @@ final class WorkspaceRuntimeTests: XCTestCase {
             let providers = try await api.get("/providers").requiredArray()
             XCTAssertEqual((providers.first ?? .null)["name"].string, "Hub offline")
             let restoredStatus = try await api.get("/workspace")
+            XCTAssertTrue(restoredStatus["peer"]["resumable"].boolean, "Transport preference must survive the actual engine restart")
+            XCTAssertTrue((restoredStatus["transport_receipts"]["outgoing_acked"].numeric ?? 0) > 0, "ACK must retain its metadata receipt")
             XCTAssertTrue((restoredStatus["peer"]["cursor"].numeric ?? 0) > 0)
             let devices = try await hub.get("/workspace")
             progress("revoke device and retain local history")

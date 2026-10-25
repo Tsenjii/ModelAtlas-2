@@ -12,6 +12,9 @@ struct WorkspaceSyncView: View {
     @State private var shareSecrets = false
     @State private var pairing: JSONValue?
     @State private var busy = false
+    @State private var syncing = false
+    @State private var pausing = false
+    @State private var confirmResetTransfer = false
     @State private var problem: String?
     @State private var confirmDisconnect = false
     @State private var confirmRevoke = false
@@ -32,10 +35,20 @@ struct WorkspaceSyncView: View {
                     if let timestamp = peer["last_success"].numeric {
                         Text("上次成功：" + Date(timeIntervalSince1970: timestamp / 1000).formatted()).font(.caption).foregroundStyle(.secondary)
                     }
-                    if !peer["last_error"].string.isEmpty { Text("同步暫未完成，本機資料與待同步修改已保留。").foregroundStyle(.red) }
+                    if peer["enabled"].boolean && !peer["last_error"].string.isEmpty { Text("同步暫未完成，本機資料與待同步修改已保留。").foregroundStyle(.red) }
+                    let transfer = status["transfer"]
+                    if !peer["enabled"].boolean { Text("同步已暫停；傳輸進度與本機修改都已保留。").font(.caption).foregroundStyle(.secondary) }
+                    if transfer != .null {
+                        Text(transfer["consumed"].boolean ? "資料已儲存，等待確認同步收據" : transfer["state"].string == "DOWNLOADING" ? "正在接收同步結果" : "正在上傳，可從已儲存的進度恢復").font(.caption)
+                        Text("上傳 " + bytes(transfer["progress_bytes"]) + " / " + bytes(transfer["request_bytes"]) + ((transfer["reply_bytes"].numeric ?? 0) > 0 ? " · 接收 " + bytes(transfer["downloaded_bytes"]) + " / " + bytes(transfer["reply_bytes"]) : " · 等待同步結果")).font(.caption).foregroundStyle(.secondary)
+                    }
                     HStack {
-                        Button("立即同步") { Task { await run { api in _ = try await api.call("/workspace/sync", method: "POST", body: .object([:])); try await store.reload() } } }
-                        Button("中斷連線", role: .destructive) { confirmDisconnect = true }
+                        Button(peer["enabled"].boolean && transfer == .null ? "立即同步" : "恢復同步") { Task { await syncNow() } }.disabled(busy)
+                        if peer["enabled"].boolean { Button("暫停同步") { Task { await pauseSync() } }.disabled(pausing) }
+                        Button("中斷連線", role: .destructive) { confirmDisconnect = true }.disabled(busy)
+                    }
+                    if !peer["enabled"].boolean && transfer != .null && !transfer["consumed"].boolean {
+                        Button("重新準備傳輸") { confirmResetTransfer = true }.disabled(busy)
                     }
                 } else {
                     DisclosureGroup("連接同步中心") {
@@ -48,9 +61,12 @@ struct WorkspaceSyncView: View {
                                 let draft = try WorkspaceDraft(url: url, label: label, code: code)
                                 _ = try await api.call("/workspace/connect", method: "POST", body: draft.body)
                                 code = ""
+                                status = try await api.get("/workspace")
+                                syncing = true
+                                defer { syncing = false }
                                 _ = try await api.call("/workspace/sync", method: "POST", body: .object([:]))
                                 try await store.reload()
-                            } } }
+                            } } }.disabled(busy)
                         }.padding(.top, 10)
                     }
                     DisclosureGroup("配對另一台裝置") {
@@ -59,7 +75,7 @@ struct WorkspaceSyncView: View {
                             Text("秘密經認證 HTTPS 傳送，並在目的端重新加密保存。預設只同步資料。").font(.caption).foregroundStyle(.secondary)
                             Button("產生一次性配對碼") { Task { await run { api in
                                 pairing = try await api.call("/workspace/pair", method: "POST", body: .object(["share_secrets": .bool(shareSecrets)]))
-                            } } }
+                            } } }.disabled(busy)
                             if let pairing {
                                 SecureField("一次性配對碼", text: .constant(pairing["code"].string)).textFieldStyle(.roundedBorder)
                                 Text("五分鐘內有效，限用一次。請只交給自己的裝置。").font(.caption).foregroundStyle(.secondary)
@@ -74,7 +90,7 @@ struct WorkspaceSyncView: View {
                             Text(device["label"].string).font(.callout.weight(.medium))
                             Text(device["platform"].string + " · " + (device["revoked_at"] != .null ? "已撤銷" : device["share_secrets"].boolean ? "可同步 Key" : "只同步資料")).font(.caption).foregroundStyle(.secondary)
                             if device["revoked_at"] == .null {
-                                Button("撤銷這台裝置", role: .destructive) { revokeDevice = device; confirmRevoke = true }
+                                Button("撤銷這台裝置", role: .destructive) { revokeDevice = device; confirmRevoke = true }.disabled(busy)
                             }
                         }.padding(.vertical, 8)
                     }
@@ -83,20 +99,30 @@ struct WorkspaceSyncView: View {
                     Text("需要你選擇的修改").font(.headline)
                     ForEach(status["conflicts"].array, id: \.self) { item in
                         Button("檢視兩份修改") { Task { await run { api in
-                            let value = try await api.get("/workspace/conflict", query: [URLQueryItem(name: "id", value: item["id"].string)])
+                            let value = try await api.get("/workspace/conflict", query: [URLQueryItem(name: "id", value: item["id"].string), URLQueryItem(name: "preview", value: "1")])
                             conflictID = item["id"].string; conflict = value
-                        } } }
+                        } } }.disabled(busy)
                     }
                 }
                 AtlasLoadedMarker(name: "workspace-sync-loaded").frame(height: 0)
             } else { ProgressView("正在讀取同步狀態…") }
             HStack {
-                Button("更新同步狀態") { Task { await run { _ in } } }
+                Button("更新同步狀態") { Task { await run { _ in } } }.disabled(busy)
                 if busy { ProgressView().controlSize(.small) }
             }
             if let problem { Text(problem).font(.callout).foregroundStyle(.red).textSelection(.enabled) }
         }
-        .disabled(busy)
+        .task(id: syncing) {
+            guard syncing, let api = store.api else { return }
+            while syncing && !Task.isCancelled {
+                do {
+                    let latest = try await api.get("/workspace")
+                    if Task.isCancelled || !syncing { return }
+                    status = latest
+                    try await Task.sleep(nanoseconds: 750_000_000)
+                } catch { return }
+            }
+        }
         .task {
             await run { _ in }
             while !Task.isCancelled {
@@ -108,6 +134,12 @@ struct WorkspaceSyncView: View {
         .confirmationDialog("中斷這台 Mac 的同步連線？", isPresented: $confirmDisconnect) {
             Button("中斷連線", role: .destructive) { Task { await run { api in _ = try await api.call("/workspace/disconnect", method: "POST", body: .object(["confirm": .bool(true)])) } } }
         } message: { Text("本機資料與完整歷史都會保留。") }
+        .confirmationDialog("重新準備傳輸？", isPresented: $confirmResetTransfer) {
+            Button("重新準備傳輸") { Task { await run { api in
+                guard let id = status?["transfer"]["id"].string, !id.isEmpty else { return }
+                _ = try await api.call("/workspace/transfer/discard", method: "POST", body: .object(["id": .string(id), "confirm": .bool(true)]))
+            } } }
+        } message: { Text("只重設尚未完成的傳輸暫存。本機資料、完整歷史與待同步修改都會保留；已完成的資料必須先恢復讀取結果。") }
         .confirmationDialog("撤銷同步權限？", isPresented: $confirmRevoke, presenting: revokeDevice) { device in
             Button("撤銷這台裝置", role: .destructive) { Task { await run { api in
                 _ = try await api.call("/workspace/revoke", method: "POST", body: .object(["device_id": device["id"], "confirm": .bool(true)]))
@@ -118,6 +150,7 @@ struct WorkspaceSyncView: View {
                 HStack { Text("選擇要保留的修改").font(.title2); Spacer(); Button("關閉") { conflict = nil } }
                 Text("兩份修改及衝突歷史都會保留。選擇前會再次核對最新版本。").foregroundStyle(.secondary)
                 if let conflict {
+                    if conflict["preview_limited"].boolean { Text("長內容顯示摘要；完整兩份資料與歷史仍保留。").font(.caption).foregroundStyle(.secondary) }
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
                             snapshot("本機", conflict["local"])
@@ -150,9 +183,33 @@ struct WorkspaceSyncView: View {
         await run { api in
             _ = try await api.call("/workspace/resolve", method: "POST", body: .object(["id": .string(conflictID), "choice": .string(choice), "confirm": .bool(true), "local_hash": detail["local_hash"]]))
             conflict = nil
+            syncing = true
+            defer { syncing = false }
             _ = try await api.call("/workspace/sync", method: "POST", body: .object([:]))
             try await store.reload()
         }
+    }
+    private func bytes(_ value: JSONValue) -> String {
+        guard let count = value.numeric, count.isFinite, count >= 0, count <= Double(72 * 1024 * 1024), count.rounded() == count else { return "尚未確認" }
+        return ByteCountFormatter.string(fromByteCount: Int64(count), countStyle: .file)
+    }
+    private func syncNow() async {
+        await run { api in
+            syncing = true
+            defer { syncing = false }
+            _ = try await api.call("/workspace/control", method: "POST", body: .object(["enabled": .bool(true), "resumable": .bool(true)]))
+            _ = try await api.call("/workspace/sync", method: "POST", body: .object([:]))
+            try await store.reload()
+        }
+    }
+    private func pauseSync() async {
+        guard !pausing, let api = store.api else { return }
+        pausing = true
+        defer { pausing = false }
+        do {
+            _ = try await api.call("/workspace/control", method: "POST", body: .object(["enabled": .bool(false)]))
+            status = try await api.get("/workspace")
+        } catch { problem = error.localizedDescription }
     }
     private func run(_ action: (AtlasClient) async throws -> Void) async {
         guard !busy else { return }
@@ -164,6 +221,9 @@ struct WorkspaceSyncView: View {
             status = try await api.get("/workspace")
             if let expires = pairing?["expires_at"].numeric, expires < Date().timeIntervalSince1970 * 1000 { pairing = nil }
         } catch is CancellationError { }
-        catch { problem = error.localizedDescription }
+        catch {
+            if let latest = try? await api.get("/workspace") { status = latest }
+            if status?["peer"]["enabled"].boolean != false { problem = error.localizedDescription }
+        }
     }
 }

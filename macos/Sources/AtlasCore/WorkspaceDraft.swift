@@ -27,7 +27,7 @@ public struct WorkspaceDraft: Sendable, CustomStringConvertible {
         self.label = name; self.code = value
     }
     public var body: JSONValue { .object([
-        "url": .string(url), "label": .string(label), "code": .string(code), "platform": .string("macOS")
+        "url": .string(url), "label": .string(label), "code": .string(code), "platform": .string("macOS"), "resumable": .bool(true)
     ]) }
 }
 

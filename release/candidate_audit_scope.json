@@ -1,17 +1,17 @@
 {
   "schema": 1,
-  "slice": "FIELD-MAPPING-015O",
+  "slice": "WORKSPACE-CHUNKS-015P",
   "browser_baseline": {
-    "id": 12594292358,
-    "bytes": 37548886,
-    "digest": "sha256:c6163810ba4b17257ca2070bd1c52c747292a96023620875a5a7f25597d74de2",
-    "source": "faf614f84265a91d85063e5f1e16d91b88266e51"
+    "id": 12602544338,
+    "bytes": 38703232,
+    "digest": "sha256:6e3ab3e4fcc6ddb3b715b3af67565f5385f6e425b3c6ef15daf6ee482e0944e7",
+    "source": "66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2"
   },
   "device_inventory": {
-    "id": 12601750979,
-    "bytes": 1258280,
-    "digest": "sha256:1d549f7cf72a38164629f4c12801bd78b36697e50d6d45844e285ed4056bbd1e",
-    "source": "25588f93e9cb5083e9a71b00709c7424a82275b9"
+    "id": 12602799262,
+    "bytes": 1258380,
+    "digest": "sha256:6aacd1a8e866da5767ff5f034f98f317b28cce8d4c2d8ab70cf44c62ddf46758",
+    "source": "66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2"
   },
   "rejected_device": {
     "id": 12602362373,
@@ -90,5 +90,11 @@
         "sha256:a8000802aa1b4ecc17ee38db2077ecbbedd440e3ba7688f8c63a96d9cb4f4a39"
       ]
     ]
+  },
+  "core_inventory": {
+    "id": 12602768642,
+    "bytes": 17249184,
+    "digest": "sha256:3ea2aae5bc43426b35d17ce2c24c11e3efcaeb83377451b7560f9d9b65385371",
+    "source": "66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2"
   }
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -174,7 +175,7 @@ func TestConnectorMappingSnapshotMigrationAndLocalOnlyData(t *testing.T) {
 	s = reopenScheduleStore(t, s)
 	assertSQLInt(t, s, schemaVersion, "PRAGMA user_version")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM my_models WHERE model_id=?", v.ModelID)
-	files, e := filepath.Glob(filepath.Join(filepath.Dir(path), "upgrade-backups", "schema-35-to-36-*.sqlite"))
+	files, e := filepath.Glob(filepath.Join(filepath.Dir(path), "upgrade-backups", fmt.Sprintf("schema-35-to-%d-*.sqlite", schemaVersion)))
 	if e != nil || len(files) != 1 {
 		t.Fatalf("missing consistent migration snapshot: %v %v", files, e)
 	}
