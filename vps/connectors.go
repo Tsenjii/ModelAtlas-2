@@ -491,6 +491,10 @@ func (s *Server) activateConnector(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "test this version with current scope before activation", 409)
 		return
 	}
+	if e = validateConnectorFixtureQuery(r.Context(), tx, v.ID, cfg, t.Selection, hash); e != nil {
+		mappingProblem(w, e)
+		return
+	}
 	if cfg.Kind == "CATALOG" {
 		var count int
 		tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM connector_active a JOIN connector_versions x ON x.id=a.version_id WHERE a.provider_id=? AND a.name!=? AND json_extract(x.config_json,'$.kind')='CATALOG'", provider, name).Scan(&count)

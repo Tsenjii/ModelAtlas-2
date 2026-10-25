@@ -1,6 +1,6 @@
 package main
 
-const appJS = jsCore + jsWorkspaceRecovery + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsResearchSchedules + jsPrivateResearchSchedule + jsResearchProgressive + jsResearchInferenceBudget + jsResearchResourceBudget + jsResearchQuotaPools + jsDetailWorkspace + jsProviderForms + jsDetails + jsAuthenticity + jsOnboard + jsAssistant + jsConnectorDiscovery + jsKnowledge + jsQueryResearch + jsSiteRecipe + jsModels + jsConversations + jsConversationCreation + jsReceipts + jsStreaming + jsCatalog + jsWorkspace + jsModelPicker + jsMacAlignment + jsIntelligence + jsCheckins + jsMacParity + jsModelConnections + jsModelViews + jsWorkspaceSync + jsSystemStatus + jsFactoryDefaults + jsExtraction
+const appJS = jsCore + jsWorkspaceRecovery + jsViews + jsChat + jsMedia + jsTools + jsResearch + jsResearchSchedules + jsPrivateResearchSchedule + jsResearchProgressive + jsResearchInferenceBudget + jsResearchResourceBudget + jsResearchQuotaPools + jsDetailWorkspace + jsProviderForms + jsDetails + jsAuthenticity + jsOnboard + jsAssistant + jsConnectorDiscovery + jsKnowledge + jsQueryResearch + jsSiteRecipe + jsModels + jsConversations + jsConversationCreation + jsReceipts + jsStreaming + jsCatalog + jsWorkspace + jsModelPicker + jsMacAlignment + jsIntelligence + jsCheckins + jsMacParity + jsModelConnections + jsModelViews + jsWorkspaceSync + jsSystemStatus + jsFactoryDefaults + jsExtraction + jsConnectorMapping
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);

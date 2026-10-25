@@ -108,13 +108,29 @@ func (s *Server) validateConnectorFixture(ctx context.Context, id string, c Conn
 	return validateConnectorFixtureQuery(ctx, s.Store.DB, id, c, v, hash)
 }
 func validateConnectorFixtureQuery(ctx context.Context, q queryRows, id string, c ConnectorConfig, v Selection, hash string) error {
-	var raw string
-	err := q.QueryRowContext(ctx, "SELECT fixture_json FROM connector_generated_versions WHERE version_id=?", id).Scan(&raw)
+	var raw, proofRaw string
+	err := q.QueryRowContext(ctx, "SELECT fixture_json,proof_json FROM connector_generated_versions WHERE version_id=?", id).Scan(&raw, &proofRaw)
 	if err == sql.ErrNoRows {
 		return nil
 	} // Existing/manual drafts retain their original real-test workflow.
 	if err != nil {
 		return errors.Join(errors.New("fixture unavailable"), err)
+	}
+	var proof connectorDiscoveryProof
+	if json.Unmarshal([]byte(proofRaw), &proof) != nil {
+		return errMappingReview
+	}
+	if proof.MappingSampleID != "" {
+		// Fresh samples admit new mappings. Existing versions must instead replay
+		// immutable evidence and obtain a fresh real HTTP receipt; source history
+		// does not expire an already approved reader.
+		sample, report, e := readMappingSampleCurrent(ctx, q, proof.MappingSampleID, false)
+		if e != nil {
+			return e
+		}
+		if sample.DiscoveryID != proof.MappingParentID || connectorHash(sample.Root) != proof.MappingSampleHash || sample.SourceURL != proof.SourceURL || sample.SourceHash != proof.SourceHash || connectorHash(report.Selection) != connectorHash(v) || sample.ContextHash != hash {
+			return errMappingReview
+		}
 	}
 	var f connectorFixture
 	decoder := json.NewDecoder(strings.NewReader(raw))

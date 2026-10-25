@@ -1,3 +1,7 @@
+> 015O本機候選：完整Go race318.399s，395個註冊函式／586個case與subcase（539pass／47明確opt-in skip），逐項保留015N原575結果；完整40 Browser race214.815s成功，原487圖全部保留。最後欄位／復原／200%新流程另race7.715s與十項後端12.024s成功，合計501PNG＝原487＋14已檢視。vet、35發布回歸0.041s及原4個coverage checker成功。自己的新來源九項／全部實際產物前仍候選，完整下一版PARTIAL。
+
+> 2026-10-25 唯一新片 FIELD-MAPPING-015O：015N來源faf614f84265a91d85063e5f1e16d91b88266e51／treeb94cbb031dcb128794fa5212244fe8ff94e66046已同源九項、九份實際ZIP與18實圖驗收所列擷取比較範圍，持久證據見verification/20261025/extraction-baseline.json與Draft PR #20。main仍cba901d／39536090788兩項SUCCESS，FEATURE FREEZE=OFF。接續已保存公開JSON的未知欄位對照、來源樣本／scope／單位證據、fixture與真HTTP實測、明確Review／正式使用及持久Undo。自己的完整回歸及九項／全部實際產物前仍候選；不借015N綠燈。原全部需求／測試／負載／timeout、公開0.8.5-preview.1／11附件凍結保留，不merge／部署，完整下一版PARTIAL。
+
 > 015N本機候選：完整Go race350.310s保留全部原557個case／subcase結果，當時383註冊案例337pass／46opt-in skip；全部574個case與subcase為528pass／46skip；之後新增0HTTP額度拒絕反例1.985s並修正LOCAL_WAIT，最後14個擷取函式race17.020s成功。完整39 Browser race197.183s／487圖（原473＋14）成功；飛行取消／不重開已關閉視窗／只讀恢復與48px／200%已驗，新來源自己384案例與九項／全部實際產物前仍候選。vet、原35發布回歸與4個coverage checker成功；原工作量／timeout及公開版本凍結不變。
 
 > 2026-10-25 唯一新片 EXTRACTION-015N：015M來源5bc886f98c2646c7e4f43948167b23b71c7e0613／tree8f51b1be90cf092fb84bc40ef0ee281bf098d3d1已由同源九項attempt1、九份實際ZIP及20實圖驗收所列Kilo出廠預設範圍，精確證據見verification/20261025/kilo-defaults-baseline.json及Draft PR #20。main仍cba901d／39536090788兩項SUCCESS，FEATURE FREEZE=OFF。接續擷取效率：精確公開規則的版本化合併讀取提案、三輪有界實際對照與Unknown成本、明確Review／試用、正式Intelligence使用與退化監測／共用持久Undo。原全部測試／負載／timeout與已驗Kilo功能保留；不改公開0.8.5-preview.1／11附件、不merge／部署；本片自己的完整回歸及同源九項／實際產物前仍候選，完整下一版仍PARTIAL。

@@ -29,12 +29,13 @@ type connectorDiscoveryRequest struct {
 	SourcePath    string    `json:"source_path"`
 }
 type connectorDiscoverySource struct {
-	URL        string   `json:"url"`
-	Status     string   `json:"status"`
-	HTTPStatus int      `json:"http_status,omitempty"`
-	Hash       string   `json:"content_hash,omitempty"`
-	DraftIDs   []string `json:"draft_ids"`
-	Reason     string   `json:"reason,omitempty"`
+	MappingSampleID string   `json:"mapping_sample_id,omitempty"`
+	URL             string   `json:"url"`
+	Status          string   `json:"status"`
+	HTTPStatus      int      `json:"http_status,omitempty"`
+	Hash            string   `json:"content_hash,omitempty"`
+	DraftIDs        []string `json:"draft_ids"`
+	Reason          string   `json:"reason,omitempty"`
 }
 type connectorDiscoveryReport struct {
 	FamilyEvidence []siteFamilyEvidence       `json:"family_evidence,omitempty"`
@@ -57,16 +58,19 @@ type connectorDiscoveryReport struct {
 	Limitations    []string                   `json:"limitations"`
 }
 type connectorDiscoveryProof struct {
-	ReportID      string         `json:"report_id"`
-	SourceURL     string         `json:"source_url"`
-	SourceHash    string         `json:"content_hash"`
-	ObservedAt    int64          `json:"observed_at"`
-	Selection     Selection      `json:"selection"`
-	Family        string         `json:"family_hint"`
-	Version       string         `json:"version_hint"`
-	FixtureStatus string         `json:"fixture_status"`
-	Expected      map[string]any `json:"fixture_expected"`
-	Limitations   []string       `json:"limitations"`
+	MappingSampleID   string         `json:"mapping_sample_id,omitempty"`
+	MappingSampleHash string         `json:"mapping_sample_sha256,omitempty"`
+	MappingParentID   string         `json:"mapping_parent_id,omitempty"`
+	ReportID          string         `json:"report_id"`
+	SourceURL         string         `json:"source_url"`
+	SourceHash        string         `json:"content_hash"`
+	ObservedAt        int64          `json:"observed_at"`
+	Selection         Selection      `json:"selection"`
+	Family            string         `json:"family_hint"`
+	Version           string         `json:"version_hint"`
+	FixtureStatus     string         `json:"fixture_status"`
+	Expected          map[string]any `json:"fixture_expected"`
+	Limitations       []string       `json:"limitations"`
 }
 type connectorGeneratedDraft struct {
 	Config  ConnectorConfig
@@ -211,6 +215,7 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 		seen[ref] = true
 	}
 	drafts := []connectorGeneratedDraft{}
+	mappingSamples := []connectorMappingSample{}
 	for len(queue) > 0 && report.Attempts < limit && ctx.Err() == nil {
 		path := queue[0]
 		queue = queue[1:]
@@ -258,6 +263,12 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 		}
 		if isJSON {
 			root = connectorStripRawSecrets(cleanSecretEcho(root, secrets, 0), 0)
+			if !reference {
+				if sample := prepareMappingSample(root, v.ID, target, source.Hash, path, hash, report.ObservedAt); sample != nil && !containsKnownSecret(sample.Root, secrets) {
+					source.MappingSampleID = sample.ID
+					mappingSamples = append(mappingSamples, *sample)
+				}
+			}
 			family, version := connectorFamilyHint(root)
 			generated, reasons := inferConnectorMappings(root, path, v.Selection)
 			if reference {
@@ -376,6 +387,9 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 		report.Sources[draft.Source].DraftIDs = append(report.Sources[draft.Source].DraftIDs, id)
 	}
 	final, _ := json.Marshal(report)
+	if err = saveMappingSamples(save, tx, mappingSamples, report); err != nil {
+		return report, true, errors.New("source sample persistence failed; inspect saved request ID")
+	}
 	if _, err = tx.ExecContext(save, "UPDATE connector_discoveries SET report_json=? WHERE id=?", string(final), v.ID); err != nil || tx.Commit() != nil {
 		return report, true, errors.New("discovery commit failed; inspect saved request ID")
 	}
