@@ -1,3 +1,5 @@
+> 015O候選25588f93未接受：自己的VPS四項／Mac三項／Android build成功，device121184563846的原enablePathUnchanged逾時15000ms；實際ZIP的984案例／1failure／0error／5skip及logcat已核對。原錯誤缺少分類，不能宣稱這次根因已證明。接續同片加入真Room／vault／VM的active先清空、management尚無列之確定性反例，先觀察紅燈再修；原六個rollback案例、全部984案例／timeout及工作量保留，不重跑掩蓋失敗。原始metadata／實際報告hash見verification/20261025/field-mapping-android-candidate.json，完整下一版仍PARTIAL。
+
 > 015O首候選6221b989未接受：追加原scope變更測試於race0.946s確認SCOPE_CHANGED紀錄會宣告未提交的sample ID。現清除該ID，UI只在已完成且有保存樣本的狀態提供對照；保留全部原斷言／HTTP／timeout。含原辨識與十項mapping擴大35.756s、兩個真Browser7.279s成功；新來源另跑自己的完整九項／全部實際產物，不借首候選綠燈。metadata及反例見verification/20261025/field-mapping-initial-candidate.json。
 
 > 015O本機候選：完整Go race318.399s，395個註冊函式／586個case與subcase（539pass／47明確opt-in skip），逐項保留015N原575結果；完整40 Browser race214.815s成功，原487圖全部保留。最後欄位／復原／200%新流程另race7.715s與十項後端12.024s成功，合計501PNG＝原487＋14已檢視。vet、35發布回歸0.041s及原4個coverage checker成功。自己的新來源九項／全部實際產物前仍候選，完整下一版PARTIAL。
