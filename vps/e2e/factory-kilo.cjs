@@ -18,7 +18,7 @@ const {chooseTarget}=require('./model-picker-helper.cjs');
   for(const width of [320,375,1280])for(const theme of ['light','dark']){await page.setViewportSize({width,height:900});await page.emulateMedia({colorScheme:theme});await shot('ready-'+width+'-'+theme);}
   await page.setViewportSize({width:375,height:900});await page.emulateMedia({colorScheme:'light'});
   await page.locator('#new-session').click();await page.locator('#send:enabled').waitFor();await page.locator('#prompt').fill('僅有合成資料的出廠對話');await page.locator('#send').click();
-  await page.getByText('KILO_BROWSER_OK',{exact:true}).waitFor();await page.locator('#send:enabled').waitFor();await page.locator('#notice.notice-visible').waitFor({state:'hidden'});await shot('chat-375-light');
+  await page.getByText('KILO_BROWSER_OK',{exact:true}).waitFor();await page.locator('#send:enabled').waitFor();assert.equal(await page.locator('#chat .native-welcome').count(),0,'the empty welcome card must leave the first real conversation');await page.locator('#notice.notice-visible').waitFor({state:'hidden'});await shot('chat-375-light');
   assert.deepEqual(await state(),{catalogs:1,chats:1,installs:0,samples:1,messages:2,members:15});
   await context.request.post(origin+'/test/kilo/paid');await page.locator('#prompt').fill('價格改變後保留的草稿');await page.locator('#send').click();await page.locator('#send:enabled').waitFor();
   await page.getByText(/這個Kilo模型目前未確認為免費可用/).waitFor();assert.equal(await page.locator('#prompt').inputValue(),'價格改變後保留的草稿');assert(await page.locator('#factory-kilo-problem').isVisible());

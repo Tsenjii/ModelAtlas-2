@@ -49,3 +49,7 @@ VPS schema34 的 `factory_defaults` 只保存本機首次安裝意圖，33→34 
 後續015M反例：原0f60e209的vps-test在600.032s逾時，其他8項CI成功也不接受；原stack與來源保留。正式研究caller在預算已滿時把本機拒絕誤分類成Kilo目錄失敗（0.068s），另真TLS semantic報告只列1次而實際目錄＋模型共2次（0.133s），兩者均已修正。保留原typed等待／明確resume及本機scope變動原因，取消不建立失敗模型樣本；每次probe從既有task meter計算實際本次HTTP，不把以前attempt累加成本次。擴大Factory／原Progressive／Conversation聚焦race47.992s、原完整單程序race463.795s成功（全部369 top-level，324pass／45明確opt-in skip）；兩個獨立程序完整runner仍保留全部原migration／HTTP／負載與整套600秒上限，詳[TESTING.md](TESTING.md)。新來源自己的九項、實際附件與實圖前仍候選。
 
 完整兩程序race240.844s成功，369個註冊案例185／184各執行一次；與原單程序463.795s全部case／subcase結果逐項相同，沒有省略、重複或失敗。四項coverage checker拒絕漏測／重複／錯誤退出／壞事件的反例亦成功。整套仍共同600秒上限，新的同源九項仍待驗。
+
+f7e2af0f九項CI成功後，實際473圖仍發現首次聊天殘留空白welcome而在375px露出截斷標題；正式Browser新增斷言2.055s重現。修正正式bubble在首個訊息移除native-welcome，沒有靠測試隱藏或捲動遮住；Kilo與原Production／ChatExperience／Conversations四流程race15.003s成功並重新檢視清楚的首輪對話。新來源完整38流程及九項／全部實際產物再驗，先前綠燈不借用。
+
+首輪welcome修後完整38 Browser race186.450s成功，473圖保留原458＋15；真實聊天的native-welcome為0，375px首輪對話重新檢視清楚，沒有動到已保存訊息。兩次候選的原始CI／artifact metadata與不接受原因保存於`docs/verification/20261025/kilo-intermediate-candidates.json`。

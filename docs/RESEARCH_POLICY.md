@@ -1,3 +1,7 @@
+> 015M首輪歡迎卡修後完整38 Browser race186.450s成功，473圖保留原458＋15；首輪訊息的native-welcome必須為0，實際375px對話已重新檢視。原369 Go／557結果等價與全負載、全部原生情境保留；新來源自己的九項與實際產物前仍候選。
+
+> 015M實圖追加反例：f7e2af0f的九項CI已SUCCESS，但實際Browser首輪聊天仍殘留native welcome，375px標題被截斷；新增正式操作斷言2.055s重現，沒有把CI綠燈當完整UI驗收。bubble移除真正空白歡迎卡，保留原訊息／草稿與scope；含Kilo／原Production／ChatExperience／Conversations四流程race15.003s成功，新來源重跑完整38 Browser與自己的九項／實際產物。
+
 > 015M完整兩程序race240.844s成功：369個註冊案例185／184各執行一次，與原單程序463.795s的所有case／subcase結果逐項完全相同；共同600秒上限、每個原fixture／migration／HTTP／負載／斷言皆保留，覆蓋checker四項亦成功。新的來源尚待自己的九項與實際產物，仍不借0f的8項成功。
 
 > 015M首0f60e209未接受：8項CI成功，vps-test121064231573在原600秒上限600.032s逾時；原stack保留。另以正式caller重現Kilo目錄budget原因誤分類0.068s及probe漏列目錄HTTP0.133s，已修正等待／明確resume、取消與每次實際HTTP報告。擴大聚焦47.992s及原完整單程序race463.795s成功（369個top-level案例、324pass／45明確opt-in skip）；完整案例改以兩個獨立程序共用原600秒上限，沒有減測試／migration／負載，待此來源自己的九項與全部實際產物。
