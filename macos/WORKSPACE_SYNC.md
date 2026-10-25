@@ -1,3 +1,5 @@
+> 2026-10-25 唯一新片 WORKSPACE-CHUNKS-015P：015O來源66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2／tree648dfd7bb3b7b989418a81fac3a4da995882d5dc已由同源九項attempt1、九份實際ZIP、額外只讀稽核與18實圖驗收所列公開欄位對照／管理交接範圍，精確證據見verification/20261025/field-mapping-baseline.json及Draft PR #20。main仍cba901d／39536090788 build＋device成功，FEATURE FREEZE=OFF。接續大於原32MiB單筆上限的分塊／持久進度／中斷恢復／完整雜湊／原子結果與三端正式入口；先加入獨立裝置能力協商的真TLS反例，尚未接線，不預稱通過或完整同步已交付。保留原嚴格v1 pair／exchange格式、原全部工作量／timeout、精確scope／秘密／撤銷／衝突／last-good；自己的新來源完整九項／全部實際產物前仍候選。公開版本／11附件凍結，不merge／部署，完整下一版PARTIAL。
+
 # Mac 跨裝置同步 — SYNC-001 已驗核心／剩餘對應追蹤
 
 設定 → 資料 → 跨裝置同步使用原生 SwiftUI 元件。Mac 的 AtlasClient 仍只連本機 loopback；共用 Go 引擎透過可信任 VPS 的 HTTPS 執行同步，目的端使用自己的 Keychain 主金鑰重新加密。Mac 休眠時不承諾持續運行，喚醒後可接續增量同步。

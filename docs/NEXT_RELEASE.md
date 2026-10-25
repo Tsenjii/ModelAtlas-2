@@ -1,3 +1,5 @@
+> 2026-10-25 唯一新片 WORKSPACE-CHUNKS-015P：015O來源66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2／tree648dfd7bb3b7b989418a81fac3a4da995882d5dc已由同源九項attempt1、九份實際ZIP、額外只讀稽核與18實圖驗收所列公開欄位對照／管理交接範圍，精確證據見verification/20261025/field-mapping-baseline.json及Draft PR #20。main仍cba901d／39536090788 build＋device成功，FEATURE FREEZE=OFF。接續大於原32MiB單筆上限的分塊／持久進度／中斷恢復／完整雜湊／原子結果與三端正式入口；先加入獨立裝置能力協商的真TLS反例，尚未接線，不預稱通過或完整同步已交付。保留原嚴格v1 pair／exchange格式、原全部工作量／timeout、精確scope／秘密／撤銷／衝突／last-good；自己的新來源完整九項／全部實際產物前仍候選。公開版本／11附件凍結，不merge／部署，完整下一版PARTIAL。
+
 > 015O候選3ef96c39未接受：新立即啟用反例通過，但原PendingConnectionHandoffTest.disabledPendingIsEvictedAndNeverResurrectsAsUsable失敗，確認停用必須移除active pending。現改為獨立managementHandoffById，僅供管理列／管理操作，恢復原pending AND與停用eviction；成功寫入才交接，真management到達即退休，不加入active／send／選取。原984案例及完整原PendingConnectionHandoffTest保持，追加反例保留所有UI／Room／vault斷言並加管理交接不冒充active；總985／5原skip／timeout不減。互動環境中斷後加只讀產物稽核與四個XML反例，待新來源自己的九項／九ZIP／18實圖才接受，不能借3ef八項綠燈；證據見verification/20261025/field-mapping-management-handoff-candidate.json。完整下一版PARTIAL，公開版本／11附件凍結。
 
 > 015O同片穩定性修正候選：25588f93因原Android啟用逾時未接受；37c7c34d的真Room／vault／VM確定性反例於985案例中唯一失敗，確認停用成功後active先清空、management尚無列會掉失管理入口。現只在真寫入成功後交接精確credential的已知列；啟用保留原AND、停用待management接手即退休。另真Browser33.60s確認來源會員變更409會擋住已提交結果恢復，現先提供原ID只讀恢復且不曝空表單；聚焦5.37s、含原辨識兩Browser7.946s及後端35.733s成功。原984／5skip完整＋1確定性案例、全部工作量／timeout保留；修後自己的九項／全部實際產物前仍候選。證據見verification/20261025/field-mapping-regression-counterexamples.json，完整下一版PARTIAL。
@@ -33,10 +35,10 @@
 | 工作 | 下一版必須可操作的結果 | 目前已驗基礎與主要缺口 |
 |---|---|---|
 | 研究排程／WISH-CRAWL-001 | 多語新站發現與候選重驗、來源／語言／地區優先序、精確預算與用量、持久分頁與恢復、完整漏斗 | VPS 公開排程、來源冷卻、AA逐頁恢復已驗；015B Brave逐頁／地區與revision用量已同來源九項驗收；015E原子入場已驗；015F每日／逐憑證核准已驗；015G token／USD預留及回報結算已驗；015H共用研究pool已驗；015I私人排程opt-in／來源確認與排程每日預算已驗；015J逐級probe／重驗策略已驗 |
-| 站點解析／WISH-CRAWL-002 | 來源證據→family/version/入口辨識→宣告式草稿→fixture及有界HTTP測試→共用Review→啟用／回退；Unknown、資格、一次性與recurring分開 | 手動connector、實測與啟用已驗；015C已驗公開來源自動mapping／fixture／真HTTP Review、改版保留與持久回退；015L來源別family/version、可選被動程式參照與整組公開配方實作候選；私人入口／任意schema及專用原生呈現仍缺 |
-| 研究改進／WISH-REFL-001 | 多輪品質／成本→具體版本差異→可重現比較→Review→下一輪使用版本→監測→退化回退 | 既有反思／版本／手動權重與Undo已驗；015A已驗固定策略版本、多輪本機比較、明確試用／退化監測與持久回退；015K已驗本機公開證據生成query、真成對實測及下一輪試用／監測／Undo；擷取規則與其他更新類型及token／費用的完整比較尚缺 |
+| 站點解析／WISH-CRAWL-002 | 來源證據→family/version/入口辨識→宣告式草稿→fixture及有界HTTP測試→共用Review→啟用／回退；Unknown、資格、一次性與recurring分開 | 手動connector、實測與啟用已驗；015C已驗公開來源自動mapping／fixture／真HTTP Review、改版保留與持久回退；015L來源別family/version、可選被動程式參照與整組公開配方實作候選；015O已驗公開未知JSON欄位對照與來源變更只讀恢復；私人入口／任意schema及專用原生呈現仍缺 |
+| 研究改進／WISH-REFL-001 | 多輪品質／成本→具體版本差異→可重現比較→Review→下一輪使用版本→監測→退化回退 | 既有反思／版本／手動權重與Undo已驗；015A已驗固定策略版本、多輪本機比較、明確試用／退化監測與持久回退；015K已驗本機公開證據生成query、真成對實測及下一輪試用／監測／Undo；015N擷取規則比較所列範圍已驗；其他更新類型及token／費用的完整比較仍待補 |
 | 真實性／WISH-AUTH-001 | 獨立版本化suite、重用實際流量、能力與身份分開、精確scope／成本／基準／衝突及風險證據 | 015D已驗既有流量v2 suite、使用者確認的跨origin參考Review／Undo及Models／Assistant；015J已驗有界主動逐級probe／預算與能力觀測；完整語意品質指紋、真站可信基準與專用原生呈現仍缺，不能以Reply OK證明身份 |
-| 同步／D-012 | 持久游標、衝突／撤銷、完整歷史與安全憑證通道、大資料分塊、中斷恢復；三端正式操作可用 | VPS及原生同步基礎已驗；大型分塊與部分原生對應未完 |
+| 同步／D-012 | 持久游標、衝突／撤銷、完整歷史與安全憑證通道、大資料分塊、中斷恢復；三端正式操作可用 | VPS及原生同步基礎已驗；015P接續超過原單筆上限的分塊與中斷恢復候選，尚未驗收；部分原生對應仍未完 |
 | 日常功能／P1–P10 | Playground文字／多媒體／工具、Providers快加／進階／Review、多Account/Key、Models／Compare／證據、Assistant安全工具與Undo全部接正式UI | VPS多項流程已驗；Mac／Android逐項核對正式caller，特別是Android PLAY-004，不以transport當UI完成 |
 | 穩定與操作／WISH-ACCEPT-001 | 重啟／離線／限流／換Key／跨日／長跑、全部尺寸／深淺色／200%、跨端歷史／更新恢復與原有資源負載 | 原測試及真systemd、原36 Browser／443圖全部保留，015L候選新增第37流程／15圖；目標VPS及實體iPhone／Android／Mac證據仍須取得 |
 
