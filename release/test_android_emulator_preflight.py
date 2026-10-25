@@ -1,7 +1,8 @@
 import subprocess
+import json
 import unittest
 
-from android_emulator_preflight import prepare
+from android_emulator_preflight import prepare, capture_runtime
 
 
 class EmulatorPreflightTests(unittest.TestCase):
@@ -46,3 +47,23 @@ class EmulatorPreflightTests(unittest.TestCase):
         run, _ = self.fake(package_ready=False)
         ticks = iter((0, 0, 91))
         with self.assertRaises(TimeoutError): prepare(run, lambda: next(ticks), lambda _: None)
+
+    def logs(self, *, finish=True, end_heap=536870912, end_pid=123):
+        records = [{"stage":"start", "pid":123, "max_heap_bytes":536870912, "expected_max_heap_bytes":536870912}]
+        if finish: records.append({"stage":"finish", "pid":end_pid, "max_heap_bytes":end_heap, "expected_max_heap_bytes":536870912})
+        return lambda *args: "\n".join("I/ModelAtlasTestRuntime: MODELATLAS_TEST_RUNTIME "+json.dumps(r) for r in records)
+
+    def test_actual_start_and_finish_heap_is_read_without_installed_package(self):
+        result = capture_runtime(self.logs())
+        self.assertEqual(["start", "finish"], result["stages"])
+        self.assertEqual(123, result["pid"])
+        self.assertEqual(536870912, result["max_heap_bytes"])
+
+    def test_missing_finish_cannot_supply_heap_evidence(self):
+        with self.assertRaises(ValueError): capture_runtime(self.logs(finish=False))
+
+    def test_low_runtime_heap_cannot_supply_green_evidence(self):
+        with self.assertRaises(ValueError): capture_runtime(self.logs(end_heap=16777216))
+
+    def test_another_process_cannot_supply_finish_evidence(self):
+        with self.assertRaises(ValueError): capture_runtime(self.logs(end_pid=456))

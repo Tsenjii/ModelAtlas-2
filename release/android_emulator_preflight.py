@@ -7,6 +7,7 @@ it never changes a VM property or retries a failed test.
 import json
 from pathlib import Path
 import subprocess
+import sys
 import time
 
 
@@ -46,9 +47,30 @@ def prepare(run=adb, clock=time.monotonic, pause=time.sleep):
     raise TimeoutError("API 29 framework did not restart within 90 seconds")
 
 
+def capture_runtime(run=adb):
+    # AGP removes the installed APK after connected tests. Read the final runner
+    # log, which survives uninstall, instead of trying to read its deleted cache.
+    raw = run("logcat", "-d", "-s", "ModelAtlasTestRuntime:I")
+    marker = "MODELATLAS_TEST_RUNTIME "
+    records = [json.loads(line.split(marker, 1)[1]) for line in raw.splitlines() if marker in line]
+    if len(records) != 2 or [r.get("stage") for r in records] != ["start", "finish"]:
+        raise ValueError("Missing or ambiguous instrumentation runtime evidence")
+    if len({r.get("pid") for r in records}) != 1 or not isinstance(records[0].get("pid"), int) or records[0]["pid"] <= 0:
+        raise ValueError("Instrumentation runtime evidence belongs to different processes")
+    if any(r.get("max_heap_bytes") != 536870912 or r.get("expected_max_heap_bytes") != 536870912 for r in records):
+        raise ValueError("Actual instrumentation heap differs from configured 512 MiB")
+    return {"max_heap_bytes": records[0]["max_heap_bytes"],
+            "expected_max_heap_bytes": records[0]["expected_max_heap_bytes"],
+            "pid": records[0]["pid"], "stages": [r["stage"] for r in records]}
+
+
 if __name__ == "__main__":
-    result = json.dumps(prepare(), sort_keys=True)
-    output = Path("app/build/outputs/androidTest-results/emulator-preflight.json")
+    capture = sys.argv[1:] == ["--capture-runtime"]
+    if sys.argv[1:] and not capture:
+        raise ValueError("Unsupported emulator preflight argument")
+    result = json.dumps(capture_runtime() if capture else prepare(), sort_keys=True)
+    name = "instrumentation-runtime" if capture else "emulator-preflight"
+    output = Path(f"app/build/outputs/androidTest-results/{name}.json")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(result + "\n")
-    print("MODELATLAS_EMULATOR_PREFLIGHT " + result)
+    print("MODELATLAS_" + name.upper().replace("-", "_") + " " + result)

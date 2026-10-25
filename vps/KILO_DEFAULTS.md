@@ -59,3 +59,9 @@ f7e2af0f九項CI成功後，實際473圖仍發現首次聊天殘留空白welcome
 來源bcb9e87dfc005100023528f8d20126988a51edff的VPS四項、Mac三項與Android build成功，但Android device121072635535兩個既有大型案例OOM，未接受。實際ZIP12586389171（1305714 bytes，SHA256 `837a70c99d726a700c97a9a7421f63249a5bb8a16460fb85f72abeac4cb95de8`）已下載核對CRC與XML：4MiB跨平台同步在ByteArrayOutputStream.grow、Unicode讀取在StringBuilder.grow，ART均回報growth limit16777216，啟動log則配置qemu.dalvik.vm.heapsize=512m。
 
 [Chromium上游2026-10-08修正](https://chromium.googlesource.com/chromium/src/tools/android/+/4a248be31b42dfb0cdabae6c7992ce565ea00fb2)記錄Android10冷啟動可能在VM屬性套用前啟動zygote而使用16MiB預設；本案目前是相符推斷，須用新CI實際程序上限與原全部測試驗證。前置程式只在任何instrumentation前核對512m設定、重啟一次framework、確認新zygote與package manager，正式Runner再核對maxMemory=536870912並把結果隨原報告上傳。不修改VM屬性或production largeHeap，不重試失敗測試，原984案例／5skip／4MiB／Unicode量與timeout不減。四個前置檢查反例＋原27發布回歸31項0.035s成功；新來源自己的全部九項與實際產物前仍候選。原始run／job／artifact metadata見`docs/verification/20261025/kilo-android-coldboot-candidate.json`。
+
+## 工具草稿與測試報告保存反例
+
+來源cfbce684d3f812697a87ea3d4ed4679a7b6c4faa的Browser40174288862／121111525383在原工具接續等待Tool continued逾時，完整226.424s失敗。實際ZIP12591722146的473圖包含failure.png、缺原tools-375-dark.png，未把總張數當完整保留。失敗實圖顯示工具textarea已被清空；同一session／selection／call的聊天紀錄重讀會重建工具表單。新增填Sunny後實際按header刷新斷言19.239s明確失敗，修正正式renderer對相同精確session／selection／call ID／function／arguments保留同一DOM與使用者內容，不同scope或新呼叫清空；新欄位忙碌時亦停用。原Production／ChatExperience／Conversations三流程race20.049s、完整38 Browser race187.646s成功，473圖完整且無failure。原全部操作／HTTP／圖片／3000delta／資源及timeout保留。
+
+同來源Android40174288872／121111525098實際ZIP12591513357（1258871 bytes）核對SHA256／CRC／XML，原984項0失敗／0錯誤、5原skip；前置報告配置512m、zygote1665→3215。job仍因最後run-as找不到已被AGP卸載的package而失敗，runtime檔是0 bytes，不當作完整成功。後置收集改讀Runner起始及finish的兩筆明確JSON紀錄，要求相同正PID、兩端實際／預期536870912 bytes、完整start→finish；不依賴已被卸載的cache、不改原測試／工作量／timeout、不重試。新增缺finish／低heap／跨PID等四反例，連同原31項共35發布回歸0.053s成功。新來源自己的九項、九份實際產物與完整報告／實圖前仍候選，cfb的失敗保留。

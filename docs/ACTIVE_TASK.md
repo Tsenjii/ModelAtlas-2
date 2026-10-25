@@ -1,3 +1,5 @@
+> 015M追加cfbce684不接受：Browser37項成功但原Production工具接續226.424s整套失敗，真圖473含failure並缺tools原圖。正式caller的工具表單會在同一紀錄刷新時重建而清空草稿；新增真UI刷新斷言19.239s重現空字串 != Sunny，修為精確session／selection／call／arguments相同時保留原表單，範圍變更才清除，忙碌時新欄位亦禁用。三條原聊天流程race20.049s、完整38 Browser race187.646s成功，473張圖完整／無failure。Android原984／5skip／0失敗實際XML及512m設定／新zygote已核對，但AGP測完卸載APK使後置run-as讀cache失敗；改用Runner起始與finish的精確PID／maxMemory紀錄，讀取不依賴已卸載package，缺少／低heap／跨PID拒絕。原27＋8前置／報告反例共35項0.053s成功。新來源自己的九項／實際產物前仍候選；原全部工作量／timeout與整版缺口保留。
+
 > 015M候選bcb9e87d未接受：VPS四項／Mac三項／Android build成功，但device121072635535原4MiB同步與Unicode儲存兩案例在ART程序16MiB上限OOM。啟動log配置512m；參考上游Android10冷啟動問題，測試前一次framework重啟、核對新zygote與package就緒，Runner必須實測536870912 bytes並存報告；不改VM屬性、不改產品largeHeap、不減984案例／5skip／負載／timeout、不重跑失敗測試。新增四個前置檢查反例，原27＋4發布回歸31項0.035s成功。自己的新來源九項與實際產物前仍候選；原始metadata見verification/20261025/kilo-android-coldboot-candidate.json。
 
 > 015M首輪歡迎卡修後完整38 Browser race186.450s成功，473圖保留原458＋15；首輪訊息的native-welcome必須為0，實際375px對話已重新檢視。原369 Go／557結果等價與全負載、全部原生情境保留；新來源自己的九項與實際產物前仍候選。
