@@ -1,0 +1,56 @@
+name: Candidate Artifact Audit
+
+on:
+  pull_request:
+    paths:
+      - "vps/**"
+      - "macos/**"
+      - "app/**"
+      - "core/**"
+      - "release/**"
+      - "docs/ACTIVE_TASK.md"
+      - ".github/workflows/candidate-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: candidate-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  candidate-artifact-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Preserve all release checks and reject false green XML summaries
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 -m unittest discover -s release -p 'test_*.py' -v
+      - name: Install pinned image verifier for actual QA screenshots
+        run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Verify nine exact-source archives, reports, packages and original workloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODELATLAS_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+          MODELATLAS_REPOSITORY: ${{ github.repository }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 release/audit_candidate.py --wait-minutes 32
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-candidate-audit
+          path: |
+            candidate-audit-output/*.json
+            candidate-audit-output/contacts/
+            candidate-audit-output/package-check/RELEASE-MANIFEST.json
+          if-no-files-found: warn

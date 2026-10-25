@@ -352,18 +352,20 @@ class CredentialRollbackFlowTest {
             viewModel.state.value.managedConnections.firstOrNull { it.id == target.connectionId }?.enabled,
         )
         assertTrue("交接期間必須封鎖推論", blockedIds().contains(target.credentialId))
-        assertTrue("未到達的管理列需要交接", pendingRecords().containsKey(target.connectionId))
+        assertFalse("管理交接不得留在推論 pending", pendingRecords().containsKey(target.connectionId))
+        assertTrue("未到達的管理列需要交接", managementHandoffRecords().containsKey(target.connectionId))
 
         onMain { viewModel.setCredentialEnabled(target.connectionId, true) }
         val enabled = awaitUi(stage = "immediate enable before management emission") { !it.saving }
         assertNull("必須找到同一筆憑證重新啟用", enabled.error)
         assertEquals(true, runBlocking { app.database.credentialDao().getById(target.credentialId)?.enabled })
         assertFalse(blockedIds().contains(target.credentialId))
+        assertTrue("管理交接不冒充 active 投影", enabled.connections.none { it.id == target.connectionId })
         driveProjections(roomActiveRows(target), emptyList())
         assertEquals(true, viewModel.state.value.managedConnections.firstOrNull { it.id == target.connectionId }?.enabled)
 
         driveProjections(roomActiveRows(target), roomManagedRows(target))
-        assertFalse("兩個真投影到達後必須退休交接列", pendingRecords().containsKey(target.connectionId))
+        assertFalse("兩個真投影到達後必須退休交接列", managementHandoffRecords().containsKey(target.connectionId))
         assertEquals(1, connectionIds().count { it == target.connectionId })
         assertEquals(1, managedIds().count { it == target.connectionId })
 
@@ -372,12 +374,12 @@ class CredentialRollbackFlowTest {
         onMain { viewModel.setCredentialEnabled(target.connectionId, false) }
         assertNull(awaitUi(stage = "second disable before management emission") { !it.saving }.error)
         driveProjections(roomActiveRows(target), roomManagedRows(target))
-        assertFalse("已停用列只等管理投影接手，不等不會出現的 active 列", pendingRecords().containsKey(target.connectionId))
+        assertFalse("已停用列只等管理投影接手，不等不會出現的 active 列", managementHandoffRecords().containsKey(target.connectionId))
         deleteOwnRows()
         driveProjections(roomActiveRows(target), roomManagedRows(target))
         assertFalse(connectionIds().contains(target.connectionId))
         assertFalse(managedIds().contains(target.connectionId))
-        assertFalse(pendingRecords().containsKey(target.connectionId))
+        assertFalse(managementHandoffRecords().containsKey(target.connectionId))
     }
 
     private fun roomActiveRows(target: Fixture): List<ConnectionRecord> = runBlocking {
@@ -422,6 +424,10 @@ class CredentialRollbackFlowTest {
     @Suppress("UNCHECKED_CAST")
     private fun pendingRecords(): Map<String, ConnectionRecord> =
         (vmField("pendingById").get(viewModel) as Map<String, ConnectionRecord>).toMap()
+
+    @Suppress("UNCHECKED_CAST")
+    private fun managementHandoffRecords(): Map<String, ConnectionRecord> =
+        (vmField("managementHandoffById").get(viewModel) as Map<String, ConnectionRecord>).toMap()
 
     @Suppress("UNCHECKED_CAST")
     private fun blockedIds(): Set<String> =

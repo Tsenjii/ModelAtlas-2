@@ -271,6 +271,8 @@ class AtlasViewModel @JvmOverloads constructor(
     private var sampleCache: List<PerformanceSample> = emptyList()
     private var checkinCache: List<CheckinEntity> = emptyList()
     private val pendingById: MutableMap<String, ConnectionRecord> = mutableMapOf()
+    // 成功憑證寫入的管理列交接；永不加入 active／send pending 或選取投影。
+    private val managementHandoffById: MutableMap<String, ConnectionRecord> = mutableMapOf()
     private val historyByConnection: MutableMap<String, MutableList<PromptMessage>> = mutableMapOf()
     // Room Flow 可稍晚才送出變更；本機先封鎖整把 credential，不能只清單一 offering。
     private val blockedCredentialIds = mutableSetOf<String>()
@@ -1438,6 +1440,7 @@ class AtlasViewModel @JvmOverloads constructor(
 
     private fun findManagedRecord(connectionId: String): ConnectionRecord? =
         managementCache.firstOrNull { it.id == connectionId }
+            ?: managementHandoffById[connectionId]
             ?: pendingById[connectionId]
             ?: connectionCache.firstOrNull { it.id == connectionId }
 
@@ -1500,6 +1503,7 @@ class AtlasViewModel @JvmOverloads constructor(
         val record = managementCache.firstOrNull { it.id == connectionId }
             ?: connectionCache.firstOrNull { it.id == connectionId }
             ?: pendingById[connectionId]
+            ?: managementHandoffById[connectionId]
         if (record == null || !record.requiresDailyCheckin) {
             _state.update { it.copy(error = string(R.string.error_checkin_not_required)) }
             return
@@ -1539,7 +1543,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 // Active 與 management 的 Room emission 獨立到達。寫入前保留精確
                 // credential 的已知列，避免停用後 active 先清空、management 尚無列，
                 // 使管理入口與緊接著的重新啟用失去同一筆已提交的連線。
-                val handoffRows = (managementCache + connectionCache + pendingById.values + record)
+                val handoffRows = (managementCache + connectionCache + pendingById.values + managementHandoffById.values + record)
                     .filter { !it.anonymous && it.credentialId == record.credentialId }
                     .distinctBy { it.id }
                 cancelAndJoinSend()
@@ -1555,11 +1559,11 @@ class AtlasViewModel @JvmOverloads constructor(
                 }
                 if (enabled) blockedCredentialIds.remove(record.credentialId)
                 else blockCredentialLocally(record.credentialId)
-                // 只有真寫入成功才交接；失敗保留原 pending／blocked／Room／vault。
+                // 只有真寫入成功才交接管理列；失敗保留原 pending／blocked／Room／vault。
                 // 已收到 management 的列由原投影接手，缺席列暫存成功的 enabled 值。
                 val managedIds = managementCache.map { it.id }.toSet()
                 handoffRows.filter { it.id !in managedIds }.forEach {
-                    pendingById[it.id] = it.copy(credentialEnabled = enabled)
+                    managementHandoffById[it.id] = it.copy(credentialEnabled = enabled)
                 }
             } finally {
                 _state.update { it.copy(saving = false, error = failure ?: it.error) }
@@ -1654,10 +1658,11 @@ class AtlasViewModel @JvmOverloads constructor(
     private fun blockCredentialLocally(credentialId: String) {
         if (credentialId.isBlank()) return
         blockedCredentialIds += credentialId
-        val affected = (connectionCache + managementCache + pendingById.values)
+        val affected = (connectionCache + managementCache + pendingById.values + managementHandoffById.values)
             .filter { !it.anonymous && it.credentialId == credentialId }.map { it.id }.toSet()
         affected.forEach {
             pendingById.remove(it)
+            managementHandoffById.remove(it)
             historyByConnection.remove(it)
         }
         _state.update {
@@ -1669,11 +1674,10 @@ class AtlasViewModel @JvmOverloads constructor(
     private fun refresh() {
         val activeIds = connectionCache.map { it.id }.toSet()
         val managedBaseIds = managementCache.map { it.id }.toSet()
-        // 啟用列仍等 active／management 兩邊接手（AND），保留原新增連線交接。
-        // 停用列不會出現在 active，只等 management 接手即退休，避免殘留或刪除後復活。
-        pendingById.entries.removeAll { (id, row) ->
-            id in managedBaseIds && (!row.credentialEnabled || id in activeIds)
-        }
+        // 新增連線的 pending 保留原 AND：active／management 兩邊都接手才移除。
+        pendingById.keys.removeAll { it in activeIds && it in managedBaseIds }
+        // 管理交接只等真 management 接手；它不參與 active／send／選取。
+        managementHandoffById.keys.removeAll { it in managedBaseIds }
         val today = LocalDate.now()
         currentDate = today
         val todayStr = today.toString()
@@ -1719,7 +1723,8 @@ class AtlasViewModel @JvmOverloads constructor(
         val pendingForActive = pendingById.values.filter { p -> p.id !in activeIds }
         val managedBase = if (managementCache.isNotEmpty()) managementCache else connectionCache
         val managedBaseIdSet = managedBase.map { it.id }.toSet()
-        val pendingForManaged = pendingById.values.filter { p -> p.id !in managedBaseIdSet }
+        val pendingForManaged = (pendingById.values + managementHandoffById.values)
+            .distinctBy { it.id }.filter { p -> p.id !in managedBaseIdSet }
         val connections = (connectionCache + pendingForActive)
             .filter { it.anonymous || (it.credentialEnabled && it.credentialId !in blockedCredentialIds) }.map(::toItem)
         val managedConnections = managedBase.map(::toItem) + pendingForManaged.map(::toItem)
