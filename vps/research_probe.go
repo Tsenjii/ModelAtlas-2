@@ -169,6 +169,9 @@ func (s *Server) saveResearchProbe(ctx context.Context, report researchProbeRepo
 }
 
 func researchProbeBudgetError(result InferenceResult) error {
+	if cause, ok := result.Details["research_preflight_budget"].(error); ok {
+		return cause
+	}
 	if limit, ok := result.Details["research_run_budget"].(*researchRunBudgetError); ok {
 		return limit
 	}
@@ -179,6 +182,12 @@ func researchProbeBudgetError(result InferenceResult) error {
 		return limit
 	}
 	return errors.New("research budget exhausted")
+}
+
+func (s *Server) researchProbeHTTPUsed(ctx context.Context, task string) (int, error) {
+	var used int
+	err := s.Store.DB.QueryRowContext(ctx, "SELECT COALESCE((SELECT http_requests FROM research_task_usage WHERE task_id=?),0)", task).Scan(&used)
+	return used, err
 }
 
 func (s *Server) executeResearchProbe(ctx context.Context, run, stage string, input taskInput) (map[string]any, error) {
@@ -255,6 +264,10 @@ func (s *Server) executeResearchProbe(ctx context.Context, run, stage string, in
 		prompt, tools = toolProbePrompt, []ToolDefinition{researchProbeTool()}
 	}
 	report.PromptHash = contentHash([]byte(prompt))
+	httpBefore, err := s.researchProbeHTTPUsed(ctx, taskID)
+	if err != nil {
+		return nil, err
+	}
 	result, _ := s.execute(ctx, inferRequest{SessionID: id, Prompt: prompt, MaxTokens: 128, Tools: tools}, "CRAWLER_VERIFY", func(string, any) error { return nil })
 	if result.Outcome == "RESEARCH_PLAN_CHANGED" {
 		return nil, errResearchProbeScopeChanged
@@ -273,7 +286,11 @@ func (s *Server) executeResearchProbe(ctx context.Context, run, stage string, in
 		if err := s.Store.DB.QueryRowContext(saveCtx, "SELECT COUNT(*) FROM research_inference_admissions WHERE request_id=? AND run_id=? AND task_id=?", report.SampleID, run, taskID).Scan(&count); err != nil {
 			return nil, err
 		}
-		report.AdditionalHTTP, report.AdditionalProbes = count, count
+		httpAfter, err := s.researchProbeHTTPUsed(saveCtx, taskID)
+		if err != nil || httpAfter < httpBefore {
+			return nil, errors.New("research HTTP accounting unavailable")
+		}
+		report.AdditionalHTTP, report.AdditionalProbes = httpAfter-httpBefore, count
 		report.State = "REQUEST_INTERRUPTED"
 		if result.Outcome == "CANCELLED" {
 			report.State = "REQUEST_CANCELLED"
@@ -288,7 +305,11 @@ func (s *Server) executeResearchProbe(ctx context.Context, run, stage string, in
 	if err := s.Store.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_inference_admissions WHERE request_id=? AND run_id=? AND task_id=?", report.SampleID, run, taskID).Scan(&admitted); err != nil {
 		return nil, err
 	}
-	report.AdditionalHTTP, report.AdditionalProbes = admitted, admitted
+	httpAfter, err := s.researchProbeHTTPUsed(ctx, taskID)
+	if err != nil || httpAfter < httpBefore {
+		return nil, errors.New("research HTTP accounting unavailable")
+	}
+	report.AdditionalHTTP, report.AdditionalProbes = httpAfter-httpBefore, admitted
 	hash := ""
 	if report.SampleID != "" {
 		sample, currentHash, err := s.researchProbeSample(ctx, grant.Selection, report.SampleID)

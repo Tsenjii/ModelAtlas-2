@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestFactoryKiloOfflineInstallCreatesUsableAnonymousSelections(t *testing.T) {
@@ -198,4 +200,129 @@ func TestFactoryKiloSchema33UpgradeDoesNotChangeExistingModelsOrPreferences(t *t
 	requireCode(t, req(t, s, "POST", "/api/v1/defaults/kilo", map[string]bool{"confirm": false}), 422)
 	requireCode(t, req(t, s, "POST", "/api/v1/defaults/kilo", map[string]bool{"confirm": true}), 201)
 	assertSQLInt(t, s, 16, "SELECT COUNT(*) FROM my_models")
+}
+
+func TestFactoryKiloResearchCatalogBudgetRejectionAndExplicitResume(t *testing.T) {
+	parallelResearchBudgetTest(t)
+	var catalogs, chats atomic.Int32
+	s, _ := connectorDiscoveryFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
+			t.Error("factory research borrowed a private key")
+		}
+		if r.URL.Path == "/api/v1/models" {
+			catalogs.Add(1)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"data":[{"id":"nvidia/nemotron-3.5-lightning:free","isFree":true,"pricing":{"prompt":"0","completion":"0"}}]}`))
+			return
+		}
+		chats.Add(1)
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Write([]byte("data: {\"choices\":[{\"delta\":{\"content\":\"Synthetic factory research answer\"}}]}\n\ndata: [DONE]\n\n"))
+	})
+	requireCode(t, req(t, s, "POST", "/api/v1/defaults/kilo", map[string]bool{"confirm": true}), 201)
+	selection := factoryConversation(t, s).Selection
+	f := &researchAdmissionFixture{Server: s, Scope: selection}
+	f.RunID = researchRunID(t, s, ResearchOptions{Selections: []Selection{selection}, MinimalInference: true, Budget: 1, ProbeBudget: 1})
+	if err := s.Store.DB.QueryRow("SELECT id FROM research_tasks WHERE run_id=? AND kind='MINIMAL_INFERENCE'", f.RunID).Scan(&f.TaskID); err != nil {
+		t.Fatal(err)
+	}
+	// Model a genuinely exhausted run; no extra HTTP is authorized by this
+	// call. The price preflight must retain the formal budget wait reason.
+	if _, err := s.Store.DB.Exec("UPDATE research_run_options SET used=1 WHERE run_id=?", f.RunID); err != nil {
+		t.Fatal(err)
+	}
+	_, err := s.executeResearchTask(f.context(), f.RunID, "MINIMAL_INFERENCE", taskInput{Selection: &selection})
+	var limit *researchRunBudgetError
+	if !errors.As(err, &limit) || limit.Metric != "HTTP" || catalogs.Load() != 0 || chats.Load() != 0 {
+		t.Fatal("factory price preflight lost the budget wait or sent unauthorized HTTP", err, catalogs.Load(), chats.Load())
+	}
+	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM telemetry")
+	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM messages")
+	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM research_evidence WHERE source_type='SCOPED_INFERENCE'")
+	requireCode(t, req(t, s, "POST", "/api/v1/research/control", map[string]any{"id": f.RunID, "action": "RESUME", "additional_budget": 2}), 200)
+	result, err := s.executeResearchTask(f.context(), f.RunID, "MINIMAL_INFERENCE", taskInput{Selection: &selection})
+	if err != nil || result["outcome"] != "SUCCESS" || catalogs.Load() != 1 || chats.Load() != 1 {
+		t.Fatal("factory research could not resume through the real guarded engine", result, err, catalogs.Load(), chats.Load())
+	}
+	f.assertRunUsage(t, 3, 1)
+	assertSQLInt(t, s, 2, "SELECT http_requests FROM research_task_usage WHERE task_id=?", f.TaskID)
+	assertSQLInt(t, s, 1, "SELECT inference_requests FROM research_task_usage WHERE task_id=?", f.TaskID)
+	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM telemetry WHERE outcome='SUCCESS'")
+	assertSQLInt(t, s, 15, "SELECT COUNT(*) FROM my_models")
+	// A deeper explicitly reviewed task also accounts for its price lookup;
+	// it must not report just the model POST while hiding the catalog GET.
+	f.RunID = researchRunID(t, s, ResearchOptions{Selections: []Selection{selection}, DeeperSelections: []Selection{selection}, MinimalInference: true, ObservationMinutes: 15, Budget: 10, ProbeBudget: 5})
+	if err := s.Store.DB.QueryRow("SELECT id FROM research_tasks WHERE run_id=? AND kind='SEMANTIC_PROBE'", f.RunID).Scan(&f.TaskID); err != nil {
+		t.Fatal(err)
+	}
+	report, err := s.executeResearchTask(f.context(), f.RunID, "SEMANTIC_PROBE", taskInput{Selection: &selection})
+	if err != nil || report["additional_http_requests"] != float64(2) || report["additional_inference_requests"] != float64(1) || report["identity_status"] != "UNPROVEN" || catalogs.Load() != 2 || chats.Load() != 2 {
+		t.Fatal("factory probe report did not account for both actual requests", report, err, catalogs.Load(), chats.Load())
+	}
+	f.assertRunUsage(t, 2, 1)
+	assertSQLInt(t, s, 2, "SELECT http_requests FROM research_task_usage WHERE task_id=?", f.TaskID)
+}
+
+func TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference(t *testing.T) {
+	parallelResearchBudgetTest(t)
+	t.Run("real-TLS-cancel", func(t *testing.T) {
+		started := make(chan struct{})
+		var catalogs, chats atomic.Int32
+		s, _ := connectorDiscoveryFixture(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "GET" {
+				chats.Add(1)
+				t.Error("cancelled preflight sent model inference")
+				return
+			}
+			catalogs.Add(1)
+			close(started)
+			<-r.Context().Done()
+		})
+		requireCode(t, req(t, s, "POST", "/api/v1/defaults/kilo", map[string]bool{"confirm": true}), 201)
+		session := factoryConversation(t, s)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		finished := make(chan struct{})
+		var result InferenceResult
+		var code int
+		go func() {
+			result, code = s.execute(ctx, inferRequest{SessionID: session.ID, Prompt: "Synthetic cancelled input"}, "PLAYGROUND", func(string, any) error { return nil })
+			close(finished)
+		}()
+		select {
+		case <-started:
+		case <-time.After(5 * time.Second):
+			t.Fatal("catalog did not start")
+		}
+		cancel()
+		select {
+		case <-finished:
+		case <-time.After(3 * time.Second):
+			t.Fatal("catalog cancellation did not finish")
+		}
+		if code != 499 || result.Outcome != "CANCELLED" || catalogs.Load() != 1 || chats.Load() != 0 {
+			t.Fatal("cancellation became an upstream failure or model request", code, result.Outcome, catalogs.Load(), chats.Load())
+		}
+		assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM telemetry")
+		assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM messages")
+		assertSQLInt(t, s, 15, "SELECT COUNT(*) FROM my_models")
+	})
+	t.Run("catalog-client-timeout", func(t *testing.T) {
+		s := testServer(t)
+		var calls atomic.Int32
+		s.PublicClient = &http.Client{Transport: originsRoundTripFunc(func(r *http.Request) (*http.Response, error) {
+			calls.Add(1)
+			if r.Method != "GET" || r.URL.Path != "/api/v1/models" {
+				t.Error("timeout sent an unexpected request")
+			}
+			return nil, context.DeadlineExceeded
+		})}
+		requireCode(t, req(t, s, "POST", "/api/v1/defaults/kilo", map[string]bool{"confirm": true}), 201)
+		session := factoryConversation(t, s)
+		result, code := s.execute(context.Background(), inferRequest{SessionID: session.ID, Prompt: "Synthetic timed-out input"}, "PLAYGROUND", func(string, any) error { return nil })
+		if code != 503 || result.Outcome != "KILO_CATALOG_UNAVAILABLE" || calls.Load() != 1 || result.Details["research_preflight_budget"] != nil {
+			t.Fatal("catalog timeout was mistaken for a local budget wait", code, result.Outcome, calls.Load())
+		}
+		assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM telemetry")
+	})
 }

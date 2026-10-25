@@ -45,3 +45,7 @@ VPS schema34 的 `factory_defaults` 只保存本機首次安裝意圖，33→34 
 本機完整Go race580.494s、vet與原27發布回歸0.037s成功；原38 Browser完整162.741s成功，最後操作與實圖修正後再以乾淨目錄重跑。
 
 本片仍待同一來源九項CI、九份實際ZIP／來源與簽署資訊／全部報告及實圖核對。公開0.8.5-preview.1、tag與11附件保持原樣，PR #20維持Draft，不merge／部署。此片驗收不等於整版完成；完整擷取效率、同步、Android PLAY-004與既有整版缺口繼續保留。
+
+後續015M反例：原0f60e209的vps-test在600.032s逾時，其他8項CI成功也不接受；原stack與來源保留。正式研究caller在預算已滿時把本機拒絕誤分類成Kilo目錄失敗（0.068s），另真TLS semantic報告只列1次而實際目錄＋模型共2次（0.133s），兩者均已修正。保留原typed等待／明確resume及本機scope變動原因，取消不建立失敗模型樣本；每次probe從既有task meter計算實際本次HTTP，不把以前attempt累加成本次。擴大Factory／原Progressive／Conversation聚焦race47.992s、原完整單程序race463.795s成功（全部369 top-level，324pass／45明確opt-in skip）；兩個獨立程序完整runner仍保留全部原migration／HTTP／負載與整套600秒上限，詳[TESTING.md](TESTING.md)。新來源自己的九項、實際附件與實圖前仍候選。
+
+完整兩程序race240.844s成功，369個註冊案例185／184各執行一次；與原單程序463.795s全部case／subcase結果逐項相同，沒有省略、重複或失敗。四項coverage checker拒絕漏測／重複／錯誤退出／壞事件的反例亦成功。整套仍共同600秒上限，新的同源九項仍待驗。

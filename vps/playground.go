@@ -505,6 +505,20 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		return result, 422
 	}
 	if err = s.guardFactoryKilo(ctx, scope, provider, cfg, endpoint, key); err != nil {
+		if ctx.Err() != nil {
+			result.Outcome = "CANCELLED"
+			return result, 499
+		}
+		var admission *conversationAdmissionError
+		if errors.As(err, &admission) {
+			result.Outcome = admission.Outcome
+			result.Details["research_preflight_budget"] = admission.Cause
+			if errors.Is(err, errResearchProbeScopeChanged) || errors.Is(err, errResearchProbeApproval) {
+				result.Outcome = "RESEARCH_PLAN_CHANGED"
+				return result, 409
+			}
+			return result, admission.Status
+		}
 		var problem *providerReadError
 		if errors.As(err, &problem) {
 			result.Outcome = problem.Code

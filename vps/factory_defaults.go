@@ -240,14 +240,19 @@ func (s *Server) guardFactoryKilo(ctx context.Context, v Selection, p Provider, 
 	if v.ProviderID != kiloFactoryID {
 		return nil
 	}
-	if v.AccountID != kiloFactoryID || v.CredentialID != kiloFactoryID || p.BaseURL != kiloFactoryBase || cfg.AuthMode != "NONE" || key != "" || len(p.AuthFields) != 0 || len(cfg.Headers) != 0 || endpoint != kiloFactoryBase+"/chat/completions" || v.Endpoint != "CHAT_COMPLETIONS" {
+	if v.AccountID != kiloFactoryID || v.CredentialID != kiloFactoryID || v.Group != "" || p.BaseURL != kiloFactoryBase || cfg.AuthMode != "NONE" || key != "" || len(p.AuthFields) != 0 || len(cfg.Headers) != 0 || endpoint != kiloFactoryBase+"/chat/completions" || v.Endpoint != "CHAT_COMPLETIONS" {
 		return &providerReadError{Code: "KILO_DEFAULT_CONNECTION_CHANGED"}
 	}
+	admissionContext := ctx
 	ctx, stop := context.WithTimeout(ctx, 20*time.Second)
 	defer stop()
 	ctx = context.WithValue(ctx, publicAnonymousOnboardKey{}, true)
 	root, _, e := s.getStructured(ctx, p, ProviderConfig{AuthMode: "NONE"}, kiloFactoryBase+"/models", "", 4<<20)
 	if e != nil {
+		var limit *researchRunBudgetError
+		if errors.As(e, &limit) || researchTransportStopped(admissionContext, e) {
+			return &conversationAdmissionError{Outcome: "RESEARCH_BUDGET_EXHAUSTED", Status: 429, Cause: e}
+		}
 		return &providerReadError{Code: "KILO_CATALOG_UNAVAILABLE"}
 	}
 	items, ok := pointer(root, "/data").([]any)

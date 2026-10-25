@@ -41,7 +41,9 @@ jobs:
       - name: Resolve pinned SQLite dependency
         run: go mod download
       - name: Unit and HTTP integration tests
-        run: go test -mod=readonly -race -count=1 ./...
+        run: |
+          python3 -m unittest test_go_runner_test.py
+          python3 test_go.py
       - name: Vet
         run: go vet -mod=readonly ./...
       - name: Genuine systemd install, upgrade, rollback and crash recovery
@@ -60,6 +62,7 @@ jobs:
           path: |
             vps/footprint.json
             vps/encoding-allocations.txt
+            vps/test-results/go-suite.json
           if-no-files-found: error
       - name: Smoke Linux runtime
         run: |
