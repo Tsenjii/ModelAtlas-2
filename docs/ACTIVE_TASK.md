@@ -1,3 +1,5 @@
+> 015O同片穩定性修正候選：25588f93因原Android啟用逾時未接受；37c7c34d的真Room／vault／VM確定性反例於985案例中唯一失敗，確認停用成功後active先清空、management尚無列會掉失管理入口。現只在真寫入成功後交接精確credential的已知列；啟用保留原AND、停用待management接手即退休。另真Browser33.60s確認來源會員變更409會擋住已提交結果恢復，現先提供原ID只讀恢復且不曝空表單；聚焦5.37s、含原辨識兩Browser7.946s及後端35.733s成功。原984／5skip完整＋1確定性案例、全部工作量／timeout保留；修後自己的九項／全部實際產物前仍候選。證據見verification/20261025/field-mapping-regression-counterexamples.json，完整下一版PARTIAL。
+
 > 015O候選25588f93未接受：自己的VPS四項／Mac三項／Android build成功，device121184563846的原enablePathUnchanged逾時15000ms；實際ZIP的984案例／1failure／0error／5skip及logcat已核對。原錯誤缺少分類，不能宣稱這次根因已證明。接續同片加入真Room／vault／VM的active先清空、management尚無列之確定性反例，先觀察紅燈再修；原六個rollback案例、全部984案例／timeout及工作量保留，不重跑掩蓋失敗。原始metadata／實際報告hash見verification/20261025/field-mapping-android-candidate.json，完整下一版仍PARTIAL。
 
 > 015O首候選6221b989未接受：追加原scope變更測試於race0.946s確認SCOPE_CHANGED紀錄會宣告未提交的sample ID。現清除該ID，UI只在已完成且有保存樣本的狀態提供對照；保留全部原斷言／HTTP／timeout。含原辨識與十項mapping擴大35.756s、兩個真Browser7.279s成功；新來源另跑自己的完整九項／全部實際產物，不借首候選綠燈。metadata及反例見verification/20261025/field-mapping-initial-candidate.json。

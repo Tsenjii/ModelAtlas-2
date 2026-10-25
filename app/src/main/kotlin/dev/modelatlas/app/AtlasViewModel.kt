@@ -1536,6 +1536,12 @@ class AtlasViewModel @JvmOverloads constructor(
                     failure = string(R.string.error_credential_update)
                     return@launch
                 }
+                // Active 與 management 的 Room emission 獨立到達。寫入前保留精確
+                // credential 的已知列，避免停用後 active 先清空、management 尚無列，
+                // 使管理入口與緊接著的重新啟用失去同一筆已提交的連線。
+                val handoffRows = (managementCache + connectionCache + pendingById.values + record)
+                    .filter { !it.anonymous && it.credentialId == record.credentialId }
+                    .distinctBy { it.id }
                 cancelAndJoinSend()
                 cancelAndJoinProviderModelAction()
                 cancelCompareForCredential(record.credentialId)
@@ -1549,6 +1555,12 @@ class AtlasViewModel @JvmOverloads constructor(
                 }
                 if (enabled) blockedCredentialIds.remove(record.credentialId)
                 else blockCredentialLocally(record.credentialId)
+                // 只有真寫入成功才交接；失敗保留原 pending／blocked／Room／vault。
+                // 已收到 management 的列由原投影接手，缺席列暫存成功的 enabled 值。
+                val managedIds = managementCache.map { it.id }.toSet()
+                handoffRows.filter { it.id !in managedIds }.forEach {
+                    pendingById[it.id] = it.copy(credentialEnabled = enabled)
+                }
             } finally {
                 _state.update { it.copy(saving = false, error = failure ?: it.error) }
                 refresh()
@@ -1657,10 +1669,11 @@ class AtlasViewModel @JvmOverloads constructor(
     private fun refresh() {
         val activeIds = connectionCache.map { it.id }.toSet()
         val managedBaseIds = managementCache.map { it.id }.toSet()
-        // pending 待 active／management 兩個 cache 都已 publish 才移除（AND）：兩邊
-        // emission 獨立到達，任一先到不得提前移除；下方 per-list bridging 已 dedup，
-        // 保留較久不會在列表重複。
-        pendingById.keys.removeAll { it in activeIds && it in managedBaseIds }
+        // 啟用列仍等 active／management 兩邊接手（AND），保留原新增連線交接。
+        // 停用列不會出現在 active，只等 management 接手即退休，避免殘留或刪除後復活。
+        pendingById.entries.removeAll { (id, row) ->
+            id in managedBaseIds && (!row.credentialEnabled || id in activeIds)
+        }
         val today = LocalDate.now()
         currentDate = today
         val todayStr = today.toString()
