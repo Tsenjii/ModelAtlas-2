@@ -223,6 +223,12 @@ func TestConnectorDiscoveryDoesNotCommitLateChangedScope(t *testing.T) {
 	if report.Status != "SCOPE_CHANGED" || len(report.DraftIDs) != 0 {
 		t.Fatal("late changed scope committed")
 	}
+	for _, source := range report.Sources {
+		if source.MappingSampleID != "" {
+			t.Fatal("changed-scope history advertised a source sample that was never committed")
+		}
+	}
+	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM connector_mapping_samples")
 	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM connector_versions")
 }
 func TestConnectorDiscoveryBoundedPathsOriginsRedirectAuthAndSecrets(t *testing.T) {

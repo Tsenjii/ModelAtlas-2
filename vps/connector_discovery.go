@@ -386,6 +386,11 @@ func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDisc
 		report.DraftIDs = append(report.DraftIDs, id)
 		report.Sources[draft.Source].DraftIDs = append(report.Sources[draft.Source].DraftIDs, id)
 	}
+	if !oneOf(report.Status, "DRAFTS_READY", "NO_SUPPORTED_MAPPING") {
+		for i := range report.Sources {
+			report.Sources[i].MappingSampleID = ""
+		}
+	}
 	final, _ := json.Marshal(report)
 	if err = saveMappingSamples(save, tx, mappingSamples, report); err != nil {
 		return report, true, errors.New("source sample persistence failed; inspect saved request ID")

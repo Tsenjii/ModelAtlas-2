@@ -41,3 +41,5 @@ Schema35→36 先保存一致快照，新增 `connector_mapping_samples` 與 `co
 Mac同源Go引擎包含後端，但專用Mac／Android欄位對照流程尚未交付；不能用API或VPS實圖冒充原生驗收。私人站點認證／任意語意、完整Reflection其他更新類型、可信真站基準、大資料分塊同步、原生PLAY-004與實際目標主機／裝置／正式簽署，仍按完整下一版清單接續。
 
 本機完整Go race318.399s成功：395註冊函式、586唯一case／subcase（539pass／47明確opt-in skip），逐項保留前片全部575結果；兩程序共同原600秒期限與全部原負載不變。完整40 Browser race214.815s成功；最後欄位限制／復原提示與大字新增情境另十項後端race12.024s、新Browser7.715s成功。501張完整PNG保留原487＋14；14新圖已檢視，單位全文、未選欄位、復原操作與200%保存按鈕可讀可達。vet、原35發布回歸0.041s及4個coverage checker成功。最後來源仍須自己的同源九項與全部實際產物，不以中途本機結果代替。
+
+首候選6221b989另未接受：原辨識的scope飛行變更案例追加斷言0.946s失敗，因SCOPE_CHANGED歷史仍顯示未保存的sample ID。現清除無效ID並在正式UI只顯示已保存的對照入口；含原辨識／mapping後端race35.756s、兩Browser7.279s通過，原所有斷言與請求不減。新來源另跑自己的九項／全部實際產物；首候選metadata保存於docs/verification/20261025/field-mapping-initial-candidate.json。

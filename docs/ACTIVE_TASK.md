@@ -1,3 +1,5 @@
+> 015O首候選6221b989未接受：追加原scope變更測試於race0.946s確認SCOPE_CHANGED紀錄會宣告未提交的sample ID。現清除該ID，UI只在已完成且有保存樣本的狀態提供對照；保留全部原斷言／HTTP／timeout。含原辨識與十項mapping擴大35.756s、兩個真Browser7.279s成功；新來源另跑自己的完整九項／全部實際產物，不借首候選綠燈。metadata及反例見verification/20261025/field-mapping-initial-candidate.json。
+
 > 015O本機候選：完整Go race318.399s，395個註冊函式／586個case與subcase（539pass／47明確opt-in skip），逐項保留015N原575結果；完整40 Browser race214.815s成功，原487圖全部保留。最後欄位／復原／200%新流程另race7.715s與十項後端12.024s成功，合計501PNG＝原487＋14已檢視。vet、35發布回歸0.041s及原4個coverage checker成功。自己的新來源九項／全部實際產物前仍候選，完整下一版PARTIAL。
 
 > 2026-10-25 唯一新片 FIELD-MAPPING-015O：015N來源faf614f84265a91d85063e5f1e16d91b88266e51／treeb94cbb031dcb128794fa5212244fe8ff94e66046已同源九項、九份實際ZIP與18實圖驗收所列擷取比較範圍，持久證據見verification/20261025/extraction-baseline.json與Draft PR #20。main仍cba901d／39536090788兩項SUCCESS，FEATURE FREEZE=OFF。接續已保存公開JSON的未知欄位對照、來源樣本／scope／單位證據、fixture與真HTTP實測、明確Review／正式使用及持久Undo。自己的完整回歸及九項／全部實際產物前仍候選；不借015N綠燈。原全部需求／測試／負載／timeout、公開0.8.5-preview.1／11附件凍結保留，不merge／部署，完整下一版PARTIAL。

@@ -16,7 +16,7 @@ function renderConnectorDiscoveries(reports){
 function connectorDiscoveryDetail(r){
  const box=modal("站點資料辨識");box.append(el("p",r.base_url),el("p",r.status==="RUNNING"?"此紀錄尚未完成，可能仍在執行或曾中斷。更新紀錄確認結果；重讀不會重新連線來源。":r.http_requests+" 次 HTTP · "+r.draft_ids.length+" 個草稿"),el("p","站點類型線索："+r.family_hint+" · 版本線索："+r.version_hint+"。這些是站方資料，尚未獨立驗證。"));
  if(r.conflicting_kinds.length)box.append(el("p","來源資料不一致："+r.conflicting_kinds.map(k=>connectorKindLabels[k]||k).join("、")+"。請比較各來源後再選擇規則。","error"));
- for(const source of r.sources||[])if(source.mapping_sample_id)action(box,"對照公開資料欄位",()=>connectorMappingDetail(source.mapping_sample_id));
+ for(const source of r.sources||[])if(source.mapping_sample_id&&['DRAFTS_READY','NO_SUPPORTED_MAPPING'].includes(r.status))action(box,"對照公開資料欄位",()=>connectorMappingDetail(source.mapping_sample_id));
  box.append(el("p","尚未驗證台灣資格、持續免費機制、有效扣費、私人帳戶資料與模型身份。"));
  if(r.draft_ids.length&&r.status==="DRAFTS_READY")action(box,"建立公開資料配方",()=>generateSiteRecipeDetail(r));siteFamilyEvidenceView(box,r.family_evidence);
  r.draft_ids.forEach(id=>{const v=connectorVersions.find(v=>v.id===id);if(v)action(box,"檢視"+(connectorKindLabels[v.config.kind]||v.config.kind)+"草稿",()=>connectorDetail(v));});
