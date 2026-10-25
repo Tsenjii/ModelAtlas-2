@@ -54,7 +54,7 @@ public final class KeychainVault {
         self.directory = directory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("ModelAtlas", isDirectory: true)
     }
-    public func start(executable: URL, secrets: EngineSecrets, additionalEnvironment: [String: String] = [:]) async throws -> AtlasClient {
+    public func start(executable: URL, secrets: EngineSecrets, additionalEnvironment: [String: String] = [:], factoryDefaults: Bool = false) async throws -> AtlasClient {
         if let client, process?.isRunning == true { return client }
         if process != nil { await stop() }
         stopping = false
@@ -71,6 +71,7 @@ public final class KeychainVault {
         let task = Process(), pipe = Pipe()
         var env = ProcessInfo.processInfo.environment.filter { !$0.key.hasPrefix("MODELATLAS_") && $0.key != "PORT" }
         for (name, value) in additionalEnvironment { env[name] = value }
+        env["MODELATLAS_FACTORY_DEFAULTS"] = factoryDefaults ? "1" : "0"
         env["MODELATLAS_DEPLOYMENT"] = "desktop"; env["MODELATLAS_ADMIN_TOKEN"] = secrets.token
         env["MODELATLAS_MASTER_KEY"] = secrets.masterKey; env["MODELATLAS_DB"] = directory.appendingPathComponent("atlas.sqlite").path
         env["MODELATLAS_DESKTOP_READY"] = ready.path; env["GOMEMLIMIT"] = "192MiB"

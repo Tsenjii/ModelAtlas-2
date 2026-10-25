@@ -4,7 +4,8 @@ import AtlasCore
 import SwiftUI
 
 // Opt-in acceptance harness. It uses a separate temporary data directory and a
-// real TLS fixture; normal launches never seed data or run any inference.
+// real TLS fixture. Normal fresh launches install offline factory metadata;
+// they never run inference without a user action.
 @MainActor enum NativeSmoke {
     private static var readingMeasurements: [String: Double] = [:]
     static func run(store: AtlasStore, output: URL) async {

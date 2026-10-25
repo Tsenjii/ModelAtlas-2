@@ -66,6 +66,7 @@ function openComparison(selections=null){
 }
 let researchHome=null,settingsRequestsLoaded=false;
 function syncSettingsPanels(group,id){
+ if(group==="settings"&&id==="settings-general")loadFactoryDefaults();
  if(!researchHome)return;
  const research=$("research-workspace"),settingsResearch=currentPane==="settings"&&id==="settings-research";
  if(settingsResearch){$("settings-research").append(research);research.hidden=false;research.open=true;research.setAttribute("aria-labelledby","settings-research-tab");loadResearch();}
@@ -74,6 +75,7 @@ function syncSettingsPanels(group,id){
  if(group==="settings"&&id==="settings-services")loadServiceReferences().catch(e=>notice(e.message,true));
 }
 function bindMacSettings(){
+ bindFactoryDefaults();
  researchHome=document.createComment("models research owner");$("research-workspace").before(researchHome);
  const notification=$("notification-list").closest("details"),telemetry=$("telemetry").closest("details");notification.open=true;$("settings-notifications").append(notification);$("settings-requests").append(telemetry);const tools=el("div",undefined,"actions");notification.insertBefore(tools,$("notification-list"));action(tools,"重新載入通知",()=>pollNotifications(false));action(tools,"標示全部為已讀",async()=>{const rows=await api("/notifications");await submit("/notifications/seen",{ids:rows.filter(r=>!r.seen_at).map(r=>r.id)});await pollNotifications(false);});
  const file=el("input"),label=el("label","選擇設定檔（JSON，15 MiB 以內）"),summary=el("p",undefined,"section-description");file.type="file";file.accept=".json,application/json";label.append(file);$("restore-form").prepend(label,summary);file.addEventListener("change",async()=>{const selected=file.files[0];file.value="";if(!selected)return;try{if(selected.size>15*1024*1024)throw Error("設定檔不能超過 15 MiB。");const raw=await selected.text(),value=JSON.parse(raw);if(!value||!Array.isArray(value.providers))throw Error("無法辨識設定檔。");$("restore-form").elements.json.value=raw;summary.textContent=value.providers.length+" 個供應商 · "+(value.models?.length||0)+" 個模型定義；勾選確認後才會匯入。";}catch(e){summary.textContent=e instanceof SyntaxError?"設定檔 JSON 格式不正確。":e.message;}});

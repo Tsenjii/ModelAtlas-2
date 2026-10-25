@@ -12,14 +12,14 @@ async function send(e){e.preventDefault();return sendChat();}
 async function sendChat(toolResults=[],retryID=""){
  const session_id=$("session").value,prompt=retryID||toolResults.length?"":$("prompt").value.trim(),selected=retryID||toolResults.length?[]:attachments.slice();
  if(!session_id||sessionScope!==$("target").value||(!prompt&&!toolResults.length&&!retryID)||busy)return;
- loadVersion++;chatHistoryStamp=null;setBusy(true);chatChanged(true,false);
+ loadVersion++;chatHistoryStamp=null;setBusy(true);factoryKiloChatError();chatChanged(true,false);
  const requestController=new AbortController();controller=requestController;
  let answer=null,answerText=null,thinkText=null,reader=null,done=false,started=false,sampleID=null,toolSummary="";
  try{
   await saveChatSettings();const payload={session_id,prompt,attachments:selected,tool_results:toolResults,retry_id:retryID};
   if($("tools-json").value.trim())payload.tools=JSON.parse($("tools-json").value);
   const resp=await fetch("/api/v1/infer",{method:"POST",credentials:"same-origin",signal:requestController.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-  sampleID=resp.headers.get("X-ModelAtlas-Sample-ID");if(!resp.ok||!resp.body)throw Error(readableProblem(await resp.text(),resp.status));
+  sampleID=resp.headers.get("X-ModelAtlas-Sample-ID");if(!resp.ok||!resp.body){const raw=await resp.text(),error=Error(readableProblem(raw,resp.status));try{error.code=JSON.parse(raw)?.error?.code;}catch{}throw error;}
   if(prompt)bubble("user",prompt);answer=bubble("assistant","");answerText=streamText(answer,()=>chatChanged());if(!retryID&&!toolResults.length)$("prompt").value="";
   reader=resp.body.getReader();const decoder=new TextDecoder();let pending="";
   for(;;){
@@ -43,7 +43,7 @@ async function sendChat(toolResults=[],retryID=""){
   if(!done)throw Error("串流中斷");
  }catch(err){
   if(err.name==="AbortError")notice("已停止回應");
-  else{notice("回應失敗："+err.message,true);if(!started&&!$("prompt").value)$("prompt").value=prompt;}
+  else{if(err.code?.startsWith("KILO_"))factoryKiloChatError(err.message);else notice("回應失敗："+err.message,true);if(!started&&!$("prompt").value)$("prompt").value=prompt;}
  }finally{
   if(!done)requestController.abort();if(reader)reader.releaseLock();answerText?.finish();thinkText?.finish();
   if(answer){if(!answer.textContent)answer.textContent=toolSummary||"未完成回應";finishBubble(answer,sampleID);}

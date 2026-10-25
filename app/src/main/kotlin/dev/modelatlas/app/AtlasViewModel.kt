@@ -187,6 +187,28 @@ class AtlasViewModel @JvmOverloads constructor(
 ) : AndroidViewModel(application) {
     private val app: AtlasApplication = application as AtlasApplication
 
+    private val _kiloFactory = MutableStateFlow(dev.modelatlas.app.data.KiloFactoryState())
+    val kiloFactory: StateFlow<dev.modelatlas.app.data.KiloFactoryState> = _kiloFactory.asStateFlow()
+    private var kiloFactoryBusy = false
+    fun loadKiloFactoryDefaults() = changeKiloFactoryDefaults(false)
+    fun addKiloFactoryDefaults() = changeKiloFactoryDefaults(true)
+    private fun changeKiloFactoryDefaults(add: Boolean) {
+        if (kiloFactoryBusy) return
+        kiloFactoryBusy = true
+        _kiloFactory.value = _kiloFactory.value.copy(loading = true, problem = false)
+        viewModelScope.launch {
+            try {
+                _kiloFactory.value = withContext(Dispatchers.IO) {
+                    val defaults = dev.modelatlas.app.data.KiloFactoryDefaults(app, app.database)
+                    if (add) defaults.install(automatic = false)
+                    defaults.info()
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { _kiloFactory.value = _kiloFactory.value.copy(loading = false, problem = true) }
+            finally { kiloFactoryBusy = false }
+        }
+    }
+
     private fun string(id: Int): String = getApplication<Application>().getString(id)
 
     val workspaceSyncStatus get() = app.workspaceSync.status
@@ -1693,6 +1715,8 @@ class AtlasViewModel @JvmOverloads constructor(
             val selected = when {
                 s.selectedId != null &&
                     (connections.any { it.id == s.selectedId } || pendingById.containsKey(s.selectedId)) -> s.selectedId
+                s.selectedId == null && connections.isNotEmpty() && connections.all { it.providerId == dev.modelatlas.core.network.KiloFactoryPolicy.PROVIDER } ->
+                    (connections.firstOrNull { it.modelId == dev.modelatlas.core.network.KiloFactoryPolicy.DEFAULT_MODEL } ?: connections.first()).id
                 connections.isNotEmpty() -> connections.first().id
                 else -> null
             }

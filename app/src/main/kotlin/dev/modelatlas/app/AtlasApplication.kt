@@ -89,6 +89,8 @@ object StartupRecovery {
  *   絕不假裝成功。
  */
 class AtlasApplication : Application() {
+    /** Test application fixtures opt out before onCreate; production defaults on. */
+    internal var factoryDefaultsEnabled: Boolean = true
     companion object {
         /** F29 有限重試上限：初次＋2 次重試，共 3 次。 */
         const val MAX_RECOVERY_ATTEMPTS = 3
@@ -195,7 +197,10 @@ class AtlasApplication : Application() {
         }
         synchronized(recoveryLock) {
             startupJob = applicationScope.launch {
-                runStartupRecovery(recover = { repository.recoverInterrupted() })
+                runStartupRecovery(recover = {
+                    if (factoryDefaultsEnabled) dev.modelatlas.app.data.KiloFactoryDefaults(this@AtlasApplication, database, freshMarkerRequired = true).install(automatic = true)
+                    repository.recoverInterrupted()
+                })
                 workspaceSync.initialize()
                 if (workspaceSync.status.value.connected) dev.modelatlas.app.work.WorkspaceSyncWorker.schedule(this@AtlasApplication)
             }

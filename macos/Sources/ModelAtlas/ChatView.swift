@@ -30,6 +30,10 @@ struct ChatView: View {
                 } label: { Image(systemName: "ellipsis.circle").font(.title3) }.menuStyle(.borderlessButton).frame(width: 26).disabled(store.generating)
             }.padding(.horizontal, 24).padding(.vertical, 10)
             Divider()
+            if store.selectedModel?["provider_id"].string == "builtin-kilo-anonymous" {
+                Text("Kilo免Key來源可能保存對話並用於改善模型；請勿輸入個人或機密資料。送出前會核對公開目錄。")
+                    .font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24).padding(.vertical, 6)
+            }
             if store.messages.isEmpty && !store.generating && store.mediaResult == nil {
                 welcome
             } else {

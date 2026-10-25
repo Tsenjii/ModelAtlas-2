@@ -1013,6 +1013,7 @@ private fun AtlasScreenContent(
             lastSynced = lmspeedLastSynced,
           )
           WorkspaceSyncSection(viewModel)
+          KiloFactorySection(viewModel)
         }
       },
     )

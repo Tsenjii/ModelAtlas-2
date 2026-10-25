@@ -166,6 +166,9 @@ internal fun PlaygroundTab(
   BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
     val compact = maxHeight < 360.dp
     Column(Modifier.widthIn(max = 720.dp).fillMaxSize()) {
+      if (selectedConnection?.providerId == dev.modelatlas.core.network.KiloFactoryPolicy.PROVIDER) {
+        Text(stringResource(R.string.kilo_factory_notice), modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp), style = MaterialTheme.typography.bodySmall)
+      }
       Box(Modifier.weight(1f).fillMaxWidth()) {
         if (state.messages.isEmpty() && state.connectionsLoading) {
           CircularProgressIndicator(Modifier.size(AtlasSpace.icon).align(Alignment.Center))

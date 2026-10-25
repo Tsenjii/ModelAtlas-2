@@ -5,6 +5,7 @@ let speechOperation="";
 function isSpeech(op){return ["AUDIO_SPEECH","GEMINI_SPEECH"].includes(op);}
 function selectedOperation(){return $("target").value?targetOperation(JSON.parse($("target").value)):"";}
 function updatePlayground(){
+ renderFactoryKiloNotice();
  syncModelPickerButton();renderConversationCreation();
  const operation=selectedOperation(),media=["IMAGES_GENERATION","IMAGES_EDIT","AUDIO","AUDIO_SPEECH","GEMINI_SPEECH","EMBEDDINGS","RERANK"].includes(operation);
  const picker=$("model-picker-open"),pickerHome=media?$("media-model-bar"):$("send-form").querySelector(".composer-tools");if(pickerHome&&picker.parentElement!==pickerHome){if(media)pickerHome.append(picker);else pickerHome.insertBefore(picker,$("send-form").querySelector(".send-actions"));}

@@ -43,8 +43,8 @@ with (root / "parity-app.log").open("w") as log:
 report = out / "native-parity.json"
 assert report.exists(), (out / "FAILURE.txt").read_text() if (out / "FAILURE.txt").exists() else "Native parity did not finish"
 value = json.loads(report.read_text())
-assert value["result"] == "PASS" and value["screenshots"] == 51, value
-for field in ["real_tls_media", "batch_confirm_undo", "stale_guards", "connector_caller", "knowledge_versions", "manual_evidence", "safe_references", "retained_history", "native_composer", "adaptive_composer", "composer_focus", "sidebar_toggle", "price_scope_guards"]:
+assert value["result"] == "PASS" and value["screenshots"] == 53, value
+for field in ["kilo_factory_defaults", "kilo_no_automatic_inference", "real_tls_media", "batch_confirm_undo", "stale_guards", "connector_caller", "knowledge_versions", "manual_evidence", "safe_references", "retained_history", "native_composer", "adaptive_composer", "composer_focus", "sidebar_toggle", "price_scope_guards"]:
     assert value[field], field
 for field in ["native_intelligence", "telemetry_trends", "quota_scope_guards", "read_only_no_inference"]:
     assert value[field], field
@@ -56,7 +56,7 @@ for field in ["account_checkin_scope", "checkin_retry_cancel", "native_motion", 
     assert value[field], field
 for field in ["provider_form_feedback", "provider_account_write_guards", "provider_next_draft", "credential_restore_scope", "saved_refresh_no_repost", "workspace_sync_entry"]:
     assert value[field], field
-assert len(list(out.glob("*.png"))) == 51
+assert len(list(out.glob("*.png"))) == 53
 assert len(list((out / "motion").glob("*.png"))) == 14
 management = json.loads((out / "provider-management.diagnostics.log").read_text())
 assert management["result"] == "PASS" and all(v for v in management.values() if type(v) is bool)

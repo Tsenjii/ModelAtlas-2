@@ -357,4 +357,11 @@
     <string name="workspace_sync_remote">同步中心</string>
     <string name="workspace_sync_keep_local">保留本機修改</string>
     <string name="workspace_sync_use_remote">採用同步中心</string>
+    <string name="kilo_factory_title">Kilo models without an API key</string>
+    <string name="kilo_factory_description">Add bundled public models and an anonymous connection without sending a chat or changing existing accounts, preferences, or removed models.</string>
+    <string name="kilo_factory_problem">Unable to confirm saved defaults. Reload before another action.</string>
+    <string name="kilo_factory_reload">Reload default model status</string>
+    <string name="kilo_factory_installed">Kilo defaults added</string>
+    <string name="kilo_factory_add">Add free Kilo defaults</string>
+    <string name="kilo_factory_notice">Anonymous Kilo providers may retain conversations and use them for training. Do not submit personal or confidential information. Bundled metadata is not a live test; the catalog is checked before sending.</string>
 </resources>

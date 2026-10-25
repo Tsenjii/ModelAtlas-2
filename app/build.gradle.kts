@@ -19,7 +19,7 @@ android {
         targetSdk = 35
         versionCode = atlasVersion.getProperty("androidVersionCode").toInt()
         versionName = atlasVersion.getProperty("androidVersionName")
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "dev.modelatlas.app.AtlasFixtureRunner"
     }
     buildFeatures { compose = true }
     compileOptions {
@@ -29,6 +29,7 @@ android {
     kotlinOptions { jvmTarget = "17" }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
     sourceSets {
+        getByName("main") { assets.srcDir(rootProject.file("vps/defaults")) }
         getByName("androidTest") {
             assets.srcDirs("schemas")
         }

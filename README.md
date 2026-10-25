@@ -1,3 +1,5 @@
+> Kilo出廠預設候選：三平台新工作區可直接選用免Key模型，舊資料由設定明確加入且保留原連線。正在進行同源跨平台驗收；詳[vps/KILO_DEFAULTS.md](vps/KILO_DEFAULTS.md)。
+
 # ModelAtlas｜AI 模型情報與 Provider 工作區
 
 ModelAtlas 整合 **AI Provider／多帳戶與 API Key 管理、模型情報、Playground、研究與 App Assistant**，提供 VPS 網頁版、Mac 原生 App 與 Android App。現在的使用與開發優先序是 **VPS 第一、Mac 第二、Android 第三**。

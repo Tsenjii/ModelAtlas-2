@@ -7,7 +7,7 @@ public struct ProviderProblem: Error, LocalizedError, Sendable {
     public let upstreamStatus: Int
     public let operation: String
     public init?(_ value: JSONValue) {
-        let codes = ["UPSTREAM_HTTP", "UPSTREAM_NETWORK", "UPSTREAM_TIMEOUT", "UPSTREAM_REJECTED", "INVALID_PROVIDER_RESPONSE", "UNSUPPORTED_PRIVATE_VERSION", "CREDENTIAL_ROLE", "CREDENTIAL_ORIGIN", "INVALID_WINDOW", "MODEL_REQUIRED", "PROVIDER_NOT_FOUND"]
+        let codes = ["KILO_CATALOG_UNAVAILABLE", "KILO_FREE_MODEL_UNAVAILABLE", "KILO_DEFAULT_CONNECTION_CHANGED", "UPSTREAM_HTTP", "UPSTREAM_NETWORK", "UPSTREAM_TIMEOUT", "UPSTREAM_REJECTED", "INVALID_PROVIDER_RESPONSE", "UNSUPPORTED_PRIVATE_VERSION", "CREDENTIAL_ROLE", "CREDENTIAL_ORIGIN", "INVALID_WINDOW", "MODEL_REQUIRED", "PROVIDER_NOT_FOUND"]
         let item = value["error"]
         guard codes.contains(item["code"].string), let status = item["upstream_status"].numeric,
               status == 0 || (100...599).contains(status), status.rounded() == status else { return nil }
@@ -17,6 +17,9 @@ public struct ProviderProblem: Error, LocalizedError, Sendable {
     }
     public var errorDescription: String? {
         switch code {
+        case "KILO_CATALOG_UNAVAILABLE": return "暫時無法確認Kilo免費目錄，已保留輸入，請稍後重試。"
+        case "KILO_FREE_MODEL_UNAVAILABLE": return "這個Kilo模型目前未確認為免費可用，已停止發送。請更新目錄或選擇其他模型。"
+        case "KILO_DEFAULT_CONNECTION_CHANGED": return "預設Kilo連線設定已變更，請檢查連線；沒有傳送聊天。"
         case "UPSTREAM_HTTP":
             if operation == "inference" {
                 switch upstreamStatus {

@@ -1,11 +1,11 @@
 package main
 
 const jsIntelligence = `
-function inferenceProblem(category,status){const names={RATE_LIMITED:"站點正在限流，稍後可手動重試。",AUTH_INVALID:"這把 Key 未通過認證，請檢查秘密值與綁定網址。",INFERENCE_DENIED:"這把 Key 沒有使用此模型或群組的權限。",PAYMENT_REQUIRED:"站點要求付款或補充額度。",MODEL_UNAVAILABLE:"站點目前無法提供此模型。",GONE:"站點已移除此端點。",UPSTREAM_5XX:"上游服務暫時無法完成請求。",NETWORK:"無法連到站點，請檢查網址及網路。",TIMEOUT:"站點回應逾時。",PARSER:"站點回應格式尚未相容。",CANCELLED:"已停止回應。"};return (names[category]||"請求未完成。")+"（"+(category||"UNKNOWN")+(status?" · HTTP "+status:"")+"）";}
+function inferenceProblem(category,status){const names={KILO_CATALOG_UNAVAILABLE:"暫時無法確認Kilo免費目錄，已保留輸入，請稍後重試。",KILO_FREE_MODEL_UNAVAILABLE:"這個Kilo模型目前未確認為免費可用，已停止發送。請更新目錄或選擇其他模型。",KILO_DEFAULT_CONNECTION_CHANGED:"預設Kilo連線設定已變更，請檢查連線；沒有傳送聊天。",RATE_LIMITED:"站點正在限流，稍後可手動重試。",AUTH_INVALID:"這把 Key 未通過認證，請檢查秘密值與綁定網址。",INFERENCE_DENIED:"這把 Key 沒有使用此模型或群組的權限。",PAYMENT_REQUIRED:"站點要求付款或補充額度。",MODEL_UNAVAILABLE:"站點目前無法提供此模型。",GONE:"站點已移除此端點。",UPSTREAM_5XX:"上游服務暫時無法完成請求。",NETWORK:"無法連到站點，請檢查網址及網路。",TIMEOUT:"站點回應逾時。",PARSER:"站點回應格式尚未相容。",CANCELLED:"已停止回應。"};if(category?.startsWith("KILO_"))return names[category]||"Kilo連線暫時無法使用，已停止發送。";return (names[category]||"請求未完成。")+"（"+(category||"UNKNOWN")+(status?" · HTTP "+status:"")+"）";}
 function readableProblem(text,status){
- let problem;try{problem=JSON.parse(text)?.error;}catch{}
+ let problem;try{const value=JSON.parse(text);if(['KILO_CATALOG_UNAVAILABLE','KILO_FREE_MODEL_UNAVAILABLE','KILO_DEFAULT_CONNECTION_CHANGED'].includes(value?.outcome))return inferenceProblem(value.outcome,status);problem=value?.error;}catch{}
  if(problem&&typeof problem==="object"){
-  const code=problem.code||problem.category,up=Number(problem.upstream_status||problem.http_status),labels={401:"認證未通過，請檢查這把 Key 與綁定網址。",402:"站點回報額度或付款限制。",403:"站點拒絕這個權限或群組。",404:"站點沒有提供這個路徑或模型。",429:"站點正在限流，請稍後手動重試。"};
+  const code=problem.code||problem.category;if(['KILO_CATALOG_UNAVAILABLE','KILO_FREE_MODEL_UNAVAILABLE','KILO_DEFAULT_CONNECTION_CHANGED'].includes(code))return inferenceProblem(code,status);const up=Number(problem.upstream_status||problem.http_status),labels={401:"認證未通過，請檢查這把 Key 與綁定網址。",402:"站點回報額度或付款限制。",403:"站點拒絕這個權限或群組。",404:"站點沒有提供這個路徑或模型。",429:"站點正在限流，請稍後手動重試。"};
   if(up>=400)return "站點回應 HTTP "+up+" · "+(labels[up]||(up>=500?"上游服務暫時無法完成請求。":"請檢查這個連線的設定。"));
   const names={RECIPE_STORAGE_UNAVAILABLE:"暫時無法讀取本機配方確認，已停止這次請求。請重試讀取。",RECIPE_REVIEW_REQUIRED:"已啟用配方已變更或缺少本機確認，請重新Review後再使用。",UPSTREAM_NETWORK:"無法連到站點，請檢查網址及網路。",UPSTREAM_TIMEOUT:"站點回應逾時，請稍後手動重試。",INVALID_PROVIDER_RESPONSE:"站點回應格式尚未相容，已保留上次有效資料。",CREDENTIAL_ROLE:"這個操作需要相符帳戶與用途的 Key。",CREDENTIAL_ORIGIN:"Key 綁定網址與這個操作不符。",UNSUPPORTED_PRIVATE_VERSION:"這個站點版本的私人帳戶介面尚未驗證。公開資料仍可獨立讀取。",INVALID_WINDOW:"請選擇有效時間範圍。",MODEL_REQUIRED:"請先選擇模型。",PROVIDER_NOT_FOUND:"找不到這個供應商。"};return names[code]||"請求未完成（HTTP "+status+"）。";
  }

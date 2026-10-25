@@ -139,6 +139,7 @@ struct SettingsView: View {
                     _ = try await store.mutate("/settings", body: submitted)
                 }
             }
+            KiloFactoryDefaultsCard(store: store)
         }
     }
     private var data: some View {

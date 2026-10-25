@@ -1,3 +1,5 @@
+> 出廠Kilo免Key模型候選：新工作區離線預載15個模型，舊工作區由設定明確加入；每次發送前核對官方免費目錄。完整使用、來源與驗證範圍見[KILO_DEFAULTS.md](KILO_DEFAULTS.md)。
+
 # ModelAtlas VPS — Go / SQLite
 
 逐級研究開發候選015J的正式入口、明確深入選取、精確流量重用、候選重驗、預算與歷史／恢復見 [RESEARCH_PROGRESSIVE.md](RESEARCH_PROGRESSIVE.md)。新來源仍須自己的完整本機與同來源九項／實際產物驗收，完整下一版願望尚未完成，公開版本與部署狀態不變。

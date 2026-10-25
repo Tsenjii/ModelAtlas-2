@@ -106,7 +106,7 @@ func TestSiteRecipeSchema32SnapshotCapturesOnlyCurrentLegacyApproval(t *testing.
 		t.Fatal(e)
 	}
 	s = reopenScheduleStore(t, s)
-	assertSQLInt(t, s, 33, "PRAGMA user_version")
+	assertSQLInt(t, s, schemaVersion, "PRAGMA user_version")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM recipe_execution_bindings")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM recipe_execution_bindings b JOIN recipe_versions v ON v.id=b.version_id WHERE v.version=2")
 	p, e := s.provider(context.Background(), "p")

@@ -340,6 +340,8 @@ func (s *Server) infer(w http.ResponseWriter, r *http.Request) {
 				problemCode = "UPSTREAM_TIMEOUT"
 			}
 			writeProviderProblem(w, &providerReadError{Code: problemCode}, "inference")
+		} else if strings.HasPrefix(result.Outcome, "KILO_") {
+			writeProviderProblem(w, &providerReadError{Code: result.Outcome}, "inference")
 		} else {
 			http.Error(w, result.Outcome, code)
 		}
@@ -501,6 +503,15 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	endpoint, err := s.requestEndpoint(ctx, provider, cfg, scope.Endpoint, scope.ModelID)
 	if err != nil {
 		return result, 422
+	}
+	if err = s.guardFactoryKilo(ctx, scope, provider, cfg, endpoint, key); err != nil {
+		var problem *providerReadError
+		if errors.As(err, &problem) {
+			result.Outcome = problem.Code
+		} else {
+			result.Outcome = "KILO_CATALOG_UNAVAILABLE"
+		}
+		return result, 503
 	}
 	stream := v.Streaming == nil || *v.Streaming
 	var custom *CustomProtocol

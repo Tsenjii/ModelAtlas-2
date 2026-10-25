@@ -31,7 +31,7 @@ func TestDesktopDynamicLoopbackAndParentPipeLifetime(t *testing.T) {
 			cmd.Env = append(cmd.Env, value)
 		}
 	}
-	cmd.Env = append(cmd.Env, "MODELATLAS_DEPLOYMENT=desktop", "MODELATLAS_DESKTOP_READY="+ready,
+	cmd.Env = append(cmd.Env, "MODELATLAS_DEPLOYMENT=desktop", "MODELATLAS_FACTORY_DEFAULTS=0", "MODELATLAS_DESKTOP_READY="+ready,
 		"MODELATLAS_DB="+db, "MODELATLAS_ADMIN_TOKEN=desktop-testing-admin-token-long", "MODELATLAS_MASTER_KEY="+base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{5}, 32)), "PORT=12345")
 	pipe, err := cmd.StdinPipe()
 	if err != nil {

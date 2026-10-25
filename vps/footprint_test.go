@@ -214,7 +214,7 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 	addr := ln.Addr().String()
 	ln.Close()
 	child := exec.Command(binary)
-	child.Env = append(os.Environ(), "MODELATLAS_LISTEN="+addr, "MODELATLAS_ADMIN_TOKEN="+s.Token, "MODELATLAS_MASTER_KEY="+base64.StdEncoding.EncodeToString(s.Key), "MODELATLAS_DB="+dbPath, "SSL_CERT_FILE="+caPath, "GOMEMLIMIT=192MiB")
+	child.Env = append(os.Environ(), "MODELATLAS_FACTORY_DEFAULTS=0", "MODELATLAS_LISTEN="+addr, "MODELATLAS_ADMIN_TOKEN="+s.Token, "MODELATLAS_MASTER_KEY="+base64.StdEncoding.EncodeToString(s.Key), "MODELATLAS_DB="+dbPath, "SSL_CERT_FILE="+caPath, "GOMEMLIMIT=192MiB")
 	if e = child.Start(); e != nil {
 		t.Fatal(e)
 	}

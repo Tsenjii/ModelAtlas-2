@@ -119,7 +119,7 @@ enum Workspace: String, CaseIterable, Identifiable {
             let secrets: EngineSecrets
             if smoke { secrets = EngineSecrets(token: "native-ui-fixture-admin-token-only", masterKey: Data(repeating: 9, count: 32).base64EncodedString()) }
             else { secrets = try KeychainVault().loadOrCreate(databaseExists: FileManager.default.fileExists(atPath: engine.directory.appendingPathComponent("atlas.sqlite").path)) }
-            api = try await engine.start(executable: executable, secrets: secrets)
+            api = try await engine.start(executable: executable, secrets: secrets, factoryDefaults: !smoke)
             try await reload()
             ready = true
         } catch { problem = error.localizedDescription }
@@ -143,7 +143,11 @@ enum Workspace: String, CaseIterable, Identifiable {
         providers = try values.0.requiredArray(); accounts = try values.1.requiredArray(); credentials = try values.2.requiredArray()
         endpoints = try values.3.requiredArray(); settings = values.4; myModels = members
         checkins.refresh(using: api)
-        if sessionID == nil && !activeModels.contains(where: { ModelScope($0).id == scopeID }) { scopeID = activeModels.first.map { ModelScope($0).id } ?? "" }
+        if sessionID == nil && !activeModels.contains(where: { ModelScope($0).id == scopeID }) {
+            let factory = scopeID.isEmpty && providers.count == 1 && providers.first?["id"].string == "builtin-kilo-anonymous"
+                ? activeModels.first { $0["model_id"].string == "nvidia/nemotron-3.5-lightning:free" } : nil
+            scopeID = (factory ?? activeModels.first).map { ModelScope($0).id } ?? ""
+        }
         try await loadSessions()
     }
     func refresh() async {

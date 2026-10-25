@@ -269,6 +269,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /sessions", s.listSessions)
 	api.HandleFunc("POST /sessions", s.addSession)
 	api.HandleFunc("POST /sessions/update", s.updateSession)
+	api.HandleFunc("GET /defaults", s.getFactoryDefaults)
+	api.HandleFunc("POST /defaults/kilo", s.addKiloFactoryDefaults)
 	api.HandleFunc("GET /sessions/export", s.exportSession)
 	api.HandleFunc("GET /sessions/settings", s.getSessionSettings)
 	api.HandleFunc("POST /sessions/settings", s.setSessionSettings)
@@ -407,6 +409,11 @@ func runApplication() error {
 	defer listener.Close()
 	client := &http.Client{Timeout: 120 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: true, MaxFlights: configuredFlights(), desktop: config.desktopReady != "", maintenanceFile: config.maintenanceFile, vaultVerified: len(config.key) == 32}
+	if os.Getenv("MODELATLAS_FACTORY_DEFAULTS") != "0" {
+		if _, err = srv.installKiloFactory(context.Background(), true); err != nil {
+			return fmt.Errorf("factory defaults initialization failed: %w", err)
+		}
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if config.desktopReady != "" {
