@@ -72,6 +72,20 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate"):
             audit.browser_image_scopes(duplicated)
 
+    def test_accepted_cost_view_cannot_be_replaced_at_the_same_image_count(self):
+        config = self.config()
+        config["new_browser_images"].remove("research-query-cost-375-light.png")
+        config["new_browser_images"].append("research-execution-replacement.png")
+        with self.assertRaisesRegex(ValueError, "accepted browser"):
+            audit.browser_image_scopes(config)
+
+    def test_contact_inventory_grows_without_rewriting_frozen_views(self):
+        config = self.config()
+        self.assertEqual(audit.visual_review_count(config),58)
+        config["new_browser_images"].append("future-new-view.png")
+        self.assertEqual(audit.visual_review_count(config),59)
+        self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
+
 class CandidateRegistryIntegrityTest(unittest.TestCase):
     def test_new_research_files_cannot_disappear_from_the_audited_registry(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -1,3 +1,4 @@
+const {waitForAsync}=require('./async-wait-helper.cjs');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises');
 (async()=>{
@@ -33,7 +34,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   // Both shipped update buttons enqueue the same durable production runner.
   await page.locator('#aa-sync').click();await page.locator('#detail').waitFor({state:'visible'});await page.waitForFunction(()=>researchRuns.length===2&&researchRuns.every(r=>r.status==='COMPLETED'));await page.locator('#detail-close').click();
   await page.getByRole('button',{name:'設定',exact:true}).click();await page.getByRole('tab',{name:'服務',exact:true}).click();await page.locator('#service-aa').getByRole('button',{name:'更新榜單',exact:true}).click();await page.locator('#detail').waitFor({state:'visible'});
-  await page.waitForFunction(async()=>{const rows=await api('/research/runs');return rows.length===3&&rows.every(r=>r.status==='COMPLETED');});
+  await waitForAsync(page,async()=>{const rows=await api('/research/runs');return rows.length===3&&rows.every(r=>r.status==='COMPLETED');});
   // A run being terminal does not prove every AA task succeeded. Inspect the
   // committed tasks as well, so a stopped page reports its actual reason.
   const finished=await (await context.request.get(origin+'/api/v1/research/runs')).json();

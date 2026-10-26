@@ -612,7 +612,7 @@ func (s *Server) suspendSchedule(ctx context.Context, id, reason string) {
 
 // A manual pause is different from a process restart. Only durable intent=1
 // may recover automatically, and a disabled owner can never resume through a
-// different API entry point. Global active schedule concurrency stays at one.
+// different API entry point. Every admission rechecks the local concurrency cap.
 func (s *Server) scheduledRunControl(ctx context.Context, tx *sql.Tx, run, action string, additionalProbes int) error {
 	var owner string
 	var enabled int
@@ -645,11 +645,11 @@ func (s *Server) scheduledRunControl(ctx context.Context, tx *sql.Tx, run, actio
 				return errors.New("private round budgets cannot exceed the approved schedule definition")
 			}
 		}
-		var active int
-		if err = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_schedule_runs p JOIN research_runs r ON r.id=p.run_id WHERE r.status IN ('QUEUED','RUNNING') AND r.id!=?", run).Scan(&active); err != nil {
+		slot, err := researchScheduleHasSlot(ctx, tx, run)
+		if err != nil {
 			return err
 		}
-		if active > 0 {
+		if !slot {
 			return errors.New("another scheduled research run is active")
 		}
 		intent = 1
@@ -717,8 +717,8 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 			s.suspendSchedule(ctx, v.ID, "SOURCES_CHANGED")
 			continue
 		}
-		var active int
-		if e = tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_schedule_runs p JOIN research_runs r ON r.id=p.run_id WHERE r.status IN ('QUEUED','RUNNING')").Scan(&active); e != nil || active > 0 {
+		slot, e := researchScheduleHasSlot(ctx, tx, "")
+		if e != nil || !slot {
 			tx.Rollback()
 			continue
 		}
@@ -777,7 +777,11 @@ func (s *Server) researchScheduleTick(ctx context.Context) {
 		if tx.Commit() != nil {
 			continue
 		}
-		return // Bounded global concurrency: never enqueue a second active round.
+		// A larger limit admits other approved schedules in this same tick. The
+		// default still returns after one, before planning another due schedule.
+		if slot, err := researchScheduleHasSlot(ctx, s.Store.DB, ""); err != nil || !slot {
+			return
+		}
 	}
 }
 
@@ -868,14 +872,14 @@ func (s *Server) recoverScheduledRun(ctx context.Context, v researchSchedule, at
 	var resumeAt int64
 	var enabled int
 	var status string
-	var budget, used, active int
+	var budget, used int
 	if tx.QueryRowContext(ctx, "SELECT p.intent,p.resume_at,s.enabled,r.status,o.budget,o.used FROM research_schedule_runs p JOIN research_schedules s ON s.id=p.schedule_id JOIN research_runs r ON r.id=p.run_id JOIN research_run_options o ON o.run_id=r.id WHERE p.run_id=?", v.LastRunID).Scan(&intent, &resumeAt, &enabled, &status, &budget, &used) != nil {
 		return
 	}
 	if intent != 1 || enabled != 1 || resumeAt > at || used >= budget || !oneOf(status, "PAUSED", "BUDGET_EXHAUSTED") {
 		return
 	}
-	if tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM research_schedule_runs p JOIN research_runs r ON r.id=p.run_id WHERE r.status IN ('QUEUED','RUNNING')").Scan(&active) != nil || active > 0 {
+	if slot, err := researchScheduleHasSlot(ctx, tx, ""); err != nil || !slot {
 		return
 	}
 	if v.Private != nil {

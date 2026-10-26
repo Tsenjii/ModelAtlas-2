@@ -1,3 +1,4 @@
+const {waitForAsync}=require('./async-wait-helper.cjs');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises');
 (async()=>{
@@ -55,7 +56,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await add().click();await page.locator('#detail [role=alert]').waitFor();assert((await page.locator('#detail [role=alert]').textContent()).includes('synthetic membership interruption'));
   assert.equal(await page.getByLabel('使用的 Key',{exact:true}).inputValue(),JSON.stringify(['p','a','second']));assert.equal(await page.getByLabel('端點',{exact:true}).inputValue(),endpoint.id);
   assert(await page.locator('#detail [role=alert]').evaluate(n=>{const r=n.getBoundingClientRect(),d=document.querySelector('#detail').getBoundingClientRect();return r.top>=d.top&&r.bottom<=d.bottom;}),'join error is outside visible modal');await shot('retry-375-light');
-  await add().click();await page.waitForFunction(async()=>(await(await fetch('/__catalog_fixture/state')).json()).ready);assert(await page.getByLabel('使用的 Key',{exact:true}).isDisabled());
+  await add().click();await waitForAsync(page,async()=>(await(await fetch('/__catalog_fixture/state')).json()).ready);assert(await page.getByLabel('使用的 Key',{exact:true}).isDisabled());
   await close();await search('尚未設定 Key');await open('尚未設定 Key');
   const held=page.waitForResponse(r=>r.url().endsWith('/api/v1/my-models')&&r.request().method()==='POST'&&r.status()===201);await fixture('release');await held;
   await page.waitForFunction(()=>catalogScopeIndex.has(JSON.stringify({provider_id:'p',account_id:'a',credential_id:'second',model_id:'other',group:'研發',endpoint:document.querySelector('#manual-endpoint')?.value}))||myModels.some(m=>m.model_id==='other'&&m.credential_id==='second'));

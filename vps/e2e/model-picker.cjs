@@ -1,3 +1,4 @@
+const {waitForAsync}=require('./async-wait-helper.cjs');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises');
 const {chooseTarget}=require('./model-picker-helper.cjs');
@@ -23,7 +24,7 @@ const {chooseTarget}=require('./model-picker-helper.cjs');
  await fs.mkdir('e2e/screenshots',{recursive:true});
  try{
   await page.goto(origin);
-  await page.waitForFunction(async()=>(await(await fetch('/picker-fixture/initial-state')).json()).ready);
+  await waitForAsync(page,async()=>(await(await fetch('/picker-fixture/initial-state')).json()).ready);
   assert(await page.locator('#model-picker-open').isDisabled(),'picker opened before its real scope read finished');
   assert.equal(await page.locator('#model-picker-title').textContent(),'正在讀取模型…');await page.keyboard.press('Meta+k');assert(await dialog.isHidden());
   await page.request.get(origin+'/picker-fixture/release-models');

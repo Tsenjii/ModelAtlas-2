@@ -53,7 +53,7 @@ dialog{max-width:760px;width:calc(100% - 32px);max-height:88dvh;padding:24px;bor
 #catalog .model-id{overflow-wrap:anywhere}
 #catalog-manual{margin-top:20px}
 .research-origin-wait-panel,.research-aa-panel{min-width:0;overflow-wrap:anywhere}
-` + modelPickerCSS + macAlignmentCSS + macParityCSS + mobileAlignmentCSS + modelViewsCSS + systemStatusCSS + researchScheduleCSS + researchInferenceBudgetCSS + workspaceRecoveryCSS + conversationCreationCSS + researchQuotaPoolCSS + researchCostCSS
+` + modelPickerCSS + macAlignmentCSS + macParityCSS + mobileAlignmentCSS + modelViewsCSS + systemStatusCSS + researchScheduleCSS + researchInferenceBudgetCSS + workspaceRecoveryCSS + conversationCreationCSS + researchQuotaPoolCSS + researchCostCSS + researchExecutionCSS
 
 const researchCostCSS = `
 .research-cost-table{width:100%;border-collapse:collapse;margin-block:16px;font-variant-numeric:tabular-nums}.research-cost-table th,.research-cost-table td{text-align:left;padding:8px 12px;vertical-align:top;overflow-wrap:anywhere}.research-cost-table th:first-child,.research-cost-table td:first-child{padding-left:0}.research-cost-table th{color:var(--muted);font-size:.875em}.research-cost-table tr+tr{border-top:1px solid var(--border)}.research-cost-value-label{display:none}

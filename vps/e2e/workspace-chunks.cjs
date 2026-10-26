@@ -1,3 +1,4 @@
+const {waitForAsync}=require('./async-wait-helper.cjs');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises');
 (async()=>{
@@ -12,7 +13,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await load();const initial=(await state()).id;assert.equal(await page.locator('#workspace-sync-now').textContent(),'恢復同步');
   await page.locator('#workspace-transfer-progress').scrollIntoViewIfNeeded();await shot('ready-375-light');
   await page.locator('#workspace-sync-now').click();
-  await page.waitForFunction(async()=>(await(await fetch('/__chunks/state')).json()).held);
+  await waitForAsync(page,async()=>(await(await fetch('/__chunks/state')).json()).held);
   await page.waitForFunction(()=>workspaceSyncRunning&&workspaceSyncLoading);assert(await page.locator('#workspace-sync-now').isDisabled());
   await page.evaluate(()=>document.documentElement.dataset.theme='dark');await page.locator('#workspace-sync-pause').scrollIntoViewIfNeeded();await shot('uploading-375-dark');
   await page.getByRole('button',{name:'暫停同步',exact:true}).click();

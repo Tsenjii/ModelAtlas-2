@@ -1,3 +1,4 @@
+const {waitForAsync}=require('./async-wait-helper.cjs');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const {openProviderForm,closeProviderEditor}=require('./provider-editor-helper.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises');
@@ -60,7 +61,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   assert((await feedback('account','alert').textContent()).includes('synthetic account interruption'));assert.equal(await input('account','顯示名稱').inputValue(),'新專案帳戶');await assertDrafts();
   assert(await feedback('account','alert').evaluate(n=>{const a=n.getBoundingClientRect(),d=n.closest('dialog').getBoundingClientRect();return a.top>=d.top&&a.bottom<=d.bottom;}));await assertErrorVisible('account');await shot('account-retry-375-light');
   await form('account').getByRole('button',{name:'新增帳戶',exact:true}).click();
-  await page.waitForFunction(async()=>(await(await fetch('/__provider_forms_fixture/state')).json()).account_ready);
+  await waitForAsync(page,async()=>(await(await fetch('/__provider_forms_fixture/state')).json()).account_ready);
   assert.equal(await form('account').getAttribute('aria-busy'),'true');assert(await input('account','顯示名稱').isDisabled());
   await form('account').evaluate(n=>{n.requestSubmit();n.requestSubmit();});assert.equal((await fixture('state')).accounts,2,'duplicate pending account submission');
   assert(await input('key','名稱').isEnabled(),'unrelated Key draft was locked');await expand('key');await input('key','名稱').fill('處理中仍可編輯的 Key');await input('key','名稱').fill('未送出的 Key 草稿');
@@ -89,7 +90,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   }
   await page.evaluate(()=>document.documentElement.style.removeProperty('font-size'));await page.setViewportSize({width:375,height:900});await page.emulateMedia({colorScheme:'light'});
   await page.evaluate(()=>window.pendingProviderForm=document.querySelector('#provider-config-form'));
-  await form('config').getByRole('button',{name:'儲存 Provider 設定',exact:true}).click();await page.waitForFunction(async()=>(await(await fetch('/__provider_forms_fixture/state')).json()).config_ready);
+  await form('config').getByRole('button',{name:'儲存 Provider 設定',exact:true}).click();await waitForAsync(page,async()=>(await(await fetch('/__provider_forms_fixture/state')).json()).config_ready);
   await form('config').evaluate(n=>n.requestSubmit());assert.equal((await fixture('state'))['providers/config'],1);await close();await open('Q');
   await fixture('release-config');await page.waitForFunction(()=>!window.pendingProviderForm.hasAttribute('aria-busy'));assert.equal(await page.evaluate(()=>providers.find(p=>p.id==='p').config.notes),'表單保存驗證');
   assert.equal(await page.locator('#detail-title').textContent(),'Q','late config save reopened previous Provider');assert.equal(await page.locator('#detail [data-provider-feedback]').count(),0,'late save wrote into new dialog');

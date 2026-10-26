@@ -1,3 +1,5 @@
+> 目前唯一候選RESEARCH-EXECUTION-015T：VPS本機研究輪數1～4、不同輪有界並行／同輪每次一項、排程slot／每日入場與取消／重啟；預設1且不新增來源／憑證／預算授權。原11個Browser腳本19個async條件改為真正await，保留全部條件／斷言／負載／timeout；新增8個實際Chromium等待回歸。015S費用證據已由246ea08同源九項、九份實際ZIP及54視圖驗收，見verification/20261026/research-cost-baseline.json。新片自己的完整回歸與九項／實際產物／58視圖前仍候選；完整下一版PARTIAL、VPS→Mac→Android及公開版本／tag／11附件凍結保持。
+
 > 2026-10-26：015R的Mac原生研究恢復已驗收（70f4683、九項與50實圖；verification/20261026/mac-research-baseline.json）。目前015S補VPS研究費用證據與正式比較；Mac同源引擎／既有JSON詳情可取得新欄位，不冒稱新增專用原生費用UI；Android專用研究與PLAY-004仍待完成。自己的九項／54視圖前候選，VPS→Mac→Android與原全部能力／負載保持。
 
 > MAC-RESEARCH-015R 本機候選：精確舊紀錄反例原本0.136s失敗（指定ID仍回100筆他輪），修後race2.502s與AA擴大回歸30.157s成功。41發布回歸、vet與真TLS fixture協定成功：3次建立／3次控制、頁1三次／頁2四次、總HTTP7、零推論；尚未執行本來源Mac原生UI／九項CI，不外推為已完成。原600s／300s、85核心／96圖及原全部負載保持；新增4核心與獨立第三原生程序8圖，原smoke／parity的120s不變。詳verification/20261026/mac-research-candidate.json。

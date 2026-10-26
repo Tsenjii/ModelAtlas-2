@@ -477,144 +477,198 @@ func (s *Server) enqueueResearch(ctx context.Context, run, kind, dedupe string, 
 	_, e := s.Store.DB.ExecContext(ctx, "INSERT INTO research_tasks(id,run_id,kind,dedupe,payload_json,status,created_at) SELECT ?,?,?,?,?,'QUEUED',? WHERE (SELECT COUNT(*) FROM research_tasks WHERE run_id=?)<128 ON CONFLICT(run_id,dedupe) DO NOTHING", newID(), run, kind, dedupe, string(raw), now(), run)
 	return e
 }
+func (s *Server) nextQueuedResearchTask(ctx context.Context, active map[string]bool) (ResearchTask, string, error) {
+	var t ResearchTask
+	var payload, previous string
+	stamp := s.scheduleTime().UnixMilli()
+	args := []any{stamp, stamp, stamp, stamp}
+	query := "SELECT t.id,t.run_id,t.kind,t.payload_json,t.result_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.origin_wait.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.aa_progress.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.brave_progress.next_attempt_at'),0)<=?"
+	ids := make([]string, 0, len(active))
+	for id := range active {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	if len(ids) > 0 {
+		query += " AND t.run_id NOT IN (" + strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",") + ")"
+		for _, id := range ids {
+			args = append(args, id)
+		}
+	}
+	err := s.Store.DB.QueryRowContext(ctx, query+" ORDER BY t.rowid LIMIT 1", args...).Scan(&t.ID, &t.RunID, &t.Kind, &payload, &previous)
+	t.Result = json.RawMessage(previous)
+	return t, payload, err
+}
+
+func (s *Server) executeQueuedResearchTask(parent context.Context, t ResearchTask, payload string) bool {
+	flight := "research:" + t.RunID
+	if !researchInferenceTask(t.Kind) && !s.beginFlight(flight) {
+		return false
+	}
+	budgetCtx := context.WithValue(context.WithValue(parent, researchBudgetKey{}, t.RunID), researchTaskBudgetKey{}, t.ID)
+	ctx, cancel := context.WithTimeout(budgetCtx, 40*time.Second)
+	s.flightMu.Lock()
+	if s.cancels == nil {
+		s.cancels = map[string]context.CancelFunc{}
+	}
+	s.cancels[flight] = cancel
+	s.flightMu.Unlock()
+	claimed, e := s.Store.DB.ExecContext(ctx, "UPDATE research_tasks SET status='RUNNING',attempts=attempts+1 WHERE id=? AND status='QUEUED' AND EXISTS(SELECT 1 FROM research_runs r WHERE r.id=research_tasks.run_id AND r.status IN ('QUEUED','RUNNING'))", t.ID)
+	var affected int64
+	if e == nil {
+		affected, e = claimed.RowsAffected()
+	}
+	if e != nil || affected != 1 {
+		cancel()
+		s.endFlight(flight)
+		return false
+	}
+	_, _ = s.Store.DB.ExecContext(ctx, "UPDATE research_runs SET status='RUNNING',checkpoint=? WHERE id=? AND status IN ('RUNNING','QUEUED')", t.ID, t.RunID)
+	var input taskInput
+	json.Unmarshal([]byte(payload), &input)
+	var result map[string]any
+	var taskErr error
+	if researchInferenceTask(t.Kind) || t.Kind == "CATALOG" {
+		var owner, definition string
+		grantErr := s.Store.DB.QueryRowContext(ctx, "SELECT s.id,s.definition_json FROM research_schedule_runs r JOIN research_schedules s ON s.id=r.schedule_id WHERE r.run_id=?", t.RunID).Scan(&owner, &definition)
+		if grantErr == nil {
+			var d scheduleDefinition
+			if json.Unmarshal([]byte(definition), &d) != nil || d.Private == nil {
+				taskErr = errors.New("automatic schedule cannot use private model credentials")
+			} else if input.Selection == nil || !privateScheduleScopeAllowed(d, *input.Selection) || researchInferenceTask(t.Kind) && !d.Options.MinimalInference || researchDeeperTask(t.Kind) && !researchDeeperSelection(d.Options, *input.Selection) || !s.scheduleApproved(ctx, s.Store.DB, owner, d) {
+				taskErr = errScheduledDefinitionChanged
+			} else {
+				ctx = context.WithValue(ctx, privateScheduleCredentialKey{}, *input.Selection)
+			}
+		} else if grantErr != sql.ErrNoRows {
+			taskErr = grantErr
+		}
+	}
+	if taskErr == nil {
+		if t.Kind == "AA" {
+			result, taskErr = s.executeAAResearchTask(ctx, t)
+		} else {
+			result, taskErr = s.executeResearchTask(ctx, t.RunID, t.Kind, input)
+		}
+	}
+	status := "SUCCESS"
+	if taskErr != nil {
+		status = "FAILED"
+		if result == nil {
+			result = map[string]any{}
+		}
+		result["reason"] = taskErr.Error()
+	}
+	if ctx.Err() != nil {
+		status = "INTERRUPTED"
+		if ctx.Err() == context.DeadlineExceeded {
+			status = "FAILED"
+			result = map[string]any{"reason": "task timeout"}
+		}
+	}
+	saveCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+	if errors.Is(taskErr, errScheduledDefinitionChanged) || errors.Is(taskErr, errResearchProbeScopeChanged) || errors.Is(taskErr, errResearchProbeApproval) {
+		var owner string
+		if s.Store.DB.QueryRowContext(saveCtx, "SELECT schedule_id FROM research_schedule_runs WHERE run_id=?", t.RunID).Scan(&owner) == nil {
+			s.suspendSchedule(saveCtx, owner, "SOURCES_CHANGED")
+		}
+	}
+	var runState string
+	var used, budget int
+	_ = s.Store.DB.QueryRowContext(saveCtx, "SELECT r.status,o.used,o.budget FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", t.RunID).Scan(&runState, &used, &budget)
+	if runState == "CANCELLED" {
+		status = "CANCELLED"
+	}
+	if runState == "PAUSED" && status == "FAILED" {
+		status = "INTERRUPTED"
+	}
+	s.scheduleBudgetWait(saveCtx, t.RunID, t.ID, taskErr)
+	if taskErr != nil && strings.Contains(taskErr.Error(), "budget") && !oneOf(runState, "CANCELLED", "PAUSED") {
+		status = "BUDGET_EXHAUSTED"
+		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='BUDGET_EXHAUSTED' WHERE id=? AND status='RUNNING'", t.RunID)
+	}
+	result, status = s.researchRetryResult(t, taskErr, result, status)
+	var inferenceLimit *researchInferenceBudgetError
+	if errors.As(taskErr, &inferenceLimit) {
+		result["inference_budget"] = inferenceLimit
+		// No inference was admitted: waiting for local authorization must not
+		// consume the original bounded upstream retry allowance.
+		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
+	}
+	var resourceLimit *researchResourceBudgetError
+	if errors.As(taskErr, &resourceLimit) {
+		result["resource_budget"] = resourceLimit
+		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
+	}
+	var originWait *researchOriginWait
+	if errors.As(taskErr, &originWait) {
+		// An admission wait sent no HTTP request and is not a failed probe.
+		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
+		result["origin_wait"] = originWait
+		if status == "FAILED" {
+			status = "QUEUED"
+		}
+	}
+	if t.Kind == "AA" {
+		result, status = s.aaResearchResult(saveCtx, t.ID, result, status, taskErr)
+	}
+	if t.Kind == "SEARCH" {
+		result, status = s.braveResearchResult(saveCtx, t.ID, result, status, taskErr)
+	}
+	raw, _ := json.Marshal(result)
+	_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET status=?,result_json=?,finished_at=CASE WHEN ?='QUEUED' THEN NULL ELSE ? END WHERE id=?", status, string(raw), status, now(), t.ID)
+	var queued int
+	_ = s.Store.DB.QueryRowContext(saveCtx, "SELECT COUNT(*) FROM research_tasks WHERE run_id=? AND status IN ('QUEUED','RUNNING','INTERRUPTED','BUDGET_EXHAUSTED')", t.RunID).Scan(&queued)
+	if queued == 0 && runState == "RUNNING" {
+		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='COMPLETED',finished_at=? WHERE id=? AND status='RUNNING'", now(), t.RunID)
+	} else if used >= budget {
+		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='BUDGET_EXHAUSTED' WHERE id=? AND status='RUNNING'", t.RunID)
+	}
+	s.updateResearchSummary(saveCtx, t.RunID)
+	stop()
+	cancel()
+	s.endFlight(flight)
+	return true
+}
+
 func (s *Server) runResearchPending(parent context.Context) {
 	s.workMu.Lock()
 	defer s.workMu.Unlock()
-	for count := 0; count < 4; count++ {
-		var t ResearchTask
-		var payload, previous string
-		stamp := s.scheduleTime().UnixMilli()
-		e := s.Store.DB.QueryRowContext(parent, "SELECT t.id,t.run_id,t.kind,t.payload_json,t.result_json FROM research_tasks t JOIN research_runs r ON r.id=t.run_id WHERE t.status='QUEUED' AND r.status IN ('QUEUED','RUNNING') AND COALESCE(json_extract(t.result_json,'$.retry.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.origin_wait.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.aa_progress.next_attempt_at'),0)<=? AND COALESCE(json_extract(t.result_json,'$.brave_progress.next_attempt_at'),0)<=? ORDER BY t.rowid LIMIT 1", stamp, stamp, stamp, stamp).Scan(&t.ID, &t.RunID, &t.Kind, &payload, &previous)
-		if e != nil {
-			return
-		}
-		t.Result = json.RawMessage(previous)
-		flight := "research:" + t.RunID
-		if !researchInferenceTask(t.Kind) && !s.beginFlight(flight) {
-			return
-		}
-		budgetCtx := context.WithValue(context.WithValue(parent, researchBudgetKey{}, t.RunID), researchTaskBudgetKey{}, t.ID)
-		ctx, cancel := context.WithTimeout(budgetCtx, 40*time.Second)
-		s.flightMu.Lock()
-		if s.cancels == nil {
-			s.cancels = map[string]context.CancelFunc{}
-		}
-		s.cancels[flight] = cancel
-		s.flightMu.Unlock()
-		_, e = s.Store.DB.ExecContext(ctx, "UPDATE research_tasks SET status='RUNNING',attempts=attempts+1 WHERE id=? AND status='QUEUED'", t.ID)
-		if e != nil {
-			cancel()
-			s.endFlight(flight)
-			return
-		}
-		_, _ = s.Store.DB.ExecContext(ctx, "UPDATE research_runs SET status='RUNNING',checkpoint=? WHERE id=? AND status IN ('RUNNING','QUEUED')", t.ID, t.RunID)
-		var input taskInput
-		json.Unmarshal([]byte(payload), &input)
-		var result map[string]any
-		var taskErr error
-		if researchInferenceTask(t.Kind) || t.Kind == "CATALOG" {
-			var owner, definition string
-			grantErr := s.Store.DB.QueryRowContext(ctx, "SELECT s.id,s.definition_json FROM research_schedule_runs r JOIN research_schedules s ON s.id=r.schedule_id WHERE r.run_id=?", t.RunID).Scan(&owner, &definition)
-			if grantErr == nil {
-				var d scheduleDefinition
-				if json.Unmarshal([]byte(definition), &d) != nil || d.Private == nil {
-					taskErr = errors.New("automatic schedule cannot use private model credentials")
-				} else if input.Selection == nil || !privateScheduleScopeAllowed(d, *input.Selection) || researchInferenceTask(t.Kind) && !d.Options.MinimalInference || researchDeeperTask(t.Kind) && !researchDeeperSelection(d.Options, *input.Selection) || !s.scheduleApproved(ctx, s.Store.DB, owner, d) {
-					taskErr = errScheduledDefinitionChanged
-				} else {
-					ctx = context.WithValue(ctx, privateScheduleCredentialKey{}, *input.Selection)
-				}
-			} else if grantErr != sql.ErrNoRows {
-				taskErr = grantErr
+	policy, err := readResearchExecutionPolicy(parent, s.Store.DB)
+	if err != nil {
+		return
+	}
+	// Finish every owned task before releasing the batch lock. A run never has
+	// two tasks in flight, and the original four-task batch/40s task budget stays.
+	active := map[string]bool{}
+	type completed struct {
+		run      string
+		admitted bool
+	}
+	done := make(chan completed, policy.MaxParallelRuns)
+	started, blocked := 0, false
+	for {
+		for !blocked && parent.Err() == nil && started < 4 && len(active) < policy.MaxParallelRuns {
+			t, payload, err := s.nextQueuedResearchTask(parent, active)
+			if err != nil {
+				break
 			}
+			active[t.RunID] = true
+			started++
+			go func(t ResearchTask, payload string) {
+				done <- completed{t.RunID, s.executeQueuedResearchTask(parent, t, payload)}
+			}(t, payload)
 		}
-		if taskErr == nil {
-			if t.Kind == "AA" {
-				result, taskErr = s.executeAAResearchTask(ctx, t)
-			} else {
-				result, taskErr = s.executeResearchTask(ctx, t.RunID, t.Kind, input)
-			}
+		if len(active) == 0 {
+			break
 		}
-		status := "SUCCESS"
-		if taskErr != nil {
-			status = "FAILED"
-			if result == nil {
-				result = map[string]any{}
-			}
-			result["reason"] = taskErr.Error()
+		result := <-done
+		delete(active, result.run)
+		if !result.admitted {
+			blocked = true
 		}
-		if ctx.Err() != nil {
-			status = "INTERRUPTED"
-			if ctx.Err() == context.DeadlineExceeded {
-				status = "FAILED"
-				result = map[string]any{"reason": "task timeout"}
-			}
-		}
-		saveCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		if errors.Is(taskErr, errScheduledDefinitionChanged) || errors.Is(taskErr, errResearchProbeScopeChanged) || errors.Is(taskErr, errResearchProbeApproval) {
-			var owner string
-			if s.Store.DB.QueryRowContext(saveCtx, "SELECT schedule_id FROM research_schedule_runs WHERE run_id=?", t.RunID).Scan(&owner) == nil {
-				s.suspendSchedule(saveCtx, owner, "SOURCES_CHANGED")
-			}
-		}
-		var runState string
-		var used, budget int
-		_ = s.Store.DB.QueryRowContext(saveCtx, "SELECT r.status,o.used,o.budget FROM research_runs r JOIN research_run_options o ON o.run_id=r.id WHERE r.id=?", t.RunID).Scan(&runState, &used, &budget)
-		if runState == "CANCELLED" {
-			status = "CANCELLED"
-		}
-		if runState == "PAUSED" && status == "FAILED" {
-			status = "INTERRUPTED"
-		}
-		s.scheduleBudgetWait(saveCtx, t.RunID, t.ID, taskErr)
-		if taskErr != nil && strings.Contains(taskErr.Error(), "budget") && !oneOf(runState, "CANCELLED", "PAUSED") {
-			status = "BUDGET_EXHAUSTED"
-			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='BUDGET_EXHAUSTED' WHERE id=? AND status='RUNNING'", t.RunID)
-		}
-		result, status = s.researchRetryResult(t, taskErr, result, status)
-		var inferenceLimit *researchInferenceBudgetError
-		if errors.As(taskErr, &inferenceLimit) {
-			result["inference_budget"] = inferenceLimit
-			// No inference was admitted: waiting for local authorization must not
-			// consume the original bounded upstream retry allowance.
-			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
-		}
-		var resourceLimit *researchResourceBudgetError
-		if errors.As(taskErr, &resourceLimit) {
-			result["resource_budget"] = resourceLimit
-			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
-		}
-		var originWait *researchOriginWait
-		if errors.As(taskErr, &originWait) {
-			// An admission wait sent no HTTP request and is not a failed probe.
-			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET attempts=MAX(0,attempts-1) WHERE id=?", t.ID)
-			result["origin_wait"] = originWait
-			if status == "FAILED" {
-				status = "QUEUED"
-			}
-		}
-		if t.Kind == "AA" {
-			result, status = s.aaResearchResult(saveCtx, t.ID, result, status, taskErr)
-		}
-		if t.Kind == "SEARCH" {
-			result, status = s.braveResearchResult(saveCtx, t.ID, result, status, taskErr)
-		}
-		raw, _ := json.Marshal(result)
-		_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_tasks SET status=?,result_json=?,finished_at=CASE WHEN ?='QUEUED' THEN NULL ELSE ? END WHERE id=?", status, string(raw), status, now(), t.ID)
-		var queued int
-		_ = s.Store.DB.QueryRowContext(saveCtx, "SELECT COUNT(*) FROM research_tasks WHERE run_id=? AND status IN ('QUEUED','RUNNING','INTERRUPTED','BUDGET_EXHAUSTED')", t.RunID).Scan(&queued)
-		if queued == 0 && runState == "RUNNING" {
-			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='COMPLETED',finished_at=? WHERE id=? AND status='RUNNING'", now(), t.RunID)
-		} else if used >= budget {
-			_, _ = s.Store.DB.ExecContext(saveCtx, "UPDATE research_runs SET status='BUDGET_EXHAUSTED' WHERE id=? AND status='RUNNING'", t.RunID)
-		}
-		s.updateResearchSummary(saveCtx, t.RunID)
-		stop()
-		cancel()
-		s.endFlight(flight)
-		if parent.Err() != nil {
-			return
-		}
+	}
+	if blocked {
+		return
 	}
 	// Continue a bounded batch when more explicitly queued work is ready. Keep
 	// four tasks per batch, the same admission meters and persisted retry floors;

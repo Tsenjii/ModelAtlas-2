@@ -34,7 +34,8 @@ const researchScheduleHTML = `
 <p class="section-description">HTTP 計數包含送出前已保留的次數；遇到中斷仍保留用量。</p>
 <div class="toolbar"><button id="research-schedule-save">保存排程</button><button id="research-schedule-reset" type="button" class="ghost">放棄編輯</button></div>
 </form></details>
-<details><summary>全部排程的每日上限</summary><form id="research-schedule-limit-form"><label>全部排程每日 HTTP 上限<input name="daily_http_limit" type="number" value="100" required min="1" max="2000"></label><p>只計算自動排程。每日 UTC 00:00（台灣 08:00）重新計數；同時最多執行一輪排程。模型資料更新和手動研究保有各自的設定。</p><button>保存全部排程上限</button></form></details>
+` + researchExecutionHTML + `
+<details><summary>全部排程的每日上限</summary><form id="research-schedule-limit-form"><label>全部排程每日 HTTP 上限<input name="daily_http_limit" type="number" value="100" required min="1" max="2000"></label><p>只計算自動排程。每日 UTC 00:00（台灣 08:00）重新計數；同時研究輪數依上方的本機執行上限。模型資料更新和手動研究保有各自的設定。</p><button>保存全部排程上限</button></form></details>
 </section>`
 
 const researchScheduleCSS = `
@@ -51,7 +52,7 @@ let researchScheduleState=null,researchScheduleLoading=false,researchScheduleWri
 const researchScheduleStates={OFF:"已停用",NEEDS_REVIEW:"來源或紀錄已變更 · 請確認",WAITING:"等待下次執行",QUEUED:"已排入佇列",RUNNING:"正在研究",PAUSED:"本輪已暫停",INFERENCE_LIMIT:"研究預算已用盡 · 手動接續",INFERENCE_WAIT:"研究預算 · 等待每日重設",DAILY_LIMIT:"每日上限 · 等待重設",INTEGRATION_LIMIT:"整合服務額度 · 等待重設",ROUND_LIMIT:"本輪達上限 · 等待下輪"};
 const researchRunStates={QUEUED:"排隊中",RUNNING:"研究中",PAUSED:"已暫停",COMPLETED:"已完成",CANCELLED:"已結束",BUDGET_EXHAUSTED:"已達上限"};
 function researchScheduleVisible(){return !document.hidden&&!$("research-workspace").hidden&&$("research-workspace").open&&(!$("models").hidden||!$("settings").hidden&&!$("settings-research").hidden);}
-function setResearchScheduleBusy(){const card=$("research-schedule-card");card.setAttribute("aria-busy",String(researchScheduleWriting));card.querySelectorAll("button,input,select").forEach(n=>n.disabled=researchScheduleWriting);$("research-schedule-refresh").disabled=researchScheduleLoading||researchScheduleWriting;}
+function setResearchScheduleBusy(){const card=$("research-schedule-card");card.setAttribute("aria-busy",String(researchScheduleWriting));card.querySelectorAll("button,input,select").forEach(n=>n.disabled=researchScheduleWriting);$("research-schedule-refresh").disabled=researchScheduleLoading||researchScheduleWriting;setResearchExecutionBusy();}
 async function loadResearchSchedules(force=false){
  if(researchScheduleLoading||researchScheduleWriting&&!force)return;researchScheduleLoading=true;$("research-schedule-refresh").disabled=true;
  try{const value=await api("/research/schedules");if(!Array.isArray(value.schedules)||!Number.isInteger(value.daily_http_limit))throw Error("無法辨識排程資料，請重試。");researchScheduleState=value;$("research-schedule-problem").hidden=true;renderResearchSchedules();}

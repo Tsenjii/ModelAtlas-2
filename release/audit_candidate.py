@@ -37,9 +37,14 @@ def browser_image_scopes(config):
             all(isinstance(name, str) for name in current+frozen), "invalid browser image scope")
     require(len(set(current)) == len(current) and len(set(frozen)) == len(frozen), "duplicate browser image scope")
     require(len(frozen) == 14 and set(frozen) <= set(current), "original private browser views missing")
+    preserved = config["accepted_browser_views"]
+    require(len(preserved) == 18 and len(set(preserved)) == 18 and set(preserved) <= set(current), "accepted browser views missing")
     # The rejected source's bytes/hash are immutable. New candidate views must
     # never be demanded from an archive produced before those views existed.
     return {"candidate": (509+len(current), set(current)), "rejected_aa": (523, set(frozen))}
+
+def visual_review_count(config):
+    return len(browser_image_scopes(config)["candidate"][1])+8+2*(6+len(config["new_mac_research_images"]))
 
 def linux_inventory(directory, arch, config):
     require(arch in ("amd64", "arm64"), "unsupported Linux architecture")
@@ -244,6 +249,12 @@ def main():
                 image.verify()
         return names
     baseline_browser = download_baseline(api, config["browser_baseline"], baselines)
+    accepted_cost = download_baseline(api, config["accepted_cost_audit"], baselines)
+    with zipfile.ZipFile(accepted_cost) as z:
+        cost_events = json.loads(p.member(z,"go-case-events.json"))
+        cost_report = json.loads(p.member(z,"audit.json"))
+        require(cost_report["source"] == config["accepted_cost_audit"]["source"] and len(cost_events) == 641, "accepted cost baseline missing")
+        require(set(cost_report["browser_images"]["added"]) == set(config["accepted_browser_views"]), "accepted cost browser inventory changed")
     with zipfile.ZipFile(baseline_browser) as z:
         prior_names = {Path(n).name for n in z.namelist() if n.endswith(".png")}
     with archive("modelatlas-vps-browser") as z:
@@ -251,17 +262,19 @@ def main():
         names = pngs(z, expected_count)
         added = {Path(n).name for n in names}-prior_names
         require(len(prior_names) == 509 and not prior_names-{Path(n).name for n in names} and added == expected_views, "original browser images were removed or private mapping views changed")
-        require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-")) and "failure" not in name for name in added), "unexpected new screenshot")
+        require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-")) and "failure" not in name for name in added), "unexpected new screenshot")
         for name in names:
             if Path(name).name in added or Path(name).name.startswith("workspace-chunks-"):
                 images.append(("browser/"+Path(name).name, z.read(name)))
-        report["browser_images"] = {"count":527,"preserved":509,"added":sorted(added)}
+        report["browser_images"] = {"count":expected_count,"preserved":509,"added":sorted(added)}
     baseline = json.loads((ROOT/"docs/verification/20261026/workspace-chunks-baseline.json").read_text())
     original_events = baseline["go_case_events"]
     require(len(original_events) == 604, "accepted Go baseline missing")
     new_functions = go_test_functions(ROOT/"vps") - {name for name in original_events if "/" not in name}
-    require(len(new_functions) == 17 and new_functions == {name for name in config["go_new_events"] if "/" not in name}, "research test registry changed; review audit scope")
+    require(new_functions == {name for name in config["go_new_events"] if "/" not in name}, "research test registry changed; review audit scope")
     expected_registry = {name for name in original_events if "/" not in name}|new_functions
+    expected_events = {**original_events, **config["go_new_events"]}
+    require(all(expected_events.get(name) == action for name,action in cost_events.items()), "accepted cost case removed or changed")
     with archive("modelatlas-vps-footprint") as z:
         footprint = json.loads(p.member(z,"footprint.json"))
         expected = dict(export_messages=11000,export_requests=100008,long_context_bytes_each=31*1024*1024,
@@ -272,14 +285,14 @@ def main():
         suite = json.loads(p.member(z,"go-suite.json"))
         require(suite["result"] == "PASS" and suite["source"] == sha and suite["working_tree_dirty"] is False and suite["race"] is True, "Go suite source/result mismatch")
         require(suite["suite_deadline_seconds"] == 600 and suite["seconds"] < 600, "original suite deadline changed")
-        require(set(suite["registry"]) == expected_registry and len(suite["registry"]) == 424, "original Go registry changed")
+        require(set(suite["registry"]) == expected_registry and len(suite["registry"]) == len(expected_registry), "original Go registry changed")
         require(p.digest("\n".join(sorted(suite["registry"])).encode()) == suite["registry_sha256"], "registry hash mismatch")
         sys.path.insert(0, str(ROOT/"vps"))
         from test_go import verify
         verify(suite["registry"], suite["processes"])
-        require(sorted(len(x["selected"]) for x in suite["processes"]) == [212,212], "original registry partition changed")
+        require(sorted(len(x["selected"]) for x in suite["processes"]) == [len(expected_registry)//2,(len(expected_registry)+1)//2], "original two-process registry partition changed")
         actions = [value for process in suite["processes"] for value in process["completed"].values()]
-        require(actions.count("pass") == 374 and actions.count("skip") == 50, "Go terminal registry outcomes changed")
+        require(all(actions.count(action) == sum(expected_events[name] == action for name in expected_registry) for action in ("pass","skip")), "Go terminal registry outcomes changed")
         report["go_suite"] = {k:v for k,v in suite.items() if k not in ("processes","registry")}
     vps_jobs = checks[".github/workflows/vps.yml"]["jobs"]
     go_log = read_job_log(api, next(job for job in vps_jobs if job["name"] == "vps-test"))
@@ -295,10 +308,14 @@ def main():
         if item.get("Test") and item.get("Action") in ("pass","skip","fail"):
             require(item["Test"] not in events, "duplicate terminal Go case")
             events[item["Test"]] = item["Action"]
-    require(events == {**original_events, **config["go_new_events"]} and len(events) == 641 and list(events.values()).count("pass") == 591 and list(events.values()).count("skip") == 50, "complete Go case outcomes missing")
+    require(events == expected_events, "complete Go case outcomes missing")
     require(all(events.get(name) == action for name,action in original_events.items()), "accepted Go case outcome regressed")
     (out/"go-case-events.json").write_text(json.dumps(events, indent=2)+"\n")
     browser_log = read_job_log(api, next(job for job in vps_jobs if job["name"] == "vps-browser"))
+    wait_cases = re.findall(r"\bok \d+ - ([^\r\n]+)", browser_log)
+    expected_wait_cases = re.findall(r"^test\('([^']+)'", (ROOT/"vps/e2e/async-wait.test.cjs").read_text(), re.M)
+    require(len(expected_wait_cases) == 8 and sorted(wait_cases) == sorted(expected_wait_cases) and all(re.search(r"# "+key+r" 0\s*$",browser_log,re.M) for key in ("fail","cancelled","skipped","todo")), "async Browser wait regressions missing")
+    report["async_wait_cases"] = wait_cases
     browser_cases = re.findall(r"--- PASS: (TestBrowser\w+) \(([0-9.]+)s\)", browser_log)
     require(len(browser_cases) == 42 and len({x[0] for x in browser_cases}) == 42, "complete browser results missing")
     require({x[0] for x in browser_cases} == {name for name in expected_registry if name.startswith("TestBrowser")}, "browser registry mismatch")
@@ -413,7 +430,7 @@ def main():
     from PIL import Image, ImageDraw, ImageOps
     contacts = out/"contacts"
     contacts.mkdir()
-    require(len(images) == 54, "all new/browser, factory, native transfer and research views required")
+    require(len(images) == visual_review_count(config), "all new/browser, factory, native transfer and research views required")
     report["visual_review_required"] = [name for name,_ in images]
     for offset in range(0,len(images),4):
         batch = images[offset:offset+4]
@@ -434,7 +451,7 @@ def main():
     # the interactive workspace is offline. No tests or archive checks are skipped.
     for name, value in (("REPORT", report), ("SOURCE_STATE", state), ("GO_CASE_EVENTS", events), ("DEVICE_CASE_EVENTS", json.loads((out/"device-case-events.json").read_text())), ("CORE_CASE_EVENTS", core_cases)):
         print("MODELATLAS_AUDIT_"+name+" "+json.dumps(value, ensure_ascii=False, separators=(",",":")), flush=True)
-    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":641,"browser_cases":42,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
+    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":len(events),"browser_cases":42,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
 
 if __name__ == "__main__":
     main()

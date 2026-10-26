@@ -1,3 +1,4 @@
+const {verifyResearchExecution}=require('./research-execution-flow.cjs');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises');
 (async()=>{
@@ -32,6 +33,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
    await surface.screenshot({path:`e2e/screenshots/research-schedules-${width}-${theme}.png`,animations:'disabled'});
   }
   await page.setViewportSize({width:375,height:1000});await page.evaluate(()=>document.documentElement.style.fontSize='200%');await surface.scrollIntoViewIfNeeded();assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'schedule 200% overflow');await page.screenshot({path:'e2e/screenshots/research-schedules-375-large.png',fullPage:true,animations:'disabled'});
+  await verifyResearchExecution(page);
   assert.deepEqual(errors,[]);console.log('PASS: actual UI → disabled save → deduped commit / failed refresh → explicit activation → real TLS worker / daily cap → history / draft retention → disable / edit preserving daily use. 320/375/1280 light/dark, 200%, 8 screenshots.');
  }catch(error){await page.screenshot({path:'e2e/screenshots/research-schedules-failure.png',fullPage:true}).catch(()=>{});throw error;}finally{await context.close();await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1)});
