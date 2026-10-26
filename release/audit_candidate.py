@@ -30,6 +30,17 @@ def go_test_functions(directory):
     functions.discard("TestMain")  # Go's package entry point is not a test case.
     return functions
 
+def browser_image_scopes(config):
+    current = config["new_browser_images"]
+    frozen = config["rejected_aa_browser"]["required_images"]
+    require(isinstance(current, list) and isinstance(frozen, list) and
+            all(isinstance(name, str) for name in current+frozen), "invalid browser image scope")
+    require(len(set(current)) == len(current) and len(set(frozen)) == len(frozen), "duplicate browser image scope")
+    require(len(frozen) == 14 and set(frozen) <= set(current), "original private browser views missing")
+    # The rejected source's bytes/hash are immutable. New candidate views must
+    # never be demanded from an archive produced before those views existed.
+    return {"candidate": (509+len(current), set(current)), "rejected_aa": (523, set(frozen))}
+
 def xml_cases(archive):
     counts = dict(tests=0, failures=0, errors=0, skipped=0)
     cases = {}
@@ -168,6 +179,7 @@ def main():
     require(os.environ["MODELATLAS_REPOSITORY"] == p.REPOSITORY and re.fullmatch("[a-f0-9]{40}", sha), "explicit repository/source required")
     require(subprocess.check_output(["git","rev-parse","HEAD"], text=True).strip() == sha, "audit checkout mismatch")
     config = json.loads((ROOT/"release/candidate_audit_scope.json").read_text())
+    browser_scopes = browser_image_scopes(config)
     out = ROOT/"candidate-audit-output"
     out.mkdir()
     actual = out/"actual"
@@ -219,9 +231,10 @@ def main():
     with zipfile.ZipFile(baseline_browser) as z:
         prior_names = {Path(n).name for n in z.namelist() if n.endswith(".png")}
     with archive("modelatlas-vps-browser") as z:
-        names = pngs(z, 527)
+        expected_count, expected_views = browser_scopes["candidate"]
+        names = pngs(z, expected_count)
         added = {Path(n).name for n in names}-prior_names
-        require(len(prior_names) == 509 and not prior_names-{Path(n).name for n in names} and added == set(config["new_browser_images"]), "original browser images were removed or private mapping views changed")
+        require(len(prior_names) == 509 and not prior_names-{Path(n).name for n in names} and added == expected_views, "original browser images were removed or private mapping views changed")
         require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-")) and "failure" not in name for name in added), "unexpected new screenshot")
         for name in names:
             if Path(name).name in added or Path(name).name.startswith("workspace-chunks-"):
@@ -315,8 +328,9 @@ def main():
         report["rejected_candidate"] = {"source":config["rejected_device"]["source"],"actual_sha256":config["rejected_device"]["digest"],"counts":negative_counts,"failure":failed_name}
     rejected_browser = download_baseline(api, config["rejected_aa_browser"], baselines)
     with zipfile.ZipFile(rejected_browser) as z:
-        rejected_names = pngs(z, 527)
-        require(set(config["new_browser_images"]) <= {Path(n).name for n in rejected_names}, "rejected private reader images missing")
+        expected_count, expected_views = browser_scopes["rejected_aa"]
+        rejected_names = pngs(z, expected_count)
+        require(expected_views <= {Path(n).name for n in rejected_names}, "rejected private reader images missing")
         aa_names = {Path(n).name for n in rejected_names if Path(n).name.startswith("research-aa-")}
         require(len(aa_names) == 8 and "research-aa-recovered-375.png" in aa_names, "rejected AA image inventory changed")
         report["rejected_aa_candidate"] = {"source":config["rejected_aa_browser"]["source"],"actual_sha256":config["rejected_aa_browser"]["digest"],"png":523,"aa_images":sorted(aa_names),"failure":"TestBrowserAAResearchPageRecoveryWorkflow: page1=3/page2=3, expected 3/4; original task failure cause unavailable, not inferred"}

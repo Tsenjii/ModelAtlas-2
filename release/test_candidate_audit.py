@@ -3,7 +3,37 @@ import unittest
 import zipfile
 from pathlib import Path
 import tempfile
+import json
+import copy
 import audit_candidate as audit
+
+class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
+    def config(self):
+        return json.loads((Path(__file__).parent/"candidate_audit_scope.json").read_text())
+
+    def test_new_candidate_views_do_not_rewrite_a_frozen_counterexample(self):
+        config = self.config()
+        before = audit.browser_image_scopes(config)
+        config["new_browser_images"].append("future-candidate-only.png")
+        after = audit.browser_image_scopes(config)
+        self.assertEqual(after["candidate"][0], before["candidate"][0]+1)
+        self.assertEqual(after["candidate"][1]-before["candidate"][1], {"future-candidate-only.png"})
+        self.assertEqual(before["rejected_aa"], after["rejected_aa"])
+        self.assertEqual(after["rejected_aa"][0], 523)
+        self.assertEqual(len(after["rejected_aa"][1]), 14)
+        self.assertFalse(any("cost-" in name for name in after["rejected_aa"][1]))
+
+    def test_new_views_cannot_replace_or_duplicate_an_original_reader_view(self):
+        original = self.config()
+        missing = copy.deepcopy(original)
+        missing["new_browser_images"].remove(original["rejected_aa_browser"]["required_images"][0])
+        missing["new_browser_images"].append("cost-view-cannot-replace-a-reader.png")
+        with self.assertRaisesRegex(ValueError, "original private"):
+            audit.browser_image_scopes(missing)
+        duplicated = copy.deepcopy(original)
+        duplicated["new_browser_images"].append(duplicated["new_browser_images"][0])
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            audit.browser_image_scopes(duplicated)
 
 class CandidateRegistryIntegrityTest(unittest.TestCase):
     def test_new_research_files_cannot_disappear_from_the_audited_registry(self):

@@ -160,7 +160,23 @@
     "id": 12625684013,
     "bytes": 40443180,
     "digest": "sha256:c84bd007ae15f12914b6eb9eae627747699c9ce47915851539ff18c5e2971d31",
-    "source": "7d612a4009a77cce431a30b23a129761827f80e0"
+    "source": "7d612a4009a77cce431a30b23a129761827f80e0",
+    "required_images": [
+      "connector-private-mapping-source-375-light.png",
+      "connector-private-mapping-group-375-light.png",
+      "connector-private-mapping-fields-320-dark.png",
+      "connector-private-mapping-fields-375-large-dark.png",
+      "connector-private-mapping-draft-320-light.png",
+      "connector-private-mapping-draft-320-dark.png",
+      "connector-private-mapping-draft-375-light.png",
+      "connector-private-mapping-draft-375-dark.png",
+      "connector-private-mapping-draft-1280-light.png",
+      "connector-private-mapping-draft-1280-dark.png",
+      "connector-private-mapping-runtime-last-good-1280-dark.png",
+      "connector-private-mapping-pat-account-375-light.png",
+      "connector-private-mapping-pat-draft-1280-dark.png",
+      "connector-private-mapping-pat-undo-375-dark.png"
+    ]
   },
   "mac_inventory": {
     "arm64": {

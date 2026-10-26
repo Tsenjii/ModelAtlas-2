@@ -91,5 +91,48 @@
     "status": "PASS_SELF_REVIEW",
     "focused_race_seconds": 13.072,
     "pending": "Exact-source nine jobs and actual archives/54 views; no whole-release completion claim."
+  },
+  "rejected_source": {
+    "source": "19427eae572a3e6f128143714fe5b807ba9a1f1d",
+    "tree": "537dcd05052ce2b222b45fa9346b0e637995e750",
+    "nine_required_jobs": "SUCCESS",
+    "runs": {
+      "vps": 40328861513,
+      "android": 40328862082,
+      "mac": 40328861559
+    },
+    "audit_run": 40328861503,
+    "audit_job": 121592619251,
+    "audit_result": "FAIL",
+    "reason": "Historical rejected AA ZIP has 523 views, but a substring replacement incorrectly made it require the new 527-view count; it also borrowed the current 18-view checklist instead of the historical 14 private views. Preserve the frozen source count/checklist independently.",
+    "actual_failed_audit_artifact": {
+      "id": 12653529192,
+      "bytes": 54396,
+      "sha256": "a5d4c4f743a56fc5c07fc48fafb8557aff35150e88517af5563002fe48826849",
+      "bytes_hash_crc": "PASS",
+      "visual_review": "NOT_COMPLETED"
+    },
+    "go_race_seconds": 592.528,
+    "go_case_events": 641,
+    "pass": 591,
+    "opt_in_skip": 50,
+    "browser_flows": 42,
+    "browser_seconds": 232.87,
+    "footprint_peak_rss_bytes": 211005440,
+    "product_code_changes_in_fix": false,
+    "actual_frozen_zip_validation": {
+      "bytes": 40443180,
+      "sha256": "c84bd007ae15f12914b6eb9eae627747699c9ce47915851539ff18c5e2971d31",
+      "png": 523,
+      "crc_all_png_decode": "PASS",
+      "frozen_private_required": 14,
+      "current_only_missing_from_old": [
+        "knowledge-evaluation-cost-375-200-light.png",
+        "research-query-cost-1280-dark.png",
+        "research-query-cost-320-200-dark.png",
+        "research-query-cost-375-light.png"
+      ],
+      "corrected_scope": "PASS"
+    }
   }
 }
