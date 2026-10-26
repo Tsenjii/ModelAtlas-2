@@ -1,6 +1,6 @@
 # 大資料同步分塊與恢復
 
-WORKSPACE-CHUNKS-015P 開發候選。015O所列範圍已由來源66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2同源九項與實際產物／18視圖驗收；完整下一版仍PARTIAL，公開版本／tag／11附件凍結。此文件是實作契約與待驗條件，不能當作已完成功能。
+WORKSPACE-CHUNKS-015P 所列範圍已驗收，來源bc4a735e9144564c5d78433b196038d2452c8def，同源九項／九份實際ZIP／20視圖均完成；精確證據見docs/verification/20261026/workspace-chunks-baseline.json。以下候選與失敗敘述保留歷史。015O所列範圍已由來源66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2同源九項與實際產物／18視圖驗收；完整下一版仍PARTIAL，公開版本／tag／11附件凍結。此文件是實作契約與待驗條件，不能當作已完成功能。
 
 原SYNC_CONTRACT明列：大於單筆傳輸上限的資料保留本機、需後續分塊協定。本片必須支援超過原32MiB的單一保留紀錄；只把原小頁切成數個HTTP請求不足驗收。新lane明確協商64MiB序列化record、65MiB請求／72MiB回應、256KiB片段；仍有界，超過界線明確保留資料，不截斷。嚴格v1 pair／exchange欄位與原限制保留，不讓舊Kotlin ignoreUnknownKeys=false誤收新欄位。
 
