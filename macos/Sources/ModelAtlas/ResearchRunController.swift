@@ -12,7 +12,9 @@ import SwiftUI
     @Published private(set) var reading = false
     @Published private(set) var needsReload = true
     @Published private(set) var problem: String?
-    @Published var additional = "0", probes = "0", retryFailed = false
+    @Published var additional = "0"
+    @Published var probes = "0"
+    @Published var retryFailed = false
 
     init(api: AtlasClient, run: JSONValue) { self.api = api; self.run = run; id = run["id"].string }
     static func queueAA(using api: AtlasClient) async throws -> JSONValue {

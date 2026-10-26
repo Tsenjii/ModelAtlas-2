@@ -79,26 +79,44 @@ import SwiftUI
 private struct AAResearchProgress: View {
     let progress: JSONValue, run: JSONValue, task: JSONValue, ranking: JSONValue
     private var complete: Bool { progress["complete"].boolean && task["status"].string == "SUCCESS" }
+    private var pageSummary: String {
+        let pages = progress["completed_pages"].display + " / " + progress["total_pages"].display
+        return "已保存 " + pages + " 頁 · " + progress["model_count"].display + " 個已評分模型"
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("已保存 " + progress["completed_pages"].display + " / " + progress["total_pages"].display + " 頁 · " + progress["model_count"].display + " 個已評分模型").font(.callout.weight(.medium))
-            if complete { Label("完整榜單已驗證並更新", systemImage: "checkmark.circle").foregroundStyle(.secondary) }
-            else if run["status"].string == "PAUSED" { Text("研究已暫停；頁面與恢復紀錄都已保存。") }
-            else if !progress["stopped_reason"].string.isEmpty { Text("本次更新已停止，請檢查紀錄後開始新一輪。") }
-            else if let at = progress["next_attempt_at"].numeric, at > 0 { Text("第 " + progress["next_page"].display + " 頁等待恢復 · 不早於 " + Date(timeIntervalSince1970: at / 1000).formatted()).fixedSize(horizontal: false, vertical: true) }
+            Text(pageSummary).font(.callout.weight(.medium))
+            status
             if !complete { Text("完成全部頁面後才更新 Top-4；已保存頁面不會重抓。").font(.caption).foregroundStyle(.secondary) }
+            previousRanking
+            history
+        }
+    }
+    @ViewBuilder private var status: some View {
+        if complete { Label("完整榜單已驗證並更新", systemImage: "checkmark.circle").foregroundStyle(.secondary) }
+        else if run["status"].string == "PAUSED" { Text("研究已暫停；頁面與恢復紀錄都已保存。") }
+        else if !progress["stopped_reason"].string.isEmpty { Text("本次更新已停止，請檢查紀錄後開始新一輪。") }
+        else if let at = progress["next_attempt_at"].numeric, at > 0 {
+            let date = Date(timeIntervalSince1970: at / 1000).formatted()
+            let message = "第 " + progress["next_page"].display + " 頁等待恢復 · 不早於 " + date
+            Text(message).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+    @ViewBuilder private var previousRanking: some View {
             if !complete, !ranking["snapshot"]["models"].array.isEmpty {
                 DisclosureGroup("上一份榜單") {
                     ForEach(ranking["snapshot"]["models"].array.prefix(4), id: \.self) { row in Text(row["rank"].display + ". " + row["name"].string) }
                 }.font(.caption)
             }
+    }
+    @ViewBuilder private var history: some View {
             if !progress["history"].array.isEmpty {
                 DisclosureGroup("分頁恢復紀錄") {
-                    ForEach(Array(progress["history"].array.enumerated()), id: \.offset) { _, event in
-                        Text("第 " + event["page"].display + " 頁 · HTTP " + event["http_status"].display).font(.caption)
+                    ForEach(Array(progress["history"].array.enumerated()), id: \.offset) { entry in
+                        Text(historyTitle(entry.element)).font(.caption)
                     }
                 }
             }
-        }
     }
+    private func historyTitle(_ event: JSONValue) -> String { "第 " + event["page"].display + " 頁 · HTTP " + event["http_status"].display }
 }

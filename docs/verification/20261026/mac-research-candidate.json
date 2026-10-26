@@ -45,5 +45,26 @@
     "new_separate_native_research_deadline_seconds": 120
   },
   "public_release": "UNCHANGED",
-  "whole_next_release": "PARTIAL"
+  "whole_next_release": "PARTIAL",
+  "rejected_candidates": [
+    {
+      "source": "49a966db26f9056d05b1c1c9e7091dd899a03ee5",
+      "run": 40296593411,
+      "job": 121484036269,
+      "status": "macos-build FAILURE; native tests not executed",
+      "errors": [
+        {
+          "file": "ResearchRunController.swift",
+          "line": 15,
+          "message": "property wrapper can only apply to a single variable"
+        },
+        {
+          "file": "ResearchRunView.swift",
+          "line": 82,
+          "message": "the compiler is unable to type-check this expression in reasonable time"
+        }
+      ],
+      "correction": "每個 Published 欄位獨立宣告；AA 進度 View 分成短字串與獨立小 View，保留原所有條件及驗收要求。修後來源尚未驗證。"
+    }
+  ]
 }
