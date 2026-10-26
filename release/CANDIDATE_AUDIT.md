@@ -1,3 +1,5 @@
+> 當前RESEARCH-COST-015S候選：原637 Go事件全部保留，再增加4個精確費用／scope／Unknown反例＝424入口／641事件（591pass／50原skip），原600秒／兩個212入口程序不變；原42 Browser／523圖全部保留，兩個原正式流程增加4張費用比較圖＝527PNG。原Android594核心／423App／996device、Mac每架構89核心／104圖與全部負載／timeout不減。實際九ZIP、54相關視圖及同源來源／hash／producer／公開凍結全驗才可接受。015R已驗基線見docs/verification/20261026/mac-research-baseline.json；以下為歷史。
+
 > 2026-10-26 MAC-RESEARCH-015R候選：原九項與九份實際ZIP／來源／producer／hash／CRC、42Browser／523圖、594核心＋423App／996device、原全部負載與公開凍結檢查保留。Go在原635事件上增加精確ID反例1pass及原生fixture明確opt-in skip，共420入口／637事件（587pass／50skip），仍共用原600秒。Mac以d261實際兩架構ZIP逐項保留原85核心與96圖，再增加4核心與8張第三原生程序真TLS／控制恢復圖；稽核要求89核心／104圖、精確7次TLS及3次控制、原ID／只讀恢復／程序退出。需實際檢視50個相關視圖後才驗收，不能借015Q綠燈。
 
 > PRIVATE-MAPPING-015Q目前候選：418 Go入口／635結果（原015P604逐項保留）、42 Browser／523PNG（原41／509完整）、594核心／423App／996device（5原skip），兩Mac各85核心／96圖。九份同來源實際ZIP及14私人＋8同步＋兩Mac各6圖共34視圖皆須核對。另驗7d612a40原AA反例的實際523PNG ZIP；原根因未知，不借該來源其他成功項目。完整下一版PARTIAL及公開凍結不變。

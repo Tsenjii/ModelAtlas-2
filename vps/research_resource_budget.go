@@ -184,7 +184,7 @@ func readResourceUsageWhere(ctx context.Context, tx *sql.Tx, day, predicate stri
 
 // Internal predicates only; run totals include all UTC days and preserve the
 // same exact reported/unknown/reserved accounting as the daily admission view.
-func readResourceUsageQuery(ctx context.Context, tx *sql.Tx, predicate string, args []any) (*researchResourceUsage, map[researchInferenceScope]*researchResourceUsage, error) {
+func readResourceUsageQuery(ctx context.Context, tx researchQueryer, predicate string, args []any) (*researchResourceUsage, map[researchInferenceScope]*researchResourceUsage, error) {
 	rows, err := tx.QueryContext(ctx, `SELECT a.provider_id,a.account_id,a.credential_id,r.reserve_tokens,r.reserve_usd,f.reported_tokens,f.reported_usd,f.accounted_tokens,f.accounted_usd,f.outcome FROM research_inference_admissions a JOIN research_resource_admissions r ON r.request_id=a.request_id LEFT JOIN research_resource_settlements f ON f.request_id=r.request_id`+predicate, args...)
 	if err != nil {
 		return nil, nil, err

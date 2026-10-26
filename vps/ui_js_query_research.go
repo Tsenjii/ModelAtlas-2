@@ -2,7 +2,7 @@ package main
 
 const jsQueryResearch = `
 function reflectionDetail(r){
- const box=modal('本輪研究成效');factsView(box,'來源、語言、查詢與驗證',r.report);box.append(el('p','反思參照：'+r.id));
+ const box=modal('本輪研究成效');researchCostView(box,r.report.cost_evidence);factsView(box,'來源、語言、查詢與驗證',r.report);box.append(el('p','反思參照：'+r.id));
  if(r.report.status!=='COMPLETED')return;
  const languages=[...new Set((r.report.quality_observations||[]).filter(q=>q.kind==='RESEARCH_STRATEGY'&&q.status==='SUCCESS'&&q.candidates>0).map(q=>q.subject))];
  for(const language of languages){let requestID=crypto.randomUUID(),pending=false;const button=action(box,'產生 '+language+' 查詢提案',async()=>{if(pending)return;pending=true;button.disabled=true;try{const v=await submit('/research/query-generation',{id:requestID,reflection_id:r.id,language});requestID=crypto.randomUUID();await loadKnowledge();const saved=knowledgeVersions.find(x=>x.id===v.id);if(saved)knowledgeDetail(saved);notice('查詢提案已保存，尚未實測或啟用');}catch(e){notice(e.message,true);}finally{pending=false;if(button.isConnected)button.disabled=false;}});}
@@ -40,7 +40,7 @@ function queryComparisonDetail(v){
     if(['QUEUED','RUNNING'].includes(arm.status))control('暫停'+name,'PAUSE');
     if(arm.status==='PAUSED'&&!pair.approval_changed)control('接續'+name,'RESUME');
     if(['QUEUED','RUNNING','PAUSED','BUDGET_EXHAUSTED'].includes(arm.status))control('取消'+name,'CANCEL');card.append(row);
-   }card.append(el('p','完整貨幣成本 Unknown；完整 HTTP 與搜尋品質分母分開。'));history.append(card);
+   }researchCostComparisonView(card,pair.cost_comparison);card.append(el('p','完整貨幣成本 Unknown；完整 HTTP 與搜尋品質分母分開。'));history.append(card);
   }
   if(!all.length)history.append(el('p','尚無已確認對照。預覽不會建立輪次或發出請求。'));
   if(nextBefore)action(history,'更多對照紀錄',()=>gated(()=>readHistory(true)));

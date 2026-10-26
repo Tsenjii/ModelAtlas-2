@@ -219,19 +219,19 @@ def main():
     with zipfile.ZipFile(baseline_browser) as z:
         prior_names = {Path(n).name for n in z.namelist() if n.endswith(".png")}
     with archive("modelatlas-vps-browser") as z:
-        names = pngs(z, 523)
+        names = pngs(z, 527)
         added = {Path(n).name for n in names}-prior_names
         require(len(prior_names) == 509 and not prior_names-{Path(n).name for n in names} and added == set(config["new_browser_images"]), "original browser images were removed or private mapping views changed")
-        require(all(name.startswith("connector-private-mapping-") and "failure" not in name for name in added), "unexpected new screenshot")
+        require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-")) and "failure" not in name for name in added), "unexpected new screenshot")
         for name in names:
             if Path(name).name in added or Path(name).name.startswith("workspace-chunks-"):
                 images.append(("browser/"+Path(name).name, z.read(name)))
-        report["browser_images"] = {"count":523,"preserved":509,"added":sorted(added)}
+        report["browser_images"] = {"count":527,"preserved":509,"added":sorted(added)}
     baseline = json.loads((ROOT/"docs/verification/20261026/workspace-chunks-baseline.json").read_text())
     original_events = baseline["go_case_events"]
     require(len(original_events) == 604, "accepted Go baseline missing")
     new_functions = go_test_functions(ROOT/"vps") - {name for name in original_events if "/" not in name}
-    require(len(new_functions) == 13 and new_functions == {name for name in config["go_new_events"] if "/" not in name}, "research test registry changed; review audit scope")
+    require(len(new_functions) == 17 and new_functions == {name for name in config["go_new_events"] if "/" not in name}, "research test registry changed; review audit scope")
     expected_registry = {name for name in original_events if "/" not in name}|new_functions
     with archive("modelatlas-vps-footprint") as z:
         footprint = json.loads(p.member(z,"footprint.json"))
@@ -243,14 +243,14 @@ def main():
         suite = json.loads(p.member(z,"go-suite.json"))
         require(suite["result"] == "PASS" and suite["source"] == sha and suite["working_tree_dirty"] is False and suite["race"] is True, "Go suite source/result mismatch")
         require(suite["suite_deadline_seconds"] == 600 and suite["seconds"] < 600, "original suite deadline changed")
-        require(set(suite["registry"]) == expected_registry and len(suite["registry"]) == 420, "original Go registry changed")
+        require(set(suite["registry"]) == expected_registry and len(suite["registry"]) == 424, "original Go registry changed")
         require(p.digest("\n".join(sorted(suite["registry"])).encode()) == suite["registry_sha256"], "registry hash mismatch")
         sys.path.insert(0, str(ROOT/"vps"))
         from test_go import verify
         verify(suite["registry"], suite["processes"])
-        require(sorted(len(x["selected"]) for x in suite["processes"]) == [210,210], "original registry partition changed")
+        require(sorted(len(x["selected"]) for x in suite["processes"]) == [212,212], "original registry partition changed")
         actions = [value for process in suite["processes"] for value in process["completed"].values()]
-        require(actions.count("pass") == 370 and actions.count("skip") == 50, "Go terminal registry outcomes changed")
+        require(actions.count("pass") == 374 and actions.count("skip") == 50, "Go terminal registry outcomes changed")
         report["go_suite"] = {k:v for k,v in suite.items() if k not in ("processes","registry")}
     vps_jobs = checks[".github/workflows/vps.yml"]["jobs"]
     go_log = read_job_log(api, next(job for job in vps_jobs if job["name"] == "vps-test"))
@@ -266,7 +266,7 @@ def main():
         if item.get("Test") and item.get("Action") in ("pass","skip","fail"):
             require(item["Test"] not in events, "duplicate terminal Go case")
             events[item["Test"]] = item["Action"]
-    require(events == {**original_events, **config["go_new_events"]} and len(events) == 637 and list(events.values()).count("pass") == 587 and list(events.values()).count("skip") == 50, "complete Go case outcomes missing")
+    require(events == {**original_events, **config["go_new_events"]} and len(events) == 641 and list(events.values()).count("pass") == 591 and list(events.values()).count("skip") == 50, "complete Go case outcomes missing")
     require(all(events.get(name) == action for name,action in original_events.items()), "accepted Go case outcome regressed")
     (out/"go-case-events.json").write_text(json.dumps(events, indent=2)+"\n")
     browser_log = read_job_log(api, next(job for job in vps_jobs if job["name"] == "vps-browser"))
@@ -315,7 +315,7 @@ def main():
         report["rejected_candidate"] = {"source":config["rejected_device"]["source"],"actual_sha256":config["rejected_device"]["digest"],"counts":negative_counts,"failure":failed_name}
     rejected_browser = download_baseline(api, config["rejected_aa_browser"], baselines)
     with zipfile.ZipFile(rejected_browser) as z:
-        rejected_names = pngs(z, 523)
+        rejected_names = pngs(z, 527)
         require(set(config["new_browser_images"]) <= {Path(n).name for n in rejected_names}, "rejected private reader images missing")
         aa_names = {Path(n).name for n in rejected_names if Path(n).name.startswith("research-aa-")}
         require(len(aa_names) == 8 and "research-aa-recovered-375.png" in aa_names, "rejected AA image inventory changed")
@@ -383,7 +383,7 @@ def main():
     from PIL import Image, ImageDraw, ImageOps
     contacts = out/"contacts"
     contacts.mkdir()
-    require(len(images) == 50, "all new/browser, factory, native transfer and research views required")
+    require(len(images) == 54, "all new/browser, factory, native transfer and research views required")
     report["visual_review_required"] = [name for name,_ in images]
     for offset in range(0,len(images),4):
         batch = images[offset:offset+4]
@@ -404,7 +404,7 @@ def main():
     # the interactive workspace is offline. No tests or archive checks are skipped.
     for name, value in (("REPORT", report), ("SOURCE_STATE", state), ("GO_CASE_EVENTS", events), ("DEVICE_CASE_EVENTS", json.loads((out/"device-case-events.json").read_text())), ("CORE_CASE_EVENTS", core_cases)):
         print("MODELATLAS_AUDIT_"+name+" "+json.dumps(value, ensure_ascii=False, separators=(",",":")), flush=True)
-    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":637,"browser_cases":42,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
+    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":641,"browser_cases":42,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
 
 if __name__ == "__main__":
     main()

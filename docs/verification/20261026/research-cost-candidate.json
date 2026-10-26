@@ -1,0 +1,95 @@
+{
+  "slice": "RESEARCH-COST-015S",
+  "status": "CANDIDATE_NOT_ACCEPTED",
+  "baseline": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+  "counterexample": {
+    "test": "TestResearchCostPublicComparisonDoesNotTurnNoInferenceIntoFree",
+    "before": "FAIL: no cost_evidence in actual query comparison arms",
+    "elapsed_seconds": 1.486,
+    "after_focused_seconds": 2.478
+  },
+  "focused_checks": {
+    "four_cost_tests_race_seconds": 5.407,
+    "quality_query_reflection_resource_probe_race_seconds": 64.652,
+    "both_original_comparison_browser_workflows_race_seconds": 12.597,
+    "release_regressions": 42,
+    "go_vet": "PASS"
+  },
+  "retained_local_failures": [
+    {
+      "kind": "TEST_EXPECTATION_ERROR",
+      "fact": "New cost test incorrectly expected HTTP/0 for a real upstream 503; actual existing contract is UPSTREAM_5XX/502. Corrected exact assertion, retained reservation assertions."
+    },
+    {
+      "kind": "TEST_SELECTOR_ERROR",
+      "fact": "New Browser cost lookup omitted kind and selected a DISCOVERY_PATH with same subject/version; added exact SOURCE_RELIABILITY kind, original assertions unchanged."
+    },
+    {
+      "kind": "UNRESOLVED_BROWSER_COUNTEREXAMPLE",
+      "test": "TestBrowserModelConnectionsWorkflow",
+      "suite_seconds": 240.721,
+      "passed_original_browser_workflows": 41,
+      "failure": "30s waiting 今日狀態尚未確認 after mocked day change and Enter",
+      "root_cause": "UNKNOWN",
+      "subsequent_isolated_diagnostics_seconds": [
+        10.57,
+        8.86,
+        9.11
+      ],
+      "diagnostic_fact": "3 actual original flows PASS, active BUTTON/account a and mocked next day recorded; no production check-in modification and no proof of root cause."
+    },
+    {
+      "kind": "INTERRUPTED_LOCAL_GO_RUN",
+      "fact": "External worktree metadata/toolchain location disappeared after environment refresh; interrupted local event stream is not a full test result. Recovered standalone clone metadata without overwriting source; current full runner repeats original 600s/complete registry."
+    },
+    {
+      "kind": "SCREENSHOT_HELPER_SELECTOR",
+      "fact": "Added capture-heading assertion matched three nested headings; narrowed to the exact cost-comparison heading. No product assertion or timeout removed."
+    },
+    {
+      "kind": "VISUAL_REVIEW_REPAIR",
+      "fact": "Initial narrow 200% captures missed the cost section after font resize; exact section positioning and heading visibility checks added. Review then showed cramped three-column text, replaced on <=480px with labeled paired values; desktop retains comparison table."
+    }
+  ],
+  "expected": {
+    "go_registry": 424,
+    "go_case_events": 641,
+    "pass": 591,
+    "opt_in_skip": 50,
+    "browser_flows": 42,
+    "browser_png": 527,
+    "visual_review_required": 54,
+    "android_core": 594,
+    "android_app": 423,
+    "android_device": 996,
+    "android_original_skip": 5,
+    "mac_core_each": 89,
+    "mac_png_each": 104
+  },
+  "whole_next_release": "PARTIAL",
+  "public_release_frozen": true,
+  "local_full_go": {
+    "registry": 424,
+    "events": 641,
+    "pass": 591,
+    "opt_in_skip": 50,
+    "seconds": 554.653,
+    "deadline_seconds": 600,
+    "all_637_prior_event_outcomes_preserved": true,
+    "acceptance_scope": "LOCAL_DIRTY_TREE_NOT_COMMIT_ACCEPTANCE"
+  },
+  "local_full_browser": {
+    "flows": 42,
+    "seconds": 256.49,
+    "deadline_seconds": 300,
+    "result": "PASS",
+    "checkin_prior_counterexample_root": "UNKNOWN",
+    "new_screenshot_targeting": "PASS after exact heading and responsive narrow/200% layout; focused 2 original workflows retained"
+  },
+  "local_final_layout": {
+    "screenshots_reviewed": 4,
+    "status": "PASS_SELF_REVIEW",
+    "focused_race_seconds": 13.072,
+    "pending": "Exact-source nine jobs and actual archives/54 views; no whole-release completion claim."
+  }
+}

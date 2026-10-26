@@ -1,3 +1,7 @@
+> 2026-10-26 目前唯一候選 RESEARCH-COST-015S：補 VPS 反思、來源／查詢排序重播與兩臂真查詢的精確費用快照與正式比較 UI。Token、站方 USD 回報、本機已核算／預留及未知公開 HTTP 分開；每個工作只取原 task／run 收據，舊紀錄無費用證據維持 Unknown。自己的同源九項與實際產物／54相關視圖前仍未驗收。保留原420 Go入口／637事件，新增4例後預期424入口／641事件（591pass＋50原skip）、42Browser／527PNG，Android594核心／423App／996device與兩Mac89核心／104PNG，以及所有原負載／timeout保持；整版與真站／目標VPS／實機／簽署仍PARTIAL，公開版本／tag／11附件凍結、PR #20仍Draft、不merge／部署／發布。
+>
+> MAC-RESEARCH-015R所列範圍已ACCEPTED：來源70f4683297955c5ba434e2b8139fbd73bcb5081d／tree c1c15a828a5d27a09e8bec0ce9caa786881c0e21；VPS40300264998、Android40300264842、Mac40300264985九項全SUCCESS，稽核40300264890／121496116554實際九ZIP與50視圖已核對。真產物12641141621為817665bytes、SHA256 9e597069cf445c2e34fed17cd2f577ee9652916a152cf762727ad97d3620297b。完整baseline見verification/20261026/mac-research-baseline.json；以下較早候選保留為歷史，不重做已驗收片。main本輪仍cba901d／39536090788 build＋device SUCCESS、FEATURE FREEZE=OFF；VPS→Mac→Android與原全部願望保持。
+
 > MAC-RESEARCH-015R 本機候選：精確舊紀錄反例原本0.136s失敗（指定ID仍回100筆他輪），修後race2.502s與AA擴大回歸30.157s成功。41發布回歸、vet與真TLS fixture協定成功：3次建立／3次控制、頁1三次／頁2四次、總HTTP7、零推論；尚未執行本來源Mac原生UI／九項CI，不外推為已完成。原600s／300s、85核心／96圖及原全部負載保持；新增4核心與獨立第三原生程序8圖，原smoke／parity的120s不變。詳verification/20261026/mac-research-candidate.json。
 
 > 2026-10-26 PRIVATE-MAPPING-015Q 所列私人欄位對照範圍已驗收：來源 d261134b0b912bad661efbe6f6d28f100ce733f6／tree bcde49d6a3190a0abd4b6eeeb4052589f8ce7ae8，同源 VPS 40290236392、Android 40290236329、Mac 40290236304 九項原必要 job 全 SUCCESS；只讀稽核 40290236359／121463303919 實際核對九份 ZIP、完整原工作量、報告、套件與公開凍結，34 個相關視圖已自行檢視 PASS。Go race 583.141s／原600s、635事件、42 Browser／523圖、594核心＋423App／996device（0failure、5原skip）、兩Mac各85核心／96圖，原負載 peak RSS 211275776 bytes。詳細證據見 verification/20261026/private-mapping-baseline.json。前次 AA 失敗根因仍 UNKNOWN，本來源成功不抹除原反例。完整下一版仍 PARTIAL，公開版本／發布請求／tag／11附件凍結，PR #20 維持 Draft，不merge／部署／發布。
@@ -59,14 +63,14 @@
 | 工作 | 下一版必須可操作的結果 | 目前已驗基礎與主要缺口 |
 |---|---|---|
 | 研究排程／WISH-CRAWL-001 | 多語新站發現與候選重驗、來源／語言／地區優先序、精確預算與用量、持久分頁與恢復、完整漏斗 | VPS 公開排程、來源冷卻、AA逐頁恢復已驗；015B Brave逐頁／地區與revision用量已同來源九項驗收；015E原子入場已驗；015F每日／逐憑證核准已驗；015G token／USD預留及回報結算已驗；015H共用研究pool已驗；015I私人排程opt-in／來源確認與排程每日預算已驗；015J逐級probe／重驗策略已驗 |
-| 站點解析／WISH-CRAWL-002 | 來源證據→family/version/入口辨識→宣告式草稿→fixture及有界HTTP測試→共用Review→啟用／回退；Unknown、資格、一次性與recurring分開 | 手動connector、實測與啟用已驗；015C已驗公開來源自動mapping／fixture／真HTTP Review、改版保留與持久回退；015L來源別family/version、可選被動程式參照與整組公開配方實作候選；015O已驗公開未知JSON欄位對照與來源變更只讀恢復；015Q接續明確私人JSON唯讀授權及欄位對照，尚未驗收；私人入口／任意schema及專用原生呈現仍缺 |
-| 研究改進／WISH-REFL-001 | 多輪品質／成本→具體版本差異→可重現比較→Review→下一輪使用版本→監測→退化回退 | 既有反思／版本／手動權重與Undo已驗；015A已驗固定策略版本、多輪本機比較、明確試用／退化監測與持久回退；015K已驗本機公開證據生成query、真成對實測及下一輪試用／監測／Undo；015N擷取規則比較所列範圍已驗；其他更新類型及token／費用的完整比較仍待補 |
+| 站點解析／WISH-CRAWL-002 | 來源證據→family/version/入口辨識→宣告式草稿→fixture及有界HTTP測試→共用Review→啟用／回退；Unknown、資格、一次性與recurring分開 | 手動connector、實測與啟用已驗；015C已驗公開來源自動mapping／fixture／真HTTP Review、改版保留與持久回退；015L來源別family/version、可選被動程式參照與整組公開配方所列範圍已驗；015O已驗公開未知JSON欄位對照與來源變更只讀恢復；015Q已驗明確私人JSON唯讀授權及欄位對照；私人入口／任意schema及專用原生呈現仍缺 |
+| 研究改進／WISH-REFL-001 | 多輪品質／成本→具體版本差異→可重現比較→Review→下一輪使用版本→監測→退化回退 | 既有反思／版本／手動權重與Undo已驗；015A已驗固定策略版本、多輪本機比較、明確試用／退化監測與持久回退；015K已驗本機公開證據生成query、真成對實測及下一輪試用／監測／Undo；015N擷取規則比較所列範圍已驗；015S補精確token／USD費用快照與兩種比較基礎，目前候選；其他更新類型及完整語意／成本改進仍待補 |
 | 真實性／WISH-AUTH-001 | 獨立版本化suite、重用實際流量、能力與身份分開、精確scope／成本／基準／衝突及風險證據 | 015D已驗既有流量v2 suite、使用者確認的跨origin參考Review／Undo及Models／Assistant；015J已驗有界主動逐級probe／預算與能力觀測；完整語意品質指紋、真站可信基準與專用原生呈現仍缺，不能以Reply OK證明身份 |
 | 同步／D-012 | 持久游標、衝突／撤銷、完整歷史與安全憑證通道、大資料分塊、中斷恢復；三端正式操作可用 | VPS及原生同步基礎已驗；015P已驗超過原32MiB單筆上限、接近64MiB雙向分塊與中斷恢復、暫停／重啟／原ID與原子收據；所列範圍已同源九項／九ZIP／20圖驗收；部分原生對應仍未完 |
-| 日常功能／P1–P10 | Playground文字／多媒體／工具、Providers快加／進階／Review、多Account/Key、Models／Compare／證據、Assistant安全工具與Undo全部接正式UI | VPS多項流程已驗；Mac／Android逐項核對正式caller，特別是Android PLAY-004，不以transport當UI完成 |
-| 穩定與操作／WISH-ACCEPT-001 | 重啟／離線／限流／換Key／跨日／長跑、全部尺寸／深淺色／200%、跨端歷史／更新恢復與原有資源負載 | 原測試及真systemd、原36 Browser／443圖全部保留，015L候選新增第37流程／15圖；目標VPS及實體iPhone／Android／Mac證據仍須取得 |
+| 日常功能／P1–P10 | Playground文字／多媒體／工具、Providers快加／進階／Review、多Account/Key、Models／Compare／證據、Assistant安全工具與Undo全部接正式UI | VPS多項流程已驗；Mac015R已驗AA持久任務與原ID恢復，其他Mac／Android逐項核對正式caller，特別是Android PLAY-004，不以transport當UI完成 |
+| 穩定與操作／WISH-ACCEPT-001 | 重啟／離線／限流／換Key／跨日／長跑、全部尺寸／深淺色／200%、跨端歷史／更新恢復與原有資源負載 | 原測試及真systemd、原42 Browser／523圖全部保留，015S候選新增4個費用視圖／共527圖；目標VPS及實體iPhone／Android／Mac證據仍須取得 |
 
-同時只接受一個整合片：015A研究評估已驗 → 015B Brave分頁／地區／用量已驗 → 015C站點草稿／Review已驗 → 015D既有流量真實性證據已驗（先重用零額外HTTP）→ 015E研究推論原子入場與恢復已驗 → 015F每日／逐憑證推論核准已驗 → 015G token／USD預留與結算已驗 → 015H共用研究額度池已驗 → 015I私人研究排程已驗 → 015J逐級probe／候選重驗已驗 → 015K query生成／真成對研究已驗 → 015L公開配方／逐來源線索候選 → 完整站點辨識／Reflection → 大資料同步與原生對應 → 全版本驗收。每片有正式caller、反例、失敗恢復及同SHA九項綠燈，才進下一片；執行時可依實際依賴調整次序並記錄理由。
+同時只接受一個整合片：015A研究評估已驗 → 015B Brave分頁／地區／用量已驗 → 015C站點草稿／Review已驗 → 015D既有流量真實性證據已驗（先重用零額外HTTP）→ 015E研究推論原子入場與恢復已驗 → 015F每日／逐憑證推論核准已驗 → 015G token／USD預留與結算已驗 → 015H共用研究額度池已驗 → 015I私人研究排程已驗 → 015J逐級probe／候選重驗已驗 → 015K query生成／真成對研究已驗 → 015L公開配方／逐來源線索已驗 → 015N擷取比較已驗 → 015O公開欄位已驗 → 015P分塊同步已驗 → 015Q私人欄位已驗 → 015R Mac研究恢復已驗 → 015S費用證據候選 → 完整站點辨識／Reflection與原生正式流程 → 全版本驗收。每片有正式caller、反例、失敗恢復及同SHA九項綠燈，才進下一片；執行時可依實際依賴調整次序並記錄理由。
 
 ## 發布檢查
 

@@ -1,3 +1,5 @@
+> 2026-10-26：015R的Mac原生研究恢復已驗收（70f4683、九項與50實圖；verification/20261026/mac-research-baseline.json）。目前015S補VPS研究費用證據與正式比較；Mac同源引擎／既有JSON詳情可取得新欄位，不冒稱新增專用原生費用UI；Android專用研究與PLAY-004仍待完成。自己的九項／54視圖前候選，VPS→Mac→Android與原全部能力／負載保持。
+
 > MAC-RESEARCH-015R 本機候選：精確舊紀錄反例原本0.136s失敗（指定ID仍回100筆他輪），修後race2.502s與AA擴大回歸30.157s成功。41發布回歸、vet與真TLS fixture協定成功：3次建立／3次控制、頁1三次／頁2四次、總HTTP7、零推論；尚未執行本來源Mac原生UI／九項CI，不外推為已完成。原600s／300s、85核心／96圖及原全部負載保持；新增4核心與獨立第三原生程序8圖，原smoke／parity的120s不變。詳verification/20261026/mac-research-candidate.json。
 
 > 2026-10-26 PRIVATE-MAPPING-015Q 所列私人欄位對照範圍已驗收：來源 d261134b0b912bad661efbe6f6d28f100ce733f6／tree bcde49d6a3190a0abd4b6eeeb4052589f8ce7ae8，同源 VPS 40290236392、Android 40290236329、Mac 40290236304 九項原必要 job 全 SUCCESS；只讀稽核 40290236359／121463303919 實際核對九份 ZIP、完整原工作量、報告、套件與公開凍結，34 個相關視圖已自行檢視 PASS。Go race 583.141s／原600s、635事件、42 Browser／523圖、594核心＋423App／996device（0failure、5原skip）、兩Mac各85核心／96圖，原負載 peak RSS 211275776 bytes。詳細證據見 verification/20261026/private-mapping-baseline.json。前次 AA 失敗根因仍 UNKNOWN，本來源成功不抹除原反例。完整下一版仍 PARTIAL，公開版本／發布請求／tag／11附件凍結，PR #20 維持 Draft，不merge／部署／發布。

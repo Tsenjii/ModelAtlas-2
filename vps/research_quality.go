@@ -14,34 +14,35 @@ import (
 const researchQualityPolicy = "research-yield-v2"
 
 type researchQuality struct {
-	Policy           string   `json:"policy"`
-	RunID            string   `json:"run_id"`
-	MetricKey        string   `json:"metric_key"`
-	Kind             string   `json:"kind"`
-	Subject          string   `json:"subject"`
-	ScopeHash        string   `json:"scope_hash"`
-	VersionID        string   `json:"version_id"`
-	EpochID          string   `json:"epoch_id"`
-	TaskID           string   `json:"task_id"`
-	Order            int      `json:"order"`
-	Status           string   `json:"status"`
-	HTTP             int      `json:"http_requests"`
-	Inference        int      `json:"inference_requests"`
-	Candidates       int      `json:"candidates"`
-	NewCandidates    int      `json:"new_candidates"`
-	NewUnresolved    int      `json:"new_unresolved"`
-	RecurringClaims  int      `json:"recurring_claims"`
-	NegativeClaims   int      `json:"negative_claims"`
-	Unresolved       int      `json:"unresolved"`
-	DuplicateHits    int      `json:"duplicate_hits"`
-	ReusedCandidates int      `json:"reused_candidates"`
-	EvidenceCount    int      `json:"evidence_count"`
-	EvidenceIDs      []string `json:"evidence_ids"`
-	Utility          float64  `json:"utility"`
-	Weight           float64  `json:"weight"`
-	Priority         int      `json:"priority"`
-	Truncated        bool     `json:"truncated"`
-	ObservedAt       int64    `json:"observed_at"`
+	Cost             *researchCostEvidence `json:"cost_evidence,omitempty"`
+	Policy           string                `json:"policy"`
+	RunID            string                `json:"run_id"`
+	MetricKey        string                `json:"metric_key"`
+	Kind             string                `json:"kind"`
+	Subject          string                `json:"subject"`
+	ScopeHash        string                `json:"scope_hash"`
+	VersionID        string                `json:"version_id"`
+	EpochID          string                `json:"epoch_id"`
+	TaskID           string                `json:"task_id"`
+	Order            int                   `json:"order"`
+	Status           string                `json:"status"`
+	HTTP             int                   `json:"http_requests"`
+	Inference        int                   `json:"inference_requests"`
+	Candidates       int                   `json:"candidates"`
+	NewCandidates    int                   `json:"new_candidates"`
+	NewUnresolved    int                   `json:"new_unresolved"`
+	RecurringClaims  int                   `json:"recurring_claims"`
+	NegativeClaims   int                   `json:"negative_claims"`
+	Unresolved       int                   `json:"unresolved"`
+	DuplicateHits    int                   `json:"duplicate_hits"`
+	ReusedCandidates int                   `json:"reused_candidates"`
+	EvidenceCount    int                   `json:"evidence_count"`
+	EvidenceIDs      []string              `json:"evidence_ids"`
+	Utility          float64               `json:"utility"`
+	Weight           float64               `json:"weight"`
+	Priority         int                   `json:"priority"`
+	Truncated        bool                  `json:"truncated"`
+	ObservedAt       int64                 `json:"observed_at"`
 }
 
 type qualityEvidenceRecord struct {
@@ -210,7 +211,19 @@ func researchQualitySnapshot(ctx context.Context, tx *sql.Tx, run string) ([]res
 		}
 		out = append(out, q)
 	}
-	return out, rows.Err()
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	for i := range out {
+		q := &out[i]
+		q.Cost, err = readResearchCost(ctx, tx, run, q.TaskID, q.HTTP, q.Inference)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
 }
 
 func saveResearchQuality(ctx context.Context, tx *sql.Tx, reflection string, quality []researchQuality) error {

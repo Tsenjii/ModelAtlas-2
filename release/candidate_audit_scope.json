@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "slice": "MAC-RESEARCH-015R",
+  "slice": "RESEARCH-COST-015S",
   "browser_baseline": {
     "id": 12622386762,
     "bytes": 39268692,
@@ -130,7 +130,11 @@
     "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/group": "pass",
     "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/duplicate": "pass",
     "TestResearchRunLookupKeepsExactOlderRecordAndScheduleScope": "pass",
-    "TestResearchMacNativeFixture": "skip"
+    "TestResearchMacNativeFixture": "skip",
+    "TestResearchCostPublicComparisonDoesNotTurnNoInferenceIntoFree": "pass",
+    "TestResearchCostTLSReceiptsStayExactScopedAndSeparateFromAllocations": "pass",
+    "TestResearchCostReplayKeepsLegacyUnknownAndImmutableTaskCoverage": "pass",
+    "TestResearchCostUnknownFailureCannotBecomeMeasuredSavings": "pass"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",
@@ -146,7 +150,11 @@
     "connector-private-mapping-runtime-last-good-1280-dark.png",
     "connector-private-mapping-pat-account-375-light.png",
     "connector-private-mapping-pat-draft-1280-dark.png",
-    "connector-private-mapping-pat-undo-375-dark.png"
+    "connector-private-mapping-pat-undo-375-dark.png",
+    "research-query-cost-375-light.png",
+    "research-query-cost-320-200-dark.png",
+    "research-query-cost-1280-dark.png",
+    "knowledge-evaluation-cost-375-200-light.png"
   ],
   "rejected_aa_browser": {
     "id": 12625684013,

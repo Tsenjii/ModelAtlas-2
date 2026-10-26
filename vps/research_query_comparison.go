@@ -34,32 +34,34 @@ type queryComparisonReview struct {
 	Note               string  `json:"note"`
 }
 type queryComparison struct {
-	ID              string               `json:"id"`
-	RequestHash     string               `json:"-"`
-	VersionID       string               `json:"version_id"`
-	VersionHash     string               `json:"-"`
-	BaselineID      string               `json:"baseline_id"`
-	BaselineQuery   string               `json:"baseline_query"`
-	ProposedQuery   string               `json:"proposed_query"`
-	Language        string               `json:"language"`
-	Country         string               `json:"country"`
-	Pages           int                  `json:"pages_per_arm"`
-	Budget          int                  `json:"budget_per_arm"`
-	CredentialStamp string               `json:"-"`
-	At              int64                `json:"at"`
-	Changed         bool                 `json:"approval_changed"`
-	Arms            []queryComparisonArm `json:"arms"`
-	Cost            *string              `json:"total_monetary_cost"`
+	CostComparison  *researchCostComparison `json:"cost_comparison"`
+	ID              string                  `json:"id"`
+	RequestHash     string                  `json:"-"`
+	VersionID       string                  `json:"version_id"`
+	VersionHash     string                  `json:"-"`
+	BaselineID      string                  `json:"baseline_id"`
+	BaselineQuery   string                  `json:"baseline_query"`
+	ProposedQuery   string                  `json:"proposed_query"`
+	Language        string                  `json:"language"`
+	Country         string                  `json:"country"`
+	Pages           int                     `json:"pages_per_arm"`
+	Budget          int                     `json:"budget_per_arm"`
+	CredentialStamp string                  `json:"-"`
+	At              int64                   `json:"at"`
+	Changed         bool                    `json:"approval_changed"`
+	Arms            []queryComparisonArm    `json:"arms"`
+	Cost            *string                 `json:"total_monetary_cost"`
 }
 type queryComparisonArm struct {
-	Arm       string           `json:"arm"`
-	RunID     string           `json:"run_id"`
-	Status    string           `json:"status"`
-	HTTP      int              `json:"http_requests"`
-	Inference int              `json:"model_inference_requests"`
-	Budget    int              `json:"budget"`
-	Quality   *researchQuality `json:"quality,omitempty"`
-	Cost      *string          `json:"total_monetary_cost"`
+	CostEvidence *researchCostEvidence `json:"cost_evidence"`
+	Arm          string                `json:"arm"`
+	RunID        string                `json:"run_id"`
+	Status       string                `json:"status"`
+	HTTP         int                   `json:"http_requests"`
+	Inference    int                   `json:"model_inference_requests"`
+	Budget       int                   `json:"budget"`
+	Quality      *researchQuality      `json:"quality,omitempty"`
+	Cost         *string               `json:"total_monetary_cost"`
 }
 
 const comparisonColumns = `id,request_hash,version_id,version_hash,baseline_id,baseline_query,proposed_query,language,country,pages,budget,credential_stamp,created_at`
@@ -379,6 +381,11 @@ func fillQueryComparison(ctx context.Context, q researchQueryer, c *queryCompari
 		}
 	}
 	for i := range c.Arms {
+		a := &c.Arms[i]
+		a.CostEvidence, e = readResearchCost(ctx, q, a.RunID, "", a.HTTP, a.Inference)
+		if e != nil {
+			return e
+		}
 		var raw string
 		e = q.QueryRowContext(ctx, "SELECT observation_json FROM research_quality_observations WHERE run_id=? AND metric_key=? ORDER BY rowid DESC LIMIT 1", c.Arms[i].RunID, knowledgeMetricKey("RESEARCH_STRATEGY", c.Language)).Scan(&raw)
 		if e == sql.ErrNoRows {
@@ -392,6 +399,11 @@ func fillQueryComparison(ctx context.Context, q researchQueryer, c *queryCompari
 			return errors.New("invalid comparison quality")
 		}
 		c.Arms[i].Quality = &quality
+	}
+	c.CostComparison = compareResearchCost("PAIRED_FULL_RUNS", c.Arms[0].CostEvidence, c.Arms[1].CostEvidence)
+	if c.Arms[0].Status != "COMPLETED" || c.Arms[1].Status != "COMPLETED" {
+		c.CostComparison.Status = "INCOMPLETE"
+		c.CostComparison.Tokens, c.CostComparison.USD = nil, nil
 	}
 	return nil
 }

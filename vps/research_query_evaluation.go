@@ -120,6 +120,7 @@ func computePairedQueryEvaluation(ctx context.Context, tx *sql.Tx, v KnowledgeVe
 		return out, e
 	}
 	budget := 0
+	var baselineCost, proposedCost *researchCostEvidence
 	for _, id := range ids {
 		c, err := scanQueryComparison(tx.QueryRowContext(ctx, "SELECT "+comparisonColumns+" FROM research_query_comparisons WHERE id=?", id))
 		if err != nil {
@@ -160,6 +161,8 @@ func computePairedQueryEvaluation(ctx context.Context, tx *sql.Tx, v KnowledgeVe
 		paired.Pairs = append(paired.Pairs, queryPairMeasurement{ComparisonID: c.ID, Budget: c.Budget, Baseline: b, Proposed: p})
 		paired.BaselineHTTP += b.HTTP
 		paired.ProposedHTTP += p.HTTP
+		baselineCost = addResearchCost(baselineCost, b.CostEvidence, b.HTTP, b.Inference)
+		proposedCost = addResearchCost(proposedCost, p.CostEvidence, p.HTTP, p.Inference)
 		out.Baseline.add(*b.Quality)
 		out.Proposed.add(*p.Quality)
 		out.Target.add(*p.Quality)
@@ -169,6 +172,7 @@ func computePairedQueryEvaluation(ctx context.Context, tx *sql.Tx, v KnowledgeVe
 	sort.Strings(out.RunIDs)
 	out.DatasetHash = snapshotHash(map[string]any{"pairs": paired.Pairs})
 	out.ComparableRuns = len(paired.Pairs)
+	out.Cost = compareResearchCost("PAIRED_FULL_RUNS", baselineCost, proposedCost)
 	out.Reason = "至少明確執行3組兩臂完整且相同範圍／每臂上限的實際查詢對照，再評估觀測效益與完整HTTP。"
 	if out.ComparableRuns >= 3 {
 		out.Status = "NO_OBSERVED_GAIN"

@@ -12,21 +12,23 @@ import (
 const knowledgeEvaluationPolicy = "research-priority-replay-v2"
 
 type researchYield struct {
-	Runs             int      `json:"runs"`
-	HTTP             int      `json:"http_requests"`
-	Candidates       int      `json:"candidates"`
-	NewCandidates    int      `json:"new_candidates"`
-	RecurringClaims  int      `json:"recurring_claims"`
-	NegativeClaims   int      `json:"negative_claims"`
-	Unresolved       int      `json:"unresolved"`
-	DuplicateHits    int      `json:"duplicate_hits"`
-	ReusedCandidates int      `json:"reused_candidates"`
-	Failures         int      `json:"failures"`
-	Utility          float64  `json:"utility"`
-	PerHTTP          *float64 `json:"utility_per_http"`
+	Cost             *researchCostEvidence `json:"cost_evidence,omitempty"`
+	Runs             int                   `json:"runs"`
+	HTTP             int                   `json:"http_requests"`
+	Candidates       int                   `json:"candidates"`
+	NewCandidates    int                   `json:"new_candidates"`
+	RecurringClaims  int                   `json:"recurring_claims"`
+	NegativeClaims   int                   `json:"negative_claims"`
+	Unresolved       int                   `json:"unresolved"`
+	DuplicateHits    int                   `json:"duplicate_hits"`
+	ReusedCandidates int                   `json:"reused_candidates"`
+	Failures         int                   `json:"failures"`
+	Utility          float64               `json:"utility"`
+	PerHTTP          *float64              `json:"utility_per_http"`
 }
 
 func (y *researchYield) add(q researchQuality) {
+	y.Cost = addResearchCost(y.Cost, q.Cost, q.HTTP, q.Inference)
 	y.Runs++
 	y.HTTP += q.HTTP
 	y.Candidates += q.Candidates
@@ -47,6 +49,9 @@ func (y *researchYield) add(q researchQuality) {
 }
 
 func (y *researchYield) merge(other researchYield) {
+	if other.Cost != nil {
+		y.Cost = addResearchCost(y.Cost, other.Cost, other.Cost.HTTP, other.Cost.Inference)
+	}
 	y.HTTP += other.HTTP
 	y.Candidates += other.Candidates
 	y.NewCandidates += other.NewCandidates
@@ -60,26 +65,27 @@ func (y *researchYield) merge(other researchYield) {
 }
 
 type knowledgeEvaluation struct {
-	Paired         *queryPairedEvaluation `json:"paired_query_measurements,omitempty"`
-	ID             string                 `json:"id"`
-	VersionID      string                 `json:"version_id"`
-	BaselineID     string                 `json:"baseline_id"`
-	Policy         string                 `json:"policy"`
-	Status         string                 `json:"status"`
-	ScopeHash      string                 `json:"scope_hash"`
-	ProposalHash   string                 `json:"proposal_hash"`
-	DatasetHash    string                 `json:"dataset_hash"`
-	PlanHash       string                 `json:"plan_hash"`
-	Target         researchYield          `json:"target_observations"`
-	Baseline       researchYield          `json:"baseline_replay"`
-	Proposed       researchYield          `json:"proposed_replay"`
-	ComparableRuns int                    `json:"comparable_runs"`
-	Excluded       int                    `json:"excluded_observations"`
-	Diff           map[string]any         `json:"diff"`
-	RunIDs         []string               `json:"run_ids"`
-	Reason         string                 `json:"reason"`
-	Limitations    []string               `json:"limitations"`
-	At             int64                  `json:"at"`
+	Cost           *researchCostComparison `json:"cost_comparison,omitempty"`
+	Paired         *queryPairedEvaluation  `json:"paired_query_measurements,omitempty"`
+	ID             string                  `json:"id"`
+	VersionID      string                  `json:"version_id"`
+	BaselineID     string                  `json:"baseline_id"`
+	Policy         string                  `json:"policy"`
+	Status         string                  `json:"status"`
+	ScopeHash      string                  `json:"scope_hash"`
+	ProposalHash   string                  `json:"proposal_hash"`
+	DatasetHash    string                  `json:"dataset_hash"`
+	PlanHash       string                  `json:"plan_hash"`
+	Target         researchYield           `json:"target_observations"`
+	Baseline       researchYield           `json:"baseline_replay"`
+	Proposed       researchYield           `json:"proposed_replay"`
+	ComparableRuns int                     `json:"comparable_runs"`
+	Excluded       int                     `json:"excluded_observations"`
+	Diff           map[string]any          `json:"diff"`
+	RunIDs         []string                `json:"run_ids"`
+	Reason         string                  `json:"reason"`
+	Limitations    []string                `json:"limitations"`
+	At             int64                   `json:"at"`
 }
 
 func readKnowledgeVersion(ctx context.Context, q researchQueryer, id string) (KnowledgeVersion, error) {
@@ -212,7 +218,7 @@ func computeKnowledgeEvaluation(ctx context.Context, tx *sql.Tx, v KnowledgeVers
 		"僅比較最近30日最多32輪同一來源版本或精確語言／查詢的本機觀測；取消、未完成、零HTTP及同步歷史不作獨立樣本。",
 		"重播只模擬已完成擷取在半數HTTP預算內的排序；不預測未觀測回應，也不證明因果改善。",
 		"recurring_claims是有來源的結構化主張，仍須原eligibility與身份驗證；沒有改動Free／資格判定。",
-		"貨幣、token及搜尋計費未完整量測，保持Unknown；READY_FOR_TRIAL僅允許人工確認試用。",
+		"費用快照只覆蓋被選取的原子工作；完整USD未知時不宣稱節省。READY_FOR_TRIAL依研究品質與HTTP，僅允許人工確認試用。",
 	}, At: now()}
 	if !oneOf(v.Kind, "SOURCE_RELIABILITY", "RESEARCH_STRATEGY") || v.Status == "IMPORTED" {
 		return out, errors.New("only local research-priority proposals can be evaluated")
@@ -299,6 +305,7 @@ func computeKnowledgeEvaluation(ctx context.Context, tx *sql.Tx, v KnowledgeVers
 		out.Baseline.merge(b)
 		out.Proposed.merge(p)
 	}
+	out.Cost = compareResearchCost("RECORDED_ATOMIC_TASK_REPLAY", out.Baseline.Cost, out.Proposed.Cost)
 	out.Baseline.Runs = out.ComparableRuns
 	out.Proposed.Runs = out.ComparableRuns
 	if out.Baseline.HTTP > 0 {
@@ -371,7 +378,7 @@ func checkKnowledgeEvaluation(ctx context.Context, tx *sql.Tx, v KnowledgeVersio
 		return errors.New("invalid evaluation")
 	}
 	fresh, err := computeKnowledgeEvaluation(ctx, tx, v)
-	if err != nil || saved.Status != "READY_FOR_TRIAL" || fresh.Status != "READY_FOR_TRIAL" || saved.Policy != fresh.Policy || saved.ProposalHash != fresh.ProposalHash || saved.ScopeHash != fresh.ScopeHash || saved.BaselineID != fresh.BaselineID || saved.PlanHash != fresh.PlanHash || saved.DatasetHash != fresh.DatasetHash {
+	if err != nil || saved.Status != "READY_FOR_TRIAL" || fresh.Status != "READY_FOR_TRIAL" || saved.Policy != fresh.Policy || saved.ProposalHash != fresh.ProposalHash || saved.ScopeHash != fresh.ScopeHash || saved.BaselineID != fresh.BaselineID || saved.PlanHash != fresh.PlanHash || saved.DatasetHash != fresh.DatasetHash || connectorHash(saved.Cost) != connectorHash(fresh.Cost) {
 		return errors.New("evaluation is insufficient, regressed or stale; refresh and evaluate again")
 	}
 	return nil

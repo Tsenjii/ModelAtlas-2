@@ -119,6 +119,11 @@ func (s *Server) reflectResearch(ctx context.Context, run string) error {
 		return e
 	}
 	report["inference_resource_usage"] = resources.view()
+	cost, e := readResearchCost(ctx, tx, run, "", used, probes)
+	if e != nil {
+		return e
+	}
+	report["cost_evidence"] = cost
 	probeRows, e := tx.QueryContext(ctx, "SELECT report_json FROM research_probe_observations WHERE run_id=? ORDER BY rowid LIMIT 128", run)
 	if e != nil {
 		return e
