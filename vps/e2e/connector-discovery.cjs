@@ -12,7 +12,7 @@ fs.mkdirSync('e2e/screenshots',{recursive:true});
  try{
   await page.goto(base);await openKnowledge();
   let failRead=true;await page.route('**/api/v1/connectors',async route=>{if(failRead&&route.request().method()==='GET'&&discoveries){failRead=false;await route.fulfill({status:503,body:'read unavailable'});}else await route.continue();});
-  await page.getByRole('button',{name:'辨識站點並產生草稿',exact:true}).click();await page.getByRole('button',{name:'讀取辨識結果',exact:true}).waitFor();assert.equal(discoveries,1);assert(await page.locator('#connector-discovery-form input').isDisabled());
+  await page.getByRole('button',{name:'辨識站點並產生草稿',exact:true}).click();await page.getByRole('button',{name:'讀取辨識結果',exact:true}).waitFor();assert.equal(discoveries,1);assert(await page.locator('#connector-discovery-form input[name=source_path]').isDisabled());
   await page.getByRole('button',{name:'讀取辨識結果',exact:true}).click();await page.getByRole('button',{name:'檢視價格草稿',exact:true}).click();
   await page.getByText('欄位樣本檢查已通過；仍需重新讀取來源實測。',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'確認啟用擷取規則',exact:true}).count(),0);assert.equal(discoveries,1);
   for(const width of [320,375,1280])for(const dark of [false,true])await shot('review-'+width+'-'+(dark?'dark':'light'),width,dark);

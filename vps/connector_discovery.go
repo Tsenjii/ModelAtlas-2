@@ -23,13 +23,13 @@ const connectorDiscoverySchema = `
 `
 
 type connectorDiscoveryRequest struct {
-	ID            string    `json:"id"`
-	ReferenceURLs []string  `json:"reference_urls,omitempty"`
-	Selection     Selection `json:"selection"`
-	SourcePath    string    `json:"source_path"`
-	CredentialRole string `json:"credential_role,omitempty"`
-	PATID string `json:"pat_credential_id,omitempty"`
-	ConfirmPrivate bool `json:"confirm_private,omitempty"`
+	ID             string    `json:"id"`
+	ReferenceURLs  []string  `json:"reference_urls,omitempty"`
+	Selection      Selection `json:"selection"`
+	SourcePath     string    `json:"source_path"`
+	CredentialRole string    `json:"credential_role,omitempty"`
+	PATID          string    `json:"pat_credential_id,omitempty"`
+	ConfirmPrivate bool      `json:"confirm_private,omitempty"`
 }
 type connectorDiscoverySource struct {
 	MappingSampleID string   `json:"mapping_sample_id,omitempty"`
@@ -41,27 +41,27 @@ type connectorDiscoverySource struct {
 	Reason          string   `json:"reason,omitempty"`
 }
 type connectorDiscoveryReport struct {
-	FamilyEvidence []siteFamilyEvidence       `json:"family_evidence,omitempty"`
-	ID             string                     `json:"id"`
-	Selection      Selection                  `json:"selection"`
-	SourcePath     string                     `json:"source_path"`
-	BaseURL        string                     `json:"base_url"`
-	Status         string                     `json:"status"`
-	Family         string                     `json:"family_hint"`
-	Version        string                     `json:"version_hint"`
-	ObservedAt     int64                      `json:"observed_at"`
-	FinishedAt     int64                      `json:"finished_at,omitempty"`
-	HTTPRequests   *int                       `json:"http_requests"`
-	Attempts       int                        `json:"fetch_attempts"`
-	RequestLimit   int                        `json:"request_limit"`
-	Sources        []connectorDiscoverySource `json:"sources"`
-	DraftIDs       []string                   `json:"draft_ids"`
-	Unknown        []string                   `json:"unknown_fields"`
-	Conflicts      []string                   `json:"conflicting_kinds"`
-	Limitations    []string                   `json:"limitations"`
-	CredentialRole string `json:"credential_role,omitempty"`
-	PATID string `json:"pat_credential_id,omitempty"`
-	PrivateConfirmed bool `json:"private_confirmed,omitempty"`
+	FamilyEvidence   []siteFamilyEvidence       `json:"family_evidence,omitempty"`
+	ID               string                     `json:"id"`
+	Selection        Selection                  `json:"selection"`
+	SourcePath       string                     `json:"source_path"`
+	BaseURL          string                     `json:"base_url"`
+	Status           string                     `json:"status"`
+	Family           string                     `json:"family_hint"`
+	Version          string                     `json:"version_hint"`
+	ObservedAt       int64                      `json:"observed_at"`
+	FinishedAt       int64                      `json:"finished_at,omitempty"`
+	HTTPRequests     *int                       `json:"http_requests"`
+	Attempts         int                        `json:"fetch_attempts"`
+	RequestLimit     int                        `json:"request_limit"`
+	Sources          []connectorDiscoverySource `json:"sources"`
+	DraftIDs         []string                   `json:"draft_ids"`
+	Unknown          []string                   `json:"unknown_fields"`
+	Conflicts        []string                   `json:"conflicting_kinds"`
+	Limitations      []string                   `json:"limitations"`
+	CredentialRole   string                     `json:"credential_role,omitempty"`
+	PATID            string                     `json:"pat_credential_id,omitempty"`
+	PrivateConfirmed bool                       `json:"private_confirmed,omitempty"`
 }
 type connectorDiscoveryProof struct {
 	MappingSampleID   string         `json:"mapping_sample_id,omitempty"`

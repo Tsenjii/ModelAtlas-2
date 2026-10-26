@@ -14,7 +14,7 @@ import (
 type connectorSourceReceiptKey struct{}
 type connectorSourceReceipt struct {
 	Hash, ContentType string
-	Bytes int
+	Bytes             int
 }
 
 func privateMappingScope(role string) string {

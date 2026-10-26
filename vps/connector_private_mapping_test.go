@@ -183,6 +183,14 @@ func TestConnectorPrivateMappingPATKeepsAccountAuthorityAndExactCredits(t *testi
 	if calls.Load() != 3 {
 		t.Fatal("account reader was not used by formal intelligence")
 	}
+	var facts string
+	if e := s.Store.DB.QueryRow("SELECT facts_json FROM observations WHERE source=? AND kind='BALANCE' AND status='SUCCESS'", "DECLARATIVE_PROVIDER_META:"+id).Scan(&facts); e != nil {
+		t.Fatal(e)
+	}
+	var got map[string]any
+	if json.Unmarshal([]byte(facts), &got) != nil || got["balance"] != "275.25" || got["unit"] != "CREDITS" || got["scope_kind"] != "ACCOUNT" || got["effective_charge"] != nil {
+		t.Fatal("private account credits were rounded, widened or treated as effective USD", facts)
+	}
 	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM telemetry")
 }
 
@@ -386,8 +394,21 @@ func TestConnectorPrivateMappingStorageFailureRetainsUnknownReservation(t *testi
 func TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood(t *testing.T) {
 	var body atomic.Value
 	body.Store(privateMappingGroupedFixture)
-	var calls atomic.Int32
+	var calls, publicStatus atomic.Int32
 	s, _ := connectorDiscoveryFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/status" {
+			publicStatus.Add(1)
+			if r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
+				t.Error("ordinary public status probe received a private credential")
+			}
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Path != "/api/model-plan" {
+			t.Error("unexpected private metadata path")
+			http.NotFound(w, r)
+			return
+		}
 		calls.Add(1)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(body.Load().(string)))
@@ -432,11 +453,27 @@ func TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood(t *testing.T)
 	if calls.Load() != 7 {
 		t.Fatal("private drift triggered retries or additional keys", calls.Load())
 	}
+	if publicStatus.Load() != 5 {
+		t.Fatal("ordinary anonymous status probe count changed", publicStatus.Load())
+	}
 }
 
 func TestConnectorPrivateMappingOtherKeyCannotBorrowRuntimeOrActiveSlot(t *testing.T) {
-	var calls atomic.Int32
+	var calls, publicStatus atomic.Int32
 	s, _ := connectorDiscoveryFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/status" {
+			publicStatus.Add(1)
+			if r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
+				t.Error("ordinary public status probe received a private credential")
+			}
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Path != "/api/model-plan" {
+			t.Error("unexpected private metadata path")
+			http.NotFound(w, r)
+			return
+		}
 		calls.Add(1)
 		if r.Header.Get("Authorization") != "Bearer top-secret-example-key" && r.Header.Get("Authorization") != "Bearer fixture-private-key-two" {
 			t.Error("unexpected private authority")
@@ -478,4 +515,7 @@ func TestConnectorPrivateMappingOtherKeyCannotBorrowRuntimeOrActiveSlot(t *testi
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM observations WHERE source=? AND status='SUCCESS'", "DECLARATIVE_PROVIDER_META:"+id)
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM observations WHERE source=? AND status='SUCCESS'", "DECLARATIVE_PROVIDER_META:"+secondID)
 	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM telemetry")
+	if publicStatus.Load() != 3 {
+		t.Fatal("ordinary anonymous status probe count changed", publicStatus.Load())
+	}
 }

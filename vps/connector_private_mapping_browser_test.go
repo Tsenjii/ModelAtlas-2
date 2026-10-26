@@ -17,8 +17,16 @@ func TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo(t *t
 	}
 	parallelBrowserFlow(t)
 	var changed atomic.Bool
-	var calls, keyCalls, patCalls atomic.Int32
+	var calls, keyCalls, patCalls, publicStatus atomic.Int32
 	s, _ := connectorDiscoveryFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/status" {
+			publicStatus.Add(1)
+			if r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
+				t.Error("ordinary public status probe received a private credential")
+			}
+			http.NotFound(w, r)
+			return
+		}
 		calls.Add(1)
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method != "GET" || r.Header.Get("Cookie") != "" {
@@ -65,7 +73,7 @@ func TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo(t *t
 			s.Store.DB.QueryRow("SELECT COUNT(*) FROM connector_active").Scan(&active)
 			s.Store.DB.QueryRow("SELECT COUNT(*) FROM my_models").Scan(&models)
 			s.Store.DB.QueryRow("SELECT COUNT(*) FROM telemetry").Scan(&telemetry)
-			json.NewEncoder(w).Encode(map[string]any{"http": calls.Load(), "key_http": keyCalls.Load(), "pat_http": patCalls.Load(), "active": active, "models": models, "telemetry": telemetry})
+			json.NewEncoder(w).Encode(map[string]any{"http": calls.Load(), "key_http": keyCalls.Load(), "pat_http": patCalls.Load(), "public_status_http": publicStatus.Load(), "active": active, "models": models, "telemetry": telemetry})
 			return
 		}
 		production.ServeHTTP(w, r)
@@ -77,7 +85,7 @@ func TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo(t *t
 	if e != nil {
 		t.Fatalf("private mapping Browser: %v\n%s", e, out)
 	}
-	if calls.Load() != 8 || keyCalls.Load() != 5 || patCalls.Load() != 3 {
+	if calls.Load() != 8 || keyCalls.Load() != 5 || patCalls.Load() != 3 || publicStatus.Load() != 3 {
 		t.Fatalf("private browser reached extra paths/credentials: total=%d key=%d pat=%d\n%s", calls.Load(), keyCalls.Load(), patCalls.Load(), out)
 	}
 	assertSQLInt(t, s, 2, "SELECT COUNT(*) FROM connector_mapping_samples")

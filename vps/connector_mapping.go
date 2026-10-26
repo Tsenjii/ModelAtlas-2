@@ -20,7 +20,7 @@ var errMappingReview = errors.New("saved source, exact model scope and current f
 
 type connectorMappingSample struct {
 	ID, DiscoveryID, ReportHash, ContextHash, SourceURL, SourceHash, Path string
-	BindingContext string // Live authority context; never accepted from a request.
+	BindingContext                                                        string // Live authority context; never accepted from a request.
 	Root                                                                  any
 	At                                                                    int64
 }
@@ -34,18 +34,18 @@ type mappingContainer struct {
 	ModelPaths []string `json:"model_paths"`
 }
 type mappingView struct {
-	ID         string             `json:"id"`
-	Selection  Selection          `json:"selection"`
-	SourceURL  string             `json:"source_url"`
-	SourceHash string             `json:"source_sha256"`
-	SampleHash string             `json:"sample_sha256"`
-	At         int64              `json:"observed_at"`
-	Containers []mappingContainer `json:"containers"`
-	RootFields []mappingField     `json:"source_fields"`
-	Fields     []mappingField     `json:"row_fields"`
-	CredentialRole string `json:"credential_role,omitempty"`
-	ScopeKind string `json:"scope_kind,omitempty"`
-	GroupFields []mappingField `json:"group_fields,omitempty"`
+	ID             string             `json:"id"`
+	Selection      Selection          `json:"selection"`
+	SourceURL      string             `json:"source_url"`
+	SourceHash     string             `json:"source_sha256"`
+	SampleHash     string             `json:"sample_sha256"`
+	At             int64              `json:"observed_at"`
+	Containers     []mappingContainer `json:"containers"`
+	RootFields     []mappingField     `json:"source_fields"`
+	Fields         []mappingField     `json:"row_fields"`
+	CredentialRole string             `json:"credential_role,omitempty"`
+	ScopeKind      string             `json:"scope_kind,omitempty"`
+	GroupFields    []mappingField     `json:"group_fields,omitempty"`
 }
 type mappingLocation struct {
 	Path   string `json:"path"`
@@ -57,7 +57,7 @@ type connectorMappingRequest struct {
 	Kind      string                     `json:"kind"`
 	Root      string                     `json:"root_pointer"`
 	ModelPath string                     `json:"model_path"`
-	GroupPath string `json:"group_path,omitempty"`
+	GroupPath string                     `json:"group_path,omitempty"`
 	Scope     mappingLocation            `json:"scope_field"`
 	Fields    map[string]string          `json:"fields"`
 	Units     map[string]mappingLocation `json:"units"`
