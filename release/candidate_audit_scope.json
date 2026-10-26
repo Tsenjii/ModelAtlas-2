@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "slice": "PRIVATE-MAPPING-015Q",
+  "slice": "MAC-RESEARCH-015R",
   "browser_baseline": {
     "id": 12622386762,
     "bytes": 39268692,
@@ -128,7 +128,9 @@
     "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/scope": "pass",
     "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/unit": "pass",
     "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/group": "pass",
-    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/duplicate": "pass"
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/duplicate": "pass",
+    "TestResearchRunLookupKeepsExactOlderRecordAndScheduleScope": "pass",
+    "TestResearchMacNativeFixture": "skip"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",
@@ -151,5 +153,29 @@
     "bytes": 40443180,
     "digest": "sha256:c84bd007ae15f12914b6eb9eae627747699c9ce47915851539ff18c5e2971d31",
     "source": "7d612a4009a77cce431a30b23a129761827f80e0"
-  }
+  },
+  "mac_inventory": {
+    "arm64": {
+      "id": 12635613135,
+      "bytes": 5558939,
+      "digest": "sha256:25d1bee91d2d7054e9725e25a26e44cb66f1568dfa733f5156ddafb0eac954de",
+      "source": "d261134b0b912bad661efbe6f6d28f100ce733f6"
+    },
+    "x86_64": {
+      "id": 12636513801,
+      "bytes": 5692884,
+      "digest": "sha256:76864e49e6d436708f1810eccc2dd08af699ce8fd178c0179d8af935f9083a2a",
+      "source": "d261134b0b912bad661efbe6f6d28f100ce733f6"
+    }
+  },
+  "new_mac_research_images": [
+    "01-aa-partial-light.png",
+    "02-aa-partial-dark.png",
+    "03-saved-read-failure-dark.png",
+    "04-paused-dark.png",
+    "05-lost-ack-dark.png",
+    "06-aa-complete-dark.png",
+    "07-services-aa-complete-light.png",
+    "08-research-aa-complete-dark.png"
+  ]
 }

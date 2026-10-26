@@ -85,6 +85,14 @@ jobs:
             macos/qa/**/parity-ui/measurement-pids.json
             macos/qa/**/parity-ui/FAILURE.txt
             macos/qa/**/parity-footprint.json
+            macos/qa/**/research-ui/*.png
+            macos/qa/**/research-ui/native-research.json
+            macos/qa/**/research-ui/measurement-pids.json
+            macos/qa/**/research-ui/FAILURE.txt
+            macos/qa/**/research-footprint.json
+            macos/qa/**/research-test.log
+            macos/qa/**/research-app.log
+            macos/qa/**/research-fixture.log
             macos/qa/**/parity-app.log
             macos/qa/**/process-footprint.json
             macos/qa/**/swift-tests.log

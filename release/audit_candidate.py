@@ -226,7 +226,7 @@ def main():
     new_functions = set()
     for path in (ROOT/"vps").glob("connector_private_mapping*test.go"):
         new_functions.update(re.findall(r"^func (Test\w+)\(", path.read_text(), re.M))
-    require(len(new_functions) == 11 and new_functions == {name for name in config["go_new_events"] if "/" not in name}, "private mapping test registry changed; review audit scope")
+    require(len(new_functions) == 13 and new_functions == {name for name in config["go_new_events"] if "/" not in name}, "research test registry changed; review audit scope")
     expected_registry = {name for name in original_events if "/" not in name}|new_functions
     with archive("modelatlas-vps-footprint") as z:
         footprint = json.loads(p.member(z,"footprint.json"))
@@ -238,14 +238,14 @@ def main():
         suite = json.loads(p.member(z,"go-suite.json"))
         require(suite["result"] == "PASS" and suite["source"] == sha and suite["working_tree_dirty"] is False and suite["race"] is True, "Go suite source/result mismatch")
         require(suite["suite_deadline_seconds"] == 600 and suite["seconds"] < 600, "original suite deadline changed")
-        require(set(suite["registry"]) == expected_registry and len(suite["registry"]) == 418, "original Go registry changed")
+        require(set(suite["registry"]) == expected_registry and len(suite["registry"]) == 420, "original Go registry changed")
         require(p.digest("\n".join(sorted(suite["registry"])).encode()) == suite["registry_sha256"], "registry hash mismatch")
         sys.path.insert(0, str(ROOT/"vps"))
         from test_go import verify
         verify(suite["registry"], suite["processes"])
-        require(sorted(len(x["selected"]) for x in suite["processes"]) == [209,209], "original registry partition changed")
+        require(sorted(len(x["selected"]) for x in suite["processes"]) == [210,210], "original registry partition changed")
         actions = [value for process in suite["processes"] for value in process["completed"].values()]
-        require(actions.count("pass") == 369 and actions.count("skip") == 49, "Go terminal registry outcomes changed")
+        require(actions.count("pass") == 370 and actions.count("skip") == 50, "Go terminal registry outcomes changed")
         report["go_suite"] = {k:v for k,v in suite.items() if k not in ("processes","registry")}
     vps_jobs = checks[".github/workflows/vps.yml"]["jobs"]
     go_log = read_job_log(api, next(job for job in vps_jobs if job["name"] == "vps-test"))
@@ -261,7 +261,7 @@ def main():
         if item.get("Test") and item.get("Action") in ("pass","skip","fail"):
             require(item["Test"] not in events, "duplicate terminal Go case")
             events[item["Test"]] = item["Action"]
-    require(events == {**original_events, **config["go_new_events"]} and len(events) == 635 and list(events.values()).count("pass") == 586 and list(events.values()).count("skip") == 49, "complete Go case outcomes missing")
+    require(events == {**original_events, **config["go_new_events"]} and len(events) == 637 and list(events.values()).count("pass") == 587 and list(events.values()).count("skip") == 50, "complete Go case outcomes missing")
     require(all(events.get(name) == action for name,action in original_events.items()), "accepted Go case outcome regressed")
     (out/"go-case-events.json").write_text(json.dumps(events, indent=2)+"\n")
     browser_log = read_job_log(api, next(job for job in vps_jobs if job["name"] == "vps-browser"))
@@ -316,8 +316,14 @@ def main():
         require(len(aa_names) == 8 and "research-aa-recovered-375.png" in aa_names, "rejected AA image inventory changed")
         report["rejected_aa_candidate"] = {"source":config["rejected_aa_browser"]["source"],"actual_sha256":config["rejected_aa_browser"]["digest"],"png":523,"aa_images":sorted(aa_names),"failure":"TestBrowserAAResearchPageRecoveryWorkflow: page1=3/page2=3, expected 3/4; original task failure cause unavailable, not inferred"}
     for arch in ("arm64","x86_64"):
+        prior_mac = download_baseline(api, config["mac_inventory"][arch], baselines)
+        with p.read_zip(prior_mac) as old:
+            old_images = {Path(n).name for n in pngs(old, 96)}
+            original_mac_cases = {x[2] for x in re.findall(r"\[(\d+)/(\d+)\] Testing ([^\n]+)", p.member(old,"swift-tests.log").decode())}
+            require(len(original_mac_cases) == 85, "accepted Mac test inventory changed")
         with archive("ModelAtlas-macOS-QA-"+arch) as z:
-            pngs(z, 96)
+            actual_images = {Path(n).name for n in pngs(z, 104)}
+            require(old_images <= actual_images and actual_images-old_images == set(config["new_mac_research_images"]), "original Mac images removed or research views missing")
             smoke = json.loads(p.member(z,"ui/native-smoke.json"))
             parity = json.loads(p.member(z,"parity-ui/native-parity.json"))
             require(smoke["result"] == parity["result"] == "PASS" and smoke["screenshots"] == 25 and parity["screenshots"] == 57, "native Mac proof missing")
@@ -326,12 +332,23 @@ def main():
             require(parity["workspace_transfer_controls"] is True and transfer["result"] == "PASS" and transfer["destination_models"] == 15 and transfer["paused_progress_bytes"] > 0 and transfer["outgoing_acked"] > 0, "native transfer receipts missing")
             require(all(transfer[x] is True for x in ("same_transfer_after_restart","pause_during_busy","actual_keychain_restart","source_product_retained","no_inference")), "native transfer controls/restart failed")
             cases = re.findall(r"\[(\d+)/(\d+)\] Testing ([^\n]+)", p.member(z,"swift-tests.log").decode())
-            require(len(cases) == 85 and {int(x[0]) for x in cases} == set(range(1,86)) and {int(x[1]) for x in cases} == {85} and len({x[2] for x in cases}) == 85, "Mac original core cases changed")
+            require(len(cases) == 89 and {int(x[0]) for x in cases} == set(range(1,90)) and {int(x[1]) for x in cases} == {89} and len({x[2] for x in cases}) == 89, "Mac core cases missing")
+            actual_mac_cases = {x[2] for x in cases}
+            require(original_mac_cases <= actual_mac_cases and len(actual_mac_cases-original_mac_cases) == 4 and all("ResearchRunStateTests/" in x for x in actual_mac_cases-original_mac_cases), "original Mac core case removed or replaced")
             require(sum("KiloFactoryTests/" in x[2] for x in cases) == 3, "native factory tests missing")
             selected = [n for n in z.namelist() if n.endswith(".png") and Path(n).name.startswith(("52-kilo-","53-kilo-","54-workspace-","55-workspace-","56-workspace-","57-workspace-"))]
             require(len(selected) == 6, "Mac factory screenshot inventory changed")
             images.extend(("mac-"+arch+"/"+Path(n).name,z.read(n)) for n in selected)
-            report["mac_"+arch] = {"png":96,"core_tests":85,"smoke":smoke,"parity":parity,"workspace_transfer":transfer}
+            research = json.loads(p.member(z,"research-ui/native-research.json"))
+            require(research["result"] == "PASS" and research["screenshots"] == 8, "native research UI proof missing")
+            require(all(research[x] is True for x in ("real_tls","native_update_buttons","live_run_state","last_good_preserved","saved_refresh_no_repost","lost_ack_no_repost","concurrent_control_guard","reopen_same_run","seven_exact_requests","no_inference")), "native research recovery failed")
+            require(research["wire"] == dict(first=3,second=4,starts=3,controls=3,resumes=2,direct_sync=0,held=False,used=7,runs=3,telemetry=0), "native AA request or mutation counts changed")
+            resource = json.loads(p.member(z,"research-footprint.json"))
+            require(all(resource[x] > 0 for x in ("app_rss_bytes","engine_rss_bytes","fixture_rss_bytes")) and resource["samples"] >= 3 and resource["app_exit_code"] == resource["fixture_exit_code"] == 0 and resource["owned_engine_exited"] is True, "native research process lifecycle proof missing")
+            native_images = [n for n in z.namelist() if "/research-ui/" in "/"+n and n.endswith(".png")]
+            require({Path(n).name for n in native_images} == set(config["new_mac_research_images"]), "native research views changed")
+            images.extend(("mac-"+arch+"/research/"+Path(n).name,z.read(n)) for n in native_images)
+            report["mac_"+arch] = {"png":104,"preserved_png":96,"core_tests":89,"preserved_core_tests":85,"smoke":smoke,"parity":parity,"workspace_transfer":transfer,"research":research,"research_resource":resource}
     with archive("ModelAtlas-macOS-Universal") as z:
         with zipfile.ZipFile(io.BytesIO(p.member(z,"ModelAtlas-macOS-Universal.zip"))) as app:
             for name in ("ModelAtlas","ModelAtlasEngine"):
@@ -361,7 +378,7 @@ def main():
     from PIL import Image, ImageDraw, ImageOps
     contacts = out/"contacts"
     contacts.mkdir()
-    require(len(images) == 34, "all new/browser, factory and native transfer views required")
+    require(len(images) == 50, "all new/browser, factory, native transfer and research views required")
     report["visual_review_required"] = [name for name,_ in images]
     for offset in range(0,len(images),4):
         batch = images[offset:offset+4]
@@ -382,7 +399,7 @@ def main():
     # the interactive workspace is offline. No tests or archive checks are skipped.
     for name, value in (("REPORT", report), ("SOURCE_STATE", state), ("GO_CASE_EVENTS", events), ("DEVICE_CASE_EVENTS", json.loads((out/"device-case-events.json").read_text())), ("CORE_CASE_EVENTS", core_cases)):
         print("MODELATLAS_AUDIT_"+name+" "+json.dumps(value, ensure_ascii=False, separators=(",",":")), flush=True)
-    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":635,"browser_cases":42,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
+    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":637,"browser_cases":42,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
 
 if __name__ == "__main__":
     main()

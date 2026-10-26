@@ -44,7 +44,8 @@ import SwiftUI
                     delegate.store = store
                     await store.bootstrap(smoke: smokeDirectory != nil)
                     if let smokeDirectory {
-                        if ProcessInfo.processInfo.arguments.contains("--parity-smoke") { await NativeParity.run(store: store, output: smokeDirectory) }
+                        if ProcessInfo.processInfo.arguments.contains("--research-smoke") { await NativeResearch.run(store: store, output: smokeDirectory) }
+                        else if ProcessInfo.processInfo.arguments.contains("--parity-smoke") { await NativeParity.run(store: store, output: smokeDirectory) }
                         else { await NativeSmoke.run(store: store, output: smokeDirectory) }
                     }
                     else { await store.observeNotifications() }

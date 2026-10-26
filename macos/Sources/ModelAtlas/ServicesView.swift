@@ -13,6 +13,7 @@ struct ServicesView: View {
     @State private var models: [JSONValue] = []
     @State private var history: JSONValue = .array([])
     @State private var query = ""
+    @State private var runDetail: JSONValue?
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             if let problem { Text(problem).foregroundStyle(.red) }
@@ -39,9 +40,10 @@ struct ServicesView: View {
                 ForEach(models.filter { query.isEmpty || $0.pretty.localizedCaseInsensitiveContains(query) }.prefix(100), id: \.self) { item in DisclosureGroup(item["canonical_id"].string) { JSONTree(value: item) } }
                 if models.isEmpty { Text("尚無外部資料。同步後可在模型詳情查看獨立來源。").foregroundStyle(.secondary) }
             }
-            AARankingCard(value: aa) { guard let api = store.api else { return }; _ = try await api.call("/research/aa/sync", method: "POST", body: .object([:])); await load() }
+            AARankingCard(value: aa) { guard let api = store.api else { return }; runDetail = try await ResearchRunController.queueAA(using: api) }
             AtlasCard { Text("資料同步歷史").font(.headline); JSONTree(value: history) }
         }.background(Group { if loaded { AtlasLoadedMarker(name: "services-loaded") } }).task { await load() }
+        .sheet(item: $runDetail, onDismiss: { Task { await load() } }) { ResearchRunView(store: store, run: $0).atlasModal(store) }
     }
     private func load() async {
         guard let api = store.api else { return }
@@ -55,7 +57,7 @@ struct AARankingCard: View {
     let sync: () async throws -> Void
     var body: some View {
         AtlasCard {
-            HStack { Text("Artificial Analysis 排名").font(.headline); Spacer(); ActionButton(title: "更新榜單", action: sync) }
+            HStack { Text("Artificial Analysis 排名").font(.headline); Spacer(); ActionButton(title: "更新榜單", action: sync).background(AtlasLoadedMarker(name: "aa-update-target")) }
             if value["snapshot"] == .null { Text("尚無有效榜單。先在設定的服務分區保存 AA Key。").foregroundStyle(.secondary) }
             else {
                 Text(value["status"].string == "FRESH" ? "目前有效；動態 Top-4 依這份快照判斷。" : "榜單已過期，Top-4 特例暫停。").font(.callout).foregroundStyle(.secondary)

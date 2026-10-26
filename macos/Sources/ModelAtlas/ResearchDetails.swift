@@ -35,42 +35,6 @@ struct ResearchSourceEditor: View {
     }
 }
 
-struct ResearchRunView: View {
-    @ObservedObject var store: AtlasStore
-    let run: JSONValue
-    @Environment(\.dismiss) private var dismiss
-    @State private var tasks: [JSONValue] = []
-    @State private var additional = "0"
-    @State private var probes = "0"
-    @State private var retry = false
-    @State private var problem: String?
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack { Text("研究紀錄").font(.title2.weight(.semibold)); Spacer(); Button("關閉") { dismiss() }.keyboardShortcut(.cancelAction) }
-            HStack { SmallBadge(text: run["status"].string, color: atlasAccent); Text(run["id"].string).font(.caption).textSelection(.enabled) }
-            if let problem { Text(problem).foregroundStyle(.red); Button("重試讀取") { Task { await load() } } }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    AtlasCard { Text("本輪結果").font(.headline); JSONTree(value: run["summary"]) }
-                    ForEach(tasks, id: \.self) { item in AtlasCard { HStack { Text(item["kind"].string).font(.headline); Spacer(); SmallBadge(text: item["status"].string) }; Text(item["attempts"].display + " 次嘗試").font(.caption).foregroundStyle(.secondary); DisclosureGroup("計畫與結果") { JSONTree(value: item["payload"]); JSONTree(value: item["result"]) } } }
-                    if ["PAUSED", "BUDGET_EXHAUSTED", "COMPLETED"].contains(run["status"].string) {
-                        AtlasCard {
-                            Text("恢復與追加預算").font(.headline)
-                            HStack { FormField(title: "追加 HTTP 預算", text: $additional); FormField(title: "追加推論預算", text: $probes) }
-                            Toggle("重試失敗項目", isOn: $retry)
-                            ActionButton(title: "確認恢復研究") {
-                                guard let api = store.api, let extra = Int(additional), (0...200).contains(extra), let extraProbes = Int(probes), (0...10).contains(extraProbes), Double(extra) + (run["budget"].numeric ?? 0) <= 200, Double(extraProbes) + (run["probe_budget"].numeric ?? 0) <= 10 else { throw DraftProblem("整輪 HTTP 預算上限為 200，推論預算上限為 10。") }
-                                _ = try await api.call("/research/control", method: "POST", body: .object(["id": run["id"], "action": .string("RESUME"), "additional_budget": .number(Double(extra)), "additional_probes": .number(Double(extraProbes)), "retry_failed": .bool(retry)])); dismiss()
-                            }
-                        }
-                    }
-                }
-            }
-        }.padding(24).frame(width: 780, height: 710).task { await load() }
-    }
-    private func load() async { guard let api = store.api else { return }; do { tasks = try await api.get("/research/tasks", query: [URLQueryItem(name: "run_id", value: run["id"].string)]).requiredArray(); problem = nil } catch { problem = error.localizedDescription } }
-}
-
 struct CandidateDetailView: View {
     @ObservedObject var store: AtlasStore
     let candidate: JSONValue

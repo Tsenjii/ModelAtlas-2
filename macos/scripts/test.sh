@@ -106,3 +106,6 @@ PY
 
 echo 'Native stage: separate full feature parity process and new native captures'
 python3 "$mac_dir/scripts/parity-test.py" "$app" "$qa" "$MODELATLAS_FIXTURE_URL"
+
+echo 'Native stage: separate durable research controls and AA recovery process'
+python3 "$mac_dir/scripts/run-bounded.py" 270 "$qa/research-test.log" python3 "$mac_dir/scripts/research-test.py" "$app" "$qa"

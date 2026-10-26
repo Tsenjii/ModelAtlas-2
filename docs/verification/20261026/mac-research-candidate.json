@@ -1,0 +1,49 @@
+{
+  "slice": "MAC-RESEARCH-015R",
+  "status": "CANDIDATE_PENDING_OWN_NINE_CI_AND_ARTIFACTS",
+  "previous_accepted_source": "d261134b0b912bad661efbe6f6d28f100ce733f6",
+  "counterexample": {
+    "test": "TestResearchRunLookupKeepsExactOlderRecordAndScheduleScope",
+    "before": "FAIL: requested lookup-000 after 104 newer records returned 100 unrelated rows",
+    "before_seconds": 0.136,
+    "after_race_seconds": 2.502,
+    "result": "PASS"
+  },
+  "local": {
+    "aa_and_lookup_race_seconds": 30.157,
+    "result": "PASS",
+    "release_regressions": 41,
+    "vet": "PASS",
+    "real_tls_fixture_protocol": {
+      "result": "PASS",
+      "first": 3,
+      "second": 4,
+      "starts": 3,
+      "controls": 3,
+      "resumes": 2,
+      "used": 7,
+      "direct_sync": 0,
+      "telemetry": 0
+    },
+    "mac_native_execution": "NOT_EXECUTED_LOCALLY; requires own ARM/Intel CI"
+  },
+  "preserved_workloads": {
+    "go_deadline_seconds": 600,
+    "browser_deadline_seconds": 300,
+    "browser_cases": 42,
+    "browser_images": 523,
+    "android_core": 594,
+    "android_app": 423,
+    "android_device": 996,
+    "android_original_skips": 5,
+    "mac_original_core": 85,
+    "mac_original_images_each": 96,
+    "mac_original_smoke_deadline_seconds": 120,
+    "mac_original_parity_deadline_seconds": 120,
+    "new_mac_core": 4,
+    "new_mac_research_images_each": 8,
+    "new_separate_native_research_deadline_seconds": 120
+  },
+  "public_release": "UNCHANGED",
+  "whole_next_release": "PARTIAL"
+}

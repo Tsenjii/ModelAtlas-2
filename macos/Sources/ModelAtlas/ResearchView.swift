@@ -29,6 +29,7 @@ struct ResearchView: View {
     @State private var candidateDetail: JSONValue?
     @State private var runDetail: JSONValue?
     @State private var sourceDetail: JSONValue?
+    init(store: AtlasStore, initialTab: String = "執行") { self.store = store; _tab = State(initialValue: initialTab) }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { Text("全球研究").font(.title3.weight(.semibold)); Spacer(); Button("重新載入") { Task { await load() } }.disabled(loading) }
@@ -37,7 +38,7 @@ struct ResearchView: View {
             if tab == "執行" { execution }
             if tab == "來源" { sourceList }
             if tab == "候選與證據" { candidateList }
-            if tab == "AA 排名" { AARankingCard(value: aa) { guard let api = store.api else { return }; _ = try await api.call("/research/aa/sync", method: "POST", body: .object([:])); await load() } }
+            if tab == "AA 排名" { AARankingCard(value: aa) { guard let api = store.api else { return }; runDetail = try await ResearchRunController.queueAA(using: api) } }
             if tab == "Recipes" { recipeEditor }
         }
         .background(Group { if loaded { AtlasLoadedMarker(name: "research-loaded") } })
@@ -67,7 +68,7 @@ struct ResearchView: View {
                     guard let api = store.api else { return }
                     let selections = store.activeModels.first(where: { ModelScope($0).id == target }).map { [ModelScope($0)] } ?? []
                     let body = try ResearchRequest.body(sources: selected.sorted(), selections: selections, budget: budget, probes: probes, minimal: minimalInference, search: useSearch, lmspeed: useLMSpeed, aa: refreshAA)
-                    _ = try await api.call("/research/start", method: "POST", body: body); await load()
+                    runDetail = try await api.call("/research/start", method: "POST", body: body); await load()
                 }
             }
             ForEach(runs, id: \.self) { run in

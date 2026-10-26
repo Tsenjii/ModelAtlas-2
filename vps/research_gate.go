@@ -71,11 +71,18 @@ func (s *Server) eligibility(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) listResearchRuns(w http.ResponseWriter, r *http.Request) {
 	owner := r.URL.Query().Get("schedule_id")
-	if owner != "" && !validID(owner) {
-		http.Error(w, "invalid schedule id", 400)
+	id := r.URL.Query().Get("id")
+	if owner != "" && !validID(owner) || id != "" && !validID(id) {
+		http.Error(w, "invalid research lookup", 400)
 		return
 	}
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT r.id,r.status,r.checkpoint,r.started_at,o.budget,o.used,o.probe_budget,o.probes_used,COALESCE(o.summary_json,'{}'),COALESCE(p.schedule_id,''),COALESCE(s.name,'') FROM research_runs r LEFT JOIN research_run_options o ON o.run_id=r.id LEFT JOIN research_schedule_runs p ON p.run_id=r.id LEFT JOIN research_schedules s ON s.id=p.schedule_id WHERE (?='' OR p.schedule_id=?) ORDER BY r.started_at DESC,r.rowid DESC LIMIT 100", owner, owner)
+	query := "SELECT r.id,r.status,r.checkpoint,r.started_at,o.budget,o.used,o.probe_budget,o.probes_used,COALESCE(o.summary_json,'{}'),COALESCE(p.schedule_id,''),COALESCE(s.name,'') FROM research_runs r LEFT JOIN research_run_options o ON o.run_id=r.id LEFT JOIN research_schedule_runs p ON p.run_id=r.id LEFT JOIN research_schedules s ON s.id=p.schedule_id WHERE (?='' OR p.schedule_id=?)"
+	args := []any{owner, owner}
+	if id != "" {
+		query += " AND r.id=?"
+		args = append(args, id)
+	}
+	rows, err := s.Store.DB.QueryContext(r.Context(), query+" ORDER BY r.started_at DESC,r.rowid DESC LIMIT 100", args...)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
