@@ -68,3 +68,5 @@ Mac同源Go引擎包含後端，但專用Mac／Android欄位對照流程尚未�
 首候選87b3a5fb未接受：原604 Go結果不變，但兩個新測試把正式Intelligence的既有匿名狀態探測混入私人計量。fixture現明確拒絕該公開狀態路徑、不傳Key／Cookie，並分開驗證私人與公開次數，不刪正式探測、不改原私人讀取次數；新Browser預期8次私人GET＋3次匿名狀態探測＝11次實際HTTP。原41Browser中40通過，兩個UI harness失敗分別為未展開私人details及原source_path的廣泛selector歧義；只修正實際操作定位、保留原斷言／timeout。來源、原始錯誤與結果逐項見private-mapping-initial-candidate.json；新候選另驗自己的完整九項及實際產物。
 
 第二候選d0bf0d89的新Browser亦未接受；原41流程全PASS。前次把額外讀取稱為匿名狀態探測的分類不正確，現依adapters.go正式caller更正：Intelligence會先以目前所選Key取得/v1/models目錄，再讀已啟用私人規則。fixture分開驗真正目錄與私人路徑／authority，不停用原目錄功能；本新UI流程預期8次私人GET＋3次目錄GET＝11次實際HTTP，0推論，catalog-only不自動成會員。詳private-mapping-catalog-counterexample.json。額外聚焦診斷不取代原九項與全部完整套件。
+
+第三候選7d612a40私人流程已成功，但原AA工作流只有6次請求，整片未接受；原任務失敗原因未知。實際失敗ZIP的523圖／CRC／SHA256已核對，五次獨立AA診斷均成功，仍不能據此補造原根因。新斷言要求三次更新的每筆AA任務實際SUCCESS、兩頁完整及預算[2,2,3]，失敗保留result；原七次請求檢查不減。200%情境現捲到48px保存按鈕並實際完成保存，修後聚焦成功。詳private-mapping-aa-counterexample.json；新來源完整九項、九ZIP及34視圖前仍候選。

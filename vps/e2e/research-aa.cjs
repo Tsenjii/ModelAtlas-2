@@ -34,6 +34,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await page.locator('#aa-sync').click();await page.locator('#detail').waitFor({state:'visible'});await page.waitForFunction(()=>researchRuns.length===2&&researchRuns.every(r=>r.status==='COMPLETED'));await page.locator('#detail-close').click();
   await page.getByRole('button',{name:'設定',exact:true}).click();await page.getByRole('tab',{name:'服務',exact:true}).click();await page.locator('#service-aa').getByRole('button',{name:'更新榜單',exact:true}).click();await page.locator('#detail').waitFor({state:'visible'});
   await page.waitForFunction(async()=>{const rows=await api('/research/runs');return rows.length===3&&rows.every(r=>r.status==='COMPLETED');});
+  // A run being terminal does not prove every AA task succeeded. Inspect the
+  // committed tasks as well, so a stopped page reports its actual reason.
+  const finished=await (await context.request.get(origin+'/api/v1/research/runs')).json();
+  assert.equal(finished.length,3);assert.deepEqual(finished.map(r=>r.used).sort((a,b)=>a-b),[2,2,3]);
+  for(const run of finished){const tasks=await (await context.request.get(origin+'/api/v1/research/tasks?run_id='+run.id)).json();assert.equal(tasks.length,1);const aa=tasks[0];assert.equal(aa.kind,'AA');assert.equal(aa.status,'SUCCESS',JSON.stringify(aa.result));assert.equal(aa.result.aa_progress.complete,true,JSON.stringify(aa.result));assert.equal(aa.result.aa_progress.completed_pages,2);}
   assert.deepEqual(errors,[]);console.log('PASS: genuine AA TLS page 1 -> page 2 HTTP 429, atomic budgets, persisted partial progress and last-good, explicit budget resume, pause past deadline, page 2-only recovery, both production update buttons, 320/375/1280 light/dark and 200%, 8 screenshots.');
  }catch(error){await page.screenshot({path:'e2e/screenshots/research-aa-failure.png',fullPage:true}).catch(()=>{});throw error;}finally{await context.close();await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1)});

@@ -145,5 +145,11 @@
     "connector-private-mapping-pat-account-375-light.png",
     "connector-private-mapping-pat-draft-1280-dark.png",
     "connector-private-mapping-pat-undo-375-dark.png"
-  ]
+  ],
+  "rejected_aa_browser": {
+    "id": 12625684013,
+    "bytes": 40443180,
+    "digest": "sha256:c84bd007ae15f12914b6eb9eae627747699c9ce47915851539ff18c5e2971d31",
+    "source": "7d612a4009a77cce431a30b23a129761827f80e0"
+  }
 }

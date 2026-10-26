@@ -308,6 +308,13 @@ def main():
         failed_name = "dev.modelatlas.app.ui.PendingConnectionHandoffTest#disabledPendingIsEvictedAndNeverResurrectsAsUsable"
         require(negative_cases[failed_name] == "failure", "original handoff counterexample absent")
         report["rejected_candidate"] = {"source":config["rejected_device"]["source"],"actual_sha256":config["rejected_device"]["digest"],"counts":negative_counts,"failure":failed_name}
+    rejected_browser = download_baseline(api, config["rejected_aa_browser"], baselines)
+    with zipfile.ZipFile(rejected_browser) as z:
+        rejected_names = pngs(z, 523)
+        require(set(config["new_browser_images"]) <= {Path(n).name for n in rejected_names}, "rejected private reader images missing")
+        aa_names = {Path(n).name for n in rejected_names if Path(n).name.startswith("research-aa-")}
+        require(len(aa_names) == 8 and "research-aa-recovered-375.png" in aa_names, "rejected AA image inventory changed")
+        report["rejected_aa_candidate"] = {"source":config["rejected_aa_browser"]["source"],"actual_sha256":config["rejected_aa_browser"]["digest"],"png":523,"aa_images":sorted(aa_names),"failure":"TestBrowserAAResearchPageRecoveryWorkflow: page1=3/page2=3, expected 3/4; original task failure cause unavailable, not inferred"}
     for arch in ("arm64","x86_64"):
         with archive("ModelAtlas-macOS-QA-"+arch) as z:
             pngs(z, 96)

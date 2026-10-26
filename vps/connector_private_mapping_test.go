@@ -93,9 +93,9 @@ func TestConnectorPrivateMappingKeyGroupReviewRealUseAndUndo(t *testing.T) {
 	request := connectorMappingRequest{
 		ID: "private-reviewed-fields", SampleID: report.Sources[0].MappingSampleID, Kind: "QUOTA",
 		Root: "/entries", ModelPath: "/opaque_model", GroupPath: "/opaque_group",
-		Scope: mappingLocation{Path: "/scope", Source: true},
+		Scope:  mappingLocation{Path: "/scope", Source: true},
 		Fields: map[string]string{"rpd": "/allowances/calls", "tpd": "/allowances/tokens"},
-		Units: map[string]mappingLocation{"rpd": {Path: "/units/calls", Source: true}, "tpd": {Path: "/units/tokens", Source: true}},
+		Units:  map[string]mappingLocation{"rpd": {Path: "/units/calls", Source: true}, "tpd": {Path: "/units/tokens", Source: true}},
 	}
 	id := mappingTestPropose(t, s, request)
 	draft := discoveredVersion(t, s, id)
@@ -160,9 +160,9 @@ func TestConnectorPrivateMappingPATKeepsAccountAuthorityAndExactCredits(t *testi
 	}
 	request := connectorMappingRequest{
 		ID: "private-account-fields", SampleID: report.Sources[0].MappingSampleID, Kind: "BALANCE",
-		Scope: mappingLocation{Path: "/scope", Source: true},
+		Scope:  mappingLocation{Path: "/scope", Source: true},
 		Fields: map[string]string{"balance": "/opaque/balance"},
-		Units: map[string]mappingLocation{"balance": {Path: "/unit", Source: true}},
+		Units:  map[string]mappingLocation{"balance": {Path: "/unit", Source: true}},
 	}
 	id := mappingTestPropose(t, s, request)
 	draft := discoveredVersion(t, s, id)
@@ -209,9 +209,9 @@ func privateMappingRequest(report connectorDiscoveryReport, id string) connector
 	return connectorMappingRequest{
 		ID: id, SampleID: report.Sources[0].MappingSampleID, Kind: "QUOTA",
 		Root: "/entries", ModelPath: "/opaque_model", GroupPath: "/opaque_group",
-		Scope: mappingLocation{Path: "/scope", Source: true},
+		Scope:  mappingLocation{Path: "/scope", Source: true},
 		Fields: map[string]string{"rpd": "/allowances/calls", "tpd": "/allowances/tokens"},
-		Units: map[string]mappingLocation{"rpd": {Path: "/units/calls", Source: true}, "tpd": {Path: "/units/tokens", Source: true}},
+		Units:  map[string]mappingLocation{"rpd": {Path: "/units/calls", Source: true}, "tpd": {Path: "/units/tokens", Source: true}},
 	}
 }
 
