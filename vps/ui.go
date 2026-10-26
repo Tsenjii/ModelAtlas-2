@@ -623,6 +623,7 @@ const homeHTML = `<!doctype html>
 <div id="settings-general" class="workspace-panel" role="tabpanel" aria-labelledby="settings-general-tab" data-workspace-panel="settings">
 <div class="card">
 <h2>顯示外觀</h2>
+<label>介面風格<select id="appearance-interface"><option value="classic">經典 · Mac 風格</option><option value="aqua">Aqua · 水光玻璃</option></select></label>
 <label>主題<select id="appearance">
 <option value="system">跟隨系統</option>
 <option value="light">淺色</option>

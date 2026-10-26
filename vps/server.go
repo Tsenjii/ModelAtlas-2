@@ -385,7 +385,9 @@ func (s *Server) Handler() http.Handler {
 	})
 	root.Handle("GET /{$}", s.auth(http.HandlerFunc(s.home)))
 	root.Handle("GET /app.css", s.auth(http.HandlerFunc(s.stylesheet)))
+	root.Handle("GET /aqua.css", s.auth(http.HandlerFunc(s.aquaStylesheet)))
 	root.Handle("GET /app.js", s.auth(http.HandlerFunc(s.script)))
+	root.Handle("GET /assets/aqua-garden-v1.webp", s.auth(http.HandlerFunc(s.aquaWallpaper)))
 	root.Handle("/api/v1/", s.auth(http.StripPrefix("/api/v1", api)))
 	return s.maintenanceHandler(root)
 }

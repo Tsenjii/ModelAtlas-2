@@ -1,0 +1,158 @@
+{
+  "date": "2026-10-27 Asia/Taipei",
+  "prior_source": [
+    {
+      "name": "ModelAtlas-Aqua-Demo.html",
+      "bytes": 966017,
+      "sha256": "19019cb39745ff50031c1fb1f2f3fcc53862a8fa7f80dfba4ac58c7adb036c01"
+    },
+    {
+      "name": "ModelAtlas-Aqua-Full-Demo.html",
+      "bytes": 1045621,
+      "sha256": "7a5907b0cd0b8f0ce325bf49666cb7fd1cde420b5994cd2bbf1f46d8374e5243"
+    }
+  ],
+  "reference_review": {
+    "sizes": [
+      390,
+      1280
+    ],
+    "full_demo_visible_controls_below_48px": 45,
+    "small_text_nodes_below_12px": 58,
+    "no_horizontal_overflow_at_390": true,
+    "observations": [
+      "原型手機首屏約前295px為插畫／宣傳標題，之後仍有重複導航與原型說明，進入主要工作較慢",
+      "頂部主導航與內容側導航在手機皆橫向滾動，兩套資訊層級同時出現",
+      "按鈕與多數輔助文字偏小，不能因原型390px未overflow就稱操作已好",
+      "以上為自己的原檔視覺與DOM檢查；原型示例數字不移植為產品資料"
+    ]
+  },
+  "initial_test_rejections": [
+    {
+      "test": "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery",
+      "seconds": 34.71,
+      "issue": "新測試用不存在的[name=label]定位動態帳戶欄位而逾時；實際表單顯示正確，使用原正式getByLabel顯示名稱定位後通過",
+      "repeat_preview_seconds": 35.09,
+      "production_change_for_selector_failure": false
+    }
+  ],
+  "design_revision": "首版Providers標題／搜尋直接疊於花園較繁雜，改以單一可讀玻璃工作面承載，桌面／手機同樣保留原控制與滾動",
+  "focused_browser_before_final_checks": {
+    "result": "PASS",
+    "seconds": 10.78,
+    "real_tls_inference": 1,
+    "screenshots": 11,
+    "last_good_and_drafts": true
+  },
+  "status": "CANDIDATE; final local and exact-source CI pending",
+  "whole_next_release": "PARTIAL",
+  "focused_final": {
+    "result": "PASS",
+    "seconds": 13.07,
+    "package_seconds": 16.065,
+    "coverage": [
+      "正式真TLS聊天與收據",
+      "聊天／帳戶草稿跨經典與Aqua保留",
+      "390／1280／320px200%深淺色",
+      "812px橫向安全區與composer不碰底導覽",
+      "44／34px直向安全區與last-good",
+      "圖片失敗／偏好損壞／storage不可用仍可進入正式工作區",
+      "重新開啟保存外觀"
+    ],
+    "screenshots_before_full_suite": 11
+  },
+  "release_regressions": {
+    "tests": 49,
+    "result": "PASS",
+    "seconds": 0.06
+  },
+  "async_wait_regressions": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "asset_focused": {
+    "result": "PASS",
+    "seconds": 3.28,
+    "checks": [
+      "受認證GET",
+      "未登入不能借ETag取304",
+      "cross-site403",
+      "private cache／ETag304",
+      "HEAD無body",
+      "Range精確12bytes",
+      "WebP bytes與SHA256"
+    ]
+  },
+  "vet": "PASS",
+  "local_full_browser_rejection": {
+    "result": "TIMEOUT",
+    "original_deadline_seconds": 300,
+    "package_seconds": 302.482,
+    "registered": 43,
+    "completed_pass": 36,
+    "incomplete": [
+      "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery",
+      "TestBrowserBraveResearchPageRecoveryWorkflow",
+      "TestBrowserConnectorMappingUnknownFieldsRecoveryRuntimeAndUndo",
+      "TestBrowserModelConnectionsWorkflow",
+      "TestBrowserModelViewsWorkflow",
+      "TestBrowserProviderFormsWorkflow",
+      "TestBrowserScopedModelPickerWorkflow"
+    ],
+    "log_sha256": "1f970a3e5859807fb76454a583351031f01295626394814e5e43c96891fd50ef",
+    "root_cause": "UNKNOWN; compare the unchanged accepted 015T under the same local runtime before attributing this timeout to the new interface",
+    "assertion_failures_observed": 0
+  },
+  "accepted_source_local_comparison": {
+    "source": "23100dc4b6cef58f80b7719ef37479f6674efba6",
+    "tree": "d21904380f30c2a4b43ca9233a8e2fc1996c7395",
+    "original_deadline_seconds": 300,
+    "package_seconds": 301.553,
+    "registered": 42,
+    "passed": 36,
+    "incomplete": [
+      "TestBrowserAssistantWorkflow",
+      "TestBrowserCatalogExperienceWorkflow",
+      "TestBrowserMobileAlignmentWorkflow",
+      "TestBrowserProductionWorkflow",
+      "TestBrowserProtocolAndSpeechWorkflow",
+      "TestBrowserResearchWorkflow"
+    ],
+    "result": "TIMEOUT",
+    "observed_assertion_failures": 0,
+    "log_sha256": "09469cab2ce5b952e70ce4ac97b2542ca33f0cfeef4071b740ed95c0821a538a",
+    "interpretation": "已驗收的原015T也在同一本機runtime超時；不支持將超時專歸Aqua，根因仍UNKNOWN。正式CI保持原300秒及全部工作量，不以此本機結果作驗收。"
+  },
+  "optional_style_loading": {
+    "change": "Aqua CSS獨立受認證同來源路徑，只有選用時建立stylesheet；經典模式停用該stylesheet。失敗明示回經典，可重選再試。",
+    "reason": "避免預設介面額外下載／匹配選用樣式；不聲稱已證明上述整套逾時根因"
+  },
+  "local_full_suite_status": "Go與最後來源Browser及同來源CI尚待完成",
+  "optional_styles_focused": {
+    "result": "PASS",
+    "test_seconds": 10.97,
+    "asset_seconds": 2.02,
+    "package_seconds": 15.416,
+    "screenshots": 12,
+    "stylesheet_load_failure_fallback": "PASS",
+    "offline_draft_above_navigation": "PASS"
+  },
+  "asset_format": "原始WebP以Go embed直接隨binary供應，未使用base64中間資產；257786bytes與SHA256維持不變",
+  "final_focused": {
+    "result": "PASS",
+    "real_browser_seconds": 10.59,
+    "asset_seconds": 1.77,
+    "package_seconds": 14.547,
+    "screenshots": 12,
+    "original_artwork_bytes_unchanged": true,
+    "original_scope_and_history_preserved": true,
+    "css_failure_fallback_and_offline_composer_visibility": true
+  },
+  "runtime_manifest_files": 333,
+  "runtime_manifest_status": "sha256 source snapshot frozen before full validation",
+  "full_local_and_ci": "PENDING at candidate commit; neither timeout is recorded as success"
+}

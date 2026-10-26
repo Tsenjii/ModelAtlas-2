@@ -1,3 +1,5 @@
+> 2026-10-27（台北）接續AQUA-INTERFACE-015U候選：使用者要求追加可切換Nozoki／Aqua風格並自行改善舊手機Demo。VPS正式三頁／設定沿原caller與草稿，新增本機外觀偏好、原創同來源背景及窄螢幕／200%／安全區／last-good驗證；自己的完整回歸與同源九項、實際產物／70相關視圖前未驗收，原全部工作量／timeout不減。前片RESEARCH-EXECUTION-015T來源23100dc4已同源九項／實際九ZIP及58視圖驗收，完整證據見verification/20261027/research-execution-baseline.json。整版PARTIAL、VPS→Mac→Android、公開v0.8.5-preview.1／tag／11附件凍結、Draft PR #20及不merge／部署／發布保持。
+
 > 目前唯一候選RESEARCH-EXECUTION-015T：VPS本機研究輪數1～4、不同輪有界並行／同輪每次一項、排程slot／每日入場與取消／重啟；預設1且不新增來源／憑證／預算授權。原11個Browser腳本19個async條件改為真正await，保留全部條件／斷言／負載／timeout；新增8個實際Chromium等待回歸。015S費用證據已由246ea08同源九項、九份實際ZIP及54視圖驗收，見verification/20261026/research-cost-baseline.json。新片自己的完整回歸與九項／實際產物／58視圖前仍候選；完整下一版PARTIAL、VPS→Mac→Android及公開版本／tag／11附件凍結保持。
 
 > 2026-10-26 目前唯一候選 RESEARCH-COST-015S：補 VPS 反思、來源／查詢排序重播與兩臂真查詢的精確費用快照與正式比較 UI。Token、站方 USD 回報、本機已核算／預留及未知公開 HTTP 分開；每個工作只取原 task／run 收據，舊紀錄無費用證據維持 Unknown。自己的同源九項與實際產物／54相關視圖前仍未驗收。保留原420 Go入口／637事件，新增4例後預期424入口／641事件（591pass＋50原skip）、42Browser／527PNG，Android594核心／423App／996device與兩Mac89核心／104PNG，以及所有原負載／timeout保持；整版與真站／目標VPS／實機／簽署仍PARTIAL，公開版本／tag／11附件凍結、PR #20仍Draft、不merge／部署／發布。

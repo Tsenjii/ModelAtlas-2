@@ -1,3 +1,5 @@
+> 2026-10-27：015T同源九項與實際九ZIP／58視圖驗收（23100dc4；verification/20261027/research-execution-baseline.json）。新片015U只追加VPS可切換Aqua介面，吸收舊手機Demo風格並改善首屏／字級／操作；仍使用原正式DOM與資料caller，保留16px／48px／safe-area／200%／草稿／last-good。Mac與Android原生Aqua尚未移植，不以網頁畫面代驗；VPS→Mac→Android、完整下一版PARTIAL、公開版本凍結保持。
+
 > 目前唯一候選RESEARCH-EXECUTION-015T：VPS本機研究輪數1～4、不同輪有界並行／同輪每次一項、排程slot／每日入場與取消／重啟；預設1且不新增來源／憑證／預算授權。原11個Browser腳本19個async條件改為真正await，保留全部條件／斷言／負載／timeout；新增8個實際Chromium等待回歸。015S費用證據已由246ea08同源九項、九份實際ZIP及54視圖驗收，見verification/20261026/research-cost-baseline.json。新片自己的完整回歸與九項／實際產物／58視圖前仍候選；完整下一版PARTIAL、VPS→Mac→Android及公開版本／tag／11附件凍結保持。
 
 > 2026-10-26：015R的Mac原生研究恢復已驗收（70f4683、九項與50實圖；verification/20261026/mac-research-baseline.json）。目前015S補VPS研究費用證據與正式比較；Mac同源引擎／既有JSON詳情可取得新欄位，不冒稱新增專用原生費用UI；Android專用研究與PLAY-004仍待完成。自己的九項／54視圖前候選，VPS→Mac→Android與原全部能力／負載保持。
