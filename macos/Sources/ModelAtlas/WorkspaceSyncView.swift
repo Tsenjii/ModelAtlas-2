@@ -111,7 +111,7 @@ struct WorkspaceSyncView: View {
                     if peer["enabled"].boolean && !peer["last_error"].string.isEmpty { Text("同步暫未完成，本機資料與待同步修改已保留。").foregroundStyle(.red) }
                     let transfer = current["transfer"]
                     if !peer["enabled"].boolean { AtlasLoadedMarker(name: "workspace-transfer-paused").frame(height: 0); Text("同步已暫停；傳輸進度與本機修改都已保留。").font(.caption).foregroundStyle(.secondary) }
-                    if transfer != .null { transferProgress(transfer) }
+                    if transfer != .null { transferProgress(transfer, paused: !peer["enabled"].boolean) }
                     HStack {
                         Button(peer["enabled"].boolean && transfer == .null ? "立即同步" : "恢復同步") { Task { await syncNow() } }.disabled(busy).background(AtlasLoadedMarker(name: "workspace-sync-now-target"))
                         if peer["enabled"].boolean { Button("暫停同步") { Task { await pauseSync() } }.disabled(pausing).background(AtlasLoadedMarker(name: "workspace-sync-pause-target")) }
@@ -181,15 +181,16 @@ struct WorkspaceSyncView: View {
                     }
                 }
     }
-    private func transferProgress(_ transfer: JSONValue) -> some View {
+    private func transferProgress(_ transfer: JSONValue, paused: Bool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(transferPhase(transfer)).font(.caption)
+            Text(transferPhase(transfer, paused: paused)).font(.caption)
             Text(transferBytes(transfer)).font(.caption).foregroundStyle(.secondary)
             AtlasLoadedMarker(name: "workspace-transfer-ready").frame(height: 0)
         }
     }
-    private func transferPhase(_ transfer: JSONValue) -> String {
+    private func transferPhase(_ transfer: JSONValue, paused: Bool) -> String {
         if transfer["consumed"].boolean { return "資料已儲存，等待確認同步收據" }
+        if paused { return "傳輸進度已保存，可恢復同步" }
         if transfer["state"].string == "DOWNLOADING" { return "正在接收同步結果" }
         return "正在上傳，可從已儲存的進度恢復"
     }

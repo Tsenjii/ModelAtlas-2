@@ -24,12 +24,25 @@ def prepare(run=adb, clock=time.monotonic, pause=time.sleep):
     growth = run("shell", "getprop", "dalvik.vm.heapgrowthlimit")
     if sdk != "29" or heap != "512m" or growth not in ("", "512m"):
         raise RuntimeError(f"Unexpected emulator VM configuration: sdk={sdk}, heap={heap}, growth={growth}")
-    before = run("shell", "pidof", "zygote64")
-    if not before.isdecimal():
-        raise RuntimeError("Expected one API 29 zygote64")
+    # adb root restarts adbd; wait-for-device alone does not establish that a
+    # single initial zygote is available. Share the original 90-second deadline
+    # with the framework restart; never retry instrumentation or change ART.
+    deadline = clock() + 90
+    observations = []
+    before = ""
+    while clock() < deadline:
+        try:
+            before = run("shell", "pidof", "zygote64")
+            observations.append(before[:128] or "missing")
+            if before.isdecimal():
+                break
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            observations.append("unavailable")
+        pause(1)
+    else:
+        raise TimeoutError("Expected one initial API 29 zygote64 within the shared 90-second deadline: " + repr(observations))
     run("shell", "stop")
     run("shell", "start")
-    deadline = clock() + 90
     while clock() < deadline:
         try:
             after = run("shell", "pidof", "zygote64")
@@ -40,6 +53,7 @@ def prepare(run=adb, clock=time.monotonic, pause=time.sleep):
                     raise RuntimeError("Emulator heap property changed during framework restart")
                 return {"sdk": sdk, "configured_heap": heap, "growth_limit": growth,
                         "zygote_before": before, "zygote_after": after,
+                        "initial_zygote_observations": observations,
                         "expected_runtime_max_heap_bytes": 512 * 1024 * 1024}
         except subprocess.CalledProcessError:
             pass  # Package manager can be absent while the framework starts.
@@ -68,9 +82,14 @@ if __name__ == "__main__":
     capture = sys.argv[1:] == ["--capture-runtime"]
     if sys.argv[1:] and not capture:
         raise ValueError("Unsupported emulator preflight argument")
-    result = json.dumps(capture_runtime() if capture else prepare(), sort_keys=True)
     name = "instrumentation-runtime" if capture else "emulator-preflight"
     output = Path(f"app/build/outputs/androidTest-results/{name}.json")
     output.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        result = json.dumps(capture_runtime() if capture else prepare(), sort_keys=True)
+    except Exception as error:
+        failure = output.with_name(name + "-failure.json")
+        failure.write_text(json.dumps({"result": "FAIL", "error": type(error).__name__, "message": str(error)}, sort_keys=True) + "\n")
+        raise
     output.write_text(result + "\n")
     print("MODELATLAS_" + name.upper().replace("-", "_") + " " + result)

@@ -38,7 +38,7 @@ async function loadWorkspaceSync(){
  const summary=$("workspace-peer-summary");summary.replaceChildren();if(peer){
   if(!peer.enabled)summary.append(el("p","同步已暫停；傳輸進度與本機修改都已保留。","section-description"));
   const transfer=value.transfer;
-  if(transfer){const phase=transfer.consumed?"資料已儲存，等待確認同步收據":transfer.state==="DOWNLOADING"?"正在接收同步結果":"正在上傳，可從已儲存的進度恢復";const download=transfer.reply_bytes>0?"接收 "+workspaceTransferBytes(transfer.downloaded_bytes)+" / "+workspaceTransferBytes(transfer.reply_bytes):"等待同步結果";const progress=el("p",phase+" · 上傳 "+workspaceTransferBytes(transfer.progress_bytes)+" / "+workspaceTransferBytes(transfer.request_bytes)+" · "+download,"section-description");progress.id="workspace-transfer-progress";summary.append(progress);}
+  if(transfer){const phase=transfer.consumed?"資料已儲存，等待確認同步收據":!peer.enabled?"傳輸進度已保存，可恢復同步":transfer.state==="DOWNLOADING"?"正在接收同步結果":"正在上傳，可從已儲存的進度恢復";const download=transfer.reply_bytes>0?"接收 "+workspaceTransferBytes(transfer.downloaded_bytes)+" / "+workspaceTransferBytes(transfer.reply_bytes):"等待同步結果";const progress=el("p",phase+" · 上傳 "+workspaceTransferBytes(transfer.progress_bytes)+" / "+workspaceTransferBytes(transfer.request_bytes)+" · "+download,"section-description");progress.id="workspace-transfer-progress";summary.append(progress);}
   summary.append(el("p",peer.url));summary.append(el("p",(peer.last_success?"上次成功："+new Date(peer.last_success).toLocaleString():"尚未完成第一次同步")+(peer.share_secrets?" · 已允許 Key 同步":" · Key 不同步"),"section-description"));
   if(peer.last_error&&peer.enabled)summary.append(el("p",workspaceSyncProblem({message:peer.last_error}),"error"));
   const peerActions=el("div",undefined,"actions");summary.append(peerActions);

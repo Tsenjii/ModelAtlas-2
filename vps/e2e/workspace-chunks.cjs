@@ -21,6 +21,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await page.waitForFunction(()=>!workspaceSyncRunning&&!workspaceSyncLoading);
   assert.equal((await state()).events,0);assert.equal((await state()).models,1);assert.equal((await state()).samples,0);
   await load();assert.equal(await page.evaluate(()=>workspaceSyncState.transfer.id),initial);assert.equal(await page.evaluate(()=>workspaceSyncState.transfer.progress_bytes),256*1024);
+  assert.match(await page.locator('#workspace-transfer-progress').textContent(),/傳輸進度已保存/);
+  assert.doesNotMatch(await page.locator('#workspace-transfer-progress').textContent(),/正在上傳|正在接收/);
   for(const width of [320,375])for(const theme of ['light','dark']){
    await page.setViewportSize({width,height:940});await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;document.documentElement.style.fontSize='200%';},theme);
    await page.locator('#workspace-transfer-progress').scrollIntoViewIfNeeded();await shot('paused-'+width+'-'+theme+'-large');

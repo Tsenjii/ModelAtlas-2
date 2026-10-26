@@ -80,6 +80,9 @@ jobs:
             macos/qa/**/parity-ui/*.png
             macos/qa/**/parity-ui/motion/*.png
             macos/qa/**/parity-ui/native-parity.json
+            macos/qa/**/parity-ui/workspace-transfer.diagnostics.json
+            macos/qa/**/parity-ui/workspace-transfer-failure.txt
+            macos/qa/**/parity-ui/measurement-pids.json
             macos/qa/**/parity-ui/FAILURE.txt
             macos/qa/**/parity-footprint.json
             macos/qa/**/parity-app.log

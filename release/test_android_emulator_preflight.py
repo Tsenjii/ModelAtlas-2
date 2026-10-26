@@ -48,6 +48,36 @@ class EmulatorPreflightTests(unittest.TestCase):
         ticks = iter((0, 0, 91))
         with self.assertRaises(TimeoutError): prepare(run, lambda: next(ticks), lambda _: None)
 
+    def test_initial_zygote_waits_for_unique_pid_then_restarts_only_once(self):
+        original, calls = self.fake()
+        initial = iter(("", "100 101", "100"))
+        now = [0]
+        def run(*args):
+            value = original(*args)
+            if args == ("shell", "pidof", "zygote64") and ("shell", "start") not in calls:
+                return next(initial)
+            return value
+        def pause(seconds): now[0] += seconds
+        result = prepare(run, lambda: now[0], pause)
+        self.assertEqual(["missing", "100 101", "100"], result["initial_zygote_observations"])
+        self.assertEqual("100", result["zygote_before"])
+        self.assertEqual("200", result["zygote_after"])
+        self.assertEqual(2, now[0])
+        self.assertEqual(1, calls.count(("shell", "stop")))
+        self.assertEqual(1, calls.count(("shell", "start")))
+        self.assertFalse(any("setprop" in call or "am" in call for call in calls))
+
+    def test_missing_initial_zygote_fails_without_restart_in_original_deadline(self):
+        original, calls = self.fake()
+        def run(*args):
+            value = original(*args)
+            return "" if args == ("shell", "pidof", "zygote64") else value
+        ticks = iter((0, 0, 91))
+        with self.assertRaisesRegex(TimeoutError, "shared 90-second"):
+            prepare(run, lambda: next(ticks), lambda _: None)
+        self.assertNotIn(("shell", "stop"), calls)
+        self.assertNotIn(("shell", "start"), calls)
+
     def logs(self, *, finish=True, end_heap=536870912, end_pid=123):
         records = [{"stage":"start", "pid":123, "max_heap_bytes":536870912, "expected_max_heap_bytes":536870912}]
         if finish: records.append({"stage":"finish", "pid":end_pid, "max_heap_bytes":end_heap, "expected_max_heap_bytes":536870912})

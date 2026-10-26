@@ -40,10 +40,11 @@ fun WorkspaceSyncSection(viewModel: AtlasViewModel) {
             if(state.pendingProjection>0) Text(stringResource(R.string.workspace_sync_compatibility,state.pendingProjection),style=MaterialTheme.typography.bodySmall)
             if(state.paused) Text(stringResource(R.string.workspace_sync_paused),style=MaterialTheme.typography.bodySmall)
             if(state.transferStage.isNotEmpty()) {
-                val phase=when(state.transferStage) {
-                    "BUILDING" -> R.string.workspace_sync_phase_prepare
-                    "DOWNLOADING" -> R.string.workspace_sync_phase_download
-                    "CONSUMED" -> R.string.workspace_sync_phase_confirm
+                val phase=when {
+                    state.transferStage=="CONSUMED" -> R.string.workspace_sync_phase_confirm
+                    state.paused -> R.string.workspace_sync_phase_paused
+                    state.transferStage=="BUILDING" -> R.string.workspace_sync_phase_prepare
+                    state.transferStage=="DOWNLOADING" -> R.string.workspace_sync_phase_download
                     else -> R.string.workspace_sync_phase_upload
                 }
                 Text(stringResource(phase),style=MaterialTheme.typography.bodySmall)

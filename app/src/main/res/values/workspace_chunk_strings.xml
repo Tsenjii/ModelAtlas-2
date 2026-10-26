@@ -4,8 +4,9 @@
     <string name="workspace_sync_paused">同步已暫停；本機資料與傳輸進度已保留。</string>
     <string name="workspace_sync_phase_prepare">正在準備加密傳輸資料</string>
     <string name="workspace_sync_phase_upload">正在上傳；中斷後可從已儲存的進度恢復。</string>
+    <string name="workspace_sync_phase_paused">傳輸進度已保存，可恢復同步。</string>
     <string name="workspace_sync_phase_download">正在接收並核對同步結果</string>
-    <string name="workspace_sync_phase_confirm">資料已儲存，正在確認同步收據。</string>
+    <string name="workspace_sync_phase_confirm">資料已儲存，等待確認同步收據。</string>
     <string name="workspace_sync_transfer_progress">上傳 %1$s / %2$s · 接收 %3$s / %4$s</string>
     <string name="workspace_sync_transfer_waiting">上傳 %1$s / %2$s · 等待同步結果</string>
     <string name="workspace_sync_reset_transfer">重新準備傳輸</string>

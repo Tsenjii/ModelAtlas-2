@@ -45,3 +45,6 @@ GET /workspace/conflict?preview=1為有界呈現；明確揭露長內容摘要�
 大字串改由WorkspaceBoundedJson固定緩衝輸出，逐段轉UTF-8，控制字元／引號／反斜線與跨邊界emoji由精確legacy bytes測試核對；record／exchange／reply的欄位順序與defaults完全保留。有界小數值沿用1.8.0的原序列化語意。原生CAS指紋另外保存數值literal與無效UTF-16差異，不把1e1／10.0或不同未配對surrogate當同一資料；SQLite指紋則對準實際保存的wire表示，避免暫存未落盤的原字面。大native SQL讀取以UTF-8 bytes／code point上界預留UTF-16容量，避免尾端emoji使近64MiB builder整倍擴充。
 
 新增核心配置量反例實際編碼接近64MiB的escaped String，逐執行緒量測額外配置須小於8MiB、每次UTF-8 write須不超8192 bytes；不是只數小fixture。原6個chunk與585舊核心案例保留，合計594。Mac原25 smoke／53 parity／14motion保留，另4個真傳輸實圖及狀態／Keychain重啟收據；新增中心與兩個前後peer程序全部納入RSS與退出檢查，原120秒上限不變。新來源預期407 Go／604事件、41 Browser／509PNG、594核心／423App／996device、兩Mac各85核心／96PNG；仍須同源九項／全部實際bytes與20視圖核對，不能因本機通過預稱交付。
+
+
+3691e4e的Android job121352711829在預檢讀初始zygote64時失敗，尚無任何instrumentation案例；不能把其當作記憶體修正通過或失敗。原錯誤缺少PID實值，只能記錄讀取不符合唯一PID及同時device unavailable。現在同一原90秒預檢deadline內等待唯一初始PID，再依原規格一次stop/start與新PID／package manager／512MiB設定；真ART start+finish仍必須驗證。兩個可控預檢反例在舊版失敗，修後41項回歸全過；原所有工作量／deadline／heap保持，不重跑裝置案例掩蓋失敗。精確證據見verification/20261025/workspace-chunks-emulator-preflight.json。
