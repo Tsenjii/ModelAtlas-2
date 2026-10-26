@@ -394,14 +394,15 @@ func TestConnectorPrivateMappingStorageFailureRetainsUnknownReservation(t *testi
 func TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood(t *testing.T) {
 	var body atomic.Value
 	body.Store(privateMappingGroupedFixture)
-	var calls, publicStatus atomic.Int32
+	var calls, catalogReads atomic.Int32
 	s, _ := connectorDiscoveryFixture(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/status" {
-			publicStatus.Add(1)
-			if r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
-				t.Error("ordinary public status probe received a private credential")
+		if r.URL.Path == "/v1/models" {
+			catalogReads.Add(1)
+			if r.Method != "GET" || r.Header.Get("Authorization") != "Bearer top-secret-example-key" || r.Header.Get("Cookie") != "" {
+				t.Error("formal catalog refresh used an unexpected authority")
 			}
-			http.NotFound(w, r)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte("{\"data\":[{\"id\":\"m\"},{\"id\":\"catalog-only\"}]}"))
 			return
 		}
 		if r.URL.Path != "/api/model-plan" {
@@ -453,20 +454,21 @@ func TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood(t *testing.T)
 	if calls.Load() != 7 {
 		t.Fatal("private drift triggered retries or additional keys", calls.Load())
 	}
-	if publicStatus.Load() != 5 {
-		t.Fatal("ordinary anonymous status probe count changed", publicStatus.Load())
+	if catalogReads.Load() != 5 {
+		t.Fatal("formal catalog refresh count changed", catalogReads.Load())
 	}
 }
 
 func TestConnectorPrivateMappingOtherKeyCannotBorrowRuntimeOrActiveSlot(t *testing.T) {
-	var calls, publicStatus atomic.Int32
+	var calls, catalogReads atomic.Int32
 	s, _ := connectorDiscoveryFixture(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/status" {
-			publicStatus.Add(1)
-			if r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
-				t.Error("ordinary public status probe received a private credential")
+		if r.URL.Path == "/v1/models" {
+			catalogReads.Add(1)
+			if r.Method != "GET" || r.Header.Get("Cookie") != "" || (r.Header.Get("Authorization") != "Bearer top-secret-example-key" && r.Header.Get("Authorization") != "Bearer fixture-private-key-two") {
+				t.Error("formal catalog refresh used an unexpected authority")
 			}
-			http.NotFound(w, r)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte("{\"data\":[{\"id\":\"m\"},{\"id\":\"catalog-only\"}]}"))
 			return
 		}
 		if r.URL.Path != "/api/model-plan" {
@@ -515,7 +517,7 @@ func TestConnectorPrivateMappingOtherKeyCannotBorrowRuntimeOrActiveSlot(t *testi
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM observations WHERE source=? AND status='SUCCESS'", "DECLARATIVE_PROVIDER_META:"+id)
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM observations WHERE source=? AND status='SUCCESS'", "DECLARATIVE_PROVIDER_META:"+secondID)
 	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM telemetry")
-	if publicStatus.Load() != 3 {
-		t.Fatal("ordinary anonymous status probe count changed", publicStatus.Load())
+	if catalogReads.Load() != 3 {
+		t.Fatal("formal catalog refresh count changed", catalogReads.Load())
 	}
 }

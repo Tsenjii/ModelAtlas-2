@@ -66,3 +66,5 @@ Mac同源Go引擎包含後端，但專用Mac／Android欄位對照流程尚未�
 這片原始真 TLS 缺口與原型觀察見 docs/verification/20261026/private-mapping-counterexample.json。候選新增實際 Key／PAT 端點、不同 group／Key、拒絕授權、scope／unit／group 漂移、資料保存失敗及重啟恢復；新增 Browser 實際操作與14相關圖。其完整回歸、同來源九項、九份實際ZIP與34視圖尚待驗，不能借015P綠燈或把模擬TLS當成任意真站相容證據。專用 Mac／Android mapping 仍未交付，完整下一版仍 PARTIAL，公開版本保持凍結。
 
 首候選87b3a5fb未接受：原604 Go結果不變，但兩個新測試把正式Intelligence的既有匿名狀態探測混入私人計量。fixture現明確拒絕該公開狀態路徑、不傳Key／Cookie，並分開驗證私人與公開次數，不刪正式探測、不改原私人讀取次數；新Browser預期8次私人GET＋3次匿名狀態探測＝11次實際HTTP。原41Browser中40通過，兩個UI harness失敗分別為未展開私人details及原source_path的廣泛selector歧義；只修正實際操作定位、保留原斷言／timeout。來源、原始錯誤與結果逐項見private-mapping-initial-candidate.json；新候選另驗自己的完整九項及實際產物。
+
+第二候選d0bf0d89的新Browser亦未接受；原41流程全PASS。前次把額外讀取稱為匿名狀態探測的分類不正確，現依adapters.go正式caller更正：Intelligence會先以目前所選Key取得/v1/models目錄，再讀已啟用私人規則。fixture分開驗真正目錄與私人路徑／authority，不停用原目錄功能；本新UI流程預期8次私人GET＋3次目錄GET＝11次實際HTTP，0推論，catalog-only不自動成會員。詳private-mapping-catalog-counterexample.json。額外聚焦診斷不取代原九項與全部完整套件。

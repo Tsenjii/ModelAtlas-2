@@ -1,0 +1,39 @@
+{
+  "slice": "PRIVATE-MAPPING-015Q",
+  "source": "d0bf0d89c082ca4ecc1a45d6eb90d2ee088e39d6",
+  "tree": "9f0ce5aadd5a19d889dcb2cca2ea910771af11d7",
+  "status": "NOT_ACCEPTED_NEW_BROWSER_FAILED",
+  "browser": {
+    "run": 40264555815,
+    "job": 121383965961,
+    "original_browser_passed": 41,
+    "new_browser_passed": 0,
+    "failures": [
+      {
+        "name": "TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo",
+        "source": "=== NAME  TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo\n2026-10-26T03:33:49.0819657Z     connector_private_mapping_browser_test.go:59: browser reached an unselected private path\n2026-10-26T03:33:49.3434657Z     connector_private_mapping_browser_test.go:86: private mapping Browser: exit status 1\n2026-10-26T03:33:49.3436521Z         AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n2026-10-26T03:33:49.3437457Z         \n2026-10-26T03:33:49.3438002Z         4 !== 3\n2026-10-26T03:33:49.3438444Z         \n2026-10-26T03:33:49.3439438Z             at /home/runner/work/ModelAtlas-2/ModelAtlas-2/vps/e2e/connector-private-mapping.cjs:33:74 {\n2026-10-26T03:33:49.3440279Z           generatedMessage: true,\n2026-10-26T03:33:49.3441261Z           code: 'ERR_ASSERTION',\n2026-10-26T03:33:49.3441752Z           actual: 4,\n2026-10-26T03:33:49.3442192Z           expected: 3,\n2026-10-26T03:33:49.3442717Z           operator: 'strictEqual',\n2026-10-26T03:33:49.3443232Z           diff: 'simple'\n2026-10-26T03:33:49.3443657Z         }\n2026-10-26T03:33:49.6159993Z --- FAIL: TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo (26.39s)\n2026-10-26T03:33:49.6160688Z === CONT  TestBrowserWorkspaceChunksResumePauseAndR"
+      }
+    ],
+    "artifact_metadata_from_log": {
+      "id": 12625613371,
+      "bytes": 40203839,
+      "digest": "sha256:f6905ec86e0622189091c0e80df76e0a3593d1f23bbd479040cac330f931ce72",
+      "uploaded_files": 521
+    },
+    "actual_archive_verified": false
+  },
+  "diagnosis": {
+    "previous_classification_corrected": "The previous assumption that the additional formal Intelligence read was an anonymous /api/status probe was incorrect. Production adapters.go enrich() explicitly calls discover() before the selected connector readers. Generic discover uses the selected inference credential for GET /v1/models. The Browser observed one additional request and the earlier fixture rejected that legitimate catalog path.",
+    "source_evidence": "vps/adapters.go: enrich -> discover -> configured generic adapter, then enrichConnectors; no production change to or suppression of catalog refresh.",
+    "fix": "The fixture now validates the exact GET /v1/models authority separately, returns a real model catalog, and separately meters selected private JSON reads. Every other path remains rejected. Original private reader counts stay unchanged. Catalog-only rows must never become My Models.",
+    "expected_formal_browser_http": {
+      "private": 8,
+      "catalog": 3,
+      "total": 11,
+      "inference": 0
+    },
+    "focused_diagnostic": "An additional focused TLS and Browser diagnostic job emits the new workflow's result earlier; all original nine jobs, full suites, workloads, assertions and timeouts remain."
+  },
+  "go_state": "The full Go job was still in progress when this Browser result was read; no success or failure is fabricated. A newer source will run its own full suite.",
+  "whole_next_release": "PARTIAL"
+}
