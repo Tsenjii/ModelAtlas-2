@@ -359,7 +359,7 @@ def main():
     from PIL import Image, ImageDraw, ImageOps
     contacts = out/"contacts"
     contacts.mkdir()
-    require(len(images) == 18, "all new/browser and native factory views required")
+    require(len(images) == 20, "all new/browser, factory and native transfer views required")
     report["visual_review_required"] = [name for name,_ in images]
     for offset in range(0,len(images),4):
         batch = images[offset:offset+4]
