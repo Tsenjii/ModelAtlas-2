@@ -134,5 +134,178 @@
       ],
       "corrected_scope": "PASS"
     }
+  },
+  "second_rejected_source": {
+    "source": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+    "tree": "4e4da19a6392396dc650cacc2eb4f00229fa572f",
+    "nine_required_jobs": {
+      ".github/workflows/vps.yml": [
+        {
+          "id": 121606574951,
+          "name": "vps-browser",
+          "conclusion": "success",
+          "run_id": 40332870062,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:01Z",
+          "completed_at": "2026-10-26T13:46:49Z"
+        },
+        {
+          "id": 121606574249,
+          "name": "vps-linux-amd64",
+          "conclusion": "success",
+          "run_id": 40332870062,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:01Z",
+          "completed_at": "2026-10-26T13:43:18Z"
+        },
+        {
+          "id": 121606574831,
+          "name": "vps-linux-arm64",
+          "conclusion": "success",
+          "run_id": 40332870062,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:00Z",
+          "completed_at": "2026-10-26T13:43:18Z"
+        },
+        {
+          "id": 121606574797,
+          "name": "vps-test",
+          "conclusion": "success",
+          "run_id": 40332870062,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:00Z",
+          "completed_at": "2026-10-26T13:50:52Z"
+        }
+      ],
+      ".github/workflows/android.yml": [
+        {
+          "id": 121606574071,
+          "name": "build",
+          "conclusion": "success",
+          "run_id": 40332870124,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:00Z",
+          "completed_at": "2026-10-26T13:46:30Z"
+        },
+        {
+          "id": 121606574663,
+          "name": "device-tests",
+          "conclusion": "success",
+          "run_id": 40332870124,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:00Z",
+          "completed_at": "2026-10-26T13:52:59Z"
+        }
+      ],
+      ".github/workflows/macos-native.yml": [
+        {
+          "id": 121606575690,
+          "name": "macos-build",
+          "conclusion": "success",
+          "run_id": 40332870699,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:02Z",
+          "completed_at": "2026-10-26T13:48:28Z"
+        },
+        {
+          "id": 121609985347,
+          "name": "macos-test (macos-15, arm64)",
+          "conclusion": "success",
+          "run_id": 40332870699,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:48:32Z",
+          "completed_at": "2026-10-26T13:54:20Z"
+        },
+        {
+          "id": 121609985234,
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "conclusion": "success",
+          "run_id": 40332870699,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:48:31Z",
+          "completed_at": "2026-10-26T13:56:57Z"
+        }
+      ]
+    },
+    "runs": {
+      "vps": 40332870062,
+      "android": 40332870124,
+      "mac": 40332870699
+    },
+    "audit_run": 40332869970,
+    "audit_job": 121606574227,
+    "audit_result": "FAIL",
+    "reason": "All preceding provenance, original workloads, Android, historical AA and both Mac core/native checks passed; a stale fixed Linux file count required 46 after the new public RESEARCH_COST.md made the real bundles contain 47. No source product or workload changes in the correction.",
+    "actual_failed_audit_artifact": {
+      "id": 12657251086,
+      "bytes": 54458,
+      "sha256": "7412b18c42c97cfe53b42e5b7c617f7ecc0cfb582e3973490891a1c5f6a28657",
+      "bytes_hash_crc": "PASS",
+      "visual_review": "NOT_COMPLETED"
+    },
+    "go_race_seconds": 397.977,
+    "go_case_events": 641,
+    "pass": 591,
+    "opt_in_skip": 50,
+    "footprint_peak_rss_bytes": 210882560,
+    "linux_preflight": {
+      "amd64": {
+        "files": 47,
+        "schema": 37,
+        "outer_hash": "46a621457a5ed42cee17db9e7993368e9b338f31b726668d53626975752c32a7"
+      },
+      "arm64": {
+        "files": 47,
+        "schema": 37,
+        "outer_hash": "45c2433dcf338990e9dae64e721c2c6b98b93a4a2c2f0b077aaafefb7d6549c6"
+      }
+    },
+    "actual_packaged_binary_preflight": {
+      "startup_seconds": 0.061163500000020576,
+      "first_members": 15,
+      "after_restart": 14,
+      "after_explicit_add": 14,
+      "empty": {
+        "telemetry": 0,
+        "sessions": 0,
+        "research_runs": 0
+      },
+      "secret_count": 0,
+      "install_ledgers": 1,
+      "parent_pipe_shutdown": "PASS"
+    },
+    "frozen_public_assets_checked": 11,
+    "main_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+    "main_jobs": [
+      {
+        "id": 119016886469,
+        "name": "build",
+        "conclusion": "success",
+        "run_id": 39536090788,
+        "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+        "started_at": "2026-10-21T02:59:47Z",
+        "completed_at": "2026-10-21T03:05:13Z"
+      },
+      {
+        "id": 119016884592,
+        "name": "device-tests",
+        "conclusion": "success",
+        "run_id": 39536090788,
+        "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+        "started_at": "2026-10-21T03:12:55Z",
+        "completed_at": "2026-10-21T03:21:59Z"
+      }
+    ],
+    "fix": "Require exact current public Markdown + nine fixed executable/deployment/metadata files, while pinning all 37 accepted original public documents. Same-count replacement and unsupported architectures are rejected.",
+    "release_regressions": 46,
+    "new_source_acceptance": "PENDING_OWN_NINE_JOBS_AND_ACTUAL_ARTIFACTS_54_VIEWS",
+    "actual_contact_tail_preflight": {
+      "views": 54,
+      "contact_sheets": 14,
+      "actual_sources": [
+        "25e3eba8bd414db8e2cb46a32e6de425110bb6a0"
+      ],
+      "note": "Preflight of unchanged tail only; new source still requires its own nine jobs/artifacts and visual acceptance."
+    }
   }
 }

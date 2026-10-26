@@ -7,6 +7,43 @@ import json
 import copy
 import audit_candidate as audit
 
+class CandidateLinuxInventoryTest(unittest.TestCase):
+    def config(self):
+        return json.loads((Path(__file__).parent/"candidate_audit_scope.json").read_text())
+
+    def test_public_documents_and_architecture_have_exact_inventory(self):
+        config = self.config()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in config["linux_baseline_documents"]:
+                (root/name).write_text("original public document\n")
+            original = audit.linux_inventory(root, "amd64", config)
+            self.assertEqual(len(original), 46)
+            (root/"RESEARCH_COST.md").write_text("new public document\n")
+            (root/"private.key").write_text("must not be packaged\n")
+            (root/"implementation.go").write_text("package main\n")
+            current = audit.linux_inventory(root, "amd64", config)
+            self.assertEqual(current-original, {"RESEARCH_COST.md"})
+            self.assertEqual(len(current), 47)
+            self.assertNotIn("private.key", current)
+            self.assertNotIn("implementation.go", current)
+            arm = audit.linux_inventory(root, "arm64", config)
+            self.assertEqual(current-arm, {"bin/modelatlas-vps-linux-amd64"})
+            self.assertEqual(arm-current, {"bin/modelatlas-vps-linux-arm64"})
+            with self.assertRaisesRegex(ValueError, "unsupported"):
+                audit.linux_inventory(root, "arm32", config)
+
+    def test_same_count_replacement_cannot_hide_a_missing_original_document(self):
+        config = self.config()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in config["linux_baseline_documents"]:
+                (root/name).write_text("original public document\n")
+            (root/"README.md").unlink()
+            (root/"replacement.md").write_text("same count is insufficient\n")
+            with self.assertRaisesRegex(ValueError, "original Linux document missing"):
+                audit.linux_inventory(root, "amd64", config)
+
 class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
     def config(self):
         return json.loads((Path(__file__).parent/"candidate_audit_scope.json").read_text())

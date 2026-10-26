@@ -1,3 +1,5 @@
+> 015S第二次稽核修正：25e3eba的九項功能job全SUCCESS，Go397.977s／原600s且原641結果完整；稽核已通過前段來源／工作量／Android／舊反例及兩Mac核心與原生證據，後段仍以固定46檔拒絕含新RESEARCH_COST.md的47檔Linux套件。本機重新下載兩種實際ZIP，核對bytes／SHA256／CRC、全部內外雜湊／架構／schema37，並實際啟動AMD64、移除模型後重啟／明確加入仍14筆、零推論／研究／秘密及父程序結束均成功。現核對精確完整清單，固定保留已驗收的37份原文件，加入同數量替換／架構反例；共46發布回歸成功。公開tag／11附件及main同來源build＋device亦重新核對。產品碼／原工作量／timeout不變；修後來源仍須自己的九項、實際九ZIP及54視圖，不借前次成功驗收。
+
 > 015S稽核修正：19427ea的九項功能job已全SUCCESS，但稽核把固定舊523圖／14私人視圖誤套為新527圖／18視圖，故未ACCEPTED。現獨立綁定舊反例圖數與原14清單；舊ZIP實際40443180bytes／SHA256／CRC／523PNG解碼已驗，確認新4張費用圖本來就不可能存在舊來源。新增兩個隔離回歸，發布驗證共44項，所有原嚴格檢查、測試／負載／timeout不減。產品Go／Swift／Kotlin／網頁碼與19427ea相同，新來源仍須自己的九項、九ZIP及54視圖；完整反例見docs/verification/20261026/research-cost-candidate.json。
 
 > 當前RESEARCH-COST-015S候選：原637 Go事件全部保留，再增加4個精確費用／scope／Unknown反例＝424入口／641事件（591pass／50原skip），原600秒／兩個212入口程序不變；原42 Browser／523圖全部保留，兩個原正式流程增加4張費用比較圖＝527PNG。原Android594核心／423App／996device、Mac每架構89核心／104圖與全部負載／timeout不減。實際九ZIP、54相關視圖及同源來源／hash／producer／公開凍結全驗才可接受。015R已驗基線見docs/verification/20261026/mac-research-baseline.json；以下為歷史。

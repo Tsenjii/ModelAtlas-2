@@ -41,6 +41,22 @@ def browser_image_scopes(config):
     # never be demanded from an archive produced before those views existed.
     return {"candidate": (509+len(current), set(current)), "rejected_aa": (523, set(frozen))}
 
+def linux_inventory(directory, arch, config):
+    require(arch in ("amd64", "arm64"), "unsupported Linux architecture")
+    baseline = config["linux_baseline_documents"]
+    require(isinstance(baseline, list) and len(baseline) == 37 and
+            all(isinstance(name, str) and Path(name).name == name and name.endswith(".md") for name in baseline) and
+            len(set(baseline)) == 37,
+            "invalid original Linux document inventory")
+    documents = {path.name for path in directory.glob("*.md") if path.is_file()}
+    require(set(baseline) <= documents, "original Linux document missing")
+    # package.sh includes each public top-level Markdown document. Require the
+    # exact current source inventory while retaining the accepted originals.
+    return documents | {"VERSION.json", "RELEASE.json", "SHA256SUMS.txt",
+                        "bin/modelatlas-vps-linux-"+arch, "deploy/install.sh",
+                        "deploy/update.sh", "deploy/manage.sh", "deploy/download.sh",
+                        "deploy/modelatlas-vps.service"}
+
 def xml_cases(archive):
     counts = dict(tests=0, failures=0, errors=0, skipped=0)
     cases = {}
@@ -379,8 +395,8 @@ def main():
                     require(raw.count((ROOT/"vps/defaults/kilo-anonymous.json").read_bytes()) >= 2, "Mac engine factory snapshot absent")
     for arch in ("amd64","arm64"):
         files, version = p.linux_bundle((package/("modelatlas-vps-linux-"+arch+".tar.gz")).read_bytes(), arch, sha, p.properties()["tag"])
-        require(version["schema"] == 37 and len(files) == 46 and {"FIELD_MAPPING.md","WORKSPACE_CHUNKS.md"} <= set(files), "Linux bundle scope mismatch")
-        report["linux_"+arch] = {"schema":37,"files":46,"version":version}
+        require(version["schema"] == 37 and set(files) == linux_inventory(ROOT/"vps", arch, config), "Linux bundle scope mismatch")
+        report["linux_"+arch] = {"schema":37,"files":len(files),"version":version}
     report["actual_binary"] = binary_smoke(package/"linux-check/bin/modelatlas-vps-linux-amd64", out)
     frozen = config["frozen"]
     release = api.get("/repos/"+p.REPOSITORY+"/releases/"+str(frozen["release_id"]))
