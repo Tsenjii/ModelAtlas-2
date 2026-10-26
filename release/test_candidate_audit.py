@@ -1,7 +1,24 @@
 import io
 import unittest
 import zipfile
+from pathlib import Path
+import tempfile
 import audit_candidate as audit
+
+class CandidateRegistryIntegrityTest(unittest.TestCase):
+    def test_new_research_files_cannot_disappear_from_the_audited_registry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cases = {
+                "connector_private_mapping_test.go": "TestConnectorPrivateMappingExisting",
+                "research_run_lookup_test.go": "TestResearchRunLookupKeepsExactOlderRecordAndScheduleScope",
+                "research_native_fixture_test.go": "TestResearchMacNativeFixture",
+            }
+            for file, name in cases.items():
+                (root/file).write_text("package main\nfunc "+name+"(t *testing.T) {}\n")
+            (root/"production.go").write_text("func TestNotARegisteredTest() {}\n")
+            (root/"main_test.go").write_text("func TestMain(m *testing.M) {}\n")
+            self.assertEqual(audit.go_test_functions(root), set(cases.values()))
 
 class CandidateXMLIntegrityTest(unittest.TestCase):
     def archive(self, body):

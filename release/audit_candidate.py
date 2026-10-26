@@ -23,6 +23,13 @@ import prepare as p
 ROOT = Path(__file__).resolve().parents[1]
 require = p.require
 
+def go_test_functions(directory):
+    functions = set()
+    for path in directory.glob("*_test.go"):
+        functions.update(re.findall(r"^func ((?:Test|Example|Fuzz)\w*)\(", path.read_text(), re.M))
+    functions.discard("TestMain")  # Go's package entry point is not a test case.
+    return functions
+
 def xml_cases(archive):
     counts = dict(tests=0, failures=0, errors=0, skipped=0)
     cases = {}
@@ -223,9 +230,7 @@ def main():
     baseline = json.loads((ROOT/"docs/verification/20261026/workspace-chunks-baseline.json").read_text())
     original_events = baseline["go_case_events"]
     require(len(original_events) == 604, "accepted Go baseline missing")
-    new_functions = set()
-    for path in (ROOT/"vps").glob("connector_private_mapping*test.go"):
-        new_functions.update(re.findall(r"^func (Test\w+)\(", path.read_text(), re.M))
+    new_functions = go_test_functions(ROOT/"vps") - {name for name in original_events if "/" not in name}
     require(len(new_functions) == 13 and new_functions == {name for name in config["go_new_events"] if "/" not in name}, "research test registry changed; review audit scope")
     expected_registry = {name for name in original_events if "/" not in name}|new_functions
     with archive("modelatlas-vps-footprint") as z:
