@@ -37,8 +37,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   // A run being terminal does not prove every AA task succeeded. Inspect the
   // committed tasks as well, so a stopped page reports its actual reason.
   const finished=await (await context.request.get(origin+'/api/v1/research/runs')).json();
-  assert.equal(finished.length,3);assert.deepEqual(finished.map(r=>r.used).sort((a,b)=>a-b),[2,2,3]);
+  assert.equal(finished.length,3,JSON.stringify(finished));
   for(const run of finished){const tasks=await (await context.request.get(origin+'/api/v1/research/tasks?run_id='+run.id)).json();assert.equal(tasks.length,1);const aa=tasks[0];assert.equal(aa.kind,'AA');assert.equal(aa.status,'SUCCESS',JSON.stringify(aa.result));assert.equal(aa.result.aa_progress.complete,true,JSON.stringify(aa.result));assert.equal(aa.result.aa_progress.completed_pages,2);}
+  assert.deepEqual(finished.map(r=>r.used).sort((a,b)=>a-b),[2,2,3],JSON.stringify(finished));
   assert.deepEqual(errors,[]);console.log('PASS: genuine AA TLS page 1 -> page 2 HTTP 429, atomic budgets, persisted partial progress and last-good, explicit budget resume, pause past deadline, page 2-only recovery, both production update buttons, 320/375/1280 light/dark and 200%, 8 screenshots.');
  }catch(error){await page.screenshot({path:'e2e/screenshots/research-aa-failure.png',fullPage:true}).catch(()=>{});throw error;}finally{await context.close();await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1)});

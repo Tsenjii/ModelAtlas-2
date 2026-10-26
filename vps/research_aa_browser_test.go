@@ -55,27 +55,33 @@ func TestBrowserAAResearchPageRecoveryWorkflow(t *testing.T) {
 	defer app.Close()
 	cmd := exec.Command("node", "e2e/research-aa.cjs", app.URL)
 	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token)
+	defer func() {
+		if !t.Failed() {
+			return
+		}
+		t.Logf("AA request counts at failure: first=%d second=%d", first.Load(), second.Load())
+		t.Logf("AA runs at failure: %s", req(t, s, "GET", "/api/v1/research/runs", nil).Body.String())
+		rows, e := s.Store.DB.Query("SELECT run_id,id,status,result_json FROM research_tasks ORDER BY rowid")
+		if e != nil {
+			t.Logf("AA task diagnostics unavailable: %v", e)
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var run, task, status, result string
+			if e := rows.Scan(&run, &task, &status, &result); e != nil {
+				t.Logf("AA task diagnostic read failed: %v", e)
+				break
+			}
+			t.Logf("AA task run=%s id=%s status=%s result=%s", run, task, status, result)
+		}
+	}()
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("AA page recovery browser: %v\n%s", err, out)
 	}
 	if first.Load() != 3 || second.Load() != 4 {
 		t.Logf("Browser output before AA request mismatch: %s", out)
-		t.Logf("AA runs at mismatch: %s", req(t, s, "GET", "/api/v1/research/runs", nil).Body.String())
-		rows, e := s.Store.DB.Query("SELECT run_id,id,status,result_json FROM research_tasks ORDER BY rowid")
-		if e != nil {
-			t.Logf("AA task diagnostics unavailable: %v", e)
-		} else {
-			defer rows.Close()
-			for rows.Next() {
-				var run, task, status, result string
-				if e := rows.Scan(&run, &task, &status, &result); e != nil {
-					t.Logf("AA task diagnostic read failed: %v", e)
-					break
-				}
-				t.Logf("AA task run=%s id=%s status=%s result=%s", run, task, status, result)
-			}
-		}
 		t.Fatalf("three explicit updates should send seven TLS requests with no repeated completed page: first=%d second=%d", first.Load(), second.Load())
 	}
 	assertSQLInt(t, s, 7, "SELECT used FROM integration_windows WHERE name='AA'")
