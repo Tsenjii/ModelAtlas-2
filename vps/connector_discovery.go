@@ -27,6 +27,9 @@ type connectorDiscoveryRequest struct {
 	ReferenceURLs []string  `json:"reference_urls,omitempty"`
 	Selection     Selection `json:"selection"`
 	SourcePath    string    `json:"source_path"`
+	CredentialRole string `json:"credential_role,omitempty"`
+	PATID string `json:"pat_credential_id,omitempty"`
+	ConfirmPrivate bool `json:"confirm_private,omitempty"`
 }
 type connectorDiscoverySource struct {
 	MappingSampleID string   `json:"mapping_sample_id,omitempty"`
@@ -56,6 +59,9 @@ type connectorDiscoveryReport struct {
 	Unknown        []string                   `json:"unknown_fields"`
 	Conflicts      []string                   `json:"conflicting_kinds"`
 	Limitations    []string                   `json:"limitations"`
+	CredentialRole string `json:"credential_role,omitempty"`
+	PATID string `json:"pat_credential_id,omitempty"`
+	PrivateConfirmed bool `json:"private_confirmed,omitempty"`
 }
 type connectorDiscoveryProof struct {
 	MappingSampleID   string         `json:"mapping_sample_id,omitempty"`
@@ -142,6 +148,10 @@ func (s *Server) listConnectorDiscoveries(w http.ResponseWriter, r *http.Request
 	jsonOK(w, 200, out)
 }
 func (s *Server) generateConnectorDrafts(parent context.Context, v connectorDiscoveryRequest, limit int) (connectorDiscoveryReport, bool, error) {
+	if v.CredentialRole != "" && v.CredentialRole != "NONE" || v.PATID != "" || v.ConfirmPrivate {
+		return s.generatePrivateConnectorSample(parent, v, limit)
+	}
+	v.CredentialRole = ""
 	var empty connectorDiscoveryReport
 	if v.SourcePath == "" {
 		v.SourcePath = "/"

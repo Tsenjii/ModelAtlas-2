@@ -119,6 +119,11 @@ func (s *Server) getStructured(ctx context.Context, p Provider, c ProviderConfig
 	if err != nil {
 		return nil, resp.StatusCode, err
 	}
+	if receipt, ok := ctx.Value(connectorSourceReceiptKey{}).(*connectorSourceReceipt); ok {
+		receipt.Hash = contentHash(b)
+		receipt.Bytes = len(b)
+		receipt.ContentType = resp.Header.Get("Content-Type")
+	}
 	secrets := []string{key}
 	for _, field := range p.AuthFields {
 		secrets = append(secrets, field.Secret)

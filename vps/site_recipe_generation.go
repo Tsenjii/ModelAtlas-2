@@ -143,7 +143,7 @@ func siteRecipeContextCurrent(ctx context.Context, q queryRows, p *siteRecipeDoc
 		return e
 	}
 	var report connectorDiscoveryReport
-	if json.Unmarshal([]byte(raw), &report) != nil || connectorHash(report) != p.SourceReportHash || report.Status != "DRAFTS_READY" || connectorHash(report.Selection) != connectorHash(p.Definition.Selection) {
+	if json.Unmarshal([]byte(raw), &report) != nil || report.CredentialRole != "" || connectorHash(report) != p.SourceReportHash || report.Status != "DRAFTS_READY" || connectorHash(report.Selection) != connectorHash(p.Definition.Selection) {
 		return errSiteRecipeReview
 	}
 	return nil

@@ -380,7 +380,7 @@ func (s *Server) testConnector(w http.ResponseWriter, r *http.Request) {
 	ctx, stop := context.WithTimeout(r.Context(), 20*time.Second)
 	defer stop()
 	publicHTTP := 0
-	if cfg.Role == "NONE" && cfg.Parser == "declarative-get-v2" {
+	if cfg.Parser == "declarative-get-v2" {
 		ctx = context.WithValue(ctx, connectorDiscoveryMeterKey{}, &publicHTTP)
 	}
 	hash, e := connectorContext(ctx, s.Store.DB, cfg, v.Selection)
@@ -436,7 +436,7 @@ func (s *Server) testConnector(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	var measuredHTTP *int
-	if cfg.Role == "NONE" && cfg.Parser == "declarative-get-v2" {
+	if cfg.Parser == "declarative-get-v2" {
 		measuredHTTP = &publicHTTP
 	}
 	result := safeAssistantData(map[string]any{"selection": v.Selection, "context_hash": hash, "config_hash": connectorHash(cfg), "facts": facts, "reason": reason, "http_method": "GET", "http_requests": measuredHTTP, "total_monetary_cost": nil, "inference_requests": 0}, secrets)
@@ -542,6 +542,9 @@ func (s *Server) enrichConnectors(ctx context.Context, v Selection) map[string]s
 		if e == nil {
 			e = validateSiteRecipeConnectorUse(ctx, s.Store.DB, id, v)
 		}
+		if e == nil {
+			e = validatePrivateMappingUse(ctx, s.Store.DB, id, c, v)
+		}
 		var rows []any
 		if e == nil {
 			if batch != nil && batch.handles(id, c) {
@@ -553,6 +556,9 @@ func (s *Server) enrichConnectors(ctx context.Context, v Selection) map[string]s
 		var facts map[string]any
 		if e == nil {
 			facts, e = extractConnector(c, v, rows)
+		}
+		if e == nil {
+			e = validatePrivateMappingUse(ctx, s.Store.DB, id, c, v)
 		}
 		status := "SUCCESS"
 		if e != nil {

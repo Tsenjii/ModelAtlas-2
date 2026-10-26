@@ -1,17 +1,17 @@
 {
   "schema": 1,
-  "slice": "WORKSPACE-CHUNKS-015P",
+  "slice": "PRIVATE-MAPPING-015Q",
   "browser_baseline": {
-    "id": 12602544338,
-    "bytes": 38703232,
-    "digest": "sha256:6e3ab3e4fcc6ddb3b715b3af67565f5385f6e425b3c6ef15daf6ee482e0944e7",
-    "source": "66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2"
+    "id": 12622386762,
+    "bytes": 39268692,
+    "digest": "sha256:bd120872a74abd10a4e647ab8d1728b4933ce935af915fce7717b352bd3f41dc",
+    "source": "bc4a735e9144564c5d78433b196038d2452c8def"
   },
   "device_inventory": {
-    "id": 12602799262,
-    "bytes": 1258380,
-    "digest": "sha256:6aacd1a8e866da5767ff5f034f98f317b28cce8d4c2d8ab70cf44c62ddf46758",
-    "source": "66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2"
+    "id": 12622946178,
+    "bytes": 1275121,
+    "digest": "sha256:e2408da4f7d76da19c0f6ce8803dda8975297c6e2bbc2cb0ab02c02d2b1351a7",
+    "source": "bc4a735e9144564c5d78433b196038d2452c8def"
   },
   "rejected_device": {
     "id": 12602362373,
@@ -92,9 +92,58 @@
     ]
   },
   "core_inventory": {
-    "id": 12602768642,
-    "bytes": 17249184,
-    "digest": "sha256:3ea2aae5bc43426b35d17ce2c24c11e3efcaeb83377451b7560f9d9b65385371",
-    "source": "66ec4eb7af3278f49a99a50e1fcc165c3a89c1d2"
-  }
+    "id": 12621969324,
+    "bytes": 17349387,
+    "digest": "sha256:3af8c5117ae7cf563084d2ea542dc20379653c60faf7690dc18dca61357f54d9",
+    "source": "bc4a735e9144564c5d78433b196038d2452c8def"
+  },
+  "go_new_events": {
+    "TestConnectorPrivateMappingExplicitReadKeepsPublicAnonymousAndSecretsOut": "pass",
+    "TestConnectorPrivateMappingKeyGroupReviewRealUseAndUndo": "pass",
+    "TestConnectorPrivateMappingPATKeepsAccountAuthorityAndExactCredits": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP": "pass",
+    "TestConnectorPrivateMappingAssistantCannotAuthorizeItsOwnRead": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys": "pass",
+    "TestConnectorPrivateMappingLateRotationAndDurableReplayKeepNoSample": "pass",
+    "TestConnectorPrivateMappingStorageFailureRetainsUnknownReservation": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood": "pass",
+    "TestConnectorPrivateMappingOtherKeyCannotBorrowRuntimeOrActiveSlot": "pass",
+    "TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo": "skip",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/unconfirmed": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/role": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/inference-pat": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/missing-pat": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/inference-as-pat": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/root": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/action": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/references": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/secret-path": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/not-member": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/auth": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/forbidden": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/redirect": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/malformed": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/oversize": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/trailing": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/scope": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/unit": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/group": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/duplicate": "pass"
+  },
+  "new_browser_images": [
+    "connector-private-mapping-source-375-light.png",
+    "connector-private-mapping-group-375-light.png",
+    "connector-private-mapping-fields-320-dark.png",
+    "connector-private-mapping-fields-375-large-dark.png",
+    "connector-private-mapping-draft-320-light.png",
+    "connector-private-mapping-draft-320-dark.png",
+    "connector-private-mapping-draft-375-light.png",
+    "connector-private-mapping-draft-375-dark.png",
+    "connector-private-mapping-draft-1280-light.png",
+    "connector-private-mapping-draft-1280-dark.png",
+    "connector-private-mapping-runtime-last-good-1280-dark.png",
+    "connector-private-mapping-pat-account-375-light.png",
+    "connector-private-mapping-pat-draft-1280-dark.png",
+    "connector-private-mapping-pat-undo-375-dark.png"
+  ]
 }

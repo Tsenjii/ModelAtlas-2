@@ -49,3 +49,18 @@ Mac同源Go引擎包含後端，但專用Mac／Android欄位對照流程尚未�
 真Browser另以正式API移除會員，使原樣本確實409，33.60s確認已提交卻丟回應的草稿沒有恢復入口。現先提供原ID原內容的只讀結果恢復，再讀目前樣本；來源不可用隱藏空表單，仍可GET找回相同version，不重POST或新增ID。其他來源有待確認請求時明確導回原來源。會員明確重新加入後才接續原fixture／真HTTP／啟用／正式Intelligence／last-good／持久Undo，原精確5次來源GET、2次mapping POST（含原拒絕）、1版／1模型／0telemetry保留。隱藏表單後harness原role預設不含hidden，isDisabled等待33.28s；改includeHidden:true保留同一disabled斷言並加空表單不可見斷言，沒有重試或延長timeout。最終聚焦race5.37s，含原辨識兩Browser7.946s及原辨識／十項mapping後端35.733s成功；501圖保留，更新的恢復實圖已檢視。修後新來源仍須自己的完整九項／全部實際產物，不借任何失敗候選的八項綠燈，完整下一版仍PARTIAL。
 
 最新3ef96c39未接受：新立即啟用反例通過，但原PendingConnectionHandoffTest的停用eviction反例抓到active pending不應被復用於管理交接。現新增只供管理的暫存，恢復原pending AND與停用移除，管理暫存不進active／send／選取；management真投影接手即退休。原984案例及原PendingConnectionHandoffTest不變；新增第985例保留所有UI／Room／vault檢查，只將交接map輔助檢查改為管理專用，並追加管理交接不冒充active投影。八項成功不足接受，自己的新來源九項／九份實際ZIP／18實圖仍待驗。工作環境中斷後以release/CANDIDATE_AUDIT.md所列只讀CI稽核接續，不減負載／timeout、不發布或部署，完整下一版仍PARTIAL。
+
+
+## PRIVATE-MAPPING-015Q：明確授權的私人 JSON（候選）
+
+預設公開辨識仍不帶憑證。Models → 研究知識 → 辨識站點資料，展開「私人 JSON（明確授權）」後選擇目前連線的 Key，或此帳戶已保存、已啟用且同一 origin 的 PAT；填寫明確唯讀 Path，確認後只讀一次 JSON。修改連線、Path、角色或 PAT 會清除確認，不自動試另一把 Key 或 PAT，不讀登入頁、動作端點、程式碼參照或其他網址。已知匿名連線無私人 Key 時明確拒絕。
+
+從保存紀錄選「對照私人資料欄位」。Key 資料必須明確選模型識別與群組識別欄位，僅顯示所選 model／group 的唯一資料列；帳戶 PAT 僅接受整份帳戶物件，不將任意模型清單當成帳戶餘額。範圍字串必須由樣本明示為 MODEL_KEY_GROUP 或 ACCOUNT，數值單位亦須明示，仍限一至四欄、每組最多四項固定檢查；缺少／重複／不支援時保持未知，不推斷 credits 為 USD 或宣稱所有私人 API 均相容。原進階規則保留。
+
+取得最多1MiB，完整清理後樣本最多256KiB、不截斷。保存原始回應 SHA256 與清理後樣本 SHA256，原始秘密內容不保存；既有 Key／PAT role、明確 PAT ID、material version、origin、完整 selection 與原 report 綁定。欄位對照與建立草稿新增0 HTTP／0推論；每個私人範圍有獨立版本名稱，避免另一把 Key 的草稿覆蓋已啟用版本。
+
+仍需不可變 fixture、真 HTTP 實測與明確確認啟用。正式 Intelligence 在讀取前後重新核對來源樣本、規則與私人 authority；其他 Key／帳戶／group 不能借用已核准的私人 reader。真測試記錄實際 HTTP、0推論與未知貨幣成本，不能把未知費用寫成免費。來源聲明與使用者欄位解讀分開，不冒充公開或獨立驗證。失敗不抹 last-good／會員資格；沿用共用持久 Undo。
+
+同一 request ID 保存唯讀來源結果；相同請求重讀不再連線。若已取得來源但最終資料交易失敗，保留 RUNNING／未知計量的原 reservation，不顯示未提交 sample ID、不自動重送。Assistant 的 discover_connectors 不接受自行填入的私人授權，必須由本機介面明確選取。
+
+這片原始真 TLS 缺口與原型觀察見 docs/verification/20261026/private-mapping-counterexample.json。候選新增實際 Key／PAT 端點、不同 group／Key、拒絕授權、scope／unit／group 漂移、資料保存失敗及重啟恢復；新增 Browser 實際操作與14相關圖。其完整回歸、同來源九項、九份實際ZIP與34視圖尚待驗，不能借015P綠燈或把模擬TLS當成任意真站相容證據。專用 Mac／Android mapping 仍未交付，完整下一版仍 PARTIAL，公開版本保持凍結。

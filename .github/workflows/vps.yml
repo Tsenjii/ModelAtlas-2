@@ -40,6 +40,25 @@ jobs:
           cache: false
       - name: Resolve pinned SQLite dependency
         run: go mod download
+      - name: Read-only Go formatting and browser syntax diagnostics
+        run: |
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          for path in sorted(pathlib.Path(".").glob("*.go")):
+              actual = path.read_text()
+              result = subprocess.run(["gofmt", str(path)], text=True, capture_output=True, check=True).stdout
+              if actual != result:
+                  print("MODELATLAS_GOFMT " + json.dumps({"path":"vps/"+str(path), "source":result}, ensure_ascii=False), flush=True)
+          for name in ("ui_js_connector_discovery.go", "ui_js_connector_mapping.go"):
+              source = pathlib.Path(name).read_text()
+              for index, script in enumerate(source.split(chr(96))[1::2]):
+                  if "function " not in script:
+                      continue
+                  subprocess.run(["node", "--check", "-"], input=script, text=True, check=True)
+          subprocess.run(["node", "--check", "e2e/connector-private-mapping.cjs"], check=True)
+          PY
       - name: Unit and HTTP integration tests
         run: |
           python3 -m unittest test_go_runner_test.py

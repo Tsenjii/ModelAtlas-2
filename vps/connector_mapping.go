@@ -20,6 +20,7 @@ var errMappingReview = errors.New("saved source, exact model scope and current f
 
 type connectorMappingSample struct {
 	ID, DiscoveryID, ReportHash, ContextHash, SourceURL, SourceHash, Path string
+	BindingContext string // Live authority context; never accepted from a request.
 	Root                                                                  any
 	At                                                                    int64
 }
@@ -42,6 +43,9 @@ type mappingView struct {
 	Containers []mappingContainer `json:"containers"`
 	RootFields []mappingField     `json:"source_fields"`
 	Fields     []mappingField     `json:"row_fields"`
+	CredentialRole string `json:"credential_role,omitempty"`
+	ScopeKind string `json:"scope_kind,omitempty"`
+	GroupFields []mappingField `json:"group_fields,omitempty"`
 }
 type mappingLocation struct {
 	Path   string `json:"path"`
@@ -53,6 +57,7 @@ type connectorMappingRequest struct {
 	Kind      string                     `json:"kind"`
 	Root      string                     `json:"root_pointer"`
 	ModelPath string                     `json:"model_path"`
+	GroupPath string `json:"group_path,omitempty"`
 	Scope     mappingLocation            `json:"scope_field"`
 	Fields    map[string]string          `json:"fields"`
 	Units     map[string]mappingLocation `json:"units"`
@@ -172,7 +177,7 @@ func readMappingSampleCurrent(ctx context.Context, q queryRows, id string, fresh
 			matched = true
 		}
 	}
-	h, e := connectorContext(ctx, q, ConnectorConfig{Role: "NONE"}, report.Selection)
+	h, e := connectorSampleContext(ctx, q, report)
 	if e != nil {
 		return v, report, e
 	}
@@ -180,8 +185,20 @@ func readMappingSampleCurrent(ctx context.Context, q queryRows, id string, fresh
 	if e != nil {
 		return v, report, e
 	}
-	if !matched || h != v.ContextHash || !connectorDiscoveryPath(v.Path) || originPath(p, v.Path) != v.SourceURL {
+	validPath := connectorDiscoveryPath(v.Path)
+	if report.CredentialRole != "" {
+		validPath = connectorPrivatePath(v.Path, report.CredentialRole)
+	}
+	if !matched || h != v.ContextHash || !validPath || originPath(p, v.Path) != v.SourceURL {
 		return v, report, errMappingReview
+	}
+	bind, e := connectorSampleBinding(report)
+	if e != nil {
+		return v, report, e
+	}
+	v.BindingContext, e = connectorContext(ctx, q, bind, report.Selection)
+	if e != nil {
+		return v, report, e
 	}
 	return v, report, nil
 }
@@ -323,8 +340,22 @@ func (s *Server) getMappingSample(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := mappingView{ID: v.ID, Selection: report.Selection, SourceURL: v.SourceURL, SourceHash: v.SourceHash, SampleHash: connectorHash(v.Root), At: v.At, Containers: mappingContainers(v.Root, report.Selection.ModelID), RootFields: mappingFields(v.Root, true), Fields: []mappingField{}}
+	if report.CredentialRole != "" {
+		out.CredentialRole = report.CredentialRole
+		out.ScopeKind = privateMappingScope(report.CredentialRole)
+		if out.ScopeKind == "ACCOUNT" {
+			out.Containers = []mappingContainer{{Root: "", ModelPaths: []string{}}}
+		}
+	}
 	if r.URL.Query().Has("root_pointer") {
-		_, row, e := mappingRows(v.Root, r.URL.Query().Get("root_pointer"), r.URL.Query().Get("model_path"), report.Selection.ModelID)
+		if report.CredentialRole == "INFERENCE" {
+			out.GroupFields = privateMappingGroupFields(v.Root, r.URL.Query().Get("root_pointer"), r.URL.Query().Get("model_path"), report.Selection)
+			if r.URL.Query().Get("group_path") == "" {
+				jsonOK(w, 200, out)
+				return
+			}
+		}
+		_, row, e := mappingReviewRows(v.Root, r.URL.Query().Get("root_pointer"), r.URL.Query().Get("model_path"), r.URL.Query().Get("group_path"), report)
 		if e != nil {
 			mappingProblem(w, e)
 			return
@@ -336,6 +367,26 @@ func (s *Server) getMappingSample(w http.ResponseWriter, r *http.Request) {
 func mappingConfig(v connectorMappingRequest, sample connectorMappingSample, report connectorDiscoveryReport) (ConnectorConfig, connectorFixture, error) {
 	c := ConnectorConfig{Kind: v.Kind, Path: sample.Path, Role: "NONE", Scope: "MODEL_PROVIDER", Root: v.Root, Fields: map[string]string{"model_id": v.ModelPath}, Unit: "NONE", Parser: "declarative-get-v2", Freshness: 86400, FieldUnits: map[string]string{}, Checks: map[string]string{}, RootChecks: map[string]string{}, Origin: report.BaseURL}
 	var fixture connectorFixture
+	if report.CredentialRole != "" {
+		bind, e := connectorSampleBinding(report)
+		if e != nil {
+			return c, fixture, e
+		}
+		c.Role, c.PATID, c.Scope = bind.Role, bind.PATID, privateMappingScope(bind.Role)
+		if c.Scope == "MODEL_KEY_GROUP" {
+			if v.GroupPath == "" {
+				return c, fixture, errMappingReview
+			}
+			c.Fields["group"] = v.GroupPath
+		} else {
+			if v.ModelPath != "" || v.GroupPath != "" || !oneOf(v.Kind, "QUOTA", "BALANCE", "USAGE", "NOTICE") {
+				return c, fixture, errMappingReview
+			}
+			c.Fields = map[string]string{}
+		}
+	} else if v.GroupPath != "" {
+		return c, fixture, errMappingReview
+	}
 	if !oneOf(v.Kind, "PRICING", "QUOTA", "PERFORMANCE", "USAGE", "BALANCE", "NOTICE") || len(v.Fields) < 1 || len(v.Fields) > 4 || len(v.Units) > len(v.Fields) {
 		return c, fixture, errMappingReview
 	}
@@ -344,7 +395,7 @@ func mappingConfig(v connectorMappingRequest, sample connectorMappingSample, rep
 			return c, fixture, errMappingReview
 		}
 	}
-	rows, row, e := mappingRows(sample.Root, v.Root, v.ModelPath, report.Selection.ModelID)
+	rows, row, e := mappingReviewRows(sample.Root, v.Root, v.ModelPath, v.GroupPath, report)
 	if e != nil {
 		return c, fixture, e
 	}
@@ -367,7 +418,7 @@ func mappingConfig(v connectorMappingRequest, sample connectorMappingSample, rep
 		checks[loc.Path] = want
 		return true
 	}
-	if !check(v.Scope, "MODEL_PROVIDER") {
+	if !check(v.Scope, c.Scope) {
 		return c, fixture, errMappingReview
 	}
 	for name, path := range v.Fields {
@@ -417,7 +468,14 @@ func mappingConfig(v connectorMappingRequest, sample connectorMappingSample, rep
 	if e != nil {
 		return c, fixture, e
 	}
-	fixture = connectorFixture{ConfigHash: connectorHash(c), ContextHash: sample.ContextHash, Selection: report.Selection, Rows: []any{connectorFixtureRow(row, c)}, Expected: facts, RootValues: c.RootChecks}
+	contextHash := sample.ContextHash
+	if report.CredentialRole != "" {
+		contextHash = sample.BindingContext
+		if contextHash == "" {
+			return c, fixture, errMappingReview
+		}
+	}
+	fixture = connectorFixture{ConfigHash: connectorHash(c), ContextHash: contextHash, Selection: report.Selection, Rows: []any{connectorFixtureRow(row, c)}, Expected: facts, RootValues: c.RootChecks}
 	replay, e := extractConnector(c, report.Selection, fixture.Rows)
 	if e != nil || connectorHash(replay) != connectorHash(facts) {
 		return c, fixture, errMappingReview
@@ -495,14 +553,26 @@ func (s *Server) proposeMappedConnector(w http.ResponseWriter, r *http.Request) 
 	versionID = newID()
 	derivedID := newID()
 	name := "mapped-" + strings.ToLower(v.Kind) + "-" + contentHash([]byte(cfg.Path + "|" + cfg.Root))[:12]
+	if report.CredentialRole != "" {
+		name += "-" + connectorHash(map[string]any{"role": cfg.Role, "pat_id": cfg.PATID, "selection": report.Selection})[:12]
+	}
 	var version int
 	if e = tx.QueryRowContext(r.Context(), "SELECT COALESCE(MAX(version),0)+1 FROM connector_versions WHERE provider_id=? AND name=?", report.Selection.ProviderID, name).Scan(&version); e != nil {
 		mappingProblem(w, e)
 		return
 	}
-	proof := connectorDiscoveryProof{ReportID: derivedID, SourceURL: sample.SourceURL, SourceHash: sample.SourceHash, ObservedAt: sample.At, Selection: report.Selection, Family: report.Family, Version: report.Version, FixtureStatus: "PASSED", Expected: fixture.Expected, Limitations: append(append([]string{}, report.Limitations...), "User-reviewed field semantics over a saved public sample; no independent verification or new HTTP during generation."), MappingSampleID: sample.ID, MappingSampleHash: connectorHash(sample.Root), MappingParentID: sample.DiscoveryID}
+	sampleReview := "User-reviewed field semantics over a saved public sample; no independent verification or new HTTP during generation."
+	if report.CredentialRole != "" {
+		sampleReview = "User-reviewed private metadata for the selected authority/scope only; no public/provider-wide claim, independent verification or new HTTP during generation."
+	}
+	proof := connectorDiscoveryProof{ReportID: derivedID, SourceURL: sample.SourceURL, SourceHash: sample.SourceHash, ObservedAt: sample.At, Selection: report.Selection, Family: report.Family, Version: report.Version, FixtureStatus: "PASSED", Expected: fixture.Expected, Limitations: append(append([]string{}, report.Limitations...), sampleReview), MappingSampleID: sample.ID, MappingSampleHash: connectorHash(sample.Root), MappingParentID: sample.DiscoveryID}
 	zero := 0
 	derived := connectorDiscoveryReport{ID: derivedID, Selection: report.Selection, SourcePath: sample.Path, BaseURL: report.BaseURL, Status: "DRAFTS_READY", Family: report.Family, Version: report.Version, ObservedAt: sample.At, FinishedAt: now(), HTTPRequests: &zero, RequestLimit: 0, Sources: []connectorDiscoverySource{{URL: sample.SourceURL, Status: "INSPECTED", Hash: sample.SourceHash, DraftIDs: []string{versionID}}}, DraftIDs: []string{versionID}, Unknown: report.Unknown, Conflicts: []string{}, Limitations: proof.Limitations, FamilyEvidence: report.FamilyEvidence}
+	derived.CredentialRole, derived.PATID, derived.PrivateConfirmed = report.CredentialRole, report.PATID, report.PrivateConfirmed
+	reason := "Explicit field mapping from saved public evidence; fixture passed, real HTTP test and confirmation still required."
+	if report.CredentialRole != "" {
+		reason = "Explicit private field mapping bound to the selected authority and scope; fixture passed, real HTTP test and confirmation still required."
+	}
 	configRaw, _ := json.Marshal(cfg)
 	proofRaw, _ := json.Marshal(proof)
 	fixtureRaw, _ := json.Marshal(fixture)
@@ -510,7 +580,7 @@ func (s *Server) proposeMappedConnector(w http.ResponseWriter, r *http.Request) 
 	evidenceRaw, _ := json.Marshal([]string{sample.DiscoveryID + ":" + sample.SourceHash})
 	_, e = tx.ExecContext(r.Context(), "INSERT INTO connector_discoveries VALUES(?,?,?,?,?)", derivedID, requestHash, report.Selection.ProviderID, string(reportRaw), sample.At)
 	if e == nil {
-		_, e = tx.ExecContext(r.Context(), "INSERT INTO connector_versions(id,provider_id,name,version,config_json,evidence_json,reason,created_at) VALUES(?,?,?,?,?,?,?,?)", versionID, report.Selection.ProviderID, name, version, string(configRaw), string(evidenceRaw), "Explicit field mapping from saved public evidence; fixture passed, real HTTP test and confirmation still required.", now())
+		_, e = tx.ExecContext(r.Context(), "INSERT INTO connector_versions(id,provider_id,name,version,config_json,evidence_json,reason,created_at) VALUES(?,?,?,?,?,?,?,?)", versionID, report.Selection.ProviderID, name, version, string(configRaw), string(evidenceRaw), reason, now())
 	}
 	if e == nil {
 		_, e = tx.ExecContext(r.Context(), "INSERT INTO connector_generated_versions VALUES(?,?,?,?)", versionID, derivedID, string(proofRaw), string(fixtureRaw))

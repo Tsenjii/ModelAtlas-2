@@ -97,6 +97,9 @@ func (s *Server) assistantTool(ctx context.Context, run string, call ToolCall, b
 		if e := strictArguments(call.Function.Arguments, &v); e != nil {
 			return nil, e
 		}
+		if v.CredentialRole != "" && v.CredentialRole != "NONE" || v.PATID != "" || v.ConfirmPrivate {
+			return nil, errors.New("private source reads require explicit confirmation in the local research interface")
+		}
 		if budget.web >= 4 {
 			return nil, errors.New("web tool budget exhausted")
 		}

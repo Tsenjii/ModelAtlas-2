@@ -128,7 +128,11 @@ func validateConnectorFixtureQuery(ctx context.Context, q queryRows, id string, 
 		if e != nil {
 			return e
 		}
-		if sample.DiscoveryID != proof.MappingParentID || connectorHash(sample.Root) != proof.MappingSampleHash || sample.SourceURL != proof.SourceURL || sample.SourceHash != proof.SourceHash || connectorHash(report.Selection) != connectorHash(v) || sample.ContextHash != hash {
+		if sample.DiscoveryID != proof.MappingParentID || connectorHash(sample.Root) != proof.MappingSampleHash || sample.SourceURL != proof.SourceURL || sample.SourceHash != proof.SourceHash || connectorHash(report.Selection) != connectorHash(v) || sample.BindingContext != hash {
+			return errMappingReview
+		}
+		bind, e := connectorSampleBinding(report)
+		if e != nil || bind.Role != c.Role || bind.PATID != c.PATID {
 			return errMappingReview
 		}
 	}

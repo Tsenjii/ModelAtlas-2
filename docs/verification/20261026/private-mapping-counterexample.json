@@ -1,0 +1,35 @@
+{
+  "slice": "PRIVATE-MAPPING-015Q",
+  "status": "COUNTEREXAMPLE_CAPTURED_RECONSTRUCTED_CANDIDATE_UNVERIFIED",
+  "base_source": "47fc98d6ef29cb13ae64b9e734271d03c5bea310",
+  "whole_next_release": "PARTIAL",
+  "counterexample": {
+    "kind": "real httptest.NewTLSServer and production local HTTP API",
+    "test": "TestConnectorPrivateMappingExplicitReadKeepsPublicAnonymousAndSecretsOut",
+    "source_behavior": "Public anonymous control sent one unauthenticated GET, retained AUTH_REQUIRED after 401, and did not try a credential. The explicitly confirmed private request was rejected by the existing strict request decoder.",
+    "trace": "--- FAIL: TestConnectorPrivateMappingExplicitReadKeepsPublicAnonymousAndSecretsOut (1.90s)\nconnector_private_mapping_test.go:45: expected 201 got 400: invalid JSON\nFAIL github.com/Tsenjii/ModelAtlas-2/vps 1.935s",
+    "original_temporary_test_sha256": null,
+    "limitation": "The interactive environment went offline before the uncommitted test and temporary log could be copied. This trace is retained from the observed tool result; no unavailable file digest is invented."
+  },
+  "prototype_observations": {
+    "first_explicit_read_race_seconds": 2.978,
+    "existing_public_and_private_focused_race_seconds": 83.307,
+    "corrected_key_group_review_runtime_undo_race_seconds": 3.628,
+    "assertion_correction": "An intermediate test expected JSON numeric allowance values; the engine intentionally preserves exact decimal strings. The 2.690s failure showed the correct scoped strings rpd=150 and tpd=1200000. The test was corrected to assert these precise strings. No production expectation or workload was lowered.",
+    "ui_node_syntax": "The two edited UI scripts passed node --check before environment loss.",
+    "scope": "These observations apply only to the earlier uncommitted prototype. Reconstructed remote candidate code and all newly added tests require their own CI. No completed local Browser result is available."
+  },
+  "candidate_requirements": [
+    "default anonymous source remains unauthenticated, including 401",
+    "explicit selected authority and single bounded read-only path",
+    "no raw Key/PAT in source samples, derived fixtures, UI, prompts or normal logs",
+    "server-derived role and PAT authority; no request-side mapping authority override",
+    "precise model and explicit group pair, or whole account object with exact unit/scope evidence",
+    "generated fixture, actual HTTP test, explicit activation and formal Intelligence caller",
+    "cross-Key runtime isolation and separate active slots",
+    "unknown reservation and read-only original ID replay after persistence failure",
+    "drift retains last-good and membership; durable shared Undo",
+    "original tests, workloads, deadlines and all nine original jobs preserved"
+  ],
+  "acceptance": "Pending the new source's nine required jobs, actual ZIP bytes and complete report review, plus actual screenshot review. Public release remains frozen."
+}
