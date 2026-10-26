@@ -90,7 +90,15 @@ class WorkspaceCountingOutput(private val target: OutputStream,private val limit
 @OptIn(ExperimentalSerializationApi::class)
 fun <T> workspaceEncodeToStream(serializer: SerializationStrategy<T>,value: T,output: OutputStream,limit: Long): Long {
     val bounded=WorkspaceCountingOutput(output,limit)
-    WorkspaceJson.encodeToStream(serializer,value,bounded);bounded.flush();return bounded.count
+    val writer=WorkspaceBoundedJson(bounded)
+    when {
+        value is WorkspaceRecord && serializer.descriptor.serialName==WorkspaceRecord.serializer().descriptor.serialName -> writer.record(value)
+        value is WorkspaceExchange && serializer.descriptor.serialName==WorkspaceExchange.serializer().descriptor.serialName -> writer.exchange(value)
+        value is WorkspaceReply && serializer.descriptor.serialName==WorkspaceReply.serializer().descriptor.serialName -> writer.reply(value)
+        value is JsonElement && serializer.descriptor.serialName==JsonElement.serializer().descriptor.serialName -> writer.element(value)
+        else -> error("不支援的同步編碼，本機資料已保留")
+    }
+    writer.finish();return bounded.count
 }
 fun workspaceRecordBytes(value: WorkspaceRecord): Long =
     workspaceEncodeToStream(WorkspaceRecord.serializer(),value,workspaceDiscardOutput,WorkspaceChunkLimits.RECORD)
@@ -113,9 +121,17 @@ fun workspaceEncodedRecordDigest(value: WorkspaceRecord): String {
 /** Exactly the native record.same relation: object ordering is irrelevant,
  * numeric literals, null, deletion and every data field remain significant. */
 fun workspaceContentDigest(value: WorkspaceRecord): String {
+    return workspaceDataDigest(value,fingerprint=true)
+}
+/** Hash the actual SQLite representation after native number normalization and
+ * UTF-8 replacement, rather than caching the input's unpersisted spelling. */
+fun workspacePersistedContentDigest(value: WorkspaceRecord): String = workspaceDataDigest(value,fingerprint=false)
+private fun workspaceDataDigest(value: WorkspaceRecord,fingerprint: Boolean): String {
     val hash=MessageDigest.getInstance("SHA-256")
     val out=DigestOutputStream(workspaceDiscardOutput,hash)
     out.write(if(value.deleted)1 else 0)
-    workspaceEncodeToStream(JsonElement.serializer(),canonicalWorkspaceData(value.data),out,WorkspaceChunkLimits.RECORD)
+    val bounded=WorkspaceCountingOutput(out,WorkspaceChunkLimits.RECORD)
+    val writer=WorkspaceBoundedJson(bounded,fingerprint)
+    writer.element(canonicalWorkspaceData(value.data));writer.finish()
     return workspaceHexDigest(hash.digest())
 }

@@ -58,7 +58,11 @@ internal fun SupportSQLiteDatabase.workspaceNativeRow(table: String,rowId: Long)
                 val chars=workspaceOne("SELECT length(`$name`) AS n,typeof(`$name`) AS t FROM `$table` WHERE rowid=?",rowId)!!
                 check(chars.text("t")=="text")
                 val length=chars.number("n")
-                val text=buildString(length.toInt()) {
+                // SQLite length counts code points; a supplementary character uses
+                // two UTF-16 units. Reserve a safe bound to avoid doubling a
+                // near-limit StringBuilder when a final emoji is appended.
+                val capacity=minOf(bytes,length*2).toInt()
+                val text=buildString(capacity) {
                     var start=1L
                     while(start<=length) {
                         append(workspaceOne("SELECT substr(`$name`,?,131072) AS value FROM `$table` WHERE rowid=?",start,rowId)!!.text("value"));start+=131072

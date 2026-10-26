@@ -60,6 +60,46 @@ func main() {
 	// expose a second real packaged engine's public sync routes. Admin APIs are
 	// never proxied, and a target must be an uncredentialed loopback HTTP origin.
 	var workspaceTarget atomic.Pointer[url.URL]
+	var transferMu sync.Mutex
+	var transferArmed, transferHeld bool
+	var transferRelease chan struct{}
+	mux.HandleFunc("/fixture/workspace-transfer", func(w http.ResponseWriter, r *http.Request) {
+		transferMu.Lock()
+		defer transferMu.Unlock()
+		if r.Method == http.MethodPost {
+			var value struct {
+				Action string `json:"action"`
+			}
+			if json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&value) != nil {
+				http.Error(w, "invalid control", 400)
+				return
+			}
+			switch value.Action {
+			case "arm":
+				if transferRelease != nil {
+					http.Error(w, "already armed", 409)
+					return
+				}
+				transferArmed = true
+				transferHeld = false
+				transferRelease = make(chan struct{})
+			case "release":
+				if transferRelease != nil {
+					close(transferRelease)
+					transferRelease = nil
+				}
+				transferArmed = false
+			default:
+				http.Error(w, "unknown control", 400)
+				return
+			}
+		} else if r.Method != http.MethodGet {
+			http.Error(w, "method required", 405)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]bool{"armed": transferArmed, "held": transferHeld})
+	})
 	mux.HandleFunc("/fixture/workspace-target", func(w http.ResponseWriter, r *http.Request) {
 		var value struct {
 			URL string `json:"url"`
@@ -82,7 +122,28 @@ func main() {
 			http.Error(w, "workspace fixture not ready", 503)
 			return
 		}
-		httputil.NewSingleHostReverseProxy(target).ServeHTTP(w, r)
+		proxy := httputil.NewSingleHostReverseProxy(target)
+		// Hold only the real center's successful first part response, after its
+		// SQLite commit. No request, receipt or progress value is fabricated.
+		proxy.ModifyResponse = func(response *http.Response) error {
+			transferMu.Lock()
+			var release chan struct{}
+			if transferArmed && r.URL.Path == "/api/workspace/transfers/part" && response.StatusCode == 200 {
+				transferArmed = false
+				transferHeld = true
+				release = transferRelease
+			}
+			transferMu.Unlock()
+			if release != nil {
+				select {
+				case <-release:
+				case <-r.Context().Done():
+					return r.Context().Err()
+				}
+			}
+			return nil
+		}
+		proxy.ServeHTTP(w, r)
 	})
 	installParityRoutes(mux)
 	richContinue := make(chan struct{})

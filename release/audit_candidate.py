@@ -261,7 +261,7 @@ def main():
         if item.get("Test") and item.get("Action") in ("pass","skip","fail"):
             require(item["Test"] not in events, "duplicate terminal Go case")
             events[item["Test"]] = item["Action"]
-    require(len(events) == 603 and list(events.values()).count("pass") == 555 and list(events.values()).count("skip") == 48, "complete Go case outcomes missing")
+    require(len(events) == 604 and list(events.values()).count("pass") == 556 and list(events.values()).count("skip") == 48, "complete Go case outcomes missing")
     require(all(events.get(name) == action for name,action in original_events.items()), "accepted Go case outcome regressed")
     (out/"go-case-events.json").write_text(json.dumps(events, indent=2)+"\n")
     browser_log = read_job_log(api, next(job for job in vps_jobs if job["name"] == "vps-browser"))
@@ -276,7 +276,7 @@ def main():
     with archive("modelatlas-debug-and-reports") as z:
         counts, core_cases = xml_cases(z)
         expected_core = {"dev.modelatlas.core.workspace.WorkspaceChunksTest#"+name for name in re.findall(r"@Test fun (\w+)\(", (ROOT/"core/src/test/kotlin/dev/modelatlas/core/workspace/WorkspaceChunksTest.kt").read_text())}
-        require(len(expected_core)==6 and counts == dict(tests=591,failures=0,errors=0,skipped=0), "Android core JVM outcomes changed")
+        require(len(expected_core)==9 and counts == dict(tests=594,failures=0,errors=0,skipped=0), "Android core JVM outcomes changed")
         require(set(core_cases)-set(old_core_cases)==expected_core and all(core_cases.get(key)==action for key,action in old_core_cases.items()), "accepted core case removed or regressed")
         html = p.member(z,"reports/tests/testDebugUnitTest/index.html").decode()
         actual_counts = {key:int(re.search(r'id="'+key+r'">\s*<div class="counter">(\d+)</div>', html).group(1)) for key in ("tests","failures","ignored")}
@@ -315,18 +315,21 @@ def main():
         report["rejected_candidate"] = {"source":config["rejected_device"]["source"],"actual_sha256":config["rejected_device"]["digest"],"counts":negative_counts,"failure":failed_name}
     for arch in ("arm64","x86_64"):
         with archive("ModelAtlas-macOS-QA-"+arch) as z:
-            pngs(z, 92)
+            pngs(z, 96)
             smoke = json.loads(p.member(z,"ui/native-smoke.json"))
             parity = json.loads(p.member(z,"parity-ui/native-parity.json"))
-            require(smoke["result"] == parity["result"] == "PASS" and smoke["screenshots"] == 25 and parity["screenshots"] == 53, "native Mac proof missing")
+            require(smoke["result"] == parity["result"] == "PASS" and smoke["screenshots"] == 25 and parity["screenshots"] == 57, "native Mac proof missing")
             require(parity["kilo_factory_defaults"] is True and parity["kilo_no_automatic_inference"] is True, "native factory caller missing")
+            transfer = json.loads(p.member(z,"parity-ui/workspace-transfer.diagnostics.json"))
+            require(parity["workspace_transfer_controls"] is True and transfer["result"] == "PASS" and transfer["destination_models"] == 15 and transfer["paused_progress_bytes"] > 0 and transfer["outgoing_acked"] > 0, "native transfer receipts missing")
+            require(all(transfer[x] is True for x in ("same_transfer_after_restart","pause_during_busy","actual_keychain_restart","source_product_retained","no_inference")), "native transfer controls/restart failed")
             cases = re.findall(r"\[(\d+)/(\d+)\] Testing ([^\n]+)", p.member(z,"swift-tests.log").decode())
             require(len(cases) == 85 and {int(x[0]) for x in cases} == set(range(1,86)) and {int(x[1]) for x in cases} == {85} and len({x[2] for x in cases}) == 85, "Mac original core cases changed")
             require(sum("KiloFactoryTests/" in x[2] for x in cases) == 3, "native factory tests missing")
-            selected = [n for n in z.namelist() if n.endswith(".png") and Path(n).name.startswith(("52-kilo-","53-kilo-"))]
-            require(len(selected) == 2, "Mac factory screenshot inventory changed")
+            selected = [n for n in z.namelist() if n.endswith(".png") and Path(n).name.startswith(("52-kilo-","53-kilo-","54-workspace-","55-workspace-","56-workspace-","57-workspace-"))]
+            require(len(selected) == 6, "Mac factory screenshot inventory changed")
             images.extend(("mac-"+arch+"/"+Path(n).name,z.read(n)) for n in selected)
-            report["mac_"+arch] = {"png":92,"core_tests":85,"smoke":smoke,"parity":parity}
+            report["mac_"+arch] = {"png":96,"core_tests":85,"smoke":smoke,"parity":parity,"workspace_transfer":transfer}
     with archive("ModelAtlas-macOS-Universal") as z:
         with zipfile.ZipFile(io.BytesIO(p.member(z,"ModelAtlas-macOS-Universal.zip"))) as app:
             for name in ("ModelAtlas","ModelAtlasEngine"):
@@ -373,7 +376,7 @@ def main():
         canvas.save(path,"JPEG",quality=82,optimize=True)
         print("MODELATLAS_AUDIT_CONTACT "+path.name+" "+base64.b64encode(path.read_bytes()).decode(), flush=True)
     (out/"audit.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n")
-    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":603,"browser_cases":41,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
+    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":604,"browser_cases":41,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
 
 if __name__ == "__main__":
     main()

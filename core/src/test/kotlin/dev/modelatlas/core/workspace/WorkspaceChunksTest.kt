@@ -13,6 +13,59 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WorkspaceChunksTest {
+    @Test fun escapedNearLimitStringsUseBoundedEncoderAllocation() {
+        val text="\n".repeat(((WorkspaceChunkLimits.RECORD-1024)/2).toInt())
+        val value=WorkspaceRecord("external_observations","large",data=buildJsonObject { put("payloadJson",text) })
+        var bytes=0L;var largest=0
+        val target=object: java.io.OutputStream() {
+            override fun write(value: Int) { bytes++ }
+            override fun write(value: ByteArray,offset: Int,length: Int) { bytes+=length;largest=maxOf(largest,length) }
+        }
+        workspaceRecordBytes(WorkspaceRecord("warmup","small"))
+        val meter=java.lang.management.ManagementFactory.getThreadMXBean() as com.sun.management.ThreadMXBean
+        assertTrue("HotSpot must expose real allocation accounting",meter.isThreadAllocatedMemorySupported)
+        meter.isThreadAllocatedMemoryEnabled=true
+        val thread=Thread.currentThread().id
+        val before=meter.getThreadAllocatedBytes(thread)
+        val count=workspaceEncodeToStream(WorkspaceRecord.serializer(),value,target,WorkspaceChunkLimits.RECORD)
+        val allocated=meter.getThreadAllocatedBytes(thread)-before
+        assertEquals(bytes,count)
+        assertTrue("Must actually encode a near-64 MiB record",count>WorkspaceChunkLimits.RECORD-1024)
+        assertTrue("UTF-8 writes must stay bounded: $largest",largest<=8192)
+        assertTrue("Encoder allocated $allocated bytes for one existing String",allocated in 0..8L*1024*1024)
+        println("MODELATLAS_BOUNDED_JSON_ALLOCATION bytes=$count allocated=$allocated largest_write=$largest")
+    }
+    @Test fun boundedWriterPreservesLegacyEnvelopesEscapesDefaultsAndUtf8Boundaries() {
+        val text="a".repeat(8191)+"😀界\u2028\u2029<>&"+(0..31).map { it.toChar() }.joinToString("")+"\"\\\ud800x\udc00"
+        val record=WorkspaceRecord("messages","unicode",data=buildJsonObject {
+            put("text",text);put("integer",9007199254740993L)
+            put("exponent",WorkspaceJson.parseToJsonElement("1e1"));put("unsigned",WorkspaceJson.parseToJsonElement("18446744073709551615"))
+            put("values",JsonArray(listOf(JsonPrimitive(1.0),JsonNull,JsonPrimitive(false),JsonPrimitive("null"))))
+            put("nested",buildJsonObject { put("quote\"\n界",text) })
+        })
+        val secrets=mapOf("credential" to WorkspaceSecret("credential",listOf(WorkspaceAuthField("Authorization",false,text))),"empty" to WorkspaceSecret("empty"))
+        fun <T> check(serializer: kotlinx.serialization.SerializationStrategy<T>,value: T,limit: Long) {
+            val output=ByteArrayOutputStream();workspaceEncodeToStream(serializer,value,output,limit)
+            assertArrayEquals(WorkspaceJson.encodeToString(serializer,value).toByteArray(Charsets.UTF_8),output.toByteArray())
+        }
+        check(WorkspaceRecord.serializer(),record,WorkspaceChunkLimits.RECORD)
+        check(WorkspaceExchange.serializer(),WorkspaceExchange(changes=listOf(record),secrets=secrets,fetch=listOf(record)),WorkspaceChunkLimits.REQUEST)
+        check(WorkspaceReply.serializer(),WorkspaceReply(1,"workspace",4,false,listOf(record),listOf(record),listOf(record),secrets),WorkspaceChunkLimits.REPLY)
+        check(WorkspaceExchange.serializer(),WorkspaceExchange(),WorkspaceChunkLimits.REQUEST)
+    }
+    @Test fun contentFingerprintRetainsExactLiteralsAndPersistedHashMatchesActualWire() {
+        fun record(value: JsonElement)=WorkspaceRecord("kind","id",data=buildJsonObject { put("value",value) })
+        val variants=listOf(WorkspaceJson.parseToJsonElement("1e1"),JsonPrimitive(10.0),JsonPrimitive("1e1"),JsonNull,JsonPrimitive("null"),JsonPrimitive("\ud800"),JsonPrimitive("\udc00"),JsonPrimitive("?"))
+        val hashes=variants.map { workspaceContentDigest(record(it)) }
+        assertEquals(variants.size,hashes.toSet().size)
+        for (value in variants) {
+            val original=record(value)
+            val persisted=WorkspaceJson.decodeFromString(WorkspaceRecord.serializer(),String(ByteArrayOutputStream().also {
+                workspaceEncodeToStream(WorkspaceRecord.serializer(),original,it,WorkspaceChunkLimits.RECORD)
+            }.toByteArray(),Charsets.UTF_8))
+            assertEquals(workspaceContentDigest(persisted),workspacePersistedContentDigest(original))
+        }
+    }
     @OptIn(ExperimentalSerializationApi::class)
     @Test fun streamEncodingKeepsLegacyBytesAndLargeIntegers() {
         val value=WorkspaceRecord("android:samples","retained",revision=9007199254740993L,

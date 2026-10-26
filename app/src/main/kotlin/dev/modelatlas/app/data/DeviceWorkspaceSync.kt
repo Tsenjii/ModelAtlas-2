@@ -51,8 +51,8 @@ class DeviceWorkspaceSync(
     private fun setImporting(active: Boolean) = db.execSQL("INSERT OR REPLACE INTO workspace_sync_state VALUES('importing',?)",arrayOf(if(active) "1" else "0"))
     private fun current(kind: String,id: String): WorkspaceRecord? = db.workspaceReadRecord("localJson",kind,id)
     private fun write(v: WorkspaceRecord,base: WorkspaceRecord,dirty: Boolean,pending: Boolean) {
-        val localHash=workspaceContentDigest(v)
-        val baseHash=if(v.same(base))localHash else workspaceContentDigest(base)
+        val localHash=workspacePersistedContentDigest(v)
+        val baseHash=if(v.same(base))localHash else workspacePersistedContentDigest(base)
         db.workspaceWithRecordJSON(v) { local ->
             db.workspaceWithRecordJSON(base) { baseline ->
                 db.execSQL("INSERT OR REPLACE INTO workspace_sync_records VALUES(?,?,?,${baseline.expression},${local.expression},?,?)",
@@ -73,7 +73,7 @@ class DeviceWorkspaceSync(
             db.execSQL("UPDATE workspace_sync_records SET localJson=${json.expression},dirty=?,pendingProjection=0 WHERE kind=? AND id=?",
                 (json.args+listOf(if(revision==0L || localHash!=baseHash)1 else 0,v.kind,v.id)).toTypedArray())
         }
-        db.workspaceSaveRecordHashes(v.kind,v.id,localHash,baseHash)
+        db.workspaceSaveRecordHashes(v.kind,v.id,workspacePersistedContentDigest(local),baseHash)
     }
 
     suspend fun initialize()=withContext(Dispatchers.IO) { lock.withLock { installWorkspaceHashJournal(db); refresh() } }

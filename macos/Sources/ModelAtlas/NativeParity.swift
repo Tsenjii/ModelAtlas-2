@@ -1,6 +1,7 @@
 import AppKit
 import AtlasCore
 import CryptoKit
+import Security
 import SwiftUI
 
 // Separate opt-in process/data directory. The original 25-frame acceptance
@@ -243,10 +244,108 @@ import SwiftUI
             try await captureWorkspace(store, output, "53-kilo-ready-dark", dark: true)
             let wireAfterKilo = try await fixtureJSON(fixture + "/fixture/parity-state")
             try require(wireBeforeKilo == wireAfterKilo && store.messages.isEmpty && !store.generating)
-            let result: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(53), "kilo_factory_defaults": .bool(true), "kilo_no_automatic_inference": .bool(true), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "account_checkin_scope": .bool(true), "checkin_retry_cancel": .bool(true), "native_motion": .bool(true), "reduced_motion": .bool(true), "public_site_auto_read": .bool(true), "provider_series_scope": .bool(true), "site_partial_retry": .bool(true), "connection_actions": .bool(true), "provider_window_restored": .bool(true), "provider_form_feedback": .bool(true), "provider_account_write_guards": .bool(true), "provider_next_draft": .bool(true), "credential_restore_scope": .bool(true), "saved_refresh_no_repost": .bool(true), "workspace_sync_entry": .bool(true), "wire_counts": counts])
+            stage = "native-workspace-transfer-pause-restart-resume"
+            try await verifyWorkspaceTransfer(store, output: output, fixture: fixture)
+            let result: JSONValue = .object(["workspace_transfer_controls": .bool(true), "result": .string("PASS"), "screenshots": .number(57), "kilo_factory_defaults": .bool(true), "kilo_no_automatic_inference": .bool(true), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "account_checkin_scope": .bool(true), "checkin_retry_cancel": .bool(true), "native_motion": .bool(true), "reduced_motion": .bool(true), "public_site_auto_read": .bool(true), "provider_series_scope": .bool(true), "site_partial_retry": .bool(true), "connection_actions": .bool(true), "provider_window_restored": .bool(true), "provider_form_feedback": .bool(true), "provider_account_write_guards": .bool(true), "provider_next_draft": .bool(true), "credential_restore_scope": .bool(true), "saved_refresh_no_repost": .bool(true), "workspace_sync_entry": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
+    }
+    private static func verifyWorkspaceTransfer(_ original: AtlasStore, output: URL, fixture: String) async throws {
+        let directory = output.appendingPathComponent("workspace-transfer-data", isDirectory: true)
+        let services = ["dev.modelatlas.qa.center." + UUID().uuidString, "dev.modelatlas.qa.peer." + UUID().uuidString]
+        defer {
+            for service in services { SecItemDelete([kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: "engine-v1"] as CFDictionary) }
+        }
+        let executable = Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/ModelAtlasEngine")
+        let center = EngineController(directory: directory.appendingPathComponent("center"))
+        var child = AtlasStore(directory: directory.appendingPathComponent("peer"))
+        var pids: [Int32] = []
+        var checkpoint = "start-engines"
+        func savePids() throws {
+            let value: JSONValue = .object(["app_pid": .number(Double(ProcessInfo.processInfo.processIdentifier)), "engine_pid": .number(Double(original.engine.process?.processIdentifier ?? 0)), "additional_engine_pids": .array(pids.map { .number(Double($0)) })])
+            try JSONEncoder().encode(value).write(to: output.appendingPathComponent("measurement-pids.json"), options: .atomic)
+        }
+        func control(_ action: String, path: String = "/fixture/workspace-transfer", body: JSONValue? = nil) async throws {
+            var request = URLRequest(url: URL(string: fixture + path)!)
+            request.httpMethod = "POST"; request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(body ?? .object(["action": .string(action)]))
+            let (_, response) = try await URLSession.shared.data(for: request)
+            try require([200, 204].contains((response as? HTTPURLResponse)?.statusCode ?? 0))
+        }
+        func click(_ window: NSWindow, _ marker: String) throws {
+            guard let target = find(window.contentView, marker) else { throw AtlasError.invalidResponse }
+            let point = target.convert(NSPoint(x: target.bounds.midX, y: target.bounds.midY), to: nil)
+            for (index, type) in [NSEvent.EventType.leftMouseDown, .leftMouseUp].enumerated() {
+                guard let event = NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil, eventNumber: index, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0) else { throw AtlasError.invalidResponse }
+                NSApp.postEvent(event, atStart: false)
+            }
+        }
+        do {
+            let wireBefore = try await fixtureJSON(fixture + "/fixture/parity-state")
+            let hub = try await center.start(executable: executable, secrets: KeychainVault(service: services[0]).loadOrCreate(databaseExists: false))
+            let secrets = try KeychainVault(service: services[1]).loadOrCreate(databaseExists: false)
+            child.api = try await child.engine.start(executable: executable, secrets: secrets, factoryDefaults: true)
+            child.ready = true; try await child.reload()
+            guard let api = child.api else { throw AtlasError.engineUnavailable }
+            pids = [center.process!.processIdentifier, child.engine.process!.processIdentifier]; try savePids()
+            try await control("", path: "/fixture/workspace-target", body: .object(["url": .string(hub.baseURL.absoluteString)]))
+            try await control("arm")
+            let pair = try await hub.call("/workspace/pair", method: "POST", body: .object(["share_secrets": .bool(false)]))
+            let draft = try WorkspaceDraft(url: fixture, label: "原生續傳驗收", code: pair["code"].string)
+            _ = try await api.call("/workspace/connect", method: "POST", body: draft.body)
+            checkpoint = "real-first-part-committed"
+            var held = false
+            let holdDeadline = Date().addingTimeInterval(4)
+            while !held && Date() < holdDeadline {
+                held = try await fixtureJSON(fixture + "/fixture/workspace-transfer")["held"].boolean
+                if !held { try await Task.sleep(nanoseconds: 20_000_000) }
+            }
+            try require(held)
+            checkpoint = "native-pause-button-while-busy"
+            try await capture(WorkspaceSyncView(store: child).padding(24), output, "55-workspace-paused-light", dark: false, marker: "workspace-sync-loaded") { window in
+                try click(window, "workspace-sync-now-target")
+                try await wait { !contains(window.contentView, "workspace-sync-idle") && contains(window.contentView, "workspace-transfer-ready") }
+                try saveFrame(window, output, "54-workspace-transfer-light")
+                try click(window, "workspace-sync-pause-target")
+                try await wait { contains(window.contentView, "workspace-transfer-paused") }
+                try await control("release")
+                try await wait { contains(window.contentView, "workspace-sync-idle") }
+            }
+            _ = try? await api.call("/workspace/sync", method: "POST", body: .object([:]))
+            let paused = try await api.get("/workspace")
+            let id = paused["transfer"]["id"].string
+            try require(!id.isEmpty && !paused["peer"]["enabled"].boolean && (paused["transfer"]["progress_bytes"].numeric ?? 0) > 0)
+            checkpoint = "actual-engine-keychain-restart"
+            let peerDirectory = child.engine.directory
+            await child.engine.stop()
+            child = AtlasStore(directory: peerDirectory)
+            let restoredSecrets = try KeychainVault(service: services[1]).loadOrCreate(databaseExists: true)
+            child.api = try await child.engine.start(executable: executable, secrets: restoredSecrets, factoryDefaults: true)
+            child.ready = true; try await child.reload()
+            pids.append(child.engine.process!.processIdentifier); try savePids()
+            guard let restored = child.api else { throw AtlasError.engineUnavailable }
+            let resumed = try await restored.get("/workspace")
+            try require(resumed["transfer"]["id"].string == id && !resumed["peer"]["enabled"].boolean && resumed["peer"]["resumable"].boolean)
+            try await capture(WorkspaceSyncView(store: child).padding(24), output, "56-workspace-restarted-dark", dark: true, marker: "workspace-transfer-paused")
+            checkpoint = "native-resume-button-and-real-ack"
+            try await capture(WorkspaceSyncView(store: child).padding(24), output, "57-workspace-completed-dark", dark: true, marker: "workspace-transfer-paused") { window in
+                try click(window, "workspace-sync-now-target")
+                try await wait { !contains(window.contentView, "workspace-transfer-paused") && contains(window.contentView, "workspace-sync-idle") && !contains(window.contentView, "workspace-transfer-ready") }
+            }
+            let finished = try await restored.get("/workspace")
+            let models = try await hub.get("/my-models").requiredArray()
+            let wireAfter = try await fixtureJSON(fixture + "/fixture/parity-state")
+            try require(finished["transfer"] == .null && (finished["transport_receipts"]["outgoing_acked"].numeric ?? 0) > 0 && models.count == 15 && wireBefore == wireAfter)
+            let diagnostics: JSONValue = .object(["result": .string("PASS"), "same_transfer_after_restart": .bool(true), "pause_during_busy": .bool(true), "actual_keychain_restart": .bool(true), "source_product_retained": .bool(child.activeModels.count == 15), "destination_models": .number(Double(models.count)), "no_inference": .bool(wireBefore == wireAfter), "paused_progress_bytes": paused["transfer"]["progress_bytes"], "outgoing_acked": finished["transport_receipts"]["outgoing_acked"]])
+            try JSONEncoder().encode(diagnostics).write(to: output.appendingPathComponent("workspace-transfer.diagnostics.json"), options: .atomic)
+        } catch {
+            try? await control("release")
+            await child.engine.stop(); await center.stop()
+            try? Data((checkpoint + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("workspace-transfer-failure.txt"))
+            throw error
+        }
+        await child.engine.stop(); await center.stop()
     }
     private static func require(_ value: @autoclosure () -> Bool) throws { guard value() else { throw AtlasError.invalidResponse } }
     private static func verifyProviderManagement(_ store: AtlasStore, output: URL, fixture: String) async throws {
@@ -704,6 +803,9 @@ import SwiftUI
         try await Task.sleep(nanoseconds: 450_000_000)
         if let interaction { window.contentView?.layoutSubtreeIfNeeded(); try await interaction(window) }
         try require(NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == (dark ? .darkAqua : .aqua))
+        try saveFrame(window, output, name)
+    }
+    private static func saveFrame(_ window: NSWindow, _ output: URL, _ name: String) throws {
         guard let root = window.contentView?.superview else { throw AtlasError.invalidResponse }; root.layoutSubtreeIfNeeded(); root.displayIfNeeded()
         guard let bitmap = root.bitmapImageRepForCachingDisplay(in: root.bounds) else { throw AtlasError.invalidResponse }; root.cacheDisplay(in: root.bounds, to: bitmap)
         guard let data = bitmap.representation(using: .png, properties: [:]), data.count > 10_000 else { throw AtlasError.invalidResponse }; try data.write(to: output.appendingPathComponent(name + ".png"))

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -56,15 +57,23 @@ func TestWorkspaceChunkExplicitResetRetainsOfflineProductAndSecret(t *testing.T)
 	assertSQLInt(t, hub, 0, "SELECT COUNT(*) FROM telemetry")
 }
 func TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability(t *testing.T) {
-	for _, mode := range []string{"legacy", "invalid-scope", "revoked"} {
+	for _, mode := range []string{"legacy", "invalid-scope", "revoked", "legacy-paused"} {
 		t.Run(mode, func(t *testing.T) {
 			hub, peer := testServer(t), testServer(t)
 			seed(t, hub, "https://provider.example/v1")
+			if mode == "legacy-paused" {
+				for i := 0; i < 230; i++ {
+					id := "retained-" + strconv.Itoa(i)
+					if _, e := hub.Store.DB.Exec("INSERT INTO models(provider_id,id,display_name,updated_at) VALUES('p',?,?,?)", id, id, now()); e != nil {
+						t.Fatal(e)
+					}
+				}
+			}
 			handler := hub.Handler()
 			var calls atomic.Int32
 			host := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path == "/api/workspace/capabilities" {
-					if mode == "legacy" {
+					if strings.HasPrefix(mode, "legacy") {
 						http.NotFound(w, r)
 					} else if mode == "revoked" {
 						http.Error(w, "revoked", 401)
@@ -77,12 +86,23 @@ func TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability(t *testin
 					calls.Add(1)
 				}
 				handler.ServeHTTP(w, r)
+				if mode == "legacy-paused" && r.URL.Path == "/api/workspace/exchange" && calls.Load() == 1 {
+					requireCode(t, req(t, peer, "POST", "/api/v1/workspace/control", map[string]any{"enabled": false}), 200)
+				}
 			}))
 			defer host.Close()
 			workspacePairForTest(t, hub, peer, host, true)
 			requireCode(t, req(t, peer, "POST", "/api/v1/workspace/control", map[string]any{"enabled": true, "resumable": true}), 200)
 			w := req(t, peer, "POST", "/api/v1/workspace/sync", map[string]any{})
-			if mode == "legacy" {
+			if mode == "legacy-paused" {
+				requireCode(t, w, 502)
+				if calls.Load() != 1 {
+					t.Fatal("pause allowed another legacy page")
+				}
+				assertSQLInt(t, peer, 0, "SELECT enabled FROM workspace_peer")
+				assertSQLInt(t, peer, 1, "SELECT COUNT(*) FROM providers")
+				assertSQLInt(t, hub, 231, "SELECT COUNT(*) FROM models")
+			} else if mode == "legacy" {
 				requireCode(t, w, 200)
 				if calls.Load() == 0 {
 					t.Fatal("legacy caller never used real v1 exchange")

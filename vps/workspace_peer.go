@@ -393,6 +393,9 @@ func (s *Server) workspaceSyncLocked(ctx context.Context) (map[string]any, error
 		}
 	}
 	for page := 0; page < 20; page++ {
+		if _, _, e := workspaceOutgoingBinding(ctx, s.Store.DB, base, token); e != nil {
+			return fail(e)
+		}
 		changes, secrets, e := s.workspaceDirtyRecords(ctx, 100)
 		if e != nil {
 			if errors.Is(e, errWorkspacePageTooLarge) {

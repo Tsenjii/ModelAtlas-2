@@ -21,7 +21,7 @@ WORKSPACE-CHUNKS-015P 開發候選。015O所列範圍已由來源66ec4eb7af3278f
 
 VPS與Mac由Settings的配對／立即同步／恢復同步選擇可恢復傳輸偏好，該本機偏好持久化於schema37；背景與手動共用相同鎖與journal。舊呼叫者保留v1。只有明確協商404或version0才可用舊小頁，撤銷／不符scope／不符上限不得暗中fallback。大於32MiB仍必須協商新lane；超過64MiB保留本機並報錯。
 
-Android沿原Room16本機state／Keystore vault保存收據與加密片段，沒有可攜的執行授權或明文整份envelope。encodeToStream／decodeFromStream配合有界SQLite UTF-8片段，傳輸只留精簡請求指紋供CAS；完整record仍保留在產品journal。產品資料、vault密文、cursor與CONSUMED在同一Room交易，ACK只清除傳輸快取。金鑰作業在Room交易外完成，維持vault→database鎖順序。record摘要快取由SQLite真INSERT／UPDATE／DELETE失效，包含相同長度的後續修改。
+Android沿原Room16本機state／Keystore vault保存收據與加密片段，沒有可攜的執行授權或明文整份envelope。固定8192字元／8192位元組緩衝編碼與decodeFromStream配合有界SQLite UTF-8片段，傳輸只留精簡請求指紋供CAS；完整record仍保留在產品journal。產品資料、vault密文、cursor與CONSUMED在同一Room交易，ACK只清除傳輸快取。金鑰作業在Room交易外完成，維持vault→database鎖順序。record摘要快取由SQLite真INSERT／UPDATE／DELETE失效，包含相同長度的後續修改。
 
 三端有可讀上傳／接收進度與暫停／恢復。暫停不等待整段傳輸鎖，下一片及目的端交易前再檢查；已在途的一片可能完成。使用者明確要求重新準備時，先向中心確認未DONE、再abort及清理傳輸快取；已提交結果必須恢復讀取，不能改用新ID重做。中斷配對只清理本機傳輸狀態，產品與完整歷史保留。
 
@@ -36,3 +36,12 @@ GET /workspace/conflict?preview=1為有界呈現；明確揭露長內容摘要�
 本機Android591核心／423App、debug及androidTest APK建置成功。新增11個instrumentation案例：接近64MiB的Go永久歷史接收、接近64MiB的native external observation上傳、Room實際重開後lost-finish／lost-ACK恢復、真暫停與快取重設、舊v1相容、UTF-8跨CursorWindow、同長度修改失效，以及Keystore domain／origin拒絕；另加真損壞回應保留last-good／原ID恢復、換配對清除舊fetch意圖但保留產品與vault。11個案例皆已通過androidTest APK編譯，但原512MiB／API29真裝置尚未執行，不能填入成功。
 
 兩架構Mac原真Keychain／兩packaged engine的TLS、歷史、衝突、程序重啟、撤銷及目的端金鑰測試保留，追加可恢復偏好與ACK收據持久斷言；新Settings進度／暫停／恢復／重設仍待實際Mac編譯與介面驗收。全部原資源負載、600秒Go／5分鐘Browser／35分鐘device等上限不放寬。完整下一版仍PARTIAL，後續Reflection／私人schema／PLAY-004及P1–P10／28條發布條件尚待完成。
+
+
+## 首整合候選的真失敗與同片修正
+
+3ced4c3來源沒有通過，不能沿用其VPS／Android build綠燈接受。實際Android ZIP12612140025為1267255 bytes，SHA256 `2018026e96c807cccbfbda6c6f72ff979695c0fde82db47acb4a8def0c51db31`；996案例中原985結果逐項不變，新增10pass／1failure。失敗是接近64MiB的原生external observation上傳：512MiB ART中JsonToJavaStreamWriter.writeQuoted／appendStringSlowPath／ensureTotalCapacity嘗試配置268402776 bytes。不是縮小fixture或提高heap來處理；完整trace、case inventory、來源與各job見verification/20261025/workspace-chunks-initial-candidate.json。
+
+大字串改由WorkspaceBoundedJson固定緩衝輸出，逐段轉UTF-8，控制字元／引號／反斜線與跨邊界emoji由精確legacy bytes測試核對；record／exchange／reply的欄位順序與defaults完全保留。有界小數值沿用1.8.0的原序列化語意。原生CAS指紋另外保存數值literal與無效UTF-16差異，不把1e1／10.0或不同未配對surrogate當同一資料；SQLite指紋則對準實際保存的wire表示，避免暫存未落盤的原字面。大native SQL讀取以UTF-8 bytes／code point上界預留UTF-16容量，避免尾端emoji使近64MiB builder整倍擴充。
+
+新增核心配置量反例實際編碼接近64MiB的escaped String，逐執行緒量測額外配置須小於8MiB、每次UTF-8 write須不超8192 bytes；不是只數小fixture。原6個chunk與585舊核心案例保留，合計594。Mac原25 smoke／53 parity／14motion保留，另4個真傳輸實圖及狀態／Keychain重啟收據；新增中心與兩個前後peer程序全部納入RSS與退出檢查，原120秒上限不變。新來源預期407 Go／604事件、41 Browser／509PNG、594核心／423App／996device、兩Mac各85核心／96PNG；仍須同源九項／全部實際bytes與20視圖核對，不能因本機通過預稱交付。
