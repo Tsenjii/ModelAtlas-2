@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "slice": "MAC-AQUA-015W",
+  "slice": "ANDROID-METADATA-015X",
   "browser_baseline": {
     "id": 12622386762,
     "bytes": 39268692,
@@ -438,5 +438,8 @@
     "10-classic-retained-dark.png",
     "11-relaunch-retained-dark.png",
     "12-reduced-transparency-light.png"
-  ]
+  ],
+  "new_device_cases": {
+    "dev.modelatlas.app.data.MyModelsMetadataRetryStateTest#c1PublicationContentionKeepsAllFiveCallersInOneFlight": "pass"
+  }
 }

@@ -323,6 +323,74 @@ class MyModelsMetadataRetryStateTest {
     }
 
     @Test
+    fun c1PublicationContentionKeepsAllFiveCallersInOneFlight() = runBlocking {
+        val f = saveFixture("c1-publication"); val m = uniqueModel("c1-publication")
+        addMembership(f.providerId, m)
+        val w = f.w(m); val rec = Rec()
+        val readersEntered = AtomicInteger(0); val readersReturned = AtomicInteger(0)
+        val allReading = CompletableDeferred<Unit>(); val releaseReaders = CompletableDeferred<Unit>()
+        val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
+        val fetch = ScriptedFetcher { call ->
+            if (call == 1) { entered.complete(Unit); release.await() }
+            rowsFor("c1-publication")
+        }
+        // All five real VM callers pass the initial no-flight lookup before
+        // any may leave their passport read. Keep their continuations on this
+        // event loop so the held publication mutex controls the interleaving.
+        val jobs = (1..5).map {
+            async(start = CoroutineStart.UNDISPATCHED) {
+                withTimeout(TIMEOUT_MS) {
+                    viewModel.requestMyModelRefresh(
+                        providerId = f.providerId, providerModelId = m,
+                        accountId = f.accountId, credentialId = f.credentialId,
+                        origin = RefreshOrigin.SESSION_AUTO,
+                        lmspeedFetcher = fetch, attemptObserver = rec,
+                        passportReader = {
+                            if (readersEntered.incrementAndGet() == 5) allReading.complete(Unit)
+                            releaseReaders.await()
+                            readersReturned.incrementAndGet()
+                            absentCapable()
+                        },
+                    )
+                }
+            }
+        }
+        try {
+            withTimeout(TIMEOUT_MS) { allReading.await() }
+            val field = AtlasViewModel::class.java.getDeclaredField("refreshFlightMutex")
+            field.isAccessible = true
+            val publicationMutex = field.get(viewModel) as kotlinx.coroutines.sync.Mutex
+            publicationMutex.lock()
+            try {
+                releaseReaders.complete(Unit)
+                awaitCond { readersReturned.get() == 5 }
+                // Reserving before flight publication lets four callers return
+                // SUPPRESSED_ALREADY_RUNNING here and makes the original c1
+                // wait forever for their Joined events. No caller may finish
+                // while publication itself is still blocked.
+                assertEquals("no suppression before flight publication", emptyList<RefreshOutcome>(), rec.evaluated(w))
+                assertTrue("all five callers must await publication", jobs.none { it.isCompleted })
+                assertEquals(0, fetch.calls)
+                assertEquals(0, rec.charged(w))
+            } finally {
+                publicationMutex.unlock()
+            }
+            withTimeout(TIMEOUT_MS) { entered.await() }
+            awaitCond { rec.joined(w) == 4 }
+            release.complete(Unit)
+            jobs.forEach { withTimeout(TIMEOUT_MS) { it.await() } }
+            assertEquals(1, fetch.calls)
+            assertEquals(1, rec.reserved(w)); assertEquals(1, rec.charged(w))
+            assertEquals(4, rec.joined(w)); assertEquals(1, rec.terminal(w).size)
+            assertEquals(5, rec.evaluated(w).size)
+            assertEquals(4, rec.evaluated(w).count { it == RefreshOutcome.JOINED_EXISTING_FLIGHT })
+        } finally {
+            releaseReaders.complete(Unit)
+            release.complete(Unit)
+        }
+    }
+
+    @Test
     fun c2AutoJoiningAddPathFlightNeverCharges() = runBlocking {
         val f = saveFixture("c2"); val m = uniqueModel("c2"); addMembership(f.providerId, m)
         val w = f.w(m); val rec = Rec()

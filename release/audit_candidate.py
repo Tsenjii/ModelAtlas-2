@@ -111,6 +111,15 @@ def xml_cases(archive):
     require(bool(cases), "missing test XML")
     return counts, cases
 
+def validate_device_case_extension(counts, cases, old_cases, config):
+    added = config["new_device_cases"]
+    require(added == {"dev.modelatlas.app.data.MyModelsMetadataRetryStateTest#c1PublicationContentionKeepsAllFiveCallersInOneFlight": "pass"}, "metadata publication regression must pass")
+    require(len(old_cases) == 996, "accepted device case inventory changed")
+    require(counts == dict(tests=997, failures=0, errors=0, skipped=5), "Android device outcomes changed")
+    require(all(cases.get(name) == action for name, action in old_cases.items()), "accepted device case removed or regressed")
+    require({name: action for name, action in cases.items() if name not in old_cases} == added, "unexpected or missing device regression case")
+    return sorted(added)
+
 def apk_certificate(apk):
     eocd = apk.rfind(b"PK\x05\x06")
     require(eocd >= 0, "APK EOCD absent")
@@ -393,15 +402,14 @@ def main():
         require(old_counts == dict(tests=996,failures=0,errors=0,skipped=5), "original test inventory source changed")
     with archive("modelatlas-device-test-reports") as z:
         counts, cases = xml_cases(z)
-        require(counts == dict(tests=996,failures=0,errors=0,skipped=5), "Android device outcomes changed")
-        require(cases == old_cases, "accepted device case removed or regressed")
+        added_device_cases = validate_device_case_extension(counts, cases, old_cases, config)
         (out/"device-case-events.json").write_text(json.dumps(cases, indent=2)+"\n")
         (out/"core-case-events.json").write_text(json.dumps(core_cases, indent=2)+"\n")
         runtime = json.loads(p.member(z,"instrumentation-runtime.json"))
         preflight = json.loads(p.member(z,"emulator-preflight.json"))
         require(runtime["max_heap_bytes"] == runtime["expected_max_heap_bytes"] == 536870912 and runtime["stages"] == ["start","finish"] and runtime["pid"] > 0, "actual ART runtime heap/PID proof absent")
         require(preflight["configured_heap"] == "512m" and preflight["sdk"] == "29" and preflight["zygote_before"] != preflight["zygote_after"], "cold-boot proof absent")
-        report["android_device"] = {"counts":counts,"preserved_cases":996,"added":[],"runtime":runtime,"preflight":preflight}
+        report["android_device"] = {"counts":counts,"preserved_cases":996,"added":added_device_cases,"runtime":runtime,"preflight":preflight}
     failed = download_baseline(api, config["rejected_device"], baselines)
     with zipfile.ZipFile(failed) as z:
         negative_counts, negative_cases = xml_cases(z)
@@ -515,7 +523,7 @@ def main():
     # the interactive workspace is offline. No tests or archive checks are skipped.
     for name, value in (("REPORT", report), ("SOURCE_STATE", state), ("GO_CASE_EVENTS", events), ("DEVICE_CASE_EVENTS", json.loads((out/"device-case-events.json").read_text())), ("CORE_CASE_EVENTS", core_cases)):
         print("MODELATLAS_AUDIT_"+name+" "+json.dumps(value, ensure_ascii=False, separators=(",",":")), flush=True)
-    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":len(events),"browser_cases":44,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
+    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":report["android_device"]["counts"]["tests"],"go_cases":len(events),"browser_cases":44,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
 
 if __name__ == "__main__":
     main()

@@ -136,6 +136,33 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
         self.assertEqual(audit.visual_review_count(config),111)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
+class CandidateDeviceExtensionTest(unittest.TestCase):
+    def setUp(self):
+        self.config = json.loads((Path(__file__).parent/"candidate_audit_scope.json").read_text())
+        self.old = {"old#"+str(i): "pass" if i < 991 else "skipped" for i in range(996)}
+        self.added = "dev.modelatlas.app.data.MyModelsMetadataRetryStateTest#c1PublicationContentionKeepsAllFiveCallersInOneFlight"
+        self.cases = dict(self.old, **{self.added: "pass"})
+        self.counts = dict(tests=997, failures=0, errors=0, skipped=5)
+
+    def test_new_pass_keeps_all_original_outcomes_and_five_skips(self):
+        self.assertEqual(audit.validate_device_case_extension(self.counts, self.cases, self.old, self.config), [self.added])
+        for original, action in (("old#0", "skipped"), ("old#995", "pass")):
+            changed = dict(self.cases); changed[original] = action
+            with self.subTest(original=original), self.assertRaisesRegex(ValueError, "removed or regressed"):
+                audit.validate_device_case_extension(self.counts, changed, self.old, self.config)
+
+    def test_missing_replaced_or_skipped_regression_cannot_pass_at_the_same_count(self):
+        for replacement in (None, "replacement#same-count", self.added):
+            changed = dict(self.old)
+            if replacement is not None:
+                changed[replacement] = "skipped" if replacement == self.added else "pass"
+            with self.subTest(replacement=replacement), self.assertRaisesRegex(ValueError, "regression case"):
+                audit.validate_device_case_extension(self.counts, changed, self.old, self.config)
+        changed_config = copy.deepcopy(self.config)
+        changed_config["new_device_cases"][self.added] = "skipped"
+        with self.assertRaisesRegex(ValueError, "must pass"):
+            audit.validate_device_case_extension(self.counts, self.cases, self.old, changed_config)
+
 class CandidateRegistryIntegrityTest(unittest.TestCase):
     def test_new_research_files_cannot_disappear_from_the_audited_registry(self):
         with tempfile.TemporaryDirectory() as directory:

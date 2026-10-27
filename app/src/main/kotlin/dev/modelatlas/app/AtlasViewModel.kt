@@ -3232,44 +3232,48 @@ class AtlasViewModel @JvmOverloads constructor(
             emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
             return outcome
         }
-        if (origin == RefreshOrigin.SESSION_AUTO) {
-            // T5 原子認領：第二個同 W 即拒（C1 單 charge）；拒否 → spent 抑制。
-            if (!myModelRefreshPolicy.reserve(w)) {
-                val st = myModelRefreshPolicy.autoStateOf(w)
-                val outcome = if (st == MyModelMetadataRetryPolicy.AutoState.RESERVED_AUTO ||
-                    st == MyModelMetadataRetryPolicy.AutoState.CHARGED_RUNNING
-                ) {
-                    RefreshOutcome.SUPPRESSED_ALREADY_RUNNING
-                } else {
-                    RefreshOutcome.SUPPRESSED_BUDGET
-                }
-                emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
-                return outcome
-            }
-        } else {
-            // T13/D3-YES：per-press user 預算，不碰 auto 機器（no-op 見證分離）。
-            myModelRefreshPolicy.onUserExplicit(w)
-        }
-        // Flight 認領（與 reserve 同一 W；中間 suspend 期間若同 W flight 出現則併入
-        // follower——auto 的 reserve 經 onQueuedCancel 釋放，T11，預算 intact）。
+        // T5：重查同 W flight、預留與發布必須原子完成。若先 reserve 再等待
+        // flight mutex，其他已讀完 passport 的 caller 會在 flight 尚未發布時
+        // 被誤判為 already-running，無法 Joined。取消等待 mutex 的 caller 也
+        // 不應留下無主 reservation。鎖內只有同步 policy／map 操作；讀取、
+        // observer、await 與 provider lock 都在鎖外，沒有額外鎖巢狀。
         val flight = CompletableDeferred<RefreshOutcome>()
+        var suppressed: RefreshOutcome? = null
         val dup = refreshFlightMutex.withLock {
             val cur = refreshFlights[w]
-            if (cur == null) {
-                refreshFlights[w] = flight
+            if (cur != null) {
+                cur // Follower 不預留，也不可釋放另一個 leader 的 reservation。
+            } else if (origin == RefreshOrigin.SESSION_AUTO && !myModelRefreshPolicy.reserve(w)) {
+                val st = myModelRefreshPolicy.autoStateOf(w)
+                suppressed = if (st == MyModelMetadataRetryPolicy.AutoState.RESERVED_AUTO ||
+                    st == MyModelMetadataRetryPolicy.AutoState.CHARGED_RUNNING
+                ) RefreshOutcome.SUPPRESSED_ALREADY_RUNNING else RefreshOutcome.SUPPRESSED_BUDGET
                 null
             } else {
-                cur
+                // T13/D3-YES：per-press user 預算，不碰 auto 機器。
+                if (origin == RefreshOrigin.USER_EXPLICIT) myModelRefreshPolicy.onUserExplicit(w)
+                refreshFlights[w] = flight
+                null
             }
         }
+        suppressed?.let { outcome ->
+            emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
+            return outcome
+        }
         if (dup != null) {
-            if (origin == RefreshOrigin.SESSION_AUTO) myModelRefreshPolicy.onQueuedCancel(w)
             emit(RefreshAttemptEvent.Joined(w, origin))
             try {
                 dup.await()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
+            }
+            try {
+                readRefreshPassport(w, passportReader, lmspeedFetcher, newApiAdapterFactory, newApiPerfAdapterFactory)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // 與快路一致：await 後重讀失敗仍只 Joined，不承接 leader 工作。
             }
             val outcome = RefreshOutcome.JOINED_EXISTING_FLIGHT
             emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
