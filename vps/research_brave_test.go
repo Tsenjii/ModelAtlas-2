@@ -241,6 +241,11 @@ func TestBraveResearchFailureSemanticsAndOptionBounds(t *testing.T) {
 }
 
 func TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation(t *testing.T) {
+	researchBraveContinuationForTest(t, researchContinuationAnchor(12, 0))
+	t.Run("UTC-midnight", func(t *testing.T) { researchBraveContinuationForTest(t, researchContinuationAnchor(23, 45)) })
+}
+
+func researchBraveContinuationForTest(t *testing.T, start time.Time) {
 	var offsets [3]atomic.Int32
 	s, clock := braveFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/res/v1/web/search" {
@@ -259,6 +264,8 @@ func TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation(t *testing.T
 		}
 		braveFixturePage(w, body.Offset < 2)
 	})
+	clock.Store(start.UnixMilli())
+	defer func() { traceResearchContinuationDays(t, s, clock, start) }()
 	saveScheduleForTest(t, s, "brave-chain", ResearchOptions{Search: true, Queries: map[string]string{"en": "free API"}, SearchPages: 3, SearchCountry: "ALL", Budget: 2}, 20)
 	controlScheduleForTest(t, s, "brave-chain", "ENABLE")
 	s.workerTick(context.Background())
@@ -283,8 +290,12 @@ func TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation(t *testing.T
 	if !c.Complete || c.NextOffset != 3 || offsets[0].Load() != 1 || offsets[1].Load() != 2 || offsets[2].Load() != 1 {
 		t.Fatal("continued pages repeated or not finished", c)
 	}
-	assertSQLInt(t, s, 4, "SELECT used FROM request_budgets WHERE name='BRAVE_SEARCH'")
-	assertSQLInt(t, s, 4, "SELECT used FROM research_schedule_daily WHERE scope='global'")
+	if start.UTC().Format("2006-01-02") == start.Add(30*time.Minute).UTC().Format("2006-01-02") {
+		assertSQLInt(t, s, 4, "SELECT used FROM request_budgets WHERE name='BRAVE_SEARCH'")
+		assertSQLInt(t, s, 4, "SELECT used FROM research_schedule_daily WHERE scope='global'")
+	}
+	assertResearchContinuationDayReceipts(t, s, "brave-chain", "BRAVE_SEARCH",
+		researchContinuationCharge{start, 2}, researchContinuationCharge{start.Add(30 * time.Minute), 2})
 	assertSQLInt(t, s, 4, "SELECT SUM(http_requests) FROM research_task_usage")
 }
 

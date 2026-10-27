@@ -145,7 +145,10 @@
     "TestResearchExecutionDefaultAndFourTaskBatchRemainBounded/1": "pass",
     "TestResearchExecutionDefaultAndFourTaskBatchRemainBounded/4": "pass",
     "TestAquaArtworkAuthenticationCacheAndRange": "pass",
-    "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery": "skip"
+    "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery": "skip",
+    "TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal/UTC-midnight": "pass",
+    "TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation/UTC-midnight": "pass",
+    "TestPublicResearchRetryScheduleContinuationRetainsAllowance/UTC-midnight": "pass"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",

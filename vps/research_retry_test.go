@@ -215,12 +215,19 @@ func TestPublicResearchRetryRestartPauseCancelAndRemainingBudget(t *testing.T) {
 }
 
 func TestPublicResearchRetryScheduleContinuationRetainsAllowance(t *testing.T) {
+	researchPublicContinuationForTest(t, researchContinuationAnchor(12, 0))
+	t.Run("UTC-midnight", func(t *testing.T) { researchPublicContinuationForTest(t, researchContinuationAnchor(23, 45)) })
+}
+
+func researchPublicContinuationForTest(t *testing.T, start time.Time) {
 	var calls atomic.Int32
 	s, clock := retryFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)
 		w.Header().Set("Retry-After", "3600")
 		http.Error(w, "later", 429)
 	})
+	clock.Store(start.UnixMilli())
+	defer func() { traceResearchContinuationDays(t, s, clock, start) }()
 	sourcesForSchedule(t, s, "continued")
 	saveScheduleForTest(t, s, "retry-chain", ResearchOptions{SourceIDs: []string{"continued"}, Budget: 1}, 10)
 	controlScheduleForTest(t, s, "retry-chain", "ENABLE")
@@ -255,7 +262,13 @@ func TestPublicResearchRetryScheduleContinuationRetainsAllowance(t *testing.T) {
 	if calls.Load() != 3 || retryTaskForTest(t, s, third).Status != "FAILED" || retryForTest(t, s, third).StoppedReason != "ATTEMPT_LIMIT" {
 		t.Fatal("continuations reset bounded allowance")
 	}
-	assertSQLInt(t, s, 3, "SELECT used FROM research_schedule_daily WHERE scope='global'")
+	if start.UTC().Format("2006-01-02") == start.Add(2*time.Hour).UTC().Format("2006-01-02") {
+		assertSQLInt(t, s, 3, "SELECT used FROM research_schedule_daily WHERE scope='global'")
+	}
+	assertResearchContinuationDayReceipts(t, s, "retry-chain", "",
+		researchContinuationCharge{start, 1},
+		researchContinuationCharge{start.Add(time.Hour), 1},
+		researchContinuationCharge{start.Add(2 * time.Hour), 1})
 	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM my_models")
 }
 

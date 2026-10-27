@@ -44,7 +44,7 @@
     "screenshots": 11,
     "last_good_and_drafts": true
   },
-  "status": "CANDIDATE; final local and exact-source CI pending",
+  "status": "CANDIDATE_WITH_CONTROLLED_UTC_DAY_REGRESSION_FIX; new exact-source CI pending",
   "whole_next_release": "PARTIAL",
   "focused_final": {
     "result": "PASS",
@@ -154,5 +154,61 @@
   },
   "runtime_manifest_files": 333,
   "runtime_manifest_status": "sha256 source snapshot frozen before full validation",
-  "full_local_and_ci": "PENDING at candidate commit; neither timeout is recorded as success"
+  "full_local_and_ci": "PENDING at candidate commit; neither timeout is recorded as success",
+  "first_candidate_evidence": "aqua-interface-first-candidate.json",
+  "controlled_utc_day": {
+    "root_cause": "原三個續傳測試以目前UTC時間起算並前進30至120分鐘，卻無日期條件讀第一筆每日用量；靠近UTC午夜時同一真HTTP流程正確分為兩天。固定12:00同日完整通過，固定23:45三個舊斷言確定性失敗，實際日期／scope／used已記錄。",
+    "red_trace_seconds": 26.098,
+    "red_log_sha256": "074de70ce985895ab285be6dfd9a1ced73bd1b9a7ea49f51476a0f797afab723",
+    "observed_cross_day_global_and_schedule_counts": {
+      "AA": [
+        2,
+        4
+      ],
+      "Brave": [
+        2,
+        2
+      ],
+      "PublicGET": [
+        1,
+        2
+      ]
+    },
+    "original_same_day_counts": {
+      "AA": 6,
+      "Brave": 4,
+      "PublicGET": 3
+    },
+    "fix": "三個原入口保留原同日流程與所有6／4／3斷言，時鐘固定12:00；各追加UTC-midnight子案例，按已知HTTP步驟時間檢查global及指定schedule所有日期的完整精確收據。Brave另核對request_budgets全部日期；不以SUM替代逐日scope。原分頁、等待、重啟、歷史、新鮮度、任務收據／成員斷言及實際HTTP數不減。",
+    "final_race_seconds": 19.925,
+    "final_cases": "三個原入口與各自三個UTC-midnight子案例全PASS",
+    "production_budget_code_changed": false,
+    "original_runner_changed": false,
+    "original_deadlines_preserved": [
+      600,
+      300
+    ],
+    "registry_count": 433,
+    "expected_case_events": 655,
+    "expected_outcomes": {
+      "pass": 604,
+      "skip": 51
+    },
+    "new_diagnostic_mistake_retained": "初版cleanup讀已關閉的舊store，實際日期證據當時不可用；改為helper defer、捕捉最後store，在仍開啟時記錄後才取得上述完整控制反例，沒有修改產品。"
+  },
+  "local_full_go_first_candidate": {
+    "result": "TIMEOUT",
+    "original_deadline_seconds": 600,
+    "complete_events": 474,
+    "pass": 420,
+    "skip": 51,
+    "fail": 3,
+    "extra_trimpath_preview_build_overlapped": true,
+    "interpretation": "未完成不能當PASS，額外編譯可能影響耗時，不宣稱已證明其耗時根因。CI相同來源實際652事件全部結束，僅三個已重現的日界斷言失敗。"
+  },
+  "historical_unknowns_preserved": [
+    "舊AA6／7根因仍UNKNOWN",
+    "舊跨日簽到30秒逾時根因仍UNKNOWN",
+    "本機完整Browser的耗時根因仍UNKNOWN"
+  ]
 }

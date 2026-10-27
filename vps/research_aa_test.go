@@ -144,6 +144,11 @@ func TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages(t *testing.T)
 }
 
 func TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal(t *testing.T) {
+	researchAAContinuationForTest(t, researchContinuationAnchor(12, 0))
+	t.Run("UTC-midnight", func(t *testing.T) { researchAAContinuationForTest(t, researchContinuationAnchor(23, 45)) })
+}
+
+func researchAAContinuationForTest(t *testing.T, start time.Time) {
 	var calls [5]atomic.Int32
 	s, clock := aaResearchFixture(t, func(w http.ResponseWriter, r *http.Request) {
 		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -154,6 +159,8 @@ func TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal(t *testing.T) 
 		}
 		aaFixturePage(w, page, 4)
 	})
+	clock.Store(start.UnixMilli())
+	defer func() { traceResearchContinuationDays(t, s, clock, start) }()
 	saveScheduleForTest(t, s, "aa-chain", ResearchOptions{RefreshAA: true, Budget: 2}, 20)
 	controlScheduleForTest(t, s, "aa-chain", "ENABLE")
 	s.workerTick(context.Background())
@@ -188,7 +195,14 @@ func TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal(t *testing.T) 
 		t.Fatal("second independent page could not recover")
 	}
 	assertSQLInt(t, s, 6, "SELECT used FROM integration_windows WHERE name='AA'")
-	assertSQLInt(t, s, 6, "SELECT used FROM research_schedule_daily WHERE scope='global'")
+	if start.UTC().Format("2006-01-02") == start.Add(75*time.Minute).UTC().Format("2006-01-02") {
+		assertSQLInt(t, s, 6, "SELECT used FROM research_schedule_daily WHERE scope='global'")
+	}
+	assertResearchContinuationDayReceipts(t, s, "aa-chain", "",
+		researchContinuationCharge{start, 2},
+		researchContinuationCharge{start.Add(30 * time.Minute), 2},
+		researchContinuationCharge{start.Add(45 * time.Minute), 1},
+		researchContinuationCharge{start.Add(75 * time.Minute), 1})
 	assertSQLInt(t, s, 8, "SELECT COUNT(*) FROM aa_models")
 	if aaCheckpointForTest(t, s, third).Snapshot.ValidUntil != c.Snapshot.ValidUntil {
 		t.Fatal("continuation extended evidence freshness")
