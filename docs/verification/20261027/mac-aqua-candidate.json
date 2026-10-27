@@ -1,7 +1,7 @@
 {
   "slice": "MAC-AQUA-015W",
   "status": "CANDIDATE",
-  "parent": "4d178c6a0d1d914ea976b2160e6326c553718f14",
+  "parent": "f581874a9fdf2fe8203909af29a22942a40f28f4",
   "expected": {
     "go_registry": 438,
     "go_terminal_events": 660,
@@ -42,5 +42,7 @@
   "second_candidate": "mac-aqua-second-candidate.json",
   "third_candidate": "mac-aqua-third-candidate.json",
   "native_first_settings_failure": "diagnostic source proved opaque accessibility path; official runner image enables Reduce Transparency",
-  "fourth_candidate": "mac-aqua-fourth-candidate.json"
+  "fourth_candidate": "mac-aqua-fourth-candidate.json",
+  "fifth_candidate": "mac-aqua-fifth-candidate.json",
+  "visual_composition": "prior functional source rejected for cropped original faces/covered Q faces; preserve aspect and right-side space, own visual acceptance pending"
 }

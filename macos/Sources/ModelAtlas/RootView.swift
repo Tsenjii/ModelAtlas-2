@@ -9,6 +9,9 @@ import SwiftUI
     @AppStorage("workspaceInterface") private var interface = "classic"
     @AppStorage("workspaceWallpaper") private var wallpaper = "kotoha"
     private var aqua: Bool { AtlasInterfaceChoice(saved: interface) == .aqua }
+    @Environment(\.accessibilityReduceTransparency) private var systemOpaque
+    @AppStorage("reduceInterfaceTransparency") private var userOpaque = false
+    private var artworkVisible: Bool { aqua && !systemOpaque && !userOpaque }
     @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
     @AppStorage("reduceInterfaceMotion") private var userReducedMotion = false
     private var motion: AtlasMotion { AtlasMotion(reduced: systemReducedMotion || userReducedMotion) }
@@ -29,11 +32,16 @@ import SwiftUI
                     if store.booting { VStack(spacing: 18) { ProgressView(); Text("正在開啟工作區…").foregroundStyle(.secondary) }.frame(maxWidth: .infinity, maxHeight: .infinity) }
                     else { EmptyCard(icon: "externaldrive", title: "本機工作區", detail: "模型、對話與研究資料保存在這台 Mac。", action: "啟動") { Task { await store.bootstrap() } } }
                 } else {
-                    Group { switch store.workspace {
-                    case .playground: ChatView(store: store)
-                    case .providers: ProvidersView(store: store)
-                    case .models: ModelsView(store: store)
-                    } }.transition(.opacity).animation(motion.panel, value: store.workspace)
+                    GeometryReader { geometry in
+                        let column = artworkVisible && geometry.size.width >= 900 ? min(340, max(300, geometry.size.width * 0.32)) : 0
+                        Group { switch store.workspace {
+                        case .playground: ChatView(store: store)
+                        case .providers: ProvidersView(store: store)
+                        case .models: ModelsView(store: store)
+                        } }.transition(.opacity).animation(motion.panel, value: store.workspace)
+                            .frame(maxWidth: geometry.size.width - column, maxHeight: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                    }
                 }
             }.frame(minWidth: 600).background(aqua ? Color.clear : atlasCanvas)
         }

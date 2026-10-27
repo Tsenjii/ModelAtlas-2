@@ -94,11 +94,13 @@ struct AtlasWallpaperBackdrop: View {
                     if !opaque, let image = AtlasWallpaperImages.image(wallpaper) {
                         if wallpaper.chibi {
                             Image(nsImage: image).resizable().scaledToFit()
-                                .frame(width: min(geometry.size.width * 0.58, 620), height: min(geometry.size.height * 0.88, 620))
-                                .padding(.trailing, 4).padding(.bottom, 36)
+                                .frame(width: min(geometry.size.width * 0.40, 500), height: min(geometry.size.height * 0.82, 560), alignment: .trailing)
+                                .padding(.trailing, 12).padding(.bottom, 24)
                         } else {
-                            Image(nsImage: image).resizable().scaledToFill()
-                                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top).clipped()
+                            Image(nsImage: image).resizable().scaledToFit()
+                                .mask(LinearGradient(gradient: Gradient(stops: [.init(color: .clear, location: 0), .init(color: .white, location: 0.08), .init(color: .white, location: 0.96), .init(color: .clear, location: 1)]), startPoint: .leading, endPoint: .trailing))
+                                .frame(width: min(geometry.size.width * 0.46, 560), height: geometry.size.height * 0.96, alignment: .trailing)
+                                .padding(.trailing, 12).padding(.bottom, 8)
                         }
                         LinearGradient(colors: scheme == .dark
                             ? [Color(red: 0.06, green: 0.12, blue: 0.19).opacity(0.42), Color(red: 0.06, green: 0.12, blue: 0.19).opacity(0.58)]
