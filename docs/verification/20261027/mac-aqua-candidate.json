@@ -1,7 +1,7 @@
 {
   "slice": "MAC-AQUA-015W",
   "status": "CANDIDATE",
-  "parent": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318",
+  "parent": "4d178c6a0d1d914ea976b2160e6326c553718f14",
   "expected": {
     "go_registry": 438,
     "go_terminal_events": 660,
@@ -10,21 +10,21 @@
     "browser_flows": 44,
     "browser_png": 557,
     "mac_core_each": 89,
-    "mac_png_each": 116,
+    "mac_png_each": 117,
     "preserved_mac_png_each": 104,
-    "new_mac_aqua_png_each": 12,
+    "new_mac_aqua_png_each": 13,
     "android_core": 594,
     "android_app": 423,
     "android_device": 996,
     "android_original_skip": 5,
-    "visual_views": 108,
-    "contacts": 27
+    "visual_views": 110,
+    "contacts": 28
   },
   "local": {
     "release_regressions": {
       "result": "PASS",
-      "tests": 54,
-      "seconds": 0.036
+      "tests": 55,
+      "seconds": 0.035
     },
     "artwork_bytes_and_rgba": "PASS",
     "shell_and_python_syntax": "PASS",
@@ -38,8 +38,9 @@
   "android_native_aqua": "NOT_IMPLEMENTED",
   "public_release_frozen": true,
   "first_candidate": "mac-aqua-first-candidate.json",
-  "transparency_validation": "actual production app Toggle on relaunch; system accessibility preference remains read-only, effective opaque state system OR user",
+  "transparency_validation": "three real packaged app launches observe system false,false,true; actual app toggle on/off; exact system and app preferences restored",
   "second_candidate": "mac-aqua-second-candidate.json",
   "third_candidate": "mac-aqua-third-candidate.json",
-  "native_first_settings_failure": "UNKNOWN; actual bounded UI readiness, focus and detailed diagnostics added; no acceptance before current native run"
+  "native_first_settings_failure": "diagnostic source proved opaque accessibility path; official runner image enables Reduce Transparency",
+  "fourth_candidate": "mac-aqua-fourth-candidate.json"
 }

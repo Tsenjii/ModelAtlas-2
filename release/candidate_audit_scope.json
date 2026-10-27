@@ -416,12 +416,27 @@
     "09-provider-form-retained-dark.png",
     "10-classic-retained-dark.png",
     "11-relaunch-retained-dark.png",
-    "12-reduced-transparency-light.png"
+    "12-reduced-transparency-light.png",
+    "13-system-reduced-transparency-dark.png"
   ],
   "accepted_native_research_cases": [
     "AtlasCoreTests.ResearchRunStateTests/testUnknownBudgetNeverGrantsResumeAndExactRunIsRequired",
     "AtlasCoreTests.ResearchRunStateTests/testStoppedOrExhaustedFailureCannotBorrowRetryPermission",
     "AtlasCoreTests.ResearchRunStateTests/testCompletedSuccessAndCancelledRunDoNotExposeControl",
     "AtlasCoreTests.ResearchRunStateTests/testAAUpdateHasNoPrivateTargetsOrInferenceAndBoundsRemainEnforced"
+  ],
+  "initial_mac_aqua_images": [
+    "01-classic-invalid-preference-light.png",
+    "02-kotoha-light.png",
+    "03-elaina-light.png",
+    "04-kotoha-chibi-light.png",
+    "05-elaina-chibi-dark.png",
+    "06-settings-four-choices-dark.png",
+    "07-providers-light.png",
+    "08-models-compact-dark.png",
+    "09-provider-form-retained-dark.png",
+    "10-classic-retained-dark.png",
+    "11-relaunch-retained-dark.png",
+    "12-reduced-transparency-light.png"
   ]
 }

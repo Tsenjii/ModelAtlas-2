@@ -54,10 +54,20 @@ def visual_review_count(config):
 
 def native_aqua_image_scope(config):
     names = config["new_mac_aqua_images"]
-    require(isinstance(names, list) and len(names) == 12 and len(set(names)) == 12 and
+    require(isinstance(names, list) and len(names) == 13 and len(set(names)) == 13 and
             all(isinstance(name, str) and re.fullmatch(r"[0-9]{2}-[a-z0-9-]+\.png", name) and "failure" not in name for name in names) and
-            {name[:2] for name in names} == {str(index).zfill(2) for index in range(1,13)}, "invalid native Aqua screenshot scope")
+            {name[:2] for name in names} == {str(index).zfill(2) for index in range(1,14)} and set(config["initial_mac_aqua_images"]) <= set(names), "invalid native Aqua screenshot scope")
     return set(names)
+
+def validate_native_transparency_fixture(resource, fixture):
+    requested = fixture.get("requested")
+    observed = fixture.get("observed")
+    require(requested == observed == [False,False,True] and all(type(value) is bool for value in requested+observed), "actual system transparency observations missing")
+    require(fixture.get("restored") is True and resource.get("system_fixture_restored") is True and fixture.get("before") == fixture.get("after"), "system transparency preference not restored")
+    before = fixture["before"]
+    require(set(before) == {"present","value"} and type(before["present"]) is bool and (type(before["value"]) is bool if before["present"] else before["value"] is None), "system transparency original state missing")
+    phases = resource.get("phases",[])
+    require(len(phases) == 3 and [phase.get("system_transparency") for phase in phases] == observed and all(type(phase.get("system_transparency")) is bool for phase in phases), "native process did not observe actual system states")
 
 def validate_browser_screenshot_names(names):
     require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-")) and "failure" not in name for name in names), "unexpected new screenshot")
@@ -441,12 +451,13 @@ def main():
             require({Path(n).name for n in native_images} == set(config["new_mac_research_images"]), "native research views changed")
             images.extend(("mac-"+arch+"/research/"+Path(n).name,z.read(n)) for n in native_images)
             aqua = json.loads(p.member(z,"aqua-ui/native-aqua.json"))
-            require(aqua["result"] == "PASS" and aqua["screenshots"] == 12 and all(aqua[x] is True for x in ("actual_settings_buttons","four_bundled_artworks","same_original_bytes","classic_default_and_invalid_fallback","scope_and_draft_retained","provider_form_retained","relaunch_preference_retained","reduced_transparency","no_inference_or_research")), "native Aqua controls or persistence proof missing")
-            require(aqua["transparency_control"] == "actual app toggle; system preference read-only and never modified", "native transparency control is not exercised")
+            require(aqua["result"] == "PASS" and aqua["screenshots"] == 13 and all(aqua[x] is True for x in ("actual_settings_buttons","four_bundled_artworks","same_original_bytes","classic_default_and_invalid_fallback","scope_and_draft_retained","provider_form_retained","relaunch_preference_retained","reduced_transparency","system_reduced_transparency","no_inference_or_research")), "native Aqua controls or persistence proof missing")
+            require(aqua["transparency_control"] == "actual app toggle and separately launched system preference fixture", "native transparency control is not exercised")
             artwork = json.loads((ROOT/"macos/Resources/Wallpapers/manifest.json").read_text())["images"]
             require({(item["id"],item["sha256"],item["bytes"]) for item in aqua["images"]} == {(item["id"],item["sha256"],item["bytes"]) for item in artwork}, "native selected artwork differs from source")
             aqua_resource = json.loads(p.member(z,"aqua-footprint.json"))
-            require(aqua_resource["result"] == "PASS" and aqua_resource["owned_engines_exited"] is True and len(aqua_resource["phases"]) == 2 and len({x["app_pid"] for x in aqua_resource["phases"]}) == len({x["engine_pid"] for x in aqua_resource["phases"]}) == 2 and all(x["exit"] == 0 for x in aqua_resource["phases"]) and aqua_resource["samples"] >= 3 and aqua_resource["app_rss_bytes"] > 0 and aqua_resource["engine_rss_bytes"] > 0, "native Aqua relaunch process lifecycle missing")
+            require(aqua_resource["result"] == "PASS" and aqua_resource["owned_engines_exited"] is True and len(aqua_resource["phases"]) == 3 and len({x["app_pid"] for x in aqua_resource["phases"]}) == len({x["engine_pid"] for x in aqua_resource["phases"]}) == 3 and all(x["exit"] == 0 for x in aqua_resource["phases"]) and aqua_resource["samples"] >= 3 and aqua_resource["app_rss_bytes"] > 0 and aqua_resource["engine_rss_bytes"] > 0, "native Aqua relaunch process lifecycle missing")
+            validate_native_transparency_fixture(aqua_resource, json.loads(p.member(z,"aqua-ui/system-transparency-fixture.json")))
             aqua_images = [n for n in z.namelist() if "/aqua-ui/" in "/"+n and n.endswith(".png")]
             require({Path(n).name for n in aqua_images} == native_aqua_views, "native Aqua views missing or replaced")
             images.extend(("mac-"+arch+"/aqua/"+Path(n).name,z.read(n)) for n in aqua_images)

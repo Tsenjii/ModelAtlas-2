@@ -108,20 +108,32 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "accepted history"):
             audit.browser_image_scopes(config)
 
-    def test_native_aqua_scope_keeps_twelve_unique_noncrash_captures(self):
+    def test_native_aqua_scope_keeps_all_unique_noncrash_captures(self):
         original = self.config()
-        self.assertEqual(len(audit.native_aqua_image_scope(original)),12)
+        self.assertEqual(len(audit.native_aqua_image_scope(original)),13)
         for replacement in ("01-failure.png", original["new_mac_aqua_images"][1]):
             config = copy.deepcopy(original)
             config["new_mac_aqua_images"][0] = replacement
             with self.assertRaisesRegex(ValueError, "native Aqua"):
                 audit.native_aqua_image_scope(config)
 
+    def test_system_transparency_requires_real_observations_and_exact_restoration(self):
+        resource = {"system_fixture_restored": True, "phases": [{"system_transparency": value} for value in (False,False,True)]}
+        fixture = {"requested": [False,False,True], "observed": [False,False,True], "restored": True, "before": {"present": True, "value": True}, "after": {"present": True, "value": True}}
+        audit.validate_native_transparency_fixture(resource,fixture)
+        for field,value in (("observed",[False,False,False]),("restored",False),("after",{"present":True,"value":False})):
+            changed = copy.deepcopy(fixture); changed[field] = value
+            with self.assertRaisesRegex(ValueError,"transparency"):
+                audit.validate_native_transparency_fixture(resource,changed)
+        resource["phases"][2]["system_transparency"] = False
+        with self.assertRaisesRegex(ValueError,"system states"):
+            audit.validate_native_transparency_fixture(resource,fixture)
+
     def test_contact_inventory_grows_without_rewriting_frozen_views(self):
         config = self.config()
-        self.assertEqual(audit.visual_review_count(config),108)
+        self.assertEqual(audit.visual_review_count(config),110)
         config["new_browser_images"].append("future-new-view.png")
-        self.assertEqual(audit.visual_review_count(config),109)
+        self.assertEqual(audit.visual_review_count(config),111)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
 class CandidateRegistryIntegrityTest(unittest.TestCase):

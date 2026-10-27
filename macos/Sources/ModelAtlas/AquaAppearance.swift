@@ -109,6 +109,10 @@ struct AtlasWallpaperBackdrop: View {
                 }
                 AtlasLoadedMarker(name: "native-interface-" + style.rawValue).frame(width: 0, height: 0)
                 if style == .aqua && opaque { AtlasLoadedMarker(name: "aqua-opaque-background").frame(width: 0, height: 0) }
+                if style == .aqua {
+                    AtlasLoadedMarker(name: systemOpaque ? "aqua-system-transparency-on" : "aqua-system-transparency-off").frame(width: 0, height: 0)
+                    AtlasLoadedMarker(name: userOpaque ? "aqua-user-transparency-on" : "aqua-user-transparency-off").frame(width: 0, height: 0)
+                }
             }.frame(width: geometry.size.width, height: geometry.size.height).clipped()
         }.allowsHitTesting(false).accessibilityHidden(true)
     }
