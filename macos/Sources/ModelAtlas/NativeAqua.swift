@@ -48,7 +48,7 @@ import SwiftUI
             _ = try await store.mutate("/providers", body: .object(["id": .string("native-aqua"), "name": .string("Aqua 原生工作區"), "base_url": .string("https://appearance.example/v1"), "auth_mode": .string("BEARER")]))
             _ = try await store.mutate("/accounts", body: .object(["id": .string("a"), "provider_id": .string("native-aqua"), "label": .string("外觀草稿帳戶")]))
             _ = try await store.mutate("/credentials", body: .object(["id": .string("c"), "provider_id": .string("native-aqua"), "account_id": .string("a"), "label": .string("合成測試用 Key"), "secret": .string("aqua-synthetic-local-key")]))
-            _ = try await store.mutate("/models", body: .object(["provider_id": .string("native-aqua"), "id": .string("aqua-chat"), "display_name": .string("Atlas Aqua · 跨介面完整模型長名稱"), "enabled": .bool(true)]))
+            _ = try await store.mutate("/models", body: .object(["provider_id": .string("native-aqua"), "id": .string("aqua-chat"), "display_name": .string("Atlas Aqua · 跨介面完整模型長名稱")]))
             _ = try await store.mutate("/my-models", body: .object(["provider_id": .string("native-aqua"), "account_id": .string("a"), "credential_id": .string("c"), "model_id": .string("aqua-chat"), "group": .string(""), "endpoint": .string("CHAT_COMPLETIONS")]))
             guard let model = store.activeModels.first(where: { $0["model_id"].string == "aqua-chat" }) else { throw AtlasError.invalidResponse }
             store.chooseModel(model); store.workspace = .playground

@@ -106,9 +106,9 @@ struct SettingsView: View {
                 Picker("色彩模式", selection: $appearance) { Text("跟隨系統").tag("system"); Text("淺色").tag("light"); Text("深色").tag("dark") }.pickerStyle(.segmented)
                 Divider()
                 AtlasWallpaperSettings(interface: $interface, wallpaper: $wallpaper)
-                Toggle("減少背景透明度", isOn: $reduceInterfaceTransparency)
-                    .background(AtlasLoadedMarker(name: "native-transparency-target"))
-                    .accessibilityIdentifier("native-transparency")
+                Toggle(isOn: $reduceInterfaceTransparency) {
+                    Text("減少背景透明度").background(AtlasLoadedMarker(name: "native-transparency-target"))
+                }.accessibilityIdentifier("native-transparency")
                 Text("系統啟用減少透明度時，一律使用實色背景。").font(.caption).foregroundStyle(.secondary)
                 Divider()
                 HStack {

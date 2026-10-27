@@ -1,7 +1,7 @@
 {
   "slice": "MAC-AQUA-015W",
   "status": "CANDIDATE",
-  "parent": "a18d942e85dd32e93ef076b998610c61b4c06ebd",
+  "parent": "73d864cb72dfc2e1544fc4d9156b4f3226f8d00e",
   "expected": {
     "go_registry": 438,
     "go_terminal_events": 660,
@@ -28,7 +28,8 @@
     },
     "artwork_bytes_and_rgba": "PASS",
     "shell_and_python_syntax": "PASS",
-    "native_compile_and_actual_ui": "PENDING_MAC_CI; AppKit unavailable in Linux workspace"
+    "native_compile_and_actual_ui": "PENDING_MAC_CI; AppKit unavailable in Linux workspace",
+    "corrected_native_seed_against_actual_packaged_engine": "PASS; five POSTs, active model, no inference or research; engine source73 unchanged product Go"
   },
   "original_workloads_and_deadlines": "UNCHANGED; additional fourth native phase bounded separately",
   "same_source_nine_jobs": "PENDING",
@@ -37,5 +38,6 @@
   "android_native_aqua": "NOT_IMPLEMENTED",
   "public_release_frozen": true,
   "first_candidate": "mac-aqua-first-candidate.json",
-  "transparency_validation": "actual production app Toggle on relaunch; system accessibility preference remains read-only, effective opaque state system OR user"
+  "transparency_validation": "actual production app Toggle on relaunch; system accessibility preference remains read-only, effective opaque state system OR user",
+  "second_candidate": "mac-aqua-second-candidate.json"
 }
