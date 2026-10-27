@@ -109,3 +109,6 @@ python3 "$mac_dir/scripts/parity-test.py" "$app" "$qa" "$MODELATLAS_FIXTURE_URL"
 
 echo 'Native stage: separate durable research controls and AA recovery process'
 python3 "$mac_dir/scripts/run-bounded.py" 270 "$qa/research-test.log" python3 "$mac_dir/scripts/research-test.py" "$app" "$qa"
+
+echo 'Native stage: separate Aqua settings, exact artwork, draft and relaunch process'
+python3 "$mac_dir/scripts/run-bounded.py" 180 "$qa/aqua-test.log" python3 "$mac_dir/scripts/aqua-test.py" "$app" "$qa"

@@ -5,6 +5,7 @@ import SwiftUI
 
 struct ChatView: View {
     @ObservedObject var store: AtlasStore
+    @Environment(\.atlasInterface) private var interface
     @State private var dropTargeted = false
     @State private var editorHeight: CGFloat = 30
     var body: some View {
@@ -28,7 +29,7 @@ struct ChatView: View {
                     Button("匯出完整 Markdown…") { export("markdown") }.disabled(store.sessionID == nil)
                     Button("匯出完整 JSON…") { export("json") }.disabled(store.sessionID == nil)
                 } label: { Image(systemName: "ellipsis.circle").font(.title3) }.menuStyle(.borderlessButton).frame(width: 26).disabled(store.generating)
-            }.padding(.horizontal, 24).padding(.vertical, 10)
+            }.padding(.horizontal, 24).padding(.vertical, 10).background(AtlasAquaSurface(fallback: .clear))
             Divider()
             if store.selectedModel?["provider_id"].string == "builtin-kilo-anonymous" {
                 Text("Kilo免Key來源可能保存對話並用於改善模型；請勿輸入個人或機密資料。送出前會核對公開目錄。")
@@ -64,7 +65,9 @@ struct ChatView: View {
                 Text("搜尋已加入的模型、帳戶或 Key。").font(.system(size: 13)).foregroundStyle(.secondary)
                 Button("選擇模型…") { store.modelPickerOpen = true }.buttonStyle(AtlasActionStyle(prominent: true))
             }
-        }.frame(maxWidth: 480, alignment: .leading).padding(28).frame(maxWidth: .infinity, maxHeight: .infinity)
+        }.frame(maxWidth: 480, alignment: .leading).padding(28)
+            .background(AtlasAquaSurface(fallback: .clear)).cornerRadius(interface == .aqua ? 22 : 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     private var composer: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -113,6 +116,7 @@ struct ChatView: View {
 struct MessageBubble: View {
     let message: JSONValue
     @ObservedObject var store: AtlasStore
+    @Environment(\.atlasInterface) private var interface
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -134,8 +138,8 @@ struct MessageBubble: View {
                 ForEach(message["attachments"].array, id: \.self) { SmallBadge(text: $0["filename"].string) }
             }
             if !message["tool_calls"].array.isEmpty { DisclosureGroup("工具呼叫") { JSONTree(value: message["tool_calls"]) } }
-        }.padding(message["role"].string == "user" ? 14 : 0)
-            .background(message["role"].string == "user" ? atlasInset.opacity(0.65) : Color.clear).cornerRadius(10)
+        }.padding(message["role"].string == "user" || interface == .aqua ? 14 : 0)
+            .background(AtlasAquaSurface(fallback: message["role"].string == "user" ? atlasInset.opacity(0.65) : .clear)).cornerRadius(interface == .aqua ? 18 : 10)
     }
 }
 

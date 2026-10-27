@@ -19,11 +19,12 @@ let atlasHairline = Color.primary.opacity(0.10)
 
 struct AtlasCard<Content: View>: View {
     @ViewBuilder var content: Content
+    @Environment(\.atlasInterface) private var interface
     var body: some View {
         VStack(alignment: .leading, spacing: 16) { content }
             .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-            .background(atlasSurface).cornerRadius(10)
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(atlasHairline, lineWidth: 0.5))
+            .background(AtlasAquaSurface()).cornerRadius(interface == .aqua ? 18 : 10)
+            .overlay(RoundedRectangle(cornerRadius: interface == .aqua ? 18 : 10).stroke(atlasHairline, lineWidth: 0.5))
     }
 }
 
@@ -152,13 +153,14 @@ struct AtlasActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     @Environment(\.colorScheme) private var scheme
     @Environment(\.atlasAccentChoice) private var accent
+    @Environment(\.atlasInterface) private var interface
     @Environment(\.atlasMotion) private var motion
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.system(size: 12, weight: .medium))
             .padding(.horizontal, 12).padding(.vertical, 6)
             .foregroundStyle(prominent ? accent.foreground(scheme) : Color.primary)
-            .background(prominent ? accent.color : atlasSurface).cornerRadius(7)
-            .overlay(RoundedRectangle(cornerRadius: 7).stroke(prominent ? Color.clear : atlasHairline, lineWidth: 0.5))
+            .background(prominent ? atlasNativeAccent(accent, interface: interface, scheme: scheme) : atlasSurface).cornerRadius(interface == .aqua ? 12 : 7)
+            .overlay(RoundedRectangle(cornerRadius: interface == .aqua ? 12 : 7).stroke(prominent ? Color.clear : atlasHairline, lineWidth: 0.5))
             .opacity(enabled ? (configuration.isPressed ? 0.7 : 1) : 0.45)
             .animation(motion.feedback, value: configuration.isPressed)
     }

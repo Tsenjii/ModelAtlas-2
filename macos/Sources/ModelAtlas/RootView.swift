@@ -6,6 +6,9 @@ import SwiftUI
 @MainActor struct RootView: View {
     @ObservedObject var store: AtlasStore
     @AppStorage("appearance") private var appearance = "system"
+    @AppStorage("workspaceInterface") private var interface = "classic"
+    @AppStorage("workspaceWallpaper") private var wallpaper = "kotoha"
+    private var aqua: Bool { AtlasInterfaceChoice(saved: interface) == .aqua }
     @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
     @AppStorage("reduceInterfaceMotion") private var userReducedMotion = false
     private var motion: AtlasMotion { AtlasMotion(reduced: systemReducedMotion || userReducedMotion) }
@@ -32,9 +35,10 @@ import SwiftUI
                     case .models: ModelsView(store: store)
                     } }.transition(.opacity).animation(motion.panel, value: store.workspace)
                 }
-            }.frame(minWidth: 600).background(atlasCanvas)
+            }.frame(minWidth: 600).background(aqua ? Color.clear : atlasCanvas)
         }
         .frame(minWidth: 900, minHeight: 620)
+        .background(AtlasWallpaperBackdrop(style: AtlasInterfaceChoice(saved: interface), wallpaper: AtlasWallpaperChoice(saved: wallpaper)))
         .animation(motion.sidebar, value: store.sidebarVisible)
         .environment(\.openURL, OpenURLAction { url in
             guard url.scheme == "https", url.user == nil, url.password == nil else { return .discarded }
@@ -117,7 +121,7 @@ import SwiftUI
                 Spacer()
                 Circle().fill(store.ready ? Color.green : Color.secondary).frame(width: 5, height: 5)
             }.padding(.horizontal, 11).padding(.bottom, 9)
-        }.padding(10).background(atlasSidebar)
+        }.padding(10).background(AtlasAquaSurface(fallback: atlasSidebar))
     }
     @MainActor private func applyNativeAppearance(_ mode: String) {
         NSApp.appearance = mode == "system" ? nil : NSAppearance(named: mode == "dark" ? .darkAqua : .aqua)

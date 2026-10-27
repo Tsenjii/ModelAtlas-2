@@ -101,11 +101,27 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "accepted Aqua"):
             audit.browser_image_scopes(config)
 
+    def test_accepted_history_view_cannot_be_replaced_at_the_same_count(self):
+        config = self.config()
+        config["new_browser_images"].remove(next(name for name in config["accepted_history_views"] if name.startswith("research-history-")))
+        config["new_browser_images"].append("research-history-replacement.png")
+        with self.assertRaisesRegex(ValueError, "accepted history"):
+            audit.browser_image_scopes(config)
+
+    def test_native_aqua_scope_keeps_twelve_unique_noncrash_captures(self):
+        original = self.config()
+        self.assertEqual(len(audit.native_aqua_image_scope(original)),12)
+        for replacement in ("01-failure.png", original["new_mac_aqua_images"][1]):
+            config = copy.deepcopy(original)
+            config["new_mac_aqua_images"][0] = replacement
+            with self.assertRaisesRegex(ValueError, "native Aqua"):
+                audit.native_aqua_image_scope(config)
+
     def test_contact_inventory_grows_without_rewriting_frozen_views(self):
         config = self.config()
-        self.assertEqual(audit.visual_review_count(config),84)
+        self.assertEqual(audit.visual_review_count(config),108)
         config["new_browser_images"].append("future-new-view.png")
-        self.assertEqual(audit.visual_review_count(config),85)
+        self.assertEqual(audit.visual_review_count(config),109)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
 class CandidateRegistryIntegrityTest(unittest.TestCase):

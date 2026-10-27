@@ -35,9 +35,13 @@ extension EnvironmentValues {
 }
 private struct AtlasAppearance: ViewModifier {
     @AppStorage("workspaceAccent") private var saved = "graphite"
+    @AppStorage("workspaceInterface") private var interface = "classic"
     private var choice: AtlasAccentChoice { AtlasAccentChoice(rawValue: saved) ?? .graphite }
+    private var style: AtlasInterfaceChoice { AtlasInterfaceChoice(saved: interface) }
+    @Environment(\.colorScheme) private var scheme
     func body(content: Content) -> some View {
-        content.environment(\.atlasAccentChoice, choice).tint(choice.color).accentColor(choice.color)
+        let color = atlasNativeAccent(choice, interface: style, scheme: scheme)
+        return content.environment(\.atlasAccentChoice, choice).environment(\.atlasInterface, style).tint(color).accentColor(color)
     }
 }
 extension View { func atlasAppearance() -> some View { modifier(AtlasAppearance()).atlasMotionPreferences() } }

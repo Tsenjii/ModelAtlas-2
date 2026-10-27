@@ -1,0 +1,39 @@
+{
+  "slice": "MAC-AQUA-015W",
+  "status": "CANDIDATE",
+  "parent": "ce1ea03be728621c36f3ff2112a203f399b4c25a",
+  "expected": {
+    "go_registry": 438,
+    "go_terminal_events": 660,
+    "go_pass": 608,
+    "go_skip": 52,
+    "browser_flows": 44,
+    "browser_png": 557,
+    "mac_core_each": 89,
+    "mac_png_each": 116,
+    "preserved_mac_png_each": 104,
+    "new_mac_aqua_png_each": 12,
+    "android_core": 594,
+    "android_app": 423,
+    "android_device": 996,
+    "android_original_skip": 5,
+    "visual_views": 108,
+    "contacts": 27
+  },
+  "local": {
+    "release_regressions": {
+      "result": "PASS",
+      "tests": 54,
+      "seconds": 0.039
+    },
+    "artwork_bytes_and_rgba": "PASS",
+    "shell_and_python_syntax": "PASS",
+    "native_compile_and_actual_ui": "PENDING_MAC_CI; AppKit unavailable in Linux workspace"
+  },
+  "original_workloads_and_deadlines": "UNCHANGED; additional fourth native phase bounded separately",
+  "same_source_nine_jobs": "PENDING",
+  "actual_nine_archives": "PENDING",
+  "whole_next_release": "PARTIAL",
+  "android_native_aqua": "NOT_IMPLEMENTED",
+  "public_release_frozen": true
+}

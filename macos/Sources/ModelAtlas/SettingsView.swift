@@ -9,6 +9,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("appearance") private var appearance = "system"
     @AppStorage("workspaceAccent") private var accent = "graphite"
+    @AppStorage("workspaceInterface") private var interface = "classic"
+    @AppStorage("workspaceWallpaper") private var wallpaper = "kotoha"
     @AppStorage("reduceInterfaceMotion") private var reduceInterfaceMotion = false
     @Environment(\.atlasMotion) private var motion
     @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
@@ -31,7 +33,7 @@ struct SettingsView: View {
     @State private var quotaThreshold = "100"
     var body: some View {
         VStack(spacing: 0) {
-            HStack { Text("設定").font(.system(size: 17, weight: .semibold)); Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.cancelAction) }.padding(.horizontal, 24).padding(.vertical, 18)
+            HStack { Text("設定").font(.system(size: 17, weight: .semibold)); Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.cancelAction).background(AtlasLoadedMarker(name: "native-settings-close-target")) }.padding(.horizontal, 24).padding(.vertical, 18)
             Divider()
             HStack(spacing: 0) {
             settingsNavigation
@@ -40,7 +42,7 @@ struct SettingsView: View {
                 settingsContent
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-        }.frame(width: 850, height: 740).background(atlasCanvas)
+        }.frame(width: 850, height: 740).background(AtlasAquaSurface(fallback: atlasCanvas))
         .task {
             timezone = store.settings["timezone"].string; performance = store.settings["performance_window"].string
             notifications = store.settings["notifications"].boolean; background = store.settings["background"]["enabled"].boolean
@@ -102,11 +104,13 @@ struct SettingsView: View {
                 Text("外觀").font(.headline)
                 Picker("色彩模式", selection: $appearance) { Text("跟隨系統").tag("system"); Text("淺色").tag("light"); Text("深色").tag("dark") }.pickerStyle(.segmented)
                 Divider()
+                AtlasWallpaperSettings(interface: $interface, wallpaper: $wallpaper)
+                Divider()
                 HStack {
                     Text("按鈕強調色")
                     Spacer()
                     Picker("按鈕強調色", selection: $accent) {
-                        ForEach(AtlasAccentChoice.allCases) { Text($0.title).tag($0.rawValue) }
+                        ForEach(AtlasAccentChoice.allCases) { Text($0 == .graphite && AtlasInterfaceChoice(saved: interface) == .aqua ? "水光藍" : $0.title).tag($0.rawValue) }
                     }.labelsHidden().frame(width: 180).accessibilityIdentifier("settings-accent")
                 }
                 Text("外觀變更會立即套用並保留。").font(.caption).foregroundStyle(.secondary)

@@ -75,6 +75,13 @@ jobs:
           path: |
             macos/qa/**/ui/*.png
             macos/qa/**/ui/native-smoke.json
+            macos/qa/**/aqua-ui/*.png
+            macos/qa/**/aqua-ui/*.json
+            macos/qa/**/aqua-ui/FAILURE.txt
+            macos/qa/**/aqua-footprint.json
+            macos/qa/**/aqua-test.log
+            macos/qa/**/aqua-app.log
+            macos/qa/**/aqua-relaunch.log
             macos/qa/**/ui/FAILURE.txt
             macos/qa/**/ui/failure-state.json
             macos/qa/**/parity-ui/*.png

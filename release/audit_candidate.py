@@ -43,12 +43,21 @@ def browser_image_scopes(config):
     require(len(execution) == 4 and len(set(execution)) == 4 and set(execution) <= set(current), "accepted execution views missing")
     aqua = config["accepted_aqua_views"]
     require(len(aqua) == 12 and len(set(aqua)) == 12 and set(aqua) <= set(current), "accepted Aqua browser views missing")
+    history = config["accepted_history_views"]
+    require(len(history) == 48 and len(set(history)) == 48 and set(history) <= set(current), "accepted history browser views missing")
     # The rejected source's bytes/hash are immutable. New candidate views must
     # never be demanded from an archive produced before those views existed.
     return {"candidate": (509+len(current), set(current)), "rejected_aa": (523, set(frozen))}
 
 def visual_review_count(config):
-    return len(browser_image_scopes(config)["candidate"][1])+8+2*(6+len(config["new_mac_research_images"]))
+    return len(browser_image_scopes(config)["candidate"][1])+8+2*(6+len(config["new_mac_research_images"])+len(native_aqua_image_scope(config)))
+
+def native_aqua_image_scope(config):
+    names = config["new_mac_aqua_images"]
+    require(isinstance(names, list) and len(names) == 12 and len(set(names)) == 12 and
+            all(isinstance(name, str) and re.fullmatch(r"[0-9]{2}-[a-z0-9-]+\.png", name) and "failure" not in name for name in names) and
+            {name[:2] for name in names} == {str(index).zfill(2) for index in range(1,13)}, "invalid native Aqua screenshot scope")
+    return set(names)
 
 def validate_browser_screenshot_names(names):
     require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-")) and "failure" not in name for name in names), "unexpected new screenshot")
@@ -209,6 +218,7 @@ def main():
     config = json.loads((ROOT/"release/candidate_audit_scope.json").read_text())
     browser_scopes = browser_image_scopes(config)
     validate_browser_screenshot_names(browser_scopes["candidate"][1])
+    native_aqua_views = native_aqua_image_scope(config)
     out = ROOT/"candidate-audit-output"
     out.mkdir()
     actual = out/"actual"
@@ -275,6 +285,13 @@ def main():
         aqua_report = json.loads(p.member(z,"audit.json"))
         require(aqua_report["source"] == config["accepted_aqua_audit"]["source"] and len(aqua_events) == 655, "accepted Aqua baseline missing")
         require(set(aqua_report["browser_images"]["added"]) == set(config["accepted_browser_views"])|set(config["accepted_execution_views"])|set(config["accepted_aqua_views"]), "accepted Aqua inventory changed")
+    accepted_history = download_baseline(api, config["accepted_history_audit"], baselines)
+    with zipfile.ZipFile(accepted_history) as z:
+        history_events = json.loads(p.member(z,"go-case-events.json"))
+        history_report = json.loads(p.member(z,"audit.json"))
+        require(history_report["source"] == config["accepted_history_audit"]["source"] and len(history_events) == 660, "accepted history baseline missing")
+        require(set(history_report["browser_images"]["added"]) == set(config["accepted_history_views"]), "accepted history inventory changed")
+        require({Path(name).name for name in history_report["visual_review_required"] if name.startswith("mac-arm64/research/")} == set(config["new_mac_research_images"]), "accepted native research views changed")
     with zipfile.ZipFile(baseline_browser) as z:
         prior_names = {Path(n).name for n in z.namelist() if n.endswith(".png")}
     with archive("modelatlas-vps-browser") as z:
@@ -297,6 +314,7 @@ def main():
     require(all(expected_events.get(name) == action for name,action in cost_events.items()), "accepted cost case removed or changed")
     require(all(expected_events.get(name) == action for name,action in execution_events.items()), "accepted execution case removed or changed")
     require(all(expected_events.get(name) == action for name,action in aqua_events.items()), "accepted Aqua case removed or changed")
+    require(all(expected_events.get(name) == action for name,action in history_events.items()), "accepted history case removed or changed")
     with archive("modelatlas-vps-footprint") as z:
         footprint = json.loads(p.member(z,"footprint.json"))
         expected = dict(export_messages=11000,export_requests=100008,long_context_bytes_each=31*1024*1024,
@@ -396,8 +414,8 @@ def main():
             original_mac_cases = {x[2] for x in re.findall(r"\[(\d+)/(\d+)\] Testing ([^\n]+)", p.member(old,"swift-tests.log").decode())}
             require(len(original_mac_cases) == 85, "accepted Mac test inventory changed")
         with archive("ModelAtlas-macOS-QA-"+arch) as z:
-            actual_images = {Path(n).name for n in pngs(z, 104)}
-            require(old_images <= actual_images and actual_images-old_images == set(config["new_mac_research_images"]), "original Mac images removed or research views missing")
+            actual_images = {Path(n).name for n in pngs(z, 104+len(native_aqua_views))}
+            require(old_images <= actual_images and actual_images-old_images == set(config["new_mac_research_images"])|native_aqua_views, "original Mac images removed or new native views missing")
             smoke = json.loads(p.member(z,"ui/native-smoke.json"))
             parity = json.loads(p.member(z,"parity-ui/native-parity.json"))
             require(smoke["result"] == parity["result"] == "PASS" and smoke["screenshots"] == 25 and parity["screenshots"] == 57, "native Mac proof missing")
@@ -408,7 +426,7 @@ def main():
             cases = re.findall(r"\[(\d+)/(\d+)\] Testing ([^\n]+)", p.member(z,"swift-tests.log").decode())
             require(len(cases) == 89 and {int(x[0]) for x in cases} == set(range(1,90)) and {int(x[1]) for x in cases} == {89} and len({x[2] for x in cases}) == 89, "Mac core cases missing")
             actual_mac_cases = {x[2] for x in cases}
-            require(original_mac_cases <= actual_mac_cases and len(actual_mac_cases-original_mac_cases) == 4 and all("ResearchRunStateTests/" in x for x in actual_mac_cases-original_mac_cases), "original Mac core case removed or replaced")
+            require(original_mac_cases <= actual_mac_cases and len(actual_mac_cases-original_mac_cases) == 4 and actual_mac_cases-original_mac_cases == set(config["accepted_native_research_cases"]), "original Mac core case removed or replaced")
             require(sum("KiloFactoryTests/" in x[2] for x in cases) == 3, "native factory tests missing")
             selected = [n for n in z.namelist() if n.endswith(".png") and Path(n).name.startswith(("52-kilo-","53-kilo-","54-workspace-","55-workspace-","56-workspace-","57-workspace-"))]
             require(len(selected) == 6, "Mac factory screenshot inventory changed")
@@ -422,9 +440,21 @@ def main():
             native_images = [n for n in z.namelist() if "/research-ui/" in "/"+n and n.endswith(".png")]
             require({Path(n).name for n in native_images} == set(config["new_mac_research_images"]), "native research views changed")
             images.extend(("mac-"+arch+"/research/"+Path(n).name,z.read(n)) for n in native_images)
-            report["mac_"+arch] = {"png":104,"preserved_png":96,"core_tests":89,"preserved_core_tests":85,"smoke":smoke,"parity":parity,"workspace_transfer":transfer,"research":research,"research_resource":resource}
+            aqua = json.loads(p.member(z,"aqua-ui/native-aqua.json"))
+            require(aqua["result"] == "PASS" and aqua["screenshots"] == 12 and all(aqua[x] is True for x in ("actual_settings_buttons","four_bundled_artworks","same_original_bytes","classic_default_and_invalid_fallback","scope_and_draft_retained","provider_form_retained","relaunch_preference_retained","reduced_transparency","no_inference_or_research")), "native Aqua controls or persistence proof missing")
+            artwork = json.loads((ROOT/"macos/Resources/Wallpapers/manifest.json").read_text())["images"]
+            require({(item["id"],item["sha256"],item["bytes"]) for item in aqua["images"]} == {(item["id"],item["sha256"],item["bytes"]) for item in artwork}, "native selected artwork differs from source")
+            aqua_resource = json.loads(p.member(z,"aqua-footprint.json"))
+            require(aqua_resource["result"] == "PASS" and aqua_resource["owned_engines_exited"] is True and len(aqua_resource["phases"]) == 2 and len({x["app_pid"] for x in aqua_resource["phases"]}) == len({x["engine_pid"] for x in aqua_resource["phases"]}) == 2 and all(x["exit"] == 0 for x in aqua_resource["phases"]) and aqua_resource["samples"] >= 3 and aqua_resource["app_rss_bytes"] > 0 and aqua_resource["engine_rss_bytes"] > 0, "native Aqua relaunch process lifecycle missing")
+            aqua_images = [n for n in z.namelist() if "/aqua-ui/" in "/"+n and n.endswith(".png")]
+            require({Path(n).name for n in aqua_images} == native_aqua_views, "native Aqua views missing or replaced")
+            images.extend(("mac-"+arch+"/aqua/"+Path(n).name,z.read(n)) for n in aqua_images)
+            report["mac_"+arch] = {"png":104+len(native_aqua_views),"preserved_png":104,"core_tests":89,"preserved_core_tests":89,"smoke":smoke,"parity":parity,"workspace_transfer":transfer,"research":research,"research_resource":resource,"aqua":aqua,"aqua_resource":aqua_resource}
     with archive("ModelAtlas-macOS-Universal") as z:
         with zipfile.ZipFile(io.BytesIO(p.member(z,"ModelAtlas-macOS-Universal.zip"))) as app:
+            for item in json.loads((ROOT/"macos/Resources/Wallpapers/manifest.json").read_text())["images"]:
+                raw = app.read("ModelAtlas.app/Contents/Resources/Wallpapers/"+item["file"])
+                require(len(raw) == item["bytes"] and p.digest(raw) == item["sha256"], "packaged native artwork changed")
             for name in ("ModelAtlas","ModelAtlasEngine"):
                 raw = app.read("ModelAtlas.app/Contents/MacOS/"+name)
                 require(raw[:4] == b"\xca\xfe\xba\xbe", "non-universal Mac binary")

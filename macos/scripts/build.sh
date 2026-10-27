@@ -12,6 +12,8 @@ swift build --package-path "$mac_dir" -c release --arch arm64 --arch x86_64
 bin_dir=$(swift build --package-path "$mac_dir" -c release --arch arm64 --arch x86_64 --show-bin-path)
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$dist/engine-build"
 cp "$mac_dir/Resources/Info.plist" "$app/Contents/Info.plist"
+mkdir -p "$app/Contents/Resources/Wallpapers"
+cp "$mac_dir/Resources/Wallpapers/"* "$app/Contents/Resources/Wallpapers/"
 python3 "$repo_dir/release/mac-metadata.py" "$app"
 cp "$bin_dir/ModelAtlas" "$app/Contents/MacOS/ModelAtlas"
 for arch in arm64 amd64; do

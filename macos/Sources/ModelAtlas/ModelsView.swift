@@ -45,7 +45,7 @@ struct ModelsView: View {
                                 }
                                 if entry.id != entries.prefix(shown).last?.id { Divider().padding(.leading, selecting ? 88 : 60) }
                             }
-                        }.background(atlasSurface).cornerRadius(12)
+                        }.background(AtlasAquaSurface()).cornerRadius(12)
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(atlasHairline, lineWidth: 0.5))
                     }
                     if filtered.count > shown { Button("顯示更多（共 \(filtered.count) 個）") { shown += 100 } }
