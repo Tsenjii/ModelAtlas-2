@@ -1,7 +1,7 @@
 {
   "slice": "MAC-AQUA-015W",
   "status": "CANDIDATE",
-  "parent": "73d864cb72dfc2e1544fc4d9156b4f3226f8d00e",
+  "parent": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318",
   "expected": {
     "go_registry": 438,
     "go_terminal_events": 660,
@@ -24,7 +24,7 @@
     "release_regressions": {
       "result": "PASS",
       "tests": 54,
-      "seconds": 0.035
+      "seconds": 0.036
     },
     "artwork_bytes_and_rgba": "PASS",
     "shell_and_python_syntax": "PASS",
@@ -39,5 +39,7 @@
   "public_release_frozen": true,
   "first_candidate": "mac-aqua-first-candidate.json",
   "transparency_validation": "actual production app Toggle on relaunch; system accessibility preference remains read-only, effective opaque state system OR user",
-  "second_candidate": "mac-aqua-second-candidate.json"
+  "second_candidate": "mac-aqua-second-candidate.json",
+  "third_candidate": "mac-aqua-third-candidate.json",
+  "native_first_settings_failure": "UNKNOWN; actual bounded UI readiness, focus and detailed diagnostics added; no acceptance before current native run"
 }

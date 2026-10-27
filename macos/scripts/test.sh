@@ -51,6 +51,10 @@ export MODELATLAS_FIXTURE_URL
 MODELATLAS_FIXTURE_URL=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["url"])' "$qa/fixture/fixture.json")
 export MODELATLAS_PLAIN_FIXTURE_URL
 MODELATLAS_PLAIN_FIXTURE_URL=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["plain"])' "$qa/fixture/fixture.json")
+
+echo 'Native stage: separate Aqua settings, exact artwork, draft and relaunch process'
+python3 "$mac_dir/scripts/run-bounded.py" 180 "$qa/aqua-test.log" python3 "$mac_dir/scripts/aqua-test.py" "$app" "$qa"
+
 echo 'Native stage: build test bundle'
 python3 "$mac_dir/scripts/run-bounded.py" 480 "$qa/swift-test-build.log" swift build --package-path "$mac_dir" --build-tests
 echo 'Native stage: run packaged engine and Keychain tests'
@@ -109,6 +113,3 @@ python3 "$mac_dir/scripts/parity-test.py" "$app" "$qa" "$MODELATLAS_FIXTURE_URL"
 
 echo 'Native stage: separate durable research controls and AA recovery process'
 python3 "$mac_dir/scripts/run-bounded.py" 270 "$qa/research-test.log" python3 "$mac_dir/scripts/research-test.py" "$app" "$qa"
-
-echo 'Native stage: separate Aqua settings, exact artwork, draft and relaunch process'
-python3 "$mac_dir/scripts/run-bounded.py" 180 "$qa/aqua-test.log" python3 "$mac_dir/scripts/aqua-test.py" "$app" "$qa"

@@ -7,3 +7,5 @@
 沿用RootView、原三主導航／右上設定與正式ChatView／ProvidersView／ModelsView及表單。原圖滿版裁切，透明Q版置於右下；聊天、側欄及卡片採可讀水光底色。非法介面值退回經典、非法背景值退回Kotoha；不把偏好當作檔案路徑。設定另提供「減少背景透明度」；使用者選用或系統啟用「減少透明度」時，背景改為實色並隱藏插畫，遵循Apple對accessibilityReduceTransparency的定義：https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityReduceTransparency 。
 
 本片MAC-AQUA-015W仍候選。新增獨立第四個原生階段，實際點選正式設定按鈕，檢查四張圖、scope／聊天及供應商草稿、經典往返、實際第二次啟動保留偏好與實際App減少透明度按鈕，共12張新圖。原89核心、104張原生圖及原smoke／parity／research的所有情境與上限保留；新階段另設180秒外層與兩次啟動共150秒。系統偏好為唯讀，不透過測試覆寫或更改主機系統偏好；由相同正式實色渲染路徑檢查App選項。自己的同源九項、實際產物及108相關視圖前不接受，不宣稱Android原生Aqua或整版已完成。
+
+為快速定位新增原生操作，Aqua階段先行執行；成功後原核心、smoke、parity、research全部照跑，原上限不變。失敗保留逐步進度／視窗與marker幾何及失敗截圖，先拆除實際modal再走既有關閉流程；不將失敗或部分圖片數當作驗收。第三候選第一個設定操作失敗的精確根因仍待真原生診斷，不因七項成功改稱全綠。

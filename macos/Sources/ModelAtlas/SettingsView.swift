@@ -44,6 +44,7 @@ struct SettingsView: View {
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }.frame(width: 850, height: 740).background(AtlasAquaSurface(fallback: atlasCanvas))
+        .overlay(AtlasLoadedMarker(name: "native-settings-ready").frame(width: 0, height: 0))
         .task {
             timezone = store.settings["timezone"].string; performance = store.settings["performance_window"].string
             notifications = store.settings["notifications"].boolean; background = store.settings["background"]["enabled"].boolean
@@ -108,7 +109,7 @@ struct SettingsView: View {
                 AtlasWallpaperSettings(interface: $interface, wallpaper: $wallpaper)
                 Toggle(isOn: $reduceInterfaceTransparency) {
                     Text("減少背景透明度").background(AtlasLoadedMarker(name: "native-transparency-target"))
-                }.accessibilityIdentifier("native-transparency")
+                }.accessibilityIdentifier("native-transparency-target")
                 Text("系統啟用減少透明度時，一律使用實色背景。").font(.caption).foregroundStyle(.secondary)
                 Divider()
                 HStack {

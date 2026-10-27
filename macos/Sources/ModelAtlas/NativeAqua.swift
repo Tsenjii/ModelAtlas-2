@@ -11,12 +11,19 @@ import SwiftUI
         let defaults = UserDefaults.standard
         let beforeFile = output.appendingPathComponent("appearance-before.json")
         let reopening = ProcessInfo.processInfo.arguments.contains("--aqua-reopen")
+        var primaryWindow: NSWindow?
+        func checkpoint(_ next: String) {
+            stage = next
+            let state: JSONValue = .object(["stage": .string(stage), "interface": .string(AtlasInterfaceChoice(saved: defaults.string(forKey: "workspaceInterface") ?? "").rawValue), "wallpaper": .string(AtlasWallpaperChoice(saved: defaults.string(forKey: "workspaceWallpaper") ?? "").rawValue), "windows": .array(NSApp.windows.filter { $0.isVisible }.map { windowState($0) })])
+            try? JSONEncoder().encode(state).write(to: output.appendingPathComponent("progress.json"), options: .atomic)
+        }
         defer { DispatchQueue.main.async { NSApp.terminate(nil) } }
         do {
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
             guard store.ready, let api = store.api,
                   let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }) else { throw AtlasError.engineUnavailable }
-            try JSONEncoder().encode(JSONValue.object(["app_pid": .number(Double(ProcessInfo.processInfo.processIdentifier)), "engine_pid": .number(Double(store.engine.process?.processIdentifier ?? 0))])).write(to: output.appendingPathComponent("measurement-pids.json"))
+            primaryWindow = window
+            try JSONEncoder().encode(JSONValue.object(["app_pid": .number(Double(ProcessInfo.processInfo.processIdentifier)), "engine_pid": .number(Double(store.engine.process?.processIdentifier ?? 0))])).write(to: output.appendingPathComponent("measurement-pids.json"), options: .atomic)
             window.setContentSize(NSSize(width: 1200, height: 800)); window.center(); window.makeKeyAndOrderFront(nil)
             if reopening {
                 defer { restorePreferences(beforeFile) }
@@ -66,19 +73,27 @@ import SwiftUI
             var images: [JSONValue] = []
             let definitions: [(AtlasWallpaperChoice, String, Bool)] = [(.kotoha, "02-kotoha-light", false), (.elaina, "03-elaina-light", false), (.kotohaChibi, "04-kotoha-chibi-light", false), (.elainaChibi, "05-elaina-chibi-dark", true)]
             for (choice, name, dark) in definitions {
-                stage = "actual-settings-" + choice.rawValue
+                checkpoint("settings-open-" + choice.rawValue)
                 let sheet = try await openSettings(store, window)
+                checkpoint("settings-ready-" + choice.rawValue)
                 if AtlasInterfaceChoice(saved: defaults.string(forKey: "workspaceInterface") ?? "") != .aqua {
+                    checkpoint("style-click-" + choice.rawValue)
                     try await click(sheet, "native-style-aqua-target")
+                    checkpoint("style-applied-" + choice.rawValue)
                     try await wait { defaults.string(forKey: "workspaceInterface") == "aqua" }
                 }
+                checkpoint("wallpaper-click-" + choice.rawValue)
                 try await click(sheet, "native-wallpaper-" + choice.rawValue + "-target")
+                checkpoint("wallpaper-applied-" + choice.rawValue)
                 try await wait { defaults.string(forKey: "workspaceWallpaper") == choice.rawValue }
                 defaults.set(dark ? "dark" : "light", forKey: "appearance")
                 if choice == .elainaChibi { try await frame(sheet, output, "06-settings-four-choices-dark") }
+                checkpoint("settings-close-" + choice.rawValue)
                 try await click(sheet, "native-settings-close-target")
                 try await wait { !store.settingsOpen && window.attachedSheet == nil }
+                checkpoint("background-ready-" + choice.rawValue)
                 try await wait { find(window.contentView, "aqua-artwork-ready-" + choice.rawValue) != nil }
+                checkpoint("bitmap-dimensions-" + choice.rawValue)
                 guard let root = Bundle.main.resourceURL, let decoded = AtlasWallpaperImages.image(choice), let bitmap = decoded.representations.first else { throw AtlasError.invalidResponse }
                 let bytes = try Data(contentsOf: root.appendingPathComponent("Wallpapers").appendingPathComponent(choice.filename))
                 let hash = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
@@ -123,8 +138,17 @@ import SwiftUI
             defaults.synchronize()
             try JSONEncoder().encode(JSONValue.object(["result": .string("PASS"), "screenshots": .number(10), "images": .array(images)])).write(to: output.appendingPathComponent("aqua-first.json"))
         } catch {
+            checkpoint(stage)
+            if let window = primaryWindow { try? await frame(window.attachedSheet ?? window, output, "failure") }
+            try? Data((stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt"), options: .atomic)
+            // End real modal sheets before asking AppKit to terminate. Failure
+            // remains fatal; original assertions and total deadline stay intact.
+            store.settingsOpen = false; store.newProviderOpen = false
+            if let window = primaryWindow {
+                for sheet in window.sheets { window.endSheet(sheet); sheet.orderOut(nil) }
+            }
             restorePreferences(beforeFile)
-            try? Data((stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt"))
+            try? await Task.sleep(nanoseconds: 100_000_000)
         }
     }
     private static func restorePreferences(_ path: URL) {
@@ -138,6 +162,18 @@ import SwiftUI
         while !condition() && Date() < end { try await Task.sleep(nanoseconds: 20_000_000) }
         try require(condition())
     }
+    private static func windowState(_ window: NSWindow) -> JSONValue {
+        .object(["number": .number(Double(window.windowNumber)), "sheet": .number(Double(window.attachedSheet?.windowNumber ?? 0)), "markers": .array(markers(window.contentView))])
+    }
+    private static func markers(_ view: NSView?) -> [JSONValue] {
+        guard let view else { return [] }
+        var rows: [JSONValue] = []
+        if let name = view.identifier?.rawValue, name.hasPrefix("native-") || name.hasPrefix("aqua-") || name.hasPrefix("appearance-") {
+            let rect = view.convert(view.bounds, to: nil)
+            rows.append(.object(["id": .string(name), "x": .number(Double(rect.minX)), "y": .number(Double(rect.minY)), "width": .number(Double(rect.width)), "height": .number(Double(rect.height))]))
+        }
+        for child in view.subviews { rows += markers(child) }; return rows
+    }
     private static func find(_ view: NSView?, _ marker: String) -> NSView? {
         guard let view else { return nil }; if view.identifier?.rawValue == marker { return view }
         for child in view.subviews { if let found = find(child, marker) { return found } }; return nil
@@ -149,11 +185,16 @@ import SwiftUI
     }
     private static func openSettings(_ store: AtlasStore, _ window: NSWindow) async throws -> NSWindow {
         store.settingsOpen = true
-        try await wait { window.attachedSheet.map { find($0.contentView, "native-style-aqua-target") != nil } == true }
-        guard let sheet = window.attachedSheet else { throw AtlasError.invalidResponse }; return sheet
+        try await wait { window.attachedSheet != nil }
+        guard let sheet = window.attachedSheet else { throw AtlasError.invalidResponse }
+        sheet.makeKeyAndOrderFront(nil); sheet.contentView?.layoutSubtreeIfNeeded()
+        try await wait { find(sheet.contentView, "native-settings-ready") != nil }
+        return sheet
     }
     private static func click(_ window: NSWindow, _ marker: String) async throws {
+        try await wait { find(window.contentView, marker) != nil }
         guard let target = find(window.contentView, marker) else { throw AtlasError.invalidResponse }
+        window.makeKeyAndOrderFront(nil)
         target.scrollToVisible(target.bounds); window.contentView?.layoutSubtreeIfNeeded()
         try await Task.sleep(nanoseconds: 80_000_000)
         let point = target.convert(NSPoint(x: target.bounds.midX, y: target.bounds.midY), to: nil)

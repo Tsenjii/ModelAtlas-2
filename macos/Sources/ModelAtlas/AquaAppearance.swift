@@ -127,7 +127,7 @@ struct AtlasWallpaperSettings: View {
                         Text(choice.title).frame(maxWidth: .infinity, minHeight: 32)
                             .background(AtlasLoadedMarker(name: "native-style-" + choice.rawValue + "-target"))
                     }.buttonStyle(AtlasActionStyle(prominent: style == choice))
-                        .accessibilityIdentifier("native-style-" + choice.rawValue)
+                        .accessibilityIdentifier("native-style-" + choice.rawValue + "-target")
                         .accessibilityAddTraits(style == choice ? .isSelected : [])
                 }
             }
@@ -140,7 +140,7 @@ struct AtlasWallpaperSettings: View {
                                 .frame(maxWidth: .infinity, minHeight: 36)
                                 .background(AtlasLoadedMarker(name: "native-wallpaper-" + choice.rawValue + "-target"))
                         }.buttonStyle(AtlasActionStyle())
-                            .accessibilityLabel(choice.title).accessibilityIdentifier("native-wallpaper-" + choice.rawValue)
+                            .accessibilityLabel(choice.title).accessibilityIdentifier("native-wallpaper-" + choice.rawValue + "-target")
                             .accessibilityAddTraits(AtlasWallpaperChoice(saved: wallpaper) == choice ? .isSelected : [])
                     }
                 }
