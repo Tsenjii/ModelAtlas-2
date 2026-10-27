@@ -1,7 +1,7 @@
 {
   "slice": "MAC-AQUA-015W",
   "status": "CANDIDATE",
-  "parent": "ce1ea03be728621c36f3ff2112a203f399b4c25a",
+  "parent": "a18d942e85dd32e93ef076b998610c61b4c06ebd",
   "expected": {
     "go_registry": 438,
     "go_terminal_events": 660,
@@ -24,7 +24,7 @@
     "release_regressions": {
       "result": "PASS",
       "tests": 54,
-      "seconds": 0.039
+      "seconds": 0.035
     },
     "artwork_bytes_and_rgba": "PASS",
     "shell_and_python_syntax": "PASS",
@@ -35,5 +35,7 @@
   "actual_nine_archives": "PENDING",
   "whole_next_release": "PARTIAL",
   "android_native_aqua": "NOT_IMPLEMENTED",
-  "public_release_frozen": true
+  "public_release_frozen": true,
+  "first_candidate": "mac-aqua-first-candidate.json",
+  "transparency_validation": "actual production app Toggle on relaunch; system accessibility preference remains read-only, effective opaque state system OR user"
 }

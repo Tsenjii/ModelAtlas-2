@@ -5,14 +5,13 @@ import SwiftUI
 
 // Separate fourth opt-in process: real settings controls and a packaged relaunch.
 @MainActor enum NativeAqua {
-    private static let preferenceKeys = ["workspaceInterface", "workspaceWallpaper", "appearance", "workspaceAccent"]
+    private static let preferenceKeys = ["workspaceInterface", "workspaceWallpaper", "appearance", "workspaceAccent", "reduceInterfaceTransparency"]
     static func run(store: AtlasStore, output: URL) async {
         var stage = "bootstrap"
         let defaults = UserDefaults.standard
         let beforeFile = output.appendingPathComponent("appearance-before.json")
         let reopening = ProcessInfo.processInfo.arguments.contains("--aqua-reopen")
-        var temporaryWindow: NSWindow?
-        defer { temporaryWindow?.close(); DispatchQueue.main.async { NSApp.terminate(nil) } }
+        defer { DispatchQueue.main.async { NSApp.terminate(nil) } }
         do {
             try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
             guard store.ready, let api = store.api,
@@ -25,20 +24,20 @@ import SwiftUI
                 try require(defaults.string(forKey: "workspaceInterface") == "aqua" && defaults.string(forKey: "workspaceWallpaper") == "elaina-chibi")
                 try await wait { find(window.contentView, "aqua-artwork-ready-elaina-chibi") != nil }
                 try await frame(window, output, "11-relaunch-retained-dark")
-                stage = "system-reduced-transparency"
+                stage = "actual-app-reduced-transparency-control"
                 defaults.set("light", forKey: "appearance")
-                let reduced = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 700), styleMask: [.titled, .closable], backing: .buffered, defer: false)
-                reduced.isReleasedWhenClosed = false; temporaryWindow = reduced
-                reduced.contentView = NSHostingView(rootView: RootView(store: store).environment(\.accessibilityReduceTransparency, true))
-                reduced.center(); reduced.makeKeyAndOrderFront(nil)
-                try await wait { find(reduced.contentView, "aqua-opaque-background") != nil }
-                try require(find(reduced.contentView, "aqua-artwork-ready-elaina-chibi") == nil)
-                try await frame(reduced, output, "12-reduced-transparency-light")
+                let sheet = try await openSettings(store, window)
+                try await click(sheet, "native-transparency-target")
+                try await wait { defaults.bool(forKey: "reduceInterfaceTransparency") }
+                try await click(sheet, "native-settings-close-target")
+                try await wait { window.attachedSheet == nil && find(window.contentView, "aqua-opaque-background") != nil }
+                try require(find(window.contentView, "aqua-artwork-ready-elaina-chibi") == nil)
+                try await frame(window, output, "12-reduced-transparency-light")
                 try require(try await api.get("/telemetry").requiredArray().isEmpty)
                 try require(try await api.get("/research/runs").requiredArray().isEmpty)
                 let first = try JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: output.appendingPathComponent("aqua-first.json")))
                 try require(first["result"].string == "PASS")
-                let report: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(12), "actual_settings_buttons": .bool(true), "four_bundled_artworks": .bool(true), "same_original_bytes": .bool(true), "classic_default_and_invalid_fallback": .bool(true), "scope_and_draft_retained": .bool(true), "provider_form_retained": .bool(true), "relaunch_preference_retained": .bool(true), "reduced_transparency": .bool(true), "no_inference_or_research": .bool(true), "images": first["images"]])
+                let report: JSONValue = .object(["result": .string("PASS"), "screenshots": .number(12), "actual_settings_buttons": .bool(true), "four_bundled_artworks": .bool(true), "same_original_bytes": .bool(true), "classic_default_and_invalid_fallback": .bool(true), "scope_and_draft_retained": .bool(true), "provider_form_retained": .bool(true), "relaunch_preference_retained": .bool(true), "reduced_transparency": .bool(true), "transparency_control": .string("actual app toggle; system preference read-only and never modified"), "no_inference_or_research": .bool(true), "images": first["images"]])
                 try JSONEncoder().encode(report).write(to: output.appendingPathComponent("native-aqua.json"))
                 return
             }
@@ -58,6 +57,7 @@ import SwiftUI
             let scope = store.selectedScope, draft = store.draft, attachments = store.attachments
             func unchanged() throws { try require(store.selectedScope == scope && store.draft == draft && store.attachments == attachments && store.sessionID == nil && store.messages.isEmpty) }
             defaults.set("light", forKey: "appearance"); defaults.set("graphite", forKey: "workspaceAccent")
+            defaults.set(false, forKey: "reduceInterfaceTransparency")
             defaults.set("invalid-interface", forKey: "workspaceInterface"); defaults.set("https://invalid.example/not-a-bundled-image", forKey: "workspaceWallpaper")
             stage = "unknown-preferences-fall-back-to-classic"
             try await wait { find(window.contentView, "native-interface-classic") != nil }

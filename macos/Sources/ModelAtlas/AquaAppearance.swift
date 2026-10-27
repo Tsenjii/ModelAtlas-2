@@ -60,7 +60,9 @@ struct AtlasAquaSurface: View {
     var fallback: Color = atlasSurface
     @Environment(\.atlasInterface) private var style
     @Environment(\.colorScheme) private var scheme
-    @Environment(\.accessibilityReduceTransparency) private var opaque
+    @Environment(\.accessibilityReduceTransparency) private var systemOpaque
+    @AppStorage("reduceInterfaceTransparency") private var userOpaque = false
+    private var opaque: Bool { systemOpaque || userOpaque }
     var body: some View {
         Group {
             if style == .classic || opaque { fallback }
@@ -81,7 +83,9 @@ struct AtlasWallpaperBackdrop: View {
     let style: AtlasInterfaceChoice
     let wallpaper: AtlasWallpaperChoice
     @Environment(\.colorScheme) private var scheme
-    @Environment(\.accessibilityReduceTransparency) private var opaque
+    @Environment(\.accessibilityReduceTransparency) private var systemOpaque
+    @AppStorage("reduceInterfaceTransparency") private var userOpaque = false
+    private var opaque: Bool { systemOpaque || userOpaque }
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .bottomTrailing) {

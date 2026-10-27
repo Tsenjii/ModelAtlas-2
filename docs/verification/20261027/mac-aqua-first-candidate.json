@@ -1,0 +1,107 @@
+{
+  "slice": "MAC-AQUA-015W",
+  "source": "a18d942e85dd32e93ef076b998610c61b4c06ebd",
+  "tree": "d66f044a771506fac46908e8b8ce7ab6205c5fc5",
+  "status": "REJECTED_NOT_ACCEPTED",
+  "observed_jobs": [
+    {
+      "run": 40544100932,
+      "jobs": [
+        {
+          "id": 122329941222,
+          "name": "macos-build",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 122331062990,
+          "name": "macos-test",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    {
+      "run": 40544101001,
+      "jobs": [
+        {
+          "id": 122329940587,
+          "name": "vps-test",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 122329940948,
+          "name": "vps-private-mapping-diagnostic",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 122329941001,
+          "name": "vps-linux-arm64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 122329941133,
+          "name": "vps-browser",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 122329941192,
+          "name": "vps-linux-amd64",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run": 40544100911,
+      "jobs": [
+        {
+          "id": 122329944797,
+          "name": "device-tests",
+          "status": "in_progress",
+          "conclusion": null
+        },
+        {
+          "id": 122329945862,
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run": 40544101221,
+      "jobs": [
+        {
+          "id": 122329942878,
+          "name": "candidate-artifact-audit",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    }
+  ],
+  "mac_build": {
+    "run": 40544100932,
+    "job": 122329941222,
+    "result": "FAILURE",
+    "error": "NativeAqua.swift:32:98 cannot convert KeyPath<EnvironmentValues, Bool> to WritableKeyPath<EnvironmentValues, Bool>",
+    "cause": "QA attempted to write the read-only SwiftUI system accessibilityReduceTransparency environment value",
+    "runtime_ui": "NOT_REACHED"
+  },
+  "audit": {
+    "run": 40544101221,
+    "job": 122329942878,
+    "result": "FAILURE",
+    "error": "CI workflow is not successful",
+    "archive": "not present when checked; no successful byte audit claimed"
+  },
+  "reference": "https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityReduceTransparency",
+  "resolution": "Keep read-only system preference; add actual app Reduce Background Transparency toggle; effective opaque state is system OR app, preserving every original assertion and screenshot. Native QA clicks production toggle on packaged relaunch instead of injecting system environment.",
+  "original_tests_workloads_and_timeouts": "UNCHANGED",
+  "whole_next_release": "PARTIAL"
+}

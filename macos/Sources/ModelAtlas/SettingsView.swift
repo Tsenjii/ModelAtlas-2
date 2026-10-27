@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("workspaceAccent") private var accent = "graphite"
     @AppStorage("workspaceInterface") private var interface = "classic"
     @AppStorage("workspaceWallpaper") private var wallpaper = "kotoha"
+    @AppStorage("reduceInterfaceTransparency") private var reduceInterfaceTransparency = false
     @AppStorage("reduceInterfaceMotion") private var reduceInterfaceMotion = false
     @Environment(\.atlasMotion) private var motion
     @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
@@ -105,6 +106,10 @@ struct SettingsView: View {
                 Picker("色彩模式", selection: $appearance) { Text("跟隨系統").tag("system"); Text("淺色").tag("light"); Text("深色").tag("dark") }.pickerStyle(.segmented)
                 Divider()
                 AtlasWallpaperSettings(interface: $interface, wallpaper: $wallpaper)
+                Toggle("減少背景透明度", isOn: $reduceInterfaceTransparency)
+                    .background(AtlasLoadedMarker(name: "native-transparency-target"))
+                    .accessibilityIdentifier("native-transparency")
+                Text("系統啟用減少透明度時，一律使用實色背景。").font(.caption).foregroundStyle(.secondary)
                 Divider()
                 HStack {
                     Text("按鈕強調色")

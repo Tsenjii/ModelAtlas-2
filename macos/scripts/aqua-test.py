@@ -59,6 +59,7 @@ for restart in (False, True):
 
 report = json.loads((out / "native-aqua.json").read_text())
 assert report["screenshots"] == len(list(out.glob("*.png"))) == 12
+assert report["transparency_control"] == "actual app toggle; system preference read-only and never modified"
 for name in ("actual_settings_buttons", "four_bundled_artworks", "same_original_bytes",
              "classic_default_and_invalid_fallback", "scope_and_draft_retained", "provider_form_retained",
              "relaunch_preference_retained", "reduced_transparency", "no_inference_or_research"):

@@ -442,6 +442,7 @@ def main():
             images.extend(("mac-"+arch+"/research/"+Path(n).name,z.read(n)) for n in native_images)
             aqua = json.loads(p.member(z,"aqua-ui/native-aqua.json"))
             require(aqua["result"] == "PASS" and aqua["screenshots"] == 12 and all(aqua[x] is True for x in ("actual_settings_buttons","four_bundled_artworks","same_original_bytes","classic_default_and_invalid_fallback","scope_and_draft_retained","provider_form_retained","relaunch_preference_retained","reduced_transparency","no_inference_or_research")), "native Aqua controls or persistence proof missing")
+            require(aqua["transparency_control"] == "actual app toggle; system preference read-only and never modified", "native transparency control is not exercised")
             artwork = json.loads((ROOT/"macos/Resources/Wallpapers/manifest.json").read_text())["images"]
             require({(item["id"],item["sha256"],item["bytes"]) for item in aqua["images"]} == {(item["id"],item["sha256"],item["bytes"]) for item in artwork}, "native selected artwork differs from source")
             aqua_resource = json.loads(p.member(z,"aqua-footprint.json"))
