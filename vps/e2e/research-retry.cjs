@@ -12,7 +12,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   const firstDeadline=await page.evaluate(()=>researchRuns[0].summary.next_retry_at);
   const runID=await page.evaluate(()=>researchRuns[0].id),card=page.locator('#research-runs .item').first();
   await card.getByText(/等待來源重試/).waitFor();await card.getByRole('button',{name:'執行紀錄',exact:true}).click();
-  const task=page.locator('#detail-content > details').filter({has:page.locator('summary').filter({hasText:/^SOURCE ·/})});await task.locator('summary').first().click();
+  const task=page.locator('#research-run-snapshot > details').filter({has:page.locator('summary').filter({hasText:/^SOURCE ·/})});await task.locator('summary').first().click();
   const panel=page.locator('.research-retry-panel');await panel.getByText(/來源暫時無法連線（HTTP 429）/).waitFor();assert.equal(await panel.locator('li').count(),1);
   await page.waitForFunction(()=>!document.querySelector('#notice').classList.contains('notice-visible'));
   for(const width of [320,375,1280])for(const theme of ['light','dark']){
@@ -34,7 +34,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   // A failed or late detail refresh keeps the visible result and cannot reopen a closed dialog.
   const taskURL='**/api/v1/research/tasks?run_id='+runID;
   await page.route(taskURL,route=>route.fulfill({status:503,contentType:'text/plain',body:'temporary detail read failure'}));
-  await page.locator('#detail-content').getByRole('button',{name:'更新執行紀錄',exact:true}).click();await page.locator('#notice.error').waitFor();await panel.getByText('來源已恢復連線，暫時失敗的紀錄已保留。',{exact:true}).waitFor();assert.equal(await panel.locator('li').count(),2);await page.unroute(taskURL);
+  await page.locator('#detail-content').getByRole('button',{name:'更新執行紀錄',exact:true}).click();await page.locator('#research-run-problem').filter({hasText:'讀取失敗'}).waitFor();await panel.getByText('來源已恢復連線，暫時失敗的紀錄已保留。',{exact:true}).waitFor();assert.equal(await panel.locator('li').count(),2);await page.unroute(taskURL);
   let arrived,release;const entered=new Promise(r=>arrived=r),hold=new Promise(r=>release=r);
   await page.route(taskURL,async route=>{const response=await route.fetch();arrived();await hold;await route.fulfill({response});});
   await page.locator('#detail-content').getByRole('button',{name:'更新執行紀錄',exact:true}).click();await entered;await page.locator('#detail-close').click();const finished=page.waitForResponse(r=>r.url().includes('/research/tasks?run_id='+runID));release();await finished;await page.evaluate(()=>new Promise(requestAnimationFrame));assert(!await page.locator('#detail').evaluate(n=>n.open),'late refresh reopened a closed dialog');

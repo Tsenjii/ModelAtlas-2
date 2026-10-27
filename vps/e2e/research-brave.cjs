@@ -16,7 +16,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   let state=await (await context.request.get(origin+'/api/v1/research/schedules')).json();assert.equal(state.schedules[0].options.search_pages,2);assert.equal(state.schedules[0].options.search_country,'JP');assert.deepEqual(state.schedules[0].languages,['en']);assert.equal(state.today_used,0);
   await card.getByRole('button',{name:'啟用排程',exact:true}).click();await waitRun('BUDGET_EXHAUSTED',2);
   const runID=(await readRuns())[0].id,runCard=page.locator('#research-runs .item').first();await runCard.getByRole('button',{name:'執行紀錄',exact:true}).click();
-  const task=page.locator('#detail-content > details').filter({has:page.locator('summary').filter({hasText:/^SEARCH ·/})});await task.locator('summary').first().click();const panel=page.locator('.research-brave-panel');
+  const task=page.locator('#research-run-snapshot > details').filter({has:page.locator('summary').filter({hasText:/^SEARCH ·/})});await task.locator('summary').first().click();const panel=page.locator('.research-brave-panel');
   await panel.getByText('已保存 1 / 最多 2 頁 · 0 個來源線索 · 地區 JP',{exact:true}).waitFor();await panel.getByText(/第 2 頁暫時無法連線/).waitFor();await panel.getByText(/目前額度已用完/).waitFor();assert.equal(await panel.locator('li').count(),1);
   let tasks=await (await context.request.get(origin+'/api/v1/research/tasks?run_id='+runID)).json();assert.equal(tasks[0].result.brave_progress.completed_pages,1);assert(!JSON.stringify(tasks).includes('credential_stamp'));assert(!JSON.stringify(tasks).includes('private-search-error-body'));assert(!JSON.stringify(tasks).includes('brave-fixture-key'));
   await page.waitForFunction(()=>!document.querySelector('#notice').classList.contains('notice-visible'));

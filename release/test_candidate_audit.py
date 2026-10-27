@@ -86,11 +86,18 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "accepted execution"):
             audit.browser_image_scopes(config)
 
+    def test_accepted_aqua_view_cannot_be_replaced_at_the_same_count(self):
+        config = self.config()
+        config["new_browser_images"].remove("aqua-playground-390-light.png")
+        config["new_browser_images"].append("research-history-cannot-replace-aqua.png")
+        with self.assertRaisesRegex(ValueError, "accepted Aqua"):
+            audit.browser_image_scopes(config)
+
     def test_contact_inventory_grows_without_rewriting_frozen_views(self):
         config = self.config()
-        self.assertEqual(audit.visual_review_count(config),70)
+        self.assertEqual(audit.visual_review_count(config),84)
         config["new_browser_images"].append("future-new-view.png")
-        self.assertEqual(audit.visual_review_count(config),71)
+        self.assertEqual(audit.visual_review_count(config),85)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
 class CandidateRegistryIntegrityTest(unittest.TestCase):

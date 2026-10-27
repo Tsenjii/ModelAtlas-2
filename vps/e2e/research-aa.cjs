@@ -13,7 +13,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   const runID=await page.evaluate(()=>researchRuns[0].id),card=page.locator('#research-runs .item').first();
   await page.locator('#aa-ranking').getByText('1. 上一份模型 1',{exact:true}).waitFor();
   await card.getByRole('button',{name:'執行紀錄',exact:true}).click();
-  const task=page.locator('#detail-content > details').filter({has:page.locator('summary').filter({hasText:/^AA ·/})});await task.locator('summary').first().click();
+  const task=page.locator('#research-run-snapshot > details').filter({has:page.locator('summary').filter({hasText:/^AA ·/})});await task.locator('summary').first().click();
   const panel=page.locator('.research-aa-panel');await panel.getByText('已保存 1 / 2 頁 · 2 個已評分模型',{exact:true}).waitFor();await panel.getByText(/第 2 頁暫時無法連線/).waitFor();await panel.getByText(/目前額度已用完/).waitFor();assert.equal(await panel.locator('li').count(),1);
   const partial=await (await context.request.get(origin+'/api/v1/research/tasks?run_id='+runID)).json();assert.equal(partial[0].result.aa_progress.completed_pages,1);assert(!JSON.stringify(partial).includes('credential_stamp'),'local credential revision leaked to UI');assert(!JSON.stringify(partial).includes('remote-private-body'),'remote error body leaked to history');assert.equal((await (await context.request.get(origin+'/api/v1/research/aa')).json()).snapshot.id,'aa-last-good');
   await page.waitForFunction(()=>!document.querySelector('#notice').classList.contains('notice-visible'));

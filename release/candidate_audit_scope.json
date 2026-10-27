@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "slice": "AQUA-INTERFACE-015U",
+  "slice": "RESEARCH-HISTORY-015V",
   "browser_baseline": {
     "id": 12622386762,
     "bytes": 39268692,
@@ -148,7 +148,12 @@
     "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery": "skip",
     "TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal/UTC-midnight": "pass",
     "TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation/UTC-midnight": "pass",
-    "TestPublicResearchRetryScheduleContinuationRetainsAllowance/UTC-midnight": "pass"
+    "TestPublicResearchRetryScheduleContinuationRetainsAllowance/UTC-midnight": "pass",
+    "TestResearchHistoryArchiveKeepsAllRowsStableAcrossInsertionsAndScheduleScopes": "pass",
+    "TestResearchHistoryRejectsBadCursorsAndUnreadableRowsWithoutInventingEmptyHistory": "pass",
+    "TestResearchHistorySchema37UpgradePreservesRecordsAndUsesBoundedOrderedIndex": "pass",
+    "TestResearchScheduleMetadataReportsSavedConcurrencyAndKeepsUnavailableUnknown": "pass",
+    "TestBrowserResearchHistoryArchiveAndExactRecovery": "skip"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",
@@ -184,7 +189,21 @@
     "aqua-playground-812-safe-dark.png",
     "aqua-playground-390-saved.png",
     "aqua-offline-390-light.png",
-    "aqua-offline-draft-390-light.png"
+    "aqua-offline-draft-390-light.png",
+    "research-history-list-1280-light.png",
+    "research-history-list-390-light.png",
+    "research-history-list-320-200-dark.png",
+    "research-history-detail-390-dark.png",
+    "research-history-detail-375-200-dark.png",
+    "research-history-last-good-390-dark.png",
+    "research-history-lost-ack-390-light.png",
+    "research-history-read-recovered-390-light.png",
+    "research-history-scope-1280-light.png",
+    "research-history-scope-failure-390-dark.png",
+    "aqua-background-kotoha-390-light.png",
+    "aqua-background-elaina-390-light.png",
+    "aqua-background-kotoha-chibi-1280-light.png",
+    "aqua-background-elaina-chibi-390-dark.png"
   ],
   "rejected_aa_browser": {
     "id": 12625684013,
@@ -308,5 +327,25 @@
     "research-execution-320-200-dark.png",
     "research-execution-1280-dark.png",
     "research-execution-375-last-good.png"
+  ],
+  "accepted_aqua_audit": {
+    "id": 12701035415,
+    "bytes": 1212247,
+    "digest": "sha256:48599e280ed1c1904037158e1ab63dd5c2295ed71ad1a57d1cf8c8e97bd9001a",
+    "source": "cf5819f2c4472319dc643128700740283641b660"
+  },
+  "accepted_aqua_views": [
+    "aqua-playground-390-light.png",
+    "aqua-playground-1280-light.png",
+    "aqua-providers-390-light.png",
+    "aqua-provider-editor-375-200-light.png",
+    "aqua-models-1280-light.png",
+    "aqua-models-320-200-dark.png",
+    "aqua-model-detail-390-dark.png",
+    "aqua-settings-390-dark.png",
+    "aqua-playground-812-safe-dark.png",
+    "aqua-playground-390-saved.png",
+    "aqua-offline-390-light.png",
+    "aqua-offline-draft-390-light.png"
   ]
 }

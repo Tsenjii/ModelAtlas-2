@@ -268,8 +268,13 @@ func (s *Server) listResearchSchedules(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "schedule storage unavailable", 500)
 		return
 	}
+	policy, err := readResearchExecutionPolicy(r.Context(), s.Store.DB)
+	if err != nil {
+		http.Error(w, "research execution policy unavailable", 503)
+		return
+	}
 	t := s.scheduleTime()
-	jsonOK(w, 200, map[string]any{"schedules": list, "daily_http_limit": scheduleDailyLimit(r.Context(), s.Store.DB), "today_used": scheduleUsage(r.Context(), s.Store.DB, t.Format("2006-01-02"), "global"), "reset_at": nextBudgetDay(t), "max_active": 1, "inference_enabled": false, "private_inference_opt_in_available": true, "lifecycle": "THIS_ENGINE"})
+	jsonOK(w, 200, map[string]any{"schedules": list, "daily_http_limit": scheduleDailyLimit(r.Context(), s.Store.DB), "today_used": scheduleUsage(r.Context(), s.Store.DB, t.Format("2006-01-02"), "global"), "reset_at": nextBudgetDay(t), "max_active": policy.MaxParallelRuns, "inference_enabled": false, "private_inference_opt_in_available": true, "lifecycle": "THIS_ENGINE"})
 }
 func (s *Server) saveResearchSchedule(w http.ResponseWriter, r *http.Request) {
 	var v struct {

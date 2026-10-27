@@ -589,6 +589,7 @@ const homeHTML = `<!doctype html>
 </div>
 <button>開始研究</button>
 </form>
+<div class="heading-actions"><h3>最近研究</h3><button id="research-history-open" type="button" class="ghost">查看全部研究紀錄</button></div>
 <div id="research-runs" class="cards">
 </div>
 <details>
@@ -624,6 +625,7 @@ const homeHTML = `<!doctype html>
 <div class="card">
 <h2>顯示外觀</h2>
 <label>介面風格<select id="appearance-interface"><option value="classic">經典 · Mac 風格</option><option value="aqua">Aqua · 水光玻璃</option></select></label>
+<div id="appearance-wallpaper-field" hidden><label>背景插畫<select id="appearance-wallpaper"><option value="kotoha">Kotoha · 原圖</option><option value="elaina">伊蕾娜 · 原圖</option><option value="kotoha-chibi">Kotoha · Q版</option><option value="elaina-chibi">伊蕾娜 · Q版</option></select></label><img id="appearance-wallpaper-preview" alt="背景預覽" width="240" height="160"></div>
 <label>主題<select id="appearance">
 <option value="system">跟隨系統</option>
 <option value="light">淺色</option>

@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"net/http"
 )
 
@@ -70,13 +68,12 @@ func (s *Server) eligibility(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listResearchRuns(w http.ResponseWriter, r *http.Request) {
-	owner := r.URL.Query().Get("schedule_id")
-	id := r.URL.Query().Get("id")
+	owner, id := r.URL.Query().Get("schedule_id"), r.URL.Query().Get("id")
 	if owner != "" && !validID(owner) || id != "" && !validID(id) {
 		http.Error(w, "invalid research lookup", 400)
 		return
 	}
-	query := "SELECT r.id,r.status,r.checkpoint,r.started_at,o.budget,o.used,o.probe_budget,o.probes_used,COALESCE(o.summary_json,'{}'),COALESCE(p.schedule_id,''),COALESCE(s.name,'') FROM research_runs r LEFT JOIN research_run_options o ON o.run_id=r.id LEFT JOIN research_schedule_runs p ON p.run_id=r.id LEFT JOIN research_schedules s ON s.id=p.schedule_id WHERE (?='' OR p.schedule_id=?)"
+	query := "SELECT " + researchRunColumns + researchRunTables + " WHERE (?='' OR p.schedule_id=?)"
 	args := []any{owner, owner}
 	if id != "" {
 		query += " AND r.id=?"
@@ -90,25 +87,16 @@ func (s *Server) listResearchRuns(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	out := []ResearchRun{}
 	for rows.Next() {
-		var v ResearchRun
-		var budget, used, probes, probeUsed sql.NullInt64
-		var raw string
-		if rows.Scan(&v.ID, &v.Status, &v.Checkpoint, &v.StartedAt, &budget, &used, &probes, &probeUsed, &raw, &v.ScheduleID, &v.ScheduleName) == nil {
-			if budget.Valid {
-				v.Budget = &budget.Int64
-			}
-			if used.Valid {
-				v.Used = &used.Int64
-			}
-			if probes.Valid {
-				v.ProbeBudget = &probes.Int64
-			}
-			if probeUsed.Valid {
-				v.ProbesUsed = &probeUsed.Int64
-			}
-			json.Unmarshal([]byte(raw), &v.Summary)
-			out = append(out, v)
+		v, _, e := scanResearchRun(rows)
+		if e != nil {
+			http.Error(w, "research record unavailable", 500)
+			return
 		}
+		out = append(out, v)
+	}
+	if rows.Err() != nil {
+		http.Error(w, "research records unavailable", 500)
+		return
 	}
 	jsonOK(w, 200, out)
 }

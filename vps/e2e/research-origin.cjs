@@ -15,7 +15,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await page.waitForFunction(id=>researchRuns.some(r=>r.id!==id&&r.used===0&&r.summary?.origin_waiting_count===1),first);
   const second=await page.evaluate(id=>researchRuns.find(r=>r.id!==id).id,first),card=page.locator('#research-runs .item').first();
   await card.getByText(/等待網站恢復/).waitFor();await card.getByRole('button',{name:'執行紀錄',exact:true}).click();
-  const task=page.locator('#detail-content > details').filter({has:page.locator('summary').filter({hasText:/^SOURCE ·/})});await task.locator('summary').first().click();
+  const task=page.locator('#research-run-snapshot > details').filter({has:page.locator('summary').filter({hasText:/^SOURCE ·/})});await task.locator('summary').first().click();
   const panel=page.locator('.research-origin-wait-panel');await panel.getByRole('heading',{name:'等待網站恢復',exact:true}).waitFor();await panel.getByText('https://provider.example',{exact:true}).waitFor();await panel.getByText(/等待期間不扣 HTTP 額度/).waitFor();
   const tasks=await (await context.request.get(origin+'/api/v1/research/tasks?run_id='+second)).json();assert.equal(tasks[0].attempts,0,'admission wait counted as an attempt');assert(!tasks[0].result.retry,'another task failure became this task failure');
   await page.waitForFunction(()=>!document.querySelector('#notice').classList.contains('notice-visible'));

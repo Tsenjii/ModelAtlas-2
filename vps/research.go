@@ -29,17 +29,18 @@ type Evidence struct {
 	ObservedAt  int64  `json:"observed_at"`
 }
 type ResearchRun struct {
-	ScheduleID   string         `json:"schedule_id,omitempty"`
-	ScheduleName string         `json:"schedule_name,omitempty"`
-	ID           string         `json:"id"`
-	Status       string         `json:"status"`
-	Checkpoint   string         `json:"checkpoint"`
-	StartedAt    int64          `json:"started_at"`
-	Budget       *int64         `json:"budget"`
-	Used         *int64         `json:"used"`
-	ProbeBudget  *int64         `json:"probe_budget"`
-	ProbesUsed   *int64         `json:"probes_used"`
-	Summary      map[string]any `json:"summary"`
+	QueryComparison bool           `json:"query_comparison,omitempty"`
+	ScheduleID      string         `json:"schedule_id,omitempty"`
+	ScheduleName    string         `json:"schedule_name,omitempty"`
+	ID              string         `json:"id"`
+	Status          string         `json:"status"`
+	Checkpoint      string         `json:"checkpoint"`
+	StartedAt       int64          `json:"started_at"`
+	Budget          *int64         `json:"budget"`
+	Used            *int64         `json:"used"`
+	ProbeBudget     *int64         `json:"probe_budget"`
+	ProbesUsed      *int64         `json:"probes_used"`
+	Summary         map[string]any `json:"summary"`
 }
 
 func (s *Server) listCandidates(w http.ResponseWriter, r *http.Request) {

@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,8 +16,8 @@ import (
 func TestAquaArtworkAuthenticationCacheAndRange(t *testing.T) {
 	s := testServer(t)
 	handler := s.Handler()
-	call := func(method, token, etag, byteRange, site string) *httptest.ResponseRecorder {
-		r := httptest.NewRequest(method, "/assets/aqua-garden-v1.webp", nil)
+	call := func(method, path, token, etag, byteRange, site string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, path, nil)
 		if token != "" {
 			r.Header.Set("Authorization", "Bearer "+token)
 		}
@@ -27,44 +28,56 @@ func TestAquaArtworkAuthenticationCacheAndRange(t *testing.T) {
 		handler.ServeHTTP(w, r)
 		return w
 	}
-	r := call("GET", s.Token, "", "", "same-origin")
-	requireCode(t, r, 200)
-	b := r.Body.Bytes()
-	digest := sha256.Sum256(b)
-	if len(b) != 257786 || hex.EncodeToString(digest[:]) != "50b2fce90ced99098f173ab6c3a9b7b6e1376a133217a22dd614206c5cbcf6b4" || string(b[:4]) != "RIFF" || string(b[8:12]) != "WEBP" {
-		t.Fatal("bundled artwork bytes changed")
+	for _, v := range []struct {
+		path, mime, sha string
+		size            int
+	}{
+		{"/assets/aqua-kotoha-v1.jpg", "image/jpeg", "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282", 135772},
+		{"/assets/aqua-elaina-v1.jpg", "image/jpeg", "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6", 422004},
+		{"/assets/aqua-kotoha-chibi-v1.webp", "image/webp", "81953319738d7b14009fc06768e968fe1321ad6d9322d49f3717ab4626bbe373", 1560556},
+		{"/assets/aqua-elaina-chibi-v1.webp", "image/webp", "3f46afcba742572cf80b9cffae8af6d4d66648dd3bce35843d1a621d02aa81bc", 1528248},
+	} {
+		r := call("GET", v.path, s.Token, "", "", "same-origin")
+		requireCode(t, r, 200)
+		b := r.Body.Bytes()
+		sum := sha256.Sum256(b)
+		if len(b) != v.size || hex.EncodeToString(sum[:]) != v.sha {
+			t.Fatal("user artwork bytes changed", v.path)
+		}
+		if v.mime == "image/webp" && (string(b[:4]) != "RIFF" || string(b[8:12]) != "WEBP") || v.mime == "image/jpeg" && (b[0] != 255 || b[1] != 216) {
+			t.Fatal("artwork format changed", v.path)
+		}
+		if r.Header().Get("Content-Type") != v.mime || r.Header().Get("Cache-Control") != "private, max-age=3600" || r.Header().Get("X-Content-Type-Options") != "nosniff" {
+			t.Fatal("artwork response headers missing", v.path)
+		}
+		etag := r.Header().Get("ETag")
+		if etag == "" {
+			t.Fatal("cache validator missing")
+		}
+		requireCode(t, call("GET", v.path, "", etag, "", "same-origin"), 401)
+		requireCode(t, call("GET", v.path, s.Token, etag, "", "cross-site"), 403)
+		if cached := call("GET", v.path, s.Token, etag, "", "same-origin"); cached.Code != 304 || cached.Body.Len() != 0 {
+			t.Fatal("authenticated cache validation failed", v.path)
+		}
+		if head := call("HEAD", v.path, s.Token, "", "", "same-origin"); head.Code != 200 || head.Body.Len() != 0 || head.Header().Get("Content-Length") != fmt.Sprint(v.size) {
+			t.Fatal("HEAD metadata changed", v.path)
+		}
+		if partial := call("GET", v.path, s.Token, "", "bytes=0-11", "same-origin"); partial.Code != 206 || partial.Body.String() != string(b[:12]) {
+			t.Fatal("range response changed", v.path)
+		}
 	}
-	if r.Header().Get("Content-Type") != "image/webp" || r.Header().Get("Cache-Control") != "private, max-age=3600" || r.Header().Get("X-Content-Type-Options") != "nosniff" {
-		t.Fatal("artwork response headers missing")
-	}
+	requireCode(t, call("GET", "/assets/aqua-garden-v1.webp", s.Token, "", "", "same-origin"), 404)
 	classic := req(t, s, "GET", "/app.css", nil)
 	requireCode(t, classic, 200)
-	if strings.Contains(classic.Body.String(), "aqua-garden") {
-		t.Fatal("classic stylesheet must not load or match optional Aqua rules")
+	if strings.Contains(classic.Body.String(), "aqua-wallpaper") {
+		t.Fatal("classic stylesheet contains optional art rules")
 	}
 	optional := req(t, s, "GET", "/aqua.css", nil)
 	requireCode(t, optional, 200)
-	if !strings.Contains(optional.Body.String(), "aqua-garden-v1.webp") || optional.Header().Get("Content-Type") != "text/css; charset=utf-8" {
+	if !strings.Contains(optional.Body.String(), "--aqua-wallpaper") || strings.Contains(optional.Body.String(), "aqua-garden") || optional.Header().Get("Content-Type") != "text/css; charset=utf-8" {
 		t.Fatal("optional appearance stylesheet missing")
 	}
-	unauthorizedStyle := httptest.NewRecorder()
-	handler.ServeHTTP(unauthorizedStyle, httptest.NewRequest("GET", "/aqua.css", nil))
-	requireCode(t, unauthorizedStyle, 401)
-	etag := r.Header().Get("ETag")
-	if etag == "" {
-		t.Fatal("cache validator missing")
-	}
-	requireCode(t, call("GET", "", etag, "", "same-origin"), 401)
-	requireCode(t, call("GET", s.Token, etag, "", "cross-site"), 403)
-	if cached := call("GET", s.Token, etag, "", "same-origin"); cached.Code != 304 || cached.Body.Len() != 0 {
-		t.Fatal("authenticated cache validation failed")
-	}
-	if head := call("HEAD", s.Token, "", "", "same-origin"); head.Code != 200 || head.Body.Len() != 0 || head.Header().Get("Content-Length") != "257786" {
-		t.Fatal("HEAD must preserve metadata without an image body")
-	}
-	if partial := call("GET", s.Token, "", "bytes=0-11", "same-origin"); partial.Code != 206 || partial.Body.String() != string(b[:12]) {
-		t.Fatal("image range response failed")
-	}
+	requireCode(t, call("GET", "/aqua.css", "", "", "", "same-origin"), 401)
 }
 
 func TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery(t *testing.T) {

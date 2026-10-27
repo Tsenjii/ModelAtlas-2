@@ -307,6 +307,7 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("GET /research/eligibility", s.eligibility)
 	api.HandleFunc("POST /research/probe", s.probeCandidate)
 	api.HandleFunc("GET /research/runs", s.listResearchRuns)
+	api.HandleFunc("GET /research/history", s.researchHistory)
 	api.HandleFunc("POST /research/runs", s.addResearchRun)
 	api.HandleFunc("GET /recipes", s.listRecipes)
 	api.HandleFunc("POST /recipes", s.addRecipe)
@@ -387,7 +388,10 @@ func (s *Server) Handler() http.Handler {
 	root.Handle("GET /app.css", s.auth(http.HandlerFunc(s.stylesheet)))
 	root.Handle("GET /aqua.css", s.auth(http.HandlerFunc(s.aquaStylesheet)))
 	root.Handle("GET /app.js", s.auth(http.HandlerFunc(s.script)))
-	root.Handle("GET /assets/aqua-garden-v1.webp", s.auth(http.HandlerFunc(s.aquaWallpaper)))
+	for asset := range aquaArtworks {
+		root.Handle("GET "+asset, s.auth(http.HandlerFunc(s.aquaWallpaper)))
+	}
+	root.Handle("GET /assets/", s.auth(http.NotFoundHandler()))
 	root.Handle("/api/v1/", s.auth(http.StripPrefix("/api/v1", api)))
 	return s.maintenanceHandler(root)
 }

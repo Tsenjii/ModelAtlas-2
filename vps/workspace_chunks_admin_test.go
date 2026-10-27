@@ -132,13 +132,13 @@ func TestWorkspaceChunkMigrationPreservesOldPeerVaultAndTakesActualV36Snapshot(t
 		t.Fatal(e)
 	}
 	peer = reopenScheduleStore(t, peer)
-	assertSQLInt(t, peer, 37, "PRAGMA user_version")
+	assertSQLInt(t, peer, schemaVersion, "PRAGMA user_version")
 	assertSQLInt(t, peer, 0, "SELECT resumable FROM workspace_peer")
 	var after string
 	if e := peer.Store.DB.QueryRow("SELECT encrypted_token FROM workspace_peer").Scan(&after); e != nil || before != after {
 		t.Fatal("migration changed transport credential")
 	}
-	files, e := filepath.Glob(filepath.Join(filepath.Dir(path), "upgrade-backups", "schema-36-to-37-*.sqlite"))
+	files, e := filepath.Glob(filepath.Join(filepath.Dir(path), "upgrade-backups", "schema-36-to-"+strconv.Itoa(schemaVersion)+"-*.sqlite"))
 	if e != nil || len(files) != 1 {
 		t.Fatal("missing v36 snapshot", e)
 	}

@@ -1,0 +1,173 @@
+{
+  "status": "CANDIDATE",
+  "slice": "RESEARCH-HISTORY-015V",
+  "parent": "cf5819f2c4472319dc643128700740283641b660",
+  "source": "commit containing this file; acceptance pending",
+  "expected": {
+    "go_registry": 438,
+    "go_terminal_events": 660,
+    "go_pass": 608,
+    "go_skip": 52,
+    "browser_flows": 44,
+    "browser_png": 557,
+    "visual_views": 84,
+    "contacts": 21,
+    "schema": 38,
+    "linux_files": 49
+  },
+  "current_local": {
+    "restored_backend": {
+      "result": "PASS",
+      "raw_log_sha256": "849050de12f56b48b338aae9c90c300e8d34b38cdba630b7375b6334754d34ef",
+      "go_pass_cases": [
+        [
+          "TestResearchHistoryArchiveKeepsAllRowsStableAcrossInsertionsAndScheduleScopes",
+          "1.59"
+        ],
+        [
+          "TestResearchHistoryRejectsBadCursorsAndUnreadableRowsWithoutInventingEmptyHistory",
+          "1.38"
+        ],
+        [
+          "TestResearchHistorySchema37UpgradePreservesRecordsAndUsesBoundedOrderedIndex",
+          "1.91"
+        ],
+        [
+          "TestResearchScheduleMetadataReportsSavedConcurrencyAndKeepsUnavailableUnknown",
+          "1.17"
+        ]
+      ],
+      "package_seconds": [
+        "7.081"
+      ],
+      "python_tests": []
+    },
+    "history_and_four_background_browser": {
+      "result": "PASS",
+      "raw_log_sha256": "747f7503ad39cf03b8fef3d7e1a29fb799a249db37396a6e995527d140660d27",
+      "go_pass_cases": [
+        [
+          "TestBrowserResearchHistoryArchiveAndExactRecovery",
+          "8.42"
+        ],
+        [
+          "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery",
+          "10.21"
+        ]
+      ],
+      "package_seconds": [
+        "11.932"
+      ],
+      "python_tests": []
+    },
+    "affected_browser": {
+      "result": "PASS",
+      "raw_log_sha256": "3e6554345ba03d1881a01e5c25a1419380cbac1e50a737354ddb66f876ee8b3a",
+      "go_pass_cases": [
+        [
+          "TestBrowserExtractionMeasuredTrialRecoveryMonitoringAndUndo",
+          "10.78"
+        ],
+        [
+          "TestBrowserReflectionGeneratedQueryPairedTrialWorkflow",
+          "13.76"
+        ],
+        [
+          "TestBrowserResearchHistoryArchiveAndExactRecovery",
+          "18.39"
+        ],
+        [
+          "TestBrowserResearchOriginCooldownWorkflow",
+          "27.98"
+        ],
+        [
+          "TestBrowserBraveResearchPageRecoveryWorkflow",
+          "28.85"
+        ],
+        [
+          "TestBrowserAAResearchPageRecoveryWorkflow",
+          "39.95"
+        ],
+        [
+          "TestBrowserResearchRetryWorkflow",
+          "42.27"
+        ],
+        [
+          "TestBrowserKnowledgeEvaluationTrialAndPersistentRollback",
+          "46.93"
+        ],
+        [
+          "TestBrowserKnowledgeWorkflow",
+          "37.36"
+        ],
+        [
+          "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery",
+          "42.04"
+        ],
+        [
+          "TestBrowserResearchInferenceDailyBudgetWorkflow",
+          "46.36"
+        ]
+      ],
+      "package_seconds": [
+        "67.070"
+      ],
+      "python_tests": [],
+      "controlled_saved_read": "research_query_browser_test.go:55: QUERY_SAVED_READ_OVERLAP {\"saved_read_status\":\"READY_FOR_TRIAL\",\"global_status\":null,\"trial_enabled\":true}"
+    },
+    "release_regression": {
+      "result": "PASS",
+      "raw_log_sha256": "57f8cc7d8f5f5badf73b59123793dff41b5292cf25ade1c90e6bd05caa2c25e9",
+      "go_pass_cases": [],
+      "package_seconds": [],
+      "python_tests": [
+        "50"
+      ]
+    },
+    "vet": {
+      "result": "PASS"
+    },
+    "async_wait": {
+      "result": "PASS",
+      "tests": 8,
+      "seconds": 1.853,
+      "raw_log_sha256": "b6a7941e8c732198ba3242f7ab4756fbfb48280de4d33578a161d5ed61f4a982"
+    }
+  },
+  "previous_session_observed": {
+    "raw_scratch_logs": "lost after workspace reset; observations retained separately, not current-source acceptance",
+    "full_go": {
+      "result": "TIMEOUT",
+      "deadline_seconds": 600,
+      "terminal_events": 532,
+      "pass": 480,
+      "skip": 52,
+      "incomplete": 128,
+      "root_cause": "UNKNOWN",
+      "log_sha256": "ebfa3f7c90d8df2605a29c24cfda96ed892e11ccd8c8a2681647c29dd3cf3f10"
+    },
+    "full_browser": {
+      "result": "FAIL_AND_TIMEOUT",
+      "seconds": 301.468,
+      "pass": 31,
+      "fail": 1,
+      "incomplete": 12,
+      "failed_case": "TestBrowserReflectionGeneratedQueryPairedTrialWorkflow",
+      "first_failure_saved_api_state": "not captured; root cause UNKNOWN",
+      "log_sha256": "48a03e8f4cf0179b661e1a10118ba32642c2427b1d52309488d37b4da2931c2d"
+    },
+    "controlled_saved_read": {
+      "red_seconds": 10.17,
+      "saved_status": "READY_FOR_TRIAL",
+      "global_status": null,
+      "old_trial_enabled": false,
+      "fixed_trial_enabled": true,
+      "six_browser_seconds": 40.35,
+      "original_assertion_requests_and_deadlines_preserved": true
+    }
+  },
+  "current_complete_ci": "PENDING",
+  "actual_nine_archives": "PENDING",
+  "whole_next_release": "PARTIAL",
+  "public_release_frozen": true
+}

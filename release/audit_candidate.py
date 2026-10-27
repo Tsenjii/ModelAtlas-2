@@ -41,6 +41,8 @@ def browser_image_scopes(config):
     require(len(preserved) == 18 and len(set(preserved)) == 18 and set(preserved) <= set(current), "accepted browser views missing")
     execution = config["accepted_execution_views"]
     require(len(execution) == 4 and len(set(execution)) == 4 and set(execution) <= set(current), "accepted execution views missing")
+    aqua = config["accepted_aqua_views"]
+    require(len(aqua) == 12 and len(set(aqua)) == 12 and set(aqua) <= set(current), "accepted Aqua browser views missing")
     # The rejected source's bytes/hash are immutable. New candidate views must
     # never be demanded from an archive produced before those views existed.
     return {"candidate": (509+len(current), set(current)), "rejected_aa": (523, set(frozen))}
@@ -263,6 +265,12 @@ def main():
         execution_report = json.loads(p.member(z,"audit.json"))
         require(execution_report["source"] == config["accepted_execution_audit"]["source"] and len(execution_events) == 650, "accepted execution baseline missing")
         require(set(execution_report["browser_images"]["added"]) == set(config["accepted_browser_views"])|set(config["accepted_execution_views"]), "accepted execution inventory changed")
+    accepted_aqua = download_baseline(api, config["accepted_aqua_audit"], baselines)
+    with zipfile.ZipFile(accepted_aqua) as z:
+        aqua_events = json.loads(p.member(z,"go-case-events.json"))
+        aqua_report = json.loads(p.member(z,"audit.json"))
+        require(aqua_report["source"] == config["accepted_aqua_audit"]["source"] and len(aqua_events) == 655, "accepted Aqua baseline missing")
+        require(set(aqua_report["browser_images"]["added"]) == set(config["accepted_browser_views"])|set(config["accepted_execution_views"])|set(config["accepted_aqua_views"]), "accepted Aqua inventory changed")
     with zipfile.ZipFile(baseline_browser) as z:
         prior_names = {Path(n).name for n in z.namelist() if n.endswith(".png")}
     with archive("modelatlas-vps-browser") as z:
@@ -270,7 +278,7 @@ def main():
         names = pngs(z, expected_count)
         added = {Path(n).name for n in names}-prior_names
         require(len(prior_names) == 509 and not prior_names-{Path(n).name for n in names} and added == expected_views, "original browser images were removed or private mapping views changed")
-        require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-")) and "failure" not in name for name in added), "unexpected new screenshot")
+        require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-")) and "failure" not in name for name in added), "unexpected new screenshot")
         for name in names:
             if Path(name).name in added or Path(name).name.startswith("workspace-chunks-"):
                 images.append(("browser/"+Path(name).name, z.read(name)))
@@ -284,6 +292,7 @@ def main():
     expected_events = {**original_events, **config["go_new_events"]}
     require(all(expected_events.get(name) == action for name,action in cost_events.items()), "accepted cost case removed or changed")
     require(all(expected_events.get(name) == action for name,action in execution_events.items()), "accepted execution case removed or changed")
+    require(all(expected_events.get(name) == action for name,action in aqua_events.items()), "accepted Aqua case removed or changed")
     with archive("modelatlas-vps-footprint") as z:
         footprint = json.loads(p.member(z,"footprint.json"))
         expected = dict(export_messages=11000,export_requests=100008,long_context_bytes_each=31*1024*1024,
@@ -326,7 +335,7 @@ def main():
     require(len(expected_wait_cases) == 8 and sorted(wait_cases) == sorted(expected_wait_cases) and all(re.search(r"# "+key+r" 0\s*$",browser_log,re.M) for key in ("fail","cancelled","skipped","todo")), "async Browser wait regressions missing")
     report["async_wait_cases"] = wait_cases
     browser_cases = re.findall(r"--- PASS: (TestBrowser\w+) \(([0-9.]+)s\)", browser_log)
-    require(len(browser_cases) == 43 and len({x[0] for x in browser_cases}) == 43, "complete browser results missing")
+    require(len(browser_cases) == 44 and len({x[0] for x in browser_cases}) == 44, "complete browser results missing")
     require({x[0] for x in browser_cases} == {name for name in expected_registry if name.startswith("TestBrowser")}, "browser registry mismatch")
     report["browser_cases"] = browser_cases
     prior_core = download_baseline(api, config["core_inventory"], baselines)
@@ -421,8 +430,8 @@ def main():
                     require(raw.count((ROOT/"vps/defaults/kilo-anonymous.json").read_bytes()) >= 2, "Mac engine factory snapshot absent")
     for arch in ("amd64","arm64"):
         files, version = p.linux_bundle((package/("modelatlas-vps-linux-"+arch+".tar.gz")).read_bytes(), arch, sha, p.properties()["tag"])
-        require(version["schema"] == 37 and set(files) == linux_inventory(ROOT/"vps", arch, config), "Linux bundle scope mismatch")
-        report["linux_"+arch] = {"schema":37,"files":len(files),"version":version}
+        require(version["schema"] == 38 and set(files) == linux_inventory(ROOT/"vps", arch, config), "Linux bundle scope mismatch")
+        report["linux_"+arch] = {"schema":38,"files":len(files),"version":version}
     report["actual_binary"] = binary_smoke(package/"linux-check/bin/modelatlas-vps-linux-amd64", out)
     frozen = config["frozen"]
     release = api.get("/repos/"+p.REPOSITORY+"/releases/"+str(frozen["release_id"]))
@@ -460,7 +469,7 @@ def main():
     # the interactive workspace is offline. No tests or archive checks are skipped.
     for name, value in (("REPORT", report), ("SOURCE_STATE", state), ("GO_CASE_EVENTS", events), ("DEVICE_CASE_EVENTS", json.loads((out/"device-case-events.json").read_text())), ("CORE_CASE_EVENTS", core_cases)):
         print("MODELATLAS_AUDIT_"+name+" "+json.dumps(value, ensure_ascii=False, separators=(",",":")), flush=True)
-    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":len(events),"browser_cases":43,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
+    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":996,"go_cases":len(events),"browser_cases":44,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
 
 if __name__ == "__main__":
     main()
