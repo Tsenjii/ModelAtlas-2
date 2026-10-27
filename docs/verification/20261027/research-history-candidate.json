@@ -132,6 +132,15 @@
       "tests": 8,
       "seconds": 1.853,
       "raw_log_sha256": "b6a7941e8c732198ba3242f7ab4756fbfb48280de4d33578a161d5ed61f4a982"
+    },
+    "capture_name_and_preflight": {
+      "result": "PASS",
+      "release_tests": 52,
+      "python_seconds": 0.033,
+      "browser_case": "TestBrowserResearchHistoryArchiveAndExactRecovery",
+      "browser_seconds": 6.83,
+      "package_seconds": 9.098,
+      "runtime_source_unchanged": true
     }
   },
   "previous_session_observed": {
@@ -169,5 +178,6 @@
   "current_complete_ci": "PENDING",
   "actual_nine_archives": "PENDING",
   "whole_next_release": "PARTIAL",
-  "public_release_frozen": true
+  "public_release_frozen": true,
+  "first_candidate_rejection": "research-history-first-candidate.json"
 }

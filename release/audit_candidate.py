@@ -50,6 +50,9 @@ def browser_image_scopes(config):
 def visual_review_count(config):
     return len(browser_image_scopes(config)["candidate"][1])+8+2*(6+len(config["new_mac_research_images"]))
 
+def validate_browser_screenshot_names(names):
+    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-")) and "failure" not in name for name in names), "unexpected new screenshot")
+
 def linux_inventory(directory, arch, config):
     require(arch in ("amd64", "arm64"), "unsupported Linux architecture")
     baseline = config["linux_baseline_documents"]
@@ -205,6 +208,7 @@ def main():
     require(subprocess.check_output(["git","rev-parse","HEAD"], text=True).strip() == sha, "audit checkout mismatch")
     config = json.loads((ROOT/"release/candidate_audit_scope.json").read_text())
     browser_scopes = browser_image_scopes(config)
+    validate_browser_screenshot_names(browser_scopes["candidate"][1])
     out = ROOT/"candidate-audit-output"
     out.mkdir()
     actual = out/"actual"
@@ -278,7 +282,7 @@ def main():
         names = pngs(z, expected_count)
         added = {Path(n).name for n in names}-prior_names
         require(len(prior_names) == 509 and not prior_names-{Path(n).name for n in names} and added == expected_views, "original browser images were removed or private mapping views changed")
-        require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-")) and "failure" not in name for name in added), "unexpected new screenshot")
+        validate_browser_screenshot_names(added)
         for name in names:
             if Path(name).name in added or Path(name).name.startswith("workspace-chunks-"):
                 images.append(("browser/"+Path(name).name, z.read(name)))

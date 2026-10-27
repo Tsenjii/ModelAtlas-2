@@ -48,6 +48,14 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
     def config(self):
         return json.loads((Path(__file__).parent/"candidate_audit_scope.json").read_text())
 
+    def test_declared_views_pass_the_same_name_guard_before_waiting_for_ci(self):
+        audit.validate_browser_screenshot_names(self.config()["new_browser_images"])
+
+    def test_crash_captures_remain_forbidden_in_declared_and_actual_views(self):
+        for name in ("research-history-failure.png", "research-history-scope-failure-390-dark.png", "aqua-failure.png", "unreviewed-view.png"):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "unexpected new screenshot"):
+                audit.validate_browser_screenshot_names([name])
+
     def test_new_candidate_views_do_not_rewrite_a_frozen_counterexample(self):
         config = self.config()
         before = audit.browser_image_scopes(config)
