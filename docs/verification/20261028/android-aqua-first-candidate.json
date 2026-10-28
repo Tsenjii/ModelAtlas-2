@@ -1,0 +1,32 @@
+{
+  "source": "4e17d6b4cda76f355b0244082a217a95bc455e81",
+  "tree": "d61ab63751c81fc6eba640228e2046521091354a",
+  "run": 40686724099,
+  "job": 122810860203,
+  "result": "REJECTED_COMPILE_FAILURE",
+  "artifact": {
+    "id": 12814927971,
+    "name": "modelatlas-android-aqua-diagnostic",
+    "size_in_bytes": 17411004,
+    "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12814927971",
+    "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12814927971/zip",
+    "expired": false,
+    "created_at": "2026-10-28T12:23:17Z",
+    "expires_at": "2027-01-26T12:18:27Z",
+    "updated_at": "2026-10-28T12:23:17Z",
+    "digest": "sha256:7d961c5ceab18afbac10b519cd3ef21dc72020e79a415e24113fdafd1426badc",
+    "workflow_run": {
+      "id": 40686724099,
+      "repository_id": 1415404214,
+      "head_repository_id": 1415404214,
+      "head_branch": "diagnostic/android-aqua-015y-20261028",
+      "head_sha": "4e17d6b4cda76f355b0244082a217a95bc455e81"
+    }
+  },
+  "root_bytes_verified": 17411004,
+  "root_sha256": "7d961c5ceab18afbac10b519cd3ef21dc72020e79a415e24113fdafd1426badc",
+  "crc": "PASS",
+  "four_actual_apk_assets": "exact original bytes",
+  "failure": "AquaInterfaceFlowTest.kt:27/280 Unresolved reference Espresso; no espresso-core dependency. Device tests and screenshots NOT_RUN.",
+  "fix": "Use existing InputMethodManager to hide the IME; no dependency, operation, assertion, workload or deadline removed."
+}

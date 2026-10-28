@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -24,7 +25,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.ViewModelProvider
-import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.modelatlas.app.AtlasApplication
@@ -114,6 +114,15 @@ class AquaInterfaceFlowTest {
 
     @After fun restoreEverything() {
         if (!restoreArmed) return
+        if (!bodyPassed) runCatching {
+            instrumentation.runOnMainSync { compose.activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+            instrumentation.uiAutomation.takeScreenshot()?.let { bitmap ->
+                output("failure-${reportName.removeSuffix(".json")}.png").outputStream().use {
+                    check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+                }
+                bitmap.recycle()
+            }
+        }
         val failures = mutableListOf<Throwable>()
         fun restore(block: () -> Unit) { runCatching(block).exceptionOrNull()?.let(failures::add) }
         restore { shell(if (previousSize == null) "wm size reset" else "wm size $previousSize") }
@@ -277,7 +286,14 @@ class AquaInterfaceFlowTest {
         return File(root, "aqua-ui/$name").also { check(it.parentFile?.mkdirs() == true || it.parentFile?.isDirectory == true) }
     }
     private fun capture(name: String) {
-        Espresso.closeSoftKeyboard()
+        compose.runOnIdle {
+            val activity = compose.activity
+            val focus = activity.currentFocus
+            activity.getSystemService(InputMethodManager::class.java).hideSoftInputFromWindow(
+                focus?.windowToken ?: activity.window.decorView.windowToken, 0,
+            )
+            focus?.clearFocus()
+        }
         compose.waitForIdle()
         compose.runOnIdle { compose.activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
         instrumentation.waitForIdleSync()
