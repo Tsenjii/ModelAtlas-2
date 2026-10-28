@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.rememberUpdatedState
 import dev.modelatlas.app.data.VisionImagePayload
 import dev.modelatlas.app.data.LocalPdfPayload
@@ -584,7 +585,7 @@ private fun PlaygroundComposer(
         TextField(
           value = prompt,
           onValueChange = { prompt = it },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).testTag("playground_composer_text"),
           label = { Text(stringResource(
             if (busy) R.string.playground_next_message else R.string.playground_message_label,
           )) },
