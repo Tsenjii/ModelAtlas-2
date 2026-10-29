@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
+import android.os.SystemClock
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.semantics.Role
@@ -332,24 +333,44 @@ class AquaInterfaceFlowTest {
             focus?.clearFocus()
         }
         compose.waitForIdle()
-        val committed = CountDownLatch(1)
-        compose.runOnIdle {
-            val activity = compose.activity
-            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            // Java/Compose idleness does not acknowledge the window surface update.
-            // Wait for an actual hardware frame submission before display capture.
-            val decor = activity.window.decorView
-            check(decor.isHardwareAccelerated)
-            decor.viewTreeObserver.registerFrameCommitCallback { committed.countDown() }
-            decor.invalidate()
+        // UiAutomation documents a nullable result even after a submitted frame.
+        // A new activity's display surface can still be unavailable. Wait for a
+        // real, non-null display capture within the existing 15-second budget;
+        // every attempt follows a new hardware frame, with no renderer fallback.
+        val started = SystemClock.elapsedRealtime()
+        val deadline = started + 15_000
+        var attempts = 0
+        var captured: Bitmap? = null
+        while (captured == null && SystemClock.elapsedRealtime() < deadline) {
+            val committed = CountDownLatch(1)
+            compose.runOnIdle {
+                val activity = compose.activity
+                activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                val decor = activity.window.decorView
+                check(decor.isHardwareAccelerated)
+                decor.viewTreeObserver.registerFrameCommitCallback { committed.countDown() }
+                decor.invalidate()
+            }
+            val remaining = deadline - SystemClock.elapsedRealtime()
+            assertTrue("The actual window frame must commit before screenshot capture",
+                remaining > 0 && committed.await(remaining, TimeUnit.MILLISECONDS))
+            instrumentation.waitForIdleSync()
+            compose.waitForIdle()
+            if (SystemClock.elapsedRealtime() >= deadline) break
+            attempts++
+            captured = instrumentation.uiAutomation.takeScreenshot()
         }
-        assertTrue("The actual window frame must commit before screenshot capture", committed.await(15, TimeUnit.SECONDS))
-        instrumentation.waitForIdleSync()
-        compose.waitForIdle()
-        val bitmap = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
+        val elapsed = SystemClock.elapsedRealtime() - started
+        val bitmap = checkNotNull(captured) {
+            "Actual display capture unavailable for $name after $attempts attempts in ${elapsed}ms (15000ms budget)"
+        }
+        assertTrue("Display capture exceeded its original readiness budget", elapsed < 15_000)
         val file = output(name)
         file.outputStream().use { check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
         pictures.put(JSONObject().put("file", name).put("width", bitmap.width).put("height", bitmap.height)
+            .put("capture_method", "UiAutomation.takeScreenshot")
+            .put("capture_attempts", attempts).put("capture_null_results", attempts - 1)
+            .put("capture_ms", elapsed).put("capture_budget_ms", 15_000)
             .put("screen_width_dp", compose.activity.resources.configuration.screenWidthDp)
             .put("font_scale", compose.activity.resources.configuration.fontScale)
             .put("dark", compose.activity.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES)

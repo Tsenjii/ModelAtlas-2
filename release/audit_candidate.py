@@ -151,6 +151,12 @@ def validate_android_aqua_reports(light, dark, expected_images):
         require(0 <= report.get("cache_bytes",-1) <= 16*1024*1024, "Android Aqua cache exceeded bound")
     pictures = light["pictures"]+dark["pictures"]
     require(len(light["pictures"]) == 10 and len(dark["pictures"]) == 5 and {item["file"] for item in pictures} == expected_images, "Android Aqua screenshot receipts missing")
+    for item in pictures:
+        require(item.get("capture_method") == "UiAutomation.takeScreenshot" and
+                type(item.get("capture_attempts")) is int and item["capture_attempts"] >= 1 and
+                type(item.get("capture_null_results")) is int and item["capture_null_results"] == item["capture_attempts"]-1 and
+                type(item.get("capture_ms")) is int and 0 <= item["capture_ms"] < 15_000 and
+                item.get("capture_budget_ms") == 15_000, "Android Aqua bounded actual display capture receipt missing")
     large = next(item for item in pictures if item["file"] == "12-playground-320-large-dark.png")
     require(large["screen_width_dp"] == 320 and large["font_scale"] >= 1.99 and large["dark"] is True, "actual Android narrow/large/dark configuration missing")
     require(all(item["dark"] is False for item in light["pictures"]) and all(item["dark"] is True for item in dark["pictures"]), "actual Android color modes missing")

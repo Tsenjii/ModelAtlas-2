@@ -203,8 +203,10 @@ class CandidateAndroidAquaTest(unittest.TestCase):
                     production_secure_before=True,secure_restored=True,no_inference=True,
                     night_before=1,night_after=1,font_before="1.0",font_after="1.0",cache_bytes=100,
                     resolved_font_before=1.0,resolved_font_after=1.0)
-        light = dict(base,pictures=[dict(file=name,dark=False) for name in names[:10]])
-        dark = dict(base,pictures=[dict(file=name,dark=True,screen_width_dp=320,font_scale=2.0) for name in names[10:]])
+        capture = dict(capture_method="UiAutomation.takeScreenshot",capture_attempts=2,
+                       capture_null_results=1,capture_ms=50,capture_budget_ms=15_000)
+        light = dict(base,pictures=[dict(capture,file=name,dark=False) for name in names[:10]])
+        dark = dict(base,pictures=[dict(capture,file=name,dark=True,screen_width_dp=320,font_scale=2.0) for name in names[10:]])
         self.assertEqual(len(audit.validate_android_aqua_reports(light,dark,set(names))),15)
         for field,value in (("secure_restored",False),("preferences_restored",False),("font_after","2.0"),("resolved_font_after",2.0),("resolved_font_before",None),("cache_bytes",16*1024*1024+1)):
             changed = copy.deepcopy(dark); changed[field] = value
@@ -218,6 +220,13 @@ class CandidateAndroidAquaTest(unittest.TestCase):
         changed = copy.deepcopy(dark); changed["pictures"][1]["screen_width_dp"] = 319
         with self.assertRaisesRegex(ValueError,"configuration"):
             audit.validate_android_aqua_reports(light,changed,set(names))
+        for field,value in (("capture_method","view.draw"),("capture_attempts",0),
+                            ("capture_attempts",True),("capture_null_results",0),
+                            ("capture_ms",15_000),("capture_ms",-1),
+                            ("capture_ms",None),("capture_budget_ms",30_000)):
+            changed = copy.deepcopy(dark); changed["pictures"][0][field] = value
+            with self.subTest(field=field,value=value), self.assertRaisesRegex(ValueError,"display capture"):
+                audit.validate_android_aqua_reports(light,changed,set(names))
 
 class CandidateRegistryIntegrityTest(unittest.TestCase):
     def test_new_research_files_cannot_disappear_from_the_audited_registry(self):
