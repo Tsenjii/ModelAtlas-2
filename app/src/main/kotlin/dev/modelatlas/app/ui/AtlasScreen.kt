@@ -632,7 +632,7 @@ private fun AtlasScreenContent(
         ) {
           CircularProgressIndicator()
           Text(stringResource(R.string.onboarding_title))
-          OutlinedButton(onClick = onboardingViewModel::cancel, modifier = Modifier.heightIn(min = 48.dp)) {
+          OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = onboardingViewModel::cancel, modifier = Modifier.heightIn(min = 48.dp)) {
             Text(stringResource(R.string.onboarding_cancel_probe))
           }
         }
@@ -825,11 +825,12 @@ private fun AtlasScreenContent(
             Button(onClick = { editing = false; showQuick = true }, enabled = !onboarding.busy, modifier = Modifier.heightIn(min = 48.dp)) {
               Text(stringResource(R.string.onboarding_quick))
             }
-            OutlinedButton(onClick = { editing = false; showAdvanced = true }, enabled = !onboarding.busy, modifier = Modifier.heightIn(min = 48.dp)) {
+            OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = { editing = false; showAdvanced = true }, enabled = !onboarding.busy, modifier = Modifier.heightIn(min = 48.dp)) {
               Text(stringResource(R.string.onboarding_advanced))
             }
             onboarding.resumable.forEach { draft ->
               OutlinedButton(
+                colors = atlasOutlinedButtonColors(),
                 onClick = { onboardingViewModel.resume(draft.workflowId); showWorkflow = true },
                 enabled = !onboarding.busy,
                 modifier = Modifier.heightIn(min = 48.dp),
@@ -839,6 +840,7 @@ private fun AtlasScreenContent(
               }
             }
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = { editing = false; showBatch = true },
               enabled = !onboarding.busy && !batch.busy,
               modifier = Modifier.heightIn(min = 48.dp),
@@ -1015,6 +1017,7 @@ private fun AtlasScreenContent(
           }
           // P7-B2：Settings 可見觸發入口（全域 enrichment；失敗保舊，不寫本地 telemetry）。
           OutlinedButton(
+            colors = atlasOutlinedButtonColors(),
             onClick = { viewModel.syncLmspeed() },
             enabled = !lmspeedSyncing,
             modifier = Modifier.heightIn(min = 48.dp),
@@ -1342,10 +1345,10 @@ private fun ProviderDetailHost(
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.error,
         )
-        OutlinedButton(onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)) {
+        OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)) {
           Text(stringResource(R.string.action_retry))
         }
-        OutlinedButton(onClick = onBack, modifier = Modifier.heightIn(min = 48.dp)) {
+        OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = onBack, modifier = Modifier.heightIn(min = 48.dp)) {
           Text(stringResource(R.string.action_back))
         }
       } else {
@@ -1626,6 +1629,7 @@ internal fun ConnectionCard(
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
           if (!isSelected && item.enabled) {
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = { onSelect(item.id) },
               enabled = !saving,
               modifier = Modifier.heightIn(min = 48.dp).testTag("connection_select_${item.id}"),
@@ -1640,6 +1644,7 @@ internal fun ConnectionCard(
             val operationLabel = stringResource(R.string.action_sync_new_api, stringResource(R.string.action_sync))
             val syncingLabel = stringResource(R.string.status_syncing)
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = { onSync(item.providerId) },
               enabled = !saving && !syncingNewApi,
               modifier = Modifier.heightIn(min = 48.dp).testTag("connection_sync_${item.id}")
@@ -1657,6 +1662,7 @@ internal fun ConnectionCard(
             val operationLabel = stringResource(R.string.connection_card_dedicated_sync)
             val syncingLabel = stringResource(R.string.status_syncing)
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = {
                 onDedicatedSync(
                   item.providerId,
@@ -1694,6 +1700,7 @@ internal fun ConnectionCard(
             }
             if (item.checkinPending) {
               OutlinedButton(
+                colors = atlasOutlinedButtonColors(),
                 onClick = { onCompleteCheckin(item.id) },
                 enabled = !saving,
                 modifier = Modifier.heightIn(min = 48.dp).testTag("connection_checkin_complete_${item.id}"),
@@ -1962,6 +1969,7 @@ private fun ModelsTab(
       verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
       OutlinedButton(
+        colors = atlasOutlinedButtonColors(),
         onClick = onDetailClose,
         modifier = Modifier.heightIn(min = 48.dp),
       ) {
@@ -1981,6 +1989,7 @@ private fun ModelsTab(
       }
       if (compareChoicesLoadFailed) {
         OutlinedButton(
+          colors = atlasOutlinedButtonColors(),
           onClick = onCompareChoicesRetry,
           modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         ) {
@@ -2013,6 +2022,7 @@ private fun ModelsTab(
   ) {
     // P7-B2：ModelsTab 可見觸發入口（全域 enrichment；只寫 external 槽，失敗保舊）。
     OutlinedButton(
+      colors = atlasOutlinedButtonColors(),
       onClick = onLmspeedSync,
       enabled = !lmspeedSyncing,
       modifier = Modifier.heightIn(min = 48.dp),
@@ -2045,7 +2055,7 @@ private fun ModelsTab(
       } else if (modelRows.isEmpty() && rowsLoadFailed) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AtlasSpace.md)) {
           Text(stringResource(R.string.error_load), color = MaterialTheme.colorScheme.error)
-          OutlinedButton(onClick = onRetryModelRows, modifier = Modifier.heightIn(min = AtlasSpace.touch)) {
+          OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = onRetryModelRows, modifier = Modifier.heightIn(min = AtlasSpace.touch)) {
             Text(stringResource(R.string.action_retry))
           }
         }
@@ -2055,6 +2065,7 @@ private fun ModelsTab(
           hasActiveFilter = hasActiveFilter,
           action = {
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = { query = ""; filterState = FilterState() },
               modifier = Modifier.heightIn(min = AtlasSpace.touch),
             ) { Text(stringResource(R.string.action_reset)) }
@@ -2087,6 +2098,7 @@ private fun ModelsTab(
                   Text(stringResource(R.string.provider_detail_group, it), style = MaterialTheme.typography.bodySmall)
                 }
                 OutlinedButton(
+                  colors = atlasOutlinedButtonColors(),
                   onClick = {
                     onDedicatedSync(
                       row.providerId,

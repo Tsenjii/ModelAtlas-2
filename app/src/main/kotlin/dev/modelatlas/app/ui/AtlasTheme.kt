@@ -18,6 +18,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
@@ -235,6 +237,13 @@ internal fun AtlasCard(
 @Composable
 internal fun atlasChromeColor(color: Color): Color =
     if (LocalAtlasAppearance.current.showsArtwork) color.copy(alpha = 0.94f) else color
+
+@Composable
+internal fun atlasOutlinedButtonColors(): ButtonColors =
+    if (LocalAtlasAppearance.current.showsArtwork) ButtonDefaults.outlinedButtonColors(
+        containerColor = atlasChromeColor(MaterialTheme.colorScheme.surface),
+        disabledContainerColor = atlasChromeColor(MaterialTheme.colorScheme.surface),
+    ) else ButtonDefaults.outlinedButtonColors()
 
 @Composable
 internal fun atlasOutlinedFieldColors(): TextFieldColors =
