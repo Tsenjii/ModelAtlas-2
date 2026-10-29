@@ -43,6 +43,7 @@ type Server struct {
 	desktop         bool
 	maintenanceFile string
 	vaultVerified   bool
+	backups         *cloudBackupService
 	scheduleMu      sync.Mutex
 	scheduleClock   func() time.Time
 	wake            chan struct{}
@@ -353,6 +354,10 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /assistant/confirm", s.assistantConfirm)
 	api.HandleFunc("POST /assistant/undo", s.assistantUndo)
 	api.HandleFunc("GET /system", s.systemStatus)
+	api.HandleFunc("GET /backup/cloud", s.getCloudBackup)
+	api.HandleFunc("POST /backup/cloud/policy", s.saveCloudBackupPolicy)
+	api.HandleFunc("POST /backup/cloud/run", s.startCloudBackup)
+	api.HandleFunc("POST /backup/cloud/cancel", s.cancelCloudBackup)
 	api.HandleFunc("GET /research/schedules", s.listResearchSchedules)
 	api.HandleFunc("GET /research/schedules/review", s.reviewPrivateResearchSchedule)
 	api.HandleFunc("GET /research/schedules/private-history", s.privateResearchScheduleHistory)
@@ -406,6 +411,12 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 func main() {
 	initializeMemoryLimit()
 	if len(os.Args) > 1 {
+		if os.Args[1] == "backup" {
+			if err := cloudBackupCommand(os.Args[2:], os.Stdout); err != nil {
+				log.Fatal(err)
+			}
+			return
+		}
 		if os.Args[1] == "serve" {
 			config, err := serveConfig(os.Args[2:], os.Getenv)
 			if err == nil {
@@ -460,6 +471,10 @@ func runConfiguredApplication(config deploymentConfig) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	if config.backupDestination != "" {
+		srv.backups = newCloudBackupService(ctx, config.backupDestination, config.db, config.key)
+		defer srv.backups.Close()
+	}
 	if config.desktopReady != "" {
 		if err = publishDesktopReady(config.desktopReady, listener.Addr().String()); err != nil {
 			return err

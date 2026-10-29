@@ -29,7 +29,7 @@ func serveConfig(args []string, getenv func(string) string) (deploymentConfig, e
 		return deploymentConfig{}, errors.New("serve configuration requires its own admin token, stable master key and absolute database path")
 	}
 	for name := range values {
-		if !oneOf(name, "MODELATLAS_ADMIN_TOKEN", "MODELATLAS_MASTER_KEY", "MODELATLAS_DB", "MODELATLAS_LISTEN", "MODELATLAS_DEPLOYMENT", "MODELATLAS_PUBLIC_ORIGIN", "MODELATLAS_MAINTENANCE_FILE", "MODELATLAS_DESKTOP_READY", "PORT") {
+		if !oneOf(name, "MODELATLAS_ADMIN_TOKEN", "MODELATLAS_MASTER_KEY", "MODELATLAS_DB", "MODELATLAS_LISTEN", "MODELATLAS_DEPLOYMENT", "MODELATLAS_PUBLIC_ORIGIN", "MODELATLAS_MAINTENANCE_FILE", "MODELATLAS_DESKTOP_READY", "MODELATLAS_BACKUP_DESTINATION", "PORT") {
 			return deploymentConfig{}, errors.New("unsupported serve configuration field; runtime resource options belong in the supervisor environment")
 		}
 	}

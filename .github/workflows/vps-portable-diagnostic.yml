@@ -20,6 +20,9 @@ jobs:
           sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
           sudo apt-get install -y rclone
           rclone version
+          mkdir -p portable-tools
+          cp /usr/bin/rclone portable-tools/rclone
+          sha256sum portable-tools/rclone > portable-tools/SHA256SUMS.txt
       - name: Real private configuration, HTTPS, online snapshots and crypt recovery
         working-directory: vps
         env:
@@ -33,4 +36,10 @@ jobs:
         with:
           name: modelatlas-portable-contracts
           path: vps/portable-contracts.jsonl
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-portable-rclone-tool
+          path: portable-tools/
           if-no-files-found: warn

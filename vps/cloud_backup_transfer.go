@@ -94,6 +94,7 @@ func copyCloudBackup(ctx context.Context, cfg cloudBackupDestination, source, de
 	}
 	cmd.Stdout, cmd.Stderr = io.Discard, io.Discard
 	cmd.WaitDelay = 3 * time.Second
+	configureBackupChild(cmd)
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() != nil {
 			return errors.New("backup transfer cancelled or timed out")
@@ -104,6 +105,10 @@ func copyCloudBackup(ctx context.Context, cfg cloudBackupDestination, source, de
 }
 
 func uploadAndVerifyCloudBackup(ctx context.Context, cfg cloudBackupDestination, directory string, archive cloudBackupArchive, key []byte) error {
+	return transferCloudBackup(ctx, cfg, directory, archive, key, nil)
+}
+
+func transferCloudBackup(ctx context.Context, cfg cloudBackupDestination, directory string, archive cloudBackupArchive, key []byte, uploaded func() error) error {
 	if !cfg.KeyRecoveryConfirmed {
 		return errors.New("confirm a separately stored master key before cloud backup")
 	}
@@ -113,6 +118,11 @@ func uploadAndVerifyCloudBackup(ctx context.Context, cfg cloudBackupDestination,
 	remote := cfg.Remote + ":" + cfg.Prefix + "/" + archive.ID
 	if err := copyCloudBackup(ctx, cfg, directory, remote); err != nil {
 		return err
+	}
+	if uploaded != nil {
+		if err := uploaded(); err != nil {
+			return err
+		}
 	}
 	verify, err := os.MkdirTemp(cfg.Spool, ".verify-")
 	if err != nil {
