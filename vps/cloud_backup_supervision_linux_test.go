@@ -85,11 +85,31 @@ func TestPortableCloudParentCrashStopsOwnedTransferAndRecoversUncertainty(t *tes
 	case <-time.After(15 * time.Second):
 		t.Fatal("owned actual TLS transfer did not start")
 	}
-	children, err := os.ReadFile("/proc/" + strconv.Itoa(cmd.Process.Pid) + "/task/" + strconv.Itoa(cmd.Process.Pid) + "/children")
-	if err != nil || len(strings.Fields(string(children))) != 1 {
-		t.Fatal("cannot identify the actual owned transfer process", err)
+	// Linux records children on the particular OS thread that performed fork.
+	// Go's exec may use any runtime thread, rather than the thread-group leader.
+	// Inspect every thread and still require exactly one actual owned process.
+	threads, err := filepath.Glob("/proc/" + strconv.Itoa(cmd.Process.Pid) + "/task/*/children")
+	if err != nil || len(threads) == 0 {
+		t.Fatal("cannot inspect actual supervisor threads", err)
 	}
-	child, err := strconv.Atoi(strings.TrimSpace(string(children)))
+	children := map[string]bool{}
+	for _, path := range threads {
+		raw, e := os.ReadFile(path)
+		if e != nil && !os.IsNotExist(e) {
+			t.Fatal("cannot inspect owned transfer processes", e)
+		}
+		for _, pid := range strings.Fields(string(raw)) {
+			children[pid] = true
+		}
+	}
+	if len(children) != 1 {
+		t.Fatal("expected exactly one actual owned transfer process", len(children))
+	}
+	childID := ""
+	for pid := range children {
+		childID = pid
+	}
+	child, err := strconv.Atoi(childID)
 	if err != nil {
 		t.Fatal(err)
 	}
