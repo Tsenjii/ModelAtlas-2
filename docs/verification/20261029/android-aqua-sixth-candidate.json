@@ -1,0 +1,19 @@
+{
+  "source": "9f79d39e94de7a43405c35228c2436113c22c800",
+  "run": 40852737435,
+  "job": 123376132827,
+  "artifact_id": 12887444902,
+  "bytes": 2041165,
+  "sha256": "aa55e15d1750f5ec1aff97d9b1e32e65e34eeb0d6230e1278af49a5a1032f827",
+  "crc": "PASS",
+  "status": "REJECTED_ACTUAL_PDF_LAYOUT",
+  "counts": {
+    "tests": 1005,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 5
+  },
+  "all_original997_outcomes": "unchanged",
+  "only_new_failure": "actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable at the320dp200% PDF layout assertion; width versus height unresolved before actual measurement.",
+  "next": "Same original assertion plus exact layout metrics; retain actual12/15 screenshots before the assertion and acknowledge a hardware frame submission before capturing. No inference behavior or deadline reduced."
+}

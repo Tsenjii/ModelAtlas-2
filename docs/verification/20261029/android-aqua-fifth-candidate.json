@@ -1,0 +1,17 @@
+{
+  "source": "1e6d88b46e690f1b28a9dee23b960abcab149b05",
+  "run": 40852733230,
+  "attempt": 1,
+  "job": 123375983450,
+  "artifact_id": 12887564613,
+  "bytes": 21614003,
+  "sha256": "80ee12b8e9f7209e4c46cbfa4a1c2757003cd24102a81cb7edccfd427a9717fe",
+  "crc": "PASS",
+  "status": "FAILED_SCREENSHOT_CAPTURE",
+  "actual_cases": 8,
+  "passed": 7,
+  "failed": 1,
+  "failure": "UiAutomation.takeScreenshot returned null at the first dark screenshot after actual Activity recreation; dark report has no pictures. Production/system/privacy settings restored exactly. PDF large-font assertions were not reached in this attempt.",
+  "root_cause": "UNKNOWN; do not claim production fixed or emulator cause established.",
+  "next": "Same source, same8 tests and all unchanged deadlines rerun; integrated source9f79d39 continues its own1005 original-plus-new device cases and same-source9 jobs."
+}

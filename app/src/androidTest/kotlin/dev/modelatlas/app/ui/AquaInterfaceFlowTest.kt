@@ -272,7 +272,7 @@ class AquaInterfaceFlowTest {
                 assertTrue(get(layouts))
             }
         assertTrue("The attachment label must stay complete at 200% font scale: " +
-            layouts.joinToString { "size=${it.size}, lines=${it.lineCount}, widthOverflow=${it.didOverflowWidth}, heightOverflow=${it.didOverflowHeight}, font=${it.layoutInput.style.fontSize}, scale=${it.layoutInput.density.fontScale}, constraints=${it.layoutInput.constraints}" },
+            layouts.joinToString { "size=${it.size}, paragraphWidth=${it.multiParagraph.width}, paragraphHeight=${it.multiParagraph.height}, lines=${it.lineCount}, widthOverflow=${it.didOverflowWidth}, heightOverflow=${it.didOverflowHeight}, font=${it.layoutInput.style.fontSize}, scale=${it.layoutInput.density.fontScale}, constraints=${it.layoutInput.constraints}" },
             layouts.isNotEmpty() && layouts.all { it.lineCount == 1 && !it.hasVisualOverflow })
         compose.onNodeWithTag("playground_composer_controls").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("playground_composer_text").performScrollTo().assertIsDisplayed()

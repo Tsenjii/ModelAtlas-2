@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -689,7 +690,8 @@ private fun PlaygroundComposer(
             .semantics { contentDescription = pdfAttachLabel },
           contentPadding = PaddingValues(horizontal = AtlasSpace.xs),
         ) {
-          Text("PDF", style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false)
+          Text("PDF", modifier = Modifier.width(IntrinsicSize.Max),
+            style = MaterialTheme.typography.labelMedium, maxLines = 1)
         }
         val audioLabel = stringResource(R.string.playground_attach_audio)
         TextButton(
