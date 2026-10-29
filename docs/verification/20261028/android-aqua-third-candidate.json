@@ -1,0 +1,15 @@
+{
+  "source": "24dda2ede0070a3808e8e3277208856a81a5174a",
+  "tree": "e7898fa7494db1e0a7cfae23a95d23f71b2234be",
+  "run": 40850733096,
+  "job": 123369247584,
+  "status": "REJECTED_COMPILE_FAILURE",
+  "artifact_id": 12886667872,
+  "artifact_bytes": 59055,
+  "artifact_sha256": "af9f18622f8230ab9c5631ec4136a5beed575e944d3503267ca74802d5de50fe",
+  "artifact_bytes_independently_verified": true,
+  "error": "PlaygroundScreen.kt:255:44 BoxWithConstraints maxHeight cannot be called via implicit receiver inside ColumnScope",
+  "fix": "Capture the enclosing maximum height before entering ColumnScope; keep the exact composer size bound, real controls, assertions and deadlines.",
+  "native_device_and_images": "NOT_RUN",
+  "crc": "PASS"
+}
