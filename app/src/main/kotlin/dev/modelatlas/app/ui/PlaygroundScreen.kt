@@ -685,10 +685,11 @@ private fun PlaygroundComposer(
           },
           enabled = canSend && canAttachFile && !busy && !imagePreparing && !filePreparing && !audioPreparing &&
             pendingImage == null && pendingFile == null && pendingAudio == null,
-          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = pdfAttachLabel },
+          modifier = Modifier.heightIn(min = AtlasSpace.touch).widthIn(min = AtlasSpace.touch)
+            .semantics { contentDescription = pdfAttachLabel },
           contentPadding = PaddingValues(horizontal = AtlasSpace.xs),
         ) {
-          Text("PDF", style = MaterialTheme.typography.labelMedium)
+          Text("PDF", style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false)
         }
         val audioLabel = stringResource(R.string.playground_attach_audio)
         TextButton(

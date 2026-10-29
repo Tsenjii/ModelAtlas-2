@@ -10,6 +10,7 @@ import android.os.ParcelFileDescriptor
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
@@ -24,7 +25,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -261,6 +264,13 @@ class AquaInterfaceFlowTest {
     private fun qaCase(body: () -> Unit) { body(); bodyPassed = true }
 
     private fun assertComposerControlsReachable() {
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithText("PDF").performScrollTo().assertIsDisplayed()
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { get ->
+                assertTrue(get(layouts))
+            }
+        assertTrue("The attachment label must stay complete at 200% font scale",
+            layouts.isNotEmpty() && layouts.all { it.lineCount == 1 && !it.hasVisualOverflow })
         compose.onNodeWithTag("playground_composer_controls").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("playground_composer_text").performScrollTo().assertIsDisplayed()
     }
