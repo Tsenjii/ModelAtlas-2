@@ -32,7 +32,7 @@ func cloudBackupCommand(args []string, out io.Writer) error {
 	id := f.String("id", "", "persistent backup identifier")
 	retry := f.Bool("retry", false, "explicitly retry the same failed backup")
 	output := f.String("output", "", "new private download directory")
-	if f.Parse(args[1:]) != nil || f.NArg() != 0 || !filepath.IsAbs(*destination) {
+	if f.Parse(args[1:]) != nil || f.NArg() != 0 || !filepath.IsAbs(*destination) || filepath.Clean(*destination) != *destination {
 		return errors.New("invalid backup options; credentials belong in private files")
 	}
 	config, err := operationConfig(*env, "")
@@ -85,7 +85,7 @@ func cloudBackupCommand(args []string, out io.Writer) error {
 	ctx, cancel := context.WithTimeout(parent, 10*time.Minute)
 	defer cancel()
 	if args[0] == "fetch" {
-		if !backupPathSegment(*id) || !filepath.IsAbs(*output) || filepath.Clean(*output) != *output {
+		if !validCloudBackupID(*id) || !filepath.IsAbs(*output) || filepath.Clean(*output) != *output {
 			return errors.New("fetch requires a backup id and a new absolute private output directory")
 		}
 		if err = os.Mkdir(*output, 0700); err != nil {
@@ -105,7 +105,7 @@ func cloudBackupCommand(args []string, out io.Writer) error {
 	if *id == "" {
 		*id = "backup-" + newID()
 	}
-	if _, err = m.start(*id, cfg.fingerprint, *retry); err != nil {
+	if _, err = m.start(*id, m.cfg.fingerprint, *retry); err != nil {
 		return err
 	}
 	m.wg.Wait()

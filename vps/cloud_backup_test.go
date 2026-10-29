@@ -70,6 +70,27 @@ func TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes(t *tes
 	if err != nil || changed.fingerprint == before {
 		t.Fatal("encryption identity changed without invalidating the binding", err)
 	}
+	backend := "[encrypted]\ntype = crypt\nremote = cloud:backups\npassword = synthetic-encryption-identity\n[cloud]\ntype = drive\nroot_folder_id = original-folder\ntoken = {\"access_token\":\"expiring-first\",\"refresh_token\":\"original-account\",\"expiry\":\"first\"}\n"
+	fingerprint := func(content string) string {
+		t.Helper()
+		if err := os.WriteFile(cfg.ConfigFile, []byte(content), 0600); err != nil {
+			t.Fatal(err)
+		}
+		value, err := readCloudBackupDestination(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return value.fingerprint
+	}
+	identity := fingerprint(backend)
+	if fingerprint(strings.ReplaceAll(strings.ReplaceAll(backend, "expiring-first", "expiring-refreshed"), `"expiry":"first"`, `"expiry":"later"`)) != identity {
+		t.Fatal("ordinary OAuth access token refresh disabled the same destination")
+	}
+	for _, changed := range []string{strings.ReplaceAll(backend, "original-folder", "another-folder"), strings.ReplaceAll(backend, "original-account", "another-account")} {
+		if fingerprint(changed) == identity {
+			t.Fatal("underlying cloud destination changed without invalidating authority")
+		}
+	}
 	for _, scope := range []string{"../other", "/absolute", "x//y", "remote:folder", "x/../y", "x\ny"} {
 		if backupPathSegment(scope) {
 			t.Fatal("unsafe backup identifier accepted")

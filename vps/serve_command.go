@@ -13,11 +13,17 @@ func serveConfig(args []string, getenv func(string) string) (deploymentConfig, e
 	f := flag.NewFlagSet("serve", flag.ContinueOnError)
 	f.SetOutput(io.Discard)
 	path := f.String("env-file", "", "private configuration file")
+	backup := f.String("backup-destination", "", "explicit private backup destination")
 	if f.Parse(args) != nil || f.NArg() != 0 {
 		return deploymentConfig{}, errors.New("usage: serve [--env-file PRIVATE_FILE]")
 	}
 	if *path == "" {
-		return readDeploymentConfig(getenv)
+		return readDeploymentConfig(func(name string) string {
+			if name == "MODELATLAS_BACKUP_DESTINATION" && *backup != "" {
+				return *backup
+			}
+			return getenv(name)
+		})
 	}
 	values, err := readPrivateEnvironment(*path)
 	if err != nil {
@@ -34,6 +40,9 @@ func serveConfig(args []string, getenv func(string) string) (deploymentConfig, e
 		}
 	}
 	return readDeploymentConfig(func(name string) string {
+		if name == "MODELATLAS_BACKUP_DESTINATION" && *backup != "" {
+			return *backup
+		}
 		if value, exists := values[name]; exists {
 			return value
 		}

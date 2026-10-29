@@ -3,13 +3,17 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"encoding/pem"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func portableServiceFixture(t *testing.T) (*Server, *cloudBackupService, string) {
@@ -133,6 +137,43 @@ func TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed(t
 	for _, bad := range []string{"0", "-1", "not-a-number", "9007199254740992"} {
 		requireCode(t, req(t, s, "GET", "/api/v1/backup/cloud?before="+bad, nil), 400)
 	}
+	for range 61 {
+		if _, err := m.db.Exec("INSERT INTO backup_events(job_id,state,at,error_code) VALUES('backup-history-0','FAILED',?,'TRANSFER_FAILED')", now()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := m.db.Exec("INSERT INTO backup_events(job_id,state,at,error_code) VALUES('backup-history-1','FAILED',?,'TRANSFER_FAILED')", now()); err != nil {
+		t.Fatal(err)
+	}
+	var history struct {
+		Job    cloudBackupJob     `json:"job"`
+		Events []cloudBackupEvent `json:"events"`
+		Next   int64              `json:"next_before"`
+	}
+	events := req(t, s, "GET", "/api/v1/backup/cloud/events?id=backup-history-0", nil)
+	requireCode(t, events, 200)
+	if json.Unmarshal(events.Body.Bytes(), &history) != nil || history.Job.ID != "backup-history-0" || len(history.Events) != 25 || history.Next == 0 {
+		t.Fatal("exact per-backup event page missing")
+	}
+	for _, event := range history.Events {
+		if event.JobID != history.Job.ID {
+			t.Fatal("borrowed another backup's process history")
+		}
+	}
+	older := req(t, s, "GET", "/api/v1/backup/cloud/events?id=backup-history-0&before="+strconv.FormatInt(history.Next, 10), nil)
+	requireCode(t, older, 200)
+	if json.Unmarshal(older.Body.Bytes(), &history) != nil || len(history.Events) != 25 || history.Events[0].Sequence >= 37 {
+		t.Fatal("event history page repeated its boundary")
+	}
+	requireCode(t, req(t, s, "GET", "/api/v1/backup/cloud/events?id=backup-missing", nil), 404)
+	requireCode(t, req(t, s, "GET", "/api/v1/backup/cloud/events?id=backup-history-0&before=0", nil), 400)
+	if _, err := m.db.Exec("UPDATE backup_events SET state='UNKNOWN' WHERE seq=61"); err != nil {
+		t.Fatal(err)
+	}
+	requireCode(t, req(t, s, "GET", "/api/v1/backup/cloud/events?id=backup-history-0", nil), 503)
+	if _, err := m.db.Exec("UPDATE backup_events SET state='FAILED' WHERE seq=61"); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := m.db.Exec("UPDATE backup_policy SET interval_minutes=0"); err != nil {
 		t.Fatal(err)
 	}
@@ -199,6 +240,16 @@ func TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup(t 
 	if p, err = reopened.policy(context.Background()); err != nil || !p.Enabled || !p.BindingValid {
 		t.Fatal("creating a backup altered the original host policy", err)
 	}
+	sharedDestination := newCloudBackupService(context.Background(), configPath, backup, s.Key)
+	defer sharedDestination.Close()
+	p, err = sharedDestination.policy(context.Background())
+	if err != nil || !p.Enabled || p.BindingValid {
+		t.Fatal("a different source borrowed execution authority from a shared host destination", err)
+	}
+	sharedDestination.tick(context.Background())
+	if sharedDestination.db.QueryRow("SELECT COUNT(*) FROM backup_jobs").Scan(&count) != nil || count != 1 {
+		t.Fatal("shared destination automatically backed up a different source")
+	}
 }
 
 func TestPortableCloudCommandsRequirePrivateIdentityAndExplicitKeyRecovery(t *testing.T) {
@@ -225,5 +276,198 @@ func TestPortableCloudCommandsRequirePrivateIdentityAndExplicitKeyRecovery(t *te
 	after, _ := os.ReadFile(destination)
 	if string(before) != string(after) {
 		t.Fatal("failed reconfiguration changed a confirmed destination")
+	}
+}
+
+func actualPortableDestination(t *testing.T) (cloudBackupDestination, string, string) {
+	t.Helper()
+	binary, err := exec.LookPath("rclone")
+	if err != nil {
+		t.Fatal("opt-in contract requires actual rclone")
+	}
+	password, err := exec.Command(binary, "obscure", "synthetic-service-crypt-password").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, path, remote := portableDestinationFixture(t, binary, strings.TrimSpace(string(password)))
+	cfg, err := readCloudBackupDestination(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cfg, path, remote
+}
+
+func TestPortableCloudActualScheduleIdempotenceFetchAndCancellation(t *testing.T) {
+	if os.Getenv("MODELATLAS_CLOUD_BACKUP_TEST") != "1" {
+		t.Skip("opt in to actual rclone crypt, scheduled transfers and cancellation")
+	}
+	s := testServer(t)
+	seed(t, s, "https://never-called.example/v1")
+	cfg, path, encrypted := actualPortableDestination(t)
+	m := newCloudBackupService(context.Background(), path, s.Store.path, s.Key)
+	defer m.Close()
+	s.backups = m
+	requireCode(t, req(t, s, "POST", "/api/v1/backup/cloud/policy", portablePolicyBody(m, 0, true)), 200)
+	s.backgroundTick(context.Background())
+	m.wg.Wait()
+	var id string
+	if m.db.QueryRow("SELECT id FROM backup_jobs").Scan(&id) != nil {
+		t.Fatal("real enabled schedule did not create a backup")
+	}
+	job, _, err := m.job(context.Background(), id)
+	if err != nil || job.State != "SUCCESS" || !validBackupDigest(job.SHA256) {
+		t.Fatal("actual scheduled crypt transfer did not verify", job, err)
+	}
+	before, err := os.ReadDir(filepath.Join(cfg.Spool, id))
+	if err != nil || len(before) != 3 {
+		t.Fatal("explicitly retained local snapshot missing", err)
+	}
+	ack := req(t, s, "POST", "/api/v1/backup/cloud/run", map[string]any{"id": id, "fingerprint": m.cfg.fingerprint, "retry": false, "confirm": true})
+	requireCode(t, ack, 202)
+	var recovered cloudBackupJob
+	if json.Unmarshal(ack.Body.Bytes(), &recovered) != nil || recovered.Sequence != job.Sequence || recovered.SHA256 != job.SHA256 {
+		t.Fatal("lost acknowledgement recovery replaced the original backup")
+	}
+	var count int
+	if m.db.QueryRow("SELECT COUNT(*) FROM backup_jobs").Scan(&count) != nil || count != 1 {
+		t.Fatal("idempotent retry created another transfer")
+	}
+	env := operationsEnvironment(t, s)
+	download := filepath.Join(t.TempDir(), "recovery")
+	if err = cloudBackupCommand([]string{"fetch", "--env-file", env, "--destination-file", path, "--id", id, "--output", download}, io.Discard); err != nil {
+		t.Fatal("formal recovery command failed", err)
+	}
+	if _, err = verifyCloudBackupArchive(context.Background(), download, id, job.SHA256, s.Key); err != nil {
+		t.Fatal(err)
+	}
+	policy := portablePolicyBody(m, 1, true)
+	policy["keep_local"] = false
+	requireCode(t, req(t, s, "POST", "/api/v1/backup/cloud/policy", policy), 200)
+	requireCode(t, req(t, s, "POST", "/api/v1/providers", Provider{ID: "newer", Name: "Newer snapshot content", BaseURL: "https://never-called.example/v1", AuthMode: "NONE"}), 201)
+	if _, err = m.db.Exec("UPDATE backup_jobs SET updated_at=?", now()-16*60000); err != nil {
+		t.Fatal(err)
+	}
+	s.backgroundTick(context.Background())
+	m.wg.Wait()
+	if m.db.QueryRow("SELECT COUNT(*) FROM backup_jobs WHERE state='SUCCESS'").Scan(&count) != nil || count != 2 {
+		t.Fatal("next due schedule did not create a distinct verified snapshot")
+	}
+	var newerID string
+	if m.db.QueryRow("SELECT id FROM backup_jobs ORDER BY seq DESC LIMIT 1").Scan(&newerID) != nil || newerID == id {
+		t.Fatal("new due schedule reused a completed identity")
+	}
+	if _, err = os.Stat(filepath.Join(cfg.Spool, newerID)); !os.IsNotExist(err) {
+		t.Fatal("verified temporary snapshot was retained against the saved policy")
+	}
+	if err = cloudBackupCommand([]string{"run", "--env-file", env, "--destination-file", path, "--id", newerID}, io.Discard); err != nil {
+		t.Fatal("formal idempotent run command could not recover its original verified receipt", err)
+	}
+	objects := 0
+	if err = filepath.WalkDir(encrypted, func(_ string, entry os.DirEntry, e error) error {
+		if e != nil {
+			return e
+		}
+		if !entry.IsDir() {
+			objects++
+		}
+		return nil
+	}); err != nil || objects != 6 {
+		t.Fatal("new scheduled backup removed an older encrypted version", objects, err)
+	}
+	copyPath := filepath.Join(t.TempDir(), "different-source.sqlite")
+	if err = onlineBackup(context.Background(), s.Store.path, copyPath, s.Key); err != nil {
+		t.Fatal(err)
+	}
+	otherSource := newCloudBackupService(context.Background(), path, copyPath, s.Key)
+	defer otherSource.Close()
+	s.backups = otherSource
+	state := req(t, s, "GET", "/api/v1/backup/cloud", nil)
+	requireCode(t, state, 200)
+	var scoped struct {
+		LastSuccess int64             `json:"last_success_at"`
+		Policy      cloudBackupPolicy `json:"policy"`
+		Jobs        []cloudBackupJob  `json:"jobs"`
+	}
+	if json.Unmarshal(state.Body.Bytes(), &scoped) != nil || scoped.LastSuccess != 0 || scoped.Policy.BindingValid || len(scoped.Jobs) != 2 || scoped.Jobs[0].CurrentSource || scoped.Jobs[1].CurrentSource {
+		t.Fatal("another source borrowed the original source's verified success")
+	}
+	requireCode(t, req(t, s, "POST", "/api/v1/backup/cloud/run", map[string]any{"id": id, "fingerprint": otherSource.cfg.fingerprint, "retry": true, "confirm": true}), 409)
+	otherSource.tick(context.Background())
+	otherSource.wg.Wait()
+	s.backups = m
+	// A real TLS storage request is held in flight. Cancelling the owning job
+	// must kill the actual transfer process, leave its local snapshot intact and
+	// never label a successful child exit or partial upload as a verified backup.
+	arrived, stopped := make(chan struct{}, 8), make(chan struct{}, 8)
+	release := make(chan struct{})
+	storage := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case arrived <- struct{}{}:
+		default:
+		}
+		select {
+		case <-r.Context().Done():
+			select {
+			case stopped <- struct{}{}:
+			default:
+			}
+		case <-release:
+			http.Error(w, "test storage released", 503)
+		}
+	}))
+	defer storage.Close()
+	defer close(release)
+	ca := filepath.Join(t.TempDir(), "storage-ca.pem")
+	if err = os.WriteFile(ca, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: storage.Certificate().Raw}), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("SSL_CERT_FILE", ca)
+	blocked, blockedPath, _ := actualPortableDestination(t)
+	old, _ := os.ReadFile(blocked.ConfigFile)
+	// Preserve the synthetic crypt password while selecting an explicit fixture
+	// backend. No production TLS option is weakened or certificate bypass used.
+	parts, err := backupCryptRemote(old, blocked.Remote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := "[encrypted]\ntype = crypt\nremote = blocked:backups\npassword = " + parts["password"] + "\n[blocked]\ntype = webdav\nurl = " + storage.URL + "\nvendor = other\n"
+	if err = os.WriteFile(blocked.ConfigFile, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+	blocked, err = readCloudBackupDestination(blockedPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	transfer := newCloudBackupService(context.Background(), blockedPath, s.Store.path, s.Key)
+	defer transfer.Close()
+	s.backups = transfer
+	cancelID := "backup-cancel-" + newID()
+	if _, err = transfer.start(cancelID, transfer.cfg.fingerprint, false); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-arrived:
+	case <-time.After(10 * time.Second):
+		t.Fatal("actual TLS storage transfer did not start")
+	}
+	requireCode(t, req(t, s, "POST", "/api/v1/backup/cloud/cancel", map[string]any{"id": cancelID}), 202)
+	done := make(chan struct{})
+	go func() { transfer.wg.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("cancelled transfer process did not exit")
+	}
+	select {
+	case <-stopped:
+	case <-time.After(5 * time.Second):
+		t.Fatal("cancelled process left an active TLS request")
+	}
+	interrupted, _, err := transfer.job(context.Background(), cancelID)
+	if err != nil || interrupted.State != "CANCELLED" || interrupted.SHA256 == "" {
+		t.Fatal("cancelled transfer lost snapshot identity or invented success", err)
+	}
+	if _, err = verifyCloudBackupArchive(context.Background(), filepath.Join(blocked.Spool, cancelID), cancelID, interrupted.SHA256, s.Key); err != nil {
+		t.Fatal("cancelled transfer discarded its original complete local snapshot", err)
 	}
 }

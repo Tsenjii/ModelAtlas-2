@@ -22,15 +22,16 @@ type cloudBackupPolicy struct {
 }
 
 type cloudBackupJob struct {
-	Sequence    int64  `json:"sequence"`
-	ID          string `json:"id"`
-	State       string `json:"state"`
-	CreatedAt   int64  `json:"created_at"`
-	UpdatedAt   int64  `json:"updated_at"`
-	SnapshotAt  int64  `json:"snapshot_at"`
-	SHA256      string `json:"sha256"`
-	ErrorCode   string `json:"error_code"`
-	Destination string `json:"destination"`
+	Sequence      int64  `json:"sequence"`
+	ID            string `json:"id"`
+	State         string `json:"state"`
+	CreatedAt     int64  `json:"created_at"`
+	UpdatedAt     int64  `json:"updated_at"`
+	SnapshotAt    int64  `json:"snapshot_at"`
+	SHA256        string `json:"sha256"`
+	ErrorCode     string `json:"error_code"`
+	Destination   string `json:"destination"`
+	CurrentSource bool   `json:"current_source"`
 }
 
 type cloudBackupService struct {
@@ -64,6 +65,7 @@ func newCloudBackupService(parent context.Context, configPath, source string, ke
 		m.problem = "主機備份目的地設定無法驗證，尚未傳送資料。"
 		return m
 	}
+	cfg = bindCloudBackupDestination(cfg, source, key)
 	m.cfg = cfg
 	relative, err := filepath.Rel(cfg.Spool, source)
 	if len(key) != 32 || err != nil || relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
@@ -119,6 +121,7 @@ func (m *cloudBackupService) available() error {
 		return errors.New("backup service configuration unavailable")
 	}
 	current, err := readCloudBackupDestination(m.configPath)
+	current = bindCloudBackupDestination(current, m.source, m.key)
 	if err != nil || current.fingerprint != m.cfg.fingerprint {
 		return errors.New("host backup configuration changed; restart to apply and confirm the new destination")
 	}
@@ -130,7 +133,7 @@ func (m *cloudBackupService) policy(ctx context.Context) (cloudBackupPolicy, err
 	var binding string
 	err := m.db.QueryRowContext(ctx, "SELECT revision,enabled,interval_minutes,keep_local,binding FROM backup_policy WHERE id=1").Scan(&p.Revision, &p.Enabled, &p.IntervalMinutes, &p.KeepLocal, &binding)
 	p.BindingValid = binding == m.cfg.fingerprint
-	if err != nil || p.Revision < 0 || p.IntervalMinutes < 15 || p.IntervalMinutes > 10080 {
+	if err != nil || p.Revision < 0 || p.Revision >= 1<<53 || p.IntervalMinutes < 15 || p.IntervalMinutes > 10080 {
 		return p, errors.New("saved backup policy unavailable")
 	}
 	return p, nil
@@ -140,6 +143,7 @@ func (m *cloudBackupService) job(ctx context.Context, id string) (cloudBackupJob
 	var j cloudBackupJob
 	var binding string
 	err := m.db.QueryRowContext(ctx, "SELECT seq,id,state,created_at,updated_at,snapshot_at,sha256,error_code,destination,binding FROM backup_jobs WHERE id=?", id).Scan(&j.Sequence, &j.ID, &j.State, &j.CreatedAt, &j.UpdatedAt, &j.SnapshotAt, &j.SHA256, &j.ErrorCode, &j.Destination, &binding)
+	j.CurrentSource = binding == m.cfg.fingerprint
 	return j, binding, err
 }
 
@@ -163,7 +167,7 @@ func (m *cloudBackupService) transition(id, state, code, digest string, snapshot
 func (m *cloudBackupService) start(id, fingerprint string, retry bool) (cloudBackupJob, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if err := m.available(); err != nil || !m.cfg.KeyRecoveryConfirmed || fingerprint != m.cfg.fingerprint || !strings.HasPrefix(id, "backup-") || !backupPathSegment(id) {
+	if err := m.available(); err != nil || !m.cfg.KeyRecoveryConfirmed || fingerprint != m.cfg.fingerprint || !validCloudBackupID(id) {
 		return cloudBackupJob{}, errors.New("backup destination or separate key recovery is not confirmed")
 	}
 	if m.ctx.Err() != nil {
@@ -206,6 +210,13 @@ func (m *cloudBackupService) start(id, fingerprint string, retry bool) (cloudBac
 		return existing, err
 	}
 	ctx, cancel := context.WithTimeout(m.ctx, 10*time.Minute)
+	returnJob, _, err := m.job(m.ctx, id)
+	if err != nil {
+		cancel()
+		lease.Close()
+		_ = m.transition(id, "FAILED", "LOCAL_STATE_UNAVAILABLE", "", 0)
+		return existing, errors.New("cannot read admitted backup state")
+	}
 	m.active, m.cancel = id, cancel
 	m.wg.Go(func() {
 		defer lease.Close()
@@ -213,8 +224,7 @@ func (m *cloudBackupService) start(id, fingerprint string, retry bool) (cloudBac
 		defer func() { m.mu.Lock(); m.active, m.cancel = "", nil; m.mu.Unlock() }()
 		m.execute(ctx, id, existing, p.KeepLocal)
 	})
-	returnJob, _, err := m.job(m.ctx, id)
-	return returnJob, err
+	return returnJob, nil
 }
 
 func (m *cloudBackupService) execute(ctx context.Context, id string, existing cloudBackupJob, keepLocal bool) {
@@ -224,8 +234,23 @@ func (m *cloudBackupService) execute(ctx context.Context, id string, existing cl
 	if existing.SHA256 != "" {
 		archive, err = verifyCloudBackupArchive(ctx, directory, id, existing.SHA256, m.key)
 	} else {
-		if err = m.transition(id, "SNAPSHOT", "", "", 0); err == nil {
-			archive, err = createCloudBackupArchive(ctx, directory, id, m.source, m.key)
+		if _, e := os.Lstat(directory); e == nil {
+			// A completed snapshot whose progress write was interrupted can be
+			// adopted unchanged. Incomplete working files remain in a separate
+			// private directory; they never overwrite a valid backup on retry.
+			archive, err = verifyCloudBackupArchive(ctx, directory, id, "", m.key)
+			if err != nil {
+				err = os.Rename(directory, directory+".incomplete-"+newID())
+				archive = cloudBackupArchive{}
+			}
+		}
+		if err == nil {
+			err = m.transition(id, "SNAPSHOT", "", "", 0)
+		}
+		if err == nil {
+			if archive.SHA256 == "" {
+				archive, err = createCloudBackupArchive(ctx, directory, id, m.source, m.key)
+			}
 		}
 	}
 	if err == nil {
@@ -235,7 +260,17 @@ func (m *cloudBackupService) execute(ctx context.Context, id string, existing cl
 		err = transferCloudBackup(ctx, m.cfg, directory, archive, m.key, func() error { return m.transition(id, "VERIFYING", "", "", 0) })
 	}
 	if err != nil {
-		state, code := "FAILED", "SNAPSHOT_OR_TRANSFER_FAILED"
+		state, code := "FAILED", "LOCAL_STATE_UNAVAILABLE"
+		if current, _, readErr := m.job(context.Background(), id); readErr == nil {
+			switch current.State {
+			case "PENDING", "SNAPSHOT":
+				code = "SNAPSHOT_FAILED"
+			case "UPLOADING":
+				code = "TRANSFER_FAILED"
+			case "VERIFYING":
+				code = "READBACK_FAILED"
+			}
+		}
 		if ctx.Err() != nil {
 			state, code = "CANCELLED", "CANCELLED_OR_TIMED_OUT"
 		}
@@ -258,7 +293,7 @@ func (m *cloudBackupService) tick(ctx context.Context) {
 		return
 	}
 	var last int64
-	if m.db.QueryRowContext(ctx, "SELECT COALESCE(MAX(updated_at),0) FROM backup_jobs").Scan(&last) != nil || last != 0 && now() < last+int64(p.IntervalMinutes)*60000 {
+	if m.db.QueryRowContext(ctx, "SELECT COALESCE(MAX(updated_at),0) FROM backup_jobs WHERE binding=?", m.cfg.fingerprint).Scan(&last) != nil || last != 0 && now() < last+int64(p.IntervalMinutes)*60000 {
 		return
 	}
 	var retry string
@@ -266,6 +301,10 @@ func (m *cloudBackupService) tick(ctx context.Context) {
 	if retry != "" {
 		_, _ = m.start(retry, m.cfg.fingerprint, true)
 	} else {
+		var failed int
+		if m.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM backup_jobs WHERE state IN ('FAILED','INTERRUPTED') AND binding=? AND sha256=''", m.cfg.fingerprint).Scan(&failed) != nil || failed != 0 {
+			return // an unusable snapshot requires attention, not disk-filling retries
+		}
 		_, _ = m.start("backup-"+newID(), m.cfg.fingerprint, false)
 	}
 }
@@ -294,7 +333,7 @@ func (s *Server) getCloudBackup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "備份政策暫時無法讀取，未變更設定。", 503)
 		return
 	}
-	rows, err := m.db.QueryContext(r.Context(), "SELECT seq,id,state,created_at,updated_at,snapshot_at,sha256,error_code,destination FROM backup_jobs WHERE seq<? ORDER BY seq DESC LIMIT 26", before)
+	rows, err := m.db.QueryContext(r.Context(), "SELECT seq,id,state,created_at,updated_at,snapshot_at,sha256,error_code,destination,binding FROM backup_jobs WHERE seq<? ORDER BY seq DESC LIMIT 26", before)
 	if err != nil {
 		http.Error(w, "備份歷史暫時無法讀取。", 503)
 		return
@@ -302,10 +341,12 @@ func (s *Server) getCloudBackup(w http.ResponseWriter, r *http.Request) {
 	jobs := []cloudBackupJob{}
 	for rows.Next() {
 		var j cloudBackupJob
-		if rows.Scan(&j.Sequence, &j.ID, &j.State, &j.CreatedAt, &j.UpdatedAt, &j.SnapshotAt, &j.SHA256, &j.ErrorCode, &j.Destination) != nil || !validCloudBackupJob(j) {
+		var binding string
+		if rows.Scan(&j.Sequence, &j.ID, &j.State, &j.CreatedAt, &j.UpdatedAt, &j.SnapshotAt, &j.SHA256, &j.ErrorCode, &j.Destination, &binding) != nil || !validCloudBackupJob(j) {
 			err = errors.New("unreadable backup history")
 			break
 		}
+		j.CurrentSource = binding == m.cfg.fingerprint
 		jobs = append(jobs, j)
 	}
 	if err == nil {
@@ -322,7 +363,7 @@ func (s *Server) getCloudBackup(w http.ResponseWriter, r *http.Request) {
 		next = jobs[len(jobs)-1].Sequence
 	}
 	var successful, snapshotAt int64
-	if m.db.QueryRowContext(r.Context(), "SELECT COALESCE(MAX(updated_at),0),COALESCE(MAX(snapshot_at),0) FROM backup_jobs WHERE state='SUCCESS'").Scan(&successful, &snapshotAt) != nil {
+	if m.db.QueryRowContext(r.Context(), "SELECT COALESCE(MAX(updated_at),0),COALESCE(MAX(snapshot_at),0) FROM backup_jobs WHERE state='SUCCESS' AND binding=?", m.cfg.fingerprint).Scan(&successful, &snapshotAt) != nil {
 		http.Error(w, "最後成功備份暫時無法讀取，保留上次結果。", 503)
 		return
 	}
@@ -342,7 +383,7 @@ func (s *Server) getCloudBackup(w http.ResponseWriter, r *http.Request) {
 }
 
 func validCloudBackupJob(j cloudBackupJob) bool {
-	return j.Sequence > 0 && j.Sequence < 1<<53 && backupPathSegment(j.ID) && j.CreatedAt > 0 && j.UpdatedAt > 0 && j.SnapshotAt >= 0 && oneOf(j.State, "PENDING", "SNAPSHOT", "UPLOADING", "VERIFYING", "SUCCESS", "FAILED", "INTERRUPTED", "CANCELLED") && (j.SHA256 == "" || len(j.SHA256) == 64) && (j.State != "SUCCESS" || j.SnapshotAt > 0 && len(j.SHA256) == 64)
+	return j.Sequence > 0 && j.Sequence < 1<<53 && validCloudBackupID(j.ID) && j.CreatedAt > 0 && j.UpdatedAt > 0 && j.SnapshotAt >= 0 && oneOf(j.State, "PENDING", "SNAPSHOT", "UPLOADING", "VERIFYING", "SUCCESS", "FAILED", "INTERRUPTED", "CANCELLED") && (j.SHA256 == "" || validBackupDigest(j.SHA256)) && (j.State != "SUCCESS" || j.SnapshotAt > 0 && validBackupDigest(j.SHA256))
 }
 
 func (s *Server) saveCloudBackupPolicy(w http.ResponseWriter, r *http.Request) {

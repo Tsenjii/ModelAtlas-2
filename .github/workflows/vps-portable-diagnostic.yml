@@ -37,9 +37,28 @@ jobs:
           name: modelatlas-portable-contracts
           path: vps/portable-contracts.jsonl
           if-no-files-found: warn
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chromium and language fonts
+        working-directory: vps/e2e
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Actual backup UI, encrypted readback and original-ID recovery
+        working-directory: vps
+        env:
+          MODELATLAS_BROWSER_TEST: '1'
+          PLAYWRIGHT_MODULE: 'playwright'
+        run: |
+          set -o pipefail
+          go test -mod=readonly -race -json -count=1 -run '^TestBrowserPortableCloudBackup' -timeout=3m . | tee portable-browser.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: modelatlas-portable-rclone-tool
-          path: portable-tools/
+          name: modelatlas-portable-browser
+          path: |
+            vps/portable-browser.jsonl
+            vps/e2e/screenshots/
           if-no-files-found: warn

@@ -355,6 +355,7 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /assistant/undo", s.assistantUndo)
 	api.HandleFunc("GET /system", s.systemStatus)
 	api.HandleFunc("GET /backup/cloud", s.getCloudBackup)
+	api.HandleFunc("GET /backup/cloud/events", s.getCloudBackupEvents)
 	api.HandleFunc("POST /backup/cloud/policy", s.saveCloudBackupPolicy)
 	api.HandleFunc("POST /backup/cloud/run", s.startCloudBackup)
 	api.HandleFunc("POST /backup/cloud/cancel", s.cancelCloudBackup)

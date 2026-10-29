@@ -3,6 +3,9 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -24,6 +27,13 @@ type cloudBackupDestination struct {
 	Spool                string `json:"spool_directory"`
 	KeyRecoveryConfirmed bool   `json:"key_recovery_confirmed"`
 	fingerprint          string
+}
+
+func bindCloudBackupDestination(cfg cloudBackupDestination, source string, key []byte) cloudBackupDestination {
+	mac := hmac.New(sha256.New, key)
+	_, _ = io.WriteString(mac, "modelatlas-cloud-backup-source-v1\x00"+filepath.Clean(source)+"\x00"+cfg.fingerprint)
+	cfg.fingerprint = hex.EncodeToString(mac.Sum(nil))
+	return cfg
 }
 
 func privateBackupFile(path string, maximum int64) ([]byte, error) {
@@ -54,6 +64,14 @@ func backupPathSegment(value string) bool {
 	return len(value) >= 1 && len(value) <= 128 && value != "." && value != ".." && strings.IndexFunc(value, func(r rune) bool {
 		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' || r == '.')
 	}) == -1
+}
+
+func validCloudBackupID(value string) bool {
+	return len(value) > len("backup-") && strings.HasPrefix(value, "backup-") && backupPathSegment(value)
+}
+
+func validBackupDigest(value string) bool {
+	return len(value) == 64 && strings.IndexFunc(value, func(r rune) bool { return !(r >= '0' && r <= '9' || r >= 'a' && r <= 'f') }) == -1
 }
 
 func readCloudBackupDestination(path string) (cloudBackupDestination, error) {
@@ -88,14 +106,27 @@ func readCloudBackupDestination(path string) (cloudBackupDestination, error) {
 	if err != nil {
 		return cfg, err
 	}
-	crypt, err := backupCryptRemote(secrets, cfg.Remote)
+	_, err = backupCryptRemote(secrets, cfg.Remote)
 	if err != nil {
 		return cfg, err
 	}
-	// Bind the selected encryption identity, while ordinary OAuth access-token
-	// refreshes in the underlying backend do not disable an approved schedule.
-	// Neither private contents nor paths are returned to a web client.
-	identity, _ := json.Marshal(crypt)
+	// Bind the whole dedicated backend configuration as well as its encryption
+	// identity. Changing an underlying account, URL, bucket or folder requires
+	// confirmation even when the selected crypt remote keeps the same name.
+	sections, _ := backupRemoteSections(secrets)
+	for _, fields := range sections {
+		var token map[string]json.RawMessage
+		if json.Unmarshal([]byte(fields["token"]), &token) == nil && token != nil {
+			// Only expiring access-token fields are volatile. In particular a new
+			// refresh token (possibly another account) is a new host identity.
+			for _, field := range []string{"access_token", "expiry", "expires_in", "id_token"} {
+				delete(token, field)
+			}
+			stable, _ := json.Marshal(token)
+			fields["token"] = string(stable)
+		}
+	}
+	identity, _ := json.Marshal(sections)
 	cfg.fingerprint = contentHash(append(append([]byte{}, raw...), identity...))
 	return cfg, nil
 }
@@ -106,6 +137,18 @@ func validateBackupCryptRemote(raw []byte, remote string) error {
 }
 
 func backupCryptRemote(raw []byte, remote string) (map[string]string, error) {
+	sections, err := backupRemoteSections(raw)
+	if err != nil {
+		return nil, err
+	}
+	v := sections[remote]
+	if v["type"] != "crypt" || v["remote"] == "" || v["password"] == "" || !oneOf(v["no_data_encryption"], "", "false") || !oneOf(v["filename_encryption"], "", "standard") || !oneOf(v["directory_name_encryption"], "", "true") {
+		return nil, errors.New("backup destination requires a configured rclone crypt remote with data and filename encryption")
+	}
+	return v, nil
+}
+
+func backupRemoteSections(raw []byte) (map[string]map[string]string, error) {
 	sections := map[string]map[string]string{}
 	section := ""
 	scan := bufio.NewScanner(bytes.NewReader(raw))
@@ -136,11 +179,7 @@ func backupCryptRemote(raw []byte, remote string) (map[string]string, error) {
 	if scan.Err() != nil {
 		return nil, errors.New("cannot parse bounded backup credentials")
 	}
-	v := sections[remote]
-	if v["type"] != "crypt" || v["remote"] == "" || v["password"] == "" || !oneOf(v["no_data_encryption"], "", "false") || !oneOf(v["filename_encryption"], "", "standard") || !oneOf(v["directory_name_encryption"], "", "true") {
-		return nil, errors.New("backup destination requires a configured rclone crypt remote with data and filename encryption")
-	}
-	return v, nil
+	return sections, nil
 }
 
 func prepareBackupSpool(path string) error {

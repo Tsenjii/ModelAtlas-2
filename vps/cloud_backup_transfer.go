@@ -24,7 +24,7 @@ type cloudBackupArchive struct {
 
 func createCloudBackupArchive(ctx context.Context, directory, id, source string, key []byte) (cloudBackupArchive, error) {
 	archive := cloudBackupArchive{Format: 1, ID: id, CreatedAt: now(), Version: versionInfo(), KeyRecoveryConfirmed: true}
-	if !backupPathSegment(id) {
+	if !validCloudBackupID(id) {
 		return archive, errors.New("invalid backup identifier")
 	}
 	if err := os.Mkdir(directory, 0700); err != nil {
@@ -58,7 +58,7 @@ func verifyCloudBackupArchive(ctx context.Context, directory, id, expectedHash s
 		}
 	}
 	raw, err := privateBackupFile(filepath.Join(directory, "backup.json"), 16384)
-	if err != nil || json.Unmarshal(raw, &archive) != nil || archive.Format != 1 || archive.ID != id || archive.CreatedAt <= 0 || archive.MasterKeyIncluded || !archive.KeyRecoveryConfirmed || len(archive.SHA256) != 64 || expectedHash != "" && archive.SHA256 != expectedHash {
+	if err != nil || json.Unmarshal(raw, &archive) != nil || archive.Format != 1 || archive.ID != id || archive.CreatedAt <= 0 || archive.MasterKeyIncluded || !archive.KeyRecoveryConfirmed || !validBackupDigest(archive.SHA256) || expectedHash != "" && archive.SHA256 != expectedHash {
 		return archive, errors.New("downloaded backup identity or manifest does not match")
 	}
 	snapshot := filepath.Join(directory, "atlas.sqlite")
