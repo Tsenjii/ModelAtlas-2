@@ -1,0 +1,192 @@
+{
+  "source": "0c8a0c8e3e2fc3689dcdacd30c5e58568d676d69",
+  "run": 40851332777,
+  "artifact_id": 12886459892,
+  "bytes": 21916272,
+  "sha256": "46e1cc03d78e79f173daa6c0a29f48cae09533312d31420de86e07c98f17a09a",
+  "crc": "PASS",
+  "cases": {
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#successfulChoicesSurviveStoreReconstructionAndOpaqueKeepsTheArtwork": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#malformedSavedTypesCannotEnableStyleOrOpenAnArbitraryPath": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#failedCommitRetainsConfirmedStateAndNextEditRepairsTheFailedCache": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#freshChoicesStayClassicWithoutWritingDefaults": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#concurrentIndependentEditsKeepEveryConfirmedChoice": "pass",
+    "dev.modelatlas.app.ui.AquaArtworkAssetsTest#actualBundledImagesDecodeWithOriginalDimensionsAlphaAndBoundedCache": "pass",
+    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable": "pass",
+    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualFourArtworkButtonsKeepScopeChatAndProviderDrafts": "pass"
+  },
+  "light": {
+    "result": "PASS",
+    "pictures": [
+      {
+        "file": "01-classic-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "33e190b293ae04dcad9231d192546e1f563ba1a285a665568027be013b1d8b69"
+      },
+      {
+        "file": "02-kotoha-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "dc7d5ea8e441398b21e78b9196b9527279d6719ae5bcfb8b6af7b306b86c265f"
+      },
+      {
+        "file": "03-elaina-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "37bdb8a5dd9e58b862a212e19e620de95e99eed14a8000e6f389bfbd74cdcb51"
+      },
+      {
+        "file": "04-kotoha-chibi-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "6c4321eb38bbdac118484bac304a27be6b5022b25ee281f2737bbb39b8c67bbf"
+      },
+      {
+        "file": "05-elaina-chibi-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "cfef4cef036adcbd345ef8eb788cc2f7c84416f125a0a3164ddf1dc754a4bd2d"
+      },
+      {
+        "file": "06-settings-four-choices-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "fe37b582c084a19f058a189e0881b89d541d2a801e11c33b0e313ad240809d7c"
+      },
+      {
+        "file": "07-providers-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "5b346bae6257839671b24da61320668e80f9eb28d6e090eb1e684054845fdc83"
+      },
+      {
+        "file": "08-models-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "61111f840802e457cfc62ddd568e568510f5caf32691840b9367cf81686bee4f"
+      },
+      {
+        "file": "09-provider-form-retained-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "d0af5e8e0e03d1feef0c7edbf4f29bdfe9315a75e33366f4014e66968ca2eb9a"
+      },
+      {
+        "file": "10-classic-draft-retained-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "7fdd0d996f18a77d9832f677e8b2b856d4e376aa46bc39d3fd4519a59bfce345"
+      }
+    ],
+    "pid": 4856,
+    "system_settings_restored": true,
+    "preferences_restored": true,
+    "production_secure_before": true,
+    "secure_restored": true,
+    "night_before": 1,
+    "night_after": 1,
+    "font_before": "null",
+    "font_after": "null",
+    "resolved_font_before": 1,
+    "resolved_font_after": 1,
+    "no_inference": true,
+    "cache_bytes": 12580128
+  },
+  "dark": {
+    "result": "PASS",
+    "pictures": [
+      {
+        "file": "11-relaunch-retained-dark.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": true,
+        "sha256": "e342c9aa25ad55b213eede8674c203d6d2bcf78094c42dab034dbf441bef9089"
+      },
+      {
+        "file": "12-playground-320-large-dark.png",
+        "width": 320,
+        "height": 740,
+        "screen_width_dp": 320,
+        "font_scale": 2,
+        "dark": true,
+        "sha256": "b5a40d21f7df7b6a80f27efe180ae6895e452d9467e336ecc70639eed4c78431"
+      },
+      {
+        "file": "13-settings-320-large-dark.png",
+        "width": 320,
+        "height": 740,
+        "screen_width_dp": 320,
+        "font_scale": 2,
+        "dark": true,
+        "sha256": "ee1f69735e867b67583b1c809a9672fe72d783bf288074aebbeeed325d28e081"
+      },
+      {
+        "file": "14-reduced-transparency-dark.png",
+        "width": 320,
+        "height": 740,
+        "screen_width_dp": 320,
+        "font_scale": 2,
+        "dark": true,
+        "sha256": "8aef829a8bcf195d321d2777014ec83f212ba9f5a54080be6a16b4de6704b117"
+      },
+      {
+        "file": "15-landscape-large-dark.png",
+        "width": 740,
+        "height": 320,
+        "screen_width_dp": 740,
+        "font_scale": 2,
+        "dark": true,
+        "sha256": "fd9cd3438ab37a798525ea00cad03248bb0685a74000d17a314c65529ab05117"
+      }
+    ],
+    "pid": 4856,
+    "system_settings_restored": true,
+    "preferences_restored": true,
+    "production_secure_before": true,
+    "secure_restored": true,
+    "night_before": 1,
+    "night_after": 1,
+    "font_before": "null",
+    "font_after": "null",
+    "resolved_font_before": 1,
+    "resolved_font_after": 1,
+    "no_inference": true,
+    "cache_bytes": 10985104
+  },
+  "status": "DEVICE_PASS_VISUAL_REJECTED",
+  "visual_review": "15 actual native images reviewed; normal artwork and draft retention corrected. At200% font scale the PDF label wraps and clips inside its original48dp fixed square. Not accepted.",
+  "correction": "Keep minimum48dp touch target, allow intrinsic PDF button width and single-line label. Require the actual native TextLayoutResult to have exactly one line and no visual overflow in both narrow and landscape scenarios. Original8 new cases/15 images and all997 originals retained."
+}
