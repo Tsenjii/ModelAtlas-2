@@ -167,6 +167,7 @@ internal fun PlaygroundTab(
 
   BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
     val compact = maxHeight < 360.dp
+    val composerMaxHeight = maxHeight
     Column(Modifier.widthIn(max = 720.dp).fillMaxSize()) {
       if (selectedConnection?.providerId == dev.modelatlas.core.network.KiloFactoryPolicy.PROVIDER) {
         Text(stringResource(R.string.kilo_factory_notice), modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp), style = MaterialTheme.typography.bodySmall)
@@ -252,7 +253,7 @@ internal fun PlaygroundTab(
         }
       }
       PlaygroundComposer(
-        modifier = Modifier.heightIn(max = maxHeight),
+        modifier = Modifier.heightIn(max = composerMaxHeight),
         selectedConnection = selectedConnection,
         busy = state.busy,
         canSend = canSend,

@@ -44,5 +44,6 @@
   "whole_next_release": "PARTIAL",
   "public_release": "frozen; PR20 Draft; no merge/deploy/publish",
   "second_rejection": "android-aqua-second-candidate.json",
-  "correction": "Exact settings_close node; restore effective font configuration before restoring an originally absent raw setting; keep complete characters beside welcome panel, large-type navigation single-line and bounded scrollable landscape composer. All operations, workloads, 15 images and deadlines retained."
+  "correction": "Exact settings_close node; restore effective font configuration before restoring an originally absent raw setting; keep complete characters beside welcome panel, large-type navigation single-line and bounded scrollable landscape composer. All operations, workloads, 15 images and deadlines retained.",
+  "third_rejection": "android-aqua-third-candidate.json"
 }
