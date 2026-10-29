@@ -1,0 +1,23 @@
+name: Mac Research Policy Core Diagnostic
+on:
+  push:
+    branches: [diagnostic/mac-policy-core-015z-20261029]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  policy-core:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile native targets and exercise the eight new policy contracts
+        run: |
+          set -euo pipefail
+          swift test --package-path macos --filter ResearchPolicyTests --parallel 2>&1 | tee policy-core.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-mac-policy-core-diagnostic
+          path: policy-core.log
+          if-no-files-found: error
