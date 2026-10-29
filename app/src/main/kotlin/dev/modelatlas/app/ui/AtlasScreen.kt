@@ -963,7 +963,7 @@ private fun AtlasScreenContent(
       confirmButton = {
         TextButton(
           onClick = { showSettings = false },
-          modifier = Modifier.heightIn(min = 48.dp),
+          modifier = Modifier.heightIn(min = 48.dp).testTag("settings_close"),
         ) {
           Text(stringResource(R.string.action_close))
         }
@@ -1102,7 +1102,8 @@ private fun AtlasBottomNavigation(selectedTab: Int, compact: Boolean, onSelect: 
                 else MaterialTheme.colorScheme.onSurfaceVariant,
             ) {
               Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(AtlasSpace.xs)) {
-                Text(label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+                Text(label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center,
+                  maxLines = 1, overflow = TextOverflow.Ellipsis)
               }
             }
           }
@@ -1194,6 +1195,7 @@ private fun ProvidersTab(
         )
         OutlinedTextField(
           value = name,
+          colors = atlasOutlinedFieldColors(),
           onValueChange = { name = it },
           modifier = Modifier.fillMaxWidth(),
           label = { Text(stringResource(R.string.label_name)) },
@@ -1203,6 +1205,7 @@ private fun ProvidersTab(
         )
         OutlinedTextField(
           value = baseUrl,
+          colors = atlasOutlinedFieldColors(),
           onValueChange = { baseUrl = it },
           modifier = Modifier.fillMaxWidth(),
           label = { Text(stringResource(R.string.label_base_url)) },
@@ -1214,6 +1217,7 @@ private fun ProvidersTab(
         )
         OutlinedTextField(
           value = modelId,
+          colors = atlasOutlinedFieldColors(),
           onValueChange = { modelId = it },
           modifier = Modifier.fillMaxWidth(),
           label = { Text(stringResource(R.string.label_model)) },
@@ -1223,6 +1227,7 @@ private fun ProvidersTab(
         )
         OutlinedTextField(
           value = secret,
+          colors = atlasOutlinedFieldColors(),
           onValueChange = { secret = it },
           modifier = Modifier.fillMaxWidth(),
           label = { Text(stringResource(R.string.label_key)) },

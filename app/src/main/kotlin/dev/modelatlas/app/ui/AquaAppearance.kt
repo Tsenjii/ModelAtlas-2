@@ -128,21 +128,22 @@ internal fun AquaBackdrop(appearance: AppearanceSettings, modifier: Modifier = M
         if (appearance.reduceTransparency) "aqua_opaque_background" else "aqua_background",
     )) {
         image.bitmap?.takeIf { image.artwork == appearance.wallpaper }?.let { bitmap ->
-            val decoration = if (appearance.wallpaper.isChibi) Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 8.dp, bottom = 96.dp)
-                .width((maxWidth * 0.68f).coerceAtMost(360.dp))
-                .height((maxHeight * 0.55f).coerceAtMost(360.dp))
-            else Modifier.fillMaxSize()
+            // Keep the complete character above the composer, beside the welcome panel.
+            // Fit preserves the supplied artwork; neither faces nor transparent edges are cropped.
+            val decoration = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 88.dp, end = 8.dp)
+                .width((maxWidth * 0.49f).coerceAtMost(320.dp))
+                .height((maxHeight * 0.48f).coerceAtMost(360.dp))
             Image(
                 bitmap.asImageBitmap(), contentDescription = null,
                 modifier = decoration.testTag("aqua_artwork_${appearance.wallpaper.savedValue}"),
                 contentScale = ContentScale.Fit,
-                alignment = if (appearance.wallpaper.isChibi) Alignment.BottomEnd else Alignment.TopEnd,
-                alpha = if (dark) 0.42f else 0.65f,
+                alignment = Alignment.TopEnd,
+                alpha = if (dark) 0.64f else 0.84f,
             )
             Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(
-                listOf(base.copy(alpha = 0.52f), base.copy(alpha = 0.12f)),
+                listOf(base.copy(alpha = 0.48f), base.copy(alpha = 0.06f)),
             )))
         }
     }

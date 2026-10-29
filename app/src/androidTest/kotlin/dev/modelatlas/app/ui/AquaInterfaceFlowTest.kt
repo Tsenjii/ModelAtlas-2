@@ -12,6 +12,7 @@ import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -66,6 +67,7 @@ class AquaInterfaceFlowTest {
     private lateinit var previousRaw: Map<String, *>
     private var previousNight = UiModeManager.MODE_NIGHT_NO
     private var previousFont = "1.0"
+    private var previousResolvedFontScale = 1f
     private var previousSize: String? = null
     private var restoreArmed = false
     private var previousSecure = false
@@ -90,6 +92,7 @@ class AquaInterfaceFlowTest {
         check(previousNight in listOf(UiModeManager.MODE_NIGHT_AUTO, UiModeManager.MODE_NIGHT_NO, UiModeManager.MODE_NIGHT_YES))
         previousFont = shell("settings get system font_scale")
         check(previousFont == "null" || previousFont.matches(Regex("[0-9]+(?:\\.[0-9]+)?")))
+        previousResolvedFontScale = compose.activity.resources.configuration.fontScale
         previousSize = overrideSize()
         previousSecure = compose.activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE != 0
         previousOrientation = compose.activity.requestedOrientation
@@ -126,13 +129,25 @@ class AquaInterfaceFlowTest {
         val failures = mutableListOf<Throwable>()
         fun restore(block: () -> Unit) { runCatching(block).exceptionOrNull()?.let(failures::add) }
         restore { shell(if (previousSize == null) "wm size reset" else "wm size $previousSize") }
-        restore { shell(if (previousFont == "null") "settings delete system font_scale" else "settings put system font_scale $previousFont") }
+        // Restore the effective configuration before its raw setting. On API29,
+        // deleting a changed font_scale can persist the default back as "1.0".
+        // Let that configuration update finish, then restore an originally absent key.
+        restore {
+            shell("settings put system font_scale ${if (previousFont == "null") previousResolvedFontScale else previousFont}")
+            compose.waitUntil(15_000) {
+                kotlin.math.abs(compose.activity.resources.configuration.fontScale - previousResolvedFontScale) < 0.001f
+            }
+        }
         restore { shell("cmd uimode night " + when (previousNight) {
             UiModeManager.MODE_NIGHT_AUTO -> "auto"
             UiModeManager.MODE_NIGHT_YES -> "yes"
             else -> "no"
         }) }
         restore { compose.runOnIdle { compose.activity.requestedOrientation = previousOrientation } }
+        restore {
+            compose.waitForIdle()
+            if (previousFont == "null") shell("settings delete system font_scale")
+        }
         restore { runBlocking {
             assertTrue(app.appearanceSettings.setStyle(previous.style))
             assertTrue(app.appearanceSettings.setWallpaper(previous.wallpaper))
@@ -158,6 +173,8 @@ class AquaInterfaceFlowTest {
                 .put("production_secure_before", previousSecure).put("secure_restored", secure == previousSecure)
                 .put("night_before", previousNight).put("night_after", app.getSystemService(UiModeManager::class.java).nightMode)
                 .put("font_before", previousFont).put("font_after", shell("settings get system font_scale"))
+                .put("resolved_font_before", previousResolvedFontScale)
+                .put("resolved_font_after", compose.activity.resources.configuration.fontScale)
                 .put("no_inference", samples() == samplesBefore).put("cache_bytes", AquaArtworkLoader.cachedBytes()))
         }
         restore { compose.activityRule.scenario.close() }
@@ -220,6 +237,7 @@ class AquaInterfaceFlowTest {
                 compose.activity.resources.configuration.fontScale >= 1.99f
         }
         compose.waitUntil(15_000) { tagExists("aqua_artwork_elaina-chibi") }
+        assertComposerControlsReachable()
         capture("12-playground-320-large-dark.png")
         openSettings()
         compose.onNodeWithTag("interface_style_aqua").performScrollTo()
@@ -236,10 +254,16 @@ class AquaInterfaceFlowTest {
         compose.runOnIdle { compose.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
         compose.waitUntil(15_000) { compose.activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE }
         compose.waitUntil(15_000) { tagExists("aqua_artwork_elaina-chibi") }
+        assertComposerControlsReachable()
         capture("15-landscape-large-dark.png")
     }
 
     private fun qaCase(body: () -> Unit) { body(); bodyPassed = true }
+
+    private fun assertComposerControlsReachable() {
+        compose.onNodeWithTag("playground_composer_controls").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("playground_composer_text").performScrollTo().assertIsDisplayed()
+    }
 
     private fun tagExists(tag: String) = compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
     private fun openSettings() {
@@ -247,7 +271,7 @@ class AquaInterfaceFlowTest {
         compose.waitUntil(15_000) { tagExists("appearance_settings") }
     }
     private fun closeSettings() {
-        compose.onNodeWithText(compose.activity.getString(R.string.action_close)).performClick()
+        compose.onNodeWithTag("settings_close").performClick()
         compose.waitUntil(15_000) { !tagExists("appearance_settings") }
     }
     private fun changeStyle(style: InterfaceStyle) {

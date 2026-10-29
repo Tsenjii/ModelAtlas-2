@@ -52,6 +52,17 @@ def browser_image_scopes(config):
 def visual_review_count(config):
     return len(browser_image_scopes(config)["candidate"][1])+8+2*(6+len(config["new_mac_research_images"])+len(native_aqua_image_scope(config)))
 
+def android_aqua_image_scope(config):
+    names = config["new_android_aqua_images"]
+    require(isinstance(names, list) and len(names) == len(set(names)) == 15 and
+            set(names) == set(config["initial_android_aqua_images"]) and
+            all(isinstance(name, str) and re.fullmatch(r"[0-9]{2}-[a-z0-9-]+\.png", name) and "failure" not in name for name in names) and
+            {name[:2] for name in names} == {str(index).zfill(2) for index in range(1,16)}, "Android Aqua image scope changed")
+    return set(names)
+
+def candidate_visual_review_count(config):
+    return visual_review_count(config)+len(android_aqua_image_scope(config))
+
 def native_aqua_image_scope(config):
     names = config["new_mac_aqua_images"]
     require(isinstance(names, list) and len(names) == 13 and len(set(names)) == 13 and
@@ -119,6 +130,31 @@ def validate_device_case_extension(counts, cases, old_cases, config):
     require(all(cases.get(name) == action for name, action in old_cases.items()), "accepted device case removed or regressed")
     require({name: action for name, action in cases.items() if name not in old_cases} == added, "unexpected or missing device regression case")
     return sorted(added)
+
+def validate_android_aqua_case_extension(counts, cases, old_cases, accepted_cases, config):
+    added = config["new_android_aqua_cases"]
+    require(isinstance(added, dict) and len(added) == 8 and all(action == "pass" for action in added.values()), "eight Android Aqua cases must pass")
+    require(counts == dict(tests=1005, failures=0, errors=0, skipped=5), "Android Aqua device outcomes changed")
+    preserved = {name: action for name, action in cases.items() if name not in added}
+    validate_device_case_extension(dict(tests=997, failures=0, errors=0, skipped=5), preserved, old_cases, config)
+    require(len(accepted_cases) == 997 and preserved == accepted_cases, "accepted997 device outcomes changed")
+    require({name: action for name, action in cases.items() if name not in accepted_cases} == added, "Android Aqua regression missing or replaced")
+    return sorted(added)
+
+def validate_android_aqua_reports(light, dark, expected_images):
+    reports = (light,dark)
+    for report in reports:
+        require(report.get("result") == "PASS" and report.get("pid",0) > 0, "Android Aqua UI did not finish")
+        require(all(report.get(key) is True for key in ("system_settings_restored","preferences_restored","production_secure_before","secure_restored","no_inference")), "Android Aqua restoration/inference guard failed")
+        require(report.get("night_before") == report.get("night_after") and report.get("font_before") == report.get("font_after"), "Android Aqua system state not restored")
+        require(isinstance(report.get("resolved_font_before"), (int,float)) and report["resolved_font_before"] > 0 and report["resolved_font_before"] == report.get("resolved_font_after"), "Android Aqua effective font configuration not restored")
+        require(0 <= report.get("cache_bytes",-1) <= 16*1024*1024, "Android Aqua cache exceeded bound")
+    pictures = light["pictures"]+dark["pictures"]
+    require(len(light["pictures"]) == 10 and len(dark["pictures"]) == 5 and {item["file"] for item in pictures} == expected_images, "Android Aqua screenshot receipts missing")
+    large = next(item for item in pictures if item["file"] == "12-playground-320-large-dark.png")
+    require(large["screen_width_dp"] == 320 and large["font_scale"] >= 1.99 and large["dark"] is True, "actual Android narrow/large/dark configuration missing")
+    require(all(item["dark"] is False for item in light["pictures"]) and all(item["dark"] is True for item in dark["pictures"]), "actual Android color modes missing")
+    return pictures
 
 def apk_certificate(apk):
     eocd = apk.rfind(b"PK\x05\x06")
@@ -395,6 +431,9 @@ def main():
         require(apk_certificate(apk) == meta["certificate_sha256"], "actual APK certificate differs from metadata")
         with zipfile.ZipFile(io.BytesIO(apk)) as app:
             require(app.read("assets/kilo-anonymous.json") == (ROOT/"vps/defaults/kilo-anonymous.json").read_bytes(), "APK factory snapshot mismatch")
+            require(app.read("assets/wallpapers/manifest.json") == (ROOT/"vps/assets/aqua-wallpapers-v1.json").read_bytes(), "APK artwork manifest changed")
+            for image in json.loads((ROOT/"vps/assets/aqua-wallpapers-v1.json").read_text())["images"]:
+                require(app.read("assets/wallpapers/"+image["file"]) == (ROOT/"vps/assets"/image["file"]).read_bytes(), "APK artwork bytes changed")
         report["android_build"] = {"core":counts,"app":actual_counts,"certificate_sha256":meta["certificate_sha256"],"production_signing":False}
     prior_device = download_baseline(api, config["device_inventory"], baselines)
     with zipfile.ZipFile(prior_device) as z:
@@ -402,14 +441,27 @@ def main():
         require(old_counts == dict(tests=996,failures=0,errors=0,skipped=5), "original test inventory source changed")
     with archive("modelatlas-device-test-reports") as z:
         counts, cases = xml_cases(z)
-        added_device_cases = validate_device_case_extension(counts, cases, old_cases, config)
+        accepted_metadata = json.loads((ROOT/"docs/verification/20261028/android-metadata-baseline.json").read_text())
+        require(accepted_metadata["source"] == "3c37fd07b0f7b0dc4935bc16db1a5f901025b338" and accepted_metadata["status"] == "ACCEPTED_LISTED_SCOPE", "accepted Android metadata baseline missing")
+        added_device_cases = validate_android_aqua_case_extension(counts, cases, old_cases, accepted_metadata["device_case_events"], config)
         (out/"device-case-events.json").write_text(json.dumps(cases, indent=2)+"\n")
         (out/"core-case-events.json").write_text(json.dumps(core_cases, indent=2)+"\n")
         runtime = json.loads(p.member(z,"instrumentation-runtime.json"))
         preflight = json.loads(p.member(z,"emulator-preflight.json"))
         require(runtime["max_heap_bytes"] == runtime["expected_max_heap_bytes"] == 536870912 and runtime["stages"] == ["start","finish"] and runtime["pid"] > 0, "actual ART runtime heap/PID proof absent")
         require(preflight["configured_heap"] == "512m" and preflight["sdk"] == "29" and preflight["zygote_before"] != preflight["zygote_after"], "cold-boot proof absent")
-        report["android_device"] = {"counts":counts,"preserved_cases":996,"added":added_device_cases,"runtime":runtime,"preflight":preflight}
+        report["android_device"] = {"counts":counts,"preserved_cases":997,"added":added_device_cases,"runtime":runtime,"preflight":preflight}
+        expected_android_images = android_aqua_image_scope(config)
+        android_names = pngs(z,15)
+        require({Path(name).name for name in android_names} == expected_android_images, "Android Aqua actual images missing")
+        light = json.loads(p.member(z,"aqua-ui-light.json"))
+        dark = json.loads(p.member(z,"aqua-ui-dark-large.json"))
+        receipts = validate_android_aqua_reports(light,dark,expected_android_images)
+        for item in receipts:
+            raw = p.member(z,"aqua-ui/"+item["file"])
+            require(p.digest(raw) == item["sha256"], "Android Aqua image receipt mismatch")
+            images.append(("android/aqua/"+item["file"],raw))
+        report["android_aqua"] = {"light":light,"dark_large":dark,"screenshots":15,"original_asset_bytes":True}
     failed = download_baseline(api, config["rejected_device"], baselines)
     with zipfile.ZipFile(failed) as z:
         negative_counts, negative_cases = xml_cases(z)
@@ -502,7 +554,7 @@ def main():
     from PIL import Image, ImageDraw, ImageOps
     contacts = out/"contacts"
     contacts.mkdir()
-    require(len(images) == visual_review_count(config), "all new/browser, factory, native transfer and research views required")
+    require(len(images) == candidate_visual_review_count(config), "all original views plus Android Aqua views required")
     report["visual_review_required"] = [name for name,_ in images]
     for offset in range(0,len(images),4):
         batch = images[offset:offset+4]

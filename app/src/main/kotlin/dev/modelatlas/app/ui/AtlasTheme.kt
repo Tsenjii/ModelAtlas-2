@@ -18,9 +18,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -233,6 +235,14 @@ internal fun AtlasCard(
 @Composable
 internal fun atlasChromeColor(color: Color): Color =
     if (LocalAtlasAppearance.current.showsArtwork) color.copy(alpha = 0.94f) else color
+
+@Composable
+internal fun atlasOutlinedFieldColors(): TextFieldColors =
+    if (LocalAtlasAppearance.current.showsArtwork) OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = atlasChromeColor(MaterialTheme.colorScheme.surface),
+        unfocusedContainerColor = atlasChromeColor(MaterialTheme.colorScheme.surface),
+        disabledContainerColor = atlasChromeColor(MaterialTheme.colorScheme.surface),
+    ) else OutlinedTextFieldDefaults.colors()
 
 @Composable
 internal fun AtlasSectionHeading(title: String, subtitle: String? = null) {

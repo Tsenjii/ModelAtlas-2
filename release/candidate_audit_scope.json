@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "slice": "ANDROID-METADATA-015X",
+  "slice": "ANDROID-AQUA-015Y",
   "browser_baseline": {
     "id": 12622386762,
     "bytes": 39268692,
@@ -441,5 +441,49 @@
   ],
   "new_device_cases": {
     "dev.modelatlas.app.data.MyModelsMetadataRetryStateTest#c1PublicationContentionKeepsAllFiveCallersInOneFlight": "pass"
-  }
+  },
+  "new_android_aqua_cases": {
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#freshChoicesStayClassicWithoutWritingDefaults": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#malformedSavedTypesCannotEnableStyleOrOpenAnArbitraryPath": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#successfulChoicesSurviveStoreReconstructionAndOpaqueKeepsTheArtwork": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#concurrentIndependentEditsKeepEveryConfirmedChoice": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#failedCommitRetainsConfirmedStateAndNextEditRepairsTheFailedCache": "pass",
+    "dev.modelatlas.app.ui.AquaArtworkAssetsTest#actualBundledImagesDecodeWithOriginalDimensionsAlphaAndBoundedCache": "pass",
+    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualFourArtworkButtonsKeepScopeChatAndProviderDrafts": "pass",
+    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable": "pass"
+  },
+  "new_android_aqua_images": [
+    "01-classic-light.png",
+    "02-kotoha-light.png",
+    "03-elaina-light.png",
+    "04-kotoha-chibi-light.png",
+    "05-elaina-chibi-light.png",
+    "06-settings-four-choices-light.png",
+    "07-providers-light.png",
+    "08-models-light.png",
+    "09-provider-form-retained-light.png",
+    "10-classic-draft-retained-light.png",
+    "11-relaunch-retained-dark.png",
+    "12-playground-320-large-dark.png",
+    "13-settings-320-large-dark.png",
+    "14-reduced-transparency-dark.png",
+    "15-landscape-large-dark.png"
+  ],
+  "initial_android_aqua_images": [
+    "01-classic-light.png",
+    "02-kotoha-light.png",
+    "03-elaina-light.png",
+    "04-kotoha-chibi-light.png",
+    "05-elaina-chibi-light.png",
+    "06-settings-four-choices-light.png",
+    "07-providers-light.png",
+    "08-models-light.png",
+    "09-provider-form-retained-light.png",
+    "10-classic-draft-retained-light.png",
+    "11-relaunch-retained-dark.png",
+    "12-playground-320-large-dark.png",
+    "13-settings-320-large-dark.png",
+    "14-reduced-transparency-dark.png",
+    "15-landscape-large-dark.png"
+  ]
 }

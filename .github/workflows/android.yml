@@ -95,7 +95,7 @@ jobs:
           disable-animations: true
           script: |
             python3 release/android_emulator_preflight.py
-            gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.expectedMaxHeapBytes=536870912 -Pandroid.testInstrumentationRunnerArguments.workspaceFixture="$WORKSPACE_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceChunksFixture="$WORKSPACE_CHUNKS_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceCertificate="$WORKSPACE_FIXTURE_CERTIFICATE" -Pandroid.testInstrumentationRunnerArguments.workspaceAdmin="$WORKSPACE_FIXTURE_ADMIN" --no-daemon --console=plain
+            gradle :app:connectedDebugAndroidTest -Pandroid.enableAdditionalTestOutput=true -Pandroid.testInstrumentationRunnerArguments.allowAquaSystemTest=true -Pandroid.testInstrumentationRunnerArguments.expectedMaxHeapBytes=536870912 -Pandroid.testInstrumentationRunnerArguments.workspaceFixture="$WORKSPACE_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceChunksFixture="$WORKSPACE_CHUNKS_FIXTURE_URL" -Pandroid.testInstrumentationRunnerArguments.workspaceCertificate="$WORKSPACE_FIXTURE_CERTIFICATE" -Pandroid.testInstrumentationRunnerArguments.workspaceAdmin="$WORKSPACE_FIXTURE_ADMIN" --no-daemon --console=plain
             python3 release/android_emulator_preflight.py --capture-runtime
       - uses: actions/upload-artifact@v4
         if: always()
@@ -104,4 +104,5 @@ jobs:
           path: |
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/
+            app/build/outputs/connected_android_test_additional_output/
           if-no-files-found: warn
