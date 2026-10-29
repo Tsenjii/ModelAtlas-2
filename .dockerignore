@@ -1,0 +1,19 @@
+# Default-deny build context. Host state, private credentials, git history and
+# test artifacts must never enter either image layer or a remote build context.
+**
+!vps/
+!vps/*.go
+vps/*_test.go
+!vps/go.mod
+!vps/go.sum
+!vps/assets/
+!vps/assets/aqua-kotoha-v1.jpg
+!vps/assets/aqua-elaina-v1.jpg
+!vps/assets/aqua-kotoha-chibi-v1.webp
+!vps/assets/aqua-elaina-chibi-v1.webp
+!vps/defaults/
+!vps/defaults/kilo-anonymous.json
+!vps/deploy/
+!vps/deploy/Dockerfile
+!vps/deploy/build.sh
+!vps/deploy/container-entrypoint.sh

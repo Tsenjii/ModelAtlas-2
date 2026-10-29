@@ -1,0 +1,22 @@
+services:
+  https:
+    image: caddy:2-alpine
+    environment:
+      MODELATLAS_PUBLIC_ORIGIN: ${MODELATLAS_PUBLIC_ORIGIN:?Set the actual HTTPS origin}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./modelatlas-proxy.caddy:/etc/caddy/modelatlas-proxy.caddy:ro
+      - modelatlas-https-data:/data
+      - modelatlas-https-config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  modelatlas-https-data:
+  modelatlas-https-config:

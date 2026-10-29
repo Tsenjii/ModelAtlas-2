@@ -62,3 +62,39 @@ jobs:
             vps/portable-browser.jsonl
             vps/e2e/screenshots/
           if-no-files-found: warn
+
+  portable-containers:
+    name: portable-container-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache: false
+      - name: Actual native container, Compose, Caddy TLS, vault, SSE and encrypted recovery
+        working-directory: vps
+        env:
+          MODELATLAS_CONTAINER_TEST: '1'
+          MODELATLAS_CONTAINER_REPORT: portable-container.json
+        run: |
+          set -o pipefail
+          go mod download
+          go test -mod=readonly -race -json -count=1 -run '^TestPortableContainer' -timeout=8m . | tee portable-container.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-portable-container-${{ matrix.arch }}
+          path: |
+            vps/portable-container.json
+            vps/portable-container.jsonl
+          if-no-files-found: warn
