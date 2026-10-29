@@ -18,9 +18,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -40,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.modelatlas.app.data.AppearanceSettings
+import dev.modelatlas.app.data.InterfaceStyle
 
 /** 第一階段共用視覺契約；以系統字型、實色表面及原生 ripple 避免額外繪製成本。 */
 object AtlasSpace {
@@ -101,6 +105,36 @@ private val AtlasDarkColors = darkColorScheme(
     inversePrimary = Color(0xFF006B5E), surfaceTint = Color(0xFF83DCC7),
 )
 
+private val AquaLightColors = AtlasLightColors.copy(
+    primary = Color(0xFF14698D), onPrimary = Color.White,
+    primaryContainer = Color(0xFFD3EFFA), onPrimaryContainer = Color(0xFF0D445D),
+    secondary = Color(0xFF496B80), secondaryContainer = Color(0xFFE0EFF8),
+    onSecondaryContainer = Color(0xFF24465C),
+    background = Color(0xFFEAF5FC), onBackground = Color(0xFF152F45),
+    surface = Color(0xFFF7FCFF), onSurface = Color(0xFF152F45),
+    surfaceVariant = Color(0xFFE0EDF6), onSurfaceVariant = Color(0xFF425D70),
+    surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFEFF8FE),
+    surfaceContainer = Color(0xFFE6F1F8), surfaceContainerHigh = Color(0xFFDDECF6),
+    surfaceContainerHighest = Color(0xFFD3E6F2),
+    outline = Color(0xFF637D8F), outlineVariant = Color(0xFFC4DBE9),
+    surfaceTint = Color(0xFF14698D),
+)
+
+private val AquaDarkColors = AtlasDarkColors.copy(
+    primary = Color(0xFF9CDEF5), onPrimary = Color(0xFF093B4F),
+    primaryContainer = Color(0xFF1F4B63), onPrimaryContainer = Color(0xFFC9EFFF),
+    secondary = Color(0xFFB1D3EB), secondaryContainer = Color(0xFF29465C),
+    onSecondaryContainer = Color(0xFFD9EFFC),
+    background = Color(0xFF0D1F2F), onBackground = Color(0xFFE8F5FF),
+    surface = Color(0xFF152B3E), onSurface = Color(0xFFE8F5FF),
+    surfaceVariant = Color(0xFF294256), onSurfaceVariant = Color(0xFFBDD3E3),
+    surfaceContainerLowest = Color(0xFF091927), surfaceContainerLow = Color(0xFF12273A),
+    surfaceContainer = Color(0xFF172E43), surfaceContainerHigh = Color(0xFF213E55),
+    surfaceContainerHighest = Color(0xFF2B4B63),
+    outline = Color(0xFF8EAABB), outlineVariant = Color(0xFF3B596E),
+    surfaceTint = Color(0xFF9CDEF5),
+)
+
 private fun atlasText(size: Int, line: Int, weight: FontWeight = FontWeight.Normal) = TextStyle(
     fontFamily = FontFamily.SansSerif,
     fontWeight = weight,
@@ -126,15 +160,22 @@ private val AtlasTypography = Typography(
 )
 
 private val LocalAtlasThemeApplied = staticCompositionLocalOf { false }
+internal val LocalAtlasAppearance = staticCompositionLocalOf { AppearanceSettings() }
 
 /** 元件可先獨立採用；日後外層掛載此 theme 時，內層沿用同一個 light/dark 選擇。 */
 @Composable
-fun AtlasTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun AtlasTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    appearance: AppearanceSettings = AppearanceSettings(),
+    content: @Composable () -> Unit,
+) {
     if (LocalAtlasThemeApplied.current) {
         content()
     } else {
-        val colors = if (darkTheme) AtlasDarkColors else AtlasLightColors
-        CompositionLocalProvider(LocalAtlasThemeApplied provides true) {
+        val colors = if (appearance.style == InterfaceStyle.AQUA) {
+            if (darkTheme) AquaDarkColors else AquaLightColors
+        } else if (darkTheme) AtlasDarkColors else AtlasLightColors
+        CompositionLocalProvider(LocalAtlasThemeApplied provides true, LocalAtlasAppearance provides appearance) {
             MaterialTheme(
                 colorScheme = colors,
                 typography = AtlasTypography,
@@ -176,7 +217,7 @@ internal fun AtlasCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = CardDefaults.cardColors(
-        containerColor = if (subdued) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surface,
+        containerColor = atlasChromeColor(if (subdued) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surface),
         contentColor = MaterialTheme.colorScheme.onSurface,
     )
     val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
@@ -190,6 +231,18 @@ internal fun AtlasCard(
         Card(onClick = onClick, modifier = modifier.fillMaxWidth(), shape = AtlasRadius.card, colors = colors, border = border, elevation = elevation, content = body)
     }
 }
+
+@Composable
+internal fun atlasChromeColor(color: Color): Color =
+    if (LocalAtlasAppearance.current.showsArtwork) color.copy(alpha = 0.94f) else color
+
+@Composable
+internal fun atlasOutlinedFieldColors(): TextFieldColors =
+    if (LocalAtlasAppearance.current.showsArtwork) OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = atlasChromeColor(MaterialTheme.colorScheme.surface),
+        unfocusedContainerColor = atlasChromeColor(MaterialTheme.colorScheme.surface),
+        disabledContainerColor = atlasChromeColor(MaterialTheme.colorScheme.surface),
+    ) else OutlinedTextFieldDefaults.colors()
 
 @Composable
 internal fun AtlasSectionHeading(title: String, subtitle: String? = null) {

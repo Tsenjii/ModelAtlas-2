@@ -117,6 +117,8 @@ class AtlasApplication : Application() {
         private set
     lateinit var notificationSettings: NotificationSettingsStore
         private set
+    lateinit var appearanceSettings: dev.modelatlas.app.data.AppearanceSettingsStore
+        private set
 
     lateinit var credentialLifecycle: CredentialLifecycle
         private set
@@ -145,6 +147,7 @@ class AtlasApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         notificationSettings = NotificationSettingsStore(this)
+        appearanceSettings = dev.modelatlas.app.data.AppearanceSettingsStore(this)
         vault = AndroidCredentialVault(this)
         database = AtlasDatabase.create(this)
         vault.attachSyncDatabase { database.openHelper.writableDatabase }

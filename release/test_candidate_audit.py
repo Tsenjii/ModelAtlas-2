@@ -163,6 +163,62 @@ class CandidateDeviceExtensionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must pass"):
             audit.validate_device_case_extension(self.counts, self.cases, self.old, changed_config)
 
+class CandidateAndroidAquaTest(unittest.TestCase):
+    def setUp(self):
+        self.config = json.loads((Path(__file__).parent/"candidate_audit_scope.json").read_text())
+        self.old = {"old#"+str(i): "pass" if i < 991 else "skipped" for i in range(996)}
+        self.accepted = {**self.old, **self.config["new_device_cases"]}
+        self.cases = {**self.accepted, **self.config["new_android_aqua_cases"]}
+        self.counts = dict(tests=1005, failures=0, errors=0, skipped=5)
+
+    def test_eight_new_passes_cannot_replace_or_change_any_of_the_accepted997(self):
+        self.assertEqual(set(audit.validate_android_aqua_case_extension(self.counts,self.cases,self.old,self.accepted,self.config)), set(self.config["new_android_aqua_cases"]))
+        for key in ("old#0", next(iter(self.config["new_device_cases"]))):
+            changed = dict(self.cases); changed.pop(key); changed["replacement#same-count"] = "pass"
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                audit.validate_android_aqua_case_extension(self.counts,changed,self.old,self.accepted,self.config)
+
+    def test_new_case_cannot_be_missing_replaced_or_skipped(self):
+        key = next(iter(self.config["new_android_aqua_cases"]))
+        for action in (None,"skipped","failure"):
+            changed = dict(self.cases)
+            if action is None:
+                changed.pop(key); changed["replacement#same-count"] = "pass"
+            else:
+                changed[key] = action
+            with self.subTest(action=action), self.assertRaises(ValueError):
+                audit.validate_android_aqua_case_extension(self.counts,changed,self.old,self.accepted,self.config)
+
+    def test_fifteen_android_views_are_added_to_all110_original_views(self):
+        self.assertEqual(audit.visual_review_count(self.config),110)
+        self.assertEqual(audit.candidate_visual_review_count(self.config),125)
+        changed = copy.deepcopy(self.config)
+        changed["new_android_aqua_images"][13] = "14-replacement.png"
+        with self.assertRaisesRegex(ValueError,"image scope"):
+            audit.android_aqua_image_scope(changed)
+
+    def test_native_reports_require_actual_configuration_and_exact_restoration(self):
+        names = self.config["new_android_aqua_images"]
+        base = dict(result="PASS",pid=123,system_settings_restored=True,preferences_restored=True,
+                    production_secure_before=True,secure_restored=True,no_inference=True,
+                    night_before=1,night_after=1,font_before="1.0",font_after="1.0",cache_bytes=100,
+                    resolved_font_before=1.0,resolved_font_after=1.0)
+        light = dict(base,pictures=[dict(file=name,dark=False) for name in names[:10]])
+        dark = dict(base,pictures=[dict(file=name,dark=True,screen_width_dp=320,font_scale=2.0) for name in names[10:]])
+        self.assertEqual(len(audit.validate_android_aqua_reports(light,dark,set(names))),15)
+        for field,value in (("secure_restored",False),("preferences_restored",False),("font_after","2.0"),("resolved_font_after",2.0),("resolved_font_before",None),("cache_bytes",16*1024*1024+1)):
+            changed = copy.deepcopy(dark); changed[field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                audit.validate_android_aqua_reports(light,changed,set(names))
+        absent = dict(dark, font_before="null", font_after="null")
+        self.assertEqual(len(audit.validate_android_aqua_reports(light,absent,set(names))),15)
+        absent["font_after"] = "1.0"
+        with self.assertRaisesRegex(ValueError,"system state"):
+            audit.validate_android_aqua_reports(light,absent,set(names))
+        changed = copy.deepcopy(dark); changed["pictures"][1]["screen_width_dp"] = 319
+        with self.assertRaisesRegex(ValueError,"configuration"):
+            audit.validate_android_aqua_reports(light,changed,set(names))
+
 class CandidateRegistryIntegrityTest(unittest.TestCase):
     def test_new_research_files_cannot_disappear_from_the_audited_registry(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -235,6 +235,34 @@ class AtlasViewModel @JvmOverloads constructor(
     } }
 
     // X-013 / D-005: app-owned durable choices; no permission request or automatic opt-in.
+    val interfaceAppearance get() = app.appearanceSettings.state
+    private val _appearanceSaving = MutableStateFlow(false)
+    val appearanceSaving = _appearanceSaving.asStateFlow()
+    private val _appearanceSaveFailed = MutableStateFlow(false)
+    val appearanceSaveFailed = _appearanceSaveFailed.asStateFlow()
+
+    fun setInterfaceStyle(value: dev.modelatlas.app.data.InterfaceStyle) = saveAppearance {
+        app.appearanceSettings.setStyle(value)
+    }
+    fun setAquaWallpaper(value: dev.modelatlas.app.data.AquaWallpaper) = saveAppearance {
+        app.appearanceSettings.setWallpaper(value)
+    }
+    fun setReduceTransparency(value: Boolean) = saveAppearance {
+        app.appearanceSettings.setReduceTransparency(value)
+    }
+    private fun saveAppearance(write: suspend () -> Boolean) {
+        if (_appearanceSaving.value) return
+        _appearanceSaving.value = true
+        _appearanceSaveFailed.value = false
+        viewModelScope.launch {
+            try {
+                _appearanceSaveFailed.value = !write()
+            } finally {
+                _appearanceSaving.value = false
+            }
+        }
+    }
+
     val notificationSettings get() = app.notificationSettings.state
     private val _notificationSettingsSaving = MutableStateFlow(false)
     val notificationSettingsSaving = _notificationSettingsSaving.asStateFlow()
