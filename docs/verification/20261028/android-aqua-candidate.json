@@ -1,20 +1,20 @@
 {
   "slice": "ANDROID-AQUA-015Y",
   "status": "CANDIDATE_NOT_ACCEPTED",
-  "diagnostic_source": "c6cd45bd36789064ac5510ea57022be03d34ba9d",
-  "diagnostic_tree": "36ed07e7c0a15bb059752509015a0ccc8b58a072",
-  "diagnostic_run": 40688042389,
-  "diagnostic_job": 122815400864,
+  "diagnostic_source": "e601703c820698c45fe5d83856c76ba5152bd072",
+  "diagnostic_tree": "29d26d02a9e238dce0d14ea4b848793738ffe184",
+  "diagnostic_run": 40856785966,
+  "diagnostic_job": 123389629253,
   "original_device_cases": 997,
   "added_device_cases": {
-    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#freshChoicesStayClassicWithoutWritingDefaults": "pass",
-    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#malformedSavedTypesCannotEnableStyleOrOpenAnArbitraryPath": "pass",
     "dev.modelatlas.app.data.AppearanceSettingsStoreTest#successfulChoicesSurviveStoreReconstructionAndOpaqueKeepsTheArtwork": "pass",
-    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#concurrentIndependentEditsKeepEveryConfirmedChoice": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#malformedSavedTypesCannotEnableStyleOrOpenAnArbitraryPath": "pass",
     "dev.modelatlas.app.data.AppearanceSettingsStoreTest#failedCommitRetainsConfirmedStateAndNextEditRepairsTheFailedCache": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#freshChoicesStayClassicWithoutWritingDefaults": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#concurrentIndependentEditsKeepEveryConfirmedChoice": "pass",
     "dev.modelatlas.app.ui.AquaArtworkAssetsTest#actualBundledImagesDecodeWithOriginalDimensionsAlphaAndBoundedCache": "pass",
-    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualFourArtworkButtonsKeepScopeChatAndProviderDrafts": "fail on diagnostic source c6cd45b; correction awaiting execution",
-    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable": "fail on diagnostic source c6cd45b; correction awaiting execution"
+    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable": "pass",
+    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualFourArtworkButtonsKeepScopeChatAndProviderDrafts": "pass"
   },
   "expected_device_total": 1005,
   "original_device_skips": 5,
@@ -46,5 +46,18 @@
   "second_rejection": "android-aqua-second-candidate.json",
   "correction": "Exact settings_close node; restore effective font configuration before restoring an originally absent raw setting; keep complete characters beside welcome panel, large-type navigation single-line and bounded scrollable landscape composer. All operations, workloads, 15 images and deadlines retained. The200% PDF label also requires intrinsic width and an actual text-layout no-overflow assertion; own corrected source pending.",
   "third_rejection": "android-aqua-third-candidate.json",
-  "fourth_rejection": "android-aqua-fourth-candidate.json"
+  "fourth_rejection": "android-aqua-fourth-candidate.json",
+  "latest_diagnostic_source": "e601703c820698c45fe5d83856c76ba5152bd072",
+  "latest_diagnostic_tree": "29d26d02a9e238dce0d14ea4b848793738ffe184",
+  "latest_diagnostic_run": 40856785966,
+  "latest_diagnostic_status": "PASS_8_NEW_CASES_15_ACTUAL_IMAGES_NOT_WHOLE_SLICE_ACCEPTED",
+  "integrated_rejection": "../20261029/android-aqua-sixth-candidate.json",
+  "measured_rejection": "../20261029/android-aqua-seventh-candidate.json",
+  "diagnostic_verified_archive": {
+    "id": 12890495848,
+    "bytes": 21915079,
+    "sha256": "68fe921bc5caa41b70bbc2d7294163ed6689c6504deb8392962287fd9bf8c390",
+    "crc": "PASS"
+  },
+  "diagnostic_evidence": "../20261029/android-aqua-diagnostic-pass.json"
 }

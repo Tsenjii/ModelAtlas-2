@@ -1,0 +1,19 @@
+{
+  "source": "9f79d39e94de7a43405c35228c2436113c22c800",
+  "run": 40852737435,
+  "job": 123376132827,
+  "artifact_id": 12887444902,
+  "bytes": 2041165,
+  "sha256": "aa55e15d1750f5ec1aff97d9b1e32e65e34eeb0d6230e1278af49a5a1032f827",
+  "crc": "PASS",
+  "status": "REJECTED_ACTUAL_PDF_LAYOUT",
+  "counts": {
+    "tests": 1005,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 5
+  },
+  "all_original997_outcomes": "unchanged",
+  "only_new_failure": "actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable在320dp／200% PDF排版斷言失敗；當時尚未量得寬度或高度根因。",
+  "next": "保留原斷言並回報實際排版尺寸；第12／15張真實截圖移至斷言之前，擷取前等待硬體frame已提交。推論行為與原deadline不減。"
+}

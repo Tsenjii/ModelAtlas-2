@@ -43,6 +43,8 @@ import dev.modelatlas.app.data.InterfaceStyle
 import java.io.File
 import java.security.MessageDigest
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -240,8 +242,8 @@ class AquaInterfaceFlowTest {
                 compose.activity.resources.configuration.fontScale >= 1.99f
         }
         compose.waitUntil(15_000) { tagExists("aqua_artwork_elaina-chibi") }
-        assertComposerControlsReachable()
         capture("12-playground-320-large-dark.png")
+        assertComposerControlsReachable()
         openSettings()
         compose.onNodeWithTag("interface_style_aqua").performScrollTo()
         capture("13-settings-320-large-dark.png")
@@ -257,8 +259,8 @@ class AquaInterfaceFlowTest {
         compose.runOnIdle { compose.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
         compose.waitUntil(15_000) { compose.activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE }
         compose.waitUntil(15_000) { tagExists("aqua_artwork_elaina-chibi") }
-        assertComposerControlsReachable()
         capture("15-landscape-large-dark.png")
+        assertComposerControlsReachable()
     }
 
     private fun qaCase(body: () -> Unit) { body(); bodyPassed = true }
@@ -269,7 +271,8 @@ class AquaInterfaceFlowTest {
             .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { get ->
                 assertTrue(get(layouts))
             }
-        assertTrue("The attachment label must stay complete at 200% font scale",
+        assertTrue("The attachment label must stay complete at 200% font scale: " +
+            layouts.joinToString { "size=${it.size}, paragraphWidth=${it.multiParagraph.width}, paragraphHeight=${it.multiParagraph.height}, lines=${it.lineCount}, widthOverflow=${it.didOverflowWidth}, heightOverflow=${it.didOverflowHeight}, font=${it.layoutInput.style.fontSize}, scale=${it.layoutInput.density.fontScale}, constraints=${it.layoutInput.constraints}" },
             layouts.isNotEmpty() && layouts.all { it.lineCount == 1 && !it.hasVisualOverflow })
         compose.onNodeWithTag("playground_composer_controls").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("playground_composer_text").performScrollTo().assertIsDisplayed()
@@ -329,7 +332,18 @@ class AquaInterfaceFlowTest {
             focus?.clearFocus()
         }
         compose.waitForIdle()
-        compose.runOnIdle { compose.activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+        val committed = CountDownLatch(1)
+        compose.runOnIdle {
+            val activity = compose.activity
+            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            // Java/Compose idleness does not acknowledge the window surface update.
+            // Wait for an actual hardware frame submission before display capture.
+            val decor = activity.window.decorView
+            check(decor.isHardwareAccelerated)
+            decor.viewTreeObserver.registerFrameCommitCallback { committed.countDown() }
+            decor.invalidate()
+        }
+        assertTrue("The actual window frame must commit before screenshot capture", committed.await(15, TimeUnit.SECONDS))
         instrumentation.waitForIdleSync()
         compose.waitForIdle()
         val bitmap = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
