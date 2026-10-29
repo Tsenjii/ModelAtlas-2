@@ -33,9 +33,10 @@ struct ResearchView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { Text("全球研究").font(.title3.weight(.semibold)); Spacer(); Button("重新載入") { Task { await load() } }.disabled(loading) }
-            AtlasTabs(selection: $tab, items: [AtlasTab("執行", "執行"), AtlasTab("來源", "來源"), AtlasTab("候選與證據", "候選與證據"), AtlasTab("AA 排名", "AA 排名"), AtlasTab("Recipes", "Recipes")])
+            AtlasTabs(selection: $tab, items: [AtlasTab("執行", "執行"), AtlasTab("執行與預算", "執行與預算"), AtlasTab("來源", "來源"), AtlasTab("候選與證據", "候選與證據"), AtlasTab("AA 排名", "AA 排名"), AtlasTab("Recipes", "Recipes")])
             if let problem { HStack { Text(problem).foregroundStyle(.red); Button("重試") { Task { await load() } } } }
             if tab == "執行" { execution }
+            if tab == "執行與預算" { ResearchPolicyWorkspace(store: store) }
             if tab == "來源" { sourceList }
             if tab == "候選與證據" { candidateList }
             if tab == "AA 排名" { AARankingCard(value: aa) { guard let api = store.api else { return }; runDetail = try await ResearchRunController.queueAA(using: api) } }
