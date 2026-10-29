@@ -6,4 +6,4 @@ if [ ! -x "$vps_dir/modelatlas-vps" ]; then
     exit 1
 fi
 # Keep the caller's working directory and replace the shell for SIGTERM delivery.
-exec "$vps_dir/modelatlas-vps"
+exec "$vps_dir/modelatlas-vps" "$@"

@@ -1,0 +1,36 @@
+name: Portable VPS contract diagnostic
+on:
+  push:
+    branches: [diagnostic/vps-portable-ops-20261030]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  portable-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.4'
+          cache: false
+      - name: Install actual encrypted transfer tool
+        run: |
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+          sudo apt-get install -y rclone
+          rclone version
+      - name: Real private configuration, HTTPS, online snapshots and crypt recovery
+        working-directory: vps
+        env:
+          MODELATLAS_CLOUD_BACKUP_TEST: '1'
+        run: |
+          set -o pipefail
+          go mod download
+          go test -mod=readonly -race -json -count=1 -run '^TestPortable' -timeout=3m . | tee portable-contracts.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-portable-contracts
+          path: vps/portable-contracts.jsonl
+          if-no-files-found: warn

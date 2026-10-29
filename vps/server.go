@@ -406,6 +406,22 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 func main() {
 	initializeMemoryLimit()
 	if len(os.Args) > 1 {
+		if os.Args[1] == "serve" {
+			config, err := serveConfig(os.Args[2:], os.Getenv)
+			if err == nil {
+				err = runConfiguredApplication(config)
+			}
+			if err != nil {
+				log.Fatal(err)
+			}
+			return
+		}
+		if os.Args[1] == "portable" {
+			if err := portableCommand(os.Args[2:], os.Stdout); err != nil {
+				log.Fatal(err)
+			}
+			return
+		}
 		if err := operationCommand(os.Args[1:], os.Stdout); err != nil {
 			log.Fatal(err)
 		}
@@ -421,6 +437,10 @@ func runApplication() error {
 	if err != nil {
 		return err
 	}
+	return runConfiguredApplication(config)
+}
+
+func runConfiguredApplication(config deploymentConfig) error {
 	store, err := openStore(config.db, true, config.key)
 	if err != nil {
 		return fmt.Errorf("database initialization failed: %w", err)
