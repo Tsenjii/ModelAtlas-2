@@ -8,6 +8,9 @@ jobs:
   bounded-anonymous-live-mapping:
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
@@ -118,6 +121,30 @@ jobs:
           	s.Store.DB.QueryRow("SELECT version_id FROM connector_mapping_requests WHERE id='live-assistant-public-mapping'").Scan(&id)
           	s.Store.DB.QueryRow("SELECT status FROM assistant_runs ORDER BY rowid DESC LIMIT 1").Scan(&status)
           	t.Logf("actual anonymous official requests=%d catalog=%d inference=%d synthetic metadata=%d agent_status=%s durable_draft=%t", transport.official.Load(), transport.catalogs.Load(), transport.inferences.Load(), metadata.Load(), status, id != "")
+          	// Preserve the actual failed/successful tool choices instead of inferring a
+          	// cause from a final response or a workflow's shell exit code.
+          	if secrets, e := s.knownSecrets(context.Background()); e == nil {
+          		rows, e := s.Store.DB.Query("SELECT name,status,args_json,result_json FROM assistant_tool_events ORDER BY rowid")
+          		if e != nil {
+          			t.Fatal(e)
+          		}
+          		for rows.Next() {
+          			var name, state, args, result string
+          			if e := rows.Scan(&name, &state, &args, &result); e != nil {
+          				t.Fatal(e)
+          			}
+          			var a, b any
+          			json.Unmarshal([]byte(args), &a)
+          			json.Unmarshal([]byte(result), &b)
+          			t.Logf("durable tool %s %s args=%s result=%s", name, state, compactAssistantData(a, secrets), compactAssistantData(b, secrets))
+          		}
+          		rows.Close()
+          		var rawFinal string
+          		s.Store.DB.QueryRow("SELECT result_json FROM assistant_runs ORDER BY rowid DESC LIMIT 1").Scan(&rawFinal)
+          		var final any
+          		json.Unmarshal([]byte(rawFinal), &final)
+          		t.Logf("safe final state=%s", excerpt(compactAssistantData(final, secrets), 1600))
+          	}
           	if id == "" || status != "SUCCESS" || !strings.Contains(w.Body.String(), "event: done") {
           		t.Fatal("real model did not complete the requested bounded public mapping flow")
           	}
@@ -140,7 +167,9 @@ jobs:
         working-directory: vps
         env:
           MODELATLAS_LIVE_ASSISTANT_MAPPING: "1"
-        run: go test -mod=readonly -race -json -count=1 -timeout=3m -run '^TestLiveAssistantMappingDiagnostic$' . | tee diagnostics/result.jsonl
+        run: |
+          set -o pipefail
+          go test -mod=readonly -race -json -count=1 -timeout=3m -run '^TestLiveAssistantMappingDiagnostic$' . | tee diagnostics/result.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
         with:
