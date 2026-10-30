@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "slice": "VPS-PORTABLE-OPS-016",
+  "slice": "ASSISTANT-MAPPING-017",
   "browser_baseline": {
     "id": 12622386762,
     "bytes": 39268692,
@@ -176,7 +176,14 @@
     "TestPortableConcurrentInitializationCannotReplaceConfirmedIdentity": "pass",
     "TestPortableAssetsRevalidateAcrossBinaryUpgrade": "pass",
     "TestPortableConfigurationOwnsIdentityWithoutExecutingOrInheritingSecrets": "pass",
-    "TestPortableForegroundUsesRealHTTPSAPIAndKeepsVaultAcrossRestart": "pass"
+    "TestPortableForegroundUsesRealHTTPSAPIAndKeepsVaultAcrossRestart": "pass",
+    "TestBrowserAssistantMappingPublicDraftSharedReviewAndPersistentUndo": "skip",
+    "TestAssistantMappingRealAgentLoopPreservesDraftAndToolJournal": "pass",
+    "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo": "pass",
+    "TestAssistantMappingOversizedDescriptorsKeepWholeSampleLocal": "pass",
+    "TestAssistantMappingRejectsOtherScopeGuessedFieldsAndStaleAuthority": "pass",
+    "TestAssistantMappingPrivateSamplesStayLocalAfterExplicitPrivateRead": "pass",
+    "TestAssistantMappingStorageFailureCannotLeaveHalfAProposal": "pass"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",
@@ -235,7 +242,13 @@
     "cloud-backup-saved-read-recovery-375-dark.png",
     "cloud-backup-schedule-320-200-dark.png",
     "cloud-backup-unconfigured-375-light.png",
-    "cloud-backup-verified-1280-dark.png"
+    "cloud-backup-verified-1280-dark.png",
+    "assistant-mapping-agent-375-light.png",
+    "assistant-mapping-review-375-light.png",
+    "assistant-mapping-fields-1280-light.png",
+    "assistant-mapping-review-320-200-dark.png",
+    "assistant-mapping-active-375-dark.png",
+    "assistant-mapping-undo-1280-dark.png"
   ],
   "rejected_aa_browser": {
     "id": 12625684013,

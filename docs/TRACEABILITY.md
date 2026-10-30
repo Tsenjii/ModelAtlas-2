@@ -1,3 +1,5 @@
+> 2026-10-30 唯一新片ASSISTANT-MAPPING-017候選：先以未改production的正式工具流程1.147秒重現unknown JSON無Assistant欄位入口，再接公開已存樣本描述與共用fixture草稿／真測／確認／Undo。六個新後端race9.181秒與vet／JS語法成功；私人來源不授權給模型，Assistant來源不冒稱使用者已審。完整原全部683結果與45Browser／566圖保留，預期追加為462入口／690結果、46Browser／572圖及140相關視圖／35接觸表；自己的完整十一項／十一真ZIP／稽核與圖審前不接受、不接下一片。前片016已驗基線與首輪Android UNKNOWN完整保留；詳verification/20261030/assistant-mapping-counterexample.json。完整下一版／Part V仍PARTIAL，公開版本凍結、PR20 Draft、Mac015Z暫停及個人目標部署缺入口保持。
+
 > 2026-10-30 VPS-PORTABLE-OPS-016所列範圍已由7053b1e76e0c15f808640375fec5c8ebf511cb1a同源十一項、十一真ZIP及稽核41006141355 attempt2驗證；134視圖／34接觸表及9原尺寸備份圖自行檢視PASS，無獨立reviewer主張。精確來源、原結果逐項保留、首輪Android逾時UNKNOWN及同源重驗、真Kilo兩次HTTP、原全部負載／timeout與限制見verification/20261030/vps-portable-baseline.json及ACTIVE_TASK。完整下一版／Part V仍PARTIAL，個人目標部署／真雲端帳戶／固定網址尚缺入口，公開版本凍結與PR20 Draft保留。
 
 | Requirement | 正式入口與驗證 | 邊界 |

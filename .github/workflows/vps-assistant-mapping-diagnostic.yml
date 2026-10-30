@@ -1,0 +1,54 @@
+name: Assistant Mapping Diagnostic
+on:
+  push:
+    branches: [diagnostic/vps-assistant-mapping-20261030]
+permissions:
+  contents: read
+concurrency:
+  group: assistant-mapping-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  public-mapping-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: vps
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Pin dependencies and install actual Chromium
+        run: |
+          go mod download
+          cd e2e
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Real saved evidence, private denial, storage recovery and agent dispatch
+        run: |
+          mkdir -p diagnostics
+          git rev-parse HEAD > diagnostics/source.txt
+          git rev-parse 'HEAD^{tree}' >> diagnostics/source.txt
+          go test -mod=readonly -race -json -count=1 -timeout=2m -run '^TestAssistantMapping' . | tee diagnostics/contracts.jsonl
+      - name: Real browser Assistant to shared Review and persistent Undo
+        env:
+          MODELATLAS_BROWSER_TEST: "1"
+          PLAYWRIGHT_MODULE: "playwright"
+        run: go test -mod=readonly -race -json -count=1 -timeout=3m -run '^TestBrowserAssistantMappingPublicDraftSharedReviewAndPersistentUndo$' . | tee diagnostics/browser.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-assistant-mapping-diagnostic
+          path: |
+            vps/diagnostics/
+            vps/e2e/screenshots/assistant-mapping-*.png
+          if-no-files-found: error

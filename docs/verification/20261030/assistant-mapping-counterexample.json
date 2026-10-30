@@ -1,0 +1,104 @@
+{
+  "slice": "ASSISTANT-MAPPING-017",
+  "status": "CANDIDATE_NOT_FINAL_SOURCE_ACCEPTANCE",
+  "parent_checkpoint": "8e9539083f17d412dd285b03b9533b36f48cc426",
+  "parent_code_source": "7053b1e76e0c15f808640375fec5c8ebf511cb1a",
+  "observed_at_utc": "2026-10-30T06:20:43.920732+00:00",
+  "counterexample": {
+    "production_changed": false,
+    "only_added_test": "vps/assistant_mapping_test.go",
+    "result": "FAIL",
+    "package_seconds": 1.147,
+    "case_seconds": 1.13,
+    "reason": "Assistant cannot inspect saved public field descriptors: tool not allowlisted",
+    "sha256": "42b481938b03f9eaeefbff99ef5c150629a802efa2574bd20ac9fb221c216257",
+    "events": [
+      {
+        "Time": "2026-10-30T14:06:46.743258654+08:00",
+        "Action": "start",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps"
+      },
+      {
+        "Time": "2026-10-30T14:06:46.757618375+08:00",
+        "Action": "run",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo"
+      },
+      {
+        "Time": "2026-10-30T14:06:46.757651826+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo",
+        "Output": "=== RUN   TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.873433245+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo",
+        "Output": "    assistant_mapping_test.go:19: Assistant cannot inspect saved public field descriptors: tool not allowlisted\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.886873969+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo",
+        "Output": "--- FAIL: TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo (1.13s)\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.886903123+08:00",
+        "Action": "fail",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo",
+        "Elapsed": 1.13
+      },
+      {
+        "Time": "2026-10-30T14:06:47.887562736+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Output": "FAIL\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.889815174+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Output": "FAIL\tgithub.com/Tsenjii/ModelAtlas-2/vps\t1.146s\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.889834403+08:00",
+        "Action": "fail",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Elapsed": 1.147
+      }
+    ]
+  },
+  "repaired_focused": {
+    "working_tree_dirty": true,
+    "result": "PASS",
+    "package_seconds": 9.181,
+    "cases": {
+      "TestAssistantMappingRealAgentLoopPreservesDraftAndToolJournal": 1.73,
+      "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo": 1.57,
+      "TestAssistantMappingOversizedDescriptorsKeepWholeSampleLocal": 1.31,
+      "TestAssistantMappingRejectsOtherScopeGuessedFieldsAndStaleAuthority": 1.24,
+      "TestAssistantMappingPrivateSamplesStayLocalAfterExplicitPrivateRead": 1.12,
+      "TestAssistantMappingStorageFailureCannotLeaveHalfAProposal": 1.19
+    },
+    "sha256": "935952bb240ee95dd0a4fd98a8491a91b50a492e2f6b509147c284e879785718"
+  },
+  "harness_compile_error": {
+    "production_counterexample": false,
+    "reason": "初版測試誤寫不存在的assistantBudget.inference，已更正為原tests欄位；不把編譯失敗當production反例。",
+    "sha256": "6046dfe1a4f0864a16fd78aa33a578b2db784afb624c8d4b5531a34254dcb758"
+  },
+  "scope": [
+    "公開來源的已保存有界欄位描述，精確model／Key／group／operation與freshness綁定；不是完整raw來源或私人樣本。",
+    "Assistant草稿來源另記ASSISTANT；沿共用fixture／真HTTP測試／明確啟用／Undo；不冒稱使用者已審語意、獨立驗證或免費。",
+    "同ID／同內容恢復不重建；Assistant與手動request身份分開，交易失敗不留半套草稿。"
+  ],
+  "pending": [
+    "新來源自己的完整462入口／690結果、46Browser／572圖、十一必要job／十一真ZIP與稽核及140相關視圖／35接觸表。",
+    "真正外部模型對任意站點的理解與真站資格／身份仍未證明；腳本TLS模型是受控工具流程fixture。",
+    "原始需求與整版PARTIAL、目標Muse／cloud／網址缺入口、Mac暫停工作及公開Release凍結保留。"
+  ]
+}

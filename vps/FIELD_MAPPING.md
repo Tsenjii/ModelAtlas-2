@@ -1,5 +1,21 @@
 # 公開 JSON 欄位對照
 
+## Assistant 公開欄位提案（017候選）
+
+已設定支援工具的 Assistant 模型後，可從 Assistant 明確要求辨識目前模型的公開唯讀資料入口，例如「辨識這個模型的 /api/pricing，依實際欄位提出價格擷取草稿，保留未知，等待我確認」。只有按下執行才啟動正常 Assistant 推論；來源仍為既有同origin匿名GET，不因401嘗試Key／PAT。
+
+若原辨識器不認識JSON欄位，Assistant可讀取已保存的公開欄位描述，再提出宣告式草稿。描述包含明確模型清單、精確唯一模型列、來源／樣本指紋、取得時間及觀察到的值；不提供完整raw來源、私人樣本或憑證。不支援／過大／過期／scope改變時回到原本的本機欄位對照，不截斷或猜單位／權限。
+
+Models → 研究知識 → 辨識紀錄 → 檢視草稿會清楚標示「Assistant 欄位提案」，列出欄位、範圍及單位證據。先檢查其語意，再按原「測試資料擷取」連線實測；通過後才有「確認啟用擷取規則」。Assistant不執行這兩個確認操作。啟用後沿正式Intelligence讀取，仍可在同一詳情Undo；重載保留版本、過程及動作紀錄。
+
+工具read_connector_mapping_sample與preview_connector_mapping自身新增0次來源HTTP／0次推論；整輪Assistant仍有實際模型HTTP／token成本，不能因此稱免費。草稿來源保存ASSISTANT，與手動request身份分開，沒有把模型提案寫成使用者已確認或獨立驗證。精確零、缺值、nominal／effective／recurring／身份保持分開；既有私人對照仍只在本機介面，不把私人讀取同意當成送到模型的授權。
+
+未改production的真反例與六項後端race證據見docs/verification/20261030/assistant-mapping-counterexample.json。自己的完整同來源十一項CI／十一真ZIP／實圖前仍候選；受控TLS模型工具回合不代表已證明任意外部模型能理解所有站點。
+
+## 015O／015Q設計與驗證歷史
+
+以下保留原切片設計及當時候選／失敗紀錄；最新片狀態以ACTIVE_TASK為準。
+
 FIELD-MAPPING-015O 候選。015N 所列擷取比較範圍已由來源 `faf614f84265a91d85063e5f1e16d91b88266e51` 同來源九項、九份實際產物及18實圖驗收；完整持久紀錄見 `docs/verification/20261025/extraction-baseline.json` 與 Draft PR #20。本片自己的完整回歸與同來源九項／全部實際產物前仍未接受。完整下一版仍 PARTIAL，公開版本與11附件保持凍結。
 
 ## 正式操作
