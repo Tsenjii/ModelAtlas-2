@@ -88,7 +88,15 @@ func assistantMappingFlowFixture(t *testing.T) (*Server, Selection, *atomic.Int3
 			}
 			request := mappingTestRequest(report)
 			request.ID = "assistant-mapping-flow-proposal"
-			assistantReply(w, "", functionCall("preview-public-fields", "preview_connector_mapping", map[string]any{"selection": selection, "mapping": request}))
+			raw, _ := json.Marshal(request)
+			var typed map[string]any
+			json.Unmarshal(raw, &typed)
+			fields := map[string]any{}
+			for name, path := range request.Fields {
+				fields[name] = map[string]string{"path": path}
+			}
+			typed["fields"] = fields
+			assistantReply(w, "", functionCall("preview-public-fields", "preview_connector_mapping", map[string]any{"selection": selection, "mapping": typed}))
 		case 4:
 			var result map[string]any
 			last(&result)

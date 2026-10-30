@@ -1,7 +1,7 @@
-name: Live Public Assistant Mapping Guidance
+name: Live Public Assistant Mapping Typed Pointers
 on:
   push:
-    branches: [diagnostic/vps-assistant-guidance-20261030]
+    branches: [diagnostic/vps-assistant-typed-20261030]
 permissions:
   contents: read
 jobs:
@@ -173,6 +173,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: modelatlas-live-public-mapping-guidance
+          name: modelatlas-live-public-mapping-typed
           path: vps/diagnostics/
           if-no-files-found: error

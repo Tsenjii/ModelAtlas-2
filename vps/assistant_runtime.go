@@ -266,6 +266,12 @@ func (s *Server) runAssistant(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if len(response.ToolCalls) == 0 {
+			if oneOf(strings.ToLower(str(response.Details["finish_reason"])), "length", "max_tokens") && strings.TrimSpace(response.Text) == "" {
+				status = "MODEL_OUTPUT_LIMIT"
+				final["text"] = "模型回覆達到輸出上限，工作尚未完成。紀錄已保留，請縮小工作範圍後再繼續。"
+				final["details"] = response.Details
+				return
+			}
 			status = "SUCCESS"
 			final["text"] = response.Text
 			final["details"] = response.Details

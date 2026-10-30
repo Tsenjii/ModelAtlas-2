@@ -36,5 +36,6 @@
   "limits": [
     "僅合成公開來源與真正匿名官方模型；無使用者資料、私人帳戶或付費fallback。",
     "本反例及工具日誌未完成前不宣稱017整體接受；完整產品與目標部署仍PARTIAL。"
-  ]
+  ],
+  "lookup_limit": "只查固定mapping.id=live-assistant-public-mapping；未保存工具事件，其他ID是否存在及首輪精確根因仍UNKNOWN。"
 }
