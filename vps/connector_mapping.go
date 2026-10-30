@@ -71,9 +71,10 @@ func mappingProblem(w http.ResponseWriter, e error) {
 	}
 }
 
-// Samples are local source data, never prompts, code, auth definitions or sync
-// execution grants. An oversized response remains in the discovery history but
-// is not silently truncated into a different mapping fixture.
+// Samples remain local source data, never raw prompts, code, auth definitions
+// or sync execution grants. A separate public-only tool may expose bounded,
+// sanitized field descriptors, never a private sample or raw document.
+// Oversized responses are not silently truncated into a different fixture.
 func prepareMappingSample(root any, discovery, sourceURL, sourceHash, path, hash string, at int64) *connectorMappingSample {
 	if !connectorDiscoveryPath(path) || siteReferenceURL(path) {
 		return nil
@@ -520,6 +521,10 @@ func (s *Server) proposeMappedConnector(w http.ResponseWriter, r *http.Request) 
 	}
 	defer tx.Rollback()
 	requestHash := connectorHash(v)
+	assistantSelection, assistantProposal := r.Context().Value(assistantMappingProposalKey{}).(Selection)
+	if assistantProposal {
+		requestHash = connectorHash(map[string]any{"mapping": v, "selection": assistantSelection, "mapping_author": "ASSISTANT"})
+	}
 	var prior, versionID string
 	e = tx.QueryRowContext(r.Context(), "SELECT request_hash,version_id FROM connector_mapping_requests WHERE id=?", v.ID).Scan(&prior, &versionID)
 	if e == nil {
@@ -545,6 +550,10 @@ func (s *Server) proposeMappedConnector(w http.ResponseWriter, r *http.Request) 
 		mappingProblem(w, e)
 		return
 	}
+	if assistantProposal && (report.CredentialRole != "" || report.PATID != "" || report.PrivateConfirmed || connectorHash(report.Selection) != connectorHash(assistantSelection)) {
+		mappingProblem(w, errMappingReview)
+		return
+	}
 	cfg, fixture, e := mappingConfig(v, sample, report)
 	if e != nil {
 		mappingProblem(w, e)
@@ -565,13 +574,22 @@ func (s *Server) proposeMappedConnector(w http.ResponseWriter, r *http.Request) 
 	if report.CredentialRole != "" {
 		sampleReview = "User-reviewed private metadata for the selected authority/scope only; no public/provider-wide claim, independent verification or new HTTP during generation."
 	}
+	if assistantProposal {
+		sampleReview = "Assistant-proposed public field semantics, not user-reviewed or independently verified. The user must inspect the fields, run a real HTTP test and explicitly confirm activation. Generation made no provider HTTP or inference request."
+	}
 	proof := connectorDiscoveryProof{ReportID: derivedID, SourceURL: sample.SourceURL, SourceHash: sample.SourceHash, ObservedAt: sample.At, Selection: report.Selection, Family: report.Family, Version: report.Version, FixtureStatus: "PASSED", Expected: fixture.Expected, Limitations: append(append([]string{}, report.Limitations...), sampleReview), MappingSampleID: sample.ID, MappingSampleHash: connectorHash(sample.Root), MappingParentID: sample.DiscoveryID}
+	if assistantProposal {
+		proof.MappingAuthor = "ASSISTANT"
+	}
 	zero := 0
 	derived := connectorDiscoveryReport{ID: derivedID, Selection: report.Selection, SourcePath: sample.Path, BaseURL: report.BaseURL, Status: "DRAFTS_READY", Family: report.Family, Version: report.Version, ObservedAt: sample.At, FinishedAt: now(), HTTPRequests: &zero, RequestLimit: 0, Sources: []connectorDiscoverySource{{URL: sample.SourceURL, Status: "INSPECTED", Hash: sample.SourceHash, DraftIDs: []string{versionID}}}, DraftIDs: []string{versionID}, Unknown: report.Unknown, Conflicts: []string{}, Limitations: proof.Limitations, FamilyEvidence: report.FamilyEvidence}
 	derived.CredentialRole, derived.PATID, derived.PrivateConfirmed = report.CredentialRole, report.PATID, report.PrivateConfirmed
 	reason := "Explicit field mapping from saved public evidence; fixture passed, real HTTP test and confirmation still required."
 	if report.CredentialRole != "" {
 		reason = "Explicit private field mapping bound to the selected authority and scope; fixture passed, real HTTP test and confirmation still required."
+	}
+	if assistantProposal {
+		reason = "Assistant-proposed public field mapping; fixture passed, user field review, real HTTP test and explicit confirmation still required."
 	}
 	configRaw, _ := json.Marshal(cfg)
 	proofRaw, _ := json.Marshal(proof)

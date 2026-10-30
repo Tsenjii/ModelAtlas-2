@@ -1,3 +1,5 @@
+> 2026-10-30 唯一當前片ASSISTANT-MAPPING-017進入正式候選：公開已存樣本欄位描述、Assistant來源的不可變草稿、共用fixture／真HTTP實測／明確確認／正式Intelligence／持久Undo已接正式caller。未改production的真反例1.147秒失敗；六新後端race9.181秒、完整Go462入口／690結果411.701秒／原600秒成功（632pass＋58明確opt-in skip），原683結果逐項完全保留。UI名稱修整後診斷9bf1d05e／41014409914／123927366038成功，真ZIP12959350458為549486bytes／SHA256 0dfc46ce57a062b8bc150846c452b78c10c8d941f88317b151c54cfb6a3d2540／CRC PASS，6後端10.615秒＋真Browser7.612秒及6實圖自行檢視；桌面正式截圖再捲到範圍／單位證據。詳細verification/20261030/assistant-mapping-counterexample.json。診斷與dirty本機結果不冒充最後來源；自己的完整十一項／十一真ZIP／46Browser與572圖／140相關視圖及35接觸表仍待驗。私人樣本不授權給模型，原全部需求／負載／timeout、首輪Android UNKNOWN、整版PARTIAL／公開凍結／PR20 Draft／Mac暫停及真目標部署缺入口保留，不接下一片。
+
 > 2026-10-30 VPS-PORTABLE-OPS-016所列範圍已由7053b1e76e0c15f808640375fec5c8ebf511cb1a同源十一項、十一真ZIP及稽核41006141355 attempt2驗證；134視圖／34接觸表及9原尺寸備份圖自行檢視PASS，無獨立reviewer主張。精確來源、原結果逐項保留、首輪Android逾時UNKNOWN及同源重驗、真Kilo兩次HTTP、原全部負載／timeout與限制見verification/20261030/vps-portable-baseline.json及ACTIVE_TASK。完整下一版／Part V仍PARTIAL，個人目標部署／真雲端帳戶／固定網址尚缺入口，公開版本凍結與PR20 Draft保留。
 
 | Requirement | 正式入口與驗證 | 邊界 |

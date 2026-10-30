@@ -52,7 +52,7 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
         audit.validate_browser_screenshot_names(self.config()["new_browser_images"])
 
     def test_crash_captures_remain_forbidden_in_declared_and_actual_views(self):
-        for name in ("research-history-failure.png", "research-history-scope-failure-390-dark.png", "aqua-failure.png", "unreviewed-view.png"):
+        for name in ("research-history-failure.png", "research-history-scope-failure-390-dark.png", "aqua-failure.png", "assistant-mapping-failure.png", "unreviewed-view.png"):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, "unexpected new screenshot"):
                 audit.validate_browser_screenshot_names([name])
 
@@ -131,9 +131,9 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
 
     def test_contact_inventory_grows_without_rewriting_frozen_views(self):
         config = self.config()
-        self.assertEqual(audit.visual_review_count(config),119)
+        self.assertEqual(audit.visual_review_count(config),125)
         config["new_browser_images"].append("future-new-view.png")
-        self.assertEqual(audit.visual_review_count(config),120)
+        self.assertEqual(audit.visual_review_count(config),126)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
 class CandidateDeviceExtensionTest(unittest.TestCase):
@@ -190,8 +190,8 @@ class CandidateAndroidAquaTest(unittest.TestCase):
                 audit.validate_android_aqua_case_extension(self.counts,changed,self.old,self.accepted,self.config)
 
     def test_fifteen_android_views_are_added_to_all110_original_views(self):
-        self.assertEqual(audit.visual_review_count(self.config),119)
-        self.assertEqual(audit.candidate_visual_review_count(self.config),134)
+        self.assertEqual(audit.visual_review_count(self.config),125)
+        self.assertEqual(audit.candidate_visual_review_count(self.config),140)
         changed = copy.deepcopy(self.config)
         changed["new_android_aqua_images"][13] = "14-replacement.png"
         with self.assertRaisesRegex(ValueError,"image scope"):

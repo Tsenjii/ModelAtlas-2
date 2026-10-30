@@ -64,6 +64,7 @@ type connectorDiscoveryReport struct {
 	PrivateConfirmed bool                       `json:"private_confirmed,omitempty"`
 }
 type connectorDiscoveryProof struct {
+	MappingAuthor     string         `json:"mapping_author,omitempty"`
 	MappingSampleID   string         `json:"mapping_sample_id,omitempty"`
 	MappingSampleHash string         `json:"mapping_sample_sha256,omitempty"`
 	MappingParentID   string         `json:"mapping_parent_id,omitempty"`

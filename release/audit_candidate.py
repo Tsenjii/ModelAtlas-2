@@ -81,7 +81,7 @@ def validate_native_transparency_fixture(resource, fixture):
     require(len(phases) == 3 and [phase.get("system_transparency") for phase in phases] == observed and all(type(phase.get("system_transparency")) is bool for phase in phases), "native process did not observe actual system states")
 
 def validate_browser_screenshot_names(names):
-    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-", "cloud-backup-")) and "failure" not in name for name in names), "unexpected new screenshot")
+    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-", "cloud-backup-", "assistant-mapping-")) and "failure" not in name for name in names), "unexpected new screenshot")
 
 def linux_inventory(directory, arch, config):
     require(arch in ("amd64", "arm64"), "unsupported Linux architecture")
@@ -456,7 +456,7 @@ def main():
     require(len(expected_wait_cases) == 8 and sorted(wait_cases) == sorted(expected_wait_cases) and all(re.search(r"# "+key+r" 0\s*$",browser_log,re.M) for key in ("fail","cancelled","skipped","todo")), "async Browser wait regressions missing")
     report["async_wait_cases"] = wait_cases
     browser_cases = re.findall(r"--- PASS: (TestBrowser\w+) \(([0-9.]+)s\)", browser_log)
-    require(len(browser_cases) == 45 and len({x[0] for x in browser_cases}) == 45, "complete browser results missing")
+    require(len(browser_cases) == 46 and len({x[0] for x in browser_cases}) == 46, "complete browser results missing")
     require({x[0] for x in browser_cases} == {name for name in expected_registry if name.startswith("TestBrowser")}, "browser registry mismatch")
     report["browser_cases"] = browser_cases
     portable = {name: ("skip" if name.startswith("TestPortableContainer") else "pass") for name in expected_events if name.startswith("TestPortable")}
@@ -628,7 +628,7 @@ def main():
     # the interactive workspace is offline. No tests or archive checks are skipped.
     for name, value in (("REPORT", report), ("SOURCE_STATE", state), ("GO_CASE_EVENTS", events), ("DEVICE_CASE_EVENTS", json.loads((out/"device-case-events.json").read_text())), ("CORE_CASE_EVENTS", core_cases)):
         print("MODELATLAS_AUDIT_"+name+" "+json.dumps(value, ensure_ascii=False, separators=(",",":")), flush=True)
-    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":report["android_device"]["counts"]["tests"],"go_cases":len(events),"browser_cases":45,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
+    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":report["android_device"]["counts"]["tests"],"go_cases":len(events),"browser_cases":46,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
 
 if __name__ == "__main__":
     main()
