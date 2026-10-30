@@ -77,8 +77,28 @@ func assistantMappingFlowFixture(t *testing.T) (*Server, Selection, *atomic.Int3
 				http.Error(w, "missing sample", 500)
 				return
 			}
-			assistantReply(w, "", functionCall("read-public-fields", "read_connector_mapping_sample", map[string]any{"sample_id": report.Sources[0].MappingSampleID, "selection": selection}))
+			assistantReply(w, "", functionCall("read-public-fields", "read_connector_mapping_sample", map[string]any{"sample_id": report.Sources[0].MappingSampleID, "selection": selection, "kind": "PRICING"}))
 		case 3:
+			var offered []ToolDefinition
+			toolJSON, _ := json.Marshal(body["tools"])
+			json.Unmarshal(toolJSON, &offered)
+			if len(offered) != len(assistantTools()) {
+				t.Error("mapping focus removed unrelated Assistant capabilities")
+			}
+			focused := false
+			for _, tool := range offered {
+				if tool.Function.Name != "preview_connector_mapping" {
+					continue
+				}
+				mapping := object(object(tool.Function.Parameters["properties"])["mapping"])
+				properties := object(mapping["properties"])
+				enum, _ := json.Marshal(object(properties["kind"])["enum"])
+				fields := object(object(properties["fields"])["properties"])
+				focused = string(enum) == `["PRICING"]` && len(fields) == 4 && fields["input"] != nil && fields["output"] != nil && fields["input_tokens"] == nil
+			}
+			if !focused {
+				t.Error("known mapping kind still offered unrelated metric/unit grammar")
+			}
 			var result struct {
 				Sample mappingView `json:"sample"`
 			}

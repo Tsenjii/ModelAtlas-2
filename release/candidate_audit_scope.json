@@ -183,7 +183,14 @@
     "TestAssistantMappingOversizedDescriptorsKeepWholeSampleLocal": "pass",
     "TestAssistantMappingRejectsOtherScopeGuessedFieldsAndStaleAuthority": "pass",
     "TestAssistantMappingPrivateSamplesStayLocalAfterExplicitPrivateRead": "pass",
-    "TestAssistantMappingStorageFailureCannotLeaveHalfAProposal": "pass"
+    "TestAssistantMappingStorageFailureCannotLeaveHalfAProposal": "pass",
+    "TestAssistantMappingAutoDescribesOnlyOneProvenUniqueModelRow": "pass",
+    "TestAssistantMappingHelpfulValidationRejectsObservedInventedFieldNames": "pass",
+    "TestAssistantMappingAmbiguousModelColumnsStillRequireExplicitSelection": "pass",
+    "TestAssistantMappingDescriptorListsCannotBeSilentlyCutByToolJournal": "pass",
+    "TestAssistantMappingTypedRowPointersKeepCanonicalRecoveryAndRejectInventedUnits": "pass",
+    "TestAssistantMappingObservedScopeAndUnitLocationsAreCopyableEvidence": "pass",
+    "TestAssistantMappingReasoningOutputLimitDoesNotCompleteAnEmptyTask": "pass"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",

@@ -250,8 +250,9 @@ func (s *Server) runAssistant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	stream := false
+	mappingKind := ""
 	for step := 0; step < 6; step++ {
-		request := inferRequest{SessionID: thread.SessionID, Prompt: prompt, System: assistantSystem, Tools: assistantTools(), ToolResults: results, Streaming: &stream, MaxTokens: 2048}
+		request := inferRequest{SessionID: thread.SessionID, Prompt: prompt, System: assistantSystem, Tools: assistantToolsForMappingKind(mappingKind), ToolResults: results, Streaming: &stream, MaxTokens: 2048}
 		response, _ := s.execute(ctx, request, "ASSISTANT_AGENT", func(name string, data any) error {
 			if name == "delta" || name == "reasoning" {
 				return emit(name, data)
@@ -303,6 +304,14 @@ func (s *Server) runAssistant(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				toolStatus = "FAILED"
 				value = map[string]any{"error": excerpt(err.Error(), 300)}
+			}
+			if call.Function.Name == "read_connector_mapping_sample" {
+				mappingKind = ""
+				if data, ok := value.(map[string]any); err == nil && ok && str(data["status"]) == "ROW_FIELDS_READY" {
+					mappingKind = str(data["mapping_kind"])
+				}
+			} else if call.Function.Name != "preview_connector_mapping" || err == nil {
+				mappingKind = ""
 			}
 			clean := compactAssistantData(value, secrets)
 			saveCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)

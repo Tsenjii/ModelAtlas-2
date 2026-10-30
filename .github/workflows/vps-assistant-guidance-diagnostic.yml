@@ -1,7 +1,7 @@
-name: Live Public Assistant Mapping Typed Pointers
+name: Live Public Assistant Mapping Focused Schema
 on:
   push:
-    branches: [diagnostic/vps-assistant-typed-20261030]
+    branches: [diagnostic/vps-assistant-focused-20261030]
 permissions:
   contents: read
 jobs:
@@ -173,6 +173,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: modelatlas-live-public-mapping-typed
+          name: modelatlas-live-public-mapping-focused
           path: vps/diagnostics/
           if-no-files-found: error
