@@ -145,7 +145,7 @@ func TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery(t *testing.T) {
 	finish := make(chan struct{})
 	upstream := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/chat/completions" || r.Header.Get("Authorization") != "Bearer container-synthetic-provider-secret" {
-			t.Error("container inference did not retain the exact endpoint and vault scope")
+			t.Errorf("container inference did not retain the exact endpoint and vault scope: method=%s path=%s selected_auth=%t", r.Method, r.URL.Path, r.Header.Get("Authorization") == "Bearer container-synthetic-provider-secret")
 			http.Error(w, "unexpected test request", 422)
 			return
 		}
