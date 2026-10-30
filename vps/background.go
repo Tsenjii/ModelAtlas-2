@@ -41,6 +41,9 @@ func loadSetting[T any](s *Server, ctx context.Context, key string, fallback T) 
 	return fallback
 }
 func (s *Server) backgroundTick(ctx context.Context) {
+	if s.backups != nil {
+		s.backups.tick(ctx)
+	}
 	s.workspaceTick(ctx)
 	s.researchScheduleTick(ctx)
 	cfg := loadSetting(s, ctx, "background", BackgroundSettings{IntervalMinutes: 60, MaxScopes: 2})

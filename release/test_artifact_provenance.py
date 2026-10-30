@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import prepare
 
@@ -15,6 +15,17 @@ class ArtifactProvenanceTests(unittest.TestCase):
         self.fixtures = json.loads((Path(__file__).parent / "fixtures/ci-rerun-provenance.json").read_text())
         self.mac = self.fixtures[2]
         self.commit = self.mac["run"]["head_sha"]
+        # Keep the real, immutable 2026-10-21 nine-job rerun counterexample
+        # under its original admission contract. It predates portable jobs;
+        # never fabricate new successful jobs/artifacts in this fixture.
+        checks = copy.deepcopy(prepare.CHECKS)
+        checks[".github/workflows/vps.yml"] = {"vps-test", "vps-browser", "vps-linux-amd64", "vps-linux-arm64"}
+        artifacts = copy.deepcopy(prepare.ARTIFACT_JOBS)
+        for arch in ("amd64", "arm64"):
+            artifacts[".github/workflows/vps.yml"].pop("modelatlas-vps-portable-"+arch)
+        scope = patch.multiple(prepare, CHECKS=checks, ARTIFACT_JOBS=artifacts)
+        scope.start()
+        self.addCleanup(scope.stop)
 
     def checked(self, fixture):
         run = fixture["run"]

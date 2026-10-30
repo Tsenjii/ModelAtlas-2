@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "slice": "ANDROID-AQUA-015Y",
+  "slice": "VPS-PORTABLE-OPS-016",
   "browser_baseline": {
     "id": 12622386762,
     "bytes": 39268692,
@@ -153,7 +153,30 @@
     "TestResearchHistoryRejectsBadCursorsAndUnreadableRowsWithoutInventingEmptyHistory": "pass",
     "TestResearchHistorySchema37UpgradePreservesRecordsAndUsesBoundedOrderedIndex": "pass",
     "TestResearchScheduleMetadataReportsSavedConcurrencyAndKeepsUnavailableUnknown": "pass",
-    "TestBrowserResearchHistoryArchiveAndExactRecovery": "skip"
+    "TestBrowserResearchHistoryArchiveAndExactRecovery": "skip",
+    "TestPortableOnlineBackupRejectsWrongKeysAndNeverOverwritesLastGood": "pass",
+    "TestBrowserPortableCloudBackupRealWorkflowAndReadRecovery": "skip",
+    "TestPortableCloudPolicyCASAndZeroExitNeverPretendVerifiedBackup": "pass",
+    "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed": "pass",
+    "TestPortableCloudCommandsRequirePrivateIdentityAndExplicitKeyRecovery": "pass",
+    "TestPortableCloudActualScheduleIdempotenceFetchAndCancellation": "skip",
+    "TestPortableOnlineBackupKeepsLiveWriterAndConsistentCompleteHistory": "pass",
+    "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup": "pass",
+    "TestPortableCloudParentCrashStopsOwnedTransferAndRecoversUncertainty": "skip",
+    "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/plaintext-backend": "pass",
+    "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-data": "pass",
+    "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-filenames": "pass",
+    "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-type": "pass",
+    "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-remote": "pass",
+    "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unreadable-encrypted-config": "pass",
+    "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes": "pass",
+    "TestPortableCloudBackupWithActualCryptAndRecovery": "skip",
+    "TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery": "skip",
+    "TestPortableInitializationPreservesKeysAndRefusesLostOrSharedState": "pass",
+    "TestPortableConcurrentInitializationCannotReplaceConfirmedIdentity": "pass",
+    "TestPortableAssetsRevalidateAcrossBinaryUpgrade": "pass",
+    "TestPortableConfigurationOwnsIdentityWithoutExecutingOrInheritingSecrets": "pass",
+    "TestPortableForegroundUsesRealHTTPSAPIAndKeepsVaultAcrossRestart": "pass"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",
@@ -203,7 +226,16 @@
     "aqua-background-kotoha-390-light.png",
     "aqua-background-elaina-390-light.png",
     "aqua-background-kotoha-chibi-1280-light.png",
-    "aqua-background-elaina-chibi-390-dark.png"
+    "aqua-background-elaina-chibi-390-dark.png",
+    "cloud-backup-history-375-light.png",
+    "cloud-backup-last-good-375-light.png",
+    "cloud-backup-lost-ack-320-200-light.png",
+    "cloud-backup-ready-1280-light.png",
+    "cloud-backup-running-375-dark.png",
+    "cloud-backup-saved-read-recovery-375-dark.png",
+    "cloud-backup-schedule-320-200-dark.png",
+    "cloud-backup-unconfigured-375-light.png",
+    "cloud-backup-verified-1280-dark.png"
   ],
   "rejected_aa_browser": {
     "id": 12625684013,

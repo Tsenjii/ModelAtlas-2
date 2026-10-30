@@ -81,7 +81,7 @@ def validate_native_transparency_fixture(resource, fixture):
     require(len(phases) == 3 and [phase.get("system_transparency") for phase in phases] == observed and all(type(phase.get("system_transparency")) is bool for phase in phases), "native process did not observe actual system states")
 
 def validate_browser_screenshot_names(names):
-    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-")) and "failure" not in name for name in names), "unexpected new screenshot")
+    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-", "cloud-backup-")) and "failure" not in name for name in names), "unexpected new screenshot")
 
 def linux_inventory(directory, arch, config):
     require(arch in ("amd64", "arm64"), "unsupported Linux architecture")
@@ -97,7 +97,45 @@ def linux_inventory(directory, arch, config):
     return documents | {"VERSION.json", "RELEASE.json", "SHA256SUMS.txt",
                         "bin/modelatlas-vps-linux-"+arch, "deploy/install.sh",
                         "deploy/update.sh", "deploy/manage.sh", "deploy/download.sh",
-                        "deploy/modelatlas-vps.service"}
+                        "deploy/modelatlas-vps.service", "deploy/Dockerfile",
+                        "deploy/container-entrypoint.sh", "deploy/compose.yaml",
+                        "deploy/compose.loopback.yaml", "deploy/compose.https.yaml",
+                        "deploy/Caddyfile", "deploy/modelatlas-proxy.caddy", ".dockerignore"}
+
+def portable_contract_results(raw, expected):
+    events = [json.loads(line) for line in raw.decode().splitlines() if line.strip()]
+    actual, started = {}, set()
+    for event in events:
+        name, action = event.get("Test"), event.get("Action")
+        require(action != "fail" and "DATA RACE" not in event.get("Output", ""), "portable execution failed")
+        if name and action == "run":
+            require(name not in started, "duplicate portable test execution")
+            started.add(name)
+        if name and action in ("pass", "skip"):
+            require(name not in actual, "duplicate portable outcome")
+            actual[name] = action
+    require(actual == expected and started == set(expected), "portable opt-in outcomes missing or changed")
+    require(sum(not event.get("Test") and event.get("Action") == "pass" for event in events) == 1, "portable package did not complete successfully")
+    return actual
+
+def validate_portable_container(report, arch, source):
+    require(report.get("result") == "PASS" and report.get("source") == source and report.get("architecture") == arch,
+            "portable container source or architecture mismatch")
+    for field in ("native", "nonroot", "read_only_root", "compose_recreation", "backend_not_published",
+                  "volume_recreation", "stable_identity", "vault", "https", "real_caddy", "sse_before_completion",
+                  "full_history", "actual_crypt_readback", "schedule_default_off"):
+        require(report.get(field) is True, "portable container evidence missing: " + field)
+    require(type(report.get("inference_calls")) is int and report["inference_calls"] == 1, "container workflow repeated inference")
+    for field in ("image", "source_image"):
+        images = report.get(field)
+        require(isinstance(images, list) and len(images) == 1 and images[0].get("Architecture") == arch and
+                images[0].get("Os") == "linux" and images[0].get("Config", {}).get("User") == "10001:10001" and
+                images[0].get("Config", {}).get("Labels", {}).get("org.opencontainers.image.revision") == source,
+                "actual built container identity mismatch")
+        require(not any(re.match(r"(?:MODELATLAS_(?:ADMIN_TOKEN|MASTER_KEY)|RCLONE_CONFIG_[^=]+)=", value)
+                        for value in images[0].get("Config", {}).get("Env", [])), "secret configured in image environment")
+    require(report.get("bundle_container") is True, "verified binary bundle container was not exercised")
+    return report
 
 def xml_cases(archive):
     counts = dict(tests=0, failures=0, errors=0, skipped=0)
@@ -303,7 +341,7 @@ def main():
                 require(archive.testzip() is None, "current artifact CRC failed")
             metadata[name] = item
             provenance.append(p.artifact_provenance(workflow, run, item))
-    require(len(metadata) == 9, "all nine actual archives required")
+    require(len(metadata) == 11, "all original nine plus two native portable archives required")
     (out/"source-state.json").write_text(json.dumps(state, ensure_ascii=False, indent=2)+"\n")
     class Downloaded:
         def pages(self, path, key):
@@ -418,9 +456,18 @@ def main():
     require(len(expected_wait_cases) == 8 and sorted(wait_cases) == sorted(expected_wait_cases) and all(re.search(r"# "+key+r" 0\s*$",browser_log,re.M) for key in ("fail","cancelled","skipped","todo")), "async Browser wait regressions missing")
     report["async_wait_cases"] = wait_cases
     browser_cases = re.findall(r"--- PASS: (TestBrowser\w+) \(([0-9.]+)s\)", browser_log)
-    require(len(browser_cases) == 44 and len({x[0] for x in browser_cases}) == 44, "complete browser results missing")
+    require(len(browser_cases) == 45 and len({x[0] for x in browser_cases}) == 45, "complete browser results missing")
     require({x[0] for x in browser_cases} == {name for name in expected_registry if name.startswith("TestBrowser")}, "browser registry mismatch")
     report["browser_cases"] = browser_cases
+    portable = {name: ("skip" if name.startswith("TestPortableContainer") else "pass") for name in expected_events if name.startswith("TestPortable")}
+    container = {name: "pass" for name in portable if name.startswith("TestPortableContainer")}
+    require(len(container) == 1 and len(portable) == 22, "portable source registry changed; review new execution scope")
+    for arch in ("amd64", "arm64"):
+        with archive("modelatlas-vps-portable-"+arch) as z:
+            results = portable_contract_results(p.member(z, "portable-contracts.jsonl"), portable)
+            native = portable_contract_results(p.member(z, "container-contracts.jsonl"), container)
+            receipt = validate_portable_container(json.loads(p.member(z, "container.json")), arch, sha)
+            report["portable_"+arch] = {"contracts":results, "container_contracts":native, "container":receipt}
     prior_core = download_baseline(api, config["core_inventory"], baselines)
     with zipfile.ZipFile(prior_core) as z:
         old_core_counts, old_core_cases = xml_cases(z)
@@ -581,7 +628,7 @@ def main():
     # the interactive workspace is offline. No tests or archive checks are skipped.
     for name, value in (("REPORT", report), ("SOURCE_STATE", state), ("GO_CASE_EVENTS", events), ("DEVICE_CASE_EVENTS", json.loads((out/"device-case-events.json").read_text())), ("CORE_CASE_EVENTS", core_cases)):
         print("MODELATLAS_AUDIT_"+name+" "+json.dumps(value, ensure_ascii=False, separators=(",",":")), flush=True)
-    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":report["android_device"]["counts"]["tests"],"go_cases":len(events),"browser_cases":44,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
+    print("MODELATLAS_AUDIT_RESULT "+json.dumps({"source":sha,"tree":state["tree"],"status":report["status"],"artifacts":len(metadata),"device_tests":report["android_device"]["counts"]["tests"],"go_cases":len(events),"browser_cases":45,"visual_views":len(images),"public_assets":11,"whole_next_release":"PARTIAL"}), flush=True)
 
 if __name__ == "__main__":
     main()

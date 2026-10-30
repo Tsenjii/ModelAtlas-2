@@ -12,5 +12,7 @@ vps/e2e/node_modules/
 vps/e2e/screenshots/
 vps/data/
 vps/test-results/
+vps/portable-test-results/
 vps/__pycache__/
+release/__pycache__/
 vps/modelatlas-vps*

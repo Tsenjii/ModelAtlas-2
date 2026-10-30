@@ -18,13 +18,13 @@ class CandidateLinuxInventoryTest(unittest.TestCase):
             for name in config["linux_baseline_documents"]:
                 (root/name).write_text("original public document\n")
             original = audit.linux_inventory(root, "amd64", config)
-            self.assertEqual(len(original), 46)
+            self.assertEqual(len(original), 54)
             (root/"RESEARCH_COST.md").write_text("new public document\n")
             (root/"private.key").write_text("must not be packaged\n")
             (root/"implementation.go").write_text("package main\n")
             current = audit.linux_inventory(root, "amd64", config)
             self.assertEqual(current-original, {"RESEARCH_COST.md"})
-            self.assertEqual(len(current), 47)
+            self.assertEqual(len(current), 55)
             self.assertNotIn("private.key", current)
             self.assertNotIn("implementation.go", current)
             arm = audit.linux_inventory(root, "arm64", config)
@@ -131,9 +131,9 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
 
     def test_contact_inventory_grows_without_rewriting_frozen_views(self):
         config = self.config()
-        self.assertEqual(audit.visual_review_count(config),110)
+        self.assertEqual(audit.visual_review_count(config),119)
         config["new_browser_images"].append("future-new-view.png")
-        self.assertEqual(audit.visual_review_count(config),111)
+        self.assertEqual(audit.visual_review_count(config),120)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
 class CandidateDeviceExtensionTest(unittest.TestCase):
@@ -190,8 +190,8 @@ class CandidateAndroidAquaTest(unittest.TestCase):
                 audit.validate_android_aqua_case_extension(self.counts,changed,self.old,self.accepted,self.config)
 
     def test_fifteen_android_views_are_added_to_all110_original_views(self):
-        self.assertEqual(audit.visual_review_count(self.config),110)
-        self.assertEqual(audit.candidate_visual_review_count(self.config),125)
+        self.assertEqual(audit.visual_review_count(self.config),119)
+        self.assertEqual(audit.candidate_visual_review_count(self.config),134)
         changed = copy.deepcopy(self.config)
         changed["new_android_aqua_images"][13] = "14-replacement.png"
         with self.assertRaisesRegex(ValueError,"image scope"):
@@ -242,6 +242,44 @@ class CandidateRegistryIntegrityTest(unittest.TestCase):
             (root/"production.go").write_text("func TestNotARegisteredTest() {}\n")
             (root/"main_test.go").write_text("func TestMain(m *testing.M) {}\n")
             self.assertEqual(audit.go_test_functions(root), set(cases.values()))
+
+class CandidatePortableAdmissionTest(unittest.TestCase):
+    def test_original_nine_job_fixture_cannot_satisfy_new_portable_admission(self):
+        import prepare
+        fixtures = json.loads((Path(__file__).parent/"fixtures/ci-rerun-provenance.json").read_text())
+        original = next(f for f in fixtures if f["run"]["path"] == ".github/workflows/vps.yml")
+        self.assertEqual(len(prepare.CHECKS[original["run"]["path"]]), 6)
+        with self.assertRaisesRegex(ValueError, "missing mandatory"):
+            prepare.verified_jobs(original["run"], original["jobs"], prepare.CHECKS[original["run"]["path"]], original["run"]["head_sha"])
+
+    def test_portable_trace_requires_every_real_case_and_package_completion(self):
+        expected = {"TestPortableOne":"pass", "TestPortableContainer":"skip"}
+        events = [{"Test":name, "Action":action} for name in expected for action in ("run", expected[name])] + [{"Action":"pass"}]
+        encode = lambda rows: ("\n".join(json.dumps(row) for row in rows)+"\n").encode()
+        self.assertEqual(audit.portable_contract_results(encode(events), expected), expected)
+        for bad in (events[:-1], events[1:], events+[events[1]], events+[{"Action":"fail"}], events+[{"Output":"WARNING: DATA RACE"}]):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                audit.portable_contract_results(encode(bad), expected)
+
+    def test_portable_receipt_cannot_borrow_other_source_architecture_or_imaginary_steps(self):
+        source = "a"*40
+        image = {"Architecture":"amd64", "Os":"linux", "Config":{"User":"10001:10001", "Env":["HOME=/data"], "Labels":{"org.opencontainers.image.revision":source}}}
+        report = dict(result="PASS",source=source,architecture="amd64",inference_calls=1,image=[image],source_image=[image])
+        fields = ("native", "nonroot", "read_only_root", "compose_recreation", "backend_not_published", "volume_recreation", "stable_identity", "vault", "https", "real_caddy", "sse_before_completion", "full_history", "actual_crypt_readback", "schedule_default_off", "bundle_container")
+        report.update({field:True for field in fields})
+        audit.validate_portable_container(report, "amd64", source)
+        for field in fields:
+            for value in (False, None, "true"):
+                changed = copy.deepcopy(report); changed[field] = value
+                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                    audit.validate_portable_container(changed, "amd64", source)
+        for change in ({"source":"b"*40},{"architecture":"arm64"},{"inference_calls":2},{"inference_calls":True}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                audit.validate_portable_container(dict(report,**change),"amd64",source)
+        for key, value in (("User","0"),("Env",["MODELATLAS_MASTER_KEY=synthetic-secret"])):
+            changed = copy.deepcopy(report); changed["image"][0]["Config"][key] = value
+            with self.assertRaises(ValueError):
+                audit.validate_portable_container(changed,"amd64",source)
 
 class CandidateXMLIntegrityTest(unittest.TestCase):
     def archive(self, body):

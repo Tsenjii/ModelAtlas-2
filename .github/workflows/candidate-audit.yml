@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - "vps/**"
+      - ".dockerignore"
       - "macos/**"
       - "app/**"
       - "core/**"
       - "release/**"
       - "docs/ACTIVE_TASK.md"
       - ".github/workflows/candidate-audit.yml"
+      - ".github/workflows/vps.yml"
   workflow_dispatch:
 
 permissions:
@@ -38,7 +40,7 @@ jobs:
         run: python3 -m unittest discover -s release -p 'test_*.py' -v
       - name: Install pinned image verifier for actual QA screenshots
         run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
-      - name: Verify nine exact-source archives, reports, packages and original workloads
+      - name: Verify eleven exact-source archives, reports, packages and original workloads
         env:
           GH_TOKEN: ${{ github.token }}
           MODELATLAS_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}

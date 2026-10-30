@@ -42,6 +42,7 @@ type staticAsset struct {
 	raw        string
 	compressed []byte
 	etag       string
+	revalidate bool
 }
 
 func (a *staticAsset) serve(w http.ResponseWriter, r *http.Request, contentType string) {
@@ -55,6 +56,12 @@ func (a *staticAsset) serve(w http.ResponseWriter, r *http.Request, contentType 
 	})
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "private, max-age=3600")
+	if a.revalidate {
+		// The HTML and application code must come from the same deployment.
+		// Revalidation keeps the conditional/gzip cache without stale code after
+		// a binary upgrade; immutable artwork retains its existing cache policy.
+		w.Header().Set("Cache-Control", "private, no-cache")
+	}
 	w.Header().Set("ETag", a.etag)
 	w.Header().Set("Vary", "Accept-Encoding")
 	if r.Header.Get("If-None-Match") == a.etag {
@@ -69,7 +76,7 @@ func (a *staticAsset) serve(w http.ResponseWriter, r *http.Request, contentType 
 	}
 }
 
-var cssAsset = staticAsset{raw: appCSS}
-var jsAsset = staticAsset{raw: appJS}
+var cssAsset = staticAsset{raw: appCSS, revalidate: true}
+var jsAsset = staticAsset{raw: appJS, revalidate: true}
 
 var errConversationLimit = errors.New("conversation limit; history retained, start a new conversation")

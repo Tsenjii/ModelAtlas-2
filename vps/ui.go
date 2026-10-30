@@ -742,7 +742,7 @@ const homeHTML = `<!doctype html>
 <p id="system-status-problem" class="error" role="alert" hidden></p>
 <p class="section-description">更新會沿用資料和金鑰。完整資料備份由主機保存；下方設定匯出不含對話、請求紀錄及 Key。</p>
 </section>
-` + workspaceSyncHTML + `
+` + cloudBackupHTML + workspaceSyncHTML + `
 <div class="card">
 <h2>備份與還原</h2>
 <p>觀測與歷史持續保留。</p>

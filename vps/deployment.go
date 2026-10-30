@@ -15,6 +15,7 @@ type deploymentConfig struct {
 	addr, db, token, publicOrigin string
 	desktopReady                  string
 	maintenanceFile               string
+	backupDestination             string
 	key                           []byte
 }
 
@@ -24,6 +25,10 @@ type deploymentConfig struct {
 func readDeploymentConfig(getenv func(string) string) (deploymentConfig, error) {
 	c := deploymentConfig{token: getenv("MODELATLAS_ADMIN_TOKEN"), db: getenv("MODELATLAS_DB"), addr: getenv("MODELATLAS_LISTEN")}
 	c.maintenanceFile = getenv("MODELATLAS_MAINTENANCE_FILE")
+	c.backupDestination = getenv("MODELATLAS_BACKUP_DESTINATION")
+	if c.backupDestination != "" && (!filepath.IsAbs(c.backupDestination) || strings.ContainsAny(c.backupDestination, "\r\n\x00")) {
+		return c, errors.New("MODELATLAS_BACKUP_DESTINATION must be an absolute private configuration path")
+	}
 	if c.maintenanceFile != "" && (!filepath.IsAbs(c.maintenanceFile) || strings.ContainsAny(c.maintenanceFile, "\r\n\x00")) {
 		return c, errors.New("MODELATLAS_MAINTENANCE_FILE must be an absolute path")
 	}

@@ -1,8 +1,9 @@
 package main
 
-// Offline operations deliberately do not construct a Server worker or contact a
-// provider. They use the same writer lock as the application and never source an
-// environment file as shell code.
+// Administrative operations do not construct a Server worker or contact a model
+// provider. Offline backup/preflight/restore keep the application writer lock;
+// online-backup explicitly uses a read-only SQLite snapshot. Environment files
+// are parsed as data and are never sourced as shell code.
 import (
 	"bufio"
 	"context"
@@ -59,7 +60,7 @@ func operationCommand(args []string, out io.Writer) error {
 		return json.NewEncoder(out).Encode(versionInfo())
 	}
 	if len(args) < 2 || args[0] != "ops" {
-		return errors.New("usage: modelatlas-vps version | ops init-env|database|backup|preflight|restore|ready [options]")
+		return errors.New("usage: modelatlas-vps version | ops init-env|database|backup|online-backup|preflight|restore|ready [options]")
 	}
 	f := flag.NewFlagSet("ops", flag.ContinueOnError)
 	f.SetOutput(io.Discard) // Never echo an invalid argument that might be a secret.
@@ -110,6 +111,8 @@ func operationCommand(args []string, out io.Writer) error {
 			}
 			return snapshotDatabase(ctx, db, *output)
 		})
+	case "online-backup":
+		err = onlineBackup(ctx, config.db, *output, config.key)
 	case "preflight":
 		// The source snapshot is immutable; only its separate private copy is migrated.
 		if *output == "" || filepath.Clean(*output) == filepath.Clean(config.db) {

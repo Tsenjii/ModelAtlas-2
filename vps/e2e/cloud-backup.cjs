@@ -1,0 +1,72 @@
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const assert=require('node:assert/strict'),fs=require('node:fs/promises');
+(async()=>{
+ const browser=await chromium.launch({headless:true}),origin=process.argv[2];
+ const context=await browser.newContext({httpCredentials:{username:'admin',password:process.env.MODELATLAS_TEST_TOKEN},viewport:{width:375,height:1000},reducedMotion:'reduce'});
+ const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await fs.mkdir('e2e/screenshots',{recursive:true});
+ const screenshot=async(name,width,theme,large=false,target='#cloud-backup-card')=>{
+  await page.setViewportSize({width,height:1000});await page.evaluate(({theme,large})=>{document.documentElement.dataset.theme=theme;document.documentElement.style.fontSize=large?'200%':'100%';},{theme,large});
+  await page.locator(target).scrollIntoViewIfNeeded();
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),name+' horizontal overflow');
+  const bounds=await page.locator('#cloud-backup-refresh').boundingBox();assert(bounds.height>=48,name+' refresh target below 48px');
+  await page.screenshot({path:'e2e/screenshots/'+name,animations:'disabled'});
+ };
+ const readDone=()=>page.waitForFunction(()=>!cloudBackupReading&&!cloudBackupWriting);
+ try{
+  await page.goto(origin);await page.waitForFunction(()=>modelPickerReady);await page.locator('#settings-toggle').click();await page.locator('#settings-data-tab').click();
+  await page.locator('#cloud-backup-summary').filter({hasText:'尚未設定'}).waitFor();assert(await page.locator('#cloud-backup-policy').isHidden());
+  await screenshot('cloud-backup-unconfigured-375-light.png',375,'light');
+  assert((await context.request.post(origin+'/fixture/backup/install',{data:{}})).ok());await page.locator('#cloud-backup-refresh').click();await readDone();
+  assert.equal(await page.locator('#cloud-backup-enabled').isChecked(),false);assert.equal(await page.locator('#cloud-backup-interval').inputValue(),'1440');
+  await screenshot('cloud-backup-ready-1280-light.png',1280,'light');
+  await page.locator('#cloud-backup-enabled').check();await page.locator('#cloud-backup-interval').fill('15');await page.locator('#cloud-backup-keep-local').check();await page.locator('#cloud-backup-save').click();
+  await page.waitForFunction(()=>cloudBackupState?.policy.revision===1&&!cloudBackupReading&&!cloudBackupWriting);
+  await screenshot('cloud-backup-schedule-320-200-dark.png',320,'dark',true,'#cloud-backup-policy');
+  assert(await page.locator('#cloud-backup-details dd').first().evaluate(e=>{const label=e.previousElementSibling.getBoundingClientRect(),value=e.getBoundingClientRect();return Math.abs(label.x-value.x)<1&&Math.abs(label.width-value.width)<1;}),'large text details must use the full readable column');
+  assert((await context.request.post(origin+'/fixture/backup/tick',{data:{}})).ok());await page.locator('#cloud-backup-refresh').click();await readDone();
+  assert(await page.evaluate(()=>!!cloudBackupState.active_id));assert.equal(await page.evaluate(()=>cloudBackupState.last_success_at),0);
+  await screenshot('cloud-backup-running-375-dark.png',375,'dark');
+  await page.waitForFunction(()=>cloudBackupState?.last_success_at>0&&!cloudBackupState.active_id);
+  assert(await page.evaluate(()=>[...cloudBackupRows.values()].some(j=>j.state==='SUCCESS'&&j.sha256.length===64)));
+  await screenshot('cloud-backup-verified-1280-dark.png',1280,'dark');
+  await page.locator('#cloud-backup-interval').fill('30');
+  let seen,release;const arrived=new Promise(r=>seen=r),held=new Promise(r=>release=r);let failedReads=0;
+  await page.route('**/api/v1/backup/cloud',async route=>{failedReads++;seen();await held;await route.fulfill({status:503,contentType:'text/plain',body:'temporarily unavailable'});});
+  await page.locator('#cloud-backup-refresh').click();await arrived;await page.evaluate(()=>{loadCloudBackups();loadCloudBackups();});assert.equal(failedReads,1);release();
+  await page.locator('#cloud-backup-problem').filter({hasText:'保留上次結果與草稿'}).waitFor();assert.equal(await page.locator('#cloud-backup-interval').inputValue(),'30');assert(await page.locator('#cloud-backup-save').isDisabled());
+  await screenshot('cloud-backup-last-good-375-light.png',375,'light');
+  await page.unroute('**/api/v1/backup/cloud');await page.locator('#cloud-backup-refresh').click();await readDone();assert(await page.locator('#cloud-backup-save').isEnabled());
+  let policyPosts=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().endsWith('/backup/cloud/policy'))policyPosts++;});
+  await page.route('**/api/v1/backup/cloud',route=>route.fulfill({status:503,contentType:'text/plain',body:'read failed after committed save'}));
+  await page.locator('#cloud-backup-save').click();await page.locator('#notice').filter({hasText:'設定已保存，但讀取失敗'}).waitFor();
+  assert.equal(policyPosts,1);assert(await page.locator('#cloud-backup-save').isDisabled());assert.equal(await page.locator('#cloud-backup-interval').inputValue(),'30');
+  await screenshot('cloud-backup-saved-read-recovery-375-dark.png',375,'dark');
+  await page.unroute('**/api/v1/backup/cloud');await page.locator('#cloud-backup-refresh').click();await page.waitForFunction(()=>cloudBackupState?.policy.revision===2&&!cloudBackupReading);
+  await page.locator('#cloud-backup-enabled').uncheck();await page.locator('#cloud-backup-save').click();await page.waitForFunction(()=>cloudBackupState?.policy.revision===3&&!cloudBackupReading&&!cloudBackupWriting);
+  let runPosts=0,lostID=null;
+  await page.route('**/api/v1/backup/cloud/run',async route=>{runPosts++;lostID=route.request().postDataJSON().id;const receipt=await route.fetch();assert.equal(receipt.status(),202);await route.abort('failed');});
+  await page.locator('#cloud-backup-run').click();await page.locator('#cloud-backup-problem').filter({hasText:'沒有自動重新送出'}).waitFor();assert.equal(runPosts,1);assert(lostID);
+  await page.evaluate(()=>runCloudBackup());assert.equal(runPosts,1);
+  await screenshot('cloud-backup-lost-ack-320-200-light.png',320,'light',true);
+  await page.unroute('**/api/v1/backup/cloud/run');await page.locator('#cloud-backup-refresh').click();await readDone();
+  await page.waitForFunction(id=>cloudBackupRows.get(id)?.state==='SUCCESS'&&!cloudBackupState.active_id,lostID);assert.equal(runPosts,1);
+  // A dirty draft remains bound to its original revision after another client
+  // changes policy. Discard is explicit, and no write happens during reread.
+  await page.locator('#cloud-backup-interval').fill('60');
+  const external=await context.request.post(origin+'/api/v1/backup/cloud/policy',{data:{revision:3,enabled:false,interval_minutes:45,keep_local:true,fingerprint:await page.evaluate(()=>cloudBackupState.fingerprint),confirm:true}});assert.equal(external.status(),200);
+  await page.locator('#cloud-backup-refresh').click();await readDone();assert.equal(await page.locator('#cloud-backup-interval').inputValue(),'60');assert(await page.locator('#cloud-backup-save').isDisabled());
+  await page.locator('#cloud-backup-discard').click();await readDone();assert.equal(await page.locator('#cloud-backup-interval').inputValue(),'45');
+  assert((await context.request.post(origin+'/fixture/backup/history',{data:{}})).ok());await page.locator('#cloud-backup-refresh').click();await readDone();
+  await page.locator('#cloud-backup-history-details > summary').click();await page.locator('#cloud-backup-more').click();await readDone();await page.locator('#cloud-backup-more').click();await readDone();
+  assert.equal(await page.evaluate(()=>cloudBackupRows.size),63);assert(await page.locator('#cloud-backup-more').isHidden());
+  const timeline=page.locator('details[data-backup-events="'+lostID+'"]');await timeline.locator('summary').click();await timeline.getByText('已回讀驗證',{exact:false}).waitFor();assert.match(await timeline.innerText(),/加密上傳中/);assert.match(await timeline.innerText(),/重新下載並驗證/);
+  await screenshot('cloud-backup-history-375-light.png',375,'light',false,'details[data-backup-events="'+lostID+'"]');
+  const last=await page.locator('#cloud-backup-details').innerText();
+  await page.route('**/api/v1/backup/cloud',async route=>{const response=await route.fetch(),state=await response.json();delete state.policy.keep_local;await route.fulfill({response,json:state});});
+  await page.locator('#cloud-backup-refresh').click();await page.locator('#cloud-backup-problem').filter({hasText:'無法辨識完整備份狀態'}).waitFor();assert.equal(await page.locator('#cloud-backup-details').innerText(),last);assert.equal(await page.locator('#cloud-backup-interval').inputValue(),'45');
+  await page.unroute('**/api/v1/backup/cloud');await page.locator('#cloud-backup-refresh').click();await readDone();
+  const text=await page.locator('#cloud-backup-card').innerText();assert(!/top-secret-example-key|rclone\.conf|destination\.json/.test(text));assert.deepEqual(errors,[]);
+  console.log('PASS: actual encrypted schedule and manual backup, full readback verification, lost ack/known commit recovery without duplicate writes, dirty CAS draft, 63 permanent records, scoped process history, malformed-read preservation, 9 real responsive screenshots');
+ }finally{await context.close();await browser.close();}
+})().catch(error=>{console.error(error);process.exit(1)});

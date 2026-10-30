@@ -1,3 +1,9 @@
+> 2026-10-30 VPS-PORTABLE-OPS-016進入正式整合候選：通用免root init／run／serve、原writer不中斷的一致快照、獨立加密目的地、持久排程／取消／原ID恢復／回讀驗證／隔離還原、Settings資料正式UI，以及source／binary套件兩種非root Docker／Compose＋Caddy HTTPS入口已接線。不是Muse專屬模式。診斷來源2ff4be18c4e5160bb29e879f1d539575ac7fd84d／tree47165874b81e1327d30e05c97c5527470c10fa59的41004406491三job SUCCESS，四份實際ZIP已驗bytes／SHA256／CRC；AMD64真容器155.169秒、ARM64真容器141.662秒，均含Compose重建、TLS、未完成前SSE、完整歷史／vault及加密下載還原。詳細verification/20261030/portable-deploy-diagnostic.json；後續ledger原子化、精確lookup503及UI文字有修正，不能借診斷當最後來源驗收。
+>
+> 本機完整普通Go race455入口／683結果（626pass＋57明確opt-in skip）434.668秒／原600秒成功，原660結果逐項保留；之後新增帳本故障反例在未修production真失敗，修後兩項4.013秒、精確lookup追加後4.081秒及vet成功。原44Browser／557圖保留＋新1／9，正式預期45／566；原Android594＋423／1005、兩Mac各89／117、全部workload／timeout與512MiB不減。發布與candidate admission增加兩個原生portable producer／artifact，現在要求同來源十一項及十一份真ZIP，再作134相關視圖／34接觸表與必要原尺寸圖自行檢視；沒有獨立reviewer主張。普通Go中的雲端／容器opt-in skip須由額外真rclone及雙原生架構job補上，不可把skip當已驗。
+>
+> 最新main仍cba901d187aa5312cc71f5c2440b23fa04104aee／39536090788 SUCCESS，FEATURE FREEZE=OFF；PR20仍Draft、遠端feature head整合前a76636c8。Mac015Z暫停工作保留於原工作樹，不帶入本片。尚未取得Muse終端、指定雲端帳戶／目的地及固定HTTPS入口，沒有真目標部署／雲端帳戶回讀／個人網址證據；公開v0.8.5-preview.1／tag／11附件保持凍結，不merge／發布。使用者授權的個人部署仍持續進行，取得實際入口後沿同一通用流程驗收；完整Part V／產品不提前稱全部完成。
+
 > 2026-10-30（台北）使用者最新要求先完成 VPS，並明確更正要「所有東西都可以部署，Muse 只是目前需要的其中一個環境」。目前唯一工作片改為 VPS-PORTABLE-OPS-016：同一後端的通用安裝／更新、持久資料、可替換的加密異地備份及可登入 HTTPS 入口；Muse 作第一個實測目標，不新增專屬產品模式或硬編碼主機設定。Mac 015Z 的8項新核心契約與表單編譯只屬診斷通過，未整合／未驗收；工作保留，先不擴張原生功能。見 D-021 及 vps/PORTABLE_DEPLOY.md。
 >
 > 目前未取得目標環境管理入口、指定備份目的地及固定 HTTPS 入口，無真遠端部署／備份／使用網址證據。沿用已驗收 a76636c8 產品來源，不把未驗 HEAD 自動部署。main 本輪重查仍 cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 的 build119016886469／device119016884592 均 SUCCESS，FEATURE FREEZE=OFF。原全部需求、測試／負載／timeout、公開版本／tag／11附件凍結和 PR20 Draft 保留；使用者已明確要求個人部署，早前「不部署」狀態不作為重複索取一般部署許可的理由。

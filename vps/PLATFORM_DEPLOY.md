@@ -1,3 +1,5 @@
+> 2026-10-30通用部署接續：免root前景程序、Docker／Compose及加密備份見 [PORTABLE_DEPLOY.md](PORTABLE_DEPLOY.md) 與 [CLOUD_BACKUP.md](CLOUD_BACKUP.md)。下文保留Git平台原契約；只有實際平台證據才能主張已部署。
+
 # Git 平台部署（Infrlo 等）
 
 ## 本輪查核與限制

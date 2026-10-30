@@ -21,7 +21,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY = "Tsenjii/ModelAtlas-2"
 CHECKS = {
-    ".github/workflows/vps.yml": {"vps-test", "vps-browser", "vps-linux-amd64", "vps-linux-arm64"},
+    ".github/workflows/vps.yml": {"vps-test", "vps-browser", "vps-linux-amd64", "vps-linux-arm64", "vps-portable-amd64", "vps-portable-arm64"},
     ".github/workflows/android.yml": {"build", "device-tests"},
     ".github/workflows/macos-native.yml": {"macos-build", "macos-test (macos-15, arm64)", "macos-test (macos-15-intel, x86_64)"},
 }
@@ -31,6 +31,8 @@ ARTIFACT_JOBS = {
         "modelatlas-vps-linux-arm64": "vps-linux-arm64",
         "modelatlas-vps-footprint": "vps-test",
         "modelatlas-vps-browser": "vps-browser",
+        "modelatlas-vps-portable-amd64": "vps-portable-amd64",
+        "modelatlas-vps-portable-arm64": "vps-portable-arm64",
     },
     ".github/workflows/android.yml": {
         "modelatlas-debug-and-reports": "build",
@@ -180,7 +182,7 @@ def wait_for_ci(api, commit, minutes):
             previous = message
         if len(result) == len(CHECKS):
             return result
-        require(time.monotonic() < deadline, "timed out waiting for all nine exact-source checks")
+        require(time.monotonic() < deadline, "timed out waiting for all eleven exact-source checks")
         time.sleep(20)
 
 def read_zip(path):

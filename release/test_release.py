@@ -88,7 +88,7 @@ class ReleaseBoundaryTests(unittest.TestCase):
         run = valid_run()
         jobs = [{"id": index, "name": name, "status": "completed", "conclusion": "success", "run_id": run["id"], "head_sha": COMMIT,
                  "started_at": "2026-10-21T03:00:00Z", "completed_at": "2026-10-21T03:10:00Z"} for index, name in enumerate(prepare.CHECKS[run["path"]])]
-        self.assertEqual(len(prepare.verified_jobs(run, jobs, prepare.CHECKS[run["path"]], COMMIT)), 4)
+        self.assertEqual(len(prepare.verified_jobs(run, jobs, prepare.CHECKS[run["path"]], COMMIT)), 6)
         for conclusion in ["skipped", "cancelled", "failure", None]:
             broken = copy.deepcopy(jobs)
             broken[0]["conclusion"] = conclusion
