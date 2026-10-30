@@ -1,10 +1,10 @@
-> 2026-10-30 VPS-PORTABLE-OPS-016整合候選，最後來源尚待十一項／實際十一ZIP及134視圖驗收，詳細ACTIVE_TASK與verification/20261030/portable-deploy-diagnostic.json。以下已驗歷史保留；原全部需求及平台範圍不縮減。
+> 2026-10-30 VPS-PORTABLE-OPS-016所列範圍已由7053b1e76e0c15f808640375fec5c8ebf511cb1a同源十一項、十一真ZIP及稽核41006141355 attempt2驗證；134視圖／34接觸表及9原尺寸備份圖自行檢視PASS，無獨立reviewer主張。精確來源、原結果逐項保留、首輪Android逾時UNKNOWN及同源重驗、真Kilo兩次HTTP、原全部負載／timeout與限制見verification/20261030/vps-portable-baseline.json及ACTIVE_TASK。完整下一版／Part V仍PARTIAL，個人目標部署／真雲端帳戶／固定網址尚缺入口，公開版本凍結與PR20 Draft保留。
 
 | Requirement | 正式入口與驗證 | 邊界 |
 | --- | --- | --- |
 | VPS-PORTABLE-OPS-016 安裝／更新 | `portable_operations.go`／`serve_command.go`→同一`runConfiguredApplication`；私密設定／並行初始化／金鑰不重生、HTTPS重啟／vault；`deploy/Dockerfile`及binary套件Dockerfile、Compose init→healthy app、Caddy／loopback overlay | 不依Muse或廠商分叉；維持單writer、本機volume與原systemd更新／restore gate；真目標環境待取得 |
 | VPS-PORTABLE-OPS-016 完整備份 | Settings資料→`ui_js_cloud_backup.go`→`/backup/cloud` policy／run／cancel／events→獨立帳本→`onlineBackup`→真rclone crypt→重新下載三檔／hash／完整DB／vault驗證；CLI configure／run／fetch及原離線restore | 排程預設OFF；目的地與本機source HMAC綁定；CAS／原ID只讀恢復／過程歷史／失敗保留，app DB複製不授予傳輸權；master key與crypt復原材料另存 |
-| VPS-PORTABLE-OPS-016 原生容器契約 | `portable_container_test.go`真native AMD64／ARM64 Docker及Compose重建、可信測試CA／真Caddy／SSE完成前delta、非root／唯讀root／volume、source與binary套件映像、全歷史／vault／加密還原；額外process-death真rclone | 診斷2ff4be18三job成功且實際ZIP核對；正式來源與使用者cloud／外部ACME／Muse不能借驗收 |
+| VPS-PORTABLE-OPS-016 原生容器契約 | `portable_container_test.go`真native AMD64／ARM64 Docker及Compose重建、可信測試CA／真Caddy／SSE完成前delta、非root／唯讀root／volume、source與binary套件映像、全歷史／vault／加密還原；額外process-death真rclone | 7053同源雙原生portable jobs及十一項SUCCESS／十一真ZIP核對；使用者cloud／外部ACME／Muse仍須各自驗收 |
 
 > 2026-10-29 ANDROID-AQUA-015Y所列範圍已ACCEPTED：來源a76636c8de149c090371c35f83a69fded256dc8c／tree2744b12d146a2af991792b805bfc7b32ebf57fc4；VPS40864279482、Android40864279445、Mac40864279400同源九項全SUCCESS，稽核40864279424／123414961678成功。九份真ZIP另行核對bytes／SHA256／CRC；稽核12893254286為2316639bytes、SHA256 54d44400bb29a6c348f25fa54fd0a9c13b4de98c31cae62527986bebd3ba43eb／CRC PASS。125相關視圖／32接觸表與8張額外原尺寸圖自行檢視PASS，沒有第二位獨立reviewer。Android594＋423／1005（原997結果逐項相同、零fail／5原skip）、同ART PID4788兩端512MiB；15實圖與單行無溢出PDF、閱讀底色／四背景／草稿／scope及系統／偏好／FLAG_SECURE還原均通過。Go438入口／660結果（608pass＋52skip）578.682秒／600、44Browser259.594秒／300及557圖、兩Mac各89核心／117圖、原全部負載peak208732160bytes保留。詳細verification/20261029/android-aqua-baseline.json；九個拒絕候選與UNKNOWN歷史保留。完整下一版仍PARTIAL、公開版本／tag／11附件凍結、PR20 Draft，不merge／部署／發布。
 

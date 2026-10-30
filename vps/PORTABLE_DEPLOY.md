@@ -1,6 +1,6 @@
 # 通用部署、持久資料與 HTTPS 入口
 
-VPS-PORTABLE-OPS-016，2026-10-30。使用者要求先完成 VPS，並明確指定部署能力要通用，Muse 只是目前的第一個目標。下列功能已接入本片候選程式；正式來源的完整十一項 CI、實際產物與目標環境仍分別驗收。已公開的 `v0.8.5-preview.1` 不包含這批新命令，不將舊 Release 冒充本片套件。
+VPS-PORTABLE-OPS-016，2026-10-30。使用者要求先完成 VPS，並明確指定部署能力要通用，Muse 只是目前的第一個目標。下列所列範圍已由來源`7053b1e76e0c15f808640375fec5c8ebf511cb1a`同源十一項CI、十一份真ZIP及實圖驗證；目標環境另行驗收。已公開的 `v0.8.5-preview.1` 不包含這批新命令，不將舊 Release 冒充本片套件。
 
 ## 選擇執行方式
 
@@ -88,8 +88,8 @@ docker compose -f deploy/compose.yaml exec -T app \
 
 ## 驗收邊界
 
-本片普通Go race已本機通過455入口／683結果（626pass、57明確opt-in skip），原600秒上限保留；該結果是工作目錄診斷，不冒充最後來源CI。額外真rclone測試驗加密、回讀、完整還原、排程、取消與SIGKILL；真Browser驗原ID恢復、CAS草稿、63筆紀錄與9張畫面。原44Browser／557圖保持，預期完整45／566。
+本片最後來源7053的普通Go race455入口／683結果（626pass、57明確opt-in skip），本機clean450.496秒、CI533.560秒，原600秒上限保留；原660結果逐項相同。額外真rclone驗加密、回讀、完整還原、排程、取消與SIGKILL；45Browser258.241秒／原300秒、566PNG，包含原ID恢復、CAS草稿、63筆紀錄與9新圖。134相關視圖／34接觸表與9張額外原尺寸備份圖自行檢視，無第二位獨立reviewer。
 
-原同來源九項再加原生AMD64／ARM64 portable jobs，驗實際Docker／Compose、Caddy／信任測試CA、未完成前SSE、volume重建、vault及加密還原；兩架構分別產出帳本。受控TLS及本機crypt backend不冒充真雲端帳戶、ACME公網網域或Muse部署。
+同來源十一項包含原生AMD64／ARM64 portable jobs：各22個portable結果21pass＋另階段容器skip，再由真容器契約PASS補驗。容器package各86.427／95.512秒，實際Docker／Compose、來源及套件映像、Caddy／信任測試CA、未完成前SSE、volume重建、vault及加密還原皆通過。受控TLS及本機crypt backend不冒充真雲端帳戶、ACME公網網域或Muse部署。完整證據見`docs/verification/20261030/vps-portable-baseline.json`；首輪Android逾時根因仍UNKNOWN，同源完整重驗通過不稱修復。
 
 目前未取得Muse管理／終端入口、使用者指定的雲端目的地及固定HTTPS入口，因此還沒有真Muse部署、真雲端帳戶回讀或個人使用網址。取得後沿同一流程驗收，不繞過平台限制，也不影響既有工作。個人部署授權不等於發布新Release或合併Draft PR；完整產品其餘願望與平台驗收仍逐項保留。
