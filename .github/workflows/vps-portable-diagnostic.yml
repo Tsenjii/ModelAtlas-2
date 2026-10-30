@@ -63,6 +63,20 @@ jobs:
             vps/e2e/screenshots/
           if-no-files-found: warn
 
+      - name: Preserve exact developer toolchain for local diagnostics
+        if: always()
+        run: |
+          mkdir -p portable-developer-tools
+          tar -czf portable-developer-tools/go.tar.gz -C "$(go env GOROOT)" .
+          tar -czf portable-developer-tools/modules.tar.gz -C "$(go env GOMODCACHE)" .
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-portable-go-toolchain
+          path: portable-developer-tools/
+          compression-level: 0
+          if-no-files-found: error
+
   portable-containers:
     name: portable-container-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}

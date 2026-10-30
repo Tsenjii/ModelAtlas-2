@@ -31,7 +31,8 @@ import (
 
 // Run on native Linux Docker hosts, once per supported release architecture.
 // This is an actual image, named volume, Caddy/TLS boundary and rclone transfer;
-// no positive response or process is replaced with a test double.
+// no container, proxy or crypt transfer is replaced with a test double. The
+// model endpoint is a bounded TLS fixture, not a real user's provider account.
 func TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery(t *testing.T) {
 	if os.Getenv("MODELATLAS_CONTAINER_TEST") != "1" {
 		t.Skip("opt in on a native Linux Docker host for the complete container lifecycle")
@@ -61,13 +62,14 @@ func TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery(t *testing.T) {
 	}
 	id := "atlas-test-" + newID()
 	image, volume, network := id+":local", id+"-data", id+"-net"
+	sourceImage, bundleImage := image, id+"-bundle:local"
 	app, proxy := id+"-app", id+"-https"
 	cleanup := func(args ...string) { _ = exec.Command("docker", args...).Run() }
 	t.Cleanup(func() {
 		cleanup("rm", "-f", app, proxy)
 		cleanup("volume", "rm", volume)
 		cleanup("network", "rm", network)
-		cleanup("image", "rm", image)
+		cleanup("image", "rm", sourceImage, bundleImage)
 	})
 	build := exec.CommandContext(ctx, "docker", "build", "-f", filepath.Join(root, "vps/deploy/Dockerfile"), "--build-arg", "SOURCE_COMMIT="+strings.TrimSpace(string(revision)), "-t", image, root)
 	buildLog := filepath.Join(t.TempDir(), "build.log")
@@ -144,14 +146,29 @@ func TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery(t *testing.T) {
 	var calls atomic.Int32
 	finish := make(chan struct{})
 	upstream := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/chat/completions" || r.Header.Get("Authorization") != "Bearer container-synthetic-provider-secret" {
+		if r.Header.Get("Authorization") != "Bearer container-synthetic-provider-secret" {
 			t.Errorf("container inference did not retain the exact endpoint and vault scope: method=%s path=%s selected_auth=%t", r.Method, r.URL.Path, r.Header.Get("Authorization") == "Bearer container-synthetic-provider-secret")
 			http.Error(w, "unexpected test request", 422)
 			return
 		}
+		if r.Method == "GET" && r.URL.Path == "/v1/models" {
+			// Explicit My Models membership starts the real catalog enrichment
+			// worker. Keep that normal flow, separate from the one paid inference.
+			jsonOK(w, 200, map[string]any{"data": []any{map[string]any{"id": "m", "name": "Container model"}}})
+			return
+		}
+		if r.Method != "POST" || r.URL.Path != "/v1/chat/completions" {
+			t.Errorf("unexpected container upstream route: %s %s", r.Method, r.URL.Path)
+			http.Error(w, "unexpected test route", 422)
+			return
+		}
 		calls.Add(1)
 		w.Header().Set("Content-Type", "text/event-stream")
-		_, _ = io.WriteString(w, "data: {\"choices\":[{\"delta\":{\"content\":\"容器串流😀\"}}]}\n\n")
+		// The production secret redactor retains a bounded suffix to prevent
+		// secrets split across chunks from escaping. Send enough real content to
+		// cross that guard, rather than requiring a tiny unsafe early flush.
+		chunk, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"delta": map[string]any{"content": strings.Repeat("容器串流😀", 64)}}}})
+		_, _ = io.WriteString(w, "data: "+string(chunk)+"\n\n")
 		w.(http.Flusher).Flush()
 		select {
 		case <-finish:
@@ -275,10 +292,15 @@ func TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery(t *testing.T) {
 	var state []struct {
 		State  struct{ ExitCode int }
 		Config struct{ User string }
+		HostConfig struct{ ReadonlyRootfs bool }
+		Mounts []struct{ Name, Destination string }
 	}
-	if json.Unmarshal(inspect, &state) != nil || len(state) != 1 || state[0].State.ExitCode != 0 || state[0].Config.User != "10001:10001" {
+	if json.Unmarshal(inspect, &state) != nil || len(state) != 1 || state[0].State.ExitCode != 0 || state[0].Config.User != "10001:10001" || !state[0].HostConfig.ReadonlyRootfs {
 		t.Fatal("container was root or did not stop normally")
 	}
+	persistent := false
+	for _, mount := range state[0].Mounts { persistent = persistent || mount.Name == volume && mount.Destination == "/data" }
+	if !persistent { t.Fatal("actual container did not use its named persistent data volume") }
 	docker("rm", app)
 	initialize()
 	start()
@@ -312,6 +334,15 @@ func TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery(t *testing.T) {
 	docker("exec", app, "modelatlas-vps", "backup", "fetch", "--env-file", "/data/state/config/modelatlas.env", "--destination-file", "/data/state/config/backup.json", "--id", backupID, "--output", "/data/recovered")
 	docker("stop", "--time", "30", app)
 	docker("rm", app)
+	// A user can also build from a verified downloaded binary bundle without
+	// installing Go. Exercise that runtime on the same persistent volume.
+	packages := filepath.Join(t.TempDir(), "packages")
+	if raw, e := exec.CommandContext(ctx,"sh","deploy/package.sh",packages).CombinedOutput(); e != nil { t.Fatalf("portable binary bundle failed: %v %s",e,raw) }
+	bundle := filepath.Join(packages,"modelatlas-vps-linux-"+runtime.GOARCH)
+	docker("build","--file",filepath.Join(bundle,"deploy/Dockerfile"),"--build-arg","SOURCE_COMMIT="+strings.TrimSpace(string(revision)),"--tag",bundleImage,bundle)
+	image = bundleImage
+	var packaged binaryVersion
+	if json.Unmarshal(cli("version"),&packaged)!=nil || packaged.Commit!=binary.Commit || packaged.Arch!=binary.Arch || packaged.Schema!=binary.Schema { t.Fatal("downloaded-bundle image changed source or architecture") }
 	cli("ops", "restore", "--env-file", "/data/state/config/modelatlas.env", "--snapshot", "/data/recovered/atlas.sqlite")
 	start()
 	if after := request("GET", "/api/v1/messages?session_id="+session.ID, nil, true, nil, 200); !bytes.Equal(before, after) {
@@ -326,7 +357,7 @@ func TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery(t *testing.T) {
 		t.Fatal("container log leaked secrets")
 	}
 	if output := os.Getenv("MODELATLAS_CONTAINER_REPORT"); output != "" {
-		report := map[string]any{"result": "PASS", "architecture": runtime.GOARCH, "source": strings.TrimSpace(string(revision)), "native": true, "nonroot": true, "read_only_root": true, "compose_recreation": true, "backend_not_published": true, "volume_recreation": true, "stable_identity": true, "vault": true, "https": true, "real_caddy": true, "sse_before_completion": true, "inference_calls": calls.Load(), "full_history": true, "actual_crypt_readback": true, "schedule_default_off": true, "image": json.RawMessage(docker("image", "inspect", image)), "proxy_image": json.RawMessage(docker("image", "inspect", "caddy:2-alpine"))}
+		report := map[string]any{"result": "PASS", "architecture": runtime.GOARCH, "source": strings.TrimSpace(string(revision)), "native": true, "nonroot": true, "read_only_root": true, "compose_recreation": true, "backend_not_published": true, "volume_recreation": true, "stable_identity": true, "vault": true, "https": true, "real_caddy": true, "sse_before_completion": true, "inference_calls": calls.Load(), "full_history": true, "actual_crypt_readback": true, "schedule_default_off": true, "bundle_container":true, "source_image":json.RawMessage(docker("image","inspect",sourceImage)), "image": json.RawMessage(docker("image", "inspect", image)), "proxy_image": json.RawMessage(docker("image", "inspect", "caddy:2-alpine"))}
 		data, e := json.MarshalIndent(report, "", "  ")
 		if e != nil || os.WriteFile(output, data, 0600) != nil {
 			t.Fatal("cannot preserve actual container receipt", e)

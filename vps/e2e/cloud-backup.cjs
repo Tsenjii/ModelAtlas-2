@@ -41,7 +41,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await page.route('**/api/v1/backup/cloud',route=>route.fulfill({status:503,contentType:'text/plain',body:'read failed after committed save'}));
   await page.locator('#cloud-backup-save').click();await page.locator('#notice').filter({hasText:'設定已保存，但讀取失敗'}).waitFor();
   assert.equal(policyPosts,1);assert(await page.locator('#cloud-backup-save').isDisabled());assert.equal(await page.locator('#cloud-backup-interval').inputValue(),'30');
-  await screenshot('cloud-backup-saved-read-failure-375-dark.png',375,'dark');
+  await screenshot('cloud-backup-saved-read-recovery-375-dark.png',375,'dark');
   await page.unroute('**/api/v1/backup/cloud');await page.locator('#cloud-backup-refresh').click();await page.waitForFunction(()=>cloudBackupState?.policy.revision===2&&!cloudBackupReading);
   await page.locator('#cloud-backup-enabled').uncheck();await page.locator('#cloud-backup-save').click();await page.waitForFunction(()=>cloudBackupState?.policy.revision===3&&!cloudBackupReading&&!cloudBackupWriting);
   let runPosts=0,lostID=null;
