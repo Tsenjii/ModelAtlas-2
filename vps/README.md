@@ -1,3 +1,7 @@
+要自行部署或交給 Muse／其他代理安裝，先讀 [部署、備份與還原說明](DEPLOY_AND_BACKUP.md)，並使用 [部署代理交接指令](MUSE_HANDOFF.md)。說明含固定候選來源、Linux／容器部署、HTTPS、雲端授權、加密備份、隔離還原、更新回退及完成清單；不需要先把Muse入口交給開發端。交接套件的程式固定為 `00b6a67ef112c86b750a588503de7b05bfa0bb12`，不是舊公開Release的新名稱。
+
+以下保留先前候選及驗收歷史；本輪自部署入口以上方說明為準。
+
 > 015O候選：未知公開JSON可從已保存樣本選取欄位、範圍與單位，無需手寫JSON；產生草稿後仍須真HTTP實測與明確確認，見[FIELD_MAPPING.md](FIELD_MAPPING.md)。015N已驗收，完整下一版與原生專用流程仍PARTIAL。
 
 > 015N候選：公開metadata擷取新增版本化合併讀取提案、三輪實際比較與明確試用／監測／持久Undo，詳[EXTRACTION_COMPARISON.md](EXTRACTION_COMPARISON.md)。新來源自己的九項與實際產物前未接受；Kilo出廠預設015M已驗，公開版本仍不變。
@@ -45,7 +49,7 @@
 ```sh
 cd vps
 go mod download
-go test -mod=readonly -race ./...
+python3 test_go.py
 go vet ./...
 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o modelatlas-vps .
 ```
