@@ -1,0 +1,34 @@
+name: Exact-source live factory Kilo diagnostic
+on:
+  push:
+    branches: [diagnostic/vps-factory-7053-20261030]
+permissions:
+  contents: read
+jobs:
+  live-factory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7053b1e76e0c15f808640375fec5c8ebf511cb1a
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - name: Two exact anonymous official requests, no user account or paid fallback
+        working-directory: vps
+        env:
+          MODELATLAS_LIVE_FACTORY_KILO: "1"
+        run: |
+          set -o pipefail
+          mkdir -p live-factory-results
+          git rev-parse HEAD > live-factory-results/source.txt
+          go mod download
+          go test -mod=readonly -race -json -run '^TestLiveFactoryKiloDefaultProfileAndConversation$' -count=1 -timeout=3m . | tee live-factory-results/result.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-live-factory-7053
+          path: vps/live-factory-results/
+          if-no-files-found: error
