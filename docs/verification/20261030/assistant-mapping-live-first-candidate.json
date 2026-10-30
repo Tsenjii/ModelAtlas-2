@@ -1,0 +1,40 @@
+{
+  "status": "REJECTED_LIVE_DIAGNOSTIC",
+  "slice": "ASSISTANT-MAPPING-017",
+  "product_source": "114a244c0912ce4a96a91373772a41924bc94d3f",
+  "product_tree": "f467e762d883315667c581fb3f9674146860b0f6",
+  "workflow_source": "0aa800befe86cdae05243653d1d247a27b9db088",
+  "workflow_tree": "f14dc8ffe1e436b716cdc3b56814b07e0170dc5b",
+  "run": 41015910932,
+  "job": 123932073374,
+  "reported_workflow_conclusion": "success",
+  "actual_go_result": "FAIL",
+  "test": "TestLiveAssistantMappingDiagnostic",
+  "case_seconds": 35.28,
+  "package_seconds": 35.298,
+  "official_http": 4,
+  "catalog_http": 2,
+  "inference_http": 2,
+  "synthetic_source_http": 1,
+  "agent_status": "SUCCESS",
+  "durable_draft": false,
+  "test_overlay_sha256": "7191a60eb4dad49863112382d4b1ea05a56992fd7d2953c507912a9be4e29234",
+  "artifact": {
+    "id": 12958973192,
+    "bytes": 1007,
+    "sha256": "2d0acac2b5b4a36dc9d3a0e3dbf294258babe078f709976743eb66bd00d91f3d",
+    "crc": "PASS"
+  },
+  "cause": "UNKNOWN：首輪未保存工具參數／結果，不能推定是資料、參數或模型判斷；持久草稿未建立，不能當成新能力已通過。",
+  "workflow_defect": "診斷的go test | tee使用預設shell，未開pipefail，tee成功遮住Go失敗。正式VPS普通suite／Browser為直接呼叫且另驗JSON，不以該診斷綠燈冒充通過。",
+  "next_diagnostic": {
+    "workflow_source": "0d5afe0e59133f011b6b338c72e4a1712d04a044",
+    "test_overlay_sha256": "00dd047534097145a4b0fbe0007053aa80ae9c029a7da095f37c040d23693519",
+    "changes": "只增加安全工具日誌、明確bash／pipefail；prompt、12次官方HTTP上限、6模型步、145秒context／3分鐘Go、相同成功斷言均不變；產品來源114a不改。"
+  },
+  "claim_correction": "曾先依workflow綠燈錯報外部實測通過，讀實際artifact後已立即更正並保留失敗；不以後續重跑結果改寫此次歷史。",
+  "limits": [
+    "僅合成公開來源與真正匿名官方模型；無使用者資料、私人帳戶或付費fallback。",
+    "本反例及工具日誌未完成前不宣稱017整體接受；完整產品與目標部署仍PARTIAL。"
+  ]
+}

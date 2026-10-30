@@ -77,7 +77,7 @@ func assistantMappingFlowFixture(t *testing.T) (*Server, Selection, *atomic.Int3
 				http.Error(w, "missing sample", 500)
 				return
 			}
-			assistantReply(w, "", functionCall("read-public-fields", "read_connector_mapping_sample", map[string]any{"sample_id": report.Sources[0].MappingSampleID, "selection": selection, "root_pointer": "/tariffs", "model_path": "/handle"}))
+			assistantReply(w, "", functionCall("read-public-fields", "read_connector_mapping_sample", map[string]any{"sample_id": report.Sources[0].MappingSampleID, "selection": selection}))
 		case 3:
 			var result struct {
 				Sample mappingView `json:"sample"`
