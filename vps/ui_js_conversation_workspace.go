@@ -11,7 +11,7 @@ function conversationUpdatedLabel(session){const at=session.updated_at||session.
 function conversationCard(parent,session){
  const provider=providers.find(p=>p.id===session.provider_id),model=modelDisplayName(session),row=item(parent,session.title,(provider?.name||session.provider_id)+" · "+model+"\n"+connectionLabel(session)+" · "+session.endpoint,()=>conversationDetail(session));
  row.dataset.sessionId=session.id;row.classList.add("conversation-card");
- if(session.pinned){const star=icon("star");star.setAttribute("aria-label","已置頂");star.setAttribute("role","img");row.querySelector("strong").prepend(star);}
+ if(session.pinned){const star=icon("star");star.removeAttribute("aria-hidden");star.setAttribute("aria-label","已置頂");star.setAttribute("role","img");row.querySelector("strong").prepend(star);}
  const preview=el("p",session.preview||"尚無訊息","conversation-card-preview"),meta=el("span",undefined,"conversation-card-meta");
  meta.append(el("span",session.message_count+" 則訊息"));const date=conversationUpdatedLabel(session);if(date){const time=el("time",date);time.dateTime=new Date(session.updated_at||session.created_at).toISOString();time.title="更新於 "+new Date(session.updated_at||session.created_at).toLocaleString("zh-TW");meta.append(time);}row.append(preview,meta);return row;
 }
@@ -40,7 +40,7 @@ async function conversationLibrary(){
  const search=()=>{invalidate();if(!composing)timer=setTimeout(()=>load(),250);};
  q.addEventListener("input",search);q.addEventListener("compositionstart",()=>{composing=true;invalidate();});q.addEventListener("compositionend",()=>{composing=false;search();});q.addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.isComposing&&!composing){event.preventDefault();invalidate();load();}});
  for(const input of [state,only])input.addEventListener("change",()=>{invalidate();load();});more.addEventListener("click",()=>load(true));clear.addEventListener("click",()=>{q.value="";invalidate();load();q.focus();});
- const cleanup=()=>{invalidate();$("detail").removeEventListener("close",closed);},closed=()=>{if(conversationLibraryCleanup===cleanup)stopConversationLibrary();};conversationLibraryCleanup=cleanup;$("detail").addEventListener("close",closed,{once:true});await load();if(detailCurrent(ticket))q.focus();
+ const cleanup=()=>{invalidate();$("detail").removeEventListener("close",closed);},closed=()=>{if(conversationLibraryCleanup===cleanup)stopConversationLibrary();};conversationLibraryCleanup=cleanup;$("detail").addEventListener("close",closed,{once:true});q.focus();await load();
 }
 function notifyConversationChange(id,event={}){if(conversationEditor?.session.id===id&&detailCurrent(conversationEditor.ticket))conversationEditor.paint(event);}
 async function updateConversation(editor,patch){

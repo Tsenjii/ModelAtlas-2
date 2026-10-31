@@ -9,7 +9,7 @@ exports.exercise=async(page,origin,session)=>{
  const shot=async name=>{
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'page horizontal overflow: '+name);
   assert(await page.locator('#detail').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'dialog horizontal overflow: '+name);
-  const targets=await page.locator('#detail button:not([hidden]),#detail input,#detail select').evaluateAll(ns=>ns.filter(n=>n.checkVisibility()).map(n=>({h:n.getBoundingClientRect().height,text:n.textContent||n.getAttribute('aria-label')})));
+  const targets=await page.locator('#detail button:not([hidden]),#detail input,#detail select').evaluateAll(ns=>ns.filter(n=>n.checkVisibility()).map(n=>{const target=n.type==='checkbox'&&n.labels?.[0]?n.labels[0]:n;return {h:target.getBoundingClientRect().height,text:target.textContent||target.getAttribute('aria-label')};}));
   assert(targets.every(t=>t.h>=47.5),'small conversation touch control: '+JSON.stringify(targets));
   await page.screenshot({path:'e2e/screenshots/conversation-workspace-'+name+'.png',fullPage:true,animations:'disabled'});
  };
@@ -40,15 +40,28 @@ exports.exercise=async(page,origin,session)=>{
  assert.equal(new Set(await rows.evaluateAll(ns=>ns.map(n=>n.dataset.sessionId))).size,52,'pagination duplicated or lost conversation identities');
  assert(await page.getByRole('button',{name:'顯示更多對話',exact:true}).isHidden());
  assert.equal(await page.locator('.conversation-list img,.conversation-list script').count(),0);
+ const only=page.getByLabel('僅目前模型',{exact:true}),onlyLabel=only.locator('..'),labelBox=await onlyLabel.boundingBox();
+ assert(labelBox&&labelBox.height>=48);
+ await onlyLabel.click({position:{x:labelBox.width-8,y:labelBox.height-4}});assert(await only.isChecked(),'the label outside the 20px checkbox was not a real touch target');
+ await page.waitForFunction(()=>document.querySelector('.conversation-list').getAttribute('aria-busy')==='false');
+ await onlyLabel.click({position:{x:labelBox.width-8,y:labelBox.height-4}});assert(!(await only.isChecked()));
+ await page.waitForFunction(()=>document.querySelector('.conversation-list').getAttribute('aria-busy')==='false');
  for(const [width,scheme,name]of [[1280,'light','1280-light'],[375,'light','375-light'],[375,'dark','375-dark']]){
   await page.setViewportSize({width,height:900});await page.emulateMedia({colorScheme:scheme});await shot(name);
  }
  await page.setViewportSize({width:320,height:900});await page.evaluate(()=>document.documentElement.style.fontSize='200%');
  await shot('320-large-dark');
- await page.evaluate(()=>{document.documentElement.dataset.interface='aqua';document.documentElement.dataset.wallpaper='elaina-chibi';});
+ await page.locator('#detail-close').click();await page.locator('#settings-toggle').click();await page.locator('#settings-general-tab').click();
+ await page.locator('#appearance-interface').selectOption('aqua');await page.locator('#appearance-wallpaper').selectOption('elaina-chibi');
+ await page.locator('#appearance-wallpaper-preview').evaluate(n=>n.decode());
+ await page.waitForFunction(()=>document.documentElement.dataset.interface==='aqua'&&getComputedStyle(document.body,'::before').backgroundImage.includes('aqua-elaina-chibi-v1.webp'));
+ await page.locator('.bottom-nav').getByRole('button',{name:'Playground',exact:true}).click();
+ await page.locator('#conversation-library').click();await search.fill('分頁對話');await count(50);
  await shot('320-large-aqua');
- await page.evaluate(()=>{document.documentElement.style.fontSize='100%';delete document.documentElement.dataset.interface;delete document.documentElement.dataset.wallpaper;});
- await page.setViewportSize({width:375,height:812});await search.fill('畫表格');await count(1);await rows.first().click();
+ await page.evaluate(()=>document.documentElement.style.fontSize='100%');await page.setViewportSize({width:375,height:812});
+ await page.locator('#detail-close').click();await page.locator('#settings-toggle').click();await page.locator('#settings-general-tab').click();await page.locator('#appearance-interface').selectOption('classic');
+ await page.locator('.bottom-nav').getByRole('button',{name:'Playground',exact:true}).click();
+ await page.locator('#conversation-library').click();await search.fill('畫表格');await count(1);await rows.first().click();
  const title=page.getByLabel('對話名稱',{exact:true}),save=page.getByRole('button',{name:'儲存名稱',exact:true});
  let initial=await state();await title.fill('已提交的名稱');await control('delay-write');await control('fail-refresh');await save.click();
  await waitForAsync(page,async()=>(await(await fetch('/__conversation-fixture/state')).json()).write_held);
@@ -75,7 +88,16 @@ exports.exercise=async(page,origin,session)=>{
  await page.waitForFunction(()=>!document.querySelector('.conversation-title-form').hasAttribute('aria-busy'));
  assert.equal((await state()).updates,initial.updates+1,'lost acknowledgement caused an automatic mutation replay');
  assert.equal(await title.inputValue(),'回應遺失但已保存');
- initial=await state();const changed=await page.request.post(origin+'/api/v1/sessions/update',{data:{session_id:session,revision:initial.revision,title:'另一個分頁的名稱'}});assert(changed.ok());
+ initial=await state();
+ const other=await page.context().newPage(),otherErrors=[],otherExternal=[];
+ other.on('pageerror',e=>otherErrors.push(e.message));other.on('request',r=>{if(!r.url().startsWith(origin))otherExternal.push(r.url());});
+ try{
+  await other.goto(origin);await other.waitForFunction(id=>document.querySelector('#session').value===id,session);
+  await other.locator('#conversation-manage').click();await other.getByLabel('對話名稱',{exact:true}).fill('另一個分頁的名稱');
+  await other.getByRole('button',{name:'儲存名稱',exact:true}).click();
+  await other.waitForFunction(()=>document.querySelector('#detail-title').textContent==='另一個分頁的名稱'&&!document.querySelector('.conversation-title-form').hasAttribute('aria-busy'));
+ }finally{await other.close();}
+ assert.deepEqual(otherErrors,[]);assert.deepEqual(otherExternal,[]);
  await title.fill('保留衝突後的草稿');await save.click();await page.getByRole('button',{name:'讀取保存狀態',exact:true}).waitFor();
  await page.getByRole('button',{name:'讀取保存狀態',exact:true}).click();
  await page.waitForFunction(()=>!document.querySelector('.conversation-title-form').hasAttribute('aria-busy'));
