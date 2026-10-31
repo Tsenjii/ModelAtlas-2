@@ -1,3 +1,13 @@
+## 2026-10-31 通用試部署與完整測試失敗可追蹤性（VPS-VALIDATION-018）
+
+| 範圍 | 正式入口／實作 | 驗證與限制 |
+| --- | --- | --- |
+| 共用完整Go驗證 | `vps/test_go.py` 保留部分報告、逐例耗時、未完成案例及明確FAIL；owned session清理與pipe排空；`.github/workflows/vps.yml` 另存失敗報告 | 修後來源 `d4619db279799e531939e3a81fb9f8bb8dfa2d07`：本機416.992秒、CI597.690秒；原469入口／697結果逐項不變、兩組／race／600秒不改。13項真OS程序回歸、故意慢啟動診斷、64發布檢查與vet通過；歷史完整逾時根因仍UNKNOWN。 |
+| 通用安裝與試跑說明 | `vps/DEPLOY_AND_BACKUP.md`、`vps/DEPLOYMENT_TRIAL.md`；Muse是其中一個試跑工具，專案持續開發 | 部署認證／HTTPS／SSE／持久資料驗收與要求備份後的額外驗收分開；未要求備份保持OFF。兩架構原00b6安裝套件與CLI命令不改，18段shell語法與連結／套件雜湊已檢查。 |
+| 同源跨平台守門 | VPS41181229448六必要項、Android41181229443兩項、Mac41181229388三項及稽核41181229360 | 十一項SUCCESS；46Browser／572圖、Android1005零fail／5原skip、兩Mac各89核心／117圖與原負載保持。原始稽核和精確證據見 [runner-lifecycle-baseline.json](verification/20261031/runner-lifecycle-baseline.json)。工程範圍已驗，完整產品／Part V、視覺與獨立review／實際目標仍PARTIAL；未merge／發布。 |
+
+以下保留歷史候選、拒絕及先前逐項需求，不以新紀錄抹除原失敗或待驗範圍。
+
 > 2026-10-30 ASSISTANT-MAPPING-017所列功能已完成同源CI與自行檢視，獨立review／實際目標驗收仍待完成，未主張整版ACCEPTED。正式程式來源00b6a67ef112c86b750a588503de7b05bfa0bb12／treed9b103a271f9ba5a07212dcbdc99f81ac4364113；VPS41042996530六必要項、Android41042996587兩項、Mac41042996502三項全SUCCESS，額外診斷不混入十一必要項。稽核41042996354／124020109869成功；十一真ZIP另驗bytes／SHA256／CRC。稽核12972107225為2607346bytes／SHA256 946802299b7d1009962b8305203f07e4ad397e84eccda113663f2d1f5f202dac／CRC PASS。140視圖以36張分組接觸表自行檢視，另看8張原尺寸圖；與audit35表的140來源圖集合完全一致，無第二位獨立reviewer。詳細verification/20261030/assistant-mapping-baseline.json。
 >
 > 公開唯一完整模型列描述、可引用scope／unit位置、typed row {path}與原字串同一request／hash、完整結果上限、依kind精簡提案grammar及空白length未完成狀態已接正式caller。沿共用fixture／真來源實測／使用者明確確認／Intelligence／持久Undo，私人樣本留本機、不自動啟用或猜free／identity。469Go入口／697結果（639pass＋58明確opt-in skip），CI598.426秒／原600秒；原690及683結果逐項相同。46Browser256.883秒／原300秒與572PNG、Android594＋423／1005零fail／5原skip、兩Mac各89核心／117PNG保持；服務PID peak207990784bytes（不含OS／Caddy／rclone／Browser）與全部原負載／512MiB保留。
