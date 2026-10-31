@@ -12,6 +12,14 @@ import test_go
 from test_go import partition, verify
 
 
+def fixture_process_stopped(pid):
+    try:
+        return Path(f"/proc/{pid}/stat").read_text().split()[2] == "Z"
+    except (FileNotFoundError, ProcessLookupError):
+        # The kernel may reap a process while its procfs file is being read.
+        return True
+
+
 class CompleteGoRegistryTest(unittest.TestCase):
     def report(self, selected, completed=None, returncode=0):
         return {"selected": selected, "started": selected[:], "completed": completed if completed is not None else {case: "pass" for case in selected}, "errors": [], "returncode": returncode}
@@ -45,17 +53,33 @@ class CompleteGoRegistryTest(unittest.TestCase):
 
 
 class GoProcessLifecycleTest(unittest.IsolatedAsyncioTestCase):
-    async def run_fixture(self, script, groups, deadline=5):
+    async def run_fixture(self, script, groups, deadline=5, start_after_spawn=False):
         # Only the runner's subprocess boundary is redirected. These are real
         # OS sessions, pipes and signals, not simulated process handles.
         create_process = asyncio.create_subprocess_exec
+        wait_for = asyncio.wait_for
+        ready = asyncio.Event()
+        spawned = []
 
         async def spawn(*args, **kwargs):
-            return await create_process(sys.executable, "-u", "-c", script, **kwargs)
+            process = await create_process(sys.executable, "-u", "-c", script, **kwargs)
+            spawned.append(process)
+            if len(spawned) == len(groups):
+                ready.set()
+            return process
+
+        async def fixture_wait_for(awaitable, timeout):
+            if start_after_spawn and timeout == deadline:
+                # This particular fixture tests cleanup of two running groups,
+                # not whether a loaded host can launch them within 0.5s. The
+                # real suite still starts its 600s clock before child launch.
+                await wait_for(ready.wait(), 5)
+            return await wait_for(awaitable, timeout)
 
         raw = io.BytesIO()
         output = io.TextIOWrapper(raw, encoding="utf-8")
         with patch.object(test_go.asyncio, "create_subprocess_exec", side_effect=spawn), \
+                patch.object(test_go.asyncio, "wait_for", side_effect=fixture_wait_for), \
                 patch.object(test_go, "LIMIT_SECONDS", deadline), \
                 patch.object(test_go.sys, "stdout", output):
             reports, failure = await test_go.execute("fixture", Path("unused"), groups)
@@ -107,18 +131,18 @@ for action,case in [('run','TestFinished'),('pass','TestFinished'),('run','TestR
             with self.assertRaises(ValueError):
                 verify(["TestFinished", "TestRunning", "TestQueued"], reports)
             pid = int(child_pid.read_text())
-            stat = Path(f"/proc/{pid}/stat")
             # An exited orphan can briefly remain a zombie until PID 1 reaps
             # it; it must never remain an executing or sleeping process.
             for _ in range(100):
-                if not stat.exists() or stat.read_text().split()[2] == "Z":
+                if fixture_process_stopped(pid):
                     break
                 await asyncio.sleep(0.01)
-            self.assertTrue(not stat.exists() or stat.read_text().split()[2] == "Z")
+            self.assertTrue(fixture_process_stopped(pid))
 
     async def test_suite_timeout_cleans_both_real_process_groups(self):
         script = "import time;time.sleep(60)"
-        reports, failure, _ = await self.run_fixture(script, [["TestOne"], ["TestTwo"]], deadline=0.5)
+        reports, failure, _ = await self.run_fixture(
+            script, [["TestOne"], ["TestTwo"]], deadline=0.5, start_after_spawn=True)
         self.assertEqual(failure, "TIMEOUT")
         for report in reports:
             self.assertEqual(report["returncode"], -15)
@@ -142,12 +166,12 @@ for action in ('run','pass'):
             reports, failure, _ = await self.run_fixture(script, [["TestFixture"]])
             self.assertIsNone(failure)
             verify(["TestFixture"], reports)
-            stat = Path(f"/proc/{int(child_pid.read_text())}/stat")
+            pid = int(child_pid.read_text())
             for _ in range(100):
-                if not stat.exists() or stat.read_text().split()[2] == "Z":
+                if fixture_process_stopped(pid):
                     break
                 await asyncio.sleep(0.01)
-            self.assertTrue(not stat.exists() or stat.read_text().split()[2] == "Z")
+            self.assertTrue(fixture_process_stopped(pid))
 
     async def test_nonzero_exit_and_invalid_json_cannot_become_pass(self):
         for script in ["print('not JSON')", "import sys;sys.exit(7)"]:
@@ -172,6 +196,13 @@ for action in ('run','pass'):
 
 
 class FailedSuiteReportTest(unittest.TestCase):
+    def test_fixture_accepts_a_process_reaped_during_procfs_read_and_rejects_a_live_one(self):
+        for error in (ProcessLookupError(), FileNotFoundError()):
+            with patch.object(Path, "read_text", side_effect=error):
+                self.assertTrue(fixture_process_stopped(123))
+        with patch.object(Path, "read_text", return_value="123 (fixture) S"):
+            self.assertFalse(fixture_process_stopped(123))
+
     def test_main_writes_failed_report_and_raises_instead_of_reusing_stale_pass(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

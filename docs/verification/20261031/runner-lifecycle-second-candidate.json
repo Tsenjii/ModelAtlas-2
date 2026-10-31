@@ -1,0 +1,31 @@
+{
+  "status": "CANDIDATE",
+  "slice": "VPS-VALIDATION-018",
+  "previous_source": "c5f0171e61e71d42be5fc84ac33e4930a0acc0d0",
+  "previous_rejected_evidence": "runner-lifecycle-candidate.json",
+  "runtime_go_diff_from_00b6": false,
+  "runner_code_diff_from_first_candidate": false,
+  "regressions": {
+    "result": "PASS",
+    "cases": 13,
+    "seconds": 4.64,
+    "command": "python3 -W error::ResourceWarning -m unittest -v test_go_runner_test.py",
+    "original_cases_preserved": 12,
+    "added_case": "procfs已回收的兩種例外被識別；真正存活的程序仍判未清理。",
+    "setup_change": "只在雙運行程序清理fixture，以ready Event確認兩個真OS session已建立後開始0.5秒診斷；正式execute的原600秒不加barrier，仍包含程序建立。",
+    "assertions": [
+      "兩個程序必須returncode=-15",
+      "兩個PID必須不存在",
+      "逾時後代持pipe仍被清理",
+      "正常完成後的後代也不能繼續運行",
+      "完整registry與非零退出／JSON錯誤等原拒絕全保留"
+    ]
+  },
+  "full_suite": "PENDING",
+  "same_source_ci": "PENDING",
+  "limits": [
+    "本機首候選的完整Go仍在執行，只能記為該來源結果，不借作新來源驗收。",
+    "歷史完整600秒逾時的精確原因仍UNKNOWN，CPU採樣不能單獨定因。",
+    "完整產品／獨立review與實際目標部署仍未全部驗收。"
+  ]
+}

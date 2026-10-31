@@ -1,5 +1,5 @@
 {
-  "status": "CANDIDATE",
+  "status": "REJECTED_CI",
   "slice": "VPS-VALIDATION-018",
   "runtime_source": "00b6a67ef112c86b750a588503de7b05bfa0bb12",
   "invariants": {
@@ -97,5 +97,20 @@
     "歷史完整本機600秒逾時仍保留，原因UNKNOWN；本片不聲稱測試速度或runtime缺陷已修復。",
     "完整產品／獨立review與實際目標部署仍未全部驗收。",
     "未移交專案，未merge或發布新公開Release。"
-  ]
+  ],
+  "source": "c5f0171e61e71d42be5fc84ac33e4930a0acc0d0",
+  "ci_rejection": {
+    "run": 41180692294,
+    "job": 124477320957,
+    "step": "Unit and HTTP integration tests",
+    "python_tests": 12,
+    "errors": 1,
+    "failures": 1,
+    "complete_go_started": false,
+    "causes": [
+      "procfs存在檢查後程序已被回收，read_text拋出ProcessLookupError",
+      "雙程序fixture的短0.5秒期限可能先於第二個程序建立；returncode None不是兩個運行中程序清理的有效setup"
+    ],
+    "fix": "單次讀取處理回收競態；清理fixture加明確建立barrier，原正式600秒及清理斷言不變。"
+  }
 }

@@ -1,3 +1,5 @@
+> 2026-10-31 VPS-VALIDATION-018 首候選 c5f0171 的 CI 單元驗證拒絕：VPS41180692294／job124477320957 在新 Python 測試中有 1 error＋1 fail，正式完整 Go 尚未啟動。procfs 檔在存在性檢查與讀取之間已被回收，以及短 fixture 期限在兩個 OS 程序都建立前到期；不是產品 Go 案例失敗，也不能借其他 job 的成功接受。現以單次 procfs 讀取處理已回收程序，雙程序清理 fixture 在明確建立訊號後才開始其短診斷期限；保留兩組的 -15／PID 不存在斷言及全部原案例，追加回收／存活狀態反例至 13 項，本機4.640秒 PASS。正式 runner 的600秒仍在子程序建立前起算，原Go負載／分組／race／上限完全不改；修後來源自己的 CI／完整回歸待驗。詳 verification/20261031/runner-lifecycle-second-candidate.json，首候選與原歷史失敗保留。
+
 > 2026-10-31（台北）VPS-VALIDATION-018 為目前唯一接續片：沿原 469 個 Go 入口、兩個固定隔離程序與共用 600 秒，修正測試逾時後進度報告遺失及已退出 leader 留下子程序／輸出管線的清理。成功仍須完整 registry、原 race、原結果逐項一致及原期限內完成；失敗報告保持 FAIL 與非零退出碼，CI另存失敗進度，不借部分案例稱全過。實際 OS 程序／pipe／signal 回歸與舊版反例已驗，完整本機及本來源 CI 尚待完成，不聲稱原完整逾時根因修復。正式 Go runtime／schema／資料／原測試不變，Mac015Z暫停工作保留，公開 Release／tag／11附件仍凍結、PR20 Draft，不 merge／發布。
 >
 > 使用者明確更正 Muse 僅「試部署看看」，不是接手專案；通用產品仍繼續開發。依 D-023，部署工具範例改名 vps/DEPLOYMENT_TRIAL.md，先驗啟動、認證、HTTPS／SSE與持久資料；未要求或未指定目的地的備份維持 OFF、明列未做，不阻擋試部署。完整備份／回讀／還原說明保留，現有安裝包程式來源仍固定已驗 00b6。main 本輪重新讀取為 cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 build119016886469／device119016884592 均 SUCCESS，FEATURE FREEZE=OFF。
