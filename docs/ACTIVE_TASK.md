@@ -1,3 +1,13 @@
+> 2026-10-31 VPS-CONVERSATIONS-019 所列對話介面與恢復功能已完成工程驗證，完整產品／Part V及獨立review仍PARTIAL。正式來源8152615b32c9b0210aebe2d1f4903d311d6016cf／tree9f5f46add8b30303b3fe63275629b90fae77b5f2；VPS41187695485六必要項、Android41187695541兩項、Mac41187695639三項同來源全SUCCESS。稽核41187695453／124498116264成功核對十一真產物；另下載稽核13038081869，2728546bytes／SHA256 5410bcb90b305107be08a40a3ad361ec2bea45b8632830aed39f7d7574dd8d47／CRC PASS，原始報告保持未改。詳 verification/20261031/conversation-workspace-baseline.json 及 conversation-workspace-audit.json。
+>
+> 對話清單現在保留最後成功結果、取消過期搜尋、IME／Enter／清除、50列分頁與局部GET重試；卡片顯示置頂、精確連線、兩行名稱／預覽、訊息數與實際更新時間。改名／置頂／封存採每ID單一提交、保留後輸入名稱草稿及關閉重開；已保存但讀取失敗與結果未知分開，先精確ID／state=ALL讀取，不自動重播POST。原完整歷史、107則匯出、Markdown／剪貼簿、精確可用範圍及composer草稿保持，DB schema38與權限不改。320px／200%、深淺色、真Aqua及原四張背景／48px點擊已驗；148視圖／37接觸表自行檢視，受影響9張另看原圖，未冒稱獨立review。
+>
+> 本機乾淨來源完整Go429.833秒、CI469.821秒／原600秒；原469入口／697結果（639pass＋58明確opt-in skip）逐項相同，固定兩組／race／全部fixtures、斷言及負載保持。46Browser204.548秒／原300秒、580PNG＝572原圖＋8新圖；Android594＋423／1005零fail／5原skip、兩Mac各89核心／117圖保持。服務PID peak185593856bytes，不含OS／Caddy／rclone／Browser，不將較低觀測值當效能改善結論。
+>
+> 原版503清空清單已重現；兩次新增測試操作錯誤及7ace完整CI攔阻皆保留。runner雙重取消競態以兩個真OS程序、一個TERM延遲0.2秒重現（舊版0.511秒None≠−15）；改唯一取消者並等全部清理，14項本機5.368秒／CI5.489秒通過，故意慢啟動與65發布檢查／vet通過。原600秒不改，歷史完整Go效能逾時原因仍UNKNOWN，不以本輪成功抹除。完整反例見本片四份verification紀錄。
+>
+> main本輪稽核仍cba901d／39536090788 build119016886469＋device119016884592 SUCCESS，FEATURE FREEZE=OFF。通用部署不依Muse分叉；Muse只試部署，未要求備份保持OFF。先前固定00b6自部署ZIP及其試跑說明不改bytes／來源，本片新介面在PR及815同源CI候選包；沒有冒稱已更新舊ZIP或已部署個人網址。公開v0.8.5-preview.1／tag／11附件凍結，PR20 Draft、不merge／發布，Mac015Z暫停修改保留；下一步仍依原VPS全功能需求及實際剩餘缺口接續。
+
 > 2026-10-31 使用者要求繼續優化介面及功能，本片VPS-CONVERSATIONS-019：沿現有原生dialog與中性色／Aqua，改善對話紀錄搜尋、分頁及管理。保留最後成功清單、加入局部讀取／錯誤／唯讀重試、清楚的對話卡片與時間／精確連線；改名／置頂／封存採每對話單一提交、已提交與讀取失敗分開、不確定結果先GET核對且不自動重送，名稱草稿保留。沿原session API與CAS／完整歷史，不改DB schema或權限；其餘平台只做同源回歸，Mac015Z暫停修改保留。先以真HTTP／Chromium重現、原完整核心／46Browser與新增情境、同來源十一項CI／產物及相關實圖完成後才驗工程範圍；原全部負載／600秒Go與300秒Browser上限不變，公開Release凍結、PR20 Draft、不merge／發布，整版與獨立review仍PARTIAL。main本輪重查仍cba901d／39536090788 build119016886469／device119016884592 SUCCESS，FEATURE FREEZE=OFF。
 
 > 2026-10-31（台北）VPS-VALIDATION-018 所列 runner／通用試部署文件範圍已完成工程驗證，完整產品與獨立review仍PARTIAL。正式程式／驗證來源 d4619db279799e531939e3a81fb9f8bb8dfa2d07／tree97e172182a97ea3bc7c9d1d407ad3b78336a822b；VPS41181229448六必要項、Android41181229443兩項、Mac41181229388三項全SUCCESS，額外mapping診斷另計。稽核41181229360／124478859587成功，實際核對十一產物；另下載稽核13034978449，2609975bytes／SHA256 ab38f00aa9d6b77932f8e26878c5220dce6e8e61a9b7f4d6f2d480ad1c826104／CRC PASS，及footprint13035292484核對完整suite。詳細 verification/20261031/runner-lifecycle-baseline.json 與原始 runner-lifecycle-audit.json。

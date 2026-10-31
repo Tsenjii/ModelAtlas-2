@@ -1,3 +1,19 @@
+## 2026-10-31 對話紀錄、草稿與不確定寫入恢復（VPS-CONVERSATIONS-019）
+
+本片來源 `8152615b32c9b0210aebe2d1f4903d311d6016cf`，所列工程範圍已驗，完整同源十一項、產物稽核與148相關視圖自行檢查完成；完整產品／獨立review仍PARTIAL。
+
+| 需求 | 正式入口／實作 | 驗證與限制 |
+| --- | --- | --- |
+| 搜尋與讀取失敗保留 | `vps/ui_js_conversation_workspace.go` 的 `conversationLibrary`；AbortController／版本、最後成功清單、IME／Enter、清除、50列分頁及原offset唯讀重試 | 原UI503後清空清單已重現；真HTTP較舊讀取取消、50加2分頁失敗保留及去重已驗。成功回應沿正式Handler／SQLite。 |
+| 可掃讀的對話卡片 | `conversationCard`／`conversationWorkspaceCSS`；名稱與置頂、完整精確連線、兩行名稱／預覽、訊息數與實際時間 | 320px／200%、375／1280、深淺色及真Aqua設定／原背景；原48px實際label外框點擊已驗。完整名稱、訊息與搜尋／匯出不截短。 |
+| 單次變更與後輸入草稿 | `updateConversation`／`conversationChanges`／`conversationNameDrafts`；每ID單一POST、穩定editor、後草稿與關閉重開保留 | 延遲真POST時重複submit不到正式端點；保存完成後保留較新草稿。只承諾當前頁面記憶體，不持久化草稿。 |
+| 已保存與不確定結果分開 | `recoverConversationChange`；已確認保存／讀取失敗與未確認結果各自回饋，精確ID且`state=ALL`的GET再refresh | 真Handler提交後遺失ACK、第二個真瀏覽器分頁CAS衝突、封存後回讀、使用者明確再保存皆已驗；不自動重播POST，原107則訊息及composer草稿保留。 |
+| 原歷史與精確可用範圍 | 原JSON／Markdown匯出、分頁預覽；「使用此對話」於呈現及點擊再次核對`pickerAvailable`精確key | 保留原105則舊訊息、一次真TLS Markdown、剪貼簿、107則完整匯出、封存／恢復及重載。無相同可選連線或封存時仍可檢視與匯出。 |
+| 完整驗證攔阻修正 | `vps/test_go.py` 以shield與唯一取消者避免中斷較慢兄弟程序清理；`test_go_runner_test.py` 真OS程序延遲TERM反例 | 舊runner新增反例0.511秒明確FAIL（None≠−15）；14項回歸及父程序ResourceWarning檢查PASS、故意慢啟動PASS。原469／697、race、兩組及600秒不變；歷史效能逾時原因仍UNKNOWN。 |
+| 同源驗證及可追蹤性 | [conversation-workspace-baseline.json](verification/20261031/conversation-workspace-baseline.json)；原版反例、兩次新測試操作錯誤與runner攔阻皆保留 | 本機完整Go429.833秒，697結果（639pass＋58原opt-in skip）與d461逐項相同；46Browser204.548秒／580PNG，原572圖保留另加8圖；CI完整Go469.821秒；同源十一項全SUCCESS，稽核41187695453核對十一真產物，148視圖／37接觸表已自行檢查，沒有第二位獨立reviewer。 |
+
+通用部署沿原契約；Muse只是試部署。公開版本／tag／11附件與PR20 Draft保留，不merge／發布；整版／Part V、實際使用者環境及獨立review仍PARTIAL，Mac015Z暫停工作保留。
+
 ## 2026-10-31 通用試部署與完整測試失敗可追蹤性（VPS-VALIDATION-018）
 
 | 範圍 | 正式入口／實作 | 驗證與限制 |

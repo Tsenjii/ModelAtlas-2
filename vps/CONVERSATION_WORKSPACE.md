@@ -21,8 +21,8 @@ Playground 的「對話紀錄」沿用原有對話、完整歷史、搜尋及匯
 
 ## 驗證範圍
 
-VPS-CONVERSATIONS-019 候選沿原 469 Go 入口、697 個結果、兩程序 race／600秒與46個完整 Browser 流程／300秒；新增情境接在原 Conversations 流程後，原 Markdown、剪貼簿、105則舊訊息、一次真TLS推論、107則完整JSON／Markdown匯出、封存／恢復及重載驗證全部保留。
+VPS-CONVERSATIONS-019 沿原 469 Go 入口、697 個結果、兩程序 race／600秒與46個完整 Browser 流程／300秒；新增情境接在原 Conversations 流程後，原 Markdown、剪貼簿、105則舊訊息、一次真TLS推論、107則完整JSON／Markdown匯出、封存／恢復及重載驗證全部保留。
 
 測試用真HTTP故障閘門注入503、過期讀取、延遲寫入及真正提交後遺失回應。成功讀取與每一筆寫入仍執行正式Handler／SQLite／CAS，回讀不替換為假成功JSON。檢查52筆分頁、最後成功資料、後輸入草稿、跨視窗版本衝突、封存後的精確ID回讀、無重複寫入、原作用域及完整訊息。原版的清單遺失已實際重現，見 `docs/verification/20261031/conversation-workspace-counterexample.json`。
 
-以真Chromium檢查375／1280、深淺色、320px／200%及Aqua，使用原48px控制與色彩tokens。四張指定背景與三主導航保留；Mac／Android專用原生介面未在本片更動。自己的完整同源十一項CI、實際產物及相關實圖驗收前仍為候選；未主張實體iPhone／Safari或獨立review通過。
+以真Chromium檢查375／1280、深淺色、320px／200%及Aqua，使用原48px控制與色彩tokens。四張指定背景與三主導航保留；Mac／Android專用原生介面未在本片更動。本片正式程式來源8152615b32c9b0210aebe2d1f4903d311d6016cf已通過同源十一項CI、十一實際產物核對、46 Browser／580圖與148相關視圖自行檢查；完整記錄見 `docs/verification/20261031/conversation-workspace-baseline.json`。完整產品／Part V、實際部署及獨立review仍PARTIAL，未主張實體iPhone／Safari通過；本次沒有改寫先前固定00b6來源的自部署ZIP或發布公開新版。
