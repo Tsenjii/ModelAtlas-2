@@ -1,3 +1,7 @@
+> 2026-10-31（台北）VPS-VALIDATION-018 為目前唯一接續片：沿原 469 個 Go 入口、兩個固定隔離程序與共用 600 秒，修正測試逾時後進度報告遺失及已退出 leader 留下子程序／輸出管線的清理。成功仍須完整 registry、原 race、原結果逐項一致及原期限內完成；失敗報告保持 FAIL 與非零退出碼，CI另存失敗進度，不借部分案例稱全過。實際 OS 程序／pipe／signal 回歸與舊版反例已驗，完整本機及本來源 CI 尚待完成，不聲稱原完整逾時根因修復。正式 Go runtime／schema／資料／原測試不變，Mac015Z暫停工作保留，公開 Release／tag／11附件仍凍結、PR20 Draft，不 merge／發布。
+>
+> 使用者明確更正 Muse 僅「試部署看看」，不是接手專案；通用產品仍繼續開發。依 D-023，部署工具範例改名 vps/DEPLOYMENT_TRIAL.md，先驗啟動、認證、HTTPS／SSE與持久資料；未要求或未指定目的地的備份維持 OFF、明列未做，不阻擋試部署。完整備份／回讀／還原說明保留，現有安裝包程式來源仍固定已驗 00b6。main 本輪重新讀取為 cba901d187aa5312cc71f5c2440b23fa04104aee，39536090788 build119016886469／device119016884592 均 SUCCESS，FEATURE FREEZE=OFF。
+
 > 2026-10-30 本輪使用者新指示D-022：先把備份、部署等寫成說明，交給Muse自行試。文件工作沿017交付收尾，新增vps/DEPLOY_AND_BACKUP.md與MUSE_HANDOFF.md、既有入口連結及可攜交接包；程式固定使用已驗00b6完整AMD64／ARM64套件，不改runtime／原測試／公開Release，不需要使用者先把Muse入口交給開發端。以原binary實際驗CLI初始化／ready、crypt上傳回讀、fetch、隔離restore及更新快照／preflight，結果在verification/20261030/self-deploy-guide.json；真雲端授權、對外HTTPS與常駐由部署者依清單驗收。本機完整回歸逾時與整版PARTIAL保留，不把文件交付冒充已部署。
 
 > 2026-10-30 ASSISTANT-MAPPING-017所列功能已完成同源CI與自行檢視，獨立review／實際目標驗收仍待完成，未主張整版ACCEPTED。正式程式來源00b6a67ef112c86b750a588503de7b05bfa0bb12／treed9b103a271f9ba5a07212dcbdc99f81ac4364113；VPS41042996530六必要項、Android41042996587兩項、Mac41042996502三項全SUCCESS，額外診斷不混入十一必要項。稽核41042996354／124020109869成功；十一真ZIP另驗bytes／SHA256／CRC。稽核12972107225為2607346bytes／SHA256 946802299b7d1009962b8305203f07e4ad397e84eccda113663f2d1f5f202dac／CRC PASS。140視圖以36張分組接觸表自行檢視，另看8張原尺寸圖；與audit35表的140來源圖集合完全一致，無第二位獨立reviewer。詳細verification/20261030/assistant-mapping-baseline.json。

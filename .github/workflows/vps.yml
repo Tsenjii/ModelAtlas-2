@@ -99,6 +99,13 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17887/api/v1/status)
           test "$code" = "401"
           curl -fsS -u "admin:example-admin-token-long-enough-for-ci" http://127.0.0.1:17887/api/v1/status
+      - name: Preserve failed Go suite progress
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: modelatlas-vps-go-failure
+          path: vps/test-results/go-suite.json
+          if-no-files-found: warn
   vps-linux:
     name: vps-linux-${{ matrix.arch }}
     runs-on: ubuntu-latest

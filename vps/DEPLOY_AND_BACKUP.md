@@ -6,7 +6,7 @@
 
 ## 1. 先拿對套件
 
-本次交接包使用已驗證的固定程式來源：
+本次安裝包使用已驗證的固定程式來源：
 
 ```text
 Repository: https://github.com/Tsenjii/ModelAtlas-2
@@ -15,9 +15,9 @@ Commit: 00b6a67ef112c86b750a588503de7b05bfa0bb12
 Linux 套件 Actions run: 41042996530
 ```
 
-**本文件及交接包是已測候選的自部署交付，不是新公開 Release。舊公開 `v0.8.5-preview.1` 沒有這批部署／備份命令，不能拿它替代。** 不直接下載會變動的 `main` 或用「latest」猜版本。後續改用新版本時，重新記錄來源與雜湊。
+**本文件及安裝包是已測候選的自部署交付，不是新公開 Release。舊公開 `v0.8.5-preview.1` 沒有這批部署／備份命令，不能拿它替代。** 不直接下載會變動的 `main` 或用「latest」猜版本。後續改用新版本時，重新記錄來源與雜湊。
 
-交接包內有本說明、`MUSE_HANDOFF.md`、兩種架構的原始完整套件、校驗檔及 `SOURCE.json`。兩個 tar.gz 保持原 CI bytes；說明放在它們外面。
+安裝包內有本說明、`DEPLOYMENT_TRIAL.md`、兩種架構的原始完整套件、校驗檔及 `SOURCE.json`。兩個 tar.gz 保持原 CI bytes；說明放在它們外面。
 
 | 主機結果 `uname -m` | 選用套件 |
 | --- | --- |
@@ -25,7 +25,7 @@ Linux 套件 Actions run: 41042996530
 | `aarch64`、`arm64` | `modelatlas-vps-linux-arm64.tar.gz` |
 | 其他架構、非 Linux | 先換成支援的 Linux 執行環境；不能直接執行這兩個 binary |
 
-解開交接 ZIP，進入它的根目錄。以下是 **Linux Bash** 範例，變數沿用同一個終端；換終端時重新設定實際絕對路徑。`atlas.example.com` 是範例，須換成真正能控制的 HTTPS 網址。首次解開到新的程式目錄；已有 `runtime` 時先核對既有部署，別重解覆寫正在執行的binary，更新改用另一個版本目錄。
+解開安裝 ZIP，進入它的根目錄。以下是 **Linux Bash** 範例，變數沿用同一個終端；換終端時重新設定實際絕對路徑。`atlas.example.com` 是範例，須換成真正能控制的 HTTPS 網址。首次解開到新的程式目錄；已有 `runtime` 時先核對既有部署，別重解覆寫正在執行的binary，更新改用另一個版本目錄。
 
 ```bash
 set -eu
@@ -55,14 +55,14 @@ ATLAS_BIN="$ATLAS_BUNDLE/bin/modelatlas-vps-linux-$ATLAS_ARCH"
 
 最後的 commit 必須與上方固定來源一致。不要把 ARM64 套件放進 AMD64 映像，或反過來。
 
-如果只拿到本文件，沒有交接 ZIP，可在已登入 GitHub CLI 的環境取得相同 Actions 套件；下載到新的空目錄：
+如果只拿到本文件，沒有安裝 ZIP，可在已登入 GitHub CLI 的環境取得相同 Actions 套件；下載到新的空目錄：
 
 ```bash
 gh run download 41042996530 --repo Tsenjii/ModelAtlas-2 \
   --name "modelatlas-vps-linux-$ATLAS_ARCH" --dir /absolute/empty/download-directory
 ```
 
-該 artifact 同時有 standalone binary、完整 tar.gz 及其 `.sha256`；部署應解開完整 tar.gz。先驗外層 `.sha256`，再驗包內 `SHA256SUMS.txt`、`bundle-check` 和 `version`。Actions 有保存期限；交接 ZIP 保存了套件，不依賴臨時下載網址。若必須重建，請從固定 commit checkout，以 Go 1.26.4／原 go.sum 執行 `vps/deploy/package.sh`，並保存新的建置雜湊；不要將重建檔冒充原 CI bytes。
+該 artifact 同時有 standalone binary、完整 tar.gz 及其 `.sha256`；部署應解開完整 tar.gz。先驗外層 `.sha256`，再驗包內 `SHA256SUMS.txt`、`bundle-check` 和 `version`。Actions 有保存期限；安裝 ZIP 保存了套件，不依賴臨時下載網址。若必須重建，請從固定 commit checkout，以 Go 1.26.4／原 go.sum 執行 `vps/deploy/package.sh`，並保存新的建置雜湊；不要將重建檔冒充原 CI bytes。
 
 ## 2. 由執行環境選路徑
 
@@ -129,7 +129,7 @@ HTTPS代理須保留真正Host、覆寫 `X-Forwarded-Proto: https`、移除不�
 | 專用rclone設定 | 本說明使用 `/data/state/config/rclone.conf` |
 | 備份暫存與本機工作帳本 | `/data/state/backups` |
 
-管理密碼只由使用者在私密終端／平台的安全檔案介面查看。代理的公開交接報告只列憑證保管位置，不貼完整env、token或key。不要在容器重建時重新生成master key。
+管理密碼只由使用者在私密終端／平台的安全檔案介面查看。代理的部署結果報告只列憑證保管位置，不貼完整env、token或key。不要在容器重建時重新生成master key。
 
 `atlas stop app`／重新啟動應保留資料。日常更新不要執行 `docker compose down --volumes`、刪volume或清除資料夾。
 
@@ -175,7 +175,7 @@ GOMEMLIMIT=192MiB "$ATLAS_BIN" portable run --directory "$ATLAS_STATE"
 2. 專用 `rclone.conf`，以及crypt原密碼／可選salt。
 3. 目的地 `backup.json`、雲端帳戶／資料夾、最近成功備份ID與SHA256。
 
-它們不放進本交接包、Git或同一份DB備份目錄。DB雲端版本不包含master key，也不包含原始附件或本機排程授權帳本；單有DB不能救回遺失的key。只在真正完成另存後使用下方 `--confirm-key-recovery`。
+它們不放進本安裝包、Git或同一份DB備份目錄。DB雲端版本不包含master key，也不包含原始附件或本機排程授權帳本；單有DB不能救回遺失的key。只在真正完成另存後使用下方 `--confirm-key-recovery`。
 
 ### 5.2 rclone設定（Google Drive範例，其他backend先實測）
 
@@ -350,7 +350,7 @@ restore會保留被替換的舊DB／WAL／SHM，不用刪資料來騰位置。�
 
 快照及preflight檔都使用新的名稱，不覆寫既有成功備份；不要重建key、刪volume、清歷史或拿不完整下載作回退。
 
-## 8. 部署完成的驗收與交接
+## 8. 部署完成的驗收與結果
 
 - 實際HTTPS網址可開啟，憑證有效；未登入看不到管理API，登入後能操作。
 - `version`、`ops ready`和設定→資料顯示正確commit／schema／vault狀態。

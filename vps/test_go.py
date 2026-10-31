@@ -47,9 +47,54 @@ def verify(registry, reports):
             raise ValueError("Go case failed")
 
 
-async def run_process(index, package, binary, selected):
+def new_report(index, selected):
+    return {"index": index, "selected": selected, "started": [], "completed": {},
+            "case_seconds": {}, "errors": [], "returncode": None,
+            "unfinished": sorted(selected), "running": []}
+
+
+async def read_events(process, report):
+    selected = set(report["selected"])
+    async for line in process.stdout:
+        # Preserve the real Go events, including all diagnostics and races.
+        sys.stdout.buffer.write(line)
+        sys.stdout.buffer.flush()
+        try:
+            event = json.loads(line)
+        except (ValueError, UnicodeDecodeError):
+            report["errors"].append("non-JSON Go tool diagnostic")
+            continue
+        case = event.get("Test", "")
+        if not case or "/" in case:
+            continue
+        if case not in selected:
+            report["errors"].append("unselected top-level case: " + case)
+        if event.get("Action") == "run":
+            report["started"].append(case)
+        if event.get("Action") in ("pass", "skip", "fail"):
+            if case in report["completed"]:
+                report["errors"].append("duplicate terminal event: " + case)
+            report["completed"][case] = event["Action"]
+            report["case_seconds"][case] = event.get("Elapsed")
+
+
+def signal_process_group(process, sig):
+    # start_new_session gives this exact child its own group. Its leader may
+    # already have exited while a descendant still owns the stdout pipe.
+    try:
+        if os.getpgid(process.pid) != process.pid:
+            raise RuntimeError("unexpected Go process group")
+    except ProcessLookupError:
+        pass
+    try:
+        os.killpg(process.pid, sig)
+    except ProcessLookupError:
+        pass
+
+
+async def run_process(index, package, binary, selected, report):
     pattern = "^(" + "|".join(re.escape(case) for case in selected) + ")$"
-    report = {"index": index, "selected": selected, "started": [], "completed": {}, "errors": [], "returncode": None}
+    started = time.monotonic()
     process = await asyncio.create_subprocess_exec(
         "go", "tool", "test2json", "-t", "-p", package, str(binary),
         "-test.v=test2json", "-test.run=" + pattern, "-test.count=1", "-test.timeout=10m",
@@ -57,50 +102,50 @@ async def run_process(index, package, binary, selected):
         start_new_session=True, limit=64 * 1024 * 1024,
     )
     report["pid"] = process.pid
-    started = time.monotonic()
+    reader = asyncio.create_task(read_events(process, report))
+    waiter = asyncio.create_task(process.wait())
+    drained = asyncio.gather(waiter, reader, return_exceptions=True)
     try:
-        async for line in process.stdout:
-            # Preserve the real Go events, including all diagnostics and races.
-            sys.stdout.buffer.write(line)
-            sys.stdout.buffer.flush()
-            try:
-                event = json.loads(line)
-            except (ValueError, UnicodeDecodeError):
-                report["errors"].append("non-JSON Go tool diagnostic")
-                continue
-            case = event.get("Test", "")
-            if not case or "/" in case:
-                continue
-            if case not in selected:
-                report["errors"].append("unselected top-level case: " + case)
-            if event.get("Action") == "run":
-                report["started"].append(case)
-            if event.get("Action") in ("pass", "skip", "fail"):
-                if case in report["completed"]:
-                    report["errors"].append("duplicate terminal event: " + case)
-                report["completed"][case] = event["Action"]
-        report["returncode"] = await process.wait()
-        return report
+        # Keep draining final Go diagnostics during suite cancellation instead
+        # of abandoning a live pipe when the event loop is about to close.
+        await asyncio.shield(reader)
+        await asyncio.shield(waiter)
     finally:
-        report["seconds"] = round(time.monotonic() - started, 3)
-        if process.returncode is None:
-            # The session belongs to this exact child. Stop its fixture engines
-            # too when the original suite-wide deadline is reached.
-            if os.getpgid(process.pid) != process.pid:
-                raise RuntimeError("unexpected Go process group")
-            os.killpg(process.pid, signal.SIGTERM)
+        if not drained.done():
+            signal_process_group(process, signal.SIGTERM)
             try:
-                await asyncio.wait_for(process.wait(), 3)
+                await asyncio.wait_for(asyncio.shield(drained), 3)
             except asyncio.TimeoutError:
-                os.killpg(process.pid, signal.SIGKILL)
-                await process.wait()
+                signal_process_group(process, signal.SIGKILL)
+                await drained
+        # No fixture in this owned session may outlive a finished test binary,
+        # including descendants which closed or redirected their stdout.
+        signal_process_group(process, signal.SIGKILL)
+        report["returncode"] = process.returncode
+        report["seconds"] = round(time.monotonic() - started, 3)
+        report["unfinished"] = sorted(set(selected) - report["completed"].keys())
+        report["running"] = sorted(set(report["started"]) - report["completed"].keys())
+    return report
 
 
 async def execute(package, binary, groups):
-    return await asyncio.wait_for(
-        asyncio.gather(*(run_process(index, package, binary, group) for index, group in enumerate(groups))),
-        timeout=LIMIT_SECONDS,
-    )
+    # Partial reports must survive cancellation and process startup failures.
+    reports = [new_report(index, group) for index, group in enumerate(groups)]
+    tasks = [asyncio.create_task(run_process(index, package, binary, group, reports[index]))
+             for index, group in enumerate(groups)]
+    failure = None
+    try:
+        await asyncio.wait_for(asyncio.gather(*tasks), timeout=LIMIT_SECONDS)
+    except asyncio.TimeoutError:
+        failure = "TIMEOUT"
+    except Exception as error:
+        failure = type(error).__name__ + ": " + str(error)
+    finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+    return reports, failure
 
 
 def main():
@@ -123,20 +168,28 @@ def main():
         groups = partition(registry)
         started = time.monotonic()
         instant = datetime.now(timezone.utc).isoformat()
-        reports = asyncio.run(execute(package, binary, groups))
-        verify(registry, reports)
+        reports, failure = asyncio.run(execute(package, binary, groups))
         elapsed = time.monotonic() - started
-        if elapsed >= LIMIT_SECONDS:
-            raise ValueError("original ten-minute suite deadline exceeded")
+        if elapsed >= LIMIT_SECONDS and failure is None:
+            failure = "TIMEOUT"
+        if failure is None:
+            try:
+                verify(registry, reports)
+            except ValueError as error:
+                failure = str(error)
         source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
         dirty = bool(subprocess.check_output(["git", "status", "--porcelain"]))
-        result = {"result": "PASS", "source": source, "working_tree_dirty": dirty, "race": True,
+        result = {"result": "FAIL" if failure else "PASS", "source": source, "working_tree_dirty": dirty, "race": True,
                   "suite_deadline_seconds": LIMIT_SECONDS, "started_at": instant, "seconds": round(elapsed, 3),
                   "package": package, "registry": sorted(registry),
                   "registry_sha256": hashlib.sha256("\n".join(sorted(registry)).encode()).hexdigest(), "processes": reports}
+        if failure is not None:
+            result["failure"] = failure
         output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
-        print(json.dumps({"result": "PASS", "complete_go_registry": len(registry), "processes": 2,
+        print(json.dumps({"result": result["result"], "complete_go_registry": len(registry), "processes": 2,
                           "race": True, "seconds": result["seconds"], "original_suite_deadline": LIMIT_SECONDS}))
+        if failure is not None:
+            raise RuntimeError("Go suite failed; see test-results/go-suite.json: " + failure)
 
 
 if __name__ == "__main__":

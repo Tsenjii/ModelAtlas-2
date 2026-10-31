@@ -1,6 +1,6 @@
 # 通用部署、持久資料與 HTTPS 入口
 
-自部署完整步驟與可直接交給Muse的指令，見 [DEPLOY_AND_BACKUP.md](DEPLOY_AND_BACKUP.md) 和 [MUSE_HANDOFF.md](MUSE_HANDOFF.md)。2026-10-30使用者決定由Muse自行試部署；不以開發端未取得Muse入口阻擋說明書交付，實際目標結果由執行者依清單回報。
+完整安裝說明見 [DEPLOY_AND_BACKUP.md](DEPLOY_AND_BACKUP.md)，任何部署工具的試跑範例見 [DEPLOYMENT_TRIAL.md](DEPLOYMENT_TRIAL.md)。Muse 僅用於試部署，開發與維護繼續在原專案進行；未要求或尚未指定目的地的雲端備份保持關閉，不阻擋部署測試。
 
 VPS-PORTABLE-OPS-016，2026-10-30。使用者要求先完成 VPS，並明確指定部署能力要通用，Muse 只是目前的第一個目標。下列所列範圍已由來源`7053b1e76e0c15f808640375fec5c8ebf511cb1a`同源十一項CI、十一份真ZIP及實圖驗證；目標環境另行驗收。已公開的 `v0.8.5-preview.1` 不包含這批新命令，不將舊 Release 冒充本片套件。
 
