@@ -124,7 +124,124 @@ func TestBrowserConversationsWorkflow(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
-	app := httptest.NewServer(s.Handler())
+	// Fault gates wrap the real handler. Successful reads and every mutation
+	// still execute production SQL/CAS; a lost acknowledgement is injected only
+	// after the actual handler has committed. No successful API JSON is mocked.
+	var libraryReads, updates, abortedReads atomic.Int32
+	var failRead, failMore, delayRead, delayWrite, loseAck, failRefresh, writeHeld atomic.Bool
+	readRelease, writeRelease := make(chan struct{}, 1), make(chan struct{}, 1)
+	handler := s.Handler()
+	app := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/__conversation-fixture/control" && r.Method == "POST" {
+			var control struct {
+				Mode string `json:"mode"`
+			}
+			if json.NewDecoder(r.Body).Decode(&control) != nil {
+				http.Error(w, "invalid fixture control", 400)
+				return
+			}
+			switch control.Mode {
+			case "fail-read":
+				failRead.Store(true)
+			case "fail-more":
+				failMore.Store(true)
+			case "delay-read":
+				delayRead.Store(true)
+			case "delay-write":
+				delayWrite.Store(true)
+			case "release-write":
+				writeRelease <- struct{}{}
+			case "lose-ack":
+				loseAck.Store(true)
+			case "fail-refresh":
+				failRefresh.Store(true)
+			case "seed-pages":
+				tx, err := s.Store.DB.Begin()
+				if err != nil {
+					t.Error(err)
+					http.Error(w, "fixture setup failed", 500)
+					return
+				}
+				defer tx.Rollback()
+				for i := 0; i < 52; i++ {
+					id, title := fmt.Sprintf("conversation-page-%02d", i), fmt.Sprintf("分頁對話 %02d", i)
+					if i == 51 {
+						title += strings.Repeat(" 很長的研究紀錄", 16)
+					}
+					if _, err = tx.Exec("INSERT INTO sessions(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,title,created_at) VALUES(?,?,?,?,?,?,?,?,?)", id, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, title, now()+int64(i)); err == nil {
+						_, err = tx.Exec("INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,'user',?,?)", "page-message-"+id, id, "分頁內容與 <img src=x onerror=alert(1)> 保留為文字", now())
+					}
+					if err != nil {
+						t.Error(err)
+						http.Error(w, "fixture setup failed", 500)
+						return
+					}
+				}
+				if err = tx.Commit(); err != nil {
+					t.Error(err)
+					http.Error(w, "fixture setup failed", 500)
+					return
+				}
+			default:
+				http.Error(w, "unknown fixture control", 400)
+				return
+			}
+			jsonOK(w, 200, map[string]bool{"ok": true})
+			return
+		}
+		if r.URL.Path == "/__conversation-fixture/state" {
+			var title string
+			var changes, messages, revision int
+			s.Store.DB.QueryRow("SELECT title FROM sessions WHERE id=?", session.ID).Scan(&title)
+			s.Store.DB.QueryRow("SELECT COUNT(*) FROM session_changes WHERE session_id=?", session.ID).Scan(&changes)
+			s.Store.DB.QueryRow("SELECT COUNT(*) FROM messages WHERE session_id=?", session.ID).Scan(&messages)
+			s.Store.DB.QueryRow("SELECT revision FROM session_metadata WHERE session_id=?", session.ID).Scan(&revision)
+			jsonOK(w, 200, map[string]any{"reads": libraryReads.Load(), "updates": updates.Load(), "aborted_reads": abortedReads.Load(), "write_held": writeHeld.Load(), "title": title, "changes": changes, "messages": messages, "revision": revision})
+			return
+		}
+		if r.URL.Path == "/api/v1/providers" && r.Method == "GET" && failRefresh.Swap(false) {
+			http.Error(w, "fixture refresh unavailable", 503)
+			return
+		}
+		if r.URL.Path == "/api/v1/sessions" && r.Method == "GET" && r.URL.Query().Get("limit") == "50" && r.URL.Query().Has("q") {
+			libraryReads.Add(1)
+			if failRead.Swap(false) || r.URL.Query().Get("offset") == "50" && failMore.Swap(false) {
+				http.Error(w, "fixture conversation read unavailable", 503)
+				return
+			}
+			if r.URL.Query().Get("q") == "慢速查詢" && delayRead.Swap(false) {
+				select {
+				case <-readRelease:
+				case <-r.Context().Done():
+					abortedReads.Add(1)
+					return
+				}
+			}
+		}
+		if r.URL.Path == "/api/v1/sessions/update" && r.Method == "POST" {
+			updates.Add(1)
+			if delayWrite.Swap(false) {
+				writeHeld.Store(true)
+				select {
+				case <-writeRelease:
+				case <-r.Context().Done():
+					writeHeld.Store(false)
+					return
+				}
+				writeHeld.Store(false)
+			}
+			if loseAck.Swap(false) {
+				result := httptest.NewRecorder()
+				handler.ServeHTTP(result, r)
+				if result.Code != 200 {
+					t.Errorf("lost-ack fixture did not commit: %d", result.Code)
+				}
+				http.Error(w, "fixture acknowledgement lost after real commit", 502)
+				return
+			}
+		}
+		handler.ServeHTTP(w, r)
+	}))
 	defer app.Close()
 	cmd := exec.Command("node", "e2e/conversations.cjs", app.URL)
 	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token, "MODELATLAS_CONVERSATION="+session.ID, "MODELATLAS_REPLY="+reply)
