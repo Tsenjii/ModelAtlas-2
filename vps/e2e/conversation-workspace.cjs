@@ -8,6 +8,7 @@ exports.exercise=async(page,origin,session)=>{
  const rows=page.locator('.conversation-list .item-button'),search=page.getByLabel('搜尋對話',{exact:true});
  const count=async n=>page.waitForFunction(n=>document.querySelectorAll('.conversation-list .item-button').length===n,n,{timeout:5000});
  const shot=async name=>{
+  await page.locator('#detail').evaluate(n=>n.scrollTop=0);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'page horizontal overflow: '+name);
   assert(await page.locator('#detail').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'dialog horizontal overflow: '+name);
   const targets=await page.locator('#detail button:not([hidden]),#detail input,#detail select').evaluateAll(ns=>ns.filter(n=>n.checkVisibility()).map(n=>{const target=n.type==='checkbox'&&n.labels?.[0]?n.labels[0]:n;return {h:target.getBoundingClientRect().height,text:target.textContent||target.getAttribute('aria-label')};}));
