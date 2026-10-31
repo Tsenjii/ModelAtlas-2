@@ -62,7 +62,8 @@ class GoProcessLifecycleTest(unittest.IsolatedAsyncioTestCase):
         spawned = []
 
         async def spawn(*args, **kwargs):
-            process = await create_process(sys.executable, "-u", "-c", script, **kwargs)
+            source = script(args) if callable(script) else script
+            process = await create_process(sys.executable, "-u", "-c", source, **kwargs)
             spawned.append(process)
             if len(spawned) == len(groups):
                 ready.set()
@@ -147,6 +148,32 @@ for action,case in [('run','TestFinished'),('pass','TestFinished'),('run','TestR
         for report in reports:
             self.assertEqual(report["returncode"], -15)
             self.assertEqual(report["completed"], {})
+            with self.assertRaises(ProcessLookupError):
+                os.kill(report["pid"], 0)
+
+    async def test_timeout_does_not_cancel_a_slower_siblings_cleanup_twice(self):
+        # One real process exits immediately on TERM. Its sibling deliberately
+        # takes longer to handle TERM, so the first task finishes while the
+        # second is still draining and collecting its return code.
+        slow = """
+import os,signal,time
+def stop(signum, frame):
+ time.sleep(0.2)
+ signal.signal(signal.SIGTERM,signal.SIG_DFL)
+ os.kill(os.getpid(),signal.SIGTERM)
+signal.signal(signal.SIGTERM,stop)
+time.sleep(60)
+"""
+        def source(args):
+            return slow if any("TestSlow" in str(arg) for arg in args) else "import time;time.sleep(60)"
+
+        reports, failure, _ = await self.run_fixture(
+            source, [["TestFast"], ["TestSlow"]], deadline=0.5, start_after_spawn=True)
+        self.assertEqual(failure, "TIMEOUT")
+        for report in reports:
+            self.assertEqual(report["returncode"], -15)
+            self.assertEqual(report["completed"], {})
+            self.assertEqual(report["unfinished"], report["selected"])
             with self.assertRaises(ProcessLookupError):
                 os.kill(report["pid"], 0)
 

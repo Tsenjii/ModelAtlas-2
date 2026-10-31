@@ -133,9 +133,14 @@ async def execute(package, binary, groups):
     reports = [new_report(index, group) for index, group in enumerate(groups)]
     tasks = [asyncio.create_task(run_process(index, package, binary, group, reports[index]))
              for index, group in enumerate(groups)]
+    completion = asyncio.gather(*tasks)
     failure = None
     try:
-        await asyncio.wait_for(asyncio.gather(*tasks), timeout=LIMIT_SECONDS)
+        # Only this function cancels child tasks. wait_for(gather(...)) would
+        # cancel every child on timeout, then finish as soon as the first child
+        # completes cancellation. Cancelling the remaining siblings again in
+        # finally interrupts their process/pipe cleanup and loses the report.
+        await asyncio.wait_for(asyncio.shield(completion), timeout=LIMIT_SECONDS)
     except asyncio.TimeoutError:
         failure = "TIMEOUT"
     except Exception as error:
@@ -145,6 +150,10 @@ async def execute(package, binary, groups):
             if not task.done():
                 task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
+        # The shielded aggregate can finish with a child cancellation after the
+        # timeout. Retrieve it so no unobserved future survives loop shutdown.
+        if completion.done() and not completion.cancelled():
+            completion.exception()
     return reports, failure
 
 

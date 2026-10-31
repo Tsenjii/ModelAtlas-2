@@ -1,0 +1,60 @@
+{
+  "status": "FOCUSED_UI_PASS_FULL_CANDIDATE_REJECTED",
+  "slice": "VPS-CONVERSATIONS-019",
+  "source": "7aceba09df6e4e72dda20cddf10dfd5ad376850f",
+  "tree": "a23aa675164e536d890f8b7e6965cba840419cd9",
+  "ui_diagnostic": {
+    "run": 41187404164,
+    "job": 124497011231,
+    "conclusion": "SUCCESS",
+    "case_seconds": 13.79,
+    "artifact": {
+      "id": 13037162560,
+      "bytes": 1117339,
+      "sha256": "85f3cf9f52578fea84c4e5ccd758307714aae3fcacb0d4c3d21394919daddecb",
+      "crc": "PASS"
+    },
+    "images": [
+      "conversation-library-375-dark.png",
+      "conversation-rich-1024-dark.png",
+      "conversation-rich-375-large-dark.png",
+      "conversation-rich-375-light.png",
+      "conversation-workspace-1280-light.png",
+      "conversation-workspace-320-large-aqua.png",
+      "conversation-workspace-320-large-dark.png",
+      "conversation-workspace-375-dark.png",
+      "conversation-workspace-375-light.png",
+      "conversation-workspace-draft-recovery-375-dark.png",
+      "conversation-workspace-read-recovery-375-dark.png",
+      "conversation-workspace-write-uncertain-375-dark.png"
+    ]
+  },
+  "full_validation_blocker": {
+    "run": 41187410760,
+    "job": 124497030995,
+    "conclusion": "FAILURE",
+    "case": "test_suite_timeout_cleans_both_real_process_groups",
+    "failure": "None != -15",
+    "original_13_tests_seconds": 4.76,
+    "product_go_suite_started": false
+  },
+  "deterministic_counterexample": {
+    "runner_source": "7aceba09df6e4e72dda20cddf10dfd5ad376850f",
+    "additional_test_only": true,
+    "case": "test_timeout_does_not_cancel_a_slower_siblings_cleanup_twice",
+    "seconds": 0.511,
+    "failure": "None != -15; Event loop is closed",
+    "method": "兩個真OS程序，其中一個TERM立即結束，另一個TERM處理延遲0.2秒；保留0.5秒fixture期限及兩個returncode=-15／PID不存在斷言。"
+  },
+  "root_cause": "wait_for先取消gather及兩子task；第一子task完成取消令aggregate先完成，execute.finally再取消尚在收集結果的第二task，打斷pipe／程序清理，returncode留None。",
+  "correction": "shield aggregate，使execute成為唯一取消者；只取消每個尚未結束task一次，等全部清理並觀察aggregate結果。",
+  "local_after_fix": {
+    "regressions": 14,
+    "seconds": 5.363,
+    "result": "PASS",
+    "release_tests": 65,
+    "release_seconds": 0.051,
+    "result_source": "7ace加本機未提交的runner修正及新增真程序反例"
+  },
+  "limits": "仍須修正後來源的完整469／697 Go與十一項CI；原600秒、fixtures、race、分組、負載及全部原斷言保留，歷史完整Go慢速逾時原因仍UNKNOWN。"
+}
