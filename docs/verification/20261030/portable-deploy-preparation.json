@@ -1,0 +1,134 @@
+{
+  "slice": "VPS-PORTABLE-OPS-016",
+  "status": "PREPARATION_ONLY",
+  "source_code_commit": "a76636c8de149c090371c35f83a69fded256dc8c",
+  "tested_checkout": "7cc4b7a79d2f73ad3fc0e77e5b927a1791807267",
+  "code_changed": false,
+  "client_date": "2026-10-30",
+  "timezone": "Asia/Taipei",
+  "suite": "focused_existing_deployment_and_offline_operations",
+  "race": true,
+  "count": 1,
+  "GOFLAGS": "-buildvcs=false",
+  "local_flag_reason": "Go could not obtain VCS status in this separate local checkout (exit 128). Product build still uses its existing explicit source ldflag; no product script, test, workload or deadline was changed. This is not a fresh complete-CI claim.",
+  "original_attempt": {
+    "log": "muse-ops-focused-tests.jsonl",
+    "result": "FAIL",
+    "failure": "TestPlatformDeploymentProcess could not build because Go VCS stamping returned exit 128; the other three selected tests passed."
+  },
+  "result": "PASS",
+  "top_level_cases": 4,
+  "terminal_pass_events": 15,
+  "elapsed_seconds": 63.661,
+  "events": [
+    {
+      "Time": "2026-10-30T00:27:05.218409509+08:00",
+      "Action": "pass",
+      "Test": "TestLocalDeploymentDoesNotInheritPublicPort",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-30T00:28:03.382210724+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/occupied-port-exits-nonzero",
+      "Elapsed": 0.12
+    },
+    {
+      "Time": "2026-10-30T00:28:03.395904118+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/relative-db",
+      "Elapsed": 0.01
+    },
+    {
+      "Time": "2026-10-30T00:28:03.446942085+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/missing-master-key",
+      "Elapsed": 0.05
+    },
+    {
+      "Time": "2026-10-30T00:28:03.452646952+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/invalid-mode",
+      "Elapsed": 0.01
+    },
+    {
+      "Time": "2026-10-30T00:28:03.458646429+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/missing-origin",
+      "Elapsed": 0.01
+    },
+    {
+      "Time": "2026-10-30T00:28:03.463986966+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/plaintext-origin",
+      "Elapsed": 0.01
+    },
+    {
+      "Time": "2026-10-30T00:28:03.511488808+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/origin-with-path",
+      "Elapsed": 0.05
+    },
+    {
+      "Time": "2026-10-30T00:28:03.516702617+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/short-admin-token",
+      "Elapsed": 0.01
+    },
+    {
+      "Time": "2026-10-30T00:28:03.521494947+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/invalid-port",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-30T00:28:03.52645443+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/public-without-opt-in",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-30T00:28:03.530983826+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess/origin-with-secret",
+      "Elapsed": 0
+    },
+    {
+      "Time": "2026-10-30T00:28:03.531657143+08:00",
+      "Action": "pass",
+      "Test": "TestPlatformDeploymentProcess",
+      "Elapsed": 58.31
+    },
+    {
+      "Time": "2026-10-30T00:28:06.056335139+08:00",
+      "Action": "pass",
+      "Test": "TestOperationsSnapshotPreflightAndRestorePreserveVaultAndHistory",
+      "Elapsed": 2.52
+    },
+    {
+      "Time": "2026-10-30T00:28:07.862876215+08:00",
+      "Action": "pass",
+      "Test": "TestOperationsWrongMasterKeyCorruptionAndEnvironmentAreSafe",
+      "Elapsed": 1.81
+    },
+    {
+      "Time": "2026-10-30T00:28:08.8673541+08:00",
+      "Action": "pass",
+      "Elapsed": 63.661
+    }
+  ],
+  "scope": [
+    "local listener remains loopback even when PORT is inherited",
+    "real HTTPS proxy/auth/Host/Origin guards, API writes, vault, SIGTERM, reopen same DB and key",
+    "complete Unicode history/exact price/rotated vault snapshot, immutable preflight and restore",
+    "wrong master key/corrupt snapshot/private environment reject safely"
+  ],
+  "not_verified": [
+    "new portable installer or container template",
+    "automatic encrypted cloud destination",
+    "any target deployment including Muse",
+    "actual public URL and SSE through target ingress",
+    "scheduled remote backup and downloaded isolated recovery",
+    "all original complete suites on a new implementation SHA"
+  ]
+}

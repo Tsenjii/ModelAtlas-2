@@ -1,0 +1,2372 @@
+{
+  "slice": "WORKSPACE-CHUNKS-015P",
+  "source": "73baf3b1087bd7d24ec1fa217084740264164945",
+  "status": "EXPECTED_COUNTEREXAMPLE_CONFIRMED_NOT_ACCEPTED",
+  "run": 40205841248,
+  "job": 121206460227,
+  "raw_job_log_bytes": 730067,
+  "go_terminal_events": [
+    {
+      "test": "TestAccountCheckinRejectsMissingScopeWrongDateAndBadTimezone",
+      "action": "pass"
+    },
+    {
+      "test": "TestAccountCheckinIsolatedIdempotentAndLegacyNeverCompletesAccounts",
+      "action": "pass"
+    },
+    {
+      "test": "TestCheckinCivilDateUsesLocalMidnightIncludingDST",
+      "action": "pass"
+    },
+    {
+      "test": "TestAccountCheckinNotificationUsesExactAccountAndDoesNotRepeat",
+      "action": "pass"
+    },
+    {
+      "test": "TestDesktopAccountCheckinNotificationsUseMachineDate",
+      "action": "pass"
+    },
+    {
+      "test": "TestAccountCheckinMigrationPreservesLegacyHistoryAndEncryptedCredentials",
+      "action": "pass"
+    },
+    {
+      "test": "TestAssistantControlChangesUndoAndCriticalRefs",
+      "action": "pass"
+    },
+    {
+      "test": "TestAssistantRealToolsSharedReviewAndSecretBoundary",
+      "action": "pass"
+    },
+    {
+      "test": "TestAssistantCancelClosesRealModelAndPreservesStatus",
+      "action": "pass"
+    },
+    {
+      "test": "TestSpeechWAVRejectsUnplayableFormatAndIncompleteFrames",
+      "action": "pass"
+    },
+    {
+      "test": "TestAssistantInterruptedToolResumeDoesNotReplay",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserAuthenticityEvidenceReviewAndPersistentUndo",
+      "action": "skip"
+    },
+    {
+      "test": "TestAuthenticityGeminiWireModeIsAComparisonCondition",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityOlderPolicyKeepsHistoryWithoutComparisonAuthority",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityEffectiveAnthropicVersionIsAComparisonCondition",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityReportReusesScopedTrafficWithoutSendingInference",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityReviewedReferenceComparisonAndPersistentUndo",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityReferenceCASStalenessCanonicalAndOriginGates",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityCostPrecisionAndUnknownsRemainSeparate",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution/1",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityDoesNotPersistPromptsResponsesOrRawSecrets",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution/2",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityIdempotencyHistoryPagingAndUnavailableDatabase",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityRequiresExactConditionsAndMeaningfulReference",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/unattested",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/tampered",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticitySchema25UpgradeAndSyncNeverCarryLocalAuthority",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/cancelled",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityCaptureFailurePreservesAnswerAndRequestHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/interrupted",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityExactAccountKeyGroupAndOperationDoNotBorrowSamples",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/running",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityResearchReportAndEvidenceUseBoundCredentialOrigin",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserKnowledgeWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserProtocolAndSpeechWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserCatalogExperienceWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserConnectorDiscoveryReviewAndPersistentRollback",
+      "action": "skip"
+    },
+    {
+      "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/material",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryCreatesEvidenceBackedDraftFromPublicSite",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/config",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryShapeOrUnitChangesKeepLastGoodAndCannotActivate",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/origin",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryBoundedPathsOriginsRedirectAuthAndSecrets",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityCredentialRotationAndLateOldTrafficStayIsolated",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryRootScopeFixtureAndExplicitMetricUnits",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryLocalReceiptCurrentScopeAndFreshnessRequired",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityAssistantUsesSharedLocalSuiteWithoutActivation",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryOpenAPIGetHintsFamilyAndCancelledWork",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryAssistantUsesSharedPipelineAndWebBudget",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityReferenceExpiryCanonicalAndDuplicateOriginRequireNewReview",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryFixedFeeNeedsExplicitPerRequestUnit",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityInFlightCredentialRotationDoesNotAttestCurrentRevision",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero/0",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorMappingIdempotentRequestPreservesParentAndOriginalActive",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero/0.000000100000000001",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserProductionWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserResearchWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserAssistantWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserManagementWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserOriginWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestConnectorMappingRejectsGuessedUnitsScopePointersAndHiddenDuplicates",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorMappingChangedEvidenceAfterTestCannotActivate",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorMappingSnapshotMigrationAndLocalOnlyData",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorMappingExpiredSampleNeedsNewDiscoveryButExistingVersionCanRetest",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserConversationCreationWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestResearchCatalogEvidenceUsesWholeExactResponse",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserChatExperienceWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestConversationCreationConcurrentRetriesAreAtomic",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryRequestIDIsDurableAndDoesNotRepeatHTTP",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/invalid-numeric",
+      "action": "pass"
+    },
+    {
+      "test": "TestConversationCreationRequestSurvivesReopenAndPreservesHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/no-scope",
+      "action": "pass"
+    },
+    {
+      "test": "TestConversationCreationRejectsMalformedRequestIdentity",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/no-unit",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/currency-conflict",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/account",
+      "action": "pass"
+    },
+    {
+      "test": "TestConversationsSearchArchiveStaleEditAndCompleteExport",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/wrong-group",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown",
+      "action": "pass"
+    },
+    {
+      "test": "TestReviewedOnboardingPersistsCustomProtocolAndNoSecretMetadata",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryFixtureAndCredentialChangesBlockBeforeHTTP",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryDoesNotCommitLateChangedScope",
+      "action": "pass"
+    },
+    {
+      "test": "TestCustomProtocolRealTLSAndNativeTools/false",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoverySourceConflictsAndNewVersionsDoNotReplaceActive",
+      "action": "pass"
+    },
+    {
+      "test": "TestCustomProtocolRealTLSAndNativeTools/true",
+      "action": "pass"
+    },
+    {
+      "test": "TestCustomProtocolRealTLSAndNativeTools",
+      "action": "pass"
+    },
+    {
+      "test": "TestLocalDeploymentDoesNotInheritPublicPort",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryAtomicDraftsAndFixtureFailure",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoverySchema24UpgradeAndSyncDoNotCopyExecutionAuthority",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/duplicate-model",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/bound-origin",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/cooldown",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorDiscoveryChangedActiveDefinitionNeedsNewReview",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserConnectorMappingUnknownFieldsRecoveryRuntimeAndUndo",
+      "action": "skip"
+    },
+    {
+      "test": "TestConnectorMappingQuotaZeroAndMissingRemainDistinct",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorMappingScopeRotationAndExpiredSamplesBlockWithoutHTTP",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorMappingFormalSavedSourceReviewRuntimeAndPersistentUndo",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorMappingStorageFailureAndAtomicReservationRollback",
+      "action": "pass"
+    },
+    {
+      "test": "TestConnectorMappingConcurrentSameIntentCreatesOneVersion",
+      "action": "pass"
+    },
+    {
+      "test": "TestDesktopDynamicLoopbackAndParentPipeLifetime",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserDetailWorkspaceWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserKiloFactoryAnonymousChatPriceGuardAndExistingWorkspaceRecovery",
+      "action": "skip"
+    },
+    {
+      "test": "TestLiveFactoryKiloDefaultProfileAndConversation",
+      "action": "skip"
+    },
+    {
+      "test": "TestNativeSpeechRejectsMalformedTruncationAndSecret",
+      "action": "pass"
+    },
+    {
+      "test": "TestConversationCreationSameRequestKeepsOneCommittedIdentity",
+      "action": "pass"
+    },
+    {
+      "test": "TestTruncatedInferenceNeverCountsSuccess",
+      "action": "pass"
+    },
+    {
+      "test": "TestConversationCreationRequestCannotBeReusedForAnotherScopeOrTitle",
+      "action": "pass"
+    },
+    {
+      "test": "TestAssistantConfirmationUndo",
+      "action": "pass"
+    },
+    {
+      "test": "TestConversationCreationLegacyClientsStillCreateDistinctSessions",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserConversationsWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestCustomRejectsIncompleteAndUnsafeDefinitions",
+      "action": "pass"
+    },
+    {
+      "test": "TestRecipeVersionedRollback",
+      "action": "pass"
+    },
+    {
+      "test": "TestManualConversationSettingsPersistAndProtectAgent",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeMeasuredTrialUsesFrozenVersionMonitorsAndRollsBackAfterRestart",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeRestoredVersionStartsNewMonitoringEpoch",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeEvaluationKeepsAgedHistoryAndExplainsChangedActiveSource",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeQualityAttributesSharedDiscoveryOnlyOnce",
+      "action": "pass"
+    },
+    {
+      "test": "TestLiveKiloProviderDiscovery",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserMacParityWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestFullHistorySQLStatisticsAndPagedRetention",
+      "action": "pass"
+    },
+    {
+      "test": "TestScheduledSyncAndEvidenceBasedNotificationEpoch",
+      "action": "pass"
+    },
+    {
+      "test": "TestHumanReadableAliasesPreserveRawModelIdentity",
+      "action": "pass"
+    },
+    {
+      "test": "TestUnknownPriceCannotGenerateConfirmedChangeNotification",
+      "action": "pass"
+    },
+    {
+      "test": "TestBoundedConversationDoesNotPreventReadingRetainedMessages",
+      "action": "pass"
+    },
+    {
+      "test": "TestBulkModelReviewAtomicStaleGuardAndUndo",
+      "action": "pass"
+    },
+    {
+      "test": "TestManualChatAndSpeechNeverSendAnotherStoredCredential",
+      "action": "pass"
+    },
+    {
+      "test": "TestMediaRejectsEchoMalformedResultsAndUnconfirmedScope",
+      "action": "pass"
+    },
+    {
+      "test": "TestMediaFlightBudgetAndExplicitCancel",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserMobileAlignmentWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserScopedModelPickerWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserModelViewsWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestCertifiedPublicNominalPriceStillReachesSelectedOffer",
+      "action": "pass"
+    },
+    {
+      "test": "TestNewApiPublicRejectsForeignModelAndMalformedMetrics",
+      "action": "pass"
+    },
+    {
+      "test": "TestNewApiCapturedPublicResponses",
+      "action": "skip"
+    },
+    {
+      "test": "TestNewApiUnknownVersionBlocksPrivilegedEndpoints",
+      "action": "pass"
+    },
+    {
+      "test": "TestObservationArchiveFrozenPagesKeepAllRowsAndExactScope",
+      "action": "pass"
+    },
+    {
+      "test": "TestObservationArchiveFailureDoesNotEraseOldGoodFact",
+      "action": "pass"
+    },
+    {
+      "test": "TestOperationsWrongMasterKeyCorruptionAndEnvironmentAreSafe",
+      "action": "pass"
+    },
+    {
+      "test": "TestMultipleOriginsKeepKeysSessionsPATsAndUndoIsolated",
+      "action": "pass"
+    },
+    {
+      "test": "TestMultimodalHistoryRevalidationAndNoRawPersistence",
+      "action": "pass"
+    },
+    {
+      "test": "TestCancelBlockedSocketExcludedFromUptime",
+      "action": "pass"
+    },
+    {
+      "test": "TestCompleteHistoryZeroUsageAndNonStreamingTTFT",
+      "action": "pass"
+    },
+    {
+      "test": "TestOnboardingReviewAtomicAndSecretIsolation",
+      "action": "pass"
+    },
+    {
+      "test": "TestPricingExactArithmeticAndParserBounds",
+      "action": "pass"
+    },
+    {
+      "test": "TestNewApiExactPricingAndMalformedPerfNeverPanics",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueuedEnrichmentHasRealProductionHTTPCaller",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/occupied-port-exits-nonzero",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/relative-db",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/invalid-mode",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/public-without-opt-in",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/missing-origin",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/origin-with-secret",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/missing-master-key",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/short-admin-token",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/invalid-port",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/plaintext-origin",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess/origin-with-path",
+      "action": "pass"
+    },
+    {
+      "test": "TestPlatformDeploymentProcess",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserExtractionMeasuredTrialRecoveryMonitoringAndUndo",
+      "action": "skip"
+    },
+    {
+      "test": "TestStandaloneProcessFootprint",
+      "action": "skip"
+    },
+    {
+      "test": "TestMetadataSearchLifecycleAndHistoryScopes",
+      "action": "pass"
+    },
+    {
+      "test": "TestGeminiSpeechActualWireAndAudio",
+      "action": "pass"
+    },
+    {
+      "test": "TestRealInferenceHTTPAndHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserKnowledgeEvaluationTrialAndPersistentRollback",
+      "action": "skip"
+    },
+    {
+      "test": "TestSafeBackupRoundTripDisablesCredentialsAndIsAtomic",
+      "action": "pass"
+    },
+    {
+      "test": "TestReflectionDoesNotRewardRepeatedEmptyHTTP200",
+      "action": "pass"
+    },
+    {
+      "test": "TestStartupInterruptRecoveryAndSingleWriterLock",
+      "action": "pass"
+    },
+    {
+      "test": "TestRegisteredMediaTransportsUseScopedTelemetry",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/insufficient-and-new-data",
+      "action": "pass"
+    },
+    {
+      "test": "TestStaleAssistantUndoCannotRemoveLaterMembership",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/changed-source-and-active-plan",
+      "action": "pass"
+    },
+    {
+      "test": "TestEndpointPathEditCannotRewriteOldConversation",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/measured-regression",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource",
+      "action": "pass"
+    },
+    {
+      "test": "TestCustomCredentialEchoRemovedBeforeMetadataPersistence",
+      "action": "pass"
+    },
+    {
+      "test": "TestSpeechVectorsThroughRealHTTP",
+      "action": "pass"
+    },
+    {
+      "test": "TestAudioGuardsAndStreamingSecret",
+      "action": "pass"
+    },
+    {
+      "test": "TestRawAttachmentSecretBlockedBeforeHTTPHistoryOrCache",
+      "action": "pass"
+    },
+    {
+      "test": "TestPagedRequestExportBeyondUIWindow",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeQualityAdmissionCancellationSyncAndV21Migration",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeScheduledContinuationRetainsItsPlannedVersion",
+      "action": "pass"
+    },
+    {
+      "test": "TestRequestExportFreezesSelectionDuringConcurrentUpdates",
+      "action": "pass"
+    },
+    {
+      "test": "TestMissingTerminalReflectionRetriesFromDurableState",
+      "action": "pass"
+    },
+    {
+      "test": "TestKnowledgeQualityRetainsFalseFreeCounterexamplesWithoutReward",
+      "action": "pass"
+    },
+    {
+      "test": "TestLiveKiloAnonymousConversationToolsAndAssistant",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserMacAlignmentWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestResearchReflectionFrozenSourcesVersionedLearningAndUndo",
+      "action": "pass"
+    },
+    {
+      "test": "TestMetricHistoryUsesExactScopeWindowAndKeepsNonStreamingUnknown",
+      "action": "pass"
+    },
+    {
+      "test": "TestDeclarativeConnectorRealTestActivationSyncCatalogAndRollback",
+      "action": "pass"
+    },
+    {
+      "test": "TestRequestJSONWireAndReplay",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserAAResearchPageRecoveryWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestAAResearchResumesFailedPageAfterRestart",
+      "action": "pass"
+    },
+    {
+      "test": "TestSafeBackupV2RoundTripAndUnsafeAtomicRollback",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/attempt-limit",
+      "action": "pass"
+    },
+    {
+      "test": "TestRankingAndTopFourCannotBorrowManualCanonicalIdentity",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/long-wait",
+      "action": "pass"
+    },
+    {
+      "test": "TestMediaResultFormatsAndOperationWire",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/key-change",
+      "action": "pass"
+    },
+    {
+      "test": "TestMediaHTTPErrorAndInputMismatch",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserModelConnectionsWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/expired",
+      "action": "pass"
+    },
+    {
+      "test": "TestNewApiPublicVersionZeroUsesSchemaWithoutSendingInferenceKey",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/version-change",
+      "action": "pass"
+    },
+    {
+      "test": "TestNewApiFailureRetainsLastGoodAndReportsActualUpstreamStatus",
+      "action": "pass"
+    },
+    {
+      "test": "TestMultilinePublicContentStillRedactsCredentialEchoes",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/page-count-change",
+      "action": "pass"
+    },
+    {
+      "test": "TestInferenceGatewayErrorKeepsUpstreamHTTPStatusAndReceipt",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/duplicate",
+      "action": "pass"
+    },
+    {
+      "test": "TestNewApiCredentialRolesAndProvenance",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/secret-echo",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/malformed",
+      "action": "pass"
+    },
+    {
+      "test": "TestObservationArchiveFiltersApplyBeforePagingAndExposeWholeRangeFacets",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood/auth",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchStopsWithoutReplacingLastGood",
+      "action": "pass"
+    },
+    {
+      "test": "TestObservationArchiveRejectsInvalidOrForeignContinuations",
+      "action": "pass"
+    },
+    {
+      "test": "TestOperationsSnapshotPreflightAndRestorePreserveVaultAndHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchCheckpointSyncIsHistoryOnlyAndUpgradeRetainsData",
+      "action": "pass"
+    },
+    {
+      "test": "TestAutomaticMigrationSnapshotAndFutureSchemaGuard",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchInFlightRestartsCannotResetPageAttemptLimit",
+      "action": "pass"
+    },
+    {
+      "test": "TestMaintenanceGateBlocksWritesSyncAndBackground",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationSecretRejectionDoesNotSpendBudget",
+      "action": "pass"
+    },
+    {
+      "test": "TestAssistantSafeReferenceCanPrepareReviewedSecondaryCredential",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/session_options",
+      "action": "pass"
+    },
+    {
+      "test": "TestAssistantPublicSourceAndAnonymousOnboardingBoundary",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/messages",
+      "action": "pass"
+    },
+    {
+      "test": "TestReportedTokenGroupCannotBorrowAnotherGroupOrCredentialEpoch",
+      "action": "pass"
+    },
+    {
+      "test": "TestPDFAndAudioSignatureBoundaries",
+      "action": "pass"
+    },
+    {
+      "test": "TestLmspeedBudgetProvenanceAndLastGood",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/telemetry",
+      "action": "pass"
+    },
+    {
+      "test": "TestCSRFAuthenticationOriginBoundary",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/request_context",
+      "action": "pass"
+    },
+    {
+      "test": "TestCustomFieldsVaultAndCredentialRollback",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/message_requests",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/research_task_usage",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestEmptyTelemetryUnknownAndLongLastGoodHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestTinyExactPricesNeverRoundToFree",
+      "action": "pass"
+    },
+    {
+      "test": "TestMultipleEndpointProfilesKeepHistoryAndCapabilitiesSeparate",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationWorkerRecoversWithoutExtraBudgetAndUsesNewEvidence",
+      "action": "pass"
+    },
+    {
+      "test": "TestResourcePoolsOnlyAttachSelectedAccountAndKey",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchRateLimitWaitsDurably",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeProtocolsAndToolContinuation/CHAT_COMPLETIONS/false",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchOverlapCompleteReplayAndScopedReflection",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeProtocolsAndToolContinuation/CHAT_COMPLETIONS/true",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchBoundedRetriesAndSharedCooldown",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeProtocolsAndToolContinuation/RESPONSES/false",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeProtocolsAndToolContinuation/RESPONSES/true",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeProtocolsAndToolContinuation/ANTHROPIC_MESSAGES/false",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchCheckpointSyncIsReadOnlyAndV23UpgradeKeepsHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeProtocolsAndToolContinuation/ANTHROPIC_MESSAGES/true",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchStorageFailuresRollbackAdmissionAndPage/admission",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeProtocolsAndToolContinuation/GEMINI_NATIVE/false",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchStorageFailuresRollbackAdmissionAndPage/page",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchStorageFailuresRollbackAdmissionAndPage",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeProtocolsAndToolContinuation/GEMINI_NATIVE/true",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeProtocolsAndToolContinuation",
+      "action": "pass"
+    },
+    {
+      "test": "TestNativeTruncationAndUnsupportedInput",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserProviderFormsWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestPublicResearchBlocksSpecialAndEmbeddedPrivateAddresses",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchLMSpeedSearchKeepsFrozenRegionAndPageLimit",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserResearchInferenceDailyBudgetWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestPublicSnapshotLastGoodFiltersBeforeLimit",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchOriginCooldownCanonicalScopeAndLateSuccess",
+      "action": "pass"
+    },
+    {
+      "test": "TestRequestReceiptFreezesQuoteUsageQuotaAndActualCharge",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchOriginCooldownInFlightSuccessCannotClearLaterFailure",
+      "action": "pass"
+    },
+    {
+      "test": "TestExplicitRetryRetainsOneUserMessageAndAllAttempts",
+      "action": "pass"
+    },
+    {
+      "test": "TestCostUnknownZeroCacheAndNativeUsageStayDistinct",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserRequestReceiptsWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestResearchOriginCooldownSchedulePauseCancelAndNoBudgetCharge",
+      "action": "pass"
+    },
+    {
+      "test": "TestUnavailableIntelligenceDoesNotBlockInference",
+      "action": "pass"
+    },
+    {
+      "test": "TestNominalZeroDoesNotClaimKeyFreeAndExplicitConfirmationDoes",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchOriginCooldownV19UpgradeAndUnavailableStore",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserPrivateResearchScheduleWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserResearchProgressiveWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserReflectionGeneratedQueryPairedTrialWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/120",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/0",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/_90_",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/Wed,_21_Oct_2026_02:03:00_GMT",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/Wed,_21_Oct_2026_01:59:00_GMT",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/86400",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/86401",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/9999999999999999999999999999999",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/Thu,_22_Oct_2026_03:00:00_GMT",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/#00",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/-1",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/+1",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/1.5",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/3,_4",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing/Bearer_must-not-be-persisted",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryAfterParsing",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchDoesNotReuseEarlierCredentialVersion",
+      "action": "pass"
+    },
+    {
+      "test": "TestRequestJSONSecretBoundaries",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryTLSBudgetsAndOtherTasksProceed",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/run",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLimitAndPermanentFailures/Too_Many_Requests",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/integration",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLimitAndPermanentFailures/Bad_Gateway",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/scheduled-day",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLimitAndPermanentFailures/Service_Unavailable",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLimitAndPermanentFailures/Gateway_Timeout",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLimitAndPermanentFailures/Unauthorized",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchKeyChangedDuringLastPageCannotPublish",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLimitAndPermanentFailures/Forbidden",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAResearchDirectSyncExcludesWorkerAndCompletedReplayUsesNoHTTP",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLimitAndPermanentFailures/Not_Found",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationConcurrentAdmissionCannotOverspendEitherMeter",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLimitAndPermanentFailures/Internal_Server_Error",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLimitAndPermanentFailures",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationSentFailureOrCancellationRetainsAdmission/1",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryRestartPauseCancelAndRemainingBudget",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryInspectKeepsLastGoodFacts",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationSentFailureOrCancellationRetainsAdmission/2",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchConversationSentFailureOrCancellationRetainsAdmission",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchSlowInterruptedBodyBackoffStartsAfterFailure",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserBraveResearchPageRecoveryWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestResearchSourceRunnerBudgetReviewAndNoImplicitMembership",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/run",
+      "action": "pass"
+    },
+    {
+      "test": "TestAALatestCompleteRankingAndExpiry",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/integration",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicFetchBoundaryAndEvidenceGate",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserResearchScheduleWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/scheduled-day",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleDisabledDueDedupAndNoMembership",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchFailureSemanticsAndOptionBounds/auth",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC/global",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchFailureSemanticsAndOptionBounds/redirect",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchFailureSemanticsAndOptionBounds/schema",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC/schedule",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchFailureSemanticsAndOptionBounds/bad-more",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleAtomicDailyReservationsAcrossConcurrentTLS",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchFailureSemanticsAndOptionBounds/missing-hint",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchFailureSemanticsAndOptionBounds/no-more",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleWorkspaceHistoryNeverResumesAndDefinitionsStayLocal",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchFailureSemanticsAndOptionBounds/legacy-one-page",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleRoundLimitContinuesRemainingTasksWithoutStarvation",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchFailureSemanticsAndOptionBounds/ten-page-limit",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchFailureSemanticsAndOptionBounds",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleUsesOnlySelectedLanguagesAndCurrentApprovedKnowledge",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleOwningPeerSyncAcknowledgementPreservesLocalIntent",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts/rotate",
+      "action": "pass"
+    },
+    {
+      "test": "TestUnimplementedGroupIsRefusedBeforeAnyRequest",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts/pause",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchManualEvidenceCannotForgeVerifiedQuota",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts/cancel",
+      "action": "pass"
+    },
+    {
+      "test": "TestAuthorizationAndSecretEncryption",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts/crash-bound",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts",
+      "action": "pass"
+    },
+    {
+      "test": "TestSessionFlightIsolationAndStableOrder",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserSystemStatusWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestSystemdDeploymentLifecycle",
+      "action": "skip"
+    },
+    {
+      "test": "TestBrowserWorkspaceSyncWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestBraveResearchTransportRecoveryAndLongWait/transport",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchTransportRecoveryAndLongWait/long-wait",
+      "action": "pass"
+    },
+    {
+      "test": "TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork/metadata-only",
+      "action": "fail"
+    },
+    {
+      "test": "TestBraveResearchTransportRecoveryAndLongWait/expired",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchTransportRecoveryAndLongWait/secret-url",
+      "action": "pass"
+    },
+    {
+      "test": "TestBraveResearchTransportRecoveryAndLongWait",
+      "action": "pass"
+    },
+    {
+      "test": "TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork/with-secrets",
+      "action": "fail"
+    },
+    {
+      "test": "TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork",
+      "action": "fail"
+    },
+    {
+      "test": "TestBraveResearchPersistsPageAndResumesAfterRestart",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserResearchOriginCooldownWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestWorkspacePairingSingleUseExpiryAndDeviceRevocation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchOriginCooldownSharedAcrossTasksAndRuns",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened/90000",
+      "action": "pass"
+    },
+    {
+      "test": "TestWorkspaceMetadataOnlyNeverTransfersSecretAndDoesNotLoop",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened/9999999999999999999999999999999",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened",
+      "action": "pass"
+    },
+    {
+      "test": "TestWorkspaceRotationLargeIntegersAndRemoteConflictChoice",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchOriginCooldownHistorySyncDoesNotControlPeer",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserResearchRetryWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestExtractionCancellationRetainsActualAdmissionWithoutModelFailure",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeReviewCannotBorrowChangedTestsKeySourceOrDefinition",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryScheduleContinuationRetainsAllowance",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryLongWaitAndPrivateTasksNeverAutoRetry",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeApprovedReadersContinueAfterDraftAdmissionExpires",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveCancelRetainsAdmissionAndUngradedObservation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/research_quota_pool_admissions",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/messages",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/request_context",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryHistorySyncNeverActivatesPeer",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipePublicEvidenceGeneratesDraftAndRequiresActualRuleTests",
+      "action": "pass"
+    },
+    {
+      "test": "TestPublicResearchRetryInterruptedLimitRetainsHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeLocalExecutionAuthorityDoesNotTravelWithHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeCatalogReadFailureKeepsLastGoodWithoutAnotherEndpoint",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteFamilySourceConstantsStayPassiveBoundedAndIndependentlyAttributed",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResumeAfterInterruptedStoreAndReuseTraffic",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPauseClosesPublicSocketAndPreservesCharge",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeBindingReadFailureAndExplicitLegacyRollback",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending/ENGINE",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchMultilingualSearchUsesSafeIntegrationAndDeduplicatesProvider",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume/1",
+      "action": "pass"
+    },
+    {
+      "test": "TestAAFixedWindowAndIncompletePageKeepsLastGood",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending/CREDENTIAL",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume/2",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-complete",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleRestartIntentAndHumanPause",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-partial",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleDisableCancelsLiveTLSAndProtectsOtherEntryPoint",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleSourceEditsRequireLocalReviewAndKeepHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetUsesSameUTCAdmissionDayAtMidnight",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-negative",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleBoundsRevisionsAndPrivateInferenceRejected",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent-reasoning",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleV18UpgradeKeepsManualHistoryAndDefaultsOff",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent-cache",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleIntegrationAdmissionWaitDoesNotSpin",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/responses-exact-int64",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-complete",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchScheduleWorkspaceSourceEditStopsExistingRound",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-inconsistent-tool-prompt",
+      "action": "pass"
+    },
+    {
+      "test": "TestCatalogSyncFailurePreservesLastGood",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-partial",
+      "action": "pass"
+    },
+    {
+      "test": "TestProtectedResponsiveAssets",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolLocalAuthorityMigrationAndPagedHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/anthropic-cache-complete",
+      "action": "pass"
+    },
+    {
+      "test": "TestScopedOptInAndHistoryPreservation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/invalid-cost-sticky",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/anthropic-cache-missing",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete",
+      "action": "pass"
+    },
+    {
+      "test": "TestSQLiteDurability",
+      "action": "pass"
+    },
+    {
+      "test": "TestUnknownNeverBecomesFree",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserSiteRecipePublicEvidenceReviewAtomicUseAndUndo",
+      "action": "skip"
+    },
+    {
+      "test": "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/truncated-larger-report",
+      "action": "pass"
+    },
+    {
+      "test": "TestSyncHistoryPollingPageRetainsHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestWorkspaceAndroidFixture",
+      "action": "skip"
+    },
+    {
+      "test": "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/truncated-smaller-report",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchBudgetFixtureIsolationAcrossPoliciesClocksAndRestart",
+      "action": "pass"
+    },
+    {
+      "test": "TestWorkspaceManualSyncJoinsRealBackgroundSyncAndCanceledWaiterDoesNotConsumeLock",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserWorkspaceRecoveryWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestResearchProgressiveWrongAnswerIsEvidenceWithoutAutomaticRetry",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveDailyStopAndExplicitRecovery",
+      "action": "pass"
+    },
+    {
+      "test": "TestWorkspaceRealTLSBidirectionalSecretsHistoryAndTombstone",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveRealProbesAndZeroHTTPReuse",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleCannotBorrowAccountPATOrAnotherKey",
+      "action": "pass"
+    },
+    {
+      "test": "TestWorkspaceOfflineConflictKeepsBothAndExplicitLocalWins",
+      "action": "pass"
+    },
+    {
+      "test": "TestBrowserWorkspaceWorkflow",
+      "action": "skip"
+    },
+    {
+      "test": "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn/false",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleApprovalHistoryIsPagedAndAtomic",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveTokenPrecisionAndPagedImmutableHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionStorageFailureIsNotReclassifiedAsChangedReview",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn/true",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeCancelledRuleKeepsPartialResultsAndActualAdmission",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleReviewRejectsRotationRaceAndPreservesScope",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeReceiptReadFailureIsUnavailableWithoutPartialWrites",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeManualSettingsCannotRemoveGroupScopeApproval",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleExplicitApprovalAndDailyStop",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeCompositeReviewActualCallerAndPersistentUndo",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/research_inference_admissions",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeSchema32SnapshotCapturesOnlyCurrentLegacyApproval",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeAtomicActivationAndUndoFailuresKeepWholeGroup",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/messages",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteFamilyReferencesRejectSecretsOriginsAndUnboundedPaths",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetPaginationAndImmutablePolicyHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/telemetry",
+      "action": "pass"
+    },
+    {
+      "test": "TestSiteRecipeActiveDefinitionCannotBorrowEarlierApproval",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleInterruptedInferenceNeverAutoReplays",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/research_resource_admissions",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetFormalSettingsEntry",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/messages",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonExplicitAtomicReviewRetryAndKeyRace",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation/TOKENS",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/telemetry",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation/USD",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/settlement-retains-reservation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/policy-and-journal",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetLocalAuthorityMigrationAndPagedHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonNoGainRegressionStaleAndForeignHistory",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/missing-explicit-cap",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/unknown-field",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/negative",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/fractional-token",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/zero-reservation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/zero-money-reservation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/nonfinite-money",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/numeric-money",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/negative-money",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/too-large",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetFormalSettingsAndUnknownReservation",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonLocalAuthoritySyncPortableAndSchema31Snapshot",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/custom_scopes",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolConcurrentInFlightKeys",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/legacy_unknown",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/country",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchResourceBudgetExactReportedSettlementZeroOverrunAndRotation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/pool_output_envelope",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/options",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolExactSettlementAcrossKeys",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolMembershipRetainsSpendAndCountsBeforeAttachment",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/probe",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolFormalEntry",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveDoesNotReuseChangedRequestConfiguration",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchQuotaPoolAccountAcrossKeysRotationRestartAndDay",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveObservationReadFailureDoesNotSpend",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressivePlannedConnectionChangeStopsBeforeHTTP",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryGenerationAndComparisonStorageFaultsStayAtomicAndLocal",
+      "action": "pass"
+    },
+    {
+      "test": "TestReflectionQueryDoesNotBorrowDifferentCountryOrPageScope",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonFixedBudgetCancelPauseAndRestart",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionReviewedComparisonProductionBatchAndPersistentUndo",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/paid",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloResearchCatalogBudgetRejectionAndExplicitResume",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/extra-fee",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloActualEngineAnonymousPriceCheckAndPersistentTelemetry",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonRealRegressionAndStaleDatasetCannotActivate",
+      "action": "pass"
+    },
+    {
+      "test": "TestQueryComparisonMeasuredTrialNextRunMonitorAndPersistentUndo",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/oversized-price",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveForeignMetadataIsNotLocalTraffic",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetStableScopeRotationAndUTCDay",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/unpriced",
+      "action": "pass"
+    },
+    {
+      "test": "TestReflectionQueryGenerationLocalEvidenceIdempotenceAndRevision",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveCandidateRevalidationUsesOnlyFreshLocalReceipt",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/missing",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveInterruptedPrivateDepthNeverAutomaticallyReplays",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/duplicate",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation/connection",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/expired",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionLatestNegativeMeasurementCannotBorrowOldGreenReceipt",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation/allocation",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/auth",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetLocalOnlySyncBackupAndMigration",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloInstallIsAtomicAndCannotOverwriteAnExistingProfile",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/offline",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/malformed",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveOversizeCompletePlanIsRejectedBeforePartialEnqueue",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/receipt",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveAdmissionRechecksScopeInsideTransaction",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionDifferentValidFactsCannotQualifyAsImprovement",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/rule",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressivePrivateRoundCapCarriesUnadmittedProbe",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveLocalAuthoritySyncPortableAndSchema30Upgrade",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionStaleUndoAndAtomicBindingFailureKeepWholeCurrentPlan",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/binding",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleSharesOneUTCAdmissionDay",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/OUTPUT_ENVELOPE",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveTaskPayloadCannotAuthorizeDeeperWork",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionIntentRecoveryDoesNotRepeatProposalOrComparisonHTTP",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleDisableCancelsFlightAndKeepsAdmission",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/USD",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/DB",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/TOKENS",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/USD",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleLocalAuthorityAndMigration",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/DB",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchPrivateScheduleFormalEntry",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart/1",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionSchema34UpgradeKeepsExactOriginalDataAndConsistentSnapshot",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart/2",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetWorkerWaitExplicitResumeAndTrafficReuse",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference/real-TLS-cancel",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference/catalog-client-timeout",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloSchema33UpgradeDoesNotChangeExistingModelsOrPreferences",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns/ENGINE",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloFirstStartExistingWorkspaceAndPersistentRemoval",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns/CREDENTIAL",
+      "action": "pass"
+    },
+    {
+      "test": "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionReviewRotationRaceKeepsActivationAtomic",
+      "action": "pass"
+    },
+    {
+      "test": "TestFactoryKiloOfflineInstallCreatesUsableAnonymousSelections",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionLocalBudgetRefusalDoesNotDegradeOrDisableTrial",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionFailureSharesOneAttemptKeepsLastGoodAndAutoUndoIsEpochBound",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionInterruptedComparisonAndBatchStayUnknownWithoutAutomaticHTTP",
+      "action": "pass"
+    },
+    {
+      "test": "TestExtractionChangedKeyBlocksComparisonAndProductionWithoutLosingHistory",
+      "action": "pass"
+    }
+  ],
+  "diagnostics": [
+    "2026-10-25T15:16:59.1189979Z {\"Time\":\"2026-10-25T15:16:59.117229782Z\",\"Action\":\"output\",\"Package\":\"github.com/Tsenjii/ModelAtlas-2/vps\",\"Test\":\"TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork/metadata-only\",\"Output\":\"    workspace_chunks_test.go:70: authenticated chunk capability endpoint returned 404; legacy exchange control passed\\n\"}",
+    "2026-10-25T15:17:00.9777082Z {\"Time\":\"2026-10-25T15:17:00.977209185Z\",\"Action\":\"output\",\"Package\":\"github.com/Tsenjii/ModelAtlas-2/vps\",\"Test\":\"TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork/with-secrets\",\"Output\":\"    workspace_chunks_test.go:70: authenticated chunk capability endpoint returned 404; legacy exchange control passed\\n\"}"
+  ],
+  "interpretation": "同一真TLS配對token的既有v1 exchange先成功；metadata-only及with-secrets的獨立協商皆404。只證明正式能力缺口，沒有分塊／恢復成功證據。",
+  "whole_next_release": "PARTIAL"
+}

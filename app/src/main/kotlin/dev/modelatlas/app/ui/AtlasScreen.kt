@@ -14,6 +14,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,6 +86,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -141,7 +143,8 @@ fun AtlasScreen(
   onboardingViewModel: OnboardingViewModel,
   batchImportViewModel: BatchImportViewModel = viewModel(),
 ) {
-  AtlasTheme {
+  val appearance by viewModel.interfaceAppearance.collectAsStateWithLifecycle()
+  AtlasTheme(appearance = appearance) {
     AtlasScreenContent(viewModel, onboardingViewModel, batchImportViewModel)
   }
 }
@@ -232,6 +235,9 @@ private fun AtlasScreenContent(
     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
   }
   val state by viewModel.state.collectAsStateWithLifecycle()
+  val appearance = LocalAtlasAppearance.current
+  val appearanceSaving by viewModel.appearanceSaving.collectAsStateWithLifecycle()
+  val appearanceSaveFailed by viewModel.appearanceSaveFailed.collectAsStateWithLifecycle()
   val notificationSettings by viewModel.notificationSettings.collectAsStateWithLifecycle()
   val notificationSettingsSaving by viewModel.notificationSettingsSaving.collectAsStateWithLifecycle()
   val notificationSettingsSaveFailed by viewModel.notificationSettingsSaveFailed.collectAsStateWithLifecycle()
@@ -546,9 +552,13 @@ private fun AtlasScreenContent(
   val showingPlayground = tab == 0 && !showQuick && !showAdvanced && !showWorkflow && !showBatch
   // B5：provider detail 有自帶 bottomBar（返回／同步），外層 tab bar 於 detail 期間隱藏。
   val providerDetailActive = tab == 1 && selectedProviderId != null
+  Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+    .testTag("interface_${appearance.style.savedValue}")) {
+  AquaBackdrop(appearance, Modifier.fillMaxSize())
   Scaffold(
     modifier = Modifier.fillMaxSize().imePadding(),
-    containerColor = MaterialTheme.colorScheme.background,
+    containerColor = if (appearance.style == dev.modelatlas.app.data.InterfaceStyle.AQUA)
+      Color.Transparent else MaterialTheme.colorScheme.background,
     topBar = {
       TopAppBar(
         title = {
@@ -570,7 +580,7 @@ private fun AtlasScreenContent(
           }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-          containerColor = MaterialTheme.colorScheme.background,
+          containerColor = atlasChromeColor(MaterialTheme.colorScheme.background),
         ),
         actions = {
           IconButton(
@@ -622,7 +632,7 @@ private fun AtlasScreenContent(
         ) {
           CircularProgressIndicator()
           Text(stringResource(R.string.onboarding_title))
-          OutlinedButton(onClick = onboardingViewModel::cancel, modifier = Modifier.heightIn(min = 48.dp)) {
+          OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = onboardingViewModel::cancel, modifier = Modifier.heightIn(min = 48.dp)) {
             Text(stringResource(R.string.onboarding_cancel_probe))
           }
         }
@@ -815,11 +825,12 @@ private fun AtlasScreenContent(
             Button(onClick = { editing = false; showQuick = true }, enabled = !onboarding.busy, modifier = Modifier.heightIn(min = 48.dp)) {
               Text(stringResource(R.string.onboarding_quick))
             }
-            OutlinedButton(onClick = { editing = false; showAdvanced = true }, enabled = !onboarding.busy, modifier = Modifier.heightIn(min = 48.dp)) {
+            OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = { editing = false; showAdvanced = true }, enabled = !onboarding.busy, modifier = Modifier.heightIn(min = 48.dp)) {
               Text(stringResource(R.string.onboarding_advanced))
             }
             onboarding.resumable.forEach { draft ->
               OutlinedButton(
+                colors = atlasOutlinedButtonColors(),
                 onClick = { onboardingViewModel.resume(draft.workflowId); showWorkflow = true },
                 enabled = !onboarding.busy,
                 modifier = Modifier.heightIn(min = 48.dp),
@@ -829,6 +840,7 @@ private fun AtlasScreenContent(
               }
             }
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = { editing = false; showBatch = true },
               enabled = !onboarding.busy && !batch.busy,
               modifier = Modifier.heightIn(min = 48.dp),
@@ -899,6 +911,7 @@ private fun AtlasScreenContent(
       }
     }
   }
+  }
   if (showSettings) {
     // X-013 / D-005: production Settings → VM → app-owned durable store.
     val context = LocalContext.current
@@ -952,7 +965,7 @@ private fun AtlasScreenContent(
       confirmButton = {
         TextButton(
           onClick = { showSettings = false },
-          modifier = Modifier.heightIn(min = 48.dp),
+          modifier = Modifier.heightIn(min = 48.dp).testTag("settings_close"),
         ) {
           Text(stringResource(R.string.action_close))
         }
@@ -964,6 +977,15 @@ private fun AtlasScreenContent(
           verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
           Text(stringResource(R.string.settings_body))
+          AppearanceSettingsSection(
+            state = appearance,
+            saving = appearanceSaving,
+            saveFailed = appearanceSaveFailed,
+            onStyle = viewModel::setInterfaceStyle,
+            onWallpaper = viewModel::setAquaWallpaper,
+            onReduceTransparency = viewModel::setReduceTransparency,
+          )
+          HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
           NotificationSettingsSection(
             state = notificationSettings,
             onMasterChanged = { on ->
@@ -995,6 +1017,7 @@ private fun AtlasScreenContent(
           }
           // P7-B2：Settings 可見觸發入口（全域 enrichment；失敗保舊，不寫本地 telemetry）。
           OutlinedButton(
+            colors = atlasOutlinedButtonColors(),
             onClick = { viewModel.syncLmspeed() },
             enabled = !lmspeedSyncing,
             modifier = Modifier.heightIn(min = 48.dp),
@@ -1012,6 +1035,8 @@ private fun AtlasScreenContent(
             error = lmspeedSyncError,
             lastSynced = lmspeedLastSynced,
           )
+          WorkspaceSyncSection(viewModel)
+          KiloFactorySection(viewModel)
         }
       },
     )
@@ -1058,7 +1083,7 @@ private fun AtlasBottomNavigation(selectedTab: Int, compact: Boolean, onSelect: 
     stringResource(R.string.tab_models),
   )
   val icons = listOf(Icons.AutoMirrored.Filled.Send, Icons.Filled.AccountCircle, Icons.Filled.Search)
-  Surface(color = MaterialTheme.colorScheme.surfaceContainerLow) {
+  Surface(color = atlasChromeColor(MaterialTheme.colorScheme.surfaceContainerLow)) {
     Column {
       HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
       if (compact) {
@@ -1080,13 +1105,14 @@ private fun AtlasBottomNavigation(selectedTab: Int, compact: Boolean, onSelect: 
                 else MaterialTheme.colorScheme.onSurfaceVariant,
             ) {
               Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(AtlasSpace.xs)) {
-                Text(label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+                Text(label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center,
+                  maxLines = 1, overflow = TextOverflow.Ellipsis)
               }
             }
           }
         }
       } else {
-        NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow, tonalElevation = 0.dp) {
+        NavigationBar(containerColor = atlasChromeColor(MaterialTheme.colorScheme.surfaceContainerLow), tonalElevation = 0.dp) {
           labels.forEachIndexed { index, label ->
             NavigationBarItem(
               selected = selectedTab == index,
@@ -1172,6 +1198,7 @@ private fun ProvidersTab(
         )
         OutlinedTextField(
           value = name,
+          colors = atlasOutlinedFieldColors(),
           onValueChange = { name = it },
           modifier = Modifier.fillMaxWidth(),
           label = { Text(stringResource(R.string.label_name)) },
@@ -1181,6 +1208,7 @@ private fun ProvidersTab(
         )
         OutlinedTextField(
           value = baseUrl,
+          colors = atlasOutlinedFieldColors(),
           onValueChange = { baseUrl = it },
           modifier = Modifier.fillMaxWidth(),
           label = { Text(stringResource(R.string.label_base_url)) },
@@ -1192,6 +1220,7 @@ private fun ProvidersTab(
         )
         OutlinedTextField(
           value = modelId,
+          colors = atlasOutlinedFieldColors(),
           onValueChange = { modelId = it },
           modifier = Modifier.fillMaxWidth(),
           label = { Text(stringResource(R.string.label_model)) },
@@ -1201,6 +1230,7 @@ private fun ProvidersTab(
         )
         OutlinedTextField(
           value = secret,
+          colors = atlasOutlinedFieldColors(),
           onValueChange = { secret = it },
           modifier = Modifier.fillMaxWidth(),
           label = { Text(stringResource(R.string.label_key)) },
@@ -1315,10 +1345,10 @@ private fun ProviderDetailHost(
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.error,
         )
-        OutlinedButton(onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)) {
+        OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)) {
           Text(stringResource(R.string.action_retry))
         }
-        OutlinedButton(onClick = onBack, modifier = Modifier.heightIn(min = 48.dp)) {
+        OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = onBack, modifier = Modifier.heightIn(min = 48.dp)) {
           Text(stringResource(R.string.action_back))
         }
       } else {
@@ -1599,6 +1629,7 @@ internal fun ConnectionCard(
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
           if (!isSelected && item.enabled) {
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = { onSelect(item.id) },
               enabled = !saving,
               modifier = Modifier.heightIn(min = 48.dp).testTag("connection_select_${item.id}"),
@@ -1613,6 +1644,7 @@ internal fun ConnectionCard(
             val operationLabel = stringResource(R.string.action_sync_new_api, stringResource(R.string.action_sync))
             val syncingLabel = stringResource(R.string.status_syncing)
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = { onSync(item.providerId) },
               enabled = !saving && !syncingNewApi,
               modifier = Modifier.heightIn(min = 48.dp).testTag("connection_sync_${item.id}")
@@ -1630,6 +1662,7 @@ internal fun ConnectionCard(
             val operationLabel = stringResource(R.string.connection_card_dedicated_sync)
             val syncingLabel = stringResource(R.string.status_syncing)
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = {
                 onDedicatedSync(
                   item.providerId,
@@ -1667,6 +1700,7 @@ internal fun ConnectionCard(
             }
             if (item.checkinPending) {
               OutlinedButton(
+                colors = atlasOutlinedButtonColors(),
                 onClick = { onCompleteCheckin(item.id) },
                 enabled = !saving,
                 modifier = Modifier.heightIn(min = 48.dp).testTag("connection_checkin_complete_${item.id}"),
@@ -1935,6 +1969,7 @@ private fun ModelsTab(
       verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
       OutlinedButton(
+        colors = atlasOutlinedButtonColors(),
         onClick = onDetailClose,
         modifier = Modifier.heightIn(min = 48.dp),
       ) {
@@ -1954,6 +1989,7 @@ private fun ModelsTab(
       }
       if (compareChoicesLoadFailed) {
         OutlinedButton(
+          colors = atlasOutlinedButtonColors(),
           onClick = onCompareChoicesRetry,
           modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         ) {
@@ -1986,6 +2022,7 @@ private fun ModelsTab(
   ) {
     // P7-B2：ModelsTab 可見觸發入口（全域 enrichment；只寫 external 槽，失敗保舊）。
     OutlinedButton(
+      colors = atlasOutlinedButtonColors(),
       onClick = onLmspeedSync,
       enabled = !lmspeedSyncing,
       modifier = Modifier.heightIn(min = 48.dp),
@@ -2018,7 +2055,7 @@ private fun ModelsTab(
       } else if (modelRows.isEmpty() && rowsLoadFailed) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AtlasSpace.md)) {
           Text(stringResource(R.string.error_load), color = MaterialTheme.colorScheme.error)
-          OutlinedButton(onClick = onRetryModelRows, modifier = Modifier.heightIn(min = AtlasSpace.touch)) {
+          OutlinedButton(colors = atlasOutlinedButtonColors(), onClick = onRetryModelRows, modifier = Modifier.heightIn(min = AtlasSpace.touch)) {
             Text(stringResource(R.string.action_retry))
           }
         }
@@ -2028,6 +2065,7 @@ private fun ModelsTab(
           hasActiveFilter = hasActiveFilter,
           action = {
             OutlinedButton(
+              colors = atlasOutlinedButtonColors(),
               onClick = { query = ""; filterState = FilterState() },
               modifier = Modifier.heightIn(min = AtlasSpace.touch),
             ) { Text(stringResource(R.string.action_reset)) }
@@ -2060,6 +2098,7 @@ private fun ModelsTab(
                   Text(stringResource(R.string.provider_detail_group, it), style = MaterialTheme.typography.bodySmall)
                 }
                 OutlinedButton(
+                  colors = atlasOutlinedButtonColors(),
                   onClick = {
                     onDedicatedSync(
                       row.providerId,

@@ -1,0 +1,17 @@
+{
+  "source": "1e6d88b46e690f1b28a9dee23b960abcab149b05",
+  "run": 40852733230,
+  "attempt": 1,
+  "job": 123375983450,
+  "artifact_id": 12887564613,
+  "bytes": 21614003,
+  "sha256": "80ee12b8e9f7209e4c46cbfa4a1c2757003cd24102a81cb7edccfd427a9717fe",
+  "crc": "PASS",
+  "status": "FAILED_SCREENSHOT_CAPTURE",
+  "actual_cases": 8,
+  "passed": 7,
+  "failed": 1,
+  "failure": "真實Activity重建後，第一張深色截圖的UiAutomation.takeScreenshot回傳null；dark報告沒有圖片。正式隱私旗標、系統與偏好均完整還原，本輪尚未執行到PDF大字斷言。",
+  "root_cause": "UNKNOWN；尚未證明是產品或模擬器根因，不把重跑成功寫成已修復。",
+  "next": "保留同一來源、8個案例及原全部deadline重跑；整合9f79d39另跑自己的1005個裝置案例與同來源九項。"
+}

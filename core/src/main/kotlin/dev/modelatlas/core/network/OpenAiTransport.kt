@@ -150,6 +150,7 @@ class OpenAiTransport(
             require(parsed.host in setOf("localhost", "127.0.0.1", "::1"))
             parsed
         } else EndpointPolicy.validate(target.endpointUrl)
+        KiloFactoryPolicy.verify(target, url, client, allowLoopbackHttpForTests)
         val payload = buildJsonObject {
             put("model", target.modelId)
             put("stream", true)

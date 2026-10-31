@@ -49,6 +49,7 @@
 ## Part II — Runtime Research Agent System Prompt
 ## Part III — App Assistant System Prompt
 ## Part IV — Research Reflection / Self-Improvement Prompt
+## Part V — 我的願望清單補充：完整研究與自我改進（2026-10-19）
 
 ---
 
@@ -2804,3 +2805,86 @@ Astra 開工前必須先：
 **保留正確 Data Model / Interface / Migration Path。**
 
 不能為了快而採用會導致未來整套重寫的簡化方案。
+
+---
+
+# Part V — 我的願望清單補充：完整研究與自我改進（2026-10-19）
+
+本章依使用者要求，將功能盤點後應補齊的項目加入原願望清單，並細化 Part I、II、IV 的驗收條件。原文與既有需求全部保留；WISH-CRAWL-001 已進入 **PARTIAL：VPS 公開研究排程第一階段已驗**，其餘四項為 **OPEN：待完成／待驗收**。寫入清單不代表功能已實作，也不會把完整 Master Spec 升為已完成。
+
+查核基準是 VPS code `ae0849294fdcf4f48c0cf549de797e59afd53ecb`（2026-10-19）。該版本已有研究任務、候選與證據、有限預算、反思報告、版本提案及明確啟用／回退的基礎；本章追蹤尚未完整交付的持續發現、未知站點理解、真實性驗證與可量測的學習閉環。平台及最新驗收狀態仍見 `ACTIVE_TASK.md`、`TRACEABILITY.md`。
+
+## 建議順序與追蹤
+
+| 順序 | Requirement ID | 願望 | 對應既有範圍 | 狀態 |
+| --- | --- | --- | --- | --- |
+| 1 | WISH-CRAWL-001 | 持續自主發現與研究排程 | Part I §33–39、§45／P8 | PARTIAL（VPS 公開第一階段已驗） |
+| 2 | WISH-CRAWL-002 | 未知站點解析與 Connector 提案 | Part I §30、§36、§40；Intelligence Contract §18–19／P8、P10 | OPEN |
+| 3 | WISH-REFL-001 | 可評估、可啟用、可回退的研究改進閉環 | Part I §40、Part IV／P10 | OPEN |
+| 4 | WISH-AUTH-001 | 完整模型真實性與替換風險驗證 | Part I §37–38、Part II／P8 | OPEN |
+| 全程 | WISH-ACCEPT-001 | 真站長跑、跨平台與手機完整驗收 | Part I §48–50；PRODUCT_SPEC §18 | OPEN |
+
+此順序是後續切片建議；實際開工仍依 `ACTIVE_TASK.md` 與同 SHA 全綠 gate，一次處理一個可驗收切片。
+
+## WISH-CRAWL-001：持續自主發現與研究排程
+
+2026-10-20 進度：VPS-RESEARCH-SCHEDULE-007 code `b1e0c66` 已以同 SHA 六項 CI／23 Browser／303圖驗證並接上正式 UI、持久公開探索、每輪／每日 HTTP 上限、重啟／啟停及本機來源確認，詳見 `vps/RESEARCH_SCHEDULES.md`。整項仍 PARTIAL；以下六個完整驗收條件全部保留，未因第一階段提前勾選。推論／費用／逐憑證 quota、地區／並行／自動退避和原生生命週期仍待後續。
+
+- [ ] 在 App 中管理持久化研究排程，定期建立新的全球／多語 discovery ResearchRun，持續發現新 Provider，並重新查核高價值、過期及先前失敗的候選。
+- [ ] 排程可設定間隔、來源／語言／地區優先序、並行上限、每輪及每日 HTTP／inference／費用預算；預算按實際 credential／quota scope 計算，避免耗盡有限免費額度。
+- [ ] 支援明確啟用／停用、暫停／續跑／取消、checkpoint、程序重啟後恢復及重複觸發去重；429／502／斷線採有界重試與退避，保留原始失敗證據。
+- [ ] 研究工作區呈現上次／下次執行、進度、實際請求與預算、跳過／失敗原因，以及完整 scanned → high-signal → verified／grey-zone／rejected 漏斗和新發現／變更報告。
+- [ ] 已加入 My Models 的 metadata refresh 與新 Provider discovery 分別排程及記錄；排程研究使用已啟用策略與最新有效 eligibility evidence，不能將 metadata sync 計作完成全球新站發現。
+- [ ] VPS 沿用既有 Go／SQLite 與研究 runner；Mac／Android 顯示各自生命週期與背景限制。通知沿用預設 OFF 及逐項設定。
+
+驗收：從正式 UI 建立排程，實際觸發研究 HTTP 並保存新候選；驗證重啟續跑、重複到期不重複扣額、暫停／取消／預算用盡後停止發送，以及報告與實際 HTTP／持久資料一致。不能只用手動 enqueue 或背景 tick 存在作為本項完成證據。
+
+## WISH-CRAWL-002：未知站點解析與 Connector 提案
+
+- [ ] 從官方文件、公開頁面、前端 XHR／JSON 線索及 GitHub source/constants，辨識 Provider family／version、Base URL、auth role 與 models／pricing／quota／usage／notice／performance 等資料入口。
+- [ ] 研究 Agent 可生成具來源證據的宣告式 ProviderRecipe／Connector 草稿，包含欄位映射、單位、完整 scope、freshness、parser version、已知限制及失敗語意；站點缺少欄位時保留 Unknown。
+- [ ] 草稿先經 schema／secret／origin 檢查、fixture 驗證與有界真 HTTP 測試，再進入共用 Review／確認／啟用；保存版本與回退能力。已驗 recipe 不被新提案無聲覆蓋。
+- [ ] 分開驗證台灣註冊／使用資格、QQ-only／中國實名／中國手機／教育／綁卡／論壇資格等限制；登入受限或資料不可取得時保留原因與待辦。
+- [ ] 分開保存 recurring reset 與一次性贈額、帳戶／Key／Group／Model／Endpoint 的 quota、nominal／effective price、來源時效及衝突。讀到頁面或模型文字推論不直接升為 VERIFIED。
+- [ ] 站點資料改版、欄位消失或認證失敗時，保留 last-good 與全部歷史，提出重驗或 recipe 更新；逐站列支援／部分支援／尚未驗證的能力。
+
+驗收：未知站點從研究 → 有證據的 mapping 草稿 → 真 HTTP 測試 → Review／啟用 → 正式 Intelligence 顯示資料，完整走通；涵蓋來源衝突、錯誤單位／scope、過期規則、失敗保留及回退。逐站標示真實測試範圍，不宣稱所有站點均自動相容。
+
+## WISH-REFL-001：可量測的研究改進閉環
+
+- [ ] 每次研究結束啟動反思，並能綜合多輪實際結果，提出具體 query patterns、source weights、語言／地區優先序、Endpoint／Auth／extraction patterns、ProviderRecipe、alias 與 verification heuristics 更新。
+- [ ] 以有效新候選、證據品質、去重、時效、假免費／誤升級、實際 HTTP／token／費用與失敗反例評估成效；HTTP 200 或抓取成功不等於來源可信或研究品質提高。
+- [ ] 保存成功／失敗路徑及 failed-strategy notes，能依真實證據降低 stale、假免費與無效策略的優先序。只有固定預設權重或反思摘要，不能視為已學會調整策略。
+- [ ] 提案先以 fixtures、歷史反例及有界真實研究，和目前啟用版本作可重現比較；保存比較範圍、基線、成本與限制。品質門檻及權重調整需有依據，資料不足保持 tentative。
+- [ ] 打通「研究 → 反思 → 具體版本提案 → 評估 → Review／明確啟用 → 下一輪真正使用 → 持續監測 → 退化回退」；每輪記錄實際使用的知識版本，能辨識改進是否生效。
+- [ ] UI 可檢視建議差異、理由、證據、評估結果、啟用版本與回退結果。沿用既有確認／Undo 與安全界線；Tool／Code 改善仍只提出 Proposal + Evidence + Rationale，不自行改 System Prompt、App source、Secret Boundary 或 destructive permission policy。
+
+驗收：用跨輪案例證明新策略確實被下一輪採用，並如實呈現相對基線的品質與成本；不合格提案不啟用，回退後下一輪恢復先前策略。不能只驗報告生成或版本存入資料庫。
+
+## WISH-AUTH-001：模型真實性與替換風險驗證
+
+- [ ] 建立獨立、版本化的 authenticity／fingerprint suite，涵蓋 response／provider metadata、context／capability、tools／reasoning 行為，並可對照已知可信來源的同一 Canonical Model。
+- [ ] 分開記錄「這次 inference 可用」「觀察到某能力」與「模型身份可信程度」；最小 Reply OK 成功、回應中的 model 名稱或單次能力命中，不足以證明身份。
+- [ ] 每次驗證保存 probeVersion、timestamp、完整 scope、來源、confidence、請求成本、比對條件、衝突及未知；UI 可查證據與限制，弱證據不得斷言百分之百替換。
+- [ ] 優先重用正常 Playground／Assistant／Compare telemetry；依高價值與風險逐級追加低成本 probe，遵守每輪／每日預算與取消，不做 max RPM 暴力測試。
+
+驗收：正式流程能區分一致、矛盾及不足判定的結果；包含受控正反例與有界真站對照，重跑可追溯版本和差異。沒有可信基線或因模型隨機性無法判定時，必須如實保留不確定性。
+
+## WISH-ACCEPT-001：真站長跑、跨平台與手機完整驗收
+
+- [ ] 爬蟲與改進閉環完成持續運行驗證，涵蓋程序重啟、斷網、429／502、預算耗盡、過期 metadata、credential rotation、多 Account／Key／Group、跨日／時區及 recovery；保存可重現條件、實際耗用與失敗紀錄。
+- [ ] 在實際部署環境驗證服務、SQLite／vault 持久化、備份／恢復、全量歷史與資源使用。保留既有並行、完整 context、資料量與全部測試工作量；量測須區分服務 RSS 與 OS／proxy 等整機成本。
+- [ ] Mac／VPS／Android 分別維護功能與 UI 對照矩陣，列 production caller、已驗範圍與缺口；單一平台或單個切片的 CI 成功不能代替其他平台及完整 P8／P9／P10 驗收。
+- [ ] 手機／平板／桌面所有頁面、分頁、卡片、表單、選單及 dialog 的左右邊界、欄位／按鈕、間距與標題層級一致；涵蓋窄屏、長文字、深淺色、200% 大字、直橫向 safe area、捲動及至少 48px／48dp 操作區。
+- [ ] 補實體 iPhone／Safari／軟體鍵盤、Android 裝置與 Mac 實際互動；檢查鍵盤彈出、輸入法、focus、底部導覽遮擋與表單錯誤可見性。模擬器／Chromium 模擬與實機結果分別記錄。
+- [ ] 每個 Requirement ID 對到正式入口、程式、測試、實圖／真站證據、版本／SHA、必要完整 CI 及 review 結果；阻塞、未驗證與已知限制必須可查，只有逐項符合才升為 ACCEPTED。
+
+驗收：提供可追溯的全功能清單及各平台結果；本章五項與原 Master Spec 全部需求均有明確狀態。CI 綠燈只證明其實際執行的測試範圍，不直接宣稱整份願望清單完成。
+
+## 本章沿用的永久約束
+
+- Provider × Account × Credential × Model × Group × Endpoint／Operation × Time 隔離；Unknown 不冒充 0／Free，nominal／effective price、quota／access／recurring free 與資料來源分開。
+- ordinary 主結果維持 RPD ≥ 100 且 TPD ≥ 1,000,000；特例只依最新有效 AA 動態前四名。未知額度與 public pool 保留灰區及證據。
+- Catalog 不自動加入 My Models；失敗不刪會員資格、last-good 或歷史，User Cancel 不算 My Uptime。
+- raw Key／PAT／Cookie／Authorization 不進模型、Git、log 或 telemetry；安全 ref、privileged HTTP、origin binding、Review／確認／Undo 繼續適用。
+- 本章沿用現有研究架構。自動跨 Provider routing／fallback、Key auto rotation、App-as-API Gateway，以及完整獨立 server-side crawler backend 的 future-only 邊界不變。

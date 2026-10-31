@@ -1,0 +1,288 @@
+name: VPS Go Build and Integration
+
+on:
+  pull_request:
+    paths:
+      - "vps/**"
+      - ".dockerignore"
+      - ".github/workflows/vps.yml"
+      - "release/**"
+      - "docs/ACTIVE_TASK.md"
+      - "docs/TRACEABILITY.md"
+  push:
+    branches: [main]
+    paths:
+      - "vps/**"
+      - ".dockerignore"
+      - ".github/workflows/vps.yml"
+      - "release/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vps-go-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vps-test:
+    name: vps-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vps
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - name: Resolve pinned SQLite dependency
+        run: go mod download
+      - name: Read-only Go formatting and browser syntax diagnostics
+        run: |
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          for path in sorted(pathlib.Path(".").glob("*.go")):
+              actual = path.read_text()
+              result = subprocess.run(["gofmt", str(path)], text=True, capture_output=True, check=True).stdout
+              if actual != result:
+                  print("MODELATLAS_GOFMT " + json.dumps({"path":"vps/"+str(path), "source":result}, ensure_ascii=False), flush=True)
+          for name in ("ui_js_connector_discovery.go", "ui_js_connector_mapping.go"):
+              source = pathlib.Path(name).read_text()
+              for index, script in enumerate(source.split(chr(96))[1::2]):
+                  if "function " not in script:
+                      continue
+                  subprocess.run(["node", "--check", "-"], input=script, text=True, check=True)
+          subprocess.run(["node", "--check", "e2e/connector-private-mapping.cjs"], check=True)
+          PY
+      - name: Unit and HTTP integration tests
+        run: |
+          python3 -m unittest test_go_runner_test.py
+          python3 test_go.py
+      - name: Vet
+        run: go vet -mod=readonly ./...
+      - name: Genuine systemd install, upgrade, rollback and crash recovery
+        run: |
+          sh deploy/package.sh /tmp/modelatlas-systemd-release
+          sudo env "PATH=$PATH" "GOMODCACHE=$(go env GOMODCACHE)" "GOCACHE=$(go env GOCACHE)" \
+            MODELATLAS_SYSTEMD_TEST=1 MODELATLAS_SYSTEMD_BUNDLE=/tmp/modelatlas-systemd-release/modelatlas-vps-linux-amd64 \
+            go test -mod=readonly -v -run '^TestSystemdDeploymentLifecycle$' -count=1 -timeout=5m
+      - name: Measure standalone resource footprint
+        run: MODELATLAS_FOOTPRINT_TEST=1 MODELATLAS_FOOTPRINT_OUT=footprint.json go test -mod=readonly -v -run TestStandaloneProcessFootprint -count=1 -timeout=3m
+      - name: Compare full-context JSON encoding allocations
+        run: go test -mod=readonly -run '^TestRequestJSON' -bench '^BenchmarkInferenceJSONBody$' -benchtime=3x -benchmem -count=1 | tee encoding-allocations.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelatlas-vps-footprint
+          path: |
+            vps/footprint.json
+            vps/encoding-allocations.txt
+            vps/test-results/go-suite.json
+          if-no-files-found: error
+      - name: Smoke Linux runtime
+        run: |
+          CGO_ENABLED=0 go build -trimpath -o /tmp/modelatlas-vps .
+          MODELATLAS_ADMIN_TOKEN=example-admin-token-long-enough-for-ci MODELATLAS_DB=/tmp/modelatlas-ci.sqlite MODELATLAS_LISTEN=127.0.0.1:17887 /tmp/modelatlas-vps &
+          pid=$!
+          trap 'kill $pid || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:17887/healthz >/tmp/vps-health.json; then break; fi
+            sleep 1
+          done
+          grep -q '"status":"ok"' /tmp/vps-health.json
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17887/api/v1/status)
+          test "$code" = "401"
+          curl -fsS -u "admin:example-admin-token-long-enough-for-ci" http://127.0.0.1:17887/api/v1/status
+      - name: Preserve failed Go suite progress
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: modelatlas-vps-go-failure
+          path: vps/test-results/go-suite.json
+          if-no-files-found: warn
+  vps-linux:
+    name: vps-linux-${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    defaults:
+      run:
+        working-directory: vps
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - name: Build
+        run: |
+          go mod download
+          GOARCH=${{ matrix.arch }} sh deploy/package.sh /tmp/modelatlas-release
+          mkdir /tmp/modelatlas-artifacts
+          cp /tmp/modelatlas-release/modelatlas-vps-linux-${{ matrix.arch }}/bin/modelatlas-vps-linux-${{ matrix.arch }} /tmp/modelatlas-artifacts/
+          cp /tmp/modelatlas-release/modelatlas-vps-linux-${{ matrix.arch }}.tar.gz* /tmp/modelatlas-artifacts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelatlas-vps-linux-${{ matrix.arch }}
+          path: /tmp/modelatlas-artifacts/*
+          if-no-files-found: error
+
+  vps-browser:
+    name: vps-browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache-dependency-path: vps/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: vps/e2e/package-lock.json
+      - name: Bound CI package downloads and use the official HTTPS mirror
+        run: |
+          sudo tee /etc/apt/apt.conf.d/80-modelatlas-ci >/dev/null <<'APT'
+          Acquire::Retries "1";
+          Acquire::http::Timeout "30";
+          Acquire::https::Timeout "30";
+          APT
+          for apt_source in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list /etc/apt/*mirrors*.txt; do
+            if [ -f "$apt_source" ]; then
+              sudo sed -i 's|mirror[+]file:/etc/apt/apt-mirrors\.txt|https://archive.ubuntu.com/ubuntu|g; s|http://azure\.archive\.ubuntu\.com/ubuntu|https://archive.ubuntu.com/ubuntu|g; s|http://archive\.ubuntu\.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$apt_source"
+            fi
+          done
+      - name: Install browser test dependencies
+        working-directory: vps/e2e
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk rclone
+      - name: Verify bounded async browser waits with actual Chromium
+        working-directory: vps
+        run: node --test --test-reporter=tap --test-timeout=30000 e2e/async-wait.test.cjs
+      - name: Browser production flow and responsive UI
+        working-directory: vps
+        env:
+          MODELATLAS_BROWSER_TEST: "1"
+          PLAYWRIGHT_MODULE: "playwright"
+        run: go test -mod=readonly -race -v -run TestBrowser -count=1 -timeout=5m
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-vps-browser
+          path: vps/e2e/screenshots/
+          if-no-files-found: warn
+
+  vps-portable:
+    name: vps-portable-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - name: Install actual encrypted transfer tool
+        run: |
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+          sudo apt-get install -y rclone
+          rclone version
+      - name: Private identity, live snapshots, crypt, scheduling, cancellation and process crash
+        working-directory: vps
+        env:
+          MODELATLAS_CLOUD_BACKUP_TEST: "1"
+        run: |
+          set -o pipefail
+          mkdir -p portable-test-results
+          go mod download
+          go test -mod=readonly -race -json -count=1 -run '^TestPortable' -timeout=3m . | tee portable-test-results/portable-contracts.jsonl
+      - name: Native containers, Compose recreation, real Caddy TLS, SSE and cloud restore
+        working-directory: vps
+        env:
+          MODELATLAS_CONTAINER_TEST: "1"
+          MODELATLAS_CONTAINER_REPORT: portable-test-results/container.json
+        run: |
+          set -o pipefail
+          go test -mod=readonly -race -json -count=1 -run '^TestPortableContainer' -timeout=8m . | tee portable-test-results/container-contracts.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-vps-portable-${{ matrix.arch }}
+          path: vps/portable-test-results/
+          if-no-files-found: warn
+
+  vps-private-mapping-diagnostic:
+    name: vps-private-mapping-diagnostic
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache-dependency-path: vps/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: vps/e2e/package-lock.json
+      - name: Bound CI package downloads and use the official HTTPS mirror
+        run: |
+          sudo tee /etc/apt/apt.conf.d/80-modelatlas-ci >/dev/null <<'APT'
+          Acquire::Retries "1";
+          Acquire::http::Timeout "30";
+          Acquire::https::Timeout "30";
+          APT
+          for apt_source in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list /etc/apt/*mirrors*.txt; do
+            if [ -f "$apt_source" ]; then
+              sudo sed -i 's|mirror[+]file:/etc/apt/apt-mirrors\.txt|https://archive.ubuntu.com/ubuntu|g; s|http://azure\.archive\.ubuntu\.com/ubuntu|https://archive.ubuntu.com/ubuntu|g; s|http://archive\.ubuntu\.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$apt_source"
+            fi
+          done
+      - name: Install browser test dependencies
+        working-directory: vps/e2e
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Focused private mapping TLS, failure and real UI diagnostics
+        working-directory: vps
+        env:
+          MODELATLAS_BROWSER_TEST: "1"
+          PLAYWRIGHT_MODULE: "playwright"
+        run: |
+          MODELATLAS_BROWSER_TEST=0 go test -mod=readonly -race -v -run '^TestConnectorPrivateMapping' -count=1 -timeout=5m
+          go test -mod=readonly -race -v -run '^TestBrowserConnectorPrivateMapping' -count=1 -timeout=5m
+          go test -mod=readonly -race -v -run '^TestBrowserAAResearchPageRecoveryWorkflow$' -count=5 -timeout=5m
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-vps-private-mapping-diagnostic
+          path: vps/e2e/screenshots/
+          if-no-files-found: warn

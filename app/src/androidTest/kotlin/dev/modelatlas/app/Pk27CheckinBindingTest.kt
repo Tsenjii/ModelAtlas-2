@@ -1,11 +1,14 @@
 package dev.modelatlas.app
 
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
@@ -30,6 +33,9 @@ import dev.modelatlas.app.data.ProviderManualConfig
 import dev.modelatlas.app.data.toEntity
 import dev.modelatlas.core.onboarding.AuthMode
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -42,6 +48,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExternalResource
+import org.junit.rules.RuleChain
+import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import java.time.LocalDate
 import java.util.UUID
@@ -55,11 +64,39 @@ import java.util.UUID
  * ConnectionCardInteractionTest, ConnectionCardFlowTest and ProviderManagementViewModelTest
  * remain the TV-9/10 regression suites.
  */
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class Pk27CheckinBindingTest {
+    private val compositionScheduler = TestCoroutineScheduler()
+    // The default UnconfinedTestDispatcher can resume frame traversal on a
+    // Room/IO emitter thread, where Android's Choreographer has no Looper.
+    // Queue composition work for the harness clock instead; keep every real
+    // UI interaction, the original 15s waits and exact-account DB assertions.
+    val compose = createAndroidComposeRule<MainActivity>(
+        effectContext = StandardTestDispatcher(compositionScheduler),
+    )
+
+    // On this legacy Compose test API, queued composition must also be driven
+    // before ActivityScenario/idle synchronization can finish. Only run ready
+    // work on Android's main Looper; do not advance virtual time or change the
+    // original 15s condition bounds. Start before the activity rule and stop
+    // after its composition has been disposed.
+    private val compositionDriver = object : ExternalResource() {
+        private val main = Handler(Looper.getMainLooper())
+        @Volatile private var active = false
+        private val pulse = object : Runnable {
+            override fun run() {
+                if (!active) return
+                compositionScheduler.runCurrent()
+                if (active) main.postDelayed(this, 16L)
+            }
+        }
+        override fun before() { active = true; main.post(pulse) }
+        override fun after() { active = false; main.removeCallbacks(pulse) }
+    }
+
     @get:Rule
-    val compose = createAndroidComposeRule<MainActivity>()
+    val testRules: TestRule = RuleChain.outerRule(compositionDriver).around(compose)
 
     private lateinit var app: AtlasApplication
     private lateinit var viewModel: AtlasViewModel
@@ -327,10 +364,12 @@ class Pk27CheckinBindingTest {
         val choice = hasClickAction() and hasText(label, substring = true)
         compose.onNode(choice).performScrollTo().performClick()
         compose.waitUntil(TIMEOUT_MS) { viewModel.state.value.selectedId == connectionId }
-        // Wait for the state change, let the rule synchronize composition, then
-        // assert actual UI disabled semantics. Never poll a Compose node from
-        // a raw waitUntil predicate running on the instrumentation thread.
-        compose.waitForIdle()
+        // selectedId updates before ProviderDetailLoader's Dispatchers.IO read
+        // restores the new actionScope. Compose idleness alone does not await
+        // that read. Wait for the actual scoped UI under the original 15s
+        // bound, then retain the same disabled assertion and exact-account DB
+        // checks. Let the Compose harness own semantics-tree polling.
+        compose.waitUntilAtLeastOneExists(choice and isNotEnabled(), TIMEOUT_MS)
         compose.onNode(choice).assertIsNotEnabled()
         headerToTop()
     }

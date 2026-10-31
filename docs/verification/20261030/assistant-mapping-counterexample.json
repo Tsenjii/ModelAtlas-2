@@ -1,0 +1,178 @@
+{
+  "slice": "ASSISTANT-MAPPING-017",
+  "status": "CANDIDATE_NOT_FINAL_SOURCE_ACCEPTANCE",
+  "parent_checkpoint": "8e9539083f17d412dd285b03b9533b36f48cc426",
+  "parent_code_source": "7053b1e76e0c15f808640375fec5c8ebf511cb1a",
+  "observed_at_utc": "2026-10-30T06:20:43.920732+00:00",
+  "counterexample": {
+    "production_changed": false,
+    "only_added_test": "vps/assistant_mapping_test.go",
+    "result": "FAIL",
+    "package_seconds": 1.147,
+    "case_seconds": 1.13,
+    "reason": "Assistant cannot inspect saved public field descriptors: tool not allowlisted",
+    "sha256": "42b481938b03f9eaeefbff99ef5c150629a802efa2574bd20ac9fb221c216257",
+    "events": [
+      {
+        "Time": "2026-10-30T14:06:46.743258654+08:00",
+        "Action": "start",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps"
+      },
+      {
+        "Time": "2026-10-30T14:06:46.757618375+08:00",
+        "Action": "run",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo"
+      },
+      {
+        "Time": "2026-10-30T14:06:46.757651826+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo",
+        "Output": "=== RUN   TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.873433245+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo",
+        "Output": "    assistant_mapping_test.go:19: Assistant cannot inspect saved public field descriptors: tool not allowlisted\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.886873969+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo",
+        "Output": "--- FAIL: TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo (1.13s)\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.886903123+08:00",
+        "Action": "fail",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Test": "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo",
+        "Elapsed": 1.13
+      },
+      {
+        "Time": "2026-10-30T14:06:47.887562736+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Output": "FAIL\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.889815174+08:00",
+        "Action": "output",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Output": "FAIL\tgithub.com/Tsenjii/ModelAtlas-2/vps\t1.146s\n"
+      },
+      {
+        "Time": "2026-10-30T14:06:47.889834403+08:00",
+        "Action": "fail",
+        "Package": "github.com/Tsenjii/ModelAtlas-2/vps",
+        "Elapsed": 1.147
+      }
+    ]
+  },
+  "repaired_focused": {
+    "working_tree_dirty": true,
+    "result": "PASS",
+    "package_seconds": 9.181,
+    "cases": {
+      "TestAssistantMappingRealAgentLoopPreservesDraftAndToolJournal": 1.73,
+      "TestAssistantMappingSavedPublicEvidenceUsesSharedReviewAndUndo": 1.57,
+      "TestAssistantMappingOversizedDescriptorsKeepWholeSampleLocal": 1.31,
+      "TestAssistantMappingRejectsOtherScopeGuessedFieldsAndStaleAuthority": 1.24,
+      "TestAssistantMappingPrivateSamplesStayLocalAfterExplicitPrivateRead": 1.12,
+      "TestAssistantMappingStorageFailureCannotLeaveHalfAProposal": 1.19
+    },
+    "sha256": "935952bb240ee95dd0a4fd98a8491a91b50a492e2f6b509147c284e879785718"
+  },
+  "harness_compile_error": {
+    "production_counterexample": false,
+    "reason": "初版測試誤寫不存在的assistantBudget.inference，已更正為原tests欄位；不把編譯失敗當production反例。",
+    "sha256": "6046dfe1a4f0864a16fd78aa33a578b2db784afb624c8d4b5531a34254dcb758"
+  },
+  "scope": [
+    "公開來源的已保存有界欄位描述，精確model／Key／group／operation與freshness綁定；不是完整raw來源或私人樣本。",
+    "Assistant草稿來源另記ASSISTANT；沿共用fixture／真HTTP測試／明確啟用／Undo；不冒稱使用者已審語意、獨立驗證或免費。",
+    "同ID／同內容恢復不重建；Assistant與手動request身份分開，交易失敗不留半套草稿。"
+  ],
+  "pending": [
+    "新來源自己的完整462入口／690結果、46Browser／572圖、十一必要job／十一真ZIP與稽核及140相關視圖／35接觸表。",
+    "真正外部模型對任意站點的理解與真站資格／身份仍未證明；腳本TLS模型是受控工具流程fixture。",
+    "原始需求與整版PARTIAL、目標Muse／cloud／網址缺入口、Mac暫停工作及公開Release凍結保留。"
+  ],
+  "local_full_go_before_ui_text_polish": {
+    "result": "PASS",
+    "source": "8e9539083f17d412dd285b03b9533b36f48cc426",
+    "working_tree_dirty": true,
+    "race": true,
+    "seconds": 411.701,
+    "deadline_seconds": 600,
+    "registry": 462,
+    "outcomes": 690,
+    "counts": {
+      "pass": 632,
+      "skip": 58
+    },
+    "all_683_prior_outcomes_unchanged": true,
+    "sha256": "6772d451263249e4c3252699b11e7e80941765a9f38191f8fd883cca36c26511",
+    "limitation": "UI工具名稱及截圖取景隨後修整；這份工作目錄結果不代替最後整合來源自己的完整十一項。"
+  },
+  "first_browser_diagnostic": {
+    "source": "f2b114ddc96373f08f82224012385779f1e2cef3",
+    "tree": "8d6eca39a40a90adf280590647c2d7d880bfced5",
+    "run": 41013745571,
+    "job": 123925233703,
+    "result": "SUCCESS",
+    "artifact": {
+      "id": 12958588058,
+      "bytes": 556341,
+      "sha256": "49f3b6ccd29fa450e96e5c9ab53586be1b0e59a06766911890618f5fefd2df42",
+      "crc": "PASS"
+    },
+    "backend_cases": 6,
+    "backend_seconds": 9.922,
+    "browser_case_seconds": 5.74,
+    "browser_package_seconds": 7.779,
+    "pictures": 6,
+    "visual_review": "自行檢視六張實圖，無獨立reviewer；工具代碼名稱影響可讀性、欄位視圖改以真實捲動展示證據，故另驗修整後來源。",
+    "controlled_peer_only": true
+  },
+  "polished_browser_diagnostic": {
+    "source": "9bf1d05ee0f347959b06a43370730e1a917bb3d6",
+    "tree": "729910db17abb87c8584181ef52483a13c082f1d",
+    "run": 41014409914,
+    "job": 123927366038,
+    "result": "SUCCESS",
+    "artifact": {
+      "id": 12959350458,
+      "bytes": 549486,
+      "sha256": "0dfc46ce57a062b8bc150846c452b78c10c8d941f88317b151c54cfb6a3d2540",
+      "crc": "PASS"
+    },
+    "backend_cases": 6,
+    "backend_seconds": 10.615,
+    "browser_case_seconds": 5.64,
+    "browser_package_seconds": 7.612,
+    "pictures": 6,
+    "picture_sha256": {
+      "assistant-mapping-active-375-dark.png": "04e50f173fc734f48d497adc84a5a094b0d713c783e9d2b16b4ba6b4ff59a671",
+      "assistant-mapping-agent-375-light.png": "26befc89ca1fa310384a9d8a7d9190de774aec881ae40aac9ac66c322cdf3081",
+      "assistant-mapping-fields-1280-light.png": "c78dd3266d37d6fe62812a38aad262149a546e48b77fd114513ffe38085ea745",
+      "assistant-mapping-review-320-200-dark.png": "33addfc2c627f6d37cabac44301a695ee3e7ec967b48a7aa9562b31ae22acf79",
+      "assistant-mapping-review-375-light.png": "adeeb3485d10d4ca062f1736d44d2e0a8bf01fbdac227a70a80d8ce30489a21c",
+      "assistant-mapping-undo-1280-dark.png": "88793a9a69b100d916ccd4898b8991e50f8ffe5cd4fc311fd8b53eae1944c1e1"
+    },
+    "visual_review": {
+      "result": "PASS_FOR_LISTED_DIAGNOSTIC_VIEWS",
+      "independent_reviewer": false,
+      "observations": [
+        "中文工具名稱、待實測／已啟用／Undo狀態與來源／已知零價／缺值清楚。",
+        "320px／200%深色的實際捲動欄位可讀且無左右溢出；全部原驗證／48px動作保留。",
+        "桌面欄位截圖仍只露首段；正式流程改捲到完整範圍／單位證據再截圖，未改產品或原功能斷言。"
+      ]
+    },
+    "controlled_peer_only": true,
+    "not_formal_source_acceptance": true
+  }
+}

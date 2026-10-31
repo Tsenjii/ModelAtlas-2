@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.rememberUpdatedState
 import dev.modelatlas.app.data.VisionImagePayload
 import dev.modelatlas.app.data.LocalPdfPayload
@@ -34,6 +35,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -92,6 +94,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -165,16 +168,29 @@ internal fun PlaygroundTab(
 
   BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
     val compact = maxHeight < 360.dp
+    val composerMaxHeight = maxHeight
     Column(Modifier.widthIn(max = 720.dp).fillMaxSize()) {
+      if (selectedConnection?.providerId == dev.modelatlas.core.network.KiloFactoryPolicy.PROVIDER) {
+        Text(stringResource(R.string.kilo_factory_notice), modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp), style = MaterialTheme.typography.bodySmall)
+      }
       Box(Modifier.weight(1f).fillMaxWidth()) {
         if (state.messages.isEmpty() && state.connectionsLoading) {
           CircularProgressIndicator(Modifier.size(AtlasSpace.icon).align(Alignment.Center))
         } else if (state.messages.isEmpty()) {
+          val besideArtwork = LocalAtlasAppearance.current.showsArtwork && !compact &&
+            LocalDensity.current.fontScale <= 1.3f
           Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = if (besideArtwork) Alignment.Start else Alignment.CenterHorizontally,
           ) {
+            Surface(
+              modifier = Modifier.fillMaxWidth(if (besideArtwork) 0.57f else 1f)
+                .padding(horizontal = AtlasSpace.md, vertical = AtlasSpace.sm),
+              shape = AtlasRadius.card,
+              color = if (LocalAtlasAppearance.current.showsArtwork)
+                atlasChromeColor(MaterialTheme.colorScheme.surface) else Color.Transparent,
+            ) {
             AtlasEmptyStateCard(
               title = stringResource(
                 if (state.connections.isEmpty()) R.string.connection_none else R.string.playground_empty_title,
@@ -183,7 +199,7 @@ internal fun PlaygroundTab(
                 if (state.connections.isEmpty()) R.string.playground_connect_hint else R.string.chat_empty,
               ),
               icon = Icons.AutoMirrored.Filled.Send,
-              compact = compact,
+              compact = compact || besideArtwork,
               action = {
                 OutlinedButton(
                   onClick = {
@@ -197,6 +213,7 @@ internal fun PlaygroundTab(
                 }
               },
             )
+            }
           }
         } else {
           LazyColumn(
@@ -237,6 +254,7 @@ internal fun PlaygroundTab(
         }
       }
       PlaygroundComposer(
+        modifier = Modifier.heightIn(max = composerMaxHeight),
         selectedConnection = selectedConnection,
         busy = state.busy,
         canSend = canSend,
@@ -434,6 +452,7 @@ private fun PlaygroundComposer(
   onNewConversation: () -> Unit,
   onSelect: () -> Unit,
   onSamples: () -> Unit,
+  modifier: Modifier = Modifier,
 ) {
   // A draft belongs to exactly the selected connection and group.
   // Never replay unsent content after switching credential/endpoint/group.
@@ -571,17 +590,21 @@ private fun PlaygroundComposer(
   val selectedContext = selectedConnection?.let { "${it.modelId} · ${it.name} · ${it.credentialLabel}" }
     ?: stringResource(R.string.connection_none)
   Surface(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = AtlasSpace.md, vertical = AtlasSpace.sm),
+    modifier = modifier.fillMaxWidth().padding(horizontal = AtlasSpace.md, vertical = AtlasSpace.sm),
     shape = AtlasRadius.card,
     color = MaterialTheme.colorScheme.surface,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
   ) {
-    Column(Modifier.padding(AtlasSpace.sm)) {
-      Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm)) {
+    BoxWithConstraints {
+      val alongside = compact && maxWidth >= 600.dp
+      val contentWidth = (maxWidth - AtlasSpace.sm * 2).coerceAtLeast(0.dp)
+      FlowRow(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(AtlasSpace.sm)) {
+      Row(modifier = Modifier.width(contentWidth * if (alongside) 0.62f else 1f),
+        verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm)) {
         TextField(
           value = prompt,
           onValueChange = { prompt = it },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).testTag("playground_composer_text"),
           label = { Text(stringResource(
             if (busy) R.string.playground_next_message else R.string.playground_message_label,
           )) },
@@ -636,7 +659,7 @@ private fun PlaygroundComposer(
         }
       }
       FlowRow(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.width(contentWidth * if (alongside) 0.38f else 1f),
         horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm),
         verticalArrangement = Arrangement.spacedBy(AtlasSpace.xs),
       ) {
@@ -663,10 +686,12 @@ private fun PlaygroundComposer(
           },
           enabled = canSend && canAttachFile && !busy && !imagePreparing && !filePreparing && !audioPreparing &&
             pendingImage == null && pendingFile == null && pendingAudio == null,
-          modifier = Modifier.size(AtlasSpace.touch).semantics { contentDescription = pdfAttachLabel },
+          modifier = Modifier.heightIn(min = AtlasSpace.touch).widthIn(min = AtlasSpace.touch)
+            .semantics { contentDescription = pdfAttachLabel },
           contentPadding = PaddingValues(horizontal = AtlasSpace.xs),
         ) {
-          Text("PDF", style = MaterialTheme.typography.labelMedium)
+          Text("PDF", modifier = Modifier.width(IntrinsicSize.Max),
+            style = MaterialTheme.typography.labelMedium, maxLines = 1)
         }
         val audioLabel = stringResource(R.string.playground_attach_audio)
         TextButton(
@@ -782,7 +807,7 @@ private fun PlaygroundComposer(
         )
       }
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("playground_composer_controls"),
         horizontalArrangement = Arrangement.spacedBy(AtlasSpace.sm),
         verticalAlignment = Alignment.CenterVertically,
       ) {
@@ -837,6 +862,7 @@ private fun PlaygroundComposer(
             Text(stringResource(R.string.playground_performance))
           }
         }
+      }
       }
     }
   }

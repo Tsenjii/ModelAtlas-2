@@ -1,0 +1,97 @@
+{
+  "slice": "MAC-RESEARCH-015R",
+  "status": "CANDIDATE_PENDING_OWN_NINE_CI_AND_ARTIFACTS",
+  "previous_accepted_source": "d261134b0b912bad661efbe6f6d28f100ce733f6",
+  "counterexample": {
+    "test": "TestResearchRunLookupKeepsExactOlderRecordAndScheduleScope",
+    "before": "FAIL: requested lookup-000 after 104 newer records returned 100 unrelated rows",
+    "before_seconds": 0.136,
+    "after_race_seconds": 2.502,
+    "result": "PASS"
+  },
+  "local": {
+    "aa_and_lookup_race_seconds": 30.157,
+    "result": "PASS",
+    "release_regressions": 41,
+    "vet": "PASS",
+    "real_tls_fixture_protocol": {
+      "result": "PASS",
+      "first": 3,
+      "second": 4,
+      "starts": 3,
+      "controls": 3,
+      "resumes": 2,
+      "used": 7,
+      "direct_sync": 0,
+      "telemetry": 0
+    },
+    "mac_native_execution": "NOT_EXECUTED_LOCALLY; requires own ARM/Intel CI"
+  },
+  "preserved_workloads": {
+    "go_deadline_seconds": 600,
+    "browser_deadline_seconds": 300,
+    "browser_cases": 42,
+    "browser_images": 523,
+    "android_core": 594,
+    "android_app": 423,
+    "android_device": 996,
+    "android_original_skips": 5,
+    "mac_original_core": 85,
+    "mac_original_images_each": 96,
+    "mac_original_smoke_deadline_seconds": 120,
+    "mac_original_parity_deadline_seconds": 120,
+    "new_mac_core": 4,
+    "new_mac_research_images_each": 8,
+    "new_separate_native_research_deadline_seconds": 120
+  },
+  "public_release": "UNCHANGED",
+  "whole_next_release": "PARTIAL",
+  "rejected_candidates": [
+    {
+      "source": "49a966db26f9056d05b1c1c9e7091dd899a03ee5",
+      "run": 40296593411,
+      "job": 121484036269,
+      "status": "macos-build FAILURE; native tests not executed",
+      "errors": [
+        {
+          "file": "ResearchRunController.swift",
+          "line": 15,
+          "message": "property wrapper can only apply to a single variable"
+        },
+        {
+          "file": "ResearchRunView.swift",
+          "line": 82,
+          "message": "the compiler is unable to type-check this expression in reasonable time"
+        }
+      ],
+      "correction": "每個 Published 欄位獨立宣告；AA 進度 View 分成短字串與獨立小 View，保留原所有條件及驗收要求。修後來源尚未驗證。"
+    },
+    {
+      "source": "8b2592b7433e69f520bba4fc838dd10040e4e87b",
+      "status": "原九項功能 CI 全 SUCCESS；只讀稽核在來源測試清單檢查失敗",
+      "runs": {
+        "vps": 40297254193,
+        "android": 40297254083,
+        "mac": 40297254182,
+        "audit": 40297254436
+      },
+      "audit_job": 121486210608,
+      "reason": "來源掃描仍只讀 connector_private_mapping*test.go，漏掉 research_run_lookup_test.go 與 research_native_fixture_test.go；不是功能測試失敗。",
+      "counterexample": "實際三個檔案的 registry 反例先 FAIL，明列漏掉兩個新函式；改為全部 *_test.go 並排除非案例 TestMain 後 PASS，原完整420入口／637事件要求不改。",
+      "local_checks": {
+        "release_regressions": 42,
+        "source_registry": 420,
+        "original_top_level": 407,
+        "new_top_level": 13
+      },
+      "native_arm_actual_archive": {
+        "id": 12638972753,
+        "bytes": 5954125,
+        "sha256": "b902439746ad6a0783ffd60328979e4a70724e79461c20a59673bee6fb99a644",
+        "images": 104,
+        "new_images_reviewed": 8,
+        "result": "PASS"
+      }
+    }
+  ]
+}

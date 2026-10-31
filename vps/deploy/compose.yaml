@@ -1,0 +1,49 @@
+name: modelatlas
+
+x-runtime: &runtime
+  image: ${MODELATLAS_IMAGE:-modelatlas:local}
+  build:
+    context: ../..
+    dockerfile: vps/deploy/Dockerfile
+    args:
+      SOURCE_COMMIT: ${MODELATLAS_SOURCE_COMMIT:-development}
+  volumes:
+    - modelatlas-data:/data
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+
+services:
+  initialize:
+    <<: *runtime
+    command:
+      - portable
+      - init
+      - --directory
+      - /data/state
+      - --public-origin
+      - ${MODELATLAS_PUBLIC_ORIGIN:?Set the actual HTTPS origin}
+      - --listen
+      - 0.0.0.0:8787
+    restart: "no"
+    healthcheck:
+      disable: true
+
+  app:
+    <<: *runtime
+    command:
+      - portable
+      - run
+      - --directory
+      - /data/state
+      - --backup-destination
+      - ${MODELATLAS_BACKUP_DESTINATION:-}
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    stop_grace_period: 30s
+    expose: ["8787"]
+
+volumes:
+  modelatlas-data:

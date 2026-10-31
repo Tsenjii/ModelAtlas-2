@@ -1,0 +1,139 @@
+{
+  "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318",
+  "tree": "a5ae8a8aad79a51ba2846ba266b5809f6a199b39",
+  "slice": "MAC-AQUA-015W",
+  "status": "REJECTED_NOT_ACCEPTED",
+  "ci": {
+    "vps_run": 40546235848,
+    "android_run": 40546235906,
+    "mac_run": 40546235895,
+    "audit_run": 40546236393,
+    "successful_required_jobs": [
+      122338134108,
+      122338134559,
+      122338134858,
+      122338134923,
+      122337897607,
+      122337898158,
+      122337992377
+    ],
+    "failed_native_jobs": [
+      122341843562,
+      122341843638
+    ]
+  },
+  "artifacts": [
+    {
+      "id": 12753618144,
+      "name": "ModelAtlas-macOS-QA-x86_64",
+      "bytes": 6161531,
+      "digest": "sha256:af628d76298d8ec6e96ede21a5a719fcd16860bc3a06ab04f785b72948ee807c",
+      "run": 40546235895,
+      "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318"
+    },
+    {
+      "id": 12753323233,
+      "name": "ModelAtlas-macOS-QA-arm64",
+      "bytes": 6028782,
+      "digest": "sha256:02a9e4d83b3d07463f616a63d7525365060caaba81922879fe8e0e5baeb53149",
+      "run": 40546235895,
+      "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318"
+    },
+    {
+      "id": 12751834344,
+      "name": "ModelAtlas-macOS-Universal",
+      "bytes": 68935681,
+      "digest": "sha256:a850c945031e87df14a02f4755d5222b1d01645e067e9cddff020907c950f405",
+      "run": 40546235895,
+      "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318"
+    },
+    {
+      "id": 12753916478,
+      "name": "modelatlas-vps-footprint",
+      "bytes": 18172,
+      "digest": "sha256:51632ceb926123e4fa7f447a4b2e9ec3e1abfb1b740648a813a4bd1728abfeee",
+      "run": 40546235848,
+      "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318"
+    },
+    {
+      "id": 12753611008,
+      "name": "modelatlas-vps-browser",
+      "bytes": 47902385,
+      "digest": "sha256:78b9e1c99e0e531fbc0c9fb1283b5818bde1b8e02131aad6fc5993189d5c8051",
+      "run": 40546235848,
+      "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318"
+    },
+    {
+      "id": 12752538693,
+      "name": "modelatlas-vps-linux-arm64",
+      "bytes": 19580444,
+      "digest": "sha256:8e41c1c56690045efcae227a31fd89fa78421712b91e00552845bf1e4c1c16dc",
+      "run": 40546235848,
+      "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318"
+    },
+    {
+      "id": 12751804962,
+      "name": "modelatlas-vps-linux-amd64",
+      "bytes": 20541293,
+      "digest": "sha256:b0c462a957663744af906e34324256b5924fd38584456fac2f37011627b9b24c",
+      "run": 40546235848,
+      "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318"
+    },
+    {
+      "id": 12752614202,
+      "name": "modelatlas-device-test-reports",
+      "bytes": 1276700,
+      "digest": "sha256:dbe1b9bb8c0d7e8bc5f1c7bec29c820ce6dc8a9c1dfd4fed8c41b6f104edffa0",
+      "run": 40546235906,
+      "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318"
+    },
+    {
+      "id": 12752008800,
+      "name": "modelatlas-debug-and-reports",
+      "bytes": 17349609,
+      "digest": "sha256:20a2b2364f95697843fc6233d23625f4886e69242caa2c4e8d077c2388e861fd",
+      "run": 40546235906,
+      "source": "cc2ffe9f3be6ca00946ac26563445ba8e64dd318"
+    }
+  ],
+  "go": {
+    "events": 660,
+    "pass": 608,
+    "skip": 52,
+    "all_accepted_660_exactly_preserved": true,
+    "processes": [
+      {
+        "result": "pass",
+        "seconds": 559.411
+      },
+      {
+        "result": "pass",
+        "seconds": 568.043
+      }
+    ],
+    "footprint_peak_bytes": 211521536
+  },
+  "browser": {
+    "flows": 44,
+    "seconds": 198.124,
+    "pngs": 557,
+    "all_pngs_fully_decoded": true
+  },
+  "android_build": {
+    "core": 594,
+    "app": 423,
+    "failures": 0
+  },
+  "native_failure": {
+    "both": "actual-settings-kotoha: 收到無法辨識的資料，請重試。",
+    "each_png": 105,
+    "new_aqua_png_only": "01-classic-invalid-preference-light.png",
+    "arm64_secondary": "app did not terminate after the caught failure; additional150s deadline rejected",
+    "intel": "FAILURE.txt assertion rejected after15s",
+    "root_cause": "UNKNOWN within first settings operation; no failure screenshot or step checkpoint in this source",
+    "original_smoke_parity_research": "completed before Aqua on both architectures; accepted old paths not replaced",
+    "original_core_each": 89
+  },
+  "next_change": "Add step-specific native window/marker diagnostics and failure PNG; wait for real sheet/target readiness and focus the target window; end modal sheets on failure. Run new Aqua phase first, then every unchanged original core/smoke/parity/research phase on success. Original deadlines/workloads/assertions and12 new PNG scope retained; no assertion skipped or timeout raised.",
+  "whole_next_release": "PARTIAL"
+}

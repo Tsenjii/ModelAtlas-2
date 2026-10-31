@@ -1,0 +1,957 @@
+{
+  "status": "BYTE_AUDIT_PASS_PENDING_VISUAL_REVIEW",
+  "slice": "MAC-RESEARCH-015R",
+  "source": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+  "tree": "c1c15a828a5d27a09e8bec0ce9caa786881c0e21",
+  "checks": {
+    ".github/workflows/vps.yml": {
+      "id": 40300264998,
+      "attempt": 1,
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40300264998",
+      "jobs": [
+        {
+          "id": 121496117317,
+          "name": "vps-browser",
+          "conclusion": "success",
+          "run_id": 40300264998,
+          "head_sha": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+          "started_at": "2026-10-26T09:31:51Z",
+          "completed_at": "2026-10-26T09:37:01Z"
+        },
+        {
+          "id": 121496117466,
+          "name": "vps-linux-amd64",
+          "conclusion": "success",
+          "run_id": 40300264998,
+          "head_sha": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+          "started_at": "2026-10-26T09:31:52Z",
+          "completed_at": "2026-10-26T09:33:07Z"
+        },
+        {
+          "id": 121496117552,
+          "name": "vps-linux-arm64",
+          "conclusion": "success",
+          "run_id": 40300264998,
+          "head_sha": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+          "started_at": "2026-10-26T09:31:52Z",
+          "completed_at": "2026-10-26T09:33:08Z"
+        },
+        {
+          "id": 121496117259,
+          "name": "vps-test",
+          "conclusion": "success",
+          "run_id": 40300264998,
+          "head_sha": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+          "started_at": "2026-10-26T09:31:51Z",
+          "completed_at": "2026-10-26T09:40:40Z"
+        }
+      ]
+    },
+    ".github/workflows/android.yml": {
+      "id": 40300264842,
+      "attempt": 1,
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40300264842",
+      "jobs": [
+        {
+          "id": 121496116431,
+          "name": "build",
+          "conclusion": "success",
+          "run_id": 40300264842,
+          "head_sha": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+          "started_at": "2026-10-26T09:31:51Z",
+          "completed_at": "2026-10-26T09:37:20Z"
+        },
+        {
+          "id": 121496116094,
+          "name": "device-tests",
+          "conclusion": "success",
+          "run_id": 40300264842,
+          "head_sha": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+          "started_at": "2026-10-26T09:31:51Z",
+          "completed_at": "2026-10-26T09:46:23Z"
+        }
+      ]
+    },
+    ".github/workflows/macos-native.yml": {
+      "id": 40300264985,
+      "attempt": 1,
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40300264985",
+      "jobs": [
+        {
+          "id": 121496116831,
+          "name": "macos-build",
+          "conclusion": "success",
+          "run_id": 40300264985,
+          "head_sha": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+          "started_at": "2026-10-26T09:31:53Z",
+          "completed_at": "2026-10-26T09:38:58Z"
+        },
+        {
+          "id": 121499155561,
+          "name": "macos-test (macos-15, arm64)",
+          "conclusion": "success",
+          "run_id": 40300264985,
+          "head_sha": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+          "started_at": "2026-10-26T09:39:01Z",
+          "completed_at": "2026-10-26T09:43:47Z"
+        },
+        {
+          "id": 121499155578,
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "conclusion": "success",
+          "run_id": 40300264985,
+          "head_sha": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+          "started_at": "2026-10-26T09:39:01Z",
+          "completed_at": "2026-10-26T09:48:10Z"
+        }
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "name": "modelatlas-vps-linux-amd64",
+      "id": 12639832602,
+      "digest": "sha256:1e55f9ca660c4bd2bbf58e9e002b8d73ce752317baa4c498bbae58560f0da2c9",
+      "run_id": 40300264998,
+      "producer_job_id": 121496117466,
+      "producer_job_name": "vps-linux-amd64",
+      "created_at": "2026-10-26T09:33:04Z"
+    },
+    {
+      "name": "modelatlas-vps-linux-arm64",
+      "id": 12639334348,
+      "digest": "sha256:e156f7ac855ef84fb0642c5afc95fb22f32a55c0abd7d098a2f062b975383c84",
+      "run_id": 40300264998,
+      "producer_job_id": 121496117552,
+      "producer_job_name": "vps-linux-arm64",
+      "created_at": "2026-10-26T09:33:04Z"
+    },
+    {
+      "name": "modelatlas-vps-footprint",
+      "id": 12640313169,
+      "digest": "sha256:c5469c2678dd74255fde70d72cd8b47971ab9e38116904d22db8bc148a9d25fe",
+      "run_id": 40300264998,
+      "producer_job_id": 121496117259,
+      "producer_job_name": "vps-test",
+      "created_at": "2026-10-26T09:40:34Z"
+    },
+    {
+      "name": "modelatlas-vps-browser",
+      "id": 12640292629,
+      "digest": "sha256:02aba2871e7de60465b6cc31798c0df7967bb73abd623d1424fe210ee62c9f97",
+      "run_id": 40300264998,
+      "producer_job_id": 121496117317,
+      "producer_job_name": "vps-browser",
+      "created_at": "2026-10-26T09:36:57Z"
+    },
+    {
+      "name": "modelatlas-debug-and-reports",
+      "id": 12640635774,
+      "digest": "sha256:f6977fa0d3f6ce48c5a113c3ee269db2f4d36711863b62786f88731a9dcded39",
+      "run_id": 40300264842,
+      "producer_job_id": 121496116431,
+      "producer_job_name": "build",
+      "created_at": "2026-10-26T09:37:17Z"
+    },
+    {
+      "name": "modelatlas-device-test-reports",
+      "id": 12641440159,
+      "digest": "sha256:20ece8f591b9b23419f89f059baed2791da4ad3ef914d985ba5ec0142f5d0338",
+      "run_id": 40300264842,
+      "producer_job_id": 121496116094,
+      "producer_job_name": "device-tests",
+      "created_at": "2026-10-26T09:46:20Z"
+    },
+    {
+      "name": "ModelAtlas-macOS-Universal",
+      "id": 12640307866,
+      "digest": "sha256:6b6edba359b5f9d22c59b7fc3b2bc128333973f8fd460fc261dacd5fbfbfc75b",
+      "run_id": 40300264985,
+      "producer_job_id": 121496116831,
+      "producer_job_name": "macos-build",
+      "created_at": "2026-10-26T09:38:50Z"
+    },
+    {
+      "name": "ModelAtlas-macOS-QA-arm64",
+      "id": 12640363427,
+      "digest": "sha256:104725c0ae0593ff4db38186bc7da9583fba823b47fa08da285b03c8a02633fd",
+      "run_id": 40300264985,
+      "producer_job_id": 121499155561,
+      "producer_job_name": "macos-test (macos-15, arm64)",
+      "created_at": "2026-10-26T09:43:42Z"
+    },
+    {
+      "name": "ModelAtlas-macOS-QA-x86_64",
+      "id": 12640294690,
+      "digest": "sha256:bc2a5236615a64efd6741f2f3cdbfcfeb25905cd846ce6874af4a7a785a0e018",
+      "run_id": 40300264985,
+      "producer_job_id": 121499155578,
+      "producer_job_name": "macos-test (macos-15-intel, x86_64)",
+      "created_at": "2026-10-26T09:48:02Z"
+    }
+  ],
+  "whole_next_release": "PARTIAL",
+  "browser_images": {
+    "count": 523,
+    "preserved": 509,
+    "added": [
+      "connector-private-mapping-draft-1280-dark.png",
+      "connector-private-mapping-draft-1280-light.png",
+      "connector-private-mapping-draft-320-dark.png",
+      "connector-private-mapping-draft-320-light.png",
+      "connector-private-mapping-draft-375-dark.png",
+      "connector-private-mapping-draft-375-light.png",
+      "connector-private-mapping-fields-320-dark.png",
+      "connector-private-mapping-fields-375-large-dark.png",
+      "connector-private-mapping-group-375-light.png",
+      "connector-private-mapping-pat-account-375-light.png",
+      "connector-private-mapping-pat-draft-1280-dark.png",
+      "connector-private-mapping-pat-undo-375-dark.png",
+      "connector-private-mapping-runtime-last-good-1280-dark.png",
+      "connector-private-mapping-source-375-light.png"
+    ]
+  },
+  "footprint": {
+    "binary_bytes": 15958178,
+    "catalog_http": 4,
+    "chat_peak_bytes": 32387072,
+    "chat_rss_bytes": 32387072,
+    "export_messages": 11000,
+    "export_peak_bytes": 211087360,
+    "export_requests": 100008,
+    "export_rss_bytes": 36909056,
+    "gomemlimit_bytes": 201326592,
+    "idle_rss_bytes": 28823552,
+    "image_peak_bytes": 211087360,
+    "image_pixels_each": 4194304,
+    "image_rss_bytes": 105656320,
+    "long_context_bytes_each": 32505856,
+    "long_context_http": 4,
+    "long_context_peak_bytes": 168210432,
+    "long_context_rss_bytes": 168210432,
+    "media_http": 8,
+    "peak_rss_bytes": 211087360,
+    "profile": "100000 retained samples/full SQL percentiles; 4 TLS chats + 4 simultaneous full 31-MiB contexts; retained 11000-message and full request exports; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each",
+    "research_peak_bytes": 211087360,
+    "research_rss_bytes": 36675584,
+    "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser",
+    "rss_target_bytes": 536870912,
+    "speech_bytes_each": 4194304,
+    "speech_peak_bytes": 211087360,
+    "speech_rss_bytes": 127561728,
+    "sqlite_bytes": 163385344,
+    "warm_rss_bytes": 127561728
+  },
+  "go_suite": {
+    "result": "PASS",
+    "source": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+    "working_tree_dirty": false,
+    "race": true,
+    "suite_deadline_seconds": 600,
+    "started_at": "2026-10-26T09:32:37.970357+00:00",
+    "seconds": 397.933,
+    "package": "github.com/Tsenjii/ModelAtlas-2/vps",
+    "registry_sha256": "22f81415ce2bb3442e2c2220f701877f4593a580820fab42b6b7e3606a0a0b15"
+  },
+  "browser_cases": [
+    [
+      "TestBrowserManagementWorkflow",
+      "6.97"
+    ],
+    [
+      "TestBrowserModelConnectionsWorkflow",
+      "9.18"
+    ],
+    [
+      "TestBrowserChatExperienceWorkflow",
+      "12.33"
+    ],
+    [
+      "TestBrowserKnowledgeWorkflow",
+      "13.51"
+    ],
+    [
+      "TestBrowserKnowledgeEvaluationTrialAndPersistentRollback",
+      "12.97"
+    ],
+    [
+      "TestBrowserMacAlignmentWorkflow",
+      "19.99"
+    ],
+    [
+      "TestBrowserMacParityWorkflow",
+      "21.64"
+    ],
+    [
+      "TestBrowserKiloFactoryAnonymousChatPriceGuardAndExistingWorkspaceRecovery",
+      "30.00"
+    ],
+    [
+      "TestBrowserDetailWorkspaceWorkflow",
+      "21.60"
+    ],
+    [
+      "TestBrowserConversationsWorkflow",
+      "15.03"
+    ],
+    [
+      "TestBrowserExtractionMeasuredTrialRecoveryMonitoringAndUndo",
+      "26.35"
+    ],
+    [
+      "TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo",
+      "14.46"
+    ],
+    [
+      "TestBrowserConnectorMappingUnknownFieldsRecoveryRuntimeAndUndo",
+      "16.67"
+    ],
+    [
+      "TestBrowserConnectorDiscoveryReviewAndPersistentRollback",
+      "14.79"
+    ],
+    [
+      "TestBrowserCatalogExperienceWorkflow",
+      "15.43"
+    ],
+    [
+      "TestBrowserConversationCreationWorkflow",
+      "20.44"
+    ],
+    [
+      "TestBrowserProtocolAndSpeechWorkflow",
+      "20.20"
+    ],
+    [
+      "TestBrowserProductionWorkflow",
+      "27.29"
+    ],
+    [
+      "TestBrowserOriginWorkflow",
+      "20.53"
+    ],
+    [
+      "TestBrowserWorkspaceRecoveryWorkflow",
+      "13.74"
+    ],
+    [
+      "TestBrowserAssistantWorkflow",
+      "8.93"
+    ],
+    [
+      "TestBrowserWorkspaceChunksResumePauseAndRetainPermanentHistory",
+      "13.49"
+    ],
+    [
+      "TestBrowserResearchWorkflow",
+      "11.23"
+    ],
+    [
+      "TestBrowserWorkspaceWorkflow",
+      "15.48"
+    ],
+    [
+      "TestBrowserSystemStatusWorkflow",
+      "9.61"
+    ],
+    [
+      "TestBrowserWorkspaceSyncWorkflow",
+      "14.81"
+    ],
+    [
+      "TestBrowserSiteRecipePublicEvidenceReviewAtomicUseAndUndo",
+      "15.16"
+    ],
+    [
+      "TestBrowserResearchRetryWorkflow",
+      "17.26"
+    ],
+    [
+      "TestBrowserPrivateResearchScheduleWorkflow",
+      "18.49"
+    ],
+    [
+      "TestBrowserResearchScheduleWorkflow",
+      "28.55"
+    ],
+    [
+      "TestBrowserResearchProgressiveWorkflow",
+      "27.06"
+    ],
+    [
+      "TestBrowserResearchOriginCooldownWorkflow",
+      "28.21"
+    ],
+    [
+      "TestBrowserReflectionGeneratedQueryPairedTrialWorkflow",
+      "26.99"
+    ],
+    [
+      "TestBrowserAAResearchPageRecoveryWorkflow",
+      "28.56"
+    ],
+    [
+      "TestBrowserRequestReceiptsWorkflow",
+      "19.08"
+    ],
+    [
+      "TestBrowserScopedModelPickerWorkflow",
+      "30.05"
+    ],
+    [
+      "TestBrowserModelViewsWorkflow",
+      "21.12"
+    ],
+    [
+      "TestBrowserAuthenticityEvidenceReviewAndPersistentUndo",
+      "17.62"
+    ],
+    [
+      "TestBrowserResearchInferenceDailyBudgetWorkflow",
+      "28.47"
+    ],
+    [
+      "TestBrowserBraveResearchPageRecoveryWorkflow",
+      "23.72"
+    ],
+    [
+      "TestBrowserProviderFormsWorkflow",
+      "27.07"
+    ],
+    [
+      "TestBrowserMobileAlignmentWorkflow",
+      "57.91"
+    ]
+  ],
+  "android_build": {
+    "core": {
+      "tests": 594,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "app": {
+      "tests": 423,
+      "failures": 0,
+      "ignored": 0
+    },
+    "certificate_sha256": "a80469468fe781906cc21376ad6b7729349f3bdad480aa27c705318eb598faf7",
+    "production_signing": false
+  },
+  "android_device": {
+    "counts": {
+      "tests": 996,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    },
+    "preserved_cases": 996,
+    "added": [],
+    "runtime": {
+      "expected_max_heap_bytes": 536870912,
+      "max_heap_bytes": 536870912,
+      "pid": 4906,
+      "stages": [
+        "start",
+        "finish"
+      ]
+    },
+    "preflight": {
+      "configured_heap": "512m",
+      "expected_runtime_max_heap_bytes": 536870912,
+      "growth_limit": "",
+      "initial_zygote_observations": [
+        "1661"
+      ],
+      "sdk": "29",
+      "zygote_after": "3387",
+      "zygote_before": "1661"
+    }
+  },
+  "rejected_candidate": {
+    "source": "3ef96c39669c6d1b14eea31624bfa020e23c6124",
+    "actual_sha256": "sha256:de07fe5b6b5bcf580278edcebfbdd5d97fa495e4552d8e14b11dc35a0f60511b",
+    "counts": {
+      "tests": 985,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 5
+    },
+    "failure": "dev.modelatlas.app.ui.PendingConnectionHandoffTest#disabledPendingIsEvictedAndNeverResurrectsAsUsable"
+  },
+  "rejected_aa_candidate": {
+    "source": "7d612a4009a77cce431a30b23a129761827f80e0",
+    "actual_sha256": "sha256:c84bd007ae15f12914b6eb9eae627747699c9ce47915851539ff18c5e2971d31",
+    "png": 523,
+    "aa_images": [
+      "research-aa-1280-dark.png",
+      "research-aa-1280-light.png",
+      "research-aa-320-dark.png",
+      "research-aa-320-light.png",
+      "research-aa-375-dark.png",
+      "research-aa-375-large.png",
+      "research-aa-375-light.png",
+      "research-aa-recovered-375.png"
+    ],
+    "failure": "TestBrowserAAResearchPageRecoveryWorkflow: page1=3/page2=3, expected 3/4; original task failure cause unavailable, not inferred"
+  },
+  "mac_arm64": {
+    "png": 104,
+    "preserved_png": 96,
+    "core_tests": 89,
+    "preserved_core_tests": 85,
+    "smoke": {
+      "providers": 2,
+      "models": 4,
+      "draft_scope_guards": true,
+      "search_scope_guards": true,
+      "native_markdown": true,
+      "messages": 2,
+      "request_receipt": true,
+      "chat_settings_guards": true,
+      "native_windows": true,
+      "chat_reading_guards": true,
+      "attachment_guards": true,
+      "screenshots": 25,
+      "result": "PASS",
+      "keyboard_picker_guards": true,
+      "real_engine": true,
+      "real_tls_chat": true,
+      "live_session_search": true
+    },
+    "parity": {
+      "result": "PASS",
+      "provider_next_draft": true,
+      "chart_receipt_identity": true,
+      "sidebar_toggle": true,
+      "telemetry_trends": true,
+      "credential_restore_scope": true,
+      "native_intelligence": true,
+      "quota_scope_guards": true,
+      "native_comparison": true,
+      "provider_form_feedback": true,
+      "provider_series_scope": true,
+      "workspace_transfer_controls": true,
+      "observation_archive": true,
+      "workspace_sync_entry": true,
+      "screenshots": 57,
+      "read_only_no_inference": true,
+      "knowledge_versions": true,
+      "stale_guards": true,
+      "comparison_scope_guards": true,
+      "native_motion": true,
+      "public_site_auto_read": true,
+      "kilo_factory_defaults": true,
+      "composer_focus": true,
+      "adaptive_composer": true,
+      "native_composer": true,
+      "chart_export_exact": true,
+      "connector_caller": true,
+      "comparison_receipts": true,
+      "batch_confirm_undo": true,
+      "chart_keyboard_selection": true,
+      "saved_refresh_no_repost": true,
+      "price_scope_guards": true,
+      "safe_references": true,
+      "provider_account_write_guards": true,
+      "appearance_choices": true,
+      "provider_window_restored": true,
+      "manual_evidence": true,
+      "account_checkin_scope": true,
+      "kilo_no_automatic_inference": true,
+      "wire_counts": {
+        "transcription": 1,
+        "speech": 1,
+        "embeddings": 1,
+        "native-dual": 1,
+        "rerank": 1,
+        "images": 1,
+        "native-current": 1,
+        "native-legacy": 1,
+        "connector": 2,
+        "image-edit": 1
+      },
+      "site_partial_retry": true,
+      "checkin_retry_cancel": true,
+      "real_tls_media": true,
+      "retained_history": true,
+      "reduced_motion": true,
+      "connection_actions": true
+    },
+    "workspace_transfer": {
+      "actual_keychain_restart": true,
+      "result": "PASS",
+      "destination_models": 15,
+      "outgoing_acked": 1,
+      "source_product_retained": true,
+      "pause_during_busy": true,
+      "no_inference": true,
+      "same_transfer_after_restart": true,
+      "paused_progress_bytes": 28307
+    },
+    "research": {
+      "last_good_preserved": true,
+      "real_tls": true,
+      "wire": {
+        "first": 3,
+        "runs": 3,
+        "used": 7,
+        "held": false,
+        "resumes": 2,
+        "starts": 3,
+        "second": 4,
+        "controls": 3,
+        "direct_sync": 0,
+        "telemetry": 0
+      },
+      "native_update_buttons": true,
+      "no_inference": true,
+      "seven_exact_requests": true,
+      "screenshots": 8,
+      "lost_ack_no_repost": true,
+      "saved_refresh_no_repost": true,
+      "live_run_state": true,
+      "concurrent_control_guard": true,
+      "reopen_same_run": true,
+      "result": "PASS"
+    },
+    "research_resource": {
+      "app_rss_bytes": 130662400,
+      "engine_rss_bytes": 25559040,
+      "fixture_rss_bytes": 30900224,
+      "combined_rss_bytes": 187121664,
+      "samples": 14,
+      "method": "ps RSS for third standalone native launch, its owned packaged engine and separate synthetic TLS test fixture; original smoke/parity workloads and deadlines unchanged",
+      "app_exit_code": 0,
+      "owned_engine_exited": true,
+      "fixture_exit_code": 0
+    }
+  },
+  "mac_x86_64": {
+    "png": 104,
+    "preserved_png": 96,
+    "core_tests": 89,
+    "preserved_core_tests": 85,
+    "smoke": {
+      "native_markdown": true,
+      "native_windows": true,
+      "screenshots": 25,
+      "search_scope_guards": true,
+      "chat_settings_guards": true,
+      "real_engine": true,
+      "result": "PASS",
+      "live_session_search": true,
+      "models": 4,
+      "keyboard_picker_guards": true,
+      "real_tls_chat": true,
+      "providers": 2,
+      "request_receipt": true,
+      "chat_reading_guards": true,
+      "attachment_guards": true,
+      "draft_scope_guards": true,
+      "messages": 2
+    },
+    "parity": {
+      "provider_account_write_guards": true,
+      "result": "PASS",
+      "native_composer": true,
+      "observation_archive": true,
+      "comparison_scope_guards": true,
+      "saved_refresh_no_repost": true,
+      "public_site_auto_read": true,
+      "provider_next_draft": true,
+      "screenshots": 57,
+      "comparison_receipts": true,
+      "provider_series_scope": true,
+      "chart_keyboard_selection": true,
+      "native_intelligence": true,
+      "kilo_factory_defaults": true,
+      "workspace_transfer_controls": true,
+      "knowledge_versions": true,
+      "credential_restore_scope": true,
+      "batch_confirm_undo": true,
+      "provider_window_restored": true,
+      "read_only_no_inference": true,
+      "kilo_no_automatic_inference": true,
+      "safe_references": true,
+      "chart_receipt_identity": true,
+      "composer_focus": true,
+      "telemetry_trends": true,
+      "adaptive_composer": true,
+      "connector_caller": true,
+      "manual_evidence": true,
+      "checkin_retry_cancel": true,
+      "retained_history": true,
+      "real_tls_media": true,
+      "native_motion": true,
+      "quota_scope_guards": true,
+      "connection_actions": true,
+      "chart_export_exact": true,
+      "account_checkin_scope": true,
+      "provider_form_feedback": true,
+      "appearance_choices": true,
+      "wire_counts": {
+        "speech": 1,
+        "transcription": 1,
+        "native-current": 1,
+        "native-legacy": 1,
+        "native-dual": 1,
+        "connector": 2,
+        "embeddings": 1,
+        "image-edit": 1,
+        "rerank": 1,
+        "images": 1
+      },
+      "site_partial_retry": true,
+      "price_scope_guards": true,
+      "sidebar_toggle": true,
+      "reduced_motion": true,
+      "stale_guards": true,
+      "native_comparison": true,
+      "workspace_sync_entry": true
+    },
+    "workspace_transfer": {
+      "same_transfer_after_restart": true,
+      "destination_models": 15,
+      "pause_during_busy": true,
+      "no_inference": true,
+      "paused_progress_bytes": 28307,
+      "actual_keychain_restart": true,
+      "result": "PASS",
+      "source_product_retained": true,
+      "outgoing_acked": 1
+    },
+    "research": {
+      "last_good_preserved": true,
+      "native_update_buttons": true,
+      "real_tls": true,
+      "live_run_state": true,
+      "reopen_same_run": true,
+      "wire": {
+        "first": 3,
+        "direct_sync": 0,
+        "used": 7,
+        "telemetry": 0,
+        "second": 4,
+        "resumes": 2,
+        "controls": 3,
+        "runs": 3,
+        "starts": 3,
+        "held": false
+      },
+      "concurrent_control_guard": true,
+      "no_inference": true,
+      "screenshots": 8,
+      "seven_exact_requests": true,
+      "result": "PASS",
+      "saved_refresh_no_repost": true,
+      "lost_ack_no_repost": true
+    },
+    "research_resource": {
+      "app_rss_bytes": 97775616,
+      "engine_rss_bytes": 20283392,
+      "fixture_rss_bytes": 25235456,
+      "combined_rss_bytes": 142761984,
+      "samples": 20,
+      "method": "ps RSS for third standalone native launch, its owned packaged engine and separate synthetic TLS test fixture; original smoke/parity workloads and deadlines unchanged",
+      "app_exit_code": 0,
+      "owned_engine_exited": true,
+      "fixture_exit_code": 0
+    }
+  },
+  "linux_amd64": {
+    "schema": 37,
+    "files": 46,
+    "version": {
+      "commit": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+      "built_at": "2026-10-26T09:32:07Z",
+      "os": "linux",
+      "arch": "amd64",
+      "schema": 37
+    }
+  },
+  "linux_arm64": {
+    "schema": 37,
+    "files": 46,
+    "version": {
+      "commit": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+      "built_at": "2026-10-26T09:32:07Z",
+      "os": "linux",
+      "arch": "arm64",
+      "schema": 37
+    }
+  },
+  "actual_binary": {
+    "startup_seconds": 0.060952413999984856,
+    "first_members": 15,
+    "after_restart": 14,
+    "after_explicit_add": 14,
+    "empty": {
+      "telemetry": 0,
+      "sessions": 0,
+      "research_runs": 0
+    },
+    "secret_count": 0,
+    "install_ledgers": 1,
+    "parent_pipe_shutdown": "PASS"
+  },
+  "main": {
+    "sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+    "run": 39536090788,
+    "jobs": [
+      {
+        "id": 119016886469,
+        "name": "build",
+        "conclusion": "success",
+        "run_id": 39536090788,
+        "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+        "started_at": "2026-10-21T02:59:47Z",
+        "completed_at": "2026-10-21T03:05:13Z"
+      },
+      {
+        "id": 119016884592,
+        "name": "device-tests",
+        "conclusion": "success",
+        "run_id": 39536090788,
+        "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+        "started_at": "2026-10-21T03:12:55Z",
+        "completed_at": "2026-10-21T03:21:59Z"
+      }
+    ]
+  },
+  "frozen": {
+    "release_id": 420473654,
+    "tag": "699d4d57ff8264506c2b2f6e5eed0021327bf602",
+    "assets": [
+      [
+        665188178,
+        "ModelAtlas-macOS-Universal.zip",
+        19245844,
+        "sha256:bb4490b500bd11af56ba7a54fd1e6278b0579b40760dcb1e2eae40d9f3eec709"
+      ],
+      [
+        665188179,
+        "ModelAtlas-Android-preview.apk",
+        14177371,
+        "sha256:5a2c698915f345e42c1c36108495685d634f5535f61171aaebc747ad314cb8df"
+      ],
+      [
+        665188180,
+        "ModelAtlas-macOS-Universal.dmg",
+        22399249,
+        "sha256:1387e79894fa4bfdcf9924ed74a08746fd4ad70d41db069842acee71ed714ca7"
+      ],
+      [
+        665188182,
+        "RELEASE-MANIFEST.json",
+        9304,
+        "sha256:1624476118fe9aa318cd8100b7fda7cc76cf156e1f66b7fe56c9c6435b505e44"
+      ],
+      [
+        665188188,
+        "ModelAtlas-Android.json",
+        724,
+        "sha256:80221ef954bc06309d0e6ad00be2da0e785d008354390ca579b9b2c6c95d6216"
+      ],
+      [
+        665188203,
+        "RELEASE-NOTES.md",
+        5460,
+        "sha256:fc1c1129900d70b5ff3f3a7e3691679f0a4cfe9f7ee45452cded8d2a7341275d"
+      ],
+      [
+        665188207,
+        "SHA256SUMS.txt",
+        883,
+        "sha256:2c37dd98855fa93289ee8b90037ce2a4bd8300a9673e91e44ad12f171892e3e9"
+      ],
+      [
+        665188222,
+        "modelatlas-vps-linux-amd64.tar.gz",
+        6028488,
+        "sha256:f22b86d3fdc65603c464854e25df5c92fec92aef23f7c3244fb578c14af86ad4"
+      ],
+      [
+        665188224,
+        "modelatlas-vps-linux-amd64.tar.gz.sha256",
+        100,
+        "sha256:bd9b776a1c8a094d244245cf1d51abb9c8babd3033e4b4f96c0f9539c0e9dfde"
+      ],
+      [
+        665188225,
+        "modelatlas-vps-linux-arm64.tar.gz",
+        5583965,
+        "sha256:f6294bf4551c9ce50875fc5d8efc3769382d55aab6121b56ca17cc64bd99ef8a"
+      ],
+      [
+        665188231,
+        "modelatlas-vps-linux-arm64.tar.gz.sha256",
+        100,
+        "sha256:a8000802aa1b4ecc17ee38db2077ecbbedd440e3ba7688f8c63a96d9cb4f4a39"
+      ]
+    ]
+  },
+  "visual_review_required": [
+    "browser/connector-private-mapping-draft-1280-dark.png",
+    "browser/connector-private-mapping-draft-1280-light.png",
+    "browser/connector-private-mapping-draft-320-dark.png",
+    "browser/connector-private-mapping-draft-320-light.png",
+    "browser/connector-private-mapping-draft-375-dark.png",
+    "browser/connector-private-mapping-draft-375-light.png",
+    "browser/connector-private-mapping-fields-320-dark.png",
+    "browser/connector-private-mapping-fields-375-large-dark.png",
+    "browser/connector-private-mapping-group-375-light.png",
+    "browser/connector-private-mapping-pat-account-375-light.png",
+    "browser/connector-private-mapping-pat-draft-1280-dark.png",
+    "browser/connector-private-mapping-pat-undo-375-dark.png",
+    "browser/connector-private-mapping-runtime-last-good-1280-dark.png",
+    "browser/connector-private-mapping-source-375-light.png",
+    "browser/workspace-chunks-complete-1280-light.png",
+    "browser/workspace-chunks-complete-375-dark.png",
+    "browser/workspace-chunks-paused-320-dark-large.png",
+    "browser/workspace-chunks-paused-320-light-large.png",
+    "browser/workspace-chunks-paused-375-dark-large.png",
+    "browser/workspace-chunks-paused-375-light-large.png",
+    "browser/workspace-chunks-ready-375-light.png",
+    "browser/workspace-chunks-uploading-375-dark.png",
+    "mac-arm64/52-kilo-defaults-light.png",
+    "mac-arm64/54-workspace-transfer-light.png",
+    "mac-arm64/53-kilo-ready-dark.png",
+    "mac-arm64/55-workspace-paused-light.png",
+    "mac-arm64/56-workspace-restarted-dark.png",
+    "mac-arm64/57-workspace-completed-dark.png",
+    "mac-arm64/research/01-aa-partial-light.png",
+    "mac-arm64/research/02-aa-partial-dark.png",
+    "mac-arm64/research/03-saved-read-failure-dark.png",
+    "mac-arm64/research/04-paused-dark.png",
+    "mac-arm64/research/05-lost-ack-dark.png",
+    "mac-arm64/research/06-aa-complete-dark.png",
+    "mac-arm64/research/07-services-aa-complete-light.png",
+    "mac-arm64/research/08-research-aa-complete-dark.png",
+    "mac-x86_64/52-kilo-defaults-light.png",
+    "mac-x86_64/53-kilo-ready-dark.png",
+    "mac-x86_64/54-workspace-transfer-light.png",
+    "mac-x86_64/55-workspace-paused-light.png",
+    "mac-x86_64/56-workspace-restarted-dark.png",
+    "mac-x86_64/57-workspace-completed-dark.png",
+    "mac-x86_64/research/01-aa-partial-light.png",
+    "mac-x86_64/research/02-aa-partial-dark.png",
+    "mac-x86_64/research/03-saved-read-failure-dark.png",
+    "mac-x86_64/research/04-paused-dark.png",
+    "mac-x86_64/research/05-lost-ack-dark.png",
+    "mac-x86_64/research/06-aa-complete-dark.png",
+    "mac-x86_64/research/07-services-aa-complete-light.png",
+    "mac-x86_64/research/08-research-aa-complete-dark.png"
+  ],
+  "manual_acceptance": {
+    "status": "ACCEPTED_STATED_SCOPE",
+    "reviewer": "本輪助理自行檢視，未聲稱第二位獨立審查者",
+    "visual_views": 50,
+    "source": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+    "audit_run": 40300264890,
+    "audit_job": 121496116554,
+    "artifact_id": 12641141621,
+    "artifact_bytes": 817665,
+    "artifact_sha256": "9e597069cf445c2e34fed17cd2f577ee9652916a152cf762727ad97d3620297b"
+  }
+}

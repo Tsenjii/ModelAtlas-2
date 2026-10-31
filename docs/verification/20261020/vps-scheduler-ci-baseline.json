@@ -1,0 +1,259 @@
+{
+  "requirement": "VPS-RESEARCH-SCHEDULE-007",
+  "scope": "公開資料排程第一階段；WISH-CRAWL-001 整體仍 PARTIAL",
+  "code_sha": "b1e0c669ffea48575875e0c16b7da6980aca5552",
+  "tree_sha": "85487cf7523a06bdd15225ce1c7c990922c88453",
+  "vps_run": 39448158004,
+  "android_run": 39448157661,
+  "jobs": [
+    {
+      "id": 118715496849,
+      "name": "vps-linux-arm64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118715496855,
+      "name": "vps-test",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118715496992,
+      "name": "vps-browser",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118715497341,
+      "name": "vps-linux-amd64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118715494503,
+      "name": "device-tests",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 118715495693,
+      "name": "build",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "go_race_seconds": 231.476,
+  "vet": "success",
+  "new_backend_scenarios": 14,
+  "browser": {
+    "artifact": 12275854641,
+    "zip_sha256": "34fc2896cab874c4776b550b56cca5296130321d6798113f46a3ea14ab9d864b",
+    "png_count": 303,
+    "new_schedule_png_count": 8,
+    "selected": [
+      {
+        "name": "research-375-large-dark.png",
+        "size": [
+          375,
+          6727
+        ]
+      },
+      {
+        "name": "research-schedule-history-375.png",
+        "size": [
+          375,
+          1000
+        ]
+      },
+      {
+        "name": "research-schedules-1280-dark.png",
+        "size": [
+          966,
+          587
+        ]
+      },
+      {
+        "name": "research-schedules-1280-light.png",
+        "size": [
+          966,
+          587
+        ]
+      },
+      {
+        "name": "research-schedules-320-dark.png",
+        "size": [
+          254,
+          864
+        ]
+      },
+      {
+        "name": "research-schedules-320-light.png",
+        "size": [
+          254,
+          864
+        ]
+      },
+      {
+        "name": "research-schedules-375-dark.png",
+        "size": [
+          309,
+          822
+        ]
+      },
+      {
+        "name": "research-schedules-375-large.png",
+        "size": [
+          309,
+          1437
+        ]
+      },
+      {
+        "name": "research-schedules-375-light.png",
+        "size": [
+          309,
+          822
+        ]
+      }
+    ],
+    "workflows": 23,
+    "race_seconds": 203.263,
+    "review": "新增8圖已檢查：320/375/1280深淺色、375大字及工作紀錄；原22流程/295圖保留。後續驗收文件提交改善成功提示消失後截圖，200%使用完整頁面，保持8圖與全部斷言。"
+  },
+  "systemd": {
+    "result": "PASS",
+    "seconds": 41.8,
+    "scope": "真systemd安裝、TLS inference、版本更新、完整資料/key、failed activation rollback、SIGKILL/committed recovery、tampered bundle rejection"
+  },
+  "android": {
+    "tests": 976,
+    "failures": 0,
+    "errors": 0,
+    "skips": 5,
+    "xml_files": 1
+  },
+  "footprint": {
+    "binary_bytes": 14287010,
+    "catalog_http": 4,
+    "chat_peak_bytes": 28512256,
+    "chat_rss_bytes": 28512256,
+    "export_messages": 11000,
+    "export_peak_bytes": 207597568,
+    "export_requests": 100008,
+    "export_rss_bytes": 32395264,
+    "gomemlimit_bytes": 201326592,
+    "idle_rss_bytes": 24244224,
+    "image_peak_bytes": 207597568,
+    "image_pixels_each": 4194304,
+    "image_rss_bytes": 99471360,
+    "long_context_bytes_each": 32505856,
+    "long_context_http": 4,
+    "long_context_peak_bytes": 160739328,
+    "long_context_rss_bytes": 160739328,
+    "media_http": 8,
+    "peak_rss_bytes": 207597568,
+    "profile": "100000 retained samples/full SQL percentiles; 4 TLS chats + 4 simultaneous full 31-MiB contexts; retained 11000-message and full request exports; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each",
+    "research_peak_bytes": 207597568,
+    "research_rss_bytes": 31969280,
+    "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser",
+    "rss_target_bytes": 536870912,
+    "speech_bytes_each": 4194304,
+    "speech_peak_bytes": 207597568,
+    "speech_rss_bytes": 137682944,
+    "sqlite_bytes": 162832384,
+    "warm_rss_bytes": 137682944
+  },
+  "bundles": [
+    {
+      "arch": "amd64",
+      "zip_bytes": 11942592,
+      "zip_sha256": "20eeac522b135373bad94ecda83da593caecd0613100f031c1d3d9e065a577c3",
+      "tar_bytes": 5976383,
+      "tar_sha256": "82bb0ad30a4015eaa4357c5cfee9ead97cd3a049f3330f5ac02f3ac556f1a031",
+      "files": 25,
+      "markdown_documents": 18,
+      "binary_bytes": 14287010,
+      "elf_machine": 62,
+      "version": {
+        "commit": "b1e0c669ffea48575875e0c16b7da6980aca5552",
+        "built_at": "2026-10-20T15:25:08Z",
+        "os": "linux",
+        "arch": "amd64",
+        "schema": 19
+      },
+      "all_checksums": "PASS",
+      "actual_cli_version_and_bundle_check": "PASS"
+    },
+    {
+      "arch": "arm64",
+      "zip_bytes": 11111040,
+      "zip_sha256": "f7317f2929405782da175590ee0c3aa67f564c1a4edee7242e73018ca5c26802",
+      "tar_bytes": 5538331,
+      "tar_sha256": "50809b4ce526fc0ef1808b8dd145d29c3aece54b83e60a0a7928648de235044b",
+      "files": 25,
+      "markdown_documents": 18,
+      "binary_bytes": 13500578,
+      "elf_machine": 183,
+      "version": {
+        "commit": "b1e0c669ffea48575875e0c16b7da6980aca5552",
+        "built_at": "2026-10-20T15:25:07Z",
+        "os": "linux",
+        "arch": "arm64",
+        "schema": 19
+      },
+      "all_checksums": "PASS"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12276893545,
+      "name": "modelatlas-vps-linux-amd64",
+      "size_bytes": 11942592,
+      "zip_digest": "sha256:20eeac522b135373bad94ecda83da593caecd0613100f031c1d3d9e065a577c3"
+    },
+    {
+      "id": 12276648965,
+      "name": "modelatlas-vps-footprint",
+      "size_bytes": 1066,
+      "zip_digest": "sha256:cbbd9fe5eca8bc14cddfabb6ac068809b31441c684e04c6b553a0674101196c0"
+    },
+    {
+      "id": 12275854641,
+      "name": "modelatlas-vps-browser",
+      "size_bytes": 19221943,
+      "zip_digest": "sha256:34fc2896cab874c4776b550b56cca5296130321d6798113f46a3ea14ab9d864b"
+    },
+    {
+      "id": 12275574614,
+      "name": "modelatlas-vps-linux-arm64",
+      "size_bytes": 11111040,
+      "zip_digest": "sha256:f7317f2929405782da175590ee0c3aa67f564c1a4edee7242e73018ca5c26802"
+    },
+    {
+      "id": 12278230066,
+      "name": "modelatlas-device-test-reports",
+      "size_bytes": 1242790,
+      "zip_digest": "sha256:6f8fea5d93ec831369f862adb0a810f5639dd789730e9c82e10fe4134e282970"
+    },
+    {
+      "id": 12276713753,
+      "name": "modelatlas-debug-and-reports",
+      "size_bytes": 17207518,
+      "zip_digest": "sha256:34f9ee8ccc305b41446f5d34fc18f27bc0d6866d32040238c2f565497bb28755"
+    }
+  ],
+  "local_verification": {
+    "backend_14_scenarios": "PASS",
+    "new_browser_flow": "PASS",
+    "vet": "PASS",
+    "full_race": "原10m上限在TestDesktopDynamicLoopbackAndParentPipeLifetime停止（該案例剛進入3秒）；沒有改測試或上限。完整同SHA CI race 231.476s PASS。",
+    "full_browser": "原5m整批上限停止，前8流程通過；沒有改timeout或減工作量。完整同SHA CI 23流程203.263s PASS。"
+  },
+  "limits": [
+    "無目標VPS IP、URL或登入方式；未遠端部署。",
+    "服務PID量測，不含OS、proxy、browser或測試伺服器；不是目標VPS實測。",
+    "只自動公開discovery；自動模型推論/費用/逐憑證quota、地區/可調並行、429/502退避、逐頁checkpoint與原生OS生命週期待後續。",
+    "未知站點Connector、可量測Reflection、authenticity、真站長跑與全部原願望驗收保留；完整P1–P10未完成。",
+    "PR #20維持Draft，沒有merge；Mac PR #21未修改；沒有外部獨立reviewer。"
+  ]
+}

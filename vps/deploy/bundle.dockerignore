@@ -1,0 +1,7 @@
+**
+!bin/
+!bin/modelatlas-vps-linux-amd64
+!bin/modelatlas-vps-linux-arm64
+!deploy/
+!deploy/Dockerfile
+!deploy/container-entrypoint.sh

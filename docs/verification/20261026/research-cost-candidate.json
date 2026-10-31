@@ -1,0 +1,311 @@
+{
+  "slice": "RESEARCH-COST-015S",
+  "status": "CANDIDATE_NOT_ACCEPTED",
+  "baseline": "70f4683297955c5ba434e2b8139fbd73bcb5081d",
+  "counterexample": {
+    "test": "TestResearchCostPublicComparisonDoesNotTurnNoInferenceIntoFree",
+    "before": "FAIL: no cost_evidence in actual query comparison arms",
+    "elapsed_seconds": 1.486,
+    "after_focused_seconds": 2.478
+  },
+  "focused_checks": {
+    "four_cost_tests_race_seconds": 5.407,
+    "quality_query_reflection_resource_probe_race_seconds": 64.652,
+    "both_original_comparison_browser_workflows_race_seconds": 12.597,
+    "release_regressions": 42,
+    "go_vet": "PASS"
+  },
+  "retained_local_failures": [
+    {
+      "kind": "TEST_EXPECTATION_ERROR",
+      "fact": "New cost test incorrectly expected HTTP/0 for a real upstream 503; actual existing contract is UPSTREAM_5XX/502. Corrected exact assertion, retained reservation assertions."
+    },
+    {
+      "kind": "TEST_SELECTOR_ERROR",
+      "fact": "New Browser cost lookup omitted kind and selected a DISCOVERY_PATH with same subject/version; added exact SOURCE_RELIABILITY kind, original assertions unchanged."
+    },
+    {
+      "kind": "UNRESOLVED_BROWSER_COUNTEREXAMPLE",
+      "test": "TestBrowserModelConnectionsWorkflow",
+      "suite_seconds": 240.721,
+      "passed_original_browser_workflows": 41,
+      "failure": "30s waiting 今日狀態尚未確認 after mocked day change and Enter",
+      "root_cause": "UNKNOWN",
+      "subsequent_isolated_diagnostics_seconds": [
+        10.57,
+        8.86,
+        9.11
+      ],
+      "diagnostic_fact": "3 actual original flows PASS, active BUTTON/account a and mocked next day recorded; no production check-in modification and no proof of root cause."
+    },
+    {
+      "kind": "INTERRUPTED_LOCAL_GO_RUN",
+      "fact": "External worktree metadata/toolchain location disappeared after environment refresh; interrupted local event stream is not a full test result. Recovered standalone clone metadata without overwriting source; current full runner repeats original 600s/complete registry."
+    },
+    {
+      "kind": "SCREENSHOT_HELPER_SELECTOR",
+      "fact": "Added capture-heading assertion matched three nested headings; narrowed to the exact cost-comparison heading. No product assertion or timeout removed."
+    },
+    {
+      "kind": "VISUAL_REVIEW_REPAIR",
+      "fact": "Initial narrow 200% captures missed the cost section after font resize; exact section positioning and heading visibility checks added. Review then showed cramped three-column text, replaced on <=480px with labeled paired values; desktop retains comparison table."
+    }
+  ],
+  "expected": {
+    "go_registry": 424,
+    "go_case_events": 641,
+    "pass": 591,
+    "opt_in_skip": 50,
+    "browser_flows": 42,
+    "browser_png": 527,
+    "visual_review_required": 54,
+    "android_core": 594,
+    "android_app": 423,
+    "android_device": 996,
+    "android_original_skip": 5,
+    "mac_core_each": 89,
+    "mac_png_each": 104
+  },
+  "whole_next_release": "PARTIAL",
+  "public_release_frozen": true,
+  "local_full_go": {
+    "registry": 424,
+    "events": 641,
+    "pass": 591,
+    "opt_in_skip": 50,
+    "seconds": 554.653,
+    "deadline_seconds": 600,
+    "all_637_prior_event_outcomes_preserved": true,
+    "acceptance_scope": "LOCAL_DIRTY_TREE_NOT_COMMIT_ACCEPTANCE"
+  },
+  "local_full_browser": {
+    "flows": 42,
+    "seconds": 256.49,
+    "deadline_seconds": 300,
+    "result": "PASS",
+    "checkin_prior_counterexample_root": "UNKNOWN",
+    "new_screenshot_targeting": "PASS after exact heading and responsive narrow/200% layout; focused 2 original workflows retained"
+  },
+  "local_final_layout": {
+    "screenshots_reviewed": 4,
+    "status": "PASS_SELF_REVIEW",
+    "focused_race_seconds": 13.072,
+    "pending": "Exact-source nine jobs and actual archives/54 views; no whole-release completion claim."
+  },
+  "rejected_source": {
+    "source": "19427eae572a3e6f128143714fe5b807ba9a1f1d",
+    "tree": "537dcd05052ce2b222b45fa9346b0e637995e750",
+    "nine_required_jobs": "SUCCESS",
+    "runs": {
+      "vps": 40328861513,
+      "android": 40328862082,
+      "mac": 40328861559
+    },
+    "audit_run": 40328861503,
+    "audit_job": 121592619251,
+    "audit_result": "FAIL",
+    "reason": "Historical rejected AA ZIP has 523 views, but a substring replacement incorrectly made it require the new 527-view count; it also borrowed the current 18-view checklist instead of the historical 14 private views. Preserve the frozen source count/checklist independently.",
+    "actual_failed_audit_artifact": {
+      "id": 12653529192,
+      "bytes": 54396,
+      "sha256": "a5d4c4f743a56fc5c07fc48fafb8557aff35150e88517af5563002fe48826849",
+      "bytes_hash_crc": "PASS",
+      "visual_review": "NOT_COMPLETED"
+    },
+    "go_race_seconds": 592.528,
+    "go_case_events": 641,
+    "pass": 591,
+    "opt_in_skip": 50,
+    "browser_flows": 42,
+    "browser_seconds": 232.87,
+    "footprint_peak_rss_bytes": 211005440,
+    "product_code_changes_in_fix": false,
+    "actual_frozen_zip_validation": {
+      "bytes": 40443180,
+      "sha256": "c84bd007ae15f12914b6eb9eae627747699c9ce47915851539ff18c5e2971d31",
+      "png": 523,
+      "crc_all_png_decode": "PASS",
+      "frozen_private_required": 14,
+      "current_only_missing_from_old": [
+        "knowledge-evaluation-cost-375-200-light.png",
+        "research-query-cost-1280-dark.png",
+        "research-query-cost-320-200-dark.png",
+        "research-query-cost-375-light.png"
+      ],
+      "corrected_scope": "PASS"
+    }
+  },
+  "second_rejected_source": {
+    "source": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+    "tree": "4e4da19a6392396dc650cacc2eb4f00229fa572f",
+    "nine_required_jobs": {
+      ".github/workflows/vps.yml": [
+        {
+          "id": 121606574951,
+          "name": "vps-browser",
+          "conclusion": "success",
+          "run_id": 40332870062,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:01Z",
+          "completed_at": "2026-10-26T13:46:49Z"
+        },
+        {
+          "id": 121606574249,
+          "name": "vps-linux-amd64",
+          "conclusion": "success",
+          "run_id": 40332870062,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:01Z",
+          "completed_at": "2026-10-26T13:43:18Z"
+        },
+        {
+          "id": 121606574831,
+          "name": "vps-linux-arm64",
+          "conclusion": "success",
+          "run_id": 40332870062,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:00Z",
+          "completed_at": "2026-10-26T13:43:18Z"
+        },
+        {
+          "id": 121606574797,
+          "name": "vps-test",
+          "conclusion": "success",
+          "run_id": 40332870062,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:00Z",
+          "completed_at": "2026-10-26T13:50:52Z"
+        }
+      ],
+      ".github/workflows/android.yml": [
+        {
+          "id": 121606574071,
+          "name": "build",
+          "conclusion": "success",
+          "run_id": 40332870124,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:00Z",
+          "completed_at": "2026-10-26T13:46:30Z"
+        },
+        {
+          "id": 121606574663,
+          "name": "device-tests",
+          "conclusion": "success",
+          "run_id": 40332870124,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:00Z",
+          "completed_at": "2026-10-26T13:52:59Z"
+        }
+      ],
+      ".github/workflows/macos-native.yml": [
+        {
+          "id": 121606575690,
+          "name": "macos-build",
+          "conclusion": "success",
+          "run_id": 40332870699,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:42:02Z",
+          "completed_at": "2026-10-26T13:48:28Z"
+        },
+        {
+          "id": 121609985347,
+          "name": "macos-test (macos-15, arm64)",
+          "conclusion": "success",
+          "run_id": 40332870699,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:48:32Z",
+          "completed_at": "2026-10-26T13:54:20Z"
+        },
+        {
+          "id": 121609985234,
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "conclusion": "success",
+          "run_id": 40332870699,
+          "head_sha": "25e3eba8bd414db8e2cb46a32e6de425110bb6a0",
+          "started_at": "2026-10-26T13:48:31Z",
+          "completed_at": "2026-10-26T13:56:57Z"
+        }
+      ]
+    },
+    "runs": {
+      "vps": 40332870062,
+      "android": 40332870124,
+      "mac": 40332870699
+    },
+    "audit_run": 40332869970,
+    "audit_job": 121606574227,
+    "audit_result": "FAIL",
+    "reason": "All preceding provenance, original workloads, Android, historical AA and both Mac core/native checks passed; a stale fixed Linux file count required 46 after the new public RESEARCH_COST.md made the real bundles contain 47. No source product or workload changes in the correction.",
+    "actual_failed_audit_artifact": {
+      "id": 12657251086,
+      "bytes": 54458,
+      "sha256": "7412b18c42c97cfe53b42e5b7c617f7ecc0cfb582e3973490891a1c5f6a28657",
+      "bytes_hash_crc": "PASS",
+      "visual_review": "NOT_COMPLETED"
+    },
+    "go_race_seconds": 397.977,
+    "go_case_events": 641,
+    "pass": 591,
+    "opt_in_skip": 50,
+    "footprint_peak_rss_bytes": 210882560,
+    "linux_preflight": {
+      "amd64": {
+        "files": 47,
+        "schema": 37,
+        "outer_hash": "46a621457a5ed42cee17db9e7993368e9b338f31b726668d53626975752c32a7"
+      },
+      "arm64": {
+        "files": 47,
+        "schema": 37,
+        "outer_hash": "45c2433dcf338990e9dae64e721c2c6b98b93a4a2c2f0b077aaafefb7d6549c6"
+      }
+    },
+    "actual_packaged_binary_preflight": {
+      "startup_seconds": 0.061163500000020576,
+      "first_members": 15,
+      "after_restart": 14,
+      "after_explicit_add": 14,
+      "empty": {
+        "telemetry": 0,
+        "sessions": 0,
+        "research_runs": 0
+      },
+      "secret_count": 0,
+      "install_ledgers": 1,
+      "parent_pipe_shutdown": "PASS"
+    },
+    "frozen_public_assets_checked": 11,
+    "main_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+    "main_jobs": [
+      {
+        "id": 119016886469,
+        "name": "build",
+        "conclusion": "success",
+        "run_id": 39536090788,
+        "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+        "started_at": "2026-10-21T02:59:47Z",
+        "completed_at": "2026-10-21T03:05:13Z"
+      },
+      {
+        "id": 119016884592,
+        "name": "device-tests",
+        "conclusion": "success",
+        "run_id": 39536090788,
+        "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+        "started_at": "2026-10-21T03:12:55Z",
+        "completed_at": "2026-10-21T03:21:59Z"
+      }
+    ],
+    "fix": "Require exact current public Markdown + nine fixed executable/deployment/metadata files, while pinning all 37 accepted original public documents. Same-count replacement and unsupported architectures are rejected.",
+    "release_regressions": 46,
+    "new_source_acceptance": "PENDING_OWN_NINE_JOBS_AND_ACTUAL_ARTIFACTS_54_VIEWS",
+    "actual_contact_tail_preflight": {
+      "views": 54,
+      "contact_sheets": 14,
+      "actual_sources": [
+        "25e3eba8bd414db8e2cb46a32e6de425110bb6a0"
+      ],
+      "note": "Preflight of unchanged tail only; new source still requires its own nine jobs/artifacts and visual acceptance."
+    }
+  }
+}

@@ -1,0 +1,43 @@
+name: VPS Opt-in Live Kilo Research
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+    paths:
+      - "vps/**"
+      - ".github/workflows/vps-live.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vps-live-kilo-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  live-kilo-research:
+    # Explicit opt-in marker, separate from deterministic regression CI.
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.pull_request.title, '[LIVE KILO]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: vps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - name: Actual anonymous model and public Provider research
+        env:
+          MODELATLAS_LIVE_KILO_RESEARCH: "1"
+          MODELATLAS_LIVE_RESEARCH_OUT: "live-kilo-provider-research.json"
+        run: go test -mod=readonly -v -run TestLiveKiloProviderDiscovery -count=1 -timeout=6m
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: modelatlas-live-kilo-research
+          path: vps/live-kilo-provider-research*.json
+          if-no-files-found: warn

@@ -65,12 +65,17 @@ import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -87,6 +92,7 @@ class MyModelsToggleFeedbackTest {
     private lateinit var app: AtlasApplication
     private lateinit var viewModel: AtlasViewModel
     private lateinit var viewModelStore: ViewModelStore
+    private var toggleReadObserver: (suspend (MyModelKey, Boolean) -> Unit)? = null
 
     private val providerIds = mutableListOf<String>()
     private val credentialRefs = mutableListOf<String>()
@@ -104,7 +110,9 @@ class MyModelsToggleFeedbackTest {
                 @Suppress("DEPRECATION")
                 override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                     @Suppress("UNCHECKED_CAST")
-                    return AtlasViewModel(app) as T
+                    return AtlasViewModel(app, myModelToggleReadObserver = { key, member ->
+                        toggleReadObserver?.invoke(key, member)
+                    }) as T
                 }
             }).get(AtlasViewModel::class.java)
         }
@@ -253,8 +261,9 @@ class MyModelsToggleFeedbackTest {
     // ── Vector 4 (landed shape) ──────────────────────────────────────────────
     // 連打兩次 toggle（landed：L2v2 已移除 in-flight gate — 第二下絕不被吞）：
     // 兩下都到 store（stale read → REPLACE 冪等）、membership 收斂為成員、
-    // 無 error、in-flight 排空。第二次 count 在第一次 add 分發前已入列
-    // （Main.immediate 同步入列，add 分發需多一次 Main 往返）→ 讀到 pre-add 狀態。
+    // 無 error、in-flight 排空。兩次 count 雖先入列，Room query 與 transaction
+    // executor 的交錯仍可能先 add 再執行第二次 count，不能靠 Main 往返猜順序。
+    // 在真 count 回傳後暫停兩個 coroutine，確認各自讀到 non-member 才同時放行。
 
     @Test
     fun rapidDoubleToggleIsIdempotentWithNoErrorAndNoStuckInFlight() {
@@ -264,13 +273,34 @@ class MyModelsToggleFeedbackTest {
         val addModelId = MODEL_ID + "-manual-double-toggle"
         val key = MyModelKey(fixture.providerId, addModelId)
         assertTrue("double-toggle test must start as non-member", prewire(member = false, key = key))
-        onMain {
-            viewModel.toggleMyModel(fixture.providerId, addModelId)
-            viewModel.toggleMyModel(fixture.providerId, addModelId) // second tap must not be swallowed
+        val reads = Channel<Pair<Boolean, Job>>(capacity = 2)
+        val releaseWrites = CompletableDeferred<Unit>()
+        toggleReadObserver = { observedKey, member ->
+            if (observedKey == key) {
+                reads.send(member to currentCoroutineContext().job)
+                releaseWrites.await()
+            }
         }
-        await { viewModel.myModelToggleInFlight.first { it.isEmpty() } }
-        await { viewModel.myModelKeys.first { it.contains(key) } }
-        assertTrue("double toggle must record no error", viewModel.myModelToggleError.value.isEmpty())
+        try {
+            onMain {
+                viewModel.toggleMyModel(fixture.providerId, addModelId)
+                viewModel.toggleMyModel(fixture.providerId, addModelId) // second tap must not be swallowed
+            }
+            val observed = await { List(2) { reads.receive() } }
+            assertTrue("both real DB reads must see non-member before either write", observed.all { !it.first })
+            assertTrue("each tap must reach its own coroutine", observed[0].second !== observed[1].second)
+            releaseWrites.complete(Unit)
+            await { observed.forEach { it.second.join() } }
+            await { viewModel.myModelToggleInFlight.first { it.isEmpty() } }
+            await { viewModel.myModelKeys.first { it.contains(key) } }
+            assertTrue("double toggle must record no error", viewModel.myModelToggleError.value.isEmpty())
+            assertEquals("idempotent adds must persist one exact membership", 1,
+                runBlocking { withTimeout(TIMEOUT_MS) { app.database.myModelsDao().count(fixture.providerId, addModelId) } })
+        } finally {
+            releaseWrites.complete(Unit)
+            toggleReadObserver = null
+            reads.close()
+        }
     }
 
     // ── Vector 5 ─────────────────────────────────────────────────────────────

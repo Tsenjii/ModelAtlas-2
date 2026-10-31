@@ -40,12 +40,12 @@ class AtlasMigration9To10Test {
         }
 
         val db = Room.databaseBuilder(context, AtlasDatabase::class.java, dbName)
-            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
             .allowMainThreadQueries()
             .build()
         try {
             val sql = db.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
 
             // 舊列保留（一次 sync failure 不清空 last-good 的 migration 側：舊資料一字不動）。
             val provider = db.providerDao().getById("p10")!!

@@ -1,0 +1,4255 @@
+{
+  "slice": "EXTRACTION-015N",
+  "status": "ACCEPTED",
+  "source": "faf614f84265a91d85063e5f1e16d91b88266e51",
+  "tree": "b94cbb031dcb128794fa5212244fe8ff94e66046",
+  "verification": {
+    "sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+    "tree": "b94cbb031dcb128794fa5212244fe8ff94e66046",
+    "runs": [
+      {
+        "run": {
+          "id": 40180194414,
+          "name": "VPS Go Build and Integration",
+          "node_id": "WFR_kwLOVF1ats8AAAAJWu0cbg",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+          "path": ".github/workflows/vps.yml",
+          "display_title": "feat: 公開資料擷取比較、Kilo出廠模型與跨平台穩定性",
+          "run_number": 216,
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success",
+          "workflow_id": 383514759,
+          "check_suite_id": 108903357176,
+          "check_suite_node_id": "CS_kwDOVF1ats8AAAAZWyVa-A",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414",
+          "pull_requests": [
+            {
+              "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls/20",
+              "id": 4847449941,
+              "number": 20,
+              "head": {
+                "ref": "feature/vps-rebuild-20261014",
+                "sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+                "repo": {
+                  "id": 1415404214,
+                  "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                  "name": "ModelAtlas-2"
+                }
+              },
+              "base": {
+                "ref": "main",
+                "sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+                "repo": {
+                  "id": 1415404214,
+                  "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                  "name": "ModelAtlas-2"
+                }
+              }
+            }
+          ],
+          "created_at": "2026-10-25T09:19:56Z",
+          "updated_at": "2026-10-25T09:27:45Z",
+          "actor": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "run_attempt": 1,
+          "referenced_workflows": [],
+          "run_started_at": "2026-10-25T09:19:56Z",
+          "triggering_actor": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414/jobs",
+          "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414/logs",
+          "check_suite_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-suites/108903357176",
+          "artifacts_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414/artifacts",
+          "cancel_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414/cancel",
+          "rerun_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414/rerun",
+          "previous_attempt_url": null,
+          "workflow_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/workflows/383514759",
+          "head_commit": {
+            "id": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "tree_id": "b94cbb031dcb128794fa5212244fe8ff94e66046",
+            "message": "feat: compare and review scoped public metadata read batching",
+            "timestamp": "2026-10-25T09:19:50Z",
+            "author": {
+              "name": "Tsenjii",
+              "email": "b310103@gm.tnfsh.tn.edu.tw"
+            },
+            "committer": {
+              "name": "Tsenjii",
+              "email": "b310103@gm.tnfsh.tn.edu.tw"
+            }
+          },
+          "repository": {
+            "id": 1415404214,
+            "node_id": "R_kgDOVF1atg",
+            "name": "ModelAtlas-2",
+            "full_name": "Tsenjii/ModelAtlas-2",
+            "private": false,
+            "owner": {
+              "login": "Tsenjii",
+              "id": 314288148,
+              "node_id": "U_kgDOEruoFA",
+              "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/Tsenjii",
+              "html_url": "https://github.com/Tsenjii",
+              "followers_url": "https://api.github.com/users/Tsenjii/followers",
+              "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+              "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+              "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+              "repos_url": "https://api.github.com/users/Tsenjii/repos",
+              "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+            "description": null,
+            "fork": false,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+            "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+            "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+            "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+            "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+            "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+            "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+            "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+            "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+            "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+            "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+            "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+            "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+            "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+            "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+            "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+            "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+            "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+            "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+            "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+            "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+            "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+            "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+            "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+            "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+            "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+            "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+            "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+            "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+            "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+            "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+            "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+            "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+            "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+            "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+            "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+            "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+          },
+          "head_repository": {
+            "id": 1415404214,
+            "node_id": "R_kgDOVF1atg",
+            "name": "ModelAtlas-2",
+            "full_name": "Tsenjii/ModelAtlas-2",
+            "private": false,
+            "owner": {
+              "login": "Tsenjii",
+              "id": 314288148,
+              "node_id": "U_kgDOEruoFA",
+              "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/Tsenjii",
+              "html_url": "https://github.com/Tsenjii",
+              "followers_url": "https://api.github.com/users/Tsenjii/followers",
+              "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+              "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+              "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+              "repos_url": "https://api.github.com/users/Tsenjii/repos",
+              "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+            "description": null,
+            "fork": false,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+            "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+            "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+            "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+            "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+            "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+            "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+            "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+            "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+            "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+            "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+            "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+            "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+            "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+            "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+            "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+            "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+            "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+            "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+            "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+            "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+            "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+            "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+            "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+            "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+            "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+            "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+            "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+            "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+            "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+            "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+            "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+            "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+            "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+            "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+            "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+            "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+          }
+        },
+        "jobs": [
+          {
+            "id": 121129420968,
+            "run_id": 40180194414,
+            "workflow_name": "VPS Go Build and Integration",
+            "head_branch": "feature/vps-rebuild-20261014",
+            "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOVF1ats8AAAAcM-BIqA",
+            "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121129420968",
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414/job/121129420968",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-10-25T09:19:57Z",
+            "started_at": "2026-10-25T09:19:59Z",
+            "completed_at": "2026-10-25T09:21:01Z",
+            "name": "vps-linux-arm64",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-10-25T09:19:59Z",
+                "completed_at": "2026-10-25T09:20:01Z"
+              },
+              {
+                "name": "Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-10-25T09:20:01Z",
+                "completed_at": "2026-10-25T09:20:03Z"
+              },
+              {
+                "name": "Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-10-25T09:20:03Z",
+                "completed_at": "2026-10-25T09:20:11Z"
+              },
+              {
+                "name": "Build",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-10-25T09:20:11Z",
+                "completed_at": "2026-10-25T09:20:56Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-10-25T09:20:56Z",
+                "completed_at": "2026-10-25T09:20:58Z"
+              },
+              {
+                "name": "Post Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 9,
+                "started_at": "2026-10-25T09:20:58Z",
+                "completed_at": "2026-10-25T09:20:58Z"
+              },
+              {
+                "name": "Post Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 10,
+                "started_at": "2026-10-25T09:20:58Z",
+                "completed_at": "2026-10-25T09:20:58Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 11,
+                "started_at": "2026-10-25T09:20:58Z",
+                "completed_at": "2026-10-25T09:20:58Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121129420968",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 1000004610,
+            "runner_name": "GitHub Actions 1000004610",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          },
+          {
+            "id": 121129421126,
+            "run_id": 40180194414,
+            "workflow_name": "VPS Go Build and Integration",
+            "head_branch": "feature/vps-rebuild-20261014",
+            "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOVF1ats8AAAAcM-BJRg",
+            "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121129421126",
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414/job/121129421126",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-10-25T09:19:57Z",
+            "started_at": "2026-10-25T09:19:59Z",
+            "completed_at": "2026-10-25T09:27:44Z",
+            "name": "vps-test",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-10-25T09:19:59Z",
+                "completed_at": "2026-10-25T09:20:01Z"
+              },
+              {
+                "name": "Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-10-25T09:20:01Z",
+                "completed_at": "2026-10-25T09:20:03Z"
+              },
+              {
+                "name": "Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-10-25T09:20:03Z",
+                "completed_at": "2026-10-25T09:20:11Z"
+              },
+              {
+                "name": "Resolve pinned SQLite dependency",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-10-25T09:20:11Z",
+                "completed_at": "2026-10-25T09:20:12Z"
+              },
+              {
+                "name": "Unit and HTTP integration tests",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-10-25T09:20:12Z",
+                "completed_at": "2026-10-25T09:26:07Z"
+              },
+              {
+                "name": "Vet",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6,
+                "started_at": "2026-10-25T09:26:07Z",
+                "completed_at": "2026-10-25T09:26:22Z"
+              },
+              {
+                "name": "Genuine systemd install, upgrade, rollback and crash recovery",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 7,
+                "started_at": "2026-10-25T09:26:22Z",
+                "completed_at": "2026-10-25T09:27:13Z"
+              },
+              {
+                "name": "Measure standalone resource footprint",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 8,
+                "started_at": "2026-10-25T09:27:13Z",
+                "completed_at": "2026-10-25T09:27:34Z"
+              },
+              {
+                "name": "Compare full-context JSON encoding allocations",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 9,
+                "started_at": "2026-10-25T09:27:34Z",
+                "completed_at": "2026-10-25T09:27:35Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 10,
+                "started_at": "2026-10-25T09:27:35Z",
+                "completed_at": "2026-10-25T09:27:37Z"
+              },
+              {
+                "name": "Smoke Linux runtime",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 11,
+                "started_at": "2026-10-25T09:27:37Z",
+                "completed_at": "2026-10-25T09:27:40Z"
+              },
+              {
+                "name": "Post Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 21,
+                "started_at": "2026-10-25T09:27:40Z",
+                "completed_at": "2026-10-25T09:27:40Z"
+              },
+              {
+                "name": "Post Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 22,
+                "started_at": "2026-10-25T09:27:40Z",
+                "completed_at": "2026-10-25T09:27:40Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 23,
+                "started_at": "2026-10-25T09:27:40Z",
+                "completed_at": "2026-10-25T09:27:40Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121129421126",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 1000004611,
+            "runner_name": "GitHub Actions 1000004611",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          },
+          {
+            "id": 121129421137,
+            "run_id": 40180194414,
+            "workflow_name": "VPS Go Build and Integration",
+            "head_branch": "feature/vps-rebuild-20261014",
+            "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOVF1ats8AAAAcM-BJUQ",
+            "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121129421137",
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414/job/121129421137",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-10-25T09:19:57Z",
+            "started_at": "2026-10-25T09:19:58Z",
+            "completed_at": "2026-10-25T09:21:09Z",
+            "name": "vps-linux-amd64",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-10-25T09:19:59Z",
+                "completed_at": "2026-10-25T09:20:00Z"
+              },
+              {
+                "name": "Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-10-25T09:20:00Z",
+                "completed_at": "2026-10-25T09:20:01Z"
+              },
+              {
+                "name": "Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-10-25T09:20:01Z",
+                "completed_at": "2026-10-25T09:20:09Z"
+              },
+              {
+                "name": "Build",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-10-25T09:20:09Z",
+                "completed_at": "2026-10-25T09:21:04Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-10-25T09:21:04Z",
+                "completed_at": "2026-10-25T09:21:06Z"
+              },
+              {
+                "name": "Post Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 9,
+                "started_at": "2026-10-25T09:21:06Z",
+                "completed_at": "2026-10-25T09:21:06Z"
+              },
+              {
+                "name": "Post Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 10,
+                "started_at": "2026-10-25T09:21:06Z",
+                "completed_at": "2026-10-25T09:21:07Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 11,
+                "started_at": "2026-10-25T09:21:07Z",
+                "completed_at": "2026-10-25T09:21:07Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121129421137",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 1000004612,
+            "runner_name": "GitHub Actions 1000004612",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          },
+          {
+            "id": 121129421185,
+            "run_id": 40180194414,
+            "workflow_name": "VPS Go Build and Integration",
+            "head_branch": "feature/vps-rebuild-20261014",
+            "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194414",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOVF1ats8AAAAcM-BJgQ",
+            "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121129421185",
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414/job/121129421185",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-10-25T09:19:57Z",
+            "started_at": "2026-10-25T09:19:59Z",
+            "completed_at": "2026-10-25T09:25:10Z",
+            "name": "vps-browser",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-10-25T09:20:00Z",
+                "completed_at": "2026-10-25T09:20:01Z"
+              },
+              {
+                "name": "Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-10-25T09:20:01Z",
+                "completed_at": "2026-10-25T09:20:02Z"
+              },
+              {
+                "name": "Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-10-25T09:20:02Z",
+                "completed_at": "2026-10-25T09:20:14Z"
+              },
+              {
+                "name": "Run actions/setup-node@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-10-25T09:20:14Z",
+                "completed_at": "2026-10-25T09:20:17Z"
+              },
+              {
+                "name": "Bound CI package downloads and use the official HTTPS mirror",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-10-25T09:20:17Z",
+                "completed_at": "2026-10-25T09:20:17Z"
+              },
+              {
+                "name": "Install browser test dependencies",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6,
+                "started_at": "2026-10-25T09:20:17Z",
+                "completed_at": "2026-10-25T09:21:16Z"
+              },
+              {
+                "name": "Browser production flow and responsive UI",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 7,
+                "started_at": "2026-10-25T09:21:16Z",
+                "completed_at": "2026-10-25T09:25:03Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 8,
+                "started_at": "2026-10-25T09:25:03Z",
+                "completed_at": "2026-10-25T09:25:07Z"
+              },
+              {
+                "name": "Post Run actions/setup-node@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 14,
+                "started_at": "2026-10-25T09:25:07Z",
+                "completed_at": "2026-10-25T09:25:07Z"
+              },
+              {
+                "name": "Post Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 15,
+                "started_at": "2026-10-25T09:25:07Z",
+                "completed_at": "2026-10-25T09:25:07Z"
+              },
+              {
+                "name": "Post Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 16,
+                "started_at": "2026-10-25T09:25:07Z",
+                "completed_at": "2026-10-25T09:25:07Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 17,
+                "started_at": "2026-10-25T09:25:07Z",
+                "completed_at": "2026-10-25T09:25:07Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121129421185",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 1000004613,
+            "runner_name": "GitHub Actions 1000004613",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          }
+        ],
+        "artifacts": [
+          {
+            "id": 12594292358,
+            "node_id": "MDg6QXJ0aWZhY3QxMjU5NDI5MjM1OA==",
+            "name": "modelatlas-vps-browser",
+            "size_in_bytes": 37548886,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12594292358",
+            "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12594292358/zip",
+            "expired": false,
+            "digest": "sha256:c6163810ba4b17257ca2070bd1c52c747292a96023620875a5a7f25597d74de2",
+            "created_at": "2026-10-25T09:25:06Z",
+            "updated_at": "2026-10-25T09:25:06Z",
+            "expires_at": "2027-01-23T09:19:56Z",
+            "workflow_run": {
+              "id": 40180194414,
+              "repository_id": 1415404214,
+              "head_repository_id": 1415404214,
+              "head_branch": "feature/vps-rebuild-20261014",
+              "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51"
+            }
+          },
+          {
+            "id": 12594022989,
+            "node_id": "MDg6QXJ0aWZhY3QxMjU5NDAyMjk4OQ==",
+            "name": "modelatlas-vps-footprint",
+            "size_in_bytes": 15972,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12594022989",
+            "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12594022989/zip",
+            "expired": false,
+            "digest": "sha256:f10169fec3450b21b2833ba28a5712144888b9a1721ab672da9989b75e8e68ce",
+            "created_at": "2026-10-25T09:27:36Z",
+            "updated_at": "2026-10-25T09:27:36Z",
+            "expires_at": "2027-01-23T09:19:56Z",
+            "workflow_run": {
+              "id": 40180194414,
+              "repository_id": 1415404214,
+              "head_repository_id": 1415404214,
+              "head_branch": "feature/vps-rebuild-20261014",
+              "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51"
+            }
+          },
+          {
+            "id": 12593752450,
+            "node_id": "MDg6QXJ0aWZhY3QxMjU5Mzc1MjQ1MA==",
+            "name": "modelatlas-vps-linux-arm64",
+            "size_in_bytes": 12008068,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593752450",
+            "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593752450/zip",
+            "expired": false,
+            "digest": "sha256:dabe3f7804e61824fc10f983e2884dc072953363248dcd42ee6bd5f77dd39973",
+            "created_at": "2026-10-25T09:20:58Z",
+            "updated_at": "2026-10-25T09:20:58Z",
+            "expires_at": "2027-01-23T09:19:56Z",
+            "workflow_run": {
+              "id": 40180194414,
+              "repository_id": 1415404214,
+              "head_repository_id": 1415404214,
+              "head_branch": "feature/vps-rebuild-20261014",
+              "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51"
+            }
+          },
+          {
+            "id": 12593507972,
+            "node_id": "MDg6QXJ0aWZhY3QxMjU5MzUwNzk3Mg==",
+            "name": "modelatlas-vps-linux-amd64",
+            "size_in_bytes": 12927994,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593507972",
+            "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593507972/zip",
+            "expired": false,
+            "digest": "sha256:e99d973f234c2a03657f212e43ec2bd72ec023e95858e137889a66021a4d043b",
+            "created_at": "2026-10-25T09:21:06Z",
+            "updated_at": "2026-10-25T09:21:06Z",
+            "expires_at": "2027-01-23T09:19:56Z",
+            "workflow_run": {
+              "id": 40180194414,
+              "repository_id": 1415404214,
+              "head_repository_id": 1415404214,
+              "head_branch": "feature/vps-rebuild-20261014",
+              "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51"
+            }
+          }
+        ]
+      },
+      {
+        "run": {
+          "id": 40180194437,
+          "name": "Android Build and Test",
+          "node_id": "WFR_kwLOVF1ats8AAAAJWu0chQ",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+          "path": ".github/workflows/android.yml",
+          "display_title": "feat: 公開資料擷取比較、Kilo出廠模型與跨平台穩定性",
+          "run_number": 308,
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success",
+          "workflow_id": 382045642,
+          "check_suite_id": 108903357218,
+          "check_suite_node_id": "CS_kwDOVF1ats8AAAAZWyVbIg",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194437",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194437",
+          "pull_requests": [
+            {
+              "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls/20",
+              "id": 4847449941,
+              "number": 20,
+              "head": {
+                "ref": "feature/vps-rebuild-20261014",
+                "sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+                "repo": {
+                  "id": 1415404214,
+                  "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                  "name": "ModelAtlas-2"
+                }
+              },
+              "base": {
+                "ref": "main",
+                "sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+                "repo": {
+                  "id": 1415404214,
+                  "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                  "name": "ModelAtlas-2"
+                }
+              }
+            }
+          ],
+          "created_at": "2026-10-25T09:19:56Z",
+          "updated_at": "2026-10-25T09:31:00Z",
+          "actor": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "run_attempt": 1,
+          "referenced_workflows": [],
+          "run_started_at": "2026-10-25T09:19:56Z",
+          "triggering_actor": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194437/jobs",
+          "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194437/logs",
+          "check_suite_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-suites/108903357218",
+          "artifacts_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194437/artifacts",
+          "cancel_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194437/cancel",
+          "rerun_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194437/rerun",
+          "previous_attempt_url": null,
+          "workflow_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/workflows/382045642",
+          "head_commit": {
+            "id": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "tree_id": "b94cbb031dcb128794fa5212244fe8ff94e66046",
+            "message": "feat: compare and review scoped public metadata read batching",
+            "timestamp": "2026-10-25T09:19:50Z",
+            "author": {
+              "name": "Tsenjii",
+              "email": "b310103@gm.tnfsh.tn.edu.tw"
+            },
+            "committer": {
+              "name": "Tsenjii",
+              "email": "b310103@gm.tnfsh.tn.edu.tw"
+            }
+          },
+          "repository": {
+            "id": 1415404214,
+            "node_id": "R_kgDOVF1atg",
+            "name": "ModelAtlas-2",
+            "full_name": "Tsenjii/ModelAtlas-2",
+            "private": false,
+            "owner": {
+              "login": "Tsenjii",
+              "id": 314288148,
+              "node_id": "U_kgDOEruoFA",
+              "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/Tsenjii",
+              "html_url": "https://github.com/Tsenjii",
+              "followers_url": "https://api.github.com/users/Tsenjii/followers",
+              "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+              "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+              "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+              "repos_url": "https://api.github.com/users/Tsenjii/repos",
+              "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+            "description": null,
+            "fork": false,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+            "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+            "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+            "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+            "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+            "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+            "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+            "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+            "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+            "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+            "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+            "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+            "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+            "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+            "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+            "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+            "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+            "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+            "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+            "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+            "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+            "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+            "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+            "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+            "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+            "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+            "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+            "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+            "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+            "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+            "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+            "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+            "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+            "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+            "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+            "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+            "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+          },
+          "head_repository": {
+            "id": 1415404214,
+            "node_id": "R_kgDOVF1atg",
+            "name": "ModelAtlas-2",
+            "full_name": "Tsenjii/ModelAtlas-2",
+            "private": false,
+            "owner": {
+              "login": "Tsenjii",
+              "id": 314288148,
+              "node_id": "U_kgDOEruoFA",
+              "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/Tsenjii",
+              "html_url": "https://github.com/Tsenjii",
+              "followers_url": "https://api.github.com/users/Tsenjii/followers",
+              "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+              "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+              "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+              "repos_url": "https://api.github.com/users/Tsenjii/repos",
+              "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+            "description": null,
+            "fork": false,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+            "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+            "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+            "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+            "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+            "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+            "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+            "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+            "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+            "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+            "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+            "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+            "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+            "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+            "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+            "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+            "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+            "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+            "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+            "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+            "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+            "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+            "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+            "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+            "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+            "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+            "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+            "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+            "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+            "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+            "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+            "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+            "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+            "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+            "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+            "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+            "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+          }
+        },
+        "jobs": [
+          {
+            "id": 121129421066,
+            "run_id": 40180194437,
+            "workflow_name": "Android Build and Test",
+            "head_branch": "feature/vps-rebuild-20261014",
+            "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194437",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOVF1ats8AAAAcM-BJCg",
+            "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121129421066",
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194437/job/121129421066",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-10-25T09:19:57Z",
+            "started_at": "2026-10-25T09:19:59Z",
+            "completed_at": "2026-10-25T09:30:59Z",
+            "name": "device-tests",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-10-25T09:19:59Z",
+                "completed_at": "2026-10-25T09:20:01Z"
+              },
+              {
+                "name": "Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-10-25T09:20:01Z",
+                "completed_at": "2026-10-25T09:20:02Z"
+              },
+              {
+                "name": "Run actions/setup-java@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-10-25T09:20:02Z",
+                "completed_at": "2026-10-25T09:20:02Z"
+              },
+              {
+                "name": "Run gradle/actions/setup-gradle@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-10-25T09:20:02Z",
+                "completed_at": "2026-10-25T09:20:14Z"
+              },
+              {
+                "name": "Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-10-25T09:20:14Z",
+                "completed_at": "2026-10-25T09:20:25Z"
+              },
+              {
+                "name": "Start real TLS workspace hub for native sync integration",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6,
+                "started_at": "2026-10-25T09:20:25Z",
+                "completed_at": "2026-10-25T09:21:00Z"
+              },
+              {
+                "name": "Enable emulator acceleration",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 7,
+                "started_at": "2026-10-25T09:21:00Z",
+                "completed_at": "2026-10-25T09:21:00Z"
+              },
+              {
+                "name": "Run reactivecircus/android-emulator-runner@v2",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 8,
+                "started_at": "2026-10-25T09:21:00Z",
+                "completed_at": "2026-10-25T09:30:54Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 9,
+                "started_at": "2026-10-25T09:30:54Z",
+                "completed_at": "2026-10-25T09:30:56Z"
+              },
+              {
+                "name": "Post Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 15,
+                "started_at": "2026-10-25T09:30:56Z",
+                "completed_at": "2026-10-25T09:30:56Z"
+              },
+              {
+                "name": "Post Run gradle/actions/setup-gradle@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 16,
+                "started_at": "2026-10-25T09:30:56Z",
+                "completed_at": "2026-10-25T09:30:57Z"
+              },
+              {
+                "name": "Post Run actions/setup-java@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 17,
+                "started_at": "2026-10-25T09:30:57Z",
+                "completed_at": "2026-10-25T09:30:57Z"
+              },
+              {
+                "name": "Post Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 18,
+                "started_at": "2026-10-25T09:30:57Z",
+                "completed_at": "2026-10-25T09:30:57Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 19,
+                "started_at": "2026-10-25T09:30:57Z",
+                "completed_at": "2026-10-25T09:30:57Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121129421066",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 1000004614,
+            "runner_name": "GitHub Actions 1000004614",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          },
+          {
+            "id": 121129421182,
+            "run_id": 40180194437,
+            "workflow_name": "Android Build and Test",
+            "head_branch": "feature/vps-rebuild-20261014",
+            "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194437",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOVF1ats8AAAAcM-BJfg",
+            "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121129421182",
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194437/job/121129421182",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-10-25T09:19:57Z",
+            "started_at": "2026-10-25T09:19:59Z",
+            "completed_at": "2026-10-25T09:24:15Z",
+            "name": "build",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-10-25T09:20:00Z",
+                "completed_at": "2026-10-25T09:20:04Z"
+              },
+              {
+                "name": "Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-10-25T09:20:04Z",
+                "completed_at": "2026-10-25T09:20:05Z"
+              },
+              {
+                "name": "Run actions/setup-java@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-10-25T09:20:05Z",
+                "completed_at": "2026-10-25T09:20:06Z"
+              },
+              {
+                "name": "Run gradle/actions/setup-gradle@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-10-25T09:20:06Z",
+                "completed_at": "2026-10-25T09:20:17Z"
+              },
+              {
+                "name": "Unit tests and APKs",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-10-25T09:20:17Z",
+                "completed_at": "2026-10-25T09:24:09Z"
+              },
+              {
+                "name": "Record installable APK provenance and signing certificate",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6,
+                "started_at": "2026-10-25T09:24:09Z",
+                "completed_at": "2026-10-25T09:24:10Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 7,
+                "started_at": "2026-10-25T09:24:10Z",
+                "completed_at": "2026-10-25T09:24:12Z"
+              },
+              {
+                "name": "Post Run gradle/actions/setup-gradle@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 12,
+                "started_at": "2026-10-25T09:24:12Z",
+                "completed_at": "2026-10-25T09:24:12Z"
+              },
+              {
+                "name": "Post Run actions/setup-java@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 13,
+                "started_at": "2026-10-25T09:24:12Z",
+                "completed_at": "2026-10-25T09:24:12Z"
+              },
+              {
+                "name": "Post Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 14,
+                "started_at": "2026-10-25T09:24:12Z",
+                "completed_at": "2026-10-25T09:24:13Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 15,
+                "started_at": "2026-10-25T09:24:13Z",
+                "completed_at": "2026-10-25T09:24:13Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121129421182",
+            "labels": [
+              "ubuntu-latest"
+            ],
+            "runner_id": 1000004615,
+            "runner_name": "GitHub Actions 1000004615",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          }
+        ],
+        "artifacts": [
+          {
+            "id": 12594500777,
+            "node_id": "MDg6QXJ0aWZhY3QxMjU5NDUwMDc3Nw==",
+            "name": "modelatlas-debug-and-reports",
+            "size_in_bytes": 17240779,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12594500777",
+            "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12594500777/zip",
+            "expired": false,
+            "digest": "sha256:80e9afc7f8031ba5655cab476573900419901af65e369c614bf218040db7f3b3",
+            "created_at": "2026-10-25T09:24:12Z",
+            "updated_at": "2026-10-25T09:24:12Z",
+            "expires_at": "2027-01-23T09:19:56Z",
+            "workflow_run": {
+              "id": 40180194437,
+              "repository_id": 1415404214,
+              "head_repository_id": 1415404214,
+              "head_branch": "feature/vps-rebuild-20261014",
+              "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51"
+            }
+          },
+          {
+            "id": 12594391989,
+            "node_id": "MDg6QXJ0aWZhY3QxMjU5NDM5MTk4OQ==",
+            "name": "modelatlas-device-test-reports",
+            "size_in_bytes": 1259062,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12594391989",
+            "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12594391989/zip",
+            "expired": false,
+            "digest": "sha256:8f91e50b756f8647687def0e60d9be30fd408b86523e576ec6563906f60f4127",
+            "created_at": "2026-10-25T09:30:56Z",
+            "updated_at": "2026-10-25T09:30:56Z",
+            "expires_at": "2027-01-23T09:19:56Z",
+            "workflow_run": {
+              "id": 40180194437,
+              "repository_id": 1415404214,
+              "head_repository_id": 1415404214,
+              "head_branch": "feature/vps-rebuild-20261014",
+              "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51"
+            }
+          }
+        ]
+      },
+      {
+        "run": {
+          "id": 40180194468,
+          "name": "macOS Native App",
+          "node_id": "WFR_kwLOVF1ats8AAAAJWu0cpA",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+          "path": ".github/workflows/macos-native.yml",
+          "display_title": "feat: 公開資料擷取比較、Kilo出廠模型與跨平台穩定性",
+          "run_number": 113,
+          "event": "pull_request",
+          "status": "completed",
+          "conclusion": "success",
+          "workflow_id": 386979292,
+          "check_suite_id": 108903357279,
+          "check_suite_node_id": "CS_kwDOVF1ats8AAAAZWyVbXw",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194468",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194468",
+          "pull_requests": [
+            {
+              "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls/20",
+              "id": 4847449941,
+              "number": 20,
+              "head": {
+                "ref": "feature/vps-rebuild-20261014",
+                "sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+                "repo": {
+                  "id": 1415404214,
+                  "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                  "name": "ModelAtlas-2"
+                }
+              },
+              "base": {
+                "ref": "main",
+                "sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+                "repo": {
+                  "id": 1415404214,
+                  "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                  "name": "ModelAtlas-2"
+                }
+              }
+            }
+          ],
+          "created_at": "2026-10-25T09:19:56Z",
+          "updated_at": "2026-10-25T09:34:46Z",
+          "actor": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "run_attempt": 1,
+          "referenced_workflows": [],
+          "run_started_at": "2026-10-25T09:19:56Z",
+          "triggering_actor": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194468/jobs",
+          "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194468/logs",
+          "check_suite_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-suites/108903357279",
+          "artifacts_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194468/artifacts",
+          "cancel_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194468/cancel",
+          "rerun_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194468/rerun",
+          "previous_attempt_url": null,
+          "workflow_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/workflows/386979292",
+          "head_commit": {
+            "id": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "tree_id": "b94cbb031dcb128794fa5212244fe8ff94e66046",
+            "message": "feat: compare and review scoped public metadata read batching",
+            "timestamp": "2026-10-25T09:19:50Z",
+            "author": {
+              "name": "Tsenjii",
+              "email": "b310103@gm.tnfsh.tn.edu.tw"
+            },
+            "committer": {
+              "name": "Tsenjii",
+              "email": "b310103@gm.tnfsh.tn.edu.tw"
+            }
+          },
+          "repository": {
+            "id": 1415404214,
+            "node_id": "R_kgDOVF1atg",
+            "name": "ModelAtlas-2",
+            "full_name": "Tsenjii/ModelAtlas-2",
+            "private": false,
+            "owner": {
+              "login": "Tsenjii",
+              "id": 314288148,
+              "node_id": "U_kgDOEruoFA",
+              "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/Tsenjii",
+              "html_url": "https://github.com/Tsenjii",
+              "followers_url": "https://api.github.com/users/Tsenjii/followers",
+              "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+              "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+              "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+              "repos_url": "https://api.github.com/users/Tsenjii/repos",
+              "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+            "description": null,
+            "fork": false,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+            "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+            "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+            "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+            "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+            "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+            "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+            "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+            "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+            "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+            "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+            "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+            "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+            "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+            "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+            "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+            "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+            "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+            "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+            "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+            "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+            "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+            "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+            "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+            "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+            "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+            "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+            "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+            "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+            "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+            "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+            "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+            "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+            "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+            "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+            "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+            "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+          },
+          "head_repository": {
+            "id": 1415404214,
+            "node_id": "R_kgDOVF1atg",
+            "name": "ModelAtlas-2",
+            "full_name": "Tsenjii/ModelAtlas-2",
+            "private": false,
+            "owner": {
+              "login": "Tsenjii",
+              "id": 314288148,
+              "node_id": "U_kgDOEruoFA",
+              "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/Tsenjii",
+              "html_url": "https://github.com/Tsenjii",
+              "followers_url": "https://api.github.com/users/Tsenjii/followers",
+              "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+              "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+              "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+              "repos_url": "https://api.github.com/users/Tsenjii/repos",
+              "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+            "description": null,
+            "fork": false,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+            "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+            "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+            "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+            "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+            "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+            "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+            "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+            "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+            "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+            "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+            "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+            "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+            "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+            "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+            "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+            "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+            "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+            "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+            "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+            "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+            "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+            "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+            "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+            "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+            "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+            "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+            "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+            "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+            "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+            "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+            "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+            "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+            "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+            "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+            "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+            "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+          }
+        },
+        "jobs": [
+          {
+            "id": 121129421187,
+            "run_id": 40180194468,
+            "workflow_name": "macOS Native App",
+            "head_branch": "feature/vps-rebuild-20261014",
+            "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194468",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOVF1ats8AAAAcM-BJgw",
+            "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121129421187",
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194468/job/121129421187",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-10-25T09:19:57Z",
+            "started_at": "2026-10-25T09:20:00Z",
+            "completed_at": "2026-10-25T09:25:47Z",
+            "name": "macos-build",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-10-25T09:20:00Z",
+                "completed_at": "2026-10-25T09:20:02Z"
+              },
+              {
+                "name": "Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-10-25T09:20:02Z",
+                "completed_at": "2026-10-25T09:20:04Z"
+              },
+              {
+                "name": "Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-10-25T09:20:04Z",
+                "completed_at": "2026-10-25T09:20:17Z"
+              },
+              {
+                "name": "Build universal native app and disk image",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-10-25T09:20:17Z",
+                "completed_at": "2026-10-25T09:25:38Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-10-25T09:25:38Z",
+                "completed_at": "2026-10-25T09:25:41Z"
+              },
+              {
+                "name": "Post Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 9,
+                "started_at": "2026-10-25T09:25:41Z",
+                "completed_at": "2026-10-25T09:25:42Z"
+              },
+              {
+                "name": "Post Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 10,
+                "started_at": "2026-10-25T09:25:42Z",
+                "completed_at": "2026-10-25T09:25:42Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 11,
+                "started_at": "2026-10-25T09:25:42Z",
+                "completed_at": "2026-10-25T09:25:43Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121129421187",
+            "labels": [
+              "macos-15"
+            ],
+            "runner_id": 1000004616,
+            "runner_name": "GitHub Actions 1000004616",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          },
+          {
+            "id": 121130658748,
+            "run_id": 40180194468,
+            "workflow_name": "macOS Native App",
+            "head_branch": "feature/vps-rebuild-20261014",
+            "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194468",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOVF1ats8AAAAcM_MrvA",
+            "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121130658748",
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194468/job/121130658748",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-10-25T09:25:47Z",
+            "started_at": "2026-10-25T09:25:50Z",
+            "completed_at": "2026-10-25T09:30:15Z",
+            "name": "macos-test (macos-15, arm64)",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-10-25T09:25:50Z",
+                "completed_at": "2026-10-25T09:25:52Z"
+              },
+              {
+                "name": "Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-10-25T09:25:52Z",
+                "completed_at": "2026-10-25T09:25:53Z"
+              },
+              {
+                "name": "Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-10-25T09:25:53Z",
+                "completed_at": "2026-10-25T09:26:12Z"
+              },
+              {
+                "name": "Run actions/download-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-10-25T09:26:12Z",
+                "completed_at": "2026-10-25T09:26:17Z"
+              },
+              {
+                "name": "Test the same signed universal artifact on this architecture",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-10-25T09:26:17Z",
+                "completed_at": "2026-10-25T09:30:07Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6,
+                "started_at": "2026-10-25T09:30:07Z",
+                "completed_at": "2026-10-25T09:30:09Z"
+              },
+              {
+                "name": "Post Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 11,
+                "started_at": "2026-10-25T09:30:09Z",
+                "completed_at": "2026-10-25T09:30:10Z"
+              },
+              {
+                "name": "Post Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 12,
+                "started_at": "2026-10-25T09:30:10Z",
+                "completed_at": "2026-10-25T09:30:10Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 13,
+                "started_at": "2026-10-25T09:30:10Z",
+                "completed_at": "2026-10-25T09:30:12Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121130658748",
+            "labels": [
+              "macos-15"
+            ],
+            "runner_id": 1000004617,
+            "runner_name": "GitHub Actions 1000004617",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          },
+          {
+            "id": 121130658838,
+            "run_id": 40180194468,
+            "workflow_name": "macOS Native App",
+            "head_branch": "feature/vps-rebuild-20261014",
+            "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40180194468",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOVF1ats8AAAAcM_MsFg",
+            "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51",
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121130658838",
+            "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194468/job/121130658838",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-10-25T09:25:47Z",
+            "started_at": "2026-10-25T09:25:52Z",
+            "completed_at": "2026-10-25T09:34:46Z",
+            "name": "macos-test (macos-15-intel, x86_64)",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-10-25T09:25:52Z",
+                "completed_at": "2026-10-25T09:25:57Z"
+              },
+              {
+                "name": "Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-10-25T09:25:57Z",
+                "completed_at": "2026-10-25T09:26:01Z"
+              },
+              {
+                "name": "Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-10-25T09:26:01Z",
+                "completed_at": "2026-10-25T09:26:41Z"
+              },
+              {
+                "name": "Run actions/download-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-10-25T09:26:41Z",
+                "completed_at": "2026-10-25T09:26:44Z"
+              },
+              {
+                "name": "Test the same signed universal artifact on this architecture",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-10-25T09:26:44Z",
+                "completed_at": "2026-10-25T09:34:34Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6,
+                "started_at": "2026-10-25T09:34:34Z",
+                "completed_at": "2026-10-25T09:34:37Z"
+              },
+              {
+                "name": "Post Run actions/setup-go@v5",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 11,
+                "started_at": "2026-10-25T09:34:37Z",
+                "completed_at": "2026-10-25T09:34:37Z"
+              },
+              {
+                "name": "Post Run actions/checkout@v4",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 12,
+                "started_at": "2026-10-25T09:34:37Z",
+                "completed_at": "2026-10-25T09:34:38Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 13,
+                "started_at": "2026-10-25T09:34:38Z",
+                "completed_at": "2026-10-25T09:34:38Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121130658838",
+            "labels": [
+              "macos-15-intel"
+            ],
+            "runner_id": 1000004618,
+            "runner_name": "GitHub Actions 1000004618",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          }
+        ],
+        "artifacts": [
+          {
+            "id": 12593842972,
+            "node_id": "MDg6QXJ0aWZhY3QxMjU5Mzg0Mjk3Mg==",
+            "name": "ModelAtlas-macOS-Universal",
+            "size_in_bytes": 42419815,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593842972",
+            "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593842972/zip",
+            "expired": false,
+            "digest": "sha256:7a6e2a18765e90bcb7ed1c95ac8ea8bf7384aefe2eb3e796d70a4e572b82054d",
+            "created_at": "2026-10-25T09:25:42Z",
+            "updated_at": "2026-10-25T09:25:42Z",
+            "expires_at": "2027-01-23T09:19:56Z",
+            "workflow_run": {
+              "id": 40180194468,
+              "repository_id": 1415404214,
+              "head_repository_id": 1415404214,
+              "head_branch": "feature/vps-rebuild-20261014",
+              "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51"
+            }
+          },
+          {
+            "id": 12593499511,
+            "node_id": "MDg6QXJ0aWZhY3QxMjU5MzQ5OTUxMQ==",
+            "name": "ModelAtlas-macOS-QA-x86_64",
+            "size_in_bytes": 5526657,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593499511",
+            "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593499511/zip",
+            "expired": false,
+            "digest": "sha256:88e2f1bb2c92aeb43897b66e7f574b02ce4a15294ff074711365e42088ba3648",
+            "created_at": "2026-10-25T09:34:36Z",
+            "updated_at": "2026-10-25T09:34:36Z",
+            "expires_at": "2027-01-23T09:19:56Z",
+            "workflow_run": {
+              "id": 40180194468,
+              "repository_id": 1415404214,
+              "head_repository_id": 1415404214,
+              "head_branch": "feature/vps-rebuild-20261014",
+              "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51"
+            }
+          },
+          {
+            "id": 12593453983,
+            "node_id": "MDg6QXJ0aWZhY3QxMjU5MzQ1Mzk4Mw==",
+            "name": "ModelAtlas-macOS-QA-arm64",
+            "size_in_bytes": 5400704,
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593453983",
+            "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12593453983/zip",
+            "expired": false,
+            "digest": "sha256:aa9c9b150349191e78ff88152f6dc521172b6cc428b8c5702c5bd2734d997d03",
+            "created_at": "2026-10-25T09:30:10Z",
+            "updated_at": "2026-10-25T09:30:10Z",
+            "expires_at": "2027-01-23T09:19:56Z",
+            "workflow_run": {
+              "id": 40180194468,
+              "repository_id": 1415404214,
+              "head_repository_id": 1415404214,
+              "head_branch": "feature/vps-rebuild-20261014",
+              "head_sha": "faf614f84265a91d85063e5f1e16d91b88266e51"
+            }
+          }
+        ]
+      }
+    ],
+    "acceptance_source": "同一對話前輪的九份實際ZIP、正式release verifier、完整報告及18實圖已逐項驗證；執行環境重建後再從PR精確讀回驗收並核對原run／job／artifact metadata。",
+    "go_case_events": [
+      {
+        "test": "TestAAFixedWindowAndIncompletePageKeepsLastGood",
+        "action": "pass"
+      },
+      {
+        "test": "TestAALatestCompleteRankingAndExpiry",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/integration",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/run",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/scheduled-day",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchCheckpointSyncIsHistoryOnlyAndUpgradeRetainsData",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchDirectSyncExcludesWorkerAndCompletedReplayUsesNoHTTP",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchInFlightRestartsCannotResetPageAttemptLimit",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchKeyChangedDuringLastPageCannotPublish",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchResumesFailedPageAfterRestart",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/attempt-limit",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/auth",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/duplicate",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/expired",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/key-change",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/long-wait",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/malformed",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/page-count-change",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/secret-echo",
+        "action": "pass"
+      },
+      {
+        "test": "TestAAResearchStopsWithoutReplacingLastGood/version-change",
+        "action": "pass"
+      },
+      {
+        "test": "TestAccountCheckinIsolatedIdempotentAndLegacyNeverCompletesAccounts",
+        "action": "pass"
+      },
+      {
+        "test": "TestAccountCheckinMigrationPreservesLegacyHistoryAndEncryptedCredentials",
+        "action": "pass"
+      },
+      {
+        "test": "TestAccountCheckinNotificationUsesExactAccountAndDoesNotRepeat",
+        "action": "pass"
+      },
+      {
+        "test": "TestAccountCheckinRejectsMissingScopeWrongDateAndBadTimezone",
+        "action": "pass"
+      },
+      {
+        "test": "TestAssistantCancelClosesRealModelAndPreservesStatus",
+        "action": "pass"
+      },
+      {
+        "test": "TestAssistantConfirmationUndo",
+        "action": "pass"
+      },
+      {
+        "test": "TestAssistantControlChangesUndoAndCriticalRefs",
+        "action": "pass"
+      },
+      {
+        "test": "TestAssistantInterruptedToolResumeDoesNotReplay",
+        "action": "pass"
+      },
+      {
+        "test": "TestAssistantPublicSourceAndAnonymousOnboardingBoundary",
+        "action": "pass"
+      },
+      {
+        "test": "TestAssistantRealToolsSharedReviewAndSecretBoundary",
+        "action": "pass"
+      },
+      {
+        "test": "TestAssistantSafeReferenceCanPrepareReviewedSecondaryCredential",
+        "action": "pass"
+      },
+      {
+        "test": "TestAudioGuardsAndStreamingSecret",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityAssistantUsesSharedLocalSuiteWithoutActivation",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityCaptureFailurePreservesAnswerAndRequestHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution/1",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution/2",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityCostPrecisionAndUnknownsRemainSeparate",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityCredentialRotationAndLateOldTrafficStayIsolated",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityDoesNotPersistPromptsResponsesOrRawSecrets",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityEffectiveAnthropicVersionIsAComparisonCondition",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityExactAccountKeyGroupAndOperationDoNotBorrowSamples",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityGeminiWireModeIsAComparisonCondition",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityIdempotencyHistoryPagingAndUnavailableDatabase",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityInFlightCredentialRotationDoesNotAttestCurrentRevision",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityOlderPolicyKeepsHistoryWithoutComparisonAuthority",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero/0",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero/0.000000100000000001",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityReferenceCASStalenessCanonicalAndOriginGates",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityReferenceExpiryCanonicalAndDuplicateOriginRequireNewReview",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityReportReusesScopedTrafficWithoutSendingInference",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityRequiresExactConditionsAndMeaningfulReference",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityResearchReportAndEvidenceUseBoundCredentialOrigin",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityReviewedReferenceComparisonAndPersistentUndo",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticitySchema25UpgradeAndSyncNeverCarryLocalAuthority",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/cancelled",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/config",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/interrupted",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/material",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/origin",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/running",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/tampered",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/unattested",
+        "action": "pass"
+      },
+      {
+        "test": "TestAuthorizationAndSecretEncryption",
+        "action": "pass"
+      },
+      {
+        "test": "TestAutomaticMigrationSnapshotAndFutureSchemaGuard",
+        "action": "pass"
+      },
+      {
+        "test": "TestBoundedConversationDoesNotPreventReadingRetainedMessages",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/integration",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/run",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/scheduled-day",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchBoundedRetriesAndSharedCooldown",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchCheckpointSyncIsReadOnlyAndV23UpgradeKeepsHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchFailureSemanticsAndOptionBounds",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchFailureSemanticsAndOptionBounds/auth",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchFailureSemanticsAndOptionBounds/bad-more",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchFailureSemanticsAndOptionBounds/legacy-one-page",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchFailureSemanticsAndOptionBounds/missing-hint",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchFailureSemanticsAndOptionBounds/no-more",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchFailureSemanticsAndOptionBounds/redirect",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchFailureSemanticsAndOptionBounds/schema",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchFailureSemanticsAndOptionBounds/ten-page-limit",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts/cancel",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts/crash-bound",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts/pause",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchLateKeyChangePauseAndCrashAttempts/rotate",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchLMSpeedSearchKeepsFrozenRegionAndPageLimit",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchOverlapCompleteReplayAndScopedReflection",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchPersistsPageAndResumesAfterRestart",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchRateLimitWaitsDurably",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchSlowInterruptedBodyBackoffStartsAfterFailure",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchStorageFailuresRollbackAdmissionAndPage",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchStorageFailuresRollbackAdmissionAndPage/admission",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchStorageFailuresRollbackAdmissionAndPage/page",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchTransportRecoveryAndLongWait",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchTransportRecoveryAndLongWait/expired",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchTransportRecoveryAndLongWait/long-wait",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchTransportRecoveryAndLongWait/secret-url",
+        "action": "pass"
+      },
+      {
+        "test": "TestBraveResearchTransportRecoveryAndLongWait/transport",
+        "action": "pass"
+      },
+      {
+        "test": "TestBrowserAAResearchPageRecoveryWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserAssistantWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserAuthenticityEvidenceReviewAndPersistentUndo",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserBraveResearchPageRecoveryWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserCatalogExperienceWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserChatExperienceWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserConnectorDiscoveryReviewAndPersistentRollback",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserConversationCreationWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserConversationsWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserDetailWorkspaceWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserExtractionMeasuredTrialRecoveryMonitoringAndUndo",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserKiloFactoryAnonymousChatPriceGuardAndExistingWorkspaceRecovery",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserKnowledgeEvaluationTrialAndPersistentRollback",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserKnowledgeWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserMacAlignmentWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserMacParityWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserManagementWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserMobileAlignmentWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserModelConnectionsWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserModelViewsWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserOriginWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserPrivateResearchScheduleWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserProductionWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserProtocolAndSpeechWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserProviderFormsWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserReflectionGeneratedQueryPairedTrialWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserRequestReceiptsWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserResearchInferenceDailyBudgetWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserResearchOriginCooldownWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserResearchProgressiveWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserResearchRetryWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserResearchScheduleWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserResearchWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserScopedModelPickerWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserSiteRecipePublicEvidenceReviewAtomicUseAndUndo",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserSystemStatusWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserWorkspaceRecoveryWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserWorkspaceSyncWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBrowserWorkspaceWorkflow",
+        "action": "skip"
+      },
+      {
+        "test": "TestBulkModelReviewAtomicStaleGuardAndUndo",
+        "action": "pass"
+      },
+      {
+        "test": "TestCancelBlockedSocketExcludedFromUptime",
+        "action": "pass"
+      },
+      {
+        "test": "TestCatalogSyncFailurePreservesLastGood",
+        "action": "pass"
+      },
+      {
+        "test": "TestCertifiedPublicNominalPriceStillReachesSelectedOffer",
+        "action": "pass"
+      },
+      {
+        "test": "TestCheckinCivilDateUsesLocalMidnightIncludingDST",
+        "action": "pass"
+      },
+      {
+        "test": "TestCompleteHistoryZeroUsageAndNonStreamingTTFT",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/bound-origin",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/cooldown",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/duplicate-model",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryAssistantUsesSharedPipelineAndWebBudget",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryAtomicDraftsAndFixtureFailure",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryBoundedPathsOriginsRedirectAuthAndSecrets",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryChangedActiveDefinitionNeedsNewReview",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryCreatesEvidenceBackedDraftFromPublicSite",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryDoesNotCommitLateChangedScope",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryFixedFeeNeedsExplicitPerRequestUnit",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryFixtureAndCredentialChangesBlockBeforeHTTP",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryLocalReceiptCurrentScopeAndFreshnessRequired",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/account",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/currency-conflict",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/invalid-numeric",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/no-scope",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/no-unit",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/wrong-group",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryOpenAPIGetHintsFamilyAndCancelledWork",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryRequestIDIsDurableAndDoesNotRepeatHTTP",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryRootScopeFixtureAndExplicitMetricUnits",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoverySchema24UpgradeAndSyncDoNotCopyExecutionAuthority",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoveryShapeOrUnitChangesKeepLastGoodAndCannotActivate",
+        "action": "pass"
+      },
+      {
+        "test": "TestConnectorDiscoverySourceConflictsAndNewVersionsDoNotReplaceActive",
+        "action": "pass"
+      },
+      {
+        "test": "TestConversationCreationConcurrentRetriesAreAtomic",
+        "action": "pass"
+      },
+      {
+        "test": "TestConversationCreationLegacyClientsStillCreateDistinctSessions",
+        "action": "pass"
+      },
+      {
+        "test": "TestConversationCreationRejectsMalformedRequestIdentity",
+        "action": "pass"
+      },
+      {
+        "test": "TestConversationCreationRequestCannotBeReusedForAnotherScopeOrTitle",
+        "action": "pass"
+      },
+      {
+        "test": "TestConversationCreationRequestSurvivesReopenAndPreservesHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestConversationCreationSameRequestKeepsOneCommittedIdentity",
+        "action": "pass"
+      },
+      {
+        "test": "TestConversationsSearchArchiveStaleEditAndCompleteExport",
+        "action": "pass"
+      },
+      {
+        "test": "TestCostUnknownZeroCacheAndNativeUsageStayDistinct",
+        "action": "pass"
+      },
+      {
+        "test": "TestCSRFAuthenticationOriginBoundary",
+        "action": "pass"
+      },
+      {
+        "test": "TestCustomCredentialEchoRemovedBeforeMetadataPersistence",
+        "action": "pass"
+      },
+      {
+        "test": "TestCustomFieldsVaultAndCredentialRollback",
+        "action": "pass"
+      },
+      {
+        "test": "TestCustomProtocolRealTLSAndNativeTools",
+        "action": "pass"
+      },
+      {
+        "test": "TestCustomProtocolRealTLSAndNativeTools/false",
+        "action": "pass"
+      },
+      {
+        "test": "TestCustomProtocolRealTLSAndNativeTools/true",
+        "action": "pass"
+      },
+      {
+        "test": "TestCustomRejectsIncompleteAndUnsafeDefinitions",
+        "action": "pass"
+      },
+      {
+        "test": "TestDeclarativeConnectorRealTestActivationSyncCatalogAndRollback",
+        "action": "pass"
+      },
+      {
+        "test": "TestDesktopAccountCheckinNotificationsUseMachineDate",
+        "action": "pass"
+      },
+      {
+        "test": "TestDesktopDynamicLoopbackAndParentPipeLifetime",
+        "action": "pass"
+      },
+      {
+        "test": "TestEmptyTelemetryUnknownAndLongLastGoodHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestEndpointPathEditCannotRewriteOldConversation",
+        "action": "pass"
+      },
+      {
+        "test": "TestExplicitRetryRetainsOneUserMessageAndAllAttempts",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionCancellationRetainsActualAdmissionWithoutModelFailure",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionChangedKeyBlocksComparisonAndProductionWithoutLosingHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionDifferentValidFactsCannotQualifyAsImprovement",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionFailureSharesOneAttemptKeepsLastGoodAndAutoUndoIsEpochBound",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionIntentRecoveryDoesNotRepeatProposalOrComparisonHTTP",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionInterruptedComparisonAndBatchStayUnknownWithoutAutomaticHTTP",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionLatestNegativeMeasurementCannotBorrowOldGreenReceipt",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionLocalBudgetRefusalDoesNotDegradeOrDisableTrial",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/binding",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/receipt",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/rule",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionReviewedComparisonProductionBatchAndPersistentUndo",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionReviewRotationRaceKeepsActivationAtomic",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionSchema34UpgradeKeepsExactOriginalDataAndConsistentSnapshot",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionStaleUndoAndAtomicBindingFailureKeepWholeCurrentPlan",
+        "action": "pass"
+      },
+      {
+        "test": "TestExtractionStorageFailureIsNotReclassifiedAsChangedReview",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloActualEngineAnonymousPriceCheckAndPersistentTelemetry",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference/catalog-client-timeout",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference/real-TLS-cancel",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/auth",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/duplicate",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/expired",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/extra-fee",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/malformed",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/missing",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/offline",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/oversized-price",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/paid",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/unpriced",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloFirstStartExistingWorkspaceAndPersistentRemoval",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloInstallIsAtomicAndCannotOverwriteAnExistingProfile",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloOfflineInstallCreatesUsableAnonymousSelections",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloResearchCatalogBudgetRejectionAndExplicitResume",
+        "action": "pass"
+      },
+      {
+        "test": "TestFactoryKiloSchema33UpgradeDoesNotChangeExistingModelsOrPreferences",
+        "action": "pass"
+      },
+      {
+        "test": "TestFullHistorySQLStatisticsAndPagedRetention",
+        "action": "pass"
+      },
+      {
+        "test": "TestGeminiSpeechActualWireAndAudio",
+        "action": "pass"
+      },
+      {
+        "test": "TestHumanReadableAliasesPreserveRawModelIdentity",
+        "action": "pass"
+      },
+      {
+        "test": "TestInferenceGatewayErrorKeepsUpstreamHTTPStatusAndReceipt",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeEvaluationKeepsAgedHistoryAndExplainsChangedActiveSource",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/changed-source-and-active-plan",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/insufficient-and-new-data",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/measured-regression",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeMeasuredTrialUsesFrozenVersionMonitorsAndRollsBackAfterRestart",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeQualityAdmissionCancellationSyncAndV21Migration",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeQualityAttributesSharedDiscoveryOnlyOnce",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeQualityRetainsFalseFreeCounterexamplesWithoutReward",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeRestoredVersionStartsNewMonitoringEpoch",
+        "action": "pass"
+      },
+      {
+        "test": "TestKnowledgeScheduledContinuationRetainsItsPlannedVersion",
+        "action": "pass"
+      },
+      {
+        "test": "TestLiveFactoryKiloDefaultProfileAndConversation",
+        "action": "skip"
+      },
+      {
+        "test": "TestLiveKiloAnonymousConversationToolsAndAssistant",
+        "action": "skip"
+      },
+      {
+        "test": "TestLiveKiloProviderDiscovery",
+        "action": "skip"
+      },
+      {
+        "test": "TestLmspeedBudgetProvenanceAndLastGood",
+        "action": "pass"
+      },
+      {
+        "test": "TestLocalDeploymentDoesNotInheritPublicPort",
+        "action": "pass"
+      },
+      {
+        "test": "TestMaintenanceGateBlocksWritesSyncAndBackground",
+        "action": "pass"
+      },
+      {
+        "test": "TestManualChatAndSpeechNeverSendAnotherStoredCredential",
+        "action": "pass"
+      },
+      {
+        "test": "TestManualConversationSettingsPersistAndProtectAgent",
+        "action": "pass"
+      },
+      {
+        "test": "TestMediaFlightBudgetAndExplicitCancel",
+        "action": "pass"
+      },
+      {
+        "test": "TestMediaHTTPErrorAndInputMismatch",
+        "action": "pass"
+      },
+      {
+        "test": "TestMediaRejectsEchoMalformedResultsAndUnconfirmedScope",
+        "action": "pass"
+      },
+      {
+        "test": "TestMediaResultFormatsAndOperationWire",
+        "action": "pass"
+      },
+      {
+        "test": "TestMetadataSearchLifecycleAndHistoryScopes",
+        "action": "pass"
+      },
+      {
+        "test": "TestMetricHistoryUsesExactScopeWindowAndKeepsNonStreamingUnknown",
+        "action": "pass"
+      },
+      {
+        "test": "TestMissingTerminalReflectionRetriesFromDurableState",
+        "action": "pass"
+      },
+      {
+        "test": "TestMultilinePublicContentStillRedactsCredentialEchoes",
+        "action": "pass"
+      },
+      {
+        "test": "TestMultimodalHistoryRevalidationAndNoRawPersistence",
+        "action": "pass"
+      },
+      {
+        "test": "TestMultipleEndpointProfilesKeepHistoryAndCapabilitiesSeparate",
+        "action": "pass"
+      },
+      {
+        "test": "TestMultipleOriginsKeepKeysSessionsPATsAndUndoIsolated",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeProtocolsAndToolContinuation",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeProtocolsAndToolContinuation/ANTHROPIC_MESSAGES/false",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeProtocolsAndToolContinuation/ANTHROPIC_MESSAGES/true",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeProtocolsAndToolContinuation/CHAT_COMPLETIONS/false",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeProtocolsAndToolContinuation/CHAT_COMPLETIONS/true",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeProtocolsAndToolContinuation/GEMINI_NATIVE/false",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeProtocolsAndToolContinuation/GEMINI_NATIVE/true",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeProtocolsAndToolContinuation/RESPONSES/false",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeProtocolsAndToolContinuation/RESPONSES/true",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeSpeechRejectsMalformedTruncationAndSecret",
+        "action": "pass"
+      },
+      {
+        "test": "TestNativeTruncationAndUnsupportedInput",
+        "action": "pass"
+      },
+      {
+        "test": "TestNewApiCapturedPublicResponses",
+        "action": "skip"
+      },
+      {
+        "test": "TestNewApiCredentialRolesAndProvenance",
+        "action": "pass"
+      },
+      {
+        "test": "TestNewApiExactPricingAndMalformedPerfNeverPanics",
+        "action": "pass"
+      },
+      {
+        "test": "TestNewApiFailureRetainsLastGoodAndReportsActualUpstreamStatus",
+        "action": "pass"
+      },
+      {
+        "test": "TestNewApiPublicRejectsForeignModelAndMalformedMetrics",
+        "action": "pass"
+      },
+      {
+        "test": "TestNewApiPublicVersionZeroUsesSchemaWithoutSendingInferenceKey",
+        "action": "pass"
+      },
+      {
+        "test": "TestNewApiUnknownVersionBlocksPrivilegedEndpoints",
+        "action": "pass"
+      },
+      {
+        "test": "TestNominalZeroDoesNotClaimKeyFreeAndExplicitConfirmationDoes",
+        "action": "pass"
+      },
+      {
+        "test": "TestObservationArchiveFailureDoesNotEraseOldGoodFact",
+        "action": "pass"
+      },
+      {
+        "test": "TestObservationArchiveFiltersApplyBeforePagingAndExposeWholeRangeFacets",
+        "action": "pass"
+      },
+      {
+        "test": "TestObservationArchiveFrozenPagesKeepAllRowsAndExactScope",
+        "action": "pass"
+      },
+      {
+        "test": "TestObservationArchiveRejectsInvalidOrForeignContinuations",
+        "action": "pass"
+      },
+      {
+        "test": "TestOnboardingReviewAtomicAndSecretIsolation",
+        "action": "pass"
+      },
+      {
+        "test": "TestOperationsSnapshotPreflightAndRestorePreserveVaultAndHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestOperationsWrongMasterKeyCorruptionAndEnvironmentAreSafe",
+        "action": "pass"
+      },
+      {
+        "test": "TestPagedRequestExportBeyondUIWindow",
+        "action": "pass"
+      },
+      {
+        "test": "TestPDFAndAudioSignatureBoundaries",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/invalid-mode",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/invalid-port",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/missing-master-key",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/missing-origin",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/occupied-port-exits-nonzero",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/origin-with-path",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/origin-with-secret",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/plaintext-origin",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/public-without-opt-in",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/relative-db",
+        "action": "pass"
+      },
+      {
+        "test": "TestPlatformDeploymentProcess/short-admin-token",
+        "action": "pass"
+      },
+      {
+        "test": "TestPricingExactArithmeticAndParserBounds",
+        "action": "pass"
+      },
+      {
+        "test": "TestProtectedResponsiveAssets",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicFetchBoundaryAndEvidenceGate",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchBlocksSpecialAndEmbeddedPrivateAddresses",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/_90_",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/-1",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/#00",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/+1",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/0",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/1.5",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/120",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/3,_4",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/86400",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/86401",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/9999999999999999999999999999999",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/Bearer_must-not-be-persisted",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/Thu,_22_Oct_2026_03:00:00_GMT",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/Wed,_21_Oct_2026_01:59:00_GMT",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryAfterParsing/Wed,_21_Oct_2026_02:03:00_GMT",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryHistorySyncNeverActivatesPeer",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryInspectKeepsLastGoodFacts",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryInterruptedLimitRetainsHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLimitAndPermanentFailures",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLimitAndPermanentFailures/Bad_Gateway",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLimitAndPermanentFailures/Forbidden",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLimitAndPermanentFailures/Gateway_Timeout",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLimitAndPermanentFailures/Internal_Server_Error",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLimitAndPermanentFailures/Not_Found",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLimitAndPermanentFailures/Service_Unavailable",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLimitAndPermanentFailures/Too_Many_Requests",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLimitAndPermanentFailures/Unauthorized",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryLongWaitAndPrivateTasksNeverAutoRetry",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryRestartPauseCancelAndRemainingBudget",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryScheduleContinuationRetainsAllowance",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicResearchRetryTLSBudgetsAndOtherTasksProceed",
+        "action": "pass"
+      },
+      {
+        "test": "TestPublicSnapshotLastGoodFiltersBeforeLimit",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonExplicitAtomicReviewRetryAndKeyRace",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonFixedBudgetCancelPauseAndRestart",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonLocalAuthoritySyncPortableAndSchema31Snapshot",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonMeasuredTrialNextRunMonitorAndPersistentUndo",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonNoGainRegressionStaleAndForeignHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonRealRegressionAndStaleDatasetCannotActivate",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/country",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/options",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/probe",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueryGenerationAndComparisonStorageFaultsStayAtomicAndLocal",
+        "action": "pass"
+      },
+      {
+        "test": "TestQueuedEnrichmentHasRealProductionHTTPCaller",
+        "action": "pass"
+      },
+      {
+        "test": "TestRankingAndTopFourCannotBorrowManualCanonicalIdentity",
+        "action": "pass"
+      },
+      {
+        "test": "TestRawAttachmentSecretBlockedBeforeHTTPHistoryOrCache",
+        "action": "pass"
+      },
+      {
+        "test": "TestRealInferenceHTTPAndHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestRecipeVersionedRollback",
+        "action": "pass"
+      },
+      {
+        "test": "TestReflectionDoesNotRewardRepeatedEmptyHTTP200",
+        "action": "pass"
+      },
+      {
+        "test": "TestReflectionQueryDoesNotBorrowDifferentCountryOrPageScope",
+        "action": "pass"
+      },
+      {
+        "test": "TestReflectionQueryGenerationLocalEvidenceIdempotenceAndRevision",
+        "action": "pass"
+      },
+      {
+        "test": "TestRegisteredMediaTransportsUseScopedTelemetry",
+        "action": "pass"
+      },
+      {
+        "test": "TestReportedTokenGroupCannotBorrowAnotherGroupOrCredentialEpoch",
+        "action": "pass"
+      },
+      {
+        "test": "TestRequestExportFreezesSelectionDuringConcurrentUpdates",
+        "action": "pass"
+      },
+      {
+        "test": "TestRequestJSONSecretBoundaries",
+        "action": "pass"
+      },
+      {
+        "test": "TestRequestJSONWireAndReplay",
+        "action": "pass"
+      },
+      {
+        "test": "TestRequestReceiptFreezesQuoteUsageQuotaAndActualCharge",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchBudgetFixtureIsolationAcrossPoliciesClocksAndRestart",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchCatalogEvidenceUsesWholeExactResponse",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/message_requests",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/messages",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/request_context",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/research_task_usage",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/session_options",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/telemetry",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationConcurrentAdmissionCannotOverspendEitherMeter",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationSecretRejectionDoesNotSpendBudget",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationSentFailureOrCancellationRetainsAdmission",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationSentFailureOrCancellationRetainsAdmission/1",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationSentFailureOrCancellationRetainsAdmission/2",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchConversationWorkerRecoversWithoutExtraBudgetAndUsesNewEvidence",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchDoesNotReuseEarlierCredentialVersion",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/messages",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/research_inference_admissions",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/telemetry",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns/CREDENTIAL",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns/ENGINE",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetFormalSettingsEntry",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetLocalOnlySyncBackupAndMigration",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetPaginationAndImmutablePolicyHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart/1",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart/2",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetStableScopeRotationAndUTCDay",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchInferenceDailyBudgetWorkerWaitExplicitResumeAndTrafficReuse",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchManualEvidenceCannotForgeVerifiedQuota",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchMultilingualSearchUsesSafeIntegrationAndDeduplicatesProvider",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchOriginCooldownCanonicalScopeAndLateSuccess",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchOriginCooldownHistorySyncDoesNotControlPeer",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchOriginCooldownInFlightSuccessCannotClearLaterFailure",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened/90000",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened/9999999999999999999999999999999",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchOriginCooldownSchedulePauseCancelAndNoBudgetCharge",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchOriginCooldownSharedAcrossTasksAndRuns",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchOriginCooldownV19UpgradeAndUnavailableStore",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPauseClosesPublicSocketAndPreservesCharge",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleApprovalHistoryIsPagedAndAtomic",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/DB",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/TOKENS",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/USD",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleCannotBorrowAccountPATOrAnotherKey",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleDisableCancelsFlightAndKeepsAdmission",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleExplicitApprovalAndDailyStop",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleFormalEntry",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleInterruptedInferenceNeverAutoReplays",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleLocalAuthorityAndMigration",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleReviewRejectsRotationRaceAndPreservesScope",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleSharesOneUTCAdmissionDay",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn/false",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn/true",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveAdmissionRechecksScopeInsideTransaction",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveCancelRetainsAdmissionAndUngradedObservation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveCandidateRevalidationUsesOnlyFreshLocalReceipt",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveDailyStopAndExplicitRecovery",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/DB",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/OUTPUT_ENVELOPE",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/USD",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveDoesNotReuseChangedRequestConfiguration",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveForeignMetadataIsNotLocalTraffic",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveInterruptedPrivateDepthNeverAutomaticallyReplays",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveLocalAuthoritySyncPortableAndSchema30Upgrade",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveObservationReadFailureDoesNotSpend",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveOversizeCompletePlanIsRejectedBeforePartialEnqueue",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressivePlannedConnectionChangeStopsBeforeHTTP",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressivePrivateRoundCapCarriesUnadmittedProbe",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveRealProbesAndZeroHTTPReuse",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation/allocation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation/connection",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveTaskPayloadCannotAuthorizeDeeperWork",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveTokenPrecisionAndPagedImmutableHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchProgressiveWrongAnswerIsEvidenceWithoutAutomaticRetry",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolAccountAcrossKeysRotationRestartAndDay",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation/TOKENS",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation/USD",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolConcurrentInFlightKeys",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/custom_scopes",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/legacy_unknown",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/pool_output_envelope",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolExactSettlementAcrossKeys",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/messages",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/request_context",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/research_quota_pool_admissions",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolFormalEntry",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolLocalAuthorityMigrationAndPagedHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchQuotaPoolMembershipRetainsSpendAndCountsBeforeAttachment",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchReflectionFrozenSourcesVersionedLearningAndUndo",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/messages",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/policy-and-journal",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/research_resource_admissions",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/settlement-retains-reservation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/telemetry",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending/CREDENTIAL",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending/ENGINE",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetExactReportedSettlementZeroOverrunAndRotation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume/1",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume/2",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetFormalSettingsAndUnknownReservation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/invalid-cost-sticky",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/truncated-larger-report",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/truncated-smaller-report",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetLocalAuthorityMigrationAndPagedHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/anthropic-cache-complete",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/anthropic-cache-missing",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-complete",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent-cache",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent-reasoning",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-negative",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-partial",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-complete",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-inconsistent-tool-prompt",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-partial",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/responses-exact-int64",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/fractional-token",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/missing-explicit-cap",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/negative",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/negative-money",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/nonfinite-money",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/numeric-money",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/too-large",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/unknown-field",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/zero-money-reservation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/zero-reservation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResourceBudgetUsesSameUTCAdmissionDayAtMidnight",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchResumeAfterInterruptedStoreAndReuseTraffic",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleAtomicDailyReservationsAcrossConcurrentTLS",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleBoundsRevisionsAndPrivateInferenceRejected",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC/global",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC/schedule",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleDisableCancelsLiveTLSAndProtectsOtherEntryPoint",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleDisabledDueDedupAndNoMembership",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleIntegrationAdmissionWaitDoesNotSpin",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleOwningPeerSyncAcknowledgementPreservesLocalIntent",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleRestartIntentAndHumanPause",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleRoundLimitContinuesRemainingTasksWithoutStarvation",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleSourceEditsRequireLocalReviewAndKeepHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleUsesOnlySelectedLanguagesAndCurrentApprovedKnowledge",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleV18UpgradeKeepsManualHistoryAndDefaultsOff",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleWorkspaceHistoryNeverResumesAndDefinitionsStayLocal",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchScheduleWorkspaceSourceEditStopsExistingRound",
+        "action": "pass"
+      },
+      {
+        "test": "TestResearchSourceRunnerBudgetReviewAndNoImplicitMembership",
+        "action": "pass"
+      },
+      {
+        "test": "TestResourcePoolsOnlyAttachSelectedAccountAndKey",
+        "action": "pass"
+      },
+      {
+        "test": "TestReviewedOnboardingPersistsCustomProtocolAndNoSecretMetadata",
+        "action": "pass"
+      },
+      {
+        "test": "TestSafeBackupRoundTripDisablesCredentialsAndIsAtomic",
+        "action": "pass"
+      },
+      {
+        "test": "TestSafeBackupV2RoundTripAndUnsafeAtomicRollback",
+        "action": "pass"
+      },
+      {
+        "test": "TestScheduledSyncAndEvidenceBasedNotificationEpoch",
+        "action": "pass"
+      },
+      {
+        "test": "TestScopedOptInAndHistoryPreservation",
+        "action": "pass"
+      },
+      {
+        "test": "TestSessionFlightIsolationAndStableOrder",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteFamilyReferencesRejectSecretsOriginsAndUnboundedPaths",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteFamilySourceConstantsStayPassiveBoundedAndIndependentlyAttributed",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeActiveDefinitionCannotBorrowEarlierApproval",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeApprovedReadersContinueAfterDraftAdmissionExpires",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeAtomicActivationAndUndoFailuresKeepWholeGroup",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeBindingReadFailureAndExplicitLegacyRollback",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeCancelledRuleKeepsPartialResultsAndActualAdmission",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeCatalogReadFailureKeepsLastGoodWithoutAnotherEndpoint",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeCompositeReviewActualCallerAndPersistentUndo",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeLocalExecutionAuthorityDoesNotTravelWithHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeManualSettingsCannotRemoveGroupScopeApproval",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipePublicEvidenceGeneratesDraftAndRequiresActualRuleTests",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeReceiptReadFailureIsUnavailableWithoutPartialWrites",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeReviewCannotBorrowChangedTestsKeySourceOrDefinition",
+        "action": "pass"
+      },
+      {
+        "test": "TestSiteRecipeSchema32SnapshotCapturesOnlyCurrentLegacyApproval",
+        "action": "pass"
+      },
+      {
+        "test": "TestSpeechVectorsThroughRealHTTP",
+        "action": "pass"
+      },
+      {
+        "test": "TestSpeechWAVRejectsUnplayableFormatAndIncompleteFrames",
+        "action": "pass"
+      },
+      {
+        "test": "TestSQLiteDurability",
+        "action": "pass"
+      },
+      {
+        "test": "TestStaleAssistantUndoCannotRemoveLaterMembership",
+        "action": "pass"
+      },
+      {
+        "test": "TestStandaloneProcessFootprint",
+        "action": "skip"
+      },
+      {
+        "test": "TestStartupInterruptRecoveryAndSingleWriterLock",
+        "action": "pass"
+      },
+      {
+        "test": "TestSyncHistoryPollingPageRetainsHistory",
+        "action": "pass"
+      },
+      {
+        "test": "TestSystemdDeploymentLifecycle",
+        "action": "skip"
+      },
+      {
+        "test": "TestTinyExactPricesNeverRoundToFree",
+        "action": "pass"
+      },
+      {
+        "test": "TestTruncatedInferenceNeverCountsSuccess",
+        "action": "pass"
+      },
+      {
+        "test": "TestUnavailableIntelligenceDoesNotBlockInference",
+        "action": "pass"
+      },
+      {
+        "test": "TestUnimplementedGroupIsRefusedBeforeAnyRequest",
+        "action": "pass"
+      },
+      {
+        "test": "TestUnknownNeverBecomesFree",
+        "action": "pass"
+      },
+      {
+        "test": "TestUnknownPriceCannotGenerateConfirmedChangeNotification",
+        "action": "pass"
+      },
+      {
+        "test": "TestWorkspaceAndroidFixture",
+        "action": "skip"
+      },
+      {
+        "test": "TestWorkspaceManualSyncJoinsRealBackgroundSyncAndCanceledWaiterDoesNotConsumeLock",
+        "action": "pass"
+      },
+      {
+        "test": "TestWorkspaceMetadataOnlyNeverTransfersSecretAndDoesNotLoop",
+        "action": "pass"
+      },
+      {
+        "test": "TestWorkspaceOfflineConflictKeepsBothAndExplicitLocalWins",
+        "action": "pass"
+      },
+      {
+        "test": "TestWorkspacePairingSingleUseExpiryAndDeviceRevocation",
+        "action": "pass"
+      },
+      {
+        "test": "TestWorkspaceRealTLSBidirectionalSecretsHistoryAndTombstone",
+        "action": "pass"
+      },
+      {
+        "test": "TestWorkspaceRotationLargeIntegersAndRemoteConflictChoice",
+        "action": "pass"
+      }
+    ]
+  },
+  "accepted_pr_body": "公開資料規則現在可從 Models → 研究知識 → 擷取效率與比較，選擇精確 My Model 與 2–6 個已核准匿名 GET 規則，產生版本、進行三輪實際對照、預覽差異並明確試用。正式 Intelligence 才在當次相同來源重用回應，保存實際 HTTP／耗時／結果 hash；金額維持 Unknown。三次實際來源失敗會持久回復原模式，本機額度／冷卻／vault 等待不當來源退化。詳 [EXTRACTION_COMPARISON.md](vps/EXTRACTION_COMPARISON.md)。\n\n**EXTRACTION-015N 所列範圍 ACCEPTED**：來源 `faf614f84265a91d85063e5f1e16d91b88266e51`，tree `b94cbb031dcb128794fa5212244fe8ff94e66046`。本來源九項首次 SUCCESS、九份實際 ZIP／完整報告與18實圖已核對。完整下一版仍 **PARTIAL**；PR 保持 Draft，未合併／部署／發布。\n\n[VPS 40180194414](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414)、[Android 40180194437](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194437)、[Mac 40180194468](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194468)，均 attempt1、同一 head SHA。每份 ZIP 已實際下載核對 bytes／SHA256／CRC，並綁定本來源 run 與成功 producer 的原始執行時間窗；正式 release verifier 的 collect 已讀取全部原始 metadata 與 ZIP，未發布。\n\n| 必要工作 | Job | Run / attempt | 結果 |\n|---|---|---|---|\n| vps-linux-arm64 | [121129420968](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414/job/121129420968) | 40180194414 / 1 | SUCCESS |\n| vps-test | [121129421126](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414/job/121129421126) | 40180194414 / 1 | SUCCESS |\n| vps-linux-amd64 | [121129421137](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414/job/121129421137) | 40180194414 / 1 | SUCCESS |\n| vps-browser | [121129421185](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194414/job/121129421185) | 40180194414 / 1 | SUCCESS |\n| device-tests | [121129421066](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194437/job/121129421066) | 40180194437 / 1 | SUCCESS |\n| build | [121129421182](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194437/job/121129421182) | 40180194437 / 1 | SUCCESS |\n| macos-build | [121129421187](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194468/job/121129421187) | 40180194468 / 1 | SUCCESS |\n| macos-test (macos-15, arm64) | [121130658748](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194468/job/121130658748) | 40180194468 / 1 | SUCCESS |\n| macos-test (macos-15-intel, x86_64) | [121130658838](https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40180194468/job/121130658838) | 40180194468 / 1 | SUCCESS |\n\n| 實際 ZIP | Artifact ID | bytes | SHA256 | 成功 producer |\n|---|---|---|---|---|\n| modelatlas-vps-linux-amd64 | 12593507972 | 12927994 | `e99d973f234c2a03657f212e43ec2bd72ec023e95858e137889a66021a4d043b` | 121129421137 |\n| modelatlas-vps-linux-arm64 | 12593752450 | 12008068 | `dabe3f7804e61824fc10f983e2884dc072953363248dcd42ee6bd5f77dd39973` | 121129420968 |\n| modelatlas-vps-footprint | 12594022989 | 15972 | `f10169fec3450b21b2833ba28a5712144888b9a1721ab672da9989b75e8e68ce` | 121129421126 |\n| modelatlas-vps-browser | 12594292358 | 37548886 | `c6163810ba4b17257ca2070bd1c52c747292a96023620875a5a7f25597d74de2` | 121129421185 |\n| modelatlas-debug-and-reports | 12594500777 | 17240779 | `80e9afc7f8031ba5655cab476573900419901af65e369c614bf218040db7f3b3` | 121129421182 |\n| modelatlas-device-test-reports | 12594391989 | 1259062 | `8f91e50b756f8647687def0e60d9be30fd408b86523e576ec6563906f60f4127` | 121129421066 |\n| ModelAtlas-macOS-Universal | 12593842972 | 42419815 | `7a6e2a18765e90bcb7ed1c95ac8ea8bf7384aefe2eb3e796d70a4e572b82054d` | 121129421187 |\n| ModelAtlas-macOS-QA-arm64 | 12593453983 | 5400704 | `aa9c9b150349191e78ff88152f6dc521172b6cc428b8c5702c5bd2734d997d03` | 121130658748 |\n| ModelAtlas-macOS-QA-x86_64 | 12593499511 | 5526657 | `88e2f1bb2c92aeb43897b66e7f574b02ce4a15294ff074711365e42088ba3648` | 121130658838 |\n\n正式流程與驗證：\n- 零 HTTP 產生提案，凍結完整 selection／Key material version／規則與舊 active；三輪 paired 真 GET 最多60秒／33次，保存 RUNNING 意圖與逐輪 checkpoint。只有每輪 facts 精確相同、實際讀取次數減少才可 Review。較晚負面比較或新來源失敗不能借舊綠燈。中斷總次數保留 null、已完成部分另列，不重播原意圖。\n- 原子 Review／明確啟用、完整定義及比較 hash 綁定、共用 action ledger。正式 caller 的 cache 只屬當次精確匿名來源，不跨帳戶／Key／模型／群組／operation；規則仍各驗 scope／單位／時效。一次失敗只讀一次，保留 last-good／會員資格，不加模型 telemetry／My Uptime。\n- 每個試用 activation 各自監測；同次試用三個實際 FAILED 以 CAS 共用 Undo。LOCAL_WAIT、取消、重啟中斷不算退化。手動 Undo 重啟後可用，stale Undo 拒絕；本機定義／測量／綁定不經 sync／portable 搬移執行授權。\n- 真 Browser 包含 late committed response 不重開已關閉視窗、比較／啟用提交後丟確認只讀 GET 恢復（鎖寫、無重 POST）、真503 last-good、重載／手動 Undo、重新試用與三次失敗自動 Undo、真正飛行取消。完整正式流程精確22個來源 GET；沒有推論、路由或付款 fallback。\n\n完整回歸與實際產物：\n- 本來源完整 Go race **315.716s**，384個註冊 top-level 各一次、192／192兩程序，共同原600秒上限；338 pass／46明確opt-in skip，source正確、dirty=false。registry SHA256 `e922fbb30be4508b681c7672bb57528eee71eda20da3aa84f6ab55ca9f916750`。原始 test2json 逐筆核對 **575個唯一case／subcase，529 pass／46 skip／0 fail**；前片原557個結果全部相同。原 migration／SQLite／TLS／工作量／timeout 保留，vet與原35發布回歸、4個coverage checker成功。\n- 完整 **39 Browser 本機197.183s／本來源CI217.369s**；487 PNG 的完整性全驗、保留前片全部473＋14。CI新流程18.68s，14新圖全檢視，含320／375／1280、深淺色／200%、48px、錯誤與復原；另檢視本來源兩架構Mac各2張Kilo圖，共18張實圖。\n- 本機完整Go350.310s是最後新增額度反例前383案例的結果；最後14擷取函式race17.020s及新Browser9.781s成功。本來源完整384結果以上列CI獨立證明，未借前片或中途本機綠燈。\n- Android原始報告：核心585／0fail／0error，App423／0fail／0ignored；device984／0fail／0error／5原skip。API29 preflight配置512m、zygote1664→3204；Runner起始與finish同PID4814，實測及預期536870912 bytes。原大型同步／Unicode負載保留，沒有重跑失敗測試、降低負載或增加timeout。\n- APK共享Kilo清單逐byte相同；實際v2簽署DER SHA256 `d02b04f0ca31cbf6fa2eea73a0aeb561537395b65c32a08199ffa0785aa3269f` 符合本次android.json，production_signing=false。它是本次CI debug預覽，不能宣稱與舊APK固定同簽章或能無縫更新。\n- Mac兩架構各 **85個唯一核心測試／92 PNG**（25smoke＋53parity＋14motion），均保留原全部案例／圖片與3個packaged-engine Kilo測試；parity明示Kilo出廠與無自動推論true。Universal App及Engine都含arm64／x86_64，來源／0.8.5／build19及兩份共享目錄正確。CI macOS15／ad-hoc未公證，不冒充實體M2／最低系統或專用原生擷取比較UI。\n- 雙Linux包各 **44個完整雜湊檔、schema35**，ELF實際CPU／來源與安裝更新內容符合。實際AMD64 CLI version／ops bundle-check與兩次真程序 **0.164s**：首次15模型、移除Lightning重啟14、再次明確加入仍14；0非空Key／0telemetry／0session／0研究／1安裝ledger，parent-pipe正常退出。ARM64為靜態包驗證，未冒充本機執行。\n- 真systemd安裝／更新／回滾／crash recovery **42.562s**；原Standalone全負載 **21.257s**：100000保留samples／完整SQL百分位、4×31MiB context／4HTTP、11000訊息與100008請求完整匯出、65模型研究、4×2048²圖片、4×4MiB原生PCM／8media HTTP全部保留。單一實際PID idle28798976／peak211062784 bytes，以/proc VmRSS＋VmHWM量測，排除runner／fixture／browser，不當整機RAM或真VPS部署。\n\n保留真失敗與修復：未接API的404（1.251s）、本機缺表誤列409（2.082s）、晚回應重開已關閉視窗（3.668s）、0 HTTP預算拒絕被當來源退化並Undo（1.985s），均於本片聚焦反例重現後修正；最後完整來源另驗。沒有抹掉歷史失敗、減測試或降低expectation。\n\n前片 **KILO-DEFAULTS-015M ACCEPTED** 的15個Kilo免Key出廠模型／Lightning預設、舊工作區明確加入與保留選擇、每次推論官方匿名價格guard，完整九項／九份ZIP／20實圖及中途失敗證據見 [kilo-defaults-baseline.json](docs/verification/20261025/kilo-defaults-baseline.json)。真站12.228s只屬來源5bc886f98c2646c7e4f43948167b23b71c7e0613的匿名目錄＋Lightning合成文字兩HTTP，不外推本來源、其他14模型、台灣、身份或持續免費。\n\n驗收末重新讀取 main仍cba901d187aa5312cc71f5c2440b23fa04104aee／39536090788 attempt2，build119016886469、device119016884592 SUCCESS，FEATURE FREEZE=OFF。公開v0.8.5-preview.1、release/request.json／version.properties、tag699d4d57ff8264506c2b2f6e5eed0021327bf602、release420473654及11附件ID／size／digest全不變。\n\n依D-016直接接未知欄位對照／具體規則更新的下一個獨立缺口，不等待再說繼續。完整站點／Reflection其他更新、分塊同步、Mac／Android專用流程（含PLAY-004）、可信真站／目標VPS／實體裝置／正式簽署等原願望仍保留；完整下一版PARTIAL，本片不替代整版驗收。\n",
+  "whole_next_release": "PARTIAL"
+}

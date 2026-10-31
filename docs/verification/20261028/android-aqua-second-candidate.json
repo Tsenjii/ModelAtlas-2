@@ -1,0 +1,219 @@
+{
+  "source": "c6cd45bd36789064ac5510ea57022be03d34ba9d",
+  "run": 40688042389,
+  "job": 122815400864,
+  "artifact": {
+    "id": 12816476224,
+    "name": "modelatlas-android-aqua-diagnostic",
+    "size_in_bytes": 22005829,
+    "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12816476224",
+    "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12816476224/zip",
+    "expired": false,
+    "created_at": "2026-10-28T12:35:51Z",
+    "expires_at": "2027-01-26T12:28:09Z",
+    "updated_at": "2026-10-28T12:35:51Z",
+    "digest": "sha256:8362a0cda4d64189a73966afd04fb690afb88d9d59516d3b91e8138bf30a33a7",
+    "workflow_run": {
+      "id": 40688042389,
+      "repository_id": 1415404214,
+      "head_repository_id": 1415404214,
+      "head_branch": "diagnostic/android-aqua-015y-20261028",
+      "head_sha": "c6cd45bd36789064ac5510ea57022be03d34ba9d"
+    }
+  },
+  "bytes": 22005829,
+  "sha256": "8362a0cda4d64189a73966afd04fb690afb88d9d59516d3b91e8138bf30a33a7",
+  "crc": "PASS",
+  "counts": {
+    "tests": 8,
+    "failures": 2
+  },
+  "failures": [
+    {
+      "case": {
+        "name": "actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable",
+        "classname": "dev.modelatlas.app.ui.AquaInterfaceFlowTest",
+        "time": "10.4"
+      },
+      "failure": "java.lang.AssertionError: Aqua QA restoration failed: [ComparisonFailure]\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat dev.modelatlas.app.ui.AquaInterfaceFlowTest.restoreEverything(AquaInterfaceFlowTest.kt:166)\n"
+    },
+    {
+      "case": {
+        "name": "actualFourArtworkButtonsKeepScopeChatAndProviderDrafts",
+        "classname": "dev.modelatlas.app.ui.AquaInterfaceFlowTest",
+        "time": "7.476"
+      },
+      "failure": "java.lang.AssertionError: Failed to inject touch input.\nReason: Expected exactly '1' node but found '2' nodes that satisfy: (Text + InputText + EditableText contains '關閉' (ignoreCase: false))\nNodes found:\n1) Node #2386 at (l=16.0, t=447.0, r=304.0, b=503.0)px\nFocused = 'false'\nRole = 'Button'\nText = '[關閉]'\nActions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]\nMergeDescendants = 'true'\nHas 1 sibling\n2) Node #2495 at (l=238.0, t=544.0, r=296.0, b=592.0)px\nFocused = 'false'\nRole = 'Button'\nText = '[關閉]'\nActions = [ClearTextSubstitution, GetTextLayoutResult, OnClick, RequestFocus, SetTextSubstitution, ShowTextSubstitution]\nMergeDescendants = 'true'\nHas 2 siblings\n\nat androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow(SemanticsNodeInteraction.kt:178)\nat androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow$default(SemanticsNodeInteraction.kt:150)\nat androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode(SemanticsNodeInteraction.kt:84)\nat androidx.compose.ui.test.ActionsKt.performTouchInput(Actions.kt:389)\nat androidx.compose.ui.test.AndroidActions.performClickImpl(Actions.android.kt:23)\nat androidx.compose.ui.test.ActionsKt.performClick(Actions.kt:60)\nat dev.modelatlas.app.ui.AquaInterfaceFlowTest.closeSettings(AquaInterfaceFlowTest.kt:250)\nat dev.modelatlas.app.ui.AquaInterfaceFlowTest.changeStyle(AquaInterfaceFlowTest.kt:257)\nat dev.modelatlas.app.ui.AquaInterfaceFlowTest.actualFourArtworkButtonsKeepScopeChatAndProviderDrafts$lambda$30(AquaInterfaceFlowTest.kt:194)\nat dev.modelatlas.app.ui.AquaInterfaceFlowTest.$r8$lambda$qBenLy4YIm21-ACHol6xVLoF_M0(Unknown Source:0)\nat dev.modelatlas.app.ui.AquaInterfaceFlowTest$$ExternalSyntheticLambda1.invoke(D8$$SyntheticClass:0)\nat dev.modelatlas.app.ui.AquaInterfaceFlowTest.qaCase(AquaInterfaceFlowTest.kt:242)\nat dev.modelatlas.app.ui.AquaInterfaceFlowTest.actualFourArtworkButtonsKeepScopeChatAndProviderDrafts(AquaInterfaceFlowTest.kt:169)\n"
+    }
+  ],
+  "reports": {
+    "aqua-ui-dark-large.json": {
+      "result": "FAIL",
+      "pictures": [
+        {
+          "file": "11-relaunch-retained-dark.png",
+          "width": 320,
+          "height": 640,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": true,
+          "sha256": "f077e29175859af94b13a81d89ae34d88f51a065cc331b6c28f82708fb9f4108"
+        },
+        {
+          "file": "12-playground-320-large-dark.png",
+          "width": 320,
+          "height": 740,
+          "screen_width_dp": 320,
+          "font_scale": 2,
+          "dark": true,
+          "sha256": "f627d148121d81b7548ba4ce98b89a293e7dfcc0d286bc354db5878af7ec9980"
+        },
+        {
+          "file": "13-settings-320-large-dark.png",
+          "width": 320,
+          "height": 740,
+          "screen_width_dp": 320,
+          "font_scale": 2,
+          "dark": true,
+          "sha256": "afd2c3505cf9b516aff0d6bdb7a8dac14e86135417f2fe54a1ce25e3267d6b18"
+        },
+        {
+          "file": "14-reduced-transparency-dark.png",
+          "width": 320,
+          "height": 740,
+          "screen_width_dp": 320,
+          "font_scale": 2,
+          "dark": true,
+          "sha256": "b7cbe97a5772bc31f0cd7063e68aac002823838398840f5bb4c1f059fe2dd6c5"
+        },
+        {
+          "file": "15-landscape-large-dark.png",
+          "width": 740,
+          "height": 320,
+          "screen_width_dp": 740,
+          "font_scale": 2,
+          "dark": true,
+          "sha256": "bc2a85ba59505e22c67ae80e99648766894b8b714cda9d225884cfadefbe228c"
+        }
+      ],
+      "pid": 4560,
+      "system_settings_restored": false,
+      "preferences_restored": true,
+      "production_secure_before": true,
+      "secure_restored": true,
+      "night_before": 1,
+      "night_after": 1,
+      "font_before": "null",
+      "font_after": "1.0",
+      "no_inference": true,
+      "cache_bytes": 10985104
+    },
+    "aqua-ui-light.json": {
+      "result": "FAIL",
+      "pictures": [
+        {
+          "file": "01-classic-light.png",
+          "width": 320,
+          "height": 640,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "58c69177be29513f0cf20e4f5e4b67cfb624d867ae7a609eb6f57d5e3649395a"
+        },
+        {
+          "file": "02-kotoha-light.png",
+          "width": 320,
+          "height": 640,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "e2fbfc6f1c026850c5d65a9ff864dc4dbcc4f8cd4a033329fb9d996d82a71e4f"
+        },
+        {
+          "file": "03-elaina-light.png",
+          "width": 320,
+          "height": 640,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "79cf746ed481af10c1677cb62e1f7bb8f4e23c5efb8ff94f8f8d3ad708a5ff94"
+        },
+        {
+          "file": "04-kotoha-chibi-light.png",
+          "width": 320,
+          "height": 640,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "abbb066993aaecd835b3733b9862df5a09424ce68282ab313be3752b511ec00e"
+        },
+        {
+          "file": "05-elaina-chibi-light.png",
+          "width": 320,
+          "height": 640,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "4435e8c09cd76cf37bf2154878fb2e77bf617daae7f6bbbfc2f6f0c24e5c738c"
+        },
+        {
+          "file": "06-settings-four-choices-light.png",
+          "width": 320,
+          "height": 640,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "0297f7474fe8e882e40af5d0f350f1abddb1a606646642c47709d8b8b23203e1"
+        },
+        {
+          "file": "07-providers-light.png",
+          "width": 320,
+          "height": 640,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "2c9626cbcb4065cca391672cd98c4d799e0f49dc2b2ea12c0d06dbfccdc5da60"
+        },
+        {
+          "file": "08-models-light.png",
+          "width": 320,
+          "height": 640,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "df69e290e47f96d703454271ebf90cffeeb8606cf29be45d9fd0d8bd01a6e0d8"
+        }
+      ],
+      "pid": 4560,
+      "system_settings_restored": true,
+      "preferences_restored": true,
+      "production_secure_before": true,
+      "secure_restored": true,
+      "night_before": 1,
+      "night_after": 1,
+      "font_before": "1.0",
+      "font_after": "1.0",
+      "no_inference": true,
+      "cache_bytes": 12580128
+    }
+  },
+  "photos": [
+    "01-classic-light.png",
+    "02-kotoha-light.png",
+    "03-elaina-light.png",
+    "04-kotoha-chibi-light.png",
+    "05-elaina-chibi-light.png",
+    "06-settings-four-choices-light.png",
+    "07-providers-light.png",
+    "08-models-light.png",
+    "11-relaunch-retained-dark.png",
+    "12-playground-320-large-dark.png",
+    "13-settings-320-large-dark.png",
+    "14-reduced-transparency-dark.png",
+    "15-landscape-large-dark.png",
+    "failure-aqua-ui-light.png"
+  ],
+  "status": "REJECTED_DEVICE_AND_VISUAL_FAILURE",
+  "visual_findings": "Originals cropped, Q-version character occluded by composer; 200% bottom navigation wraps; landscape composer controls clipped. Current local corrections require their own executed native screenshots.",
+  "retained_thresholds": "All original997 device cases, eight new cases,15 native images, original Go/Browser/Mac/JVM workloads and all deadlines remain unchanged."
+}

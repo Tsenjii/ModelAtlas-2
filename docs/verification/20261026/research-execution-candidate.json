@@ -1,0 +1,97 @@
+{
+  "slice": "RESEARCH-EXECUTION-015T",
+  "status": "CANDIDATE_NOT_ACCEPTED",
+  "baseline": "246ea08afecb82e77781682fd2d3e962001ec3e0",
+  "counterexample": {
+    "test": "TestResearchExecutionParallelRunsKeepEachRunSequentialAndReceiptsScoped",
+    "before": "FAIL: configured max2 never let the second real TLS run enter while the first run was held.",
+    "before_package_seconds": 3.213,
+    "after_focused_race_seconds": 2.644
+  },
+  "local_checks": {
+    "original_schedule_and_new_counterexample_race_seconds": 28.29,
+    "seven_execution_top_level_tests_with_two_subcases_race_seconds": 5.888,
+    "execution_original_browser_workflow_race_seconds": 22.413,
+    "original_conditions_migrated": 19,
+    "original_scripts": 11,
+    "async_wait_chromium_cases": 8,
+    "release_regressions": 48,
+    "go_vet": "PASS",
+    "async_wait_tap_audit_parser": "PASS_8_ACTUAL_CASES"
+  },
+  "retained_failures": [
+    {
+      "kind": "NEW_TEST_EXPECTATION_ERROR",
+      "fact": "New restart test incorrectly expected queued manual work to auto-resume; the original OpenStore contract deliberately changes QUEUED/RUNNING manual runs to PAUSED. Restored that original assertion, then required explicit RESUME; focused race2.742s PASS, no recovery policy relaxed."
+    },
+    {
+      "kind": "NEW_SCREENSHOT_GEOMETRY_ERROR",
+      "seconds": [
+        21.658,
+        21.66
+      ],
+      "fact": "New screenshot guard treated the desktop side navigation as a bottom bar. Actual save x282/y475.765625/width130.015625/height48 was disjoint from nav x12/y90/width192/height152. Corrected rectangle-overlap assertion for both desktop side and mobile bottom navigation, retained48px/viewport/overflow assertions; no production layout workaround."
+    },
+    {
+      "kind": "INITIAL_WAIT_HELPER_CLOSE_TEST_INTERRUPTED",
+      "fact": "First new Node test attempted page.close while an unresolved browser evaluate Promise was still pending and did not finish locally. Interrupted that owned run, added close-event cleanup and a30s per-test bound; separate hung-predicate deadline/late-result and close-during-poll-pause cases now pass. This is not proof of historical AA/check-in root cause."
+    }
+  ],
+  "expected": {
+    "go_registry": 431,
+    "go_case_events": 650,
+    "pass": 600,
+    "opt_in_skip": 50,
+    "browser_flows": 42,
+    "browser_png": 531,
+    "async_wait_cases": 8,
+    "visual_review_required": 58,
+    "android_core": 594,
+    "android_app": 423,
+    "android_device": 996,
+    "android_original_skip": 5,
+    "mac_core_each": 89,
+    "mac_png_each": 104
+  },
+  "prior_aa_and_checkin_failure_root": "UNKNOWN",
+  "whole_next_release": "PARTIAL",
+  "public_release_frozen": true,
+  "local_full_browser": {
+    "workflows": 42,
+    "seconds": 266.868,
+    "original_deadline_seconds": 300,
+    "png": 531,
+    "preserved_original_png": 527,
+    "all_decode": "PASS",
+    "result": "PASS",
+    "runtime_files_unchanged_during_suite": true,
+    "scope": "LOCAL_DIRTY_TREE_NOT_COMMIT_ACCEPTANCE"
+  },
+  "local_full_go": {
+    "registry": 431,
+    "events": 650,
+    "pass": 600,
+    "opt_in_skip": 50,
+    "seconds": 515.406,
+    "original_deadline_seconds": 600,
+    "all_641_prior_event_outcomes_preserved": true,
+    "process_registry_sizes": [
+      216,
+      215
+    ],
+    "runtime_files_unchanged_during_suite": true,
+    "scope": "LOCAL_DIRTY_TREE_NOT_COMMIT_ACCEPTANCE"
+  },
+  "local_final_capture": {
+    "focused_original_browser_race_seconds": 23.102,
+    "views_self_reviewed": 4,
+    "result": "PASS_SELF_REVIEW",
+    "capture_adjustment": "After validating reachable48px save controls against actual sidebar/bottom-nav rectangles, capture summary/legend and assert the configured value is visible. The full42-flow266.868s run preceded only this capture helper adjustment; production Go/UI code and original assertions are unchanged.",
+    "scope": "LOCAL_NOT_COMMIT_ACCEPTANCE",
+    "changed_after_full_suites": [
+      "vps/e2e/research-execution-flow.cjs"
+    ]
+  },
+  "local_runtime_files": 327,
+  "local_runtime_snapshot_sha256": "9e937978569cfdfcd47715e7213ccedefc9b60aaa8710134490caffe6694680b"
+}

@@ -1,7 +1,6 @@
 package dev.modelatlas.app
 
 import android.os.Looper
-import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -11,12 +10,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dev.modelatlas.app.data.ConnectionRecord
 import dev.modelatlas.app.ui.ModelRow
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -32,6 +27,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * S1 (PK-01): disable-failure must not run [blockCredentialLocally] before the write.
@@ -67,7 +63,7 @@ class CredentialRollbackFlowTest {
 
     @After
     fun tearDown() {
-        if (::viewModelStore.isInitialized) viewModelStore.clear()
+        if (::viewModelStore.isInitialized) onMain { viewModelStore.clear() }
         for (ref in credentialRefs) runCatching { app.vault.remove(ref) }
         credentialRefs.clear()
         deleteOwnRows()
@@ -83,7 +79,7 @@ class CredentialRollbackFlowTest {
         val kept = givenConnection("rollback-t1-kept")
         awaitSettled(target.connectionId, kept.connectionId)
 
-        viewModel.selectConnection(target.connectionId)
+        onMain { viewModel.selectConnection(target.connectionId) }
         awaitUi { it.selectedId == target.connectionId }
         val seeded = listOf(
             ChatMessage(id = UUID.randomUUID().toString(), role = "user", text = "rollback-t1-seed"),
@@ -92,7 +88,7 @@ class CredentialRollbackFlowTest {
         val before = viewModel.state.value.messages
         assertEquals(seeded, before)
 
-        viewModel.setCredentialEnabled(target.connectionId, false)
+        onMain { viewModel.setCredentialEnabled(target.connectionId, false) }
 
         val settled = awaitUi { !it.saving }
         assertEquals(app.getString(R.string.error_credential_update), settled.error)
@@ -145,7 +141,7 @@ class CredentialRollbackFlowTest {
         assertTrue("pending row must bridge into managed list", managedIds().contains(pendingId))
         assertEquals(pendingId, viewModel.state.value.selectedId)
 
-        viewModel.setCredentialEnabled(pendingId, false)
+        onMain { viewModel.setCredentialEnabled(pendingId, false) }
 
         val settled = awaitUi { !it.saving }
         assertEquals(app.getString(R.string.error_credential_update), settled.error)
@@ -164,10 +160,10 @@ class CredentialRollbackFlowTest {
         val target = givenConnection("rollback-t3-target")
         awaitSettled(target.connectionId)
 
-        viewModel.selectConnection(target.connectionId)
+        onMain { viewModel.selectConnection(target.connectionId) }
         awaitUi { it.selectedId == target.connectionId }
 
-        viewModel.setCredentialEnabled(target.connectionId, false)
+        onMain { viewModel.setCredentialEnabled(target.connectionId, false) }
 
         val settled = awaitUi { state ->
             !state.saving && state.connections.none { it.id == target.connectionId }
@@ -191,23 +187,23 @@ class CredentialRollbackFlowTest {
 
     @Test
     fun enablePathUnchanged() {
-        var failEnable = false
+        val failEnable = AtomicBoolean(false)
         installVm(
             writer = { credId, enabled ->
-                if (enabled && failEnable) throw IllegalStateException("rollback-test-enable-boom")
+                if (enabled && failEnable.get()) throw IllegalStateException("rollback-test-enable-boom")
                 else app.credentialLifecycle.setEnabled(credId, enabled)
             },
         )
         val target = givenConnection("rollback-t4-target")
         awaitSettled(target.connectionId)
 
-        viewModel.setCredentialEnabled(target.connectionId, false)
-        awaitUi { state ->
+        onMain { viewModel.setCredentialEnabled(target.connectionId, false) }
+        awaitUi(stage = "first disable") { state ->
             !state.saving && state.connections.none { it.id == target.connectionId }
         }
 
-        viewModel.setCredentialEnabled(target.connectionId, true)
-        val restored = awaitUi { state ->
+        onMain { viewModel.setCredentialEnabled(target.connectionId, true) }
+        val restored = awaitUi(stage = "successful enable") { state ->
             !state.saving && state.connections.any { it.id == target.connectionId && it.enabled } &&
                 state.managedConnections.firstOrNull { it.id == target.connectionId }?.enabled == true
         }
@@ -217,14 +213,14 @@ class CredentialRollbackFlowTest {
             runBlocking { app.database.credentialDao().getById(target.credentialId)?.enabled },
         )
 
-        viewModel.setCredentialEnabled(target.connectionId, false)
-        awaitUi { state ->
+        onMain { viewModel.setCredentialEnabled(target.connectionId, false) }
+        awaitUi(stage = "second disable") { state ->
             !state.saving && state.connections.none { it.id == target.connectionId }
         }
 
-        failEnable = true
-        viewModel.setCredentialEnabled(target.connectionId, true)
-        val failed = awaitUi { !it.saving }
+        failEnable.set(true)
+        onMain { viewModel.setCredentialEnabled(target.connectionId, true) }
+        val failed = awaitUi(stage = "failed enable") { !it.saving }
         assertEquals(app.getString(R.string.error_credential_update), failed.error)
         assertTrue(
             "failed enable must stay out of the active list",
@@ -264,23 +260,25 @@ class CredentialRollbackFlowTest {
         val target = givenConnection("rollback-t5-target")
         val fallback = givenConnection("rollback-t5-fallback")
         awaitSettled(target.connectionId, fallback.connectionId)
-        viewModel.selectConnection(target.connectionId)
+        onMain { viewModel.selectConnection(target.connectionId) }
         awaitUi { it.selectedId == target.connectionId }
 
-        viewModel.setCredentialEnabled(target.connectionId, false)
+        onMain { viewModel.setCredentialEnabled(target.connectionId, false) }
         runBlocking { withTimeout(TIMEOUT_MS) { entered.await() } }
         assertTrue("write window must hold saving", viewModel.state.value.saving)
 
         val preparing = app.getString(R.string.error_preparing)
-        viewModel.send("rollback-t5-window-probe")
+        onMain { viewModel.send("rollback-t5-window-probe") }
         assertEquals("send during the window must be rejected", preparing, viewModel.state.value.error)
-        viewModel.testProviderModel(target.providerId, "rollback-t5-probe-model")
+        onMain { viewModel.testProviderModel(target.providerId, "rollback-t5-probe-model") }
         val action = viewModel.providerModelAction.value
         assertEquals("provider action during the window must be rejected", "FAILURE", action.status)
         assertEquals(preparing, action.message)
-        viewModel.requestCompareLive(
-            ModelRow(providerId = target.providerId, providerModelId = "rollback-t5", canonicalId = "rollback-t5"),
-        )
+        onMain {
+            viewModel.requestCompareLive(
+                ModelRow(providerId = target.providerId, providerModelId = "rollback-t5", canonicalId = "rollback-t5"),
+            )
+        }
         assertEquals("compare during the window must be rejected", "BUSY", viewModel.compareError.value)
 
         gate.complete(Unit)
@@ -306,12 +304,112 @@ class CredentialRollbackFlowTest {
         assertNotNull("auto-select must point at an enabled connection", selected)
     }
 
-    // ===== harness (ProviderManagementViewModelTest 慣例 + PendingConnectionHandoffTest pending 模式) =====
+    @Test
+    fun repeatedEnableDisableUsesMainAndKeepsRoomVaultAndProjectionsAligned() {
+        installVm()
+        val target = givenConnection("rollback-t6-repeated")
+        awaitSettled(target.connectionId)
+        repeat(4) { iteration ->
+            for (enabled in listOf(false, true)) {
+                onMain { viewModel.setCredentialEnabled(target.connectionId, enabled) }
+                val settled = awaitUi(stage = "toggle $iteration enabled=$enabled") { state ->
+                    !state.saving &&
+                        state.connections.any { it.id == target.connectionId && it.enabled } == enabled &&
+                        state.managedConnections.firstOrNull { it.id == target.connectionId }?.enabled == enabled
+                }
+                assertNull("toggle must not fail", settled.error)
+                assertEquals(enabled, runBlocking { app.database.credentialDao().getById(target.credentialId)?.enabled })
+                assertEquals(!enabled, blockedIds().contains(target.credentialId))
+                assertTrue("toggle must retain the same vault material", app.vault.has(target.credentialId))
+            }
+        }
+    }
+
+    @Test
+    fun disableBeforeManagementEmissionKeepsImmediateEnableAndRetiresBridge() {
+        installVm()
+        val target = givenConnection("rollback-t7-management-late")
+        awaitSettled(target.connectionId)
+        isolateCollectors()
+
+        // 真 Room 列，僅控制兩個獨立投影的到達順序；管理查詢尚未送出此列。
+        val activeBefore = roomActiveRows(target)
+        driveProjections(activeBefore, emptyList())
+        assertTrue(managedIds().contains(target.connectionId))
+
+        onMain { viewModel.setCredentialEnabled(target.connectionId, false) }
+        val disabled = awaitUi(stage = "disable before management emission") { !it.saving }
+        assertNull(disabled.error)
+        assertEquals(false, runBlocking { app.database.credentialDao().getById(target.credentialId)?.enabled })
+        assertTrue(app.vault.has(target.credentialId))
+
+        // Active 已收到停用後的空結果，management 仍未到：必須保留可重新啟用的管理列。
+        driveProjections(roomActiveRows(target), emptyList())
+        assertTrue(viewModel.state.value.connections.none { it.id == target.connectionId })
+        assertEquals(
+            "停用成功後不得因 management 尚未到達而丟失可重新啟用的列",
+            false,
+            viewModel.state.value.managedConnections.firstOrNull { it.id == target.connectionId }?.enabled,
+        )
+        assertTrue("交接期間必須封鎖推論", blockedIds().contains(target.credentialId))
+        assertFalse("管理交接不得留在推論 pending", pendingRecords().containsKey(target.connectionId))
+        assertTrue("未到達的管理列需要交接", managementHandoffRecords().containsKey(target.connectionId))
+
+        onMain { viewModel.setCredentialEnabled(target.connectionId, true) }
+        val enabled = awaitUi(stage = "immediate enable before management emission") { !it.saving }
+        assertNull("必須找到同一筆憑證重新啟用", enabled.error)
+        assertEquals(true, runBlocking { app.database.credentialDao().getById(target.credentialId)?.enabled })
+        assertFalse(blockedIds().contains(target.credentialId))
+        assertTrue("管理交接不冒充 active 投影", enabled.connections.none { it.id == target.connectionId })
+        driveProjections(roomActiveRows(target), emptyList())
+        assertEquals(true, viewModel.state.value.managedConnections.firstOrNull { it.id == target.connectionId }?.enabled)
+
+        driveProjections(roomActiveRows(target), roomManagedRows(target))
+        assertFalse("兩個真投影到達後必須退休交接列", managementHandoffRecords().containsKey(target.connectionId))
+        assertEquals(1, connectionIds().count { it == target.connectionId })
+        assertEquals(1, managedIds().count { it == target.connectionId })
+
+        // 停用列無 active emission：management 單獨接手也必須能退休，刪除後不復活。
+        driveProjections(roomActiveRows(target), emptyList())
+        onMain { viewModel.setCredentialEnabled(target.connectionId, false) }
+        assertNull(awaitUi(stage = "second disable before management emission") { !it.saving }.error)
+        driveProjections(roomActiveRows(target), roomManagedRows(target))
+        assertFalse("已停用列只等管理投影接手，不等不會出現的 active 列", managementHandoffRecords().containsKey(target.connectionId))
+        deleteOwnRows()
+        driveProjections(roomActiveRows(target), roomManagedRows(target))
+        assertFalse(connectionIds().contains(target.connectionId))
+        assertFalse(managedIds().contains(target.connectionId))
+        assertFalse(managementHandoffRecords().containsKey(target.connectionId))
+    }
+
+    private fun roomActiveRows(target: Fixture): List<ConnectionRecord> = runBlocking {
+        withTimeout(TIMEOUT_MS) {
+            app.repository.connections.first().filter { it.providerId == target.providerId }
+        }
+    }
+
+    private fun roomManagedRows(target: Fixture): List<ConnectionRecord> = runBlocking {
+        withTimeout(TIMEOUT_MS) {
+            app.repository.managementConnections.first().filter { it.providerId == target.providerId }
+        }
+    }
+
+    private fun driveProjections(active: List<ConnectionRecord>, management: List<ConnectionRecord>) {
+        onMain {
+            vmField("connectionCache").set(viewModel, active)
+            vmField("managementCache").set(viewModel, management)
+        }
+        driveRefresh()
+    }
+
+    // ===== harness (Main UI caller + Room StateFlow convergence) =====
 
     private fun installVm(writer: (suspend (String, Boolean) -> Unit)? = null) {
-        viewModelStore = ViewModelStore()
-        viewModel = ViewModelProvider(viewModelStore, RollbackViewModelFactory(app, writer))
-            .get(AtlasViewModel::class.java)
+        onMain {
+            viewModelStore = ViewModelStore()
+            viewModel = ViewModelProvider(viewModelStore, RollbackViewModelFactory(app, writer))
+                .get(AtlasViewModel::class.java)
+        }
     }
 
     private fun failingDisableWriter(): suspend (String, Boolean) -> Unit = { credId, enabled ->
@@ -326,6 +424,10 @@ class CredentialRollbackFlowTest {
     @Suppress("UNCHECKED_CAST")
     private fun pendingRecords(): Map<String, ConnectionRecord> =
         (vmField("pendingById").get(viewModel) as Map<String, ConnectionRecord>).toMap()
+
+    @Suppress("UNCHECKED_CAST")
+    private fun managementHandoffRecords(): Map<String, ConnectionRecord> =
+        (vmField("managementHandoffById").get(viewModel) as Map<String, ConnectionRecord>).toMap()
 
     @Suppress("UNCHECKED_CAST")
     private fun blockedIds(): Set<String> =
@@ -366,27 +468,41 @@ class CredentialRollbackFlowTest {
     }
 
     /**
-     * 等 Room 流程與 viewModelScope 都收斂：以 withTimeout + state.first 等待，不用固定 sleep。
-     * 測試執行緒不是主執行緒，所以一併用 waitForIdleSync 讓 Main 派發的 ViewModel 協程有機會推進。
+     * Main 保持可派發 Room／viewModelScope；測試執行緒只掛起等待真正的 state。
+     * 不在 while 迴圈反覆 waitForIdleSync，把 instrumentation/Main 都佔住。
+     * 逾時保持原15秒上限並列出無 secret 的投影狀態，不能把未收斂當成功。
      */
-    private fun awaitUi(timeoutMillis: Long = TIMEOUT_MS, predicate: (AtlasUiState) -> Boolean): AtlasUiState {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val waiter = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private fun awaitUi(
+        timeoutMillis: Long = TIMEOUT_MS,
+        stage: String = "UI convergence",
+        predicate: (AtlasUiState) -> Boolean,
+    ): AtlasUiState {
+        check(Looper.myLooper() != Looper.getMainLooper()) { "awaitUi must not block Main" }
         try {
-            val pending = waiter.async { withTimeout(timeoutMillis) { viewModel.state.first(predicate) } }
-            val deadline = SystemClock.uptimeMillis() + timeoutMillis
-            while (!pending.isCompleted && SystemClock.uptimeMillis() < deadline) {
-                if (Looper.myLooper() != Looper.getMainLooper()) runCatching { instrumentation.waitForIdleSync() }
-            }
-            return runBlocking { pending.await() }
-        } finally {
-            waiter.cancel()
+            return runBlocking { withTimeout(timeoutMillis) { viewModel.state.first(predicate) } }
+        } catch (e: TimeoutCancellationException) {
+            val state = viewModel.state.value
+            throw AssertionError(
+                "$stage: saving=${state.saving}, busy=${state.busy}, hasError=${state.error != null}, " +
+                    "errorCategory=${errorCategory(state.error)}, " +
+                    "active=${state.connections.map { it.id to it.enabled }}, " +
+                    "managed=${state.managedConnections.map { it.id to it.enabled }}",
+                e,
+            )
         }
+    }
+
+    private fun errorCategory(error: String?): String = when (error) {
+        null -> "NONE"
+        app.getString(R.string.error_connection_not_found) -> "CONNECTION_NOT_FOUND"
+        app.getString(R.string.error_credential_update) -> "CREDENTIAL_UPDATE"
+        app.getString(R.string.error_load) -> "LOAD"
+        else -> "OTHER"
     }
 
     private fun awaitSettled(vararg connectionIds: String) {
         val wanted = connectionIds.toSet()
-        awaitUi { state ->
+        awaitUi(stage = "initial Room projections") { state ->
             !state.saving && !state.busy &&
                 state.connections.count { it.id in wanted } == wanted.size &&
                 state.managedConnections.count { it.id in wanted } == wanted.size

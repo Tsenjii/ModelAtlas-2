@@ -68,11 +68,13 @@ class TransportDispatch(transports: List<EndpointTransport>) : InferenceTranspor
      */
     fun route(kind: MultimodalKind): TransportRoute = route(kind.endpointType.name)
 
-    override fun stream(target: InferenceTarget, messages: List<PromptMessage>): Flow<StreamEvent> =
-        when (val route = route(target.operation)) {
+    override fun stream(target: InferenceTarget, messages: List<PromptMessage>): Flow<StreamEvent> {
+        KiloFactoryPolicy.requireScope(target)
+        return when (val route = route(target.operation)) {
             is TransportRoute.Routed -> route.transport.stream(target, messages)
             is TransportRoute.Unsupported -> throw InferenceFailure(Outcome.OTHER)
         }
+    }
 
     companion object {
         const val REASON_UNKNOWN_OPERATION = "unknown-operation"

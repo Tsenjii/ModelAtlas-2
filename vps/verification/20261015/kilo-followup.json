@@ -1,0 +1,56 @@
+{
+  "anonymous": true,
+  "model": "nvidia/nemotron-3.5-lightning:free",
+  "observed_at": "2026-10-14T20:12:14Z",
+  "candidate_count": 3,
+  "evidence_count": 4,
+  "research_tasks": 7,
+  "successful_tasks": 3,
+  "inference_http": 6,
+  "public_http": 7,
+  "public_attempts": [
+    {
+      "host": "console.groq.com",
+      "path": "/docs/rate-limits",
+      "status": 200
+    },
+    {
+      "host": "inference-docs.cerebras.ai",
+      "path": "/support/pricing",
+      "status": 307
+    },
+    {
+      "host": "openrouter.ai",
+      "path": "/pricing",
+      "status": 200
+    },
+    {
+      "host": "console.groq.com",
+      "path": "/docs/rate-limits",
+      "status": 200
+    },
+    {
+      "host": "inference-docs.cerebras.ai",
+      "path": "/support/pricing",
+      "status": 307
+    },
+    {
+      "host": "openrouter.ai",
+      "path": "/pricing",
+      "status": 200
+    },
+    {
+      "host": "console.groq.com",
+      "path": "/_next/static/chunks/app/(console)/docs/(mdx-pages)/layout-8a2b1a3af078617f.js",
+      "status": 200
+    }
+  ],
+  "code_sha": "a39fa2a9d6fcb4cb6f3fc5ca3b4cec78d6e0e6d2",
+  "workflow_run": 38629907160,
+  "job_id": 116078568504,
+  "elapsed_seconds": 20.06,
+  "conclusion": "success",
+  "artifact_id": 11926167081,
+  "artifact_sha256": "21e604fe54999ad5305fe6e1edeeb8ee9b0e82dc3b9ad31ce4b2aeeae5bead14",
+  "interpretation": "Groq/OpenRouter public retrieval succeeded; Cerebras redirect was not followed and remains a failed lead. Public JS was read as data, never executed. These are research candidates, not verified recurring-free/strong/Taiwan/identity claims. Anonymous opt-in was disabled after this run."
+}

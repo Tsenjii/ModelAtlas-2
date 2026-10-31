@@ -1,0 +1,2634 @@
+{
+  "status": "ACCEPTED_LISTED_SCOPE",
+  "slice": "MAC-AQUA-015W",
+  "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+  "tree": "69fb19a2b53745fb050243ca28e0df7dfaaf7e94",
+  "verified_at_utc": "2026-10-27T19:00:13.989147+00:00",
+  "audit_run": 40560891187,
+  "audit_job": 122389264406,
+  "audit_artifact": {
+    "id": 12761268077,
+    "bytes": 2022243,
+    "sha256": "445d791e6fa9bd4480e759d4eede7a399c786c775f29b3a4c98a116948335692",
+    "crc": "PASS"
+  },
+  "audit": {
+    "status": "BYTE_AUDIT_PASS_PENDING_VISUAL_REVIEW",
+    "slice": "MAC-AQUA-015W",
+    "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+    "tree": "69fb19a2b53745fb050243ca28e0df7dfaaf7e94",
+    "checks": {
+      ".github/workflows/vps.yml": {
+        "id": 40560891243,
+        "attempt": 1,
+        "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40560891243",
+        "jobs": [
+          {
+            "id": 122389265889,
+            "name": "vps-browser",
+            "conclusion": "success",
+            "run_id": 40560891243,
+            "head_sha": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+            "started_at": "2026-10-27T18:32:17Z",
+            "completed_at": "2026-10-27T18:37:33Z"
+          },
+          {
+            "id": 122389265890,
+            "name": "vps-linux-amd64",
+            "conclusion": "success",
+            "run_id": 40560891243,
+            "head_sha": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+            "started_at": "2026-10-27T18:32:17Z",
+            "completed_at": "2026-10-27T18:33:21Z"
+          },
+          {
+            "id": 122389265652,
+            "name": "vps-linux-arm64",
+            "conclusion": "success",
+            "run_id": 40560891243,
+            "head_sha": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+            "started_at": "2026-10-27T18:32:17Z",
+            "completed_at": "2026-10-27T18:33:29Z"
+          },
+          {
+            "id": 122389265132,
+            "name": "vps-test",
+            "conclusion": "success",
+            "run_id": 40560891243,
+            "head_sha": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+            "started_at": "2026-10-27T18:32:17Z",
+            "completed_at": "2026-10-27T18:44:40Z"
+          }
+        ]
+      },
+      ".github/workflows/android.yml": {
+        "id": 40560891239,
+        "attempt": 1,
+        "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40560891239",
+        "jobs": [
+          {
+            "id": 122389265236,
+            "name": "build",
+            "conclusion": "success",
+            "run_id": 40560891239,
+            "head_sha": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+            "started_at": "2026-10-27T18:32:17Z",
+            "completed_at": "2026-10-27T18:35:56Z"
+          },
+          {
+            "id": 122389264849,
+            "name": "device-tests",
+            "conclusion": "success",
+            "run_id": 40560891239,
+            "head_sha": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+            "started_at": "2026-10-27T18:32:17Z",
+            "completed_at": "2026-10-27T18:43:08Z"
+          }
+        ]
+      },
+      ".github/workflows/macos-native.yml": {
+        "id": 40560891180,
+        "attempt": 1,
+        "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40560891180",
+        "jobs": [
+          {
+            "id": 122389264655,
+            "name": "macos-build",
+            "conclusion": "success",
+            "run_id": 40560891180,
+            "head_sha": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+            "started_at": "2026-10-27T18:32:21Z",
+            "completed_at": "2026-10-27T18:40:14Z"
+          },
+          {
+            "id": 122393623074,
+            "name": "macos-test (macos-15, arm64)",
+            "conclusion": "success",
+            "run_id": 40560891180,
+            "head_sha": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+            "started_at": "2026-10-27T18:40:21Z",
+            "completed_at": "2026-10-27T18:45:43Z"
+          },
+          {
+            "id": 122393622799,
+            "name": "macos-test (macos-15-intel, x86_64)",
+            "conclusion": "success",
+            "run_id": 40560891180,
+            "head_sha": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+            "started_at": "2026-10-27T18:40:18Z",
+            "completed_at": "2026-10-27T18:51:10Z"
+          }
+        ]
+      }
+    },
+    "artifacts": [
+      {
+        "name": "modelatlas-vps-linux-amd64",
+        "id": 12762275179,
+        "digest": "sha256:aeb88daf6f419ea3b90c0c1d33718f9be613753b0d130412ae521dcaa3ec1738",
+        "run_id": 40560891243,
+        "producer_job_id": 122389265890,
+        "producer_job_name": "vps-linux-amd64",
+        "created_at": "2026-10-27T18:33:18Z"
+      },
+      {
+        "name": "modelatlas-vps-linux-arm64",
+        "id": 12760791717,
+        "digest": "sha256:e4eeb4743e5d051e5a9dc3d1ce9d791d6f7451bca713df46ce5ed2b56d7f4f02",
+        "run_id": 40560891243,
+        "producer_job_id": 122389265652,
+        "producer_job_name": "vps-linux-arm64",
+        "created_at": "2026-10-27T18:33:27Z"
+      },
+      {
+        "name": "modelatlas-vps-footprint",
+        "id": 12762141762,
+        "digest": "sha256:732f8733d59ca935c4de0f8c50c472c8ec3399556c58d647524cf7ab49d224c1",
+        "run_id": 40560891243,
+        "producer_job_id": 122389265132,
+        "producer_job_name": "vps-test",
+        "created_at": "2026-10-27T18:44:33Z"
+      },
+      {
+        "name": "modelatlas-vps-browser",
+        "id": 12761546384,
+        "digest": "sha256:56a793b3db6119d8f615d70455875ede002747e540d5960ce3d976896bf3fd7c",
+        "run_id": 40560891243,
+        "producer_job_id": 122389265889,
+        "producer_job_name": "vps-browser",
+        "created_at": "2026-10-27T18:37:30Z"
+      },
+      {
+        "name": "modelatlas-debug-and-reports",
+        "id": 12760152921,
+        "digest": "sha256:cb8a59b20daae07b1ed6041e64314129235d0d13829555a6971928a8d4fc772e",
+        "run_id": 40560891239,
+        "producer_job_id": 122389265236,
+        "producer_job_name": "build",
+        "created_at": "2026-10-27T18:35:52Z"
+      },
+      {
+        "name": "modelatlas-device-test-reports",
+        "id": 12760113843,
+        "digest": "sha256:001864048949053c5b85f15ba26aa71a13981a03450912db1b5d6899443f1b4a",
+        "run_id": 40560891239,
+        "producer_job_id": 122389264849,
+        "producer_job_name": "device-tests",
+        "created_at": "2026-10-27T18:43:05Z"
+      },
+      {
+        "name": "ModelAtlas-macOS-Universal",
+        "id": 12760668357,
+        "digest": "sha256:21822c41b903488892642c49e92dca9ce2350bc2f315472fbf08090c2e812cbf",
+        "run_id": 40560891180,
+        "producer_job_id": 122389264655,
+        "producer_job_name": "macos-build",
+        "created_at": "2026-10-27T18:40:08Z"
+      },
+      {
+        "name": "ModelAtlas-macOS-QA-arm64",
+        "id": 12761836989,
+        "digest": "sha256:d768f0debbbefa256e452b3b15cf290b2f9aade7511699cfc38bbf41bdd1e12b",
+        "run_id": 40560891180,
+        "producer_job_id": 122393623074,
+        "producer_job_name": "macos-test (macos-15, arm64)",
+        "created_at": "2026-10-27T18:45:35Z"
+      },
+      {
+        "name": "ModelAtlas-macOS-QA-x86_64",
+        "id": 12760868666,
+        "digest": "sha256:458fc1f23a1c56cb2a8f54a5117236f16af0765476635fb1f21a3ef3c39fcade",
+        "run_id": 40560891180,
+        "producer_job_id": 122393622799,
+        "producer_job_name": "macos-test (macos-15-intel, x86_64)",
+        "created_at": "2026-10-27T18:51:02Z"
+      }
+    ],
+    "whole_next_release": "PARTIAL",
+    "browser_images": {
+      "count": 557,
+      "preserved": 509,
+      "added": [
+        "aqua-background-elaina-390-light.png",
+        "aqua-background-elaina-chibi-390-dark.png",
+        "aqua-background-kotoha-390-light.png",
+        "aqua-background-kotoha-chibi-1280-light.png",
+        "aqua-model-detail-390-dark.png",
+        "aqua-models-1280-light.png",
+        "aqua-models-320-200-dark.png",
+        "aqua-offline-390-light.png",
+        "aqua-offline-draft-390-light.png",
+        "aqua-playground-1280-light.png",
+        "aqua-playground-390-light.png",
+        "aqua-playground-390-saved.png",
+        "aqua-playground-812-safe-dark.png",
+        "aqua-provider-editor-375-200-light.png",
+        "aqua-providers-390-light.png",
+        "aqua-settings-390-dark.png",
+        "connector-private-mapping-draft-1280-dark.png",
+        "connector-private-mapping-draft-1280-light.png",
+        "connector-private-mapping-draft-320-dark.png",
+        "connector-private-mapping-draft-320-light.png",
+        "connector-private-mapping-draft-375-dark.png",
+        "connector-private-mapping-draft-375-light.png",
+        "connector-private-mapping-fields-320-dark.png",
+        "connector-private-mapping-fields-375-large-dark.png",
+        "connector-private-mapping-group-375-light.png",
+        "connector-private-mapping-pat-account-375-light.png",
+        "connector-private-mapping-pat-draft-1280-dark.png",
+        "connector-private-mapping-pat-undo-375-dark.png",
+        "connector-private-mapping-runtime-last-good-1280-dark.png",
+        "connector-private-mapping-source-375-light.png",
+        "knowledge-evaluation-cost-375-200-light.png",
+        "research-execution-1280-dark.png",
+        "research-execution-320-200-dark.png",
+        "research-execution-375-last-good.png",
+        "research-execution-375-light.png",
+        "research-history-detail-375-200-dark.png",
+        "research-history-detail-390-dark.png",
+        "research-history-last-good-390-dark.png",
+        "research-history-list-1280-light.png",
+        "research-history-list-320-200-dark.png",
+        "research-history-list-390-light.png",
+        "research-history-lost-ack-390-light.png",
+        "research-history-read-recovered-390-light.png",
+        "research-history-scope-1280-light.png",
+        "research-history-scope-recovery-390-dark.png",
+        "research-query-cost-1280-dark.png",
+        "research-query-cost-320-200-dark.png",
+        "research-query-cost-375-light.png"
+      ]
+    },
+    "footprint": {
+      "binary_bytes": 19734690,
+      "catalog_http": 4,
+      "chat_peak_bytes": 34910208,
+      "chat_rss_bytes": 34639872,
+      "export_messages": 11000,
+      "export_peak_bytes": 211427328,
+      "export_requests": 100008,
+      "export_rss_bytes": 37961728,
+      "gomemlimit_bytes": 201326592,
+      "idle_rss_bytes": 29163520,
+      "image_peak_bytes": 211427328,
+      "image_pixels_each": 4194304,
+      "image_rss_bytes": 107188224,
+      "long_context_bytes_each": 32505856,
+      "long_context_http": 4,
+      "long_context_peak_bytes": 168513536,
+      "long_context_rss_bytes": 168513536,
+      "media_http": 8,
+      "peak_rss_bytes": 211427328,
+      "profile": "100000 retained samples/full SQL percentiles; 4 TLS chats + 4 simultaneous full 31-MiB contexts; retained 11000-message and full request exports; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each",
+      "research_peak_bytes": 211427328,
+      "research_rss_bytes": 37830656,
+      "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser",
+      "rss_target_bytes": 536870912,
+      "speech_bytes_each": 4194304,
+      "speech_peak_bytes": 211427328,
+      "speech_rss_bytes": 115953664,
+      "sqlite_bytes": 163364864,
+      "warm_rss_bytes": 115953664
+    },
+    "go_suite": {
+      "result": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "working_tree_dirty": false,
+      "race": true,
+      "suite_deadline_seconds": 600,
+      "started_at": "2026-10-27T18:33:22.883692+00:00",
+      "seconds": 571.018,
+      "package": "github.com/Tsenjii/ModelAtlas-2/vps",
+      "registry_sha256": "00b04fe9fa24352f62964aaca5d67f38ad7b0a281b07fde38ba098256fd73d3b"
+    },
+    "async_wait_cases": [
+      "awaits actual async results and keeps only one predicate in flight",
+      "false conditions time out and stop polling after the deadline",
+      "a hung browser Promise is bounded and late resolution cannot repoll",
+      "browser exceptions propagate without waiting for the deadline",
+      "the host deadline works while the page clock is frozen",
+      "closing a page rejects a pending wait and leaves no later poll",
+      "invalid or unbounded timer settings are rejected",
+      "all nineteen original async conditions retain awaited polling"
+    ],
+    "browser_cases": [
+      [
+        "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery",
+        "13.82"
+      ],
+      [
+        "TestBrowserMacParityWorkflow",
+        "16.31"
+      ],
+      [
+        "TestBrowserWorkspaceRecoveryWorkflow",
+        "20.84"
+      ],
+      [
+        "TestBrowserWorkspaceWorkflow",
+        "22.51"
+      ],
+      [
+        "TestBrowserWorkspaceSyncWorkflow",
+        "15.05"
+      ],
+      [
+        "TestBrowserWorkspaceChunksResumePauseAndRetainPermanentHistory",
+        "14.26"
+      ],
+      [
+        "TestBrowserSystemStatusWorkflow",
+        "11.46"
+      ],
+      [
+        "TestBrowserSiteRecipePublicEvidenceReviewAtomicUseAndUndo",
+        "16.63"
+      ],
+      [
+        "TestBrowserReflectionGeneratedQueryPairedTrialWorkflow",
+        "18.30"
+      ],
+      [
+        "TestBrowserResearchScheduleWorkflow",
+        "26.45"
+      ],
+      [
+        "TestBrowserResearchProgressiveWorkflow",
+        "31.10"
+      ],
+      [
+        "TestBrowserResearchRetryWorkflow",
+        "29.04"
+      ],
+      [
+        "TestBrowserPrivateResearchScheduleWorkflow",
+        "26.20"
+      ],
+      [
+        "TestBrowserResearchOriginCooldownWorkflow",
+        "25.51"
+      ],
+      [
+        "TestBrowserResearchHistoryArchiveAndExactRecovery",
+        "22.34"
+      ],
+      [
+        "TestBrowserResearchInferenceDailyBudgetWorkflow",
+        "25.19"
+      ],
+      [
+        "TestBrowserRequestReceiptsWorkflow",
+        "13.40"
+      ],
+      [
+        "TestBrowserAAResearchPageRecoveryWorkflow",
+        "28.17"
+      ],
+      [
+        "TestBrowserBraveResearchPageRecoveryWorkflow",
+        "15.37"
+      ],
+      [
+        "TestBrowserProviderFormsWorkflow",
+        "22.15"
+      ],
+      [
+        "TestBrowserModelViewsWorkflow",
+        "21.70"
+      ],
+      [
+        "TestBrowserModelConnectionsWorkflow",
+        "21.11"
+      ],
+      [
+        "TestBrowserConnectorDiscoveryReviewAndPersistentRollback",
+        "18.69"
+      ],
+      [
+        "TestBrowserScopedModelPickerWorkflow",
+        "29.62"
+      ],
+      [
+        "TestBrowserKnowledgeEvaluationTrialAndPersistentRollback",
+        "14.60"
+      ],
+      [
+        "TestBrowserKiloFactoryAnonymousChatPriceGuardAndExistingWorkspaceRecovery",
+        "25.07"
+      ],
+      [
+        "TestBrowserMacAlignmentWorkflow",
+        "38.12"
+      ],
+      [
+        "TestBrowserDetailWorkspaceWorkflow",
+        "41.98"
+      ],
+      [
+        "TestBrowserMobileAlignmentWorkflow",
+        "69.61"
+      ],
+      [
+        "TestBrowserConversationsWorkflow",
+        "20.26"
+      ],
+      [
+        "TestBrowserExtractionMeasuredTrialRecoveryMonitoringAndUndo",
+        "35.92"
+      ],
+      [
+        "TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo",
+        "17.77"
+      ],
+      [
+        "TestBrowserConnectorMappingUnknownFieldsRecoveryRuntimeAndUndo",
+        "14.33"
+      ],
+      [
+        "TestBrowserConversationCreationWorkflow",
+        "21.67"
+      ],
+      [
+        "TestBrowserChatExperienceWorkflow",
+        "12.79"
+      ],
+      [
+        "TestBrowserCatalogExperienceWorkflow",
+        "21.62"
+      ],
+      [
+        "TestBrowserProtocolAndSpeechWorkflow",
+        "12.28"
+      ],
+      [
+        "TestBrowserOriginWorkflow",
+        "11.78"
+      ],
+      [
+        "TestBrowserManagementWorkflow",
+        "11.53"
+      ],
+      [
+        "TestBrowserResearchWorkflow",
+        "11.21"
+      ],
+      [
+        "TestBrowserKnowledgeWorkflow",
+        "10.46"
+      ],
+      [
+        "TestBrowserAssistantWorkflow",
+        "10.49"
+      ],
+      [
+        "TestBrowserAuthenticityEvidenceReviewAndPersistentUndo",
+        "11.63"
+      ],
+      [
+        "TestBrowserProductionWorkflow",
+        "23.51"
+      ]
+    ],
+    "android_build": {
+      "core": {
+        "tests": 594,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "app": {
+        "tests": 423,
+        "failures": 0,
+        "ignored": 0
+      },
+      "certificate_sha256": "6d7ea55c2ff80398e999236dbd939b06fd5cfcc66051ea8b55540868a17df3f8",
+      "production_signing": false
+    },
+    "android_device": {
+      "counts": {
+        "tests": 996,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 5
+      },
+      "preserved_cases": 996,
+      "added": [],
+      "runtime": {
+        "expected_max_heap_bytes": 536870912,
+        "max_heap_bytes": 536870912,
+        "pid": 4800,
+        "stages": [
+          "start",
+          "finish"
+        ]
+      },
+      "preflight": {
+        "configured_heap": "512m",
+        "expected_runtime_max_heap_bytes": 536870912,
+        "growth_limit": "",
+        "initial_zygote_observations": [
+          "1662"
+        ],
+        "sdk": "29",
+        "zygote_after": "3195",
+        "zygote_before": "1662"
+      }
+    },
+    "rejected_candidate": {
+      "source": "3ef96c39669c6d1b14eea31624bfa020e23c6124",
+      "actual_sha256": "sha256:de07fe5b6b5bcf580278edcebfbdd5d97fa495e4552d8e14b11dc35a0f60511b",
+      "counts": {
+        "tests": 985,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 5
+      },
+      "failure": "dev.modelatlas.app.ui.PendingConnectionHandoffTest#disabledPendingIsEvictedAndNeverResurrectsAsUsable"
+    },
+    "rejected_aa_candidate": {
+      "source": "7d612a4009a77cce431a30b23a129761827f80e0",
+      "actual_sha256": "sha256:c84bd007ae15f12914b6eb9eae627747699c9ce47915851539ff18c5e2971d31",
+      "png": 523,
+      "aa_images": [
+        "research-aa-1280-dark.png",
+        "research-aa-1280-light.png",
+        "research-aa-320-dark.png",
+        "research-aa-320-light.png",
+        "research-aa-375-dark.png",
+        "research-aa-375-large.png",
+        "research-aa-375-light.png",
+        "research-aa-recovered-375.png"
+      ],
+      "failure": "TestBrowserAAResearchPageRecoveryWorkflow: page1=3/page2=3, expected 3/4; original task failure cause unavailable, not inferred"
+    },
+    "mac_arm64": {
+      "png": 117,
+      "preserved_png": 104,
+      "core_tests": 89,
+      "preserved_core_tests": 89,
+      "smoke": {
+        "draft_scope_guards": true,
+        "attachment_guards": true,
+        "native_markdown": true,
+        "messages": 2,
+        "screenshots": 25,
+        "live_session_search": true,
+        "chat_settings_guards": true,
+        "result": "PASS",
+        "chat_reading_guards": true,
+        "search_scope_guards": true,
+        "keyboard_picker_guards": true,
+        "request_receipt": true,
+        "native_windows": true,
+        "real_tls_chat": true,
+        "providers": 2,
+        "models": 4,
+        "real_engine": true
+      },
+      "parity": {
+        "connector_caller": true,
+        "reduced_motion": true,
+        "public_site_auto_read": true,
+        "native_comparison": true,
+        "site_partial_retry": true,
+        "chart_keyboard_selection": true,
+        "kilo_factory_defaults": true,
+        "retained_history": true,
+        "result": "PASS",
+        "price_scope_guards": true,
+        "account_checkin_scope": true,
+        "native_composer": true,
+        "real_tls_media": true,
+        "provider_account_write_guards": true,
+        "comparison_receipts": true,
+        "appearance_choices": true,
+        "chart_receipt_identity": true,
+        "observation_archive": true,
+        "wire_counts": {
+          "native-dual": 1,
+          "native-legacy": 1,
+          "connector": 2,
+          "rerank": 1,
+          "images": 1,
+          "embeddings": 1,
+          "transcription": 1,
+          "native-current": 1,
+          "speech": 1,
+          "image-edit": 1
+        },
+        "comparison_scope_guards": true,
+        "workspace_sync_entry": true,
+        "sidebar_toggle": true,
+        "adaptive_composer": true,
+        "native_intelligence": true,
+        "provider_series_scope": true,
+        "telemetry_trends": true,
+        "provider_form_feedback": true,
+        "provider_next_draft": true,
+        "connection_actions": true,
+        "read_only_no_inference": true,
+        "credential_restore_scope": true,
+        "native_motion": true,
+        "manual_evidence": true,
+        "workspace_transfer_controls": true,
+        "kilo_no_automatic_inference": true,
+        "chart_export_exact": true,
+        "checkin_retry_cancel": true,
+        "stale_guards": true,
+        "provider_window_restored": true,
+        "screenshots": 57,
+        "knowledge_versions": true,
+        "batch_confirm_undo": true,
+        "composer_focus": true,
+        "safe_references": true,
+        "quota_scope_guards": true,
+        "saved_refresh_no_repost": true
+      },
+      "workspace_transfer": {
+        "paused_progress_bytes": 28307,
+        "result": "PASS",
+        "source_product_retained": true,
+        "destination_models": 15,
+        "same_transfer_after_restart": true,
+        "no_inference": true,
+        "actual_keychain_restart": true,
+        "outgoing_acked": 1,
+        "pause_during_busy": true
+      },
+      "research": {
+        "no_inference": true,
+        "lost_ack_no_repost": true,
+        "screenshots": 8,
+        "native_update_buttons": true,
+        "seven_exact_requests": true,
+        "reopen_same_run": true,
+        "wire": {
+          "used": 7,
+          "direct_sync": 0,
+          "second": 4,
+          "resumes": 2,
+          "first": 3,
+          "starts": 3,
+          "telemetry": 0,
+          "runs": 3,
+          "held": false,
+          "controls": 3
+        },
+        "saved_refresh_no_repost": true,
+        "result": "PASS",
+        "live_run_state": true,
+        "last_good_preserved": true,
+        "concurrent_control_guard": true,
+        "real_tls": true
+      },
+      "research_resource": {
+        "app_rss_bytes": 128860160,
+        "engine_rss_bytes": 25247744,
+        "fixture_rss_bytes": 31637504,
+        "combined_rss_bytes": 185073664,
+        "samples": 15,
+        "method": "ps RSS for third standalone native launch, its owned packaged engine and separate synthetic TLS test fixture; original smoke/parity workloads and deadlines unchanged",
+        "app_exit_code": 0,
+        "owned_engine_exited": true,
+        "fixture_exit_code": 0
+      },
+      "aqua": {
+        "result": "PASS",
+        "relaunch_preference_retained": true,
+        "same_original_bytes": true,
+        "scope_and_draft_retained": true,
+        "provider_form_retained": true,
+        "transparency_control": "actual app toggle and separately launched system preference fixture",
+        "system_transparency": true,
+        "no_inference_or_research": true,
+        "system_reduced_transparency": true,
+        "screenshots": 13,
+        "actual_settings_buttons": true,
+        "classic_default_and_invalid_fallback": true,
+        "images": [
+          {
+            "id": "kotoha",
+            "bytes": 135772,
+            "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282"
+          },
+          {
+            "id": "elaina",
+            "bytes": 422004,
+            "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6"
+          },
+          {
+            "id": "kotoha-chibi",
+            "sha256": "f54666c7bb7714fa03919830d8404dd5dc5c37f12a4cd18c51353a34235c6eb0",
+            "bytes": 2363841
+          },
+          {
+            "sha256": "8be85b8f0db24f937576f6f6091e25cad560e4aecc64f0a08560b2cc0c52a415",
+            "bytes": 2272459,
+            "id": "elaina-chibi"
+          }
+        ],
+        "reduced_transparency": true,
+        "four_bundled_artworks": true
+      },
+      "aqua_resource": {
+        "app_rss_bytes": 201031680,
+        "engine_rss_bytes": 27377664,
+        "samples": 82,
+        "method": "three standalone packaged launches; exact artworks, actual app toggle and real system accessibility states",
+        "phases": [
+          {
+            "app_pid": 1714,
+            "engine_pid": 1753,
+            "exit": 0,
+            "system_transparency": false
+          },
+          {
+            "app_pid": 2001,
+            "engine_pid": 2003,
+            "exit": 0,
+            "system_transparency": false
+          },
+          {
+            "app_pid": 2038,
+            "engine_pid": 2117,
+            "exit": 0,
+            "system_transparency": true
+          }
+        ],
+        "result": "PASS",
+        "owned_engines_exited": true,
+        "system_fixture_restored": true
+      }
+    },
+    "mac_x86_64": {
+      "png": 117,
+      "preserved_png": 104,
+      "core_tests": 89,
+      "preserved_core_tests": 89,
+      "smoke": {
+        "native_windows": true,
+        "native_markdown": true,
+        "models": 4,
+        "attachment_guards": true,
+        "messages": 2,
+        "draft_scope_guards": true,
+        "result": "PASS",
+        "real_engine": true,
+        "real_tls_chat": true,
+        "screenshots": 25,
+        "live_session_search": true,
+        "chat_settings_guards": true,
+        "request_receipt": true,
+        "search_scope_guards": true,
+        "providers": 2,
+        "chat_reading_guards": true,
+        "keyboard_picker_guards": true
+      },
+      "parity": {
+        "provider_form_feedback": true,
+        "native_composer": true,
+        "public_site_auto_read": true,
+        "kilo_no_automatic_inference": true,
+        "screenshots": 57,
+        "reduced_motion": true,
+        "chart_receipt_identity": true,
+        "provider_account_write_guards": true,
+        "comparison_receipts": true,
+        "chart_keyboard_selection": true,
+        "telemetry_trends": true,
+        "observation_archive": true,
+        "result": "PASS",
+        "native_intelligence": true,
+        "comparison_scope_guards": true,
+        "native_motion": true,
+        "workspace_sync_entry": true,
+        "adaptive_composer": true,
+        "account_checkin_scope": true,
+        "native_comparison": true,
+        "appearance_choices": true,
+        "price_scope_guards": true,
+        "stale_guards": true,
+        "wire_counts": {
+          "connector": 2,
+          "transcription": 1,
+          "speech": 1,
+          "image-edit": 1,
+          "images": 1,
+          "native-legacy": 1,
+          "native-current": 1,
+          "rerank": 1,
+          "native-dual": 1,
+          "embeddings": 1
+        },
+        "workspace_transfer_controls": true,
+        "connector_caller": true,
+        "provider_next_draft": true,
+        "kilo_factory_defaults": true,
+        "connection_actions": true,
+        "safe_references": true,
+        "read_only_no_inference": true,
+        "sidebar_toggle": true,
+        "manual_evidence": true,
+        "site_partial_retry": true,
+        "provider_window_restored": true,
+        "credential_restore_scope": true,
+        "saved_refresh_no_repost": true,
+        "checkin_retry_cancel": true,
+        "composer_focus": true,
+        "quota_scope_guards": true,
+        "batch_confirm_undo": true,
+        "knowledge_versions": true,
+        "retained_history": true,
+        "chart_export_exact": true,
+        "real_tls_media": true,
+        "provider_series_scope": true
+      },
+      "workspace_transfer": {
+        "pause_during_busy": true,
+        "no_inference": true,
+        "result": "PASS",
+        "outgoing_acked": 1,
+        "paused_progress_bytes": 28307,
+        "actual_keychain_restart": true,
+        "source_product_retained": true,
+        "same_transfer_after_restart": true,
+        "destination_models": 15
+      },
+      "research": {
+        "last_good_preserved": true,
+        "real_tls": true,
+        "reopen_same_run": true,
+        "concurrent_control_guard": true,
+        "no_inference": true,
+        "live_run_state": true,
+        "native_update_buttons": true,
+        "seven_exact_requests": true,
+        "saved_refresh_no_repost": true,
+        "result": "PASS",
+        "lost_ack_no_repost": true,
+        "screenshots": 8,
+        "wire": {
+          "held": false,
+          "controls": 3,
+          "telemetry": 0,
+          "resumes": 2,
+          "used": 7,
+          "second": 4,
+          "starts": 3,
+          "first": 3,
+          "direct_sync": 0,
+          "runs": 3
+        }
+      },
+      "research_resource": {
+        "app_rss_bytes": 95891456,
+        "engine_rss_bytes": 20774912,
+        "fixture_rss_bytes": 25415680,
+        "combined_rss_bytes": 141484032,
+        "samples": 18,
+        "method": "ps RSS for third standalone native launch, its owned packaged engine and separate synthetic TLS test fixture; original smoke/parity workloads and deadlines unchanged",
+        "app_exit_code": 0,
+        "owned_engine_exited": true,
+        "fixture_exit_code": 0
+      },
+      "aqua": {
+        "scope_and_draft_retained": true,
+        "four_bundled_artworks": true,
+        "classic_default_and_invalid_fallback": true,
+        "system_transparency": true,
+        "result": "PASS",
+        "system_reduced_transparency": true,
+        "no_inference_or_research": true,
+        "actual_settings_buttons": true,
+        "screenshots": 13,
+        "relaunch_preference_retained": true,
+        "images": [
+          {
+            "bytes": 135772,
+            "id": "kotoha",
+            "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282"
+          },
+          {
+            "id": "elaina",
+            "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6",
+            "bytes": 422004
+          },
+          {
+            "sha256": "f54666c7bb7714fa03919830d8404dd5dc5c37f12a4cd18c51353a34235c6eb0",
+            "bytes": 2363841,
+            "id": "kotoha-chibi"
+          },
+          {
+            "bytes": 2272459,
+            "sha256": "8be85b8f0db24f937576f6f6091e25cad560e4aecc64f0a08560b2cc0c52a415",
+            "id": "elaina-chibi"
+          }
+        ],
+        "same_original_bytes": true,
+        "transparency_control": "actual app toggle and separately launched system preference fixture",
+        "provider_form_retained": true,
+        "reduced_transparency": true
+      },
+      "aqua_resource": {
+        "app_rss_bytes": 152076288,
+        "engine_rss_bytes": 22220800,
+        "samples": 138,
+        "method": "three standalone packaged launches; exact artworks, actual app toggle and real system accessibility states",
+        "phases": [
+          {
+            "app_pid": 2442,
+            "engine_pid": 2531,
+            "exit": 0,
+            "system_transparency": false
+          },
+          {
+            "app_pid": 3114,
+            "engine_pid": 3119,
+            "exit": 0,
+            "system_transparency": false
+          },
+          {
+            "app_pid": 3285,
+            "engine_pid": 3290,
+            "exit": 0,
+            "system_transparency": true
+          }
+        ],
+        "result": "PASS",
+        "owned_engines_exited": true,
+        "system_fixture_restored": true
+      }
+    },
+    "linux_amd64": {
+      "schema": 38,
+      "files": 49,
+      "version": {
+        "commit": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+        "built_at": "2026-10-27T18:32:31Z",
+        "os": "linux",
+        "arch": "amd64",
+        "schema": 38
+      }
+    },
+    "linux_arm64": {
+      "schema": 38,
+      "files": 49,
+      "version": {
+        "commit": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+        "built_at": "2026-10-27T18:32:31Z",
+        "os": "linux",
+        "arch": "arm64",
+        "schema": 38
+      }
+    },
+    "actual_binary": {
+      "startup_seconds": 0.06122965600002317,
+      "first_members": 15,
+      "after_restart": 14,
+      "after_explicit_add": 14,
+      "empty": {
+        "telemetry": 0,
+        "sessions": 0,
+        "research_runs": 0
+      },
+      "secret_count": 0,
+      "install_ledgers": 1,
+      "parent_pipe_shutdown": "PASS"
+    },
+    "main": {
+      "sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+      "run": 39536090788,
+      "jobs": [
+        {
+          "id": 119016886469,
+          "name": "build",
+          "conclusion": "success",
+          "run_id": 39536090788,
+          "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+          "started_at": "2026-10-21T02:59:47Z",
+          "completed_at": "2026-10-21T03:05:13Z"
+        },
+        {
+          "id": 119016884592,
+          "name": "device-tests",
+          "conclusion": "success",
+          "run_id": 39536090788,
+          "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+          "started_at": "2026-10-21T03:12:55Z",
+          "completed_at": "2026-10-21T03:21:59Z"
+        }
+      ]
+    },
+    "frozen": {
+      "release_id": 420473654,
+      "tag": "699d4d57ff8264506c2b2f6e5eed0021327bf602",
+      "assets": [
+        [
+          665188178,
+          "ModelAtlas-macOS-Universal.zip",
+          19245844,
+          "sha256:bb4490b500bd11af56ba7a54fd1e6278b0579b40760dcb1e2eae40d9f3eec709"
+        ],
+        [
+          665188179,
+          "ModelAtlas-Android-preview.apk",
+          14177371,
+          "sha256:5a2c698915f345e42c1c36108495685d634f5535f61171aaebc747ad314cb8df"
+        ],
+        [
+          665188180,
+          "ModelAtlas-macOS-Universal.dmg",
+          22399249,
+          "sha256:1387e79894fa4bfdcf9924ed74a08746fd4ad70d41db069842acee71ed714ca7"
+        ],
+        [
+          665188182,
+          "RELEASE-MANIFEST.json",
+          9304,
+          "sha256:1624476118fe9aa318cd8100b7fda7cc76cf156e1f66b7fe56c9c6435b505e44"
+        ],
+        [
+          665188188,
+          "ModelAtlas-Android.json",
+          724,
+          "sha256:80221ef954bc06309d0e6ad00be2da0e785d008354390ca579b9b2c6c95d6216"
+        ],
+        [
+          665188203,
+          "RELEASE-NOTES.md",
+          5460,
+          "sha256:fc1c1129900d70b5ff3f3a7e3691679f0a4cfe9f7ee45452cded8d2a7341275d"
+        ],
+        [
+          665188207,
+          "SHA256SUMS.txt",
+          883,
+          "sha256:2c37dd98855fa93289ee8b90037ce2a4bd8300a9673e91e44ad12f171892e3e9"
+        ],
+        [
+          665188222,
+          "modelatlas-vps-linux-amd64.tar.gz",
+          6028488,
+          "sha256:f22b86d3fdc65603c464854e25df5c92fec92aef23f7c3244fb578c14af86ad4"
+        ],
+        [
+          665188224,
+          "modelatlas-vps-linux-amd64.tar.gz.sha256",
+          100,
+          "sha256:bd9b776a1c8a094d244245cf1d51abb9c8babd3033e4b4f96c0f9539c0e9dfde"
+        ],
+        [
+          665188225,
+          "modelatlas-vps-linux-arm64.tar.gz",
+          5583965,
+          "sha256:f6294bf4551c9ce50875fc5d8efc3769382d55aab6121b56ca17cc64bd99ef8a"
+        ],
+        [
+          665188231,
+          "modelatlas-vps-linux-arm64.tar.gz.sha256",
+          100,
+          "sha256:a8000802aa1b4ecc17ee38db2077ecbbedd440e3ba7688f8c63a96d9cb4f4a39"
+        ]
+      ]
+    },
+    "visual_review_required": [
+      "browser/aqua-background-elaina-390-light.png",
+      "browser/aqua-background-elaina-chibi-390-dark.png",
+      "browser/aqua-background-kotoha-390-light.png",
+      "browser/aqua-background-kotoha-chibi-1280-light.png",
+      "browser/aqua-model-detail-390-dark.png",
+      "browser/aqua-models-1280-light.png",
+      "browser/aqua-models-320-200-dark.png",
+      "browser/aqua-offline-390-light.png",
+      "browser/aqua-offline-draft-390-light.png",
+      "browser/aqua-playground-1280-light.png",
+      "browser/aqua-playground-390-light.png",
+      "browser/aqua-playground-390-saved.png",
+      "browser/aqua-playground-812-safe-dark.png",
+      "browser/aqua-provider-editor-375-200-light.png",
+      "browser/aqua-providers-390-light.png",
+      "browser/aqua-settings-390-dark.png",
+      "browser/connector-private-mapping-draft-1280-dark.png",
+      "browser/connector-private-mapping-draft-1280-light.png",
+      "browser/connector-private-mapping-draft-320-dark.png",
+      "browser/connector-private-mapping-draft-320-light.png",
+      "browser/connector-private-mapping-draft-375-dark.png",
+      "browser/connector-private-mapping-draft-375-light.png",
+      "browser/connector-private-mapping-fields-320-dark.png",
+      "browser/connector-private-mapping-fields-375-large-dark.png",
+      "browser/connector-private-mapping-group-375-light.png",
+      "browser/connector-private-mapping-pat-account-375-light.png",
+      "browser/connector-private-mapping-pat-draft-1280-dark.png",
+      "browser/connector-private-mapping-pat-undo-375-dark.png",
+      "browser/connector-private-mapping-runtime-last-good-1280-dark.png",
+      "browser/connector-private-mapping-source-375-light.png",
+      "browser/knowledge-evaluation-cost-375-200-light.png",
+      "browser/research-execution-1280-dark.png",
+      "browser/research-execution-375-last-good.png",
+      "browser/research-execution-320-200-dark.png",
+      "browser/research-execution-375-light.png",
+      "browser/research-history-detail-375-200-dark.png",
+      "browser/research-history-detail-390-dark.png",
+      "browser/research-history-last-good-390-dark.png",
+      "browser/research-history-list-1280-light.png",
+      "browser/research-history-list-320-200-dark.png",
+      "browser/research-history-list-390-light.png",
+      "browser/research-history-read-recovered-390-light.png",
+      "browser/research-history-lost-ack-390-light.png",
+      "browser/research-history-scope-1280-light.png",
+      "browser/research-history-scope-recovery-390-dark.png",
+      "browser/research-query-cost-1280-dark.png",
+      "browser/research-query-cost-320-200-dark.png",
+      "browser/research-query-cost-375-light.png",
+      "browser/workspace-chunks-complete-1280-light.png",
+      "browser/workspace-chunks-complete-375-dark.png",
+      "browser/workspace-chunks-paused-320-light-large.png",
+      "browser/workspace-chunks-paused-320-dark-large.png",
+      "browser/workspace-chunks-paused-375-dark-large.png",
+      "browser/workspace-chunks-paused-375-light-large.png",
+      "browser/workspace-chunks-ready-375-light.png",
+      "browser/workspace-chunks-uploading-375-dark.png",
+      "mac-arm64/52-kilo-defaults-light.png",
+      "mac-arm64/53-kilo-ready-dark.png",
+      "mac-arm64/54-workspace-transfer-light.png",
+      "mac-arm64/55-workspace-paused-light.png",
+      "mac-arm64/56-workspace-restarted-dark.png",
+      "mac-arm64/57-workspace-completed-dark.png",
+      "mac-arm64/research/01-aa-partial-light.png",
+      "mac-arm64/research/02-aa-partial-dark.png",
+      "mac-arm64/research/03-saved-read-failure-dark.png",
+      "mac-arm64/research/04-paused-dark.png",
+      "mac-arm64/research/05-lost-ack-dark.png",
+      "mac-arm64/research/06-aa-complete-dark.png",
+      "mac-arm64/research/07-services-aa-complete-light.png",
+      "mac-arm64/research/08-research-aa-complete-dark.png",
+      "mac-arm64/aqua/01-classic-invalid-preference-light.png",
+      "mac-arm64/aqua/02-kotoha-light.png",
+      "mac-arm64/aqua/03-elaina-light.png",
+      "mac-arm64/aqua/04-kotoha-chibi-light.png",
+      "mac-arm64/aqua/05-elaina-chibi-dark.png",
+      "mac-arm64/aqua/06-settings-four-choices-dark.png",
+      "mac-arm64/aqua/07-providers-light.png",
+      "mac-arm64/aqua/09-provider-form-retained-dark.png",
+      "mac-arm64/aqua/10-classic-retained-dark.png",
+      "mac-arm64/aqua/08-models-compact-dark.png",
+      "mac-arm64/aqua/11-relaunch-retained-dark.png",
+      "mac-arm64/aqua/12-reduced-transparency-light.png",
+      "mac-arm64/aqua/13-system-reduced-transparency-dark.png",
+      "mac-x86_64/52-kilo-defaults-light.png",
+      "mac-x86_64/53-kilo-ready-dark.png",
+      "mac-x86_64/54-workspace-transfer-light.png",
+      "mac-x86_64/55-workspace-paused-light.png",
+      "mac-x86_64/56-workspace-restarted-dark.png",
+      "mac-x86_64/57-workspace-completed-dark.png",
+      "mac-x86_64/research/01-aa-partial-light.png",
+      "mac-x86_64/research/02-aa-partial-dark.png",
+      "mac-x86_64/research/03-saved-read-failure-dark.png",
+      "mac-x86_64/research/04-paused-dark.png",
+      "mac-x86_64/research/05-lost-ack-dark.png",
+      "mac-x86_64/research/06-aa-complete-dark.png",
+      "mac-x86_64/research/07-services-aa-complete-light.png",
+      "mac-x86_64/research/08-research-aa-complete-dark.png",
+      "mac-x86_64/aqua/01-classic-invalid-preference-light.png",
+      "mac-x86_64/aqua/02-kotoha-light.png",
+      "mac-x86_64/aqua/03-elaina-light.png",
+      "mac-x86_64/aqua/04-kotoha-chibi-light.png",
+      "mac-x86_64/aqua/05-elaina-chibi-dark.png",
+      "mac-x86_64/aqua/06-settings-four-choices-dark.png",
+      "mac-x86_64/aqua/07-providers-light.png",
+      "mac-x86_64/aqua/08-models-compact-dark.png",
+      "mac-x86_64/aqua/09-provider-form-retained-dark.png",
+      "mac-x86_64/aqua/10-classic-retained-dark.png",
+      "mac-x86_64/aqua/11-relaunch-retained-dark.png",
+      "mac-x86_64/aqua/12-reduced-transparency-light.png",
+      "mac-x86_64/aqua/13-system-reduced-transparency-dark.png"
+    ],
+    "browser_suite": {
+      "result": "PASS",
+      "cases": 44,
+      "seconds": 249.313,
+      "deadline_seconds": 300,
+      "job": 122389265889
+    }
+  },
+  "go_case_events": {
+    "TestAccountCheckinRejectsMissingScopeWrongDateAndBadTimezone": "pass",
+    "TestCheckinCivilDateUsesLocalMidnightIncludingDST": "pass",
+    "TestAccountCheckinIsolatedIdempotentAndLegacyNeverCompletesAccounts": "pass",
+    "TestAccountCheckinNotificationUsesExactAccountAndDoesNotRepeat": "pass",
+    "TestAquaArtworkAuthenticationCacheAndRange": "pass",
+    "TestAccountCheckinMigrationPreservesLegacyHistoryAndEncryptedCredentials": "pass",
+    "TestAssistantRealToolsSharedReviewAndSecretBoundary": "pass",
+    "TestDesktopAccountCheckinNotificationsUseMachineDate": "pass",
+    "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery": "skip",
+    "TestAssistantInterruptedToolResumeDoesNotReplay": "pass",
+    "TestSpeechWAVRejectsUnplayableFormatAndIncompleteFrames": "pass",
+    "TestAssistantControlChangesUndoAndCriticalRefs": "pass",
+    "TestAssistantCancelClosesRealModelAndPreservesStatus": "pass",
+    "TestBrowserAuthenticityEvidenceReviewAndPersistentUndo": "skip",
+    "TestAuthenticityOlderPolicyKeepsHistoryWithoutComparisonAuthority": "pass",
+    "TestAuthenticityGeminiWireModeIsAComparisonCondition": "pass",
+    "TestAuthenticityReportReusesScopedTrafficWithoutSendingInference": "pass",
+    "TestAuthenticityEffectiveAnthropicVersionIsAComparisonCondition": "pass",
+    "TestAuthenticityReferenceCASStalenessCanonicalAndOriginGates": "pass",
+    "TestAuthenticityCostPrecisionAndUnknownsRemainSeparate": "pass",
+    "TestAuthenticityDoesNotPersistPromptsResponsesOrRawSecrets": "pass",
+    "TestAuthenticityReviewedReferenceComparisonAndPersistentUndo": "pass",
+    "TestAuthenticityIdempotencyHistoryPagingAndUnavailableDatabase": "pass",
+    "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution/1": "pass",
+    "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution/2": "pass",
+    "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution": "pass",
+    "TestAuthenticityRequiresExactConditionsAndMeaningfulReference": "pass",
+    "TestAuthenticitySchema25UpgradeAndSyncNeverCarryLocalAuthority": "pass",
+    "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/unattested": "pass",
+    "TestAuthenticityCaptureFailurePreservesAnswerAndRequestHistory": "pass",
+    "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/tampered": "pass",
+    "TestAuthenticityExactAccountKeyGroupAndOperationDoNotBorrowSamples": "pass",
+    "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/cancelled": "pass",
+    "TestAuthenticityResearchReportAndEvidenceUseBoundCredentialOrigin": "pass",
+    "TestBrowserResearchWorkflow": "skip",
+    "TestBrowserAssistantWorkflow": "skip",
+    "TestBrowserKnowledgeWorkflow": "skip",
+    "TestBrowserProtocolAndSpeechWorkflow": "skip",
+    "TestBrowserChatExperienceWorkflow": "skip",
+    "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/interrupted": "pass",
+    "TestConnectorDiscoveryCreatesEvidenceBackedDraftFromPublicSite": "pass",
+    "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/running": "pass",
+    "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/material": "pass",
+    "TestConnectorDiscoveryShapeOrUnitChangesKeepLastGoodAndCannotActivate": "pass",
+    "TestConnectorDiscoveryBoundedPathsOriginsRedirectAuthAndSecrets": "pass",
+    "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/config": "pass",
+    "TestConnectorDiscoveryRootScopeFixtureAndExplicitMetricUnits": "pass",
+    "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/origin": "pass",
+    "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence": "pass",
+    "TestConnectorDiscoveryLocalReceiptCurrentScopeAndFreshnessRequired": "pass",
+    "TestAuthenticityCredentialRotationAndLateOldTrafficStayIsolated": "pass",
+    "TestConnectorDiscoveryOpenAPIGetHintsFamilyAndCancelledWork": "pass",
+    "TestAuthenticityAssistantUsesSharedLocalSuiteWithoutActivation": "pass",
+    "TestConnectorDiscoveryAssistantUsesSharedPipelineAndWebBudget": "pass",
+    "TestAuthenticityReferenceExpiryCanonicalAndDuplicateOriginRequireNewReview": "pass",
+    "TestConnectorDiscoveryFixedFeeNeedsExplicitPerRequestUnit": "pass",
+    "TestBrowserConnectorMappingUnknownFieldsRecoveryRuntimeAndUndo": "skip",
+    "TestAuthenticityInFlightCredentialRotationDoesNotAttestCurrentRevision": "pass",
+    "TestConnectorMappingIdempotentRequestPreservesParentAndOriginalActive": "pass",
+    "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero/0": "pass",
+    "TestConnectorMappingRejectsGuessedUnitsScopePointersAndHiddenDuplicates": "pass",
+    "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero/0.000000100000000001": "pass",
+    "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero": "pass",
+    "TestBrowserProductionWorkflow": "skip",
+    "TestBrowserManagementWorkflow": "skip",
+    "TestBrowserOriginWorkflow": "skip",
+    "TestBrowserCatalogExperienceWorkflow": "skip",
+    "TestConnectorMappingChangedEvidenceAfterTestCannotActivate": "pass",
+    "TestConnectorMappingSnapshotMigrationAndLocalOnlyData": "pass",
+    "TestResearchCatalogEvidenceUsesWholeExactResponse": "pass",
+    "TestBrowserConnectorDiscoveryReviewAndPersistentRollback": "skip",
+    "TestConnectorMappingExpiredSampleNeedsNewDiscoveryButExistingVersionCanRetest": "pass",
+    "TestConnectorDiscoveryRequestIDIsDurableAndDoesNotRepeatHTTP": "pass",
+    "TestConnectorPrivateMappingPATKeepsAccountAuthorityAndExactCredits": "pass",
+    "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/no-scope": "pass",
+    "TestConnectorPrivateMappingAssistantCannotAuthorizeItsOwnRead": "pass",
+    "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/no-unit": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/auth": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/forbidden": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/redirect": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/malformed": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/oversize": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/trailing": "pass",
+    "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys": "pass",
+    "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/currency-conflict": "pass",
+    "TestConnectorPrivateMappingLateRotationAndDurableReplayKeepNoSample": "pass",
+    "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/account": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/scope": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/unit": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/group": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/duplicate": "pass",
+    "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood": "pass",
+    "TestBrowserConversationCreationWorkflow": "skip",
+    "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/wrong-group": "pass",
+    "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/invalid-numeric": "pass",
+    "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown": "pass",
+    "TestConversationCreationConcurrentRetriesAreAtomic": "pass",
+    "TestConnectorDiscoveryFixtureAndCredentialChangesBlockBeforeHTTP": "pass",
+    "TestConversationCreationRequestSurvivesReopenAndPreservesHistory": "pass",
+    "TestConnectorDiscoveryDoesNotCommitLateChangedScope": "pass",
+    "TestConversationCreationRejectsMalformedRequestIdentity": "pass",
+    "TestConnectorDiscoverySourceConflictsAndNewVersionsDoNotReplaceActive": "pass",
+    "TestConnectorDiscoveryAtomicDraftsAndFixtureFailure": "pass",
+    "TestConversationsSearchArchiveStaleEditAndCompleteExport": "pass",
+    "TestConnectorDiscoverySchema24UpgradeAndSyncDoNotCopyExecutionAuthority": "pass",
+    "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/duplicate-model": "pass",
+    "TestCustomProtocolRealTLSAndNativeTools/false": "pass",
+    "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/bound-origin": "pass",
+    "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/cooldown": "pass",
+    "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown": "pass",
+    "TestCustomProtocolRealTLSAndNativeTools/true": "pass",
+    "TestCustomProtocolRealTLSAndNativeTools": "pass",
+    "TestLocalDeploymentDoesNotInheritPublicPort": "pass",
+    "TestConnectorDiscoveryChangedActiveDefinitionNeedsNewReview": "pass",
+    "TestConnectorMappingQuotaZeroAndMissingRemainDistinct": "pass",
+    "TestConnectorMappingScopeRotationAndExpiredSamplesBlockWithoutHTTP": "pass",
+    "TestConnectorMappingFormalSavedSourceReviewRuntimeAndPersistentUndo": "pass",
+    "TestConnectorMappingStorageFailureAndAtomicReservationRollback": "pass",
+    "TestConnectorMappingConcurrentSameIntentCreatesOneVersion": "pass",
+    "TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo": "skip",
+    "TestConnectorPrivateMappingExplicitReadKeepsPublicAnonymousAndSecretsOut": "pass",
+    "TestConnectorPrivateMappingKeyGroupReviewRealUseAndUndo": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/unconfirmed": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/role": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/inference-pat": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/missing-pat": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/inference-as-pat": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/root": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/action": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/references": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/secret-path": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/not-member": "pass",
+    "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP": "pass",
+    "TestConnectorPrivateMappingStorageFailureRetainsUnknownReservation": "pass",
+    "TestDesktopDynamicLoopbackAndParentPipeLifetime": "pass",
+    "TestBrowserDetailWorkspaceWorkflow": "skip",
+    "TestBrowserKiloFactoryAnonymousChatPriceGuardAndExistingWorkspaceRecovery": "skip",
+    "TestLiveFactoryKiloDefaultProfileAndConversation": "skip",
+    "TestStandaloneProcessFootprint": "skip",
+    "TestNativeSpeechRejectsMalformedTruncationAndSecret": "pass",
+    "TestConnectorPrivateMappingOtherKeyCannotBorrowRuntimeOrActiveSlot": "pass",
+    "TestAssistantConfirmationUndo": "pass",
+    "TestConversationCreationSameRequestKeepsOneCommittedIdentity": "pass",
+    "TestRecipeVersionedRollback": "pass",
+    "TestConversationCreationRequestCannotBeReusedForAnotherScopeOrTitle": "pass",
+    "TestConversationCreationLegacyClientsStillCreateDistinctSessions": "pass",
+    "TestBrowserConversationsWorkflow": "skip",
+    "TestKnowledgeMeasuredTrialUsesFrozenVersionMonitorsAndRollsBackAfterRestart": "pass",
+    "TestReviewedOnboardingPersistsCustomProtocolAndNoSecretMetadata": "pass",
+    "TestCustomRejectsIncompleteAndUnsafeDefinitions": "pass",
+    "TestManualConversationSettingsPersistAndProtectAgent": "pass",
+    "TestKnowledgeRestoredVersionStartsNewMonitoringEpoch": "pass",
+    "TestKnowledgeEvaluationKeepsAgedHistoryAndExplainsChangedActiveSource": "pass",
+    "TestKnowledgeQualityAttributesSharedDiscoveryOnlyOnce": "pass",
+    "TestLiveKiloProviderDiscovery": "skip",
+    "TestBrowserMacParityWorkflow": "skip",
+    "TestFullHistorySQLStatisticsAndPagedRetention": "pass",
+    "TestSafeBackupV2RoundTripAndUnsafeAtomicRollback": "pass",
+    "TestHumanReadableAliasesPreserveRawModelIdentity": "pass",
+    "TestBoundedConversationDoesNotPreventReadingRetainedMessages": "pass",
+    "TestBulkModelReviewAtomicStaleGuardAndUndo": "pass",
+    "TestManualChatAndSpeechNeverSendAnotherStoredCredential": "pass",
+    "TestMediaRejectsEchoMalformedResultsAndUnconfirmedScope": "pass",
+    "TestMediaFlightBudgetAndExplicitCancel": "pass",
+    "TestBrowserMobileAlignmentWorkflow": "skip",
+    "TestBrowserModelViewsWorkflow": "skip",
+    "TestCertifiedPublicNominalPriceStillReachesSelectedOffer": "pass",
+    "TestNewApiPublicRejectsForeignModelAndMalformedMetrics": "pass",
+    "TestNewApiCapturedPublicResponses": "skip",
+    "TestNewApiUnknownVersionBlocksPrivilegedEndpoints": "pass",
+    "TestObservationArchiveFrozenPagesKeepAllRowsAndExactScope": "pass",
+    "TestObservationArchiveFailureDoesNotEraseOldGoodFact": "pass",
+    "TestOperationsWrongMasterKeyCorruptionAndEnvironmentAreSafe": "pass",
+    "TestMultipleOriginsKeepKeysSessionsPATsAndUndoIsolated": "pass",
+    "TestMultimodalHistoryRevalidationAndNoRawPersistence": "pass",
+    "TestCancelBlockedSocketExcludedFromUptime": "pass",
+    "TestCompleteHistoryZeroUsageAndNonStreamingTTFT": "pass",
+    "TestOnboardingReviewAtomicAndSecretIsolation": "pass",
+    "TestPricingExactArithmeticAndParserBounds": "pass",
+    "TestNewApiExactPricingAndMalformedPerfNeverPanics": "pass",
+    "TestQueuedEnrichmentHasRealProductionHTTPCaller": "pass",
+    "TestMetadataSearchLifecycleAndHistoryScopes": "pass",
+    "TestPlatformDeploymentProcess/occupied-port-exits-nonzero": "pass",
+    "TestPlatformDeploymentProcess/plaintext-origin": "pass",
+    "TestPlatformDeploymentProcess/origin-with-path": "pass",
+    "TestPlatformDeploymentProcess/relative-db": "pass",
+    "TestPlatformDeploymentProcess/short-admin-token": "pass",
+    "TestPlatformDeploymentProcess/invalid-port": "pass",
+    "TestPlatformDeploymentProcess/public-without-opt-in": "pass",
+    "TestPlatformDeploymentProcess/missing-origin": "pass",
+    "TestPlatformDeploymentProcess/origin-with-secret": "pass",
+    "TestPlatformDeploymentProcess/missing-master-key": "pass",
+    "TestPlatformDeploymentProcess/invalid-mode": "pass",
+    "TestPlatformDeploymentProcess": "pass",
+    "TestBrowserExtractionMeasuredTrialRecoveryMonitoringAndUndo": "skip",
+    "TestRegisteredMediaTransportsUseScopedTelemetry": "pass",
+    "TestTinyExactPricesNeverRoundToFree": "pass",
+    "TestGeminiSpeechActualWireAndAudio": "pass",
+    "TestEndpointPathEditCannotRewriteOldConversation": "pass",
+    "TestRealInferenceHTTPAndHistory": "pass",
+    "TestCustomCredentialEchoRemovedBeforeMetadataPersistence": "pass",
+    "TestTruncatedInferenceNeverCountsSuccess": "pass",
+    "TestBrowserKnowledgeEvaluationTrialAndPersistentRollback": "skip",
+    "TestResourcePoolsOnlyAttachSelectedAccountAndKey": "pass",
+    "TestAudioGuardsAndStreamingSecret": "pass",
+    "TestReflectionDoesNotRewardRepeatedEmptyHTTP200": "pass",
+    "TestRawAttachmentSecretBlockedBeforeHTTPHistoryOrCache": "pass",
+    "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/insufficient-and-new-data": "pass",
+    "TestPagedRequestExportBeyondUIWindow": "pass",
+    "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/changed-source-and-active-plan": "pass",
+    "TestRequestExportFreezesSelectionDuringConcurrentUpdates": "pass",
+    "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/measured-regression": "pass",
+    "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource": "pass",
+    "TestUnavailableIntelligenceDoesNotBlockInference": "pass",
+    "TestMissingTerminalReflectionRetriesFromDurableState": "pass",
+    "TestDeclarativeConnectorRealTestActivationSyncCatalogAndRollback": "pass",
+    "TestRequestJSONWireAndReplay": "pass",
+    "TestBrowserAAResearchPageRecoveryWorkflow": "skip",
+    "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/run": "pass",
+    "TestKnowledgeQualityAdmissionCancellationSyncAndV21Migration": "pass",
+    "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/integration": "pass",
+    "TestKnowledgeScheduledContinuationRetainsItsPlannedVersion": "pass",
+    "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/scheduled-day": "pass",
+    "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages": "pass",
+    "TestKnowledgeQualityRetainsFalseFreeCounterexamplesWithoutReward": "pass",
+    "TestLiveKiloAnonymousConversationToolsAndAssistant": "skip",
+    "TestBrowserMacAlignmentWorkflow": "skip",
+    "TestMetricHistoryUsesExactScopeWindowAndKeepsNonStreamingUnknown": "pass",
+    "TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal/UTC-midnight": "pass",
+    "TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal": "pass",
+    "TestScheduledSyncAndEvidenceBasedNotificationEpoch": "pass",
+    "TestAAResearchKeyChangedDuringLastPageCannotPublish": "pass",
+    "TestUnknownPriceCannotGenerateConfirmedChangeNotification": "pass",
+    "TestAAResearchDirectSyncExcludesWorkerAndCompletedReplayUsesNoHTTP": "pass",
+    "TestRankingAndTopFourCannotBorrowManualCanonicalIdentity": "pass",
+    "TestResearchConversationSecretRejectionDoesNotSpendBudget": "pass",
+    "TestMediaResultFormatsAndOperationWire": "pass",
+    "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/session_options": "pass",
+    "TestMediaHTTPErrorAndInputMismatch": "pass",
+    "TestBrowserModelConnectionsWorkflow": "skip",
+    "TestBrowserScopedModelPickerWorkflow": "skip",
+    "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/messages": "pass",
+    "TestNewApiPublicVersionZeroUsesSchemaWithoutSendingInferenceKey": "pass",
+    "TestNewApiFailureRetainsLastGoodAndReportsActualUpstreamStatus": "pass",
+    "TestMultilinePublicContentStillRedactsCredentialEchoes": "pass",
+    "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/telemetry": "pass",
+    "TestInferenceGatewayErrorKeepsUpstreamHTTPStatusAndReceipt": "pass",
+    "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/request_context": "pass",
+    "TestNewApiCredentialRolesAndProvenance": "pass",
+    "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/message_requests": "pass",
+    "TestObservationArchiveFiltersApplyBeforePagingAndExposeWholeRangeFacets": "pass",
+    "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/research_task_usage": "pass",
+    "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory": "pass",
+    "TestObservationArchiveRejectsInvalidOrForeignContinuations": "pass",
+    "TestResearchConversationWorkerRecoversWithoutExtraBudgetAndUsesNewEvidence": "pass",
+    "TestBrowserBraveResearchPageRecoveryWorkflow": "skip",
+    "TestBraveResearchRateLimitWaitsDurably": "pass",
+    "TestOperationsSnapshotPreflightAndRestorePreserveVaultAndHistory": "pass",
+    "TestBraveResearchOverlapCompleteReplayAndScopedReflection": "pass",
+    "TestBraveResearchBoundedRetriesAndSharedCooldown": "pass",
+    "TestAutomaticMigrationSnapshotAndFutureSchemaGuard": "pass",
+    "TestMaintenanceGateBlocksWritesSyncAndBackground": "pass",
+    "TestAssistantSafeReferenceCanPrepareReviewedSecondaryCredential": "pass",
+    "TestAssistantPublicSourceAndAnonymousOnboardingBoundary": "pass",
+    "TestBraveResearchCheckpointSyncIsReadOnlyAndV23UpgradeKeepsHistory": "pass",
+    "TestReportedTokenGroupCannotBorrowAnotherGroupOrCredentialEpoch": "pass",
+    "TestPDFAndAudioSignatureBoundaries": "pass",
+    "TestBraveResearchStorageFailuresRollbackAdmissionAndPage/admission": "pass",
+    "TestLmspeedBudgetProvenanceAndLastGood": "pass",
+    "TestBraveResearchStorageFailuresRollbackAdmissionAndPage/page": "pass",
+    "TestBraveResearchStorageFailuresRollbackAdmissionAndPage": "pass",
+    "TestCSRFAuthenticationOriginBoundary": "pass",
+    "TestBraveResearchLMSpeedSearchKeepsFrozenRegionAndPageLimit": "pass",
+    "TestBrowserResearchHistoryArchiveAndExactRecovery": "skip",
+    "TestResearchHistoryRejectsBadCursorsAndUnreadableRowsWithoutInventingEmptyHistory": "pass",
+    "TestCustomFieldsVaultAndCredentialRollback": "pass",
+    "TestResearchScheduleMetadataReportsSavedConcurrencyAndKeepsUnavailableUnknown": "pass",
+    "TestResearchMacNativeFixture": "skip",
+    "TestBrowserResearchOriginCooldownWorkflow": "skip",
+    "TestResearchOriginCooldownSharedAcrossTasksAndRuns": "pass",
+    "TestSafeBackupRoundTripDisablesCredentialsAndIsAtomic": "pass",
+    "TestStartupInterruptRecoveryAndSingleWriterLock": "pass",
+    "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened/90000": "pass",
+    "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened/9999999999999999999999999999999": "pass",
+    "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened": "pass",
+    "TestEmptyTelemetryUnknownAndLongLastGoodHistory": "pass",
+    "TestStaleAssistantUndoCannotRemoveLaterMembership": "pass",
+    "TestResearchOriginCooldownHistorySyncDoesNotControlPeer": "pass",
+    "TestBrowserPrivateResearchScheduleWorkflow": "skip",
+    "TestBrowserReflectionGeneratedQueryPairedTrialWorkflow": "skip",
+    "TestBrowserResearchRetryWorkflow": "skip",
+    "TestPublicResearchRetryAfterParsing/120": "pass",
+    "TestPublicResearchRetryAfterParsing/0": "pass",
+    "TestPublicResearchRetryAfterParsing/_90_": "pass",
+    "TestPublicResearchRetryAfterParsing/Wed,_21_Oct_2026_02:03:00_GMT": "pass",
+    "TestPublicResearchRetryAfterParsing/Wed,_21_Oct_2026_01:59:00_GMT": "pass",
+    "TestPublicResearchRetryAfterParsing/86400": "pass",
+    "TestPublicResearchRetryAfterParsing/86401": "pass",
+    "TestPublicResearchRetryAfterParsing/9999999999999999999999999999999": "pass",
+    "TestPublicResearchRetryAfterParsing/Thu,_22_Oct_2026_03:00:00_GMT": "pass",
+    "TestPublicResearchRetryAfterParsing/#00": "pass",
+    "TestPublicResearchRetryAfterParsing/-1": "pass",
+    "TestPublicResearchRetryAfterParsing/+1": "pass",
+    "TestPublicResearchRetryAfterParsing/1.5": "pass",
+    "TestPublicResearchRetryAfterParsing/3,_4": "pass",
+    "TestPublicResearchRetryAfterParsing/Bearer_must-not-be-persisted": "pass",
+    "TestPublicResearchRetryAfterParsing": "pass",
+    "TestMultipleEndpointProfilesKeepHistoryAndCapabilitiesSeparate": "pass",
+    "TestNativeProtocolsAndToolContinuation/CHAT_COMPLETIONS/false": "pass",
+    "TestPublicResearchRetryTLSBudgetsAndOtherTasksProceed": "pass",
+    "TestNativeProtocolsAndToolContinuation/CHAT_COMPLETIONS/true": "pass",
+    "TestPublicResearchRetryLimitAndPermanentFailures/Too_Many_Requests": "pass",
+    "TestNativeProtocolsAndToolContinuation/RESPONSES/false": "pass",
+    "TestPublicResearchRetryLimitAndPermanentFailures/Bad_Gateway": "pass",
+    "TestNativeProtocolsAndToolContinuation/RESPONSES/true": "pass",
+    "TestPublicResearchRetryLimitAndPermanentFailures/Service_Unavailable": "pass",
+    "TestNativeProtocolsAndToolContinuation/ANTHROPIC_MESSAGES/false": "pass",
+    "TestPublicResearchRetryLimitAndPermanentFailures/Gateway_Timeout": "pass",
+    "TestNativeProtocolsAndToolContinuation/ANTHROPIC_MESSAGES/true": "pass",
+    "TestPublicResearchRetryLimitAndPermanentFailures/Unauthorized": "pass",
+    "TestNativeProtocolsAndToolContinuation/GEMINI_NATIVE/false": "pass",
+    "TestPublicResearchRetryLimitAndPermanentFailures/Forbidden": "pass",
+    "TestNativeProtocolsAndToolContinuation/GEMINI_NATIVE/true": "pass",
+    "TestNativeProtocolsAndToolContinuation": "pass",
+    "TestNativeTruncationAndUnsupportedInput": "pass",
+    "TestPublicResearchRetryLimitAndPermanentFailures/Not_Found": "pass",
+    "TestSpeechVectorsThroughRealHTTP": "pass",
+    "TestBrowserProviderFormsWorkflow": "skip",
+    "TestPublicResearchBlocksSpecialAndEmbeddedPrivateAddresses": "pass",
+    "TestPublicResearchRetryLimitAndPermanentFailures/Internal_Server_Error": "pass",
+    "TestPublicResearchRetryLimitAndPermanentFailures": "pass",
+    "TestPublicSnapshotLastGoodFiltersBeforeLimit": "pass",
+    "TestPublicResearchRetryRestartPauseCancelAndRemainingBudget": "pass",
+    "TestRequestReceiptFreezesQuoteUsageQuotaAndActualCharge": "pass",
+    "TestPublicResearchRetryInspectKeepsLastGoodFacts": "pass",
+    "TestPublicFetchBoundaryAndEvidenceGate": "pass",
+    "TestExplicitRetryRetainsOneUserMessageAndAllAttempts": "pass",
+    "TestCostUnknownZeroCacheAndNativeUsageStayDistinct": "pass",
+    "TestBrowserRequestReceiptsWorkflow": "skip",
+    "TestNominalZeroDoesNotClaimKeyFreeAndExplicitConfirmationDoes": "pass",
+    "TestResearchResumeAfterInterruptedStoreAndReuseTraffic": "pass",
+    "TestResearchReflectionFrozenSourcesVersionedLearningAndUndo": "pass",
+    "TestResearchPauseClosesPublicSocketAndPreservesCharge": "pass",
+    "TestResearchDoesNotReuseEarlierCredentialVersion": "pass",
+    "TestRequestJSONSecretBoundaries": "pass",
+    "TestResearchMultilingualSearchUsesSafeIntegrationAndDeduplicatesProvider": "pass",
+    "TestAAFixedWindowAndIncompletePageKeepsLastGood": "pass",
+    "TestAAResearchResumesFailedPageAfterRestart": "pass",
+    "TestResearchScheduleDisabledDueDedupAndNoMembership": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/attempt-limit": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/long-wait": "pass",
+    "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC/global": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/key-change": "pass",
+    "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC/schedule": "pass",
+    "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/expired": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/version-change": "pass",
+    "TestResearchScheduleRestartIntentAndHumanPause": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/page-count-change": "pass",
+    "TestResearchScheduleAtomicDailyReservationsAcrossConcurrentTLS": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/duplicate": "pass",
+    "TestResearchScheduleSourceEditsRequireLocalReviewAndKeepHistory": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/secret-echo": "pass",
+    "TestResearchScheduleV18UpgradeKeepsManualHistoryAndDefaultsOff": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/malformed": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood/auth": "pass",
+    "TestAAResearchStopsWithoutReplacingLastGood": "pass",
+    "TestResearchScheduleWorkspaceSourceEditStopsExistingRound": "pass",
+    "TestAuthorizationAndSecretEncryption": "pass",
+    "TestScopedOptInAndHistoryPreservation": "pass",
+    "TestAAResearchCheckpointSyncIsHistoryOnlyAndUpgradeRetainsData": "pass",
+    "TestSQLiteDurability": "pass",
+    "TestUnknownNeverBecomesFree": "pass",
+    "TestBrowserSiteRecipePublicEvidenceReviewAtomicUseAndUndo": "skip",
+    "TestSyncHistoryPollingPageRetainsHistory": "pass",
+    "TestWorkspaceAndroidFixture": "skip",
+    "TestBrowserWorkspaceSyncWorkflow": "skip",
+    "TestAAResearchInFlightRestartsCannotResetPageAttemptLimit": "pass",
+    "TestResearchConversationConcurrentAdmissionCannotOverspendEitherMeter": "pass",
+    "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability/legacy": "pass",
+    "TestResearchConversationSentFailureOrCancellationRetainsAdmission/1": "pass",
+    "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability/invalid-scope": "pass",
+    "TestResearchConversationSentFailureOrCancellationRetainsAdmission/2": "pass",
+    "TestResearchConversationSentFailureOrCancellationRetainsAdmission": "pass",
+    "TestBraveResearchSlowInterruptedBodyBackoffStartsAfterFailure": "pass",
+    "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability/revoked": "pass",
+    "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/run": "pass",
+    "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/integration": "pass",
+    "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/scheduled-day": "pass",
+    "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap": "pass",
+    "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability/legacy-paused": "pass",
+    "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability": "pass",
+    "TestBrowserWorkspaceChunksResumePauseAndRetainPermanentHistory": "skip",
+    "TestBraveResearchFailureSemanticsAndOptionBounds/auth": "pass",
+    "TestBraveResearchFailureSemanticsAndOptionBounds/redirect": "pass",
+    "TestBraveResearchFailureSemanticsAndOptionBounds/schema": "pass",
+    "TestBraveResearchFailureSemanticsAndOptionBounds/bad-more": "pass",
+    "TestBraveResearchFailureSemanticsAndOptionBounds/missing-hint": "pass",
+    "TestBraveResearchFailureSemanticsAndOptionBounds/no-more": "pass",
+    "TestBraveResearchFailureSemanticsAndOptionBounds/legacy-one-page": "pass",
+    "TestBraveResearchFailureSemanticsAndOptionBounds/ten-page-limit": "pass",
+    "TestBraveResearchFailureSemanticsAndOptionBounds": "pass",
+    "TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation/UTC-midnight": "pass",
+    "TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation": "pass",
+    "TestBraveResearchLateKeyChangePauseAndCrashAttempts/rotate": "pass",
+    "TestBraveResearchLateKeyChangePauseAndCrashAttempts/pause": "pass",
+    "TestBraveResearchLateKeyChangePauseAndCrashAttempts/cancel": "pass",
+    "TestBraveResearchLateKeyChangePauseAndCrashAttempts/crash-bound": "pass",
+    "TestBraveResearchLateKeyChangePauseAndCrashAttempts": "pass",
+    "TestBraveResearchTransportRecoveryAndLongWait/transport": "pass",
+    "TestBraveResearchTransportRecoveryAndLongWait/long-wait": "pass",
+    "TestBraveResearchTransportRecoveryAndLongWait/expired": "pass",
+    "TestBraveResearchTransportRecoveryAndLongWait/secret-url": "pass",
+    "TestBraveResearchTransportRecoveryAndLongWait": "pass",
+    "TestBraveResearchPersistsPageAndResumesAfterRestart": "pass",
+    "TestResearchHistoryArchiveKeepsAllRowsStableAcrossInsertionsAndScheduleScopes": "pass",
+    "TestResearchHistorySchema37UpgradePreservesRecordsAndUsesBoundedOrderedIndex": "pass",
+    "TestBrowserResearchInferenceDailyBudgetWorkflow": "skip",
+    "TestResearchOriginCooldownCanonicalScopeAndLateSuccess": "pass",
+    "TestResearchOriginCooldownInFlightSuccessCannotClearLaterFailure": "pass",
+    "TestResearchOriginCooldownSchedulePauseCancelAndNoBudgetCharge": "pass",
+    "TestResearchOriginCooldownV19UpgradeAndUnavailableStore": "pass",
+    "TestBrowserResearchProgressiveWorkflow": "skip",
+    "TestPublicResearchRetryScheduleContinuationRetainsAllowance/UTC-midnight": "pass",
+    "TestPublicResearchRetryScheduleContinuationRetainsAllowance": "pass",
+    "TestPublicResearchRetryLongWaitAndPrivateTasksNeverAutoRetry": "pass",
+    "TestPublicResearchRetryHistorySyncNeverActivatesPeer": "pass",
+    "TestPublicResearchRetryInterruptedLimitRetainsHistory": "pass",
+    "TestResearchRunLookupKeepsExactOlderRecordAndScheduleScope": "pass",
+    "TestWorkspaceChunkLargeRecordResumeRestartAndLostFinishReceipt": "pass",
+    "TestResearchSourceRunnerBudgetReviewAndNoImplicitMembership": "pass",
+    "TestAALatestCompleteRankingAndExpiry": "pass",
+    "TestBrowserResearchScheduleWorkflow": "skip",
+    "TestWorkspaceChunkEncryptedSecretScopeAndAtomicRollback": "pass",
+    "TestResearchScheduleDisableCancelsLiveTLSAndProtectsOtherEntryPoint": "pass",
+    "TestResearchScheduleWorkspaceHistoryNeverResumesAndDefinitionsStayLocal": "pass",
+    "TestResearchScheduleBoundsRevisionsAndPrivateInferenceRejected": "pass",
+    "TestResearchScheduleRoundLimitContinuesRemainingTasksWithoutStarvation": "pass",
+    "TestResearchScheduleUsesOnlySelectedLanguagesAndCurrentApprovedKnowledge": "pass",
+    "TestResearchScheduleIntegrationAdmissionWaitDoesNotSpin": "pass",
+    "TestResearchScheduleOwningPeerSyncAcknowledgementPreservesLocalIntent": "pass",
+    "TestCatalogSyncFailurePreservesLastGood": "pass",
+    "TestUnimplementedGroupIsRefusedBeforeAnyRequest": "pass",
+    "TestResearchManualEvidenceCannotForgeVerifiedQuota": "pass",
+    "TestProtectedResponsiveAssets": "pass",
+    "TestSessionFlightIsolationAndStableOrder": "pass",
+    "TestBrowserSystemStatusWorkflow": "skip",
+    "TestSystemdDeploymentLifecycle": "skip",
+    "TestWorkspaceChunkExplicitResetRetainsOfflineProductAndSecret": "pass",
+    "TestWorkspaceChunkMigrationPreservesOldPeerVaultAndTakesActualV36Snapshot": "pass",
+    "TestWorkspaceChunkLargeConflictPreviewKeepsFullCASAndHistory": "pass",
+    "TestWorkspaceChunkRejectsCorruptionIdentityAndScopeBeforeApply": "pass",
+    "TestWorkspaceChunkBoundedEncodingAndLegacyCanonicalBytes": "pass",
+    "TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork/metadata-only": "pass",
+    "TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork/with-secrets": "pass",
+    "TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork": "pass",
+    "TestBrowserWorkspaceRecoveryWorkflow": "skip",
+    "TestWorkspacePairingSingleUseExpiryAndDeviceRevocation": "pass",
+    "TestWorkspaceMetadataOnlyNeverTransfersSecretAndDoesNotLoop": "pass",
+    "TestWorkspaceChunkFormalCallerLargeHistoryAndLostAcknowledgement": "pass",
+    "TestWorkspaceRotationLargeIntegersAndRemoteConflictChoice": "pass",
+    "TestBrowserWorkspaceWorkflow": "skip",
+    "TestExtractionReviewRotationRaceKeepsActivationAtomic": "pass",
+    "TestResearchProgressiveWrongAnswerIsEvidenceWithoutAutomaticRetry": "pass",
+    "TestWorkspaceChunkCallerCancellationPauseAndConcurrentEdit": "pass",
+    "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/research_quota_pool_admissions": "pass",
+    "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/messages": "pass",
+    "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/request_context": "pass",
+    "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation": "pass",
+    "TestSiteRecipeApprovedReadersContinueAfterDraftAdmissionExpires": "pass",
+    "TestWorkspaceManualSyncJoinsRealBackgroundSyncAndCanceledWaiterDoesNotConsumeLock": "pass",
+    "TestSiteRecipeReviewCannotBorrowChangedTestsKeySourceOrDefinition": "pass",
+    "TestSiteRecipePublicEvidenceGeneratesDraftAndRequiresActualRuleTests": "pass",
+    "TestWorkspaceRealTLSBidirectionalSecretsHistoryAndTombstone": "pass",
+    "TestSiteRecipeLocalExecutionAuthorityDoesNotTravelWithHistory": "pass",
+    "TestSiteRecipeCatalogReadFailureKeepsLastGoodWithoutAnotherEndpoint": "pass",
+    "TestSiteFamilySourceConstantsStayPassiveBoundedAndIndependentlyAttributed": "pass",
+    "TestWorkspaceOfflineConflictKeepsBothAndExplicitLocalWins": "pass",
+    "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume/1": "pass",
+    "TestExtractionDifferentValidFactsCannotQualifyAsImprovement": "pass",
+    "TestResearchExecutionPolicyCASPersistsLocallyAndRejectsUnknownAuthority": "pass",
+    "TestSiteRecipeBindingReadFailureAndExplicitLegacyRollback": "pass",
+    "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume/2": "pass",
+    "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/OUTPUT_ENVELOPE": "pass",
+    "TestResearchResourceBudgetUsesSameUTCAdmissionDayAtMidnight": "pass",
+    "TestResearchProgressiveAdmissionRechecksScopeInsideTransaction": "pass",
+    "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/USD": "pass",
+    "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-complete": "pass",
+    "TestResearchPrivateScheduleSharesOneUTCAdmissionDay": "pass",
+    "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/invalid-cost-sticky": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-partial": "pass",
+    "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/DB": "pass",
+    "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic": "pass",
+    "TestResearchPrivateScheduleDisableCancelsFlightAndKeepsAdmission": "pass",
+    "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/truncated-larger-report": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent": "pass",
+    "TestResearchProgressivePrivateRoundCapCarriesUnadmittedProbe": "pass",
+    "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/truncated-smaller-report": "pass",
+    "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-negative": "pass",
+    "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/TOKENS": "pass",
+    "TestResearchExecutionPolicyFaultsStopWorkWithoutChangingThePreference": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent-reasoning": "pass",
+    "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/USD": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent-cache": "pass",
+    "TestResearchPrivateScheduleLocalAuthorityAndMigration": "pass",
+    "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/DB": "pass",
+    "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/responses-exact-int64": "pass",
+    "TestResearchPrivateScheduleFormalEntry": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-complete": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-inconsistent-tool-prompt": "pass",
+    "TestResearchInferenceDailyBudgetStableScopeRotationAndUTCDay": "pass",
+    "TestResearchInferenceDailyBudgetPaginationAndImmutablePolicyHistory": "pass",
+    "TestResearchQuotaPoolLocalAuthorityMigrationAndPagedHistory": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-partial": "pass",
+    "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/research_inference_admissions": "pass",
+    "TestResearchExecutionScheduledSlotsPreserveDedupResumeAndDailyBudget": "pass",
+    "TestResearchInferenceDailyBudgetFormalSettingsEntry": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/anthropic-cache-complete": "pass",
+    "TestResearchExecutionParallelPrivateRunsStillShareCredentialBudget": "pass",
+    "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending/ENGINE": "pass",
+    "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/messages": "pass",
+    "TestResearchExecutionCancellationAndRestartKeepOtherRunAndExactReceipts": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/anthropic-cache-missing": "pass",
+    "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete": "pass",
+    "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/telemetry": "pass",
+    "TestFactoryKiloInstallIsAtomicAndCannotOverwriteAnExistingProfile": "pass",
+    "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending/CREDENTIAL": "pass",
+    "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending": "pass",
+    "TestResearchProgressiveDoesNotReuseChangedRequestConfiguration": "pass",
+    "TestResearchCostUnknownFailureCannotBecomeMeasuredSavings": "pass",
+    "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection": "pass",
+    "TestResearchPrivateScheduleCannotBorrowAccountPATOrAnotherKey": "pass",
+    "TestReflectionQueryDoesNotBorrowDifferentCountryOrPageScope": "pass",
+    "TestResearchCostReplayKeepsLegacyUnknownAndImmutableTaskCoverage": "pass",
+    "TestResearchPrivateScheduleInterruptedInferenceNeverAutoReplays": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/paid": "pass",
+    "TestResearchPrivateScheduleApprovalHistoryIsPagedAndAtomic": "pass",
+    "TestFactoryKiloResearchCatalogBudgetRejectionAndExplicitResume": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/extra-fee": "pass",
+    "TestFactoryKiloActualEngineAnonymousPriceCheckAndPersistentTelemetry": "pass",
+    "TestResearchPrivateScheduleReviewRejectsRotationRaceAndPreservesScope": "pass",
+    "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn/false": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/oversized-price": "pass",
+    "TestResearchQuotaPoolMembershipRetainsSpendAndCountsBeforeAttachment": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/unpriced": "pass",
+    "TestResearchPrivateScheduleExplicitApprovalAndDailyStop": "pass",
+    "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn/true": "pass",
+    "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn": "pass",
+    "TestSiteRecipeReceiptReadFailureIsUnavailableWithoutPartialWrites": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/missing": "pass",
+    "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart/1": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/duplicate": "pass",
+    "TestSiteRecipeCancelledRuleKeepsPartialResultsAndActualAdmission": "pass",
+    "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart/2": "pass",
+    "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/expired": "pass",
+    "TestSiteRecipeManualSettingsCannotRemoveGroupScopeApproval": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/auth": "pass",
+    "TestSiteRecipeAtomicActivationAndUndoFailuresKeepWholeGroup": "pass",
+    "TestResearchExecutionDefaultAndFourTaskBatchRemainBounded/1": "pass",
+    "TestResearchInferenceDailyBudgetWorkerWaitExplicitResumeAndTrafficReuse": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/offline": "pass",
+    "TestResearchInferenceDailyBudgetLocalOnlySyncBackupAndMigration": "pass",
+    "TestSiteRecipeSchema32SnapshotCapturesOnlyCurrentLegacyApproval": "pass",
+    "TestResearchExecutionDefaultAndFourTaskBatchRemainBounded/4": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/malformed": "pass",
+    "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest": "pass",
+    "TestResearchExecutionDefaultAndFourTaskBatchRemainBounded": "pass",
+    "TestResearchProgressiveRealProbesAndZeroHTTPReuse": "pass",
+    "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns/ENGINE": "pass",
+    "TestSiteFamilyReferencesRejectSecretsOriginsAndUnboundedPaths": "pass",
+    "TestSiteRecipeCompositeReviewActualCallerAndPersistentUndo": "pass",
+    "TestResearchProgressiveObservationReadFailureDoesNotSpend": "pass",
+    "TestSiteRecipeActiveDefinitionCannotBorrowEarlierApproval": "pass",
+    "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/research_resource_admissions": "pass",
+    "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns/CREDENTIAL": "pass",
+    "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns": "pass",
+    "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation/TOKENS": "pass",
+    "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/messages": "pass",
+    "TestResearchResourceBudgetExactReportedSettlementZeroOverrunAndRotation": "pass",
+    "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/custom_scopes": "pass",
+    "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation/USD": "pass",
+    "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation": "pass",
+    "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/telemetry": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/missing-explicit-cap": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/unknown-field": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/negative": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/fractional-token": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/zero-reservation": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/zero-money-reservation": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/nonfinite-money": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/numeric-money": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/negative-money": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/too-large": "pass",
+    "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites": "pass",
+    "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/legacy_unknown": "pass",
+    "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/settlement-retains-reservation": "pass",
+    "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/pool_output_envelope": "pass",
+    "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope": "pass",
+    "TestResearchResourceBudgetFormalSettingsAndUnknownReservation": "pass",
+    "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/policy-and-journal": "pass",
+    "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements": "pass",
+    "TestQueryComparisonRealRegressionAndStaleDatasetCannotActivate": "pass",
+    "TestQueryComparisonFixedBudgetCancelPauseAndRestart": "pass",
+    "TestResearchQuotaPoolConcurrentInFlightKeys": "pass",
+    "TestResearchProgressiveForeignMetadataIsNotLocalTraffic": "pass",
+    "TestQueryGenerationAndComparisonStorageFaultsStayAtomicAndLocal": "pass",
+    "TestQueryComparisonMeasuredTrialNextRunMonitorAndPersistentUndo": "pass",
+    "TestResearchQuotaPoolAccountAcrossKeysRotationRestartAndDay": "pass",
+    "TestResearchProgressiveTaskPayloadCannotAuthorizeDeeperWork": "pass",
+    "TestResearchProgressivePlannedConnectionChangeStopsBeforeHTTP": "pass",
+    "TestResearchQuotaPoolExactSettlementAcrossKeys": "pass",
+    "TestReflectionQueryGenerationLocalEvidenceIdempotenceAndRevision": "pass",
+    "TestResearchProgressiveCancelRetainsAdmissionAndUngradedObservation": "pass",
+    "TestResearchQuotaPoolFormalEntry": "pass",
+    "TestResearchResourceBudgetLocalAuthorityMigrationAndPagedHistory": "pass",
+    "TestResearchExecutionParallelRunsKeepEachRunSequentialAndReceiptsScoped": "pass",
+    "TestResearchProgressiveInterruptedPrivateDepthNeverAutomaticallyReplays": "pass",
+    "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/country": "pass",
+    "TestExtractionSchema34UpgradeKeepsExactOriginalDataAndConsistentSnapshot": "pass",
+    "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/options": "pass",
+    "TestResearchCostTLSReceiptsStayExactScopedAndSeparateFromAllocations": "pass",
+    "TestResearchCostPublicComparisonDoesNotTurnNoInferenceIntoFree": "pass",
+    "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference/real-TLS-cancel": "pass",
+    "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/probe": "pass",
+    "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval": "pass",
+    "TestQueryComparisonLocalAuthoritySyncPortableAndSchema31Snapshot": "pass",
+    "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference/catalog-client-timeout": "pass",
+    "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference": "pass",
+    "TestFactoryKiloSchema33UpgradeDoesNotChangeExistingModelsOrPreferences": "pass",
+    "TestQueryComparisonNoGainRegressionStaleAndForeignHistory": "pass",
+    "TestExtractionLatestNegativeMeasurementCannotBorrowOldGreenReceipt": "pass",
+    "TestResearchProgressiveDailyStopAndExplicitRecovery": "pass",
+    "TestFactoryKiloFirstStartExistingWorkspaceAndPersistentRemoval": "pass",
+    "TestExtractionReviewedComparisonProductionBatchAndPersistentUndo": "pass",
+    "TestResearchBudgetFixtureIsolationAcrossPoliciesClocksAndRestart": "pass",
+    "TestFactoryKiloOfflineInstallCreatesUsableAnonymousSelections": "pass",
+    "TestExtractionLocalBudgetRefusalDoesNotDegradeOrDisableTrial": "pass",
+    "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/receipt": "pass",
+    "TestExtractionStaleUndoAndAtomicBindingFailureKeepWholeCurrentPlan": "pass",
+    "TestExtractionCancellationRetainsActualAdmissionWithoutModelFailure": "pass",
+    "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/rule": "pass",
+    "TestExtractionStorageFailureIsNotReclassifiedAsChangedReview": "pass",
+    "TestExtractionFailureSharesOneAttemptKeepsLastGoodAndAutoUndoIsEpochBound": "pass",
+    "TestExtractionIntentRecoveryDoesNotRepeatProposalOrComparisonHTTP": "pass",
+    "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/binding": "pass",
+    "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP": "pass",
+    "TestExtractionInterruptedComparisonAndBatchStayUnknownWithoutAutomaticHTTP": "pass",
+    "TestExtractionChangedKeyBlocksComparisonAndProductionWithoutLosingHistory": "pass",
+    "TestResearchProgressiveCandidateRevalidationUsesOnlyFreshLocalReceipt": "pass",
+    "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation/connection": "pass",
+    "TestQueryComparisonExplicitAtomicReviewRetryAndKeyRace": "pass",
+    "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation/allocation": "pass",
+    "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation": "pass",
+    "TestResearchProgressiveTokenPrecisionAndPagedImmutableHistory": "pass",
+    "TestResearchProgressiveOversizeCompletePlanIsRejectedBeforePartialEnqueue": "pass",
+    "TestResearchProgressiveLocalAuthoritySyncPortableAndSchema30Upgrade": "pass"
+  },
+  "direct_downloads": [
+    {
+      "id": 12760668357,
+      "name": "ModelAtlas-macOS-Universal",
+      "bytes": 69037176,
+      "sha256": "21822c41b903488892642c49e92dca9ce2350bc2f315472fbf08090c2e812cbf",
+      "crc": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "run": 40560891180
+    },
+    {
+      "id": 12762275179,
+      "name": "modelatlas-vps-linux-amd64",
+      "bytes": 20541327,
+      "sha256": "aeb88daf6f419ea3b90c0c1d33718f9be613753b0d130412ae521dcaa3ec1738",
+      "crc": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "run": 40560891243
+    },
+    {
+      "id": 12761546384,
+      "name": "modelatlas-vps-browser",
+      "bytes": 47870357,
+      "sha256": "56a793b3db6119d8f615d70455875ede002747e540d5960ce3d976896bf3fd7c",
+      "crc": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "run": 40560891243
+    },
+    {
+      "id": 12760791717,
+      "name": "modelatlas-vps-linux-arm64",
+      "bytes": 19580377,
+      "sha256": "e4eeb4743e5d051e5a9dc3d1ce9d791d6f7451bca713df46ce5ed2b56d7f4f02",
+      "crc": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "run": 40560891243
+    },
+    {
+      "id": 12760152921,
+      "name": "modelatlas-debug-and-reports",
+      "bytes": 17349203,
+      "sha256": "cb8a59b20daae07b1ed6041e64314129235d0d13829555a6971928a8d4fc772e",
+      "crc": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "run": 40560891239
+    },
+    {
+      "id": 12761836989,
+      "name": "ModelAtlas-macOS-QA-arm64",
+      "bytes": 11879316,
+      "sha256": "d768f0debbbefa256e452b3b15cf290b2f9aade7511699cfc38bbf41bdd1e12b",
+      "crc": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "run": 40560891180
+    },
+    {
+      "id": 12762141762,
+      "name": "modelatlas-vps-footprint",
+      "bytes": 18171,
+      "sha256": "732f8733d59ca935c4de0f8c50c472c8ec3399556c58d647524cf7ab49d224c1",
+      "crc": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "run": 40560891243
+    },
+    {
+      "id": 12760113843,
+      "name": "modelatlas-device-test-reports",
+      "bytes": 1259640,
+      "sha256": "001864048949053c5b85f15ba26aa71a13981a03450912db1b5d6899443f1b4a",
+      "crc": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "run": 40560891239
+    },
+    {
+      "id": 12760868666,
+      "name": "ModelAtlas-macOS-QA-x86_64",
+      "bytes": 12571807,
+      "sha256": "458fc1f23a1c56cb2a8f54a5117236f16af0765476635fb1f21a3ef3c39fcade",
+      "crc": "PASS",
+      "source": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+      "run": 40560891180
+    }
+  ],
+  "root_physical_inspections": {
+    "ModelAtlas-macOS-Universal": {
+      "exact_original_artworks": [
+        {
+          "id": "kotoha",
+          "file": "aqua-kotoha-v1.jpg",
+          "bytes": 135772,
+          "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282",
+          "origin": "same user-selected original file as accepted VPS appearance; original chibi PNG retained for macOS 12 compatibility"
+        },
+        {
+          "id": "elaina",
+          "file": "aqua-elaina-v1.jpg",
+          "bytes": 422004,
+          "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6",
+          "origin": "same user-selected original file as accepted VPS appearance; original chibi PNG retained for macOS 12 compatibility"
+        },
+        {
+          "id": "kotoha-chibi",
+          "file": "aqua-kotoha-chibi-v1.png",
+          "bytes": 2363841,
+          "sha256": "f54666c7bb7714fa03919830d8404dd5dc5c37f12a4cd18c51353a34235c6eb0",
+          "origin": "same user-selected original file as accepted VPS appearance; original chibi PNG retained for macOS 12 compatibility"
+        },
+        {
+          "id": "elaina-chibi",
+          "file": "aqua-elaina-chibi-v1.png",
+          "bytes": 2272459,
+          "sha256": "8be85b8f0db24f937576f6f6091e25cad560e4aecc64f0a08560b2cc0c52a415",
+          "origin": "same user-selected original file as accepted VPS appearance; original chibi PNG retained for macOS 12 compatibility"
+        }
+      ],
+      "universal_binaries": [
+        "ModelAtlas",
+        "ModelAtlasEngine"
+      ]
+    },
+    "modelatlas-vps-browser": {
+      "png": 557,
+      "fully_decoded": true
+    },
+    "modelatlas-debug-and-reports": {
+      "core_tests": 594,
+      "app": {
+        "tests": 423,
+        "failures": 0,
+        "ignored": 0
+      },
+      "factory_asset": "EXACT_MATCH"
+    },
+    "ModelAtlas-macOS-QA-arm64": {
+      "png": 117,
+      "fully_decoded": true,
+      "core_tests": 89,
+      "report": {
+        "result": "PASS",
+        "relaunch_preference_retained": true,
+        "same_original_bytes": true,
+        "scope_and_draft_retained": true,
+        "provider_form_retained": true,
+        "transparency_control": "actual app toggle and separately launched system preference fixture",
+        "system_transparency": true,
+        "no_inference_or_research": true,
+        "system_reduced_transparency": true,
+        "screenshots": 13,
+        "actual_settings_buttons": true,
+        "classic_default_and_invalid_fallback": true,
+        "images": [
+          {
+            "id": "kotoha",
+            "bytes": 135772,
+            "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282"
+          },
+          {
+            "id": "elaina",
+            "bytes": 422004,
+            "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6"
+          },
+          {
+            "id": "kotoha-chibi",
+            "sha256": "f54666c7bb7714fa03919830d8404dd5dc5c37f12a4cd18c51353a34235c6eb0",
+            "bytes": 2363841
+          },
+          {
+            "sha256": "8be85b8f0db24f937576f6f6091e25cad560e4aecc64f0a08560b2cc0c52a415",
+            "bytes": 2272459,
+            "id": "elaina-chibi"
+          }
+        ],
+        "reduced_transparency": true,
+        "four_bundled_artworks": true
+      },
+      "fixture": {
+        "before": {
+          "present": true,
+          "value": true
+        },
+        "requested": [
+          false,
+          false,
+          true
+        ],
+        "observed": [
+          false,
+          false,
+          true
+        ],
+        "restored": true,
+        "after": {
+          "present": true,
+          "value": true
+        }
+      },
+      "footprint": {
+        "app_rss_bytes": 201031680,
+        "engine_rss_bytes": 27377664,
+        "samples": 82,
+        "method": "three standalone packaged launches; exact artworks, actual app toggle and real system accessibility states",
+        "phases": [
+          {
+            "app_pid": 1714,
+            "engine_pid": 1753,
+            "exit": 0,
+            "system_transparency": false
+          },
+          {
+            "app_pid": 2001,
+            "engine_pid": 2003,
+            "exit": 0,
+            "system_transparency": false
+          },
+          {
+            "app_pid": 2038,
+            "engine_pid": 2117,
+            "exit": 0,
+            "system_transparency": true
+          }
+        ],
+        "result": "PASS",
+        "owned_engines_exited": true,
+        "system_fixture_restored": true
+      }
+    },
+    "modelatlas-vps-footprint": {
+      "binary_bytes": 19734690,
+      "catalog_http": 4,
+      "chat_peak_bytes": 34910208,
+      "chat_rss_bytes": 34639872,
+      "export_messages": 11000,
+      "export_peak_bytes": 211427328,
+      "export_requests": 100008,
+      "export_rss_bytes": 37961728,
+      "gomemlimit_bytes": 201326592,
+      "idle_rss_bytes": 29163520,
+      "image_peak_bytes": 211427328,
+      "image_pixels_each": 4194304,
+      "image_rss_bytes": 107188224,
+      "long_context_bytes_each": 32505856,
+      "long_context_http": 4,
+      "long_context_peak_bytes": 168513536,
+      "long_context_rss_bytes": 168513536,
+      "media_http": 8,
+      "peak_rss_bytes": 211427328,
+      "profile": "100000 retained samples/full SQL percentiles; 4 TLS chats + 4 simultaneous full 31-MiB contexts; retained 11000-message and full request exports; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each",
+      "research_peak_bytes": 211427328,
+      "research_rss_bytes": 37830656,
+      "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser",
+      "rss_target_bytes": 536870912,
+      "speech_bytes_each": 4194304,
+      "speech_peak_bytes": 211427328,
+      "speech_rss_bytes": 115953664,
+      "sqlite_bytes": 163364864,
+      "warm_rss_bytes": 115953664
+    },
+    "modelatlas-device-test-reports": {
+      "tests": 996,
+      "failures": 0,
+      "skipped": 5,
+      "runtime": {
+        "expected_max_heap_bytes": 536870912,
+        "max_heap_bytes": 536870912,
+        "pid": 4800,
+        "stages": [
+          "start",
+          "finish"
+        ]
+      }
+    },
+    "ModelAtlas-macOS-QA-x86_64": {
+      "png": 117,
+      "fully_decoded": true,
+      "core_tests": 89,
+      "report": {
+        "scope_and_draft_retained": true,
+        "four_bundled_artworks": true,
+        "classic_default_and_invalid_fallback": true,
+        "system_transparency": true,
+        "result": "PASS",
+        "system_reduced_transparency": true,
+        "no_inference_or_research": true,
+        "actual_settings_buttons": true,
+        "screenshots": 13,
+        "relaunch_preference_retained": true,
+        "images": [
+          {
+            "bytes": 135772,
+            "id": "kotoha",
+            "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282"
+          },
+          {
+            "id": "elaina",
+            "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6",
+            "bytes": 422004
+          },
+          {
+            "sha256": "f54666c7bb7714fa03919830d8404dd5dc5c37f12a4cd18c51353a34235c6eb0",
+            "bytes": 2363841,
+            "id": "kotoha-chibi"
+          },
+          {
+            "bytes": 2272459,
+            "sha256": "8be85b8f0db24f937576f6f6091e25cad560e4aecc64f0a08560b2cc0c52a415",
+            "id": "elaina-chibi"
+          }
+        ],
+        "same_original_bytes": true,
+        "transparency_control": "actual app toggle and separately launched system preference fixture",
+        "provider_form_retained": true,
+        "reduced_transparency": true
+      },
+      "fixture": {
+        "before": {
+          "present": true,
+          "value": true
+        },
+        "requested": [
+          false,
+          false,
+          true
+        ],
+        "observed": [
+          false,
+          false,
+          true
+        ],
+        "restored": true,
+        "after": {
+          "present": true,
+          "value": true
+        }
+      },
+      "footprint": {
+        "app_rss_bytes": 152076288,
+        "engine_rss_bytes": 22220800,
+        "samples": 138,
+        "method": "three standalone packaged launches; exact artworks, actual app toggle and real system accessibility states",
+        "phases": [
+          {
+            "app_pid": 2442,
+            "engine_pid": 2531,
+            "exit": 0,
+            "system_transparency": false
+          },
+          {
+            "app_pid": 3114,
+            "engine_pid": 3119,
+            "exit": 0,
+            "system_transparency": false
+          },
+          {
+            "app_pid": 3285,
+            "engine_pid": 3290,
+            "exit": 0,
+            "system_transparency": true
+          }
+        ],
+        "result": "PASS",
+        "owned_engines_exited": true,
+        "system_fixture_restored": true
+      }
+    }
+  },
+  "root_linux_bundles": [
+    {
+      "arch": "amd64",
+      "files": 49,
+      "version": {
+        "commit": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+        "built_at": "2026-10-27T18:32:31Z",
+        "os": "linux",
+        "arch": "amd64",
+        "schema": 38
+      }
+    },
+    {
+      "arch": "arm64",
+      "files": 49,
+      "version": {
+        "commit": "ad346fe362fb229fb2f8e1be4244df3ab3bd7af2",
+        "built_at": "2026-10-27T18:32:31Z",
+        "os": "linux",
+        "arch": "arm64",
+        "schema": 38
+      }
+    }
+  ],
+  "root_factory_runtime": {
+    "startup_seconds": 0.06129398699977173,
+    "first_members": 15,
+    "after_restart": 14,
+    "after_explicit_add": 14,
+    "empty": {
+      "telemetry": 0,
+      "sessions": 0,
+      "research_runs": 0
+    },
+    "secret_count": 0,
+    "install_ledgers": 1,
+    "parent_pipe_shutdown": "PASS"
+  },
+  "root_wallpaper_runtime": {
+    "result": "PASS",
+    "startup_seconds": 0.060837760000140406,
+    "images": [
+      {
+        "file": "aqua-kotoha-v1.jpg",
+        "bytes": 135772,
+        "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282"
+      },
+      {
+        "file": "aqua-elaina-v1.jpg",
+        "bytes": 422004,
+        "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6"
+      },
+      {
+        "file": "aqua-kotoha-chibi-v1.webp",
+        "bytes": 1560556,
+        "sha256": "81953319738d7b14009fc06768e968fe1321ad6d9322d49f3717ab4626bbe373"
+      },
+      {
+        "file": "aqua-elaina-chibi-v1.webp",
+        "bytes": 1528248,
+        "sha256": "3f46afcba742572cf80b9cffae8af6d4d66648dd3bce35843d1a621d02aa81bc"
+      }
+    ],
+    "old_garden_status": 404,
+    "unauthorized_status": 401,
+    "all_five_native_seed_mutations": "PASS",
+    "selected_model_active": true,
+    "no_inference_or_research": true,
+    "parent_pipe_shutdown": "PASS"
+  },
+  "manual_review": {
+    "result": "PASS",
+    "reviewer": "primary_agent_self_review",
+    "independent_second_reviewer": false,
+    "reviewed_view_count": 110,
+    "reviewed_views": [
+      "browser/aqua-background-elaina-390-light.png",
+      "browser/aqua-background-elaina-chibi-390-dark.png",
+      "browser/aqua-background-kotoha-390-light.png",
+      "browser/aqua-background-kotoha-chibi-1280-light.png",
+      "browser/aqua-model-detail-390-dark.png",
+      "browser/aqua-models-1280-light.png",
+      "browser/aqua-models-320-200-dark.png",
+      "browser/aqua-offline-390-light.png",
+      "browser/aqua-offline-draft-390-light.png",
+      "browser/aqua-playground-1280-light.png",
+      "browser/aqua-playground-390-light.png",
+      "browser/aqua-playground-390-saved.png",
+      "browser/aqua-playground-812-safe-dark.png",
+      "browser/aqua-provider-editor-375-200-light.png",
+      "browser/aqua-providers-390-light.png",
+      "browser/aqua-settings-390-dark.png",
+      "browser/connector-private-mapping-draft-1280-dark.png",
+      "browser/connector-private-mapping-draft-1280-light.png",
+      "browser/connector-private-mapping-draft-320-dark.png",
+      "browser/connector-private-mapping-draft-320-light.png",
+      "browser/connector-private-mapping-draft-375-dark.png",
+      "browser/connector-private-mapping-draft-375-light.png",
+      "browser/connector-private-mapping-fields-320-dark.png",
+      "browser/connector-private-mapping-fields-375-large-dark.png",
+      "browser/connector-private-mapping-group-375-light.png",
+      "browser/connector-private-mapping-pat-account-375-light.png",
+      "browser/connector-private-mapping-pat-draft-1280-dark.png",
+      "browser/connector-private-mapping-pat-undo-375-dark.png",
+      "browser/connector-private-mapping-runtime-last-good-1280-dark.png",
+      "browser/connector-private-mapping-source-375-light.png",
+      "browser/knowledge-evaluation-cost-375-200-light.png",
+      "browser/research-execution-1280-dark.png",
+      "browser/research-execution-375-last-good.png",
+      "browser/research-execution-320-200-dark.png",
+      "browser/research-execution-375-light.png",
+      "browser/research-history-detail-375-200-dark.png",
+      "browser/research-history-detail-390-dark.png",
+      "browser/research-history-last-good-390-dark.png",
+      "browser/research-history-list-1280-light.png",
+      "browser/research-history-list-320-200-dark.png",
+      "browser/research-history-list-390-light.png",
+      "browser/research-history-read-recovered-390-light.png",
+      "browser/research-history-lost-ack-390-light.png",
+      "browser/research-history-scope-1280-light.png",
+      "browser/research-history-scope-recovery-390-dark.png",
+      "browser/research-query-cost-1280-dark.png",
+      "browser/research-query-cost-320-200-dark.png",
+      "browser/research-query-cost-375-light.png",
+      "browser/workspace-chunks-complete-1280-light.png",
+      "browser/workspace-chunks-complete-375-dark.png",
+      "browser/workspace-chunks-paused-320-light-large.png",
+      "browser/workspace-chunks-paused-320-dark-large.png",
+      "browser/workspace-chunks-paused-375-dark-large.png",
+      "browser/workspace-chunks-paused-375-light-large.png",
+      "browser/workspace-chunks-ready-375-light.png",
+      "browser/workspace-chunks-uploading-375-dark.png",
+      "mac-arm64/52-kilo-defaults-light.png",
+      "mac-arm64/53-kilo-ready-dark.png",
+      "mac-arm64/54-workspace-transfer-light.png",
+      "mac-arm64/55-workspace-paused-light.png",
+      "mac-arm64/56-workspace-restarted-dark.png",
+      "mac-arm64/57-workspace-completed-dark.png",
+      "mac-arm64/research/01-aa-partial-light.png",
+      "mac-arm64/research/02-aa-partial-dark.png",
+      "mac-arm64/research/03-saved-read-failure-dark.png",
+      "mac-arm64/research/04-paused-dark.png",
+      "mac-arm64/research/05-lost-ack-dark.png",
+      "mac-arm64/research/06-aa-complete-dark.png",
+      "mac-arm64/research/07-services-aa-complete-light.png",
+      "mac-arm64/research/08-research-aa-complete-dark.png",
+      "mac-arm64/aqua/01-classic-invalid-preference-light.png",
+      "mac-arm64/aqua/02-kotoha-light.png",
+      "mac-arm64/aqua/03-elaina-light.png",
+      "mac-arm64/aqua/04-kotoha-chibi-light.png",
+      "mac-arm64/aqua/05-elaina-chibi-dark.png",
+      "mac-arm64/aqua/06-settings-four-choices-dark.png",
+      "mac-arm64/aqua/07-providers-light.png",
+      "mac-arm64/aqua/09-provider-form-retained-dark.png",
+      "mac-arm64/aqua/10-classic-retained-dark.png",
+      "mac-arm64/aqua/08-models-compact-dark.png",
+      "mac-arm64/aqua/11-relaunch-retained-dark.png",
+      "mac-arm64/aqua/12-reduced-transparency-light.png",
+      "mac-arm64/aqua/13-system-reduced-transparency-dark.png",
+      "mac-x86_64/52-kilo-defaults-light.png",
+      "mac-x86_64/53-kilo-ready-dark.png",
+      "mac-x86_64/54-workspace-transfer-light.png",
+      "mac-x86_64/55-workspace-paused-light.png",
+      "mac-x86_64/56-workspace-restarted-dark.png",
+      "mac-x86_64/57-workspace-completed-dark.png",
+      "mac-x86_64/research/01-aa-partial-light.png",
+      "mac-x86_64/research/02-aa-partial-dark.png",
+      "mac-x86_64/research/03-saved-read-failure-dark.png",
+      "mac-x86_64/research/04-paused-dark.png",
+      "mac-x86_64/research/05-lost-ack-dark.png",
+      "mac-x86_64/research/06-aa-complete-dark.png",
+      "mac-x86_64/research/07-services-aa-complete-light.png",
+      "mac-x86_64/research/08-research-aa-complete-dark.png",
+      "mac-x86_64/aqua/01-classic-invalid-preference-light.png",
+      "mac-x86_64/aqua/02-kotoha-light.png",
+      "mac-x86_64/aqua/03-elaina-light.png",
+      "mac-x86_64/aqua/04-kotoha-chibi-light.png",
+      "mac-x86_64/aqua/05-elaina-chibi-dark.png",
+      "mac-x86_64/aqua/06-settings-four-choices-dark.png",
+      "mac-x86_64/aqua/07-providers-light.png",
+      "mac-x86_64/aqua/08-models-compact-dark.png",
+      "mac-x86_64/aqua/09-provider-form-retained-dark.png",
+      "mac-x86_64/aqua/10-classic-retained-dark.png",
+      "mac-x86_64/aqua/11-relaunch-retained-dark.png",
+      "mac-x86_64/aqua/12-reduced-transparency-light.png",
+      "mac-x86_64/aqua/13-system-reduced-transparency-dark.png"
+    ],
+    "contacts": [
+      {
+        "file": "contacts/review-1.jpg",
+        "sha256": "7e2b11a7e4b0d4ad32fd4d51fd87d70f89786e25dd9deb05cba63d39a5ce02b6",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-2.jpg",
+        "sha256": "2f6584072687e1dc0d48fa96171db70c33c6d99b850f7abd763b54b1a7d41a89",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-3.jpg",
+        "sha256": "0d764fa21e6e5ea3649080c5d40d657e23bc94850e07f0cd63b30e55809f85dd",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-4.jpg",
+        "sha256": "ce7ca7bd939087ed055bb4635376d3aeebda2e76445b8526944eb9f7abc0a945",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-5.jpg",
+        "sha256": "e2e24b5c21f59d15241da1c5d8bdd83742a40f0cce80a3fc13703cd5f8881ec0",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-6.jpg",
+        "sha256": "8a48ecb333a6bd15398bc54d983dc36f85d1f82da81cd24c5ccba9af9d3fe194",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-7.jpg",
+        "sha256": "29cf0caeeeffbb44da9e1bc87da3346277efa92781d388c0b2677434457bc84d",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-8.jpg",
+        "sha256": "7354b84a6c146f12e68ce738ca9bc90b48363560f75eee07404e3e72f7c63a40",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-9.jpg",
+        "sha256": "ee62fab327e5c82984be2e100e5931c284f19369b5df3c9e9605795d91ac7d60",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-10.jpg",
+        "sha256": "1b0625521fa8e46a5c2d2265ab241e814123ce13502f7975cee0d9f4cb114e63",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-11.jpg",
+        "sha256": "36b415d45670b83489f25354c8a9b3d3039a7feeb0cec5e8a4cb6c33ca2f0ec4",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-12.jpg",
+        "sha256": "f3e50f38a753efb2c91ef8863d82d3b6c0296d29fc862ffdd56569c785e7d58d",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-13.jpg",
+        "sha256": "5c7f411eca8c7f4cf003f4d27f1392afd17a0991714abf7699072e840d08585e",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-14.jpg",
+        "sha256": "222ea7a31c8161a8446809ce21bb7b66a9e018c8ebf6a7ff2a00c4f1f64e3380",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-15.jpg",
+        "sha256": "8a3a4d9faa6d56df1cff10dff4c36e0204542adce474d8b34a4ce9d677b10de4",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-16.jpg",
+        "sha256": "65d377fffced3d56e69edca708af38829844b6db8ae681c9909571660685a36e",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-17.jpg",
+        "sha256": "d9af1e8a4e942550096510d8c72dd809bbb2b352deabf2bab4cf4d2662775dd1",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-18.jpg",
+        "sha256": "d021e3ee0ce72b2c14c3864db6110b8228d3cea1b6b03e21c59fddc51ba01edb",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-19.jpg",
+        "sha256": "ba8f15ecede3078692d10064f1628784eb748fba402bf96083b3588704478851",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-20.jpg",
+        "sha256": "e33cd311aa8f205586c7a463da1df43e1e2a8aebb5583168efcea9fa1d5cfd37",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-21.jpg",
+        "sha256": "4b7b0b2238c2562712e28dd4dbbb6b57a8d8938f2320760f3ac4bd1525fc0f52",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-22.jpg",
+        "sha256": "8573c8ede162410aa5780124f241ad4e520118d7d7091704284b2b39dbb0d59b",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-23.jpg",
+        "sha256": "0b68ff66f1535e38fa8243421e1ffe41f953c89eced22c2c29c7d3c86e1c5bc2",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-24.jpg",
+        "sha256": "2b77a41412a627d9916c630fa00aa9ddae4d6e280ec6bfb039479d8426eb322e",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-25.jpg",
+        "sha256": "4f5ebd516350ba70d20d784891559bd74590abdffe290794b1d36e9c6335fdf7",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-26.jpg",
+        "sha256": "0ae254ec502bba3fa96e9005dff5d0e283a8e478714194e150a571c522524ced",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-27.jpg",
+        "sha256": "0b4e5ca6a3253add149ffe3216e0a3b5975e5dbd5db1ba4b80fe8de06e32bfc7",
+        "result": "PASS"
+      },
+      {
+        "file": "contacts/review-28.jpg",
+        "sha256": "e92b7793e0a235b4d667e6f0dc7143bcb5a9767cfeb614ea0a61bb262a017093",
+        "result": "PASS"
+      }
+    ],
+    "additional_full_size_views": [
+      {
+        "file": "mac-arm64/aqua/02-kotoha-light.png",
+        "artifact_id": 12761836989,
+        "sha256": "ef6e394e0203c9888aacc0a61e2fc9154b44a0fd7309327041bc5fdcb610eeb9",
+        "result": "PASS"
+      },
+      {
+        "file": "mac-arm64/aqua/03-elaina-light.png",
+        "artifact_id": 12761836989,
+        "sha256": "8c99b8657823946a5dfb2b267a0e435ddd6a63d4639a84e68550a6d239aee2c4",
+        "result": "PASS"
+      },
+      {
+        "file": "mac-arm64/aqua/05-elaina-chibi-dark.png",
+        "artifact_id": 12761836989,
+        "sha256": "a0d3be7a73bc8df57d222ffe09451a5ff974eb59c6fd0da87f920f258955b341",
+        "result": "PASS"
+      },
+      {
+        "file": "mac-arm64/aqua/06-settings-four-choices-dark.png",
+        "artifact_id": 12761836989,
+        "sha256": "8e5ff9830a5d3caa81deb586858f90acbdf97f52711eb142969a50d734d5430f",
+        "result": "PASS"
+      },
+      {
+        "file": "mac-arm64/aqua/09-provider-form-retained-dark.png",
+        "artifact_id": 12761836989,
+        "sha256": "5ee4221f2f3db6f68b3c67b7af11c7defc610f001e785395ad5d4edac9d255d9",
+        "result": "PASS"
+      },
+      {
+        "file": "mac-x86_64/aqua/02-kotoha-light.png",
+        "artifact_id": 12760868666,
+        "sha256": "2ca2c2ca5a9bcd03b001b1ef662a62da6b69f15d5d4ca52173990d79c00c8648",
+        "result": "PASS"
+      },
+      {
+        "file": "mac-x86_64/aqua/05-elaina-chibi-dark.png",
+        "artifact_id": 12760868666,
+        "sha256": "33c2183f23e603eafa4920b653dfce14129e44e2899d75bf3207da1cfac50d69",
+        "result": "PASS"
+      },
+      {
+        "file": "mac-x86_64/aqua/13-system-reduced-transparency-dark.png",
+        "artifact_id": 12760868666,
+        "sha256": "bc16ca8d69a983e6db2a6f1a580cf6b2d9815f32b0ed1072418ed84a57db0757",
+        "result": "PASS"
+      }
+    ],
+    "findings": [
+      "兩張原圖依原比例安排右側，人物臉部可辨識；Q版臉部可見，桌面文字與輸入區清楚。",
+      "四背景設定、窄窗模型清單、供應商草稿及切回經典可讀；草稿文字與附件保留。",
+      "兩架構的App減少透明度與真系統減少透明度畫面均為可讀實色，不載入插畫。",
+      "全部相關Browser手機／桌面、大字／安全區、讀取失敗／last-good與歷程恢復接觸表已自行檢視。"
+    ]
+  },
+  "whole_next_release": "PARTIAL",
+  "original_unknown_timeout_causes": {
+    "android_4d_c1FiveIdenticalCallersChargeOnce": "UNKNOWN historical exact interleaving; current 996-pass result is not proof of a fix. Investigate separately under ANDROID-METADATA-015X.",
+    "earlier_go_and_browser_timeouts": "UNKNOWN where no deterministic counterexample was recorded; original workloads and deadlines remain."
+  },
+  "next_slice": "ANDROID-METADATA-015X",
+  "public_release": "v0.8.5-preview.1/tag/11 assets frozen; PR20 Draft; no merge, deploy or publish"
+}

@@ -1,3 +1,9 @@
+> 下一版開發：015N擷取比較所列範圍已同來源九項及實際產物驗收；現在接續公開樣本的欄位對照正式流程，見[vps/FIELD_MAPPING.md](vps/FIELD_MAPPING.md)。出廠Kilo15個免Key模型保留；完整下一版仍PARTIAL，公開版本與附件不變。
+
+> Kilo免Key出廠模型已完成三平台內部驗收，來源5bc886f／同源九項與九份產物。下一片015N公開資料擷取比較仍在驗收；下一公開版本尚未發布，完整需求仍PARTIAL。最新證據與缺口見docs/ACTIVE_TASK.md及docs/NEXT_RELEASE.md。
+
+> Kilo出廠預設候選：三平台新工作區可直接選用免Key模型，舊資料由設定明確加入且保留原連線。正在進行同源跨平台驗收；詳[vps/KILO_DEFAULTS.md](vps/KILO_DEFAULTS.md)。
+
 # ModelAtlas｜AI 模型情報與 Provider 工作區
 
 ModelAtlas 整合 **AI Provider／多帳戶與 API Key 管理、模型情報、Playground、研究與 App Assistant**，提供 VPS 網頁版、Mac 原生 App 與 Android App。現在的使用與開發優先序是 **VPS 第一、Mac 第二、Android 第三**。
@@ -20,6 +26,7 @@ ModelAtlas 整合 **AI Provider／多帳戶與 API Key 管理、模型情報、P
 - **Providers**：Quick／Advanced onboarding、可恢復 Review、多帳戶／Key、角色與 origin 隔離、New API／專用整合、簽到與來源分區。帳戶 PAT 與推論 Key 分開，不自動換 Key 或跨供應商路由。
 - **Models**：Catalog 與 My Models 分開；搜尋／分類、價格與額度來源、個人效能、站方／外部資料、詳情與歷史、明確加入及比較。未知價格／額度不當成零或免費。
 - **VPS 日常維運**：固定資料庫／master key／管理密碼、完整一致備份、在副本試跑 schema 遷移、版本／認證／儲存健康檢查、更新失敗回復與中斷復原；之後使用明確版本套件更新。
+- **VPS 日常使用**：清楚的載入／離線／重新連線提示、保留上次資料與對話草稿、手機重新整理入口、合併重複刷新及有界讀取；建立對話先確認寫入、只讀恢復清單與同請求防重複；延續深淺色、窄螢幕與大字操作。
 - **VPS 公開研究排程**：保存後預設關閉，明確啟用才執行；每輪／每日 HTTP 上限、重啟接續、啟停與完整紀錄、來源變更確認；公開來源暫時故障的有限延後重試與恢復紀錄。關閉瀏覽器後仍由服務工作，不自動花用模型 Key。
 - **研究與 Assistant 基礎**：來源／候選漏斗／證據、正式工具操作、Review／Undo、版本化知識／Recipe／反思提案；敏感資料由本機安全層處理，raw Key／PAT 不進模型提示或日誌。
 

@@ -47,13 +47,13 @@ class AtlasMigration4To5Test {
                 assertFalse(legacyTables.contains("snapshot_heads"))
             }
             val opened = Room.databaseBuilder(context, AtlasDatabase::class.java, name)
-                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
                 .allowMainThreadQueries()
                 .build()
             room = opened
             // 強制正式開库，觸發 migration 與 generated schema validation。
             val sql = opened.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
             val v7Tables = setOf(
                 "canonical_models", "provider_model_aliases", "model_classifications",
                 "classification_capabilities", "classification_modalities", "classification_endpoint_types",
@@ -64,7 +64,7 @@ class AtlasMigration4To5Test {
             val v11Tables = setOf("my_models")
             val v12Tables = setOf("provider_perf_facts", "provider_perf_heads")
             val v13Tables = setOf("provider_account_usage_facts", "provider_account_usage_heads")
-            assertEquals(legacyTables + setOf("snapshot_facts", "snapshot_heads") + v7Tables + v8Tables + v9Tables + v10Tables + v11Tables + v12Tables + v13Tables + setOf("snapshot_slice_heads"), tables(sql))
+            assertEquals(legacyTables + setOf("snapshot_facts", "snapshot_heads") + v7Tables + v8Tables + v9Tables + v10Tables + v11Tables + v12Tables + v13Tables + setOf("snapshot_slice_heads") + workspaceSyncTables, tables(sql))
             for (table in v12Tables + v13Tables) {
                 sql.query("SELECT COUNT(*) FROM `$table`").use { cursor ->
                     assertTrue(cursor.moveToFirst())

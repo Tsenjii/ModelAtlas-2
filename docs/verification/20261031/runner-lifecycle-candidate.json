@@ -1,0 +1,116 @@
+{
+  "status": "REJECTED_CI",
+  "slice": "VPS-VALIDATION-018",
+  "runtime_source": "00b6a67ef112c86b750a588503de7b05bfa0bb12",
+  "invariants": {
+    "runtime_go_diff": false,
+    "schema": 38,
+    "registry": 469,
+    "partition": "原固定交錯兩個隔離程序，每個案例恰好一次",
+    "race": true,
+    "deadline_seconds": 600,
+    "no_fixture_or_assertion_removed": true
+  },
+  "counterexample": {
+    "scope": "測試 runner 取消回歸；真實 OS 子程序／pipe／signal，僅診斷 fixture 使用 0.4 秒；正式套件仍共用原 600 秒",
+    "baseline_source": "00b6a67ef112c86b750a588503de7b05bfa0bb12",
+    "baseline_runner_sha256": "8b00d0c745f17176498cee3d14354c6d660c7a96a2f1a73340aa45be5da49386",
+    "candidate_runner_sha256": "98ef2ce5abae1165e86ba33fa645b4cbc30e0663d32374dc87a7f4df3cf2b1e8",
+    "baseline": {
+      "returned_reports": false,
+      "exception": "TimeoutError",
+      "raw_terminal_events": 2
+    },
+    "candidate": {
+      "returned_reports": true,
+      "failure": "TIMEOUT",
+      "reports": [
+        {
+          "completed": {
+            "TestFinished": "pass"
+          },
+          "running": [
+            "TestRunning"
+          ],
+          "unfinished": [
+            "TestRunning"
+          ],
+          "returncode": -15
+        },
+        {
+          "completed": {
+            "TestFinished": "pass"
+          },
+          "running": [
+            "TestRunning"
+          ],
+          "unfinished": [
+            "TestRunning"
+          ],
+          "returncode": -15
+        }
+      ],
+      "raw_terminal_events": 2
+    },
+    "runtime_go_code_changed": false,
+    "historical_complete_suite_timeout_cause": "UNKNOWN；本反例證明逾時進度遺失，不證明歷史完整 Go 為何超過 600 秒。"
+  },
+  "runner_regressions": {
+    "cases": 12,
+    "result": "PASS",
+    "command": "python3 -W error::ResourceWarning -m unittest -v test_go_runner_test.py",
+    "coverage": [
+      "真實子程序完成／skip／逐例耗時",
+      "雙程序共用逾時與非零結束",
+      "leader已退出但後代仍持有輸出pipe，TERM後KILL且不留下執行程序",
+      "正常完成後仍清理已改接輸出的後代",
+      "非JSON／非零退出不能通過",
+      "reader與spawn錯誤保留失敗資訊",
+      "覆寫舊PASS檔為FAIL並以非零退出"
+    ]
+  },
+  "focused_cpu_profile": {
+    "cases": [
+      "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection",
+      "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest"
+    ],
+    "result": "PASS",
+    "go_package_seconds": 17.452,
+    "cpu_samples_seconds": 21.65,
+    "open_store_cumulative_seconds": 13.08,
+    "migrate_cumulative_seconds": 12.49,
+    "workspace_create_schema_cumulative_seconds": 5.85,
+    "limits": "僅三個既有測試的診斷採樣，不能外推歷史完整套件的精確逾時根因；未關閉race／checkptr、快取建庫或跳過升級。"
+  },
+  "full_suite": "PENDING",
+  "same_source_ci": "PENDING",
+  "deployment_trial": "Muse只是試部署工具，通用產品持續由原專案開發；未要求的備份不阻擋試部署。",
+  "main_gate": {
+    "source": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+    "run": 39536090788,
+    "build": 119016886469,
+    "device": 119016884592,
+    "result": "SUCCESS"
+  },
+  "limits": [
+    "歷史完整本機600秒逾時仍保留，原因UNKNOWN；本片不聲稱測試速度或runtime缺陷已修復。",
+    "完整產品／獨立review與實際目標部署仍未全部驗收。",
+    "未移交專案，未merge或發布新公開Release。"
+  ],
+  "source": "c5f0171e61e71d42be5fc84ac33e4930a0acc0d0",
+  "ci_rejection": {
+    "run": 41180692294,
+    "job": 124477320957,
+    "step": "Unit and HTTP integration tests",
+    "python_tests": 12,
+    "errors": 1,
+    "failures": 1,
+    "complete_go_started": false,
+    "causes": [
+      "procfs存在檢查後程序已被回收，read_text拋出ProcessLookupError",
+      "雙程序fixture的短0.5秒期限可能先於第二個程序建立；returncode None不是兩個運行中程序清理的有效setup"
+    ],
+    "fix": "單次讀取處理回收競態；清理fixture加明確建立barrier，原正式600秒及清理斷言不變。"
+  }
+}
