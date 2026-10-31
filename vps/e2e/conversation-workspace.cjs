@@ -4,6 +4,7 @@ const {waitForAsync}=require('./async-wait-helper.cjs');
 exports.exercise=async(page,origin,session)=>{
  const control=async mode=>{const r=await page.request.post(origin+'/__conversation-fixture/control',{data:{mode}});assert(r.ok());};
  const state=async()=>await(await page.request.get(origin+'/__conversation-fixture/state')).json();
+ const manage=async target=>{if(!(await target.locator('#conversation-more').evaluate(n=>n.open)))await target.locator('#conversation-more > summary').click();await target.locator('#conversation-manage').click();};
  const rows=page.locator('.conversation-list .item-button'),search=page.getByLabel('搜尋對話',{exact:true});
  const count=async n=>page.waitForFunction(n=>document.querySelectorAll('.conversation-list .item-button').length===n,n,{timeout:5000});
  const shot=async name=>{
@@ -68,7 +69,7 @@ exports.exercise=async(page,origin,session)=>{
  assert(await save.isDisabled(),'a pending rename can be submitted twice');
  await title.fill('等待期間的新草稿');await title.locator('..').locator('..').dispatchEvent('submit');
  assert.equal((await state()).updates,initial.updates+1,'duplicate submit reached the real mutation endpoint');
- await page.locator('#detail-close').click();await page.locator('#conversation-manage').click();
+ await page.locator('#detail-close').click();await manage(page);
  assert.equal(await title.inputValue(),'等待期間的新草稿','closing an in-flight editor lost its later draft');
  assert(await save.isDisabled(),'reopening an in-flight editor allowed another mutation');
  await control('release-write');await page.getByRole('button',{name:'重新讀取清單',exact:true}).waitFor();
@@ -93,7 +94,7 @@ exports.exercise=async(page,origin,session)=>{
  other.on('pageerror',e=>otherErrors.push(e.message));other.on('request',r=>{if(!r.url().startsWith(origin))otherExternal.push(r.url());});
  try{
   await other.goto(origin);await other.waitForFunction(id=>document.querySelector('#session').value===id,session);
-  await other.locator('#conversation-manage').click();await other.getByLabel('對話名稱',{exact:true}).fill('另一個分頁的名稱');
+  await manage(other);await other.getByLabel('對話名稱',{exact:true}).fill('另一個分頁的名稱');
   await other.getByRole('button',{name:'儲存名稱',exact:true}).click();
   await other.waitForFunction(()=>document.querySelector('#detail-title').textContent==='另一個分頁的名稱'&&!document.querySelector('.conversation-title-form').hasAttribute('aria-busy'));
  }finally{await other.close();}

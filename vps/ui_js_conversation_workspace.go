@@ -7,9 +7,9 @@ const jsConversationWorkspace = `
 const conversationChanges=new Map(),conversationNameDrafts=new Map();
 let conversationEditor=null;
 function stopConversationLibrary(){const cleanup=conversationLibraryCleanup;conversationLibraryCleanup=null;cleanup?.();}
-function conversationUpdatedLabel(session){const at=session.updated_at||session.created_at;if(!at||!Number.isFinite(at))return "";const date=new Date(at);return Number.isNaN(date.getTime())?"":new Intl.DateTimeFormat("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(date);}
+function conversationUpdatedLabel(session){const at=session.updated_at||session.created_at;if(!at||!Number.isFinite(at))return "";const date=new Date(at);return Number.isNaN(date.getTime())?"":new Intl.DateTimeFormat("zh-TW",{year:date.getFullYear()===new Date().getFullYear()?undefined:"numeric",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(date);}
 function conversationCard(parent,session){
- const provider=providers.find(p=>p.id===session.provider_id),model=modelDisplayName(session),row=item(parent,session.title,(provider?.name||session.provider_id)+" · "+model+"\n"+connectionLabel(session)+" · "+session.endpoint,()=>conversationDetail(session));
+ const provider=providers.find(p=>p.id===session.provider_id),model=modelDisplayName(session),operation=targetOperation(session),endpoint=(operationLabels[operation]||operation)+(session.endpoint!==operation?" · "+session.endpoint:""),row=item(parent,session.title,(provider?.name||session.provider_id)+" · "+model+"\n"+connectionLabel(session)+" · "+endpoint,()=>conversationDetail(session));
  row.dataset.sessionId=session.id;row.classList.add("conversation-card");
  if(session.pinned){const star=icon("star");star.removeAttribute("aria-hidden");star.setAttribute("aria-label","已置頂");star.setAttribute("role","img");row.querySelector("strong").prepend(star);}
  const preview=el("p",session.preview||"尚無訊息","conversation-card-preview"),meta=el("span",undefined,"conversation-card-meta");

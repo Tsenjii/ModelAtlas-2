@@ -243,6 +243,10 @@ func TestBrowserConversationsWorkflow(t *testing.T) {
 		handler.ServeHTTP(w, r)
 	}))
 	defer app.Close()
+	// Release fault gates before the test server closes, including on a browser
+	// assertion failure; a failed scenario must not hang server cleanup.
+	defer close(readRelease)
+	defer close(writeRelease)
 	cmd := exec.Command("node", "e2e/conversations.cjs", app.URL)
 	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token, "MODELATLAS_CONVERSATION="+session.ID, "MODELATLAS_REPLY="+reply)
 	out, e := cmd.CombinedOutput()
