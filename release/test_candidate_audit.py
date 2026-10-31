@@ -51,8 +51,18 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
     def test_declared_views_pass_the_same_name_guard_before_waiting_for_ci(self):
         audit.validate_browser_screenshot_names(self.config()["new_browser_images"])
 
+    def test_conversation_extension_keeps_every_verified_browser_view_and_adds_exactly_eight(self):
+        previous = json.loads((Path(__file__).resolve().parents[1]/"docs/verification/20261031/runner-lifecycle-audit.json").read_text())["browser_images"]["added"]
+        added = {"conversation-workspace-"+suffix+".png" for suffix in (
+            "read-recovery-375-dark", "1280-light", "375-light", "375-dark", "320-large-dark",
+            "320-large-aqua", "draft-recovery-375-dark", "write-uncertain-375-dark")}
+        config = self.config()
+        self.assertEqual(len(previous),63)
+        self.assertEqual(set(config["new_browser_images"]),set(previous)|added)
+        self.assertEqual(audit.browser_image_scopes(config)["candidate"][0],580)
+
     def test_crash_captures_remain_forbidden_in_declared_and_actual_views(self):
-        for name in ("research-history-failure.png", "research-history-scope-failure-390-dark.png", "aqua-failure.png", "assistant-mapping-failure.png", "unreviewed-view.png"):
+        for name in ("research-history-failure.png", "research-history-scope-failure-390-dark.png", "aqua-failure.png", "assistant-mapping-failure.png", "conversation-workspace-failure.png", "unreviewed-view.png"):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, "unexpected new screenshot"):
                 audit.validate_browser_screenshot_names([name])
 
@@ -131,9 +141,12 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
 
     def test_contact_inventory_grows_without_rewriting_frozen_views(self):
         config = self.config()
-        self.assertEqual(audit.visual_review_count(config),125)
+        original = copy.deepcopy(config)
+        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith("conversation-workspace-")]
+        self.assertEqual(audit.visual_review_count(original),125)
+        self.assertEqual(audit.visual_review_count(config),133)
         config["new_browser_images"].append("future-new-view.png")
-        self.assertEqual(audit.visual_review_count(config),126)
+        self.assertEqual(audit.visual_review_count(config),134)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
 class CandidateDeviceExtensionTest(unittest.TestCase):
@@ -190,8 +203,12 @@ class CandidateAndroidAquaTest(unittest.TestCase):
                 audit.validate_android_aqua_case_extension(self.counts,changed,self.old,self.accepted,self.config)
 
     def test_fifteen_android_views_are_added_to_all110_original_views(self):
-        self.assertEqual(audit.visual_review_count(self.config),125)
-        self.assertEqual(audit.candidate_visual_review_count(self.config),140)
+        original = copy.deepcopy(self.config)
+        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith("conversation-workspace-")]
+        self.assertEqual(audit.visual_review_count(original),125)
+        self.assertEqual(audit.candidate_visual_review_count(original),140)
+        self.assertEqual(audit.visual_review_count(self.config),133)
+        self.assertEqual(audit.candidate_visual_review_count(self.config),148)
         changed = copy.deepcopy(self.config)
         changed["new_android_aqua_images"][13] = "14-replacement.png"
         with self.assertRaisesRegex(ValueError,"image scope"):

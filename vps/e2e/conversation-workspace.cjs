@@ -13,7 +13,7 @@ exports.exercise=async(page,origin,session)=>{
   assert(targets.every(t=>t.h>=47.5),'small conversation touch control: '+JSON.stringify(targets));
   await page.screenshot({path:'e2e/screenshots/conversation-workspace-'+name+'.png',fullPage:true,animations:'disabled'});
  };
- await count(1);
+ await page.locator('#detail-close').click();await page.locator('#prompt').fill('整理對話時保留的草稿');await page.locator('#conversation-library').click();await search.fill('畫表格');await count(1);
  const before=await rows.first().textContent();
  await control('fail-read');
  const response=page.waitForResponse(r=>r.url().includes('/api/v1/sessions?')&&r.url().includes(encodeURIComponent('故障搜尋')));
@@ -21,7 +21,7 @@ exports.exercise=async(page,origin,session)=>{
  assert.equal(await rows.count(),1,'read failure cleared the last successful conversation list');
  assert.equal(await rows.first().textContent(),before,'read failure changed last-good data');
  await page.getByRole('button',{name:'重新讀取對話紀錄',exact:true}).waitFor();
- await shot('read-failure-375-dark');
+ await shot('read-recovery-375-dark');
  await page.getByRole('button',{name:'重新讀取對話紀錄',exact:true}).click();
  await page.getByText('沒有符合的對話',{exact:true}).waitFor();assert.equal(await rows.count(),0);
  assert.equal(await search.inputValue(),'故障搜尋');
@@ -88,5 +88,10 @@ exports.exercise=async(page,origin,session)=>{
  await page.getByRole('button',{name:'取消封存',exact:true}).waitFor();assert.equal((await state()).updates,initial.updates+1);
  assert.equal(await page.getByRole('button',{name:'使用此對話',exact:true}).count(),0,'an archived conversation became usable during recovery');
  await page.getByRole('button',{name:'取消封存',exact:true}).click();
- await page.getByRole('button',{name:'使用此對話',exact:true}).waitFor();assert.equal((await state()).messages,107,'management changed retained messages');
+ await page.getByRole('button',{name:'使用此對話',exact:true}).waitFor();
+ await page.waitForFunction(()=>!document.querySelector('.conversation-title-form').hasAttribute('aria-busy'));
+ assert.equal((await state()).messages,107,'management changed retained messages');
+ await page.getByRole('button',{name:'使用此對話',exact:true}).click();await page.locator('#detail').waitFor({state:'hidden'});
+ assert.equal(await page.locator('#session').inputValue(),session,'management resumed a different conversation');
+ assert.equal(await page.locator('#prompt').inputValue(),'整理對話時保留的草稿','management lost the original scoped composer draft');
 };

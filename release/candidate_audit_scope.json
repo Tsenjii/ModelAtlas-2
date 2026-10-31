@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "slice": "ASSISTANT-MAPPING-017",
+  "slice": "VPS-CONVERSATIONS-019",
   "browser_baseline": {
     "id": 12622386762,
     "bytes": 39268692,
@@ -255,7 +255,15 @@
     "assistant-mapping-fields-1280-light.png",
     "assistant-mapping-review-320-200-dark.png",
     "assistant-mapping-active-375-dark.png",
-    "assistant-mapping-undo-1280-dark.png"
+    "assistant-mapping-undo-1280-dark.png",
+    "conversation-workspace-read-recovery-375-dark.png",
+    "conversation-workspace-1280-light.png",
+    "conversation-workspace-375-light.png",
+    "conversation-workspace-375-dark.png",
+    "conversation-workspace-320-large-dark.png",
+    "conversation-workspace-320-large-aqua.png",
+    "conversation-workspace-draft-recovery-375-dark.png",
+    "conversation-workspace-write-uncertain-375-dark.png"
   ],
   "rejected_aa_browser": {
     "id": 12625684013,

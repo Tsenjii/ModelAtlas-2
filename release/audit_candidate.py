@@ -81,7 +81,7 @@ def validate_native_transparency_fixture(resource, fixture):
     require(len(phases) == 3 and [phase.get("system_transparency") for phase in phases] == observed and all(type(phase.get("system_transparency")) is bool for phase in phases), "native process did not observe actual system states")
 
 def validate_browser_screenshot_names(names):
-    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-", "cloud-backup-", "assistant-mapping-")) and "failure" not in name for name in names), "unexpected new screenshot")
+    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-", "cloud-backup-", "assistant-mapping-", "conversation-workspace-")) and "failure" not in name for name in names), "unexpected new screenshot")
 
 def linux_inventory(directory, arch, config):
     require(arch in ("amd64", "arm64"), "unsupported Linux architecture")
