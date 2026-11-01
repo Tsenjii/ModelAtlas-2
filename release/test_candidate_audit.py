@@ -7,6 +7,22 @@ import json
 import copy
 import audit_candidate as audit
 
+class CandidateBrowserCaseExtensionTest(unittest.TestCase):
+    def setUp(self):
+        previous = json.loads((Path(__file__).resolve().parents[1]/"docs/verification/20261031/conversation-workspace-audit.json").read_text())["browser_cases"]
+        self.cases = previous+[("TestBrowserModelBatchTestWorkflow", "4.39")]
+        self.registry = audit.go_test_functions(Path(__file__).resolve().parents[1]/"vps")
+
+    def test_original_46_and_real_batch_case_match_current_registry(self):
+        self.assertEqual(audit.validate_browser_case_extension(self.cases,self.registry),47)
+
+    def test_missing_duplicate_and_same_count_replacements_are_rejected(self):
+        for cases in (self.cases[:-1], self.cases+[self.cases[-1]], self.cases[1:]+[("TestBrowserReplacement", "1.0")]):
+            with self.subTest(cases=len(cases)), self.assertRaisesRegex(ValueError,"missing or replaced"):
+                audit.validate_browser_case_extension(cases,self.registry)
+        with self.assertRaisesRegex(ValueError,"registry mismatch"):
+            audit.validate_browser_case_extension(self.cases,self.registry-{"TestBrowserModelBatchTestWorkflow"})
+
 class CandidateLinuxInventoryTest(unittest.TestCase):
     def config(self):
         return json.loads((Path(__file__).parent/"candidate_audit_scope.json").read_text())
