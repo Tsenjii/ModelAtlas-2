@@ -1,3 +1,18 @@
+## 2026-11-01 三平台批次模型實測（MODEL-BATCH-020）
+
+所列工程範圍已驗；正式來源 `7aecf289d8fb2fd2dd0e237bb79ebf0f4c650322`，完整產品／Part V與獨立review仍PARTIAL。使用者指示全平台接續、VPS優先，原平台暫停優先序已更新。
+
+| 正式操作 | 程式／caller | 同來源驗證 |
+| --- | --- | --- |
+| VPS模型多選逐筆實測 | `vps/model_batch.go`、`ui_js_model_batch.go`，沿既有正式execute／MANUAL_TEST／receipt | 三個真TLS核心案例與新增Browser；1–100／重複／精確scope／429停止／socket取消／掉線未知與無重送／JSON bytes／320及200% |
+| Mac原生批次 | `ManualModelTests.swift`、`ModelBatchTestsView.swift`、ModelsView多選入口 | 四個新核心案例；兩架構實際原生caller各兩次精確帳號收據、重複開始 guard、取消前零請求及59張parity圖 |
+| Android原生批次 | `ProviderModelBatchState`、AtlasViewModel、ProviderDetailScreen／AtlasScreen，沿Room／vault／InferenceEngine | 一個新App JVM與五個實際裝置案例，含Compose正式callback、完整三筆、429、active取消與開始前離開；原1005結果保留 |
+| 驗證與交付 | `release/audit_candidate.py`保留原46個Browser名稱＋唯一新增；固定來源雙架構套件／部署說明 | VPS6＋Mac3＋Android2全SUCCESS；十一真ZIP稽核；159視圖自行檢視及8項真binary／crypt回讀／隔離還原／預檢 |
+
+完整Go592.299秒／600秒、473入口／701結果（原697逐項相同）；47Browser271.413秒／300秒、587PNG（原580保留）；Android594核心＋424App／1010device（5原skip）、兩Mac各93核心／119PNG。71發布回歸與全部原負載／deadline保持。8b90的十一綠燈不足以接受其舊46計數稽核，原拒絕及修後精確集合反例已保存。實際稽核原始狀態保持待視覺檢查，自行檢查結果另存，未冒稱獨立review。
+
+完整證據見 [model-batch-baseline.json](verification/20261101/model-batch-baseline.json)、[model-batch-audit.json](verification/20261101/model-batch-audit.json)、[model-batch-visual-review.json](verification/20261101/model-batch-visual-review.json) 與 [model-batch-delivery.json](verification/20261101/model-batch-delivery.json)。使用者VPS／雲端帳戶／實機與主要原生研究／多模態缺口仍保留，PR20 Draft與公開版本凍結不變。
+
 ## 2026-10-31 對話紀錄、草稿與不確定寫入恢復（VPS-CONVERSATIONS-019）
 
 本片來源 `8152615b32c9b0210aebe2d1f4903d311d6016cf`，所列工程範圍已驗，完整同源十一項、產物稽核與148相關視圖自行檢查完成；完整產品／獨立review仍PARTIAL。

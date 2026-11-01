@@ -1,0 +1,18 @@
+{
+  "source": "7aecf289d8fb2fd2dd0e237bb79ebf0f4c650322",
+  "result": "PASS",
+  "checks": [
+    "repeat_init_retains_private_identity",
+    "portable_https_origin_auth_ready",
+    "actual_crypt_upload_and_readback_success",
+    "fetch_and_isolated_restore_preserve_marker_and_running_database",
+    "online_update_snapshot_and_copy_preflight",
+    "remote_content_is_ciphertext",
+    "master_key_and_admin_identity_unchanged",
+    "backup_schedule_remains_off"
+  ],
+  "test_environment": "isolated Linux AMD64, exact CI binary, actual rclone crypt backed by a temporary local directory",
+  "user_cloud_account": false,
+  "external_https_ingress": false,
+  "real_vps_deployment": false
+}

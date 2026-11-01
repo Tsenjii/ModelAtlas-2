@@ -1,3 +1,11 @@
+> 2026-11-01（台北）MODEL-BATCH-020所列三平台批次實測已完成工程驗證。正式程式來源 `7aecf289d8fb2fd2dd0e237bb79ebf0f4c650322`／tree `b88330cf901ae6a08bb6313407ed0307ab3cba0f`；VPS41329331638六項、Android41329331607兩項、Mac41329331646三項同來源全SUCCESS，稽核41329331630／124915907069成功核對十一真產物。另下載稽核13092349535，2870631bytes／SHA256 de78104deea2acec6ee478a2cd51d4af2f606511b468ea4bf3fbe667aea33b82／CRC PASS，原始BYTE_AUDIT_PASS_PENDING_VISUAL_REVIEW報告不改；159視圖依平台42接觸表及11張新增原圖已自行檢視，沒有獨立reviewer主張。詳 verification/20261101/model-batch-baseline.json 及其 audit／visual-review／delivery紀錄。
+>
+> VPS Models多選1–100個精確文字連線，可預覽、逐筆進度／停止／收據／JSON匯出及頁面內重開；Mac原生多選與兩帳號同名模型caller、Android指定連線下的原生多選／VM／Room／引擎均接正式流程。429／402停止後續，取消保留owned job至socket與telemetry完成；掉線不重送，VPS缺失回應保守標示結果未確認。批次不是RPM壓測，也不支援跨頁面／服務重啟自動續跑。
+>
+> 正式來源完整Go592.299秒／原600秒，473入口／701結果（642pass＋59明確opt-in skip），原697結果逐項相同；47Browser271.413秒／原300秒與587PNG保留原580＋7。Android594＋424／1010零fail／5原skip、兩Mac各93核心／119圖；所有原負載、race、timeout不減。71發布回歸、vet與原真systemd／雙架構容器均成功。服務PID peak187691008bytes，不含OS／Caddy／rclone／Browser，不將較低觀測值當效能改善結論；完整Go只餘7.701秒、歷史逾時原因仍UNKNOWN。本機開發中完整Go與首輪缺rclone／fixture／按鈕選取失敗，以及8b90全十一綠但稽核寫死46拒絕，都保留於證據；修後驗證器逐項保留原46＋唯一新增Browser流程，不以改低數量放行。
+>
+> 自部署ZIP已更新為固定7aec原CI的AMD64／ARM64套件，外層／內層校驗、schema38及8項真binary／rclone crypt／隔離還原／更新前預檢完成；真Kilo目錄＋一次最小對話另於8b90通過，7aec僅修檢查器／文件，未變runtime。使用者本輪全平台要求更新原Mac015Z／Android暫停優先序。整版P1–P10／Part V仍PARTIAL：完整未知站點語意／身份品質、部分原生研究／多模態正式UI、真站長跑、實機與獨立review尚未齊；尚無使用者VPS／Muse入口、真雲端帳戶授權，沒有個人部署網址。公開v0.8.5-preview.1／tag／11附件凍結，PR20 Draft、不merge／發布。本次後續文件checkpoint只記錄7aec證據，不將checkpoint自己的待跑CI冒充同來源通過。
+
 > 2026-11-01（台北）使用者要求全平台完成、VPS 優先至全部功能可使用。接續三平台批次模型實測 MODEL-BATCH-020：VPS 從現有模型多選啟動、有界逐筆結果／取消／額度停止／匯出，Mac 原生多選與 Android 指定連線下的原生模型多選沿用正式推論／telemetry，禁止自動重送不確定的請求。這是目前唯一整合片；既有 Mac015Z 暫停優先序由本次全平台指示更新，但不刪原研究／同步／多模態缺口。VPS 聚焦真 TLS 與 Browser 已通過；新增來源自己的完整回歸、十一項 CI、原生及產物驗證前仍候選。原全部 workload／timeout、P1–P10／Part V、公開版本凍結及 PR20 Draft 保留；不宣稱使用者目標已部署。
 
 > 2026-10-31 VPS-CONVERSATIONS-019 所列對話介面與恢復功能已完成工程驗證，完整產品／Part V及獨立review仍PARTIAL。正式來源8152615b32c9b0210aebe2d1f4903d311d6016cf／tree9f5f46add8b30303b3fe63275629b90fae77b5f2；VPS41187695485六必要項、Android41187695541兩項、Mac41187695639三項同來源全SUCCESS。稽核41187695453／124498116264成功核對十一真產物；另下載稽核13038081869，2728546bytes／SHA256 5410bcb90b305107be08a40a3ad361ec2bea45b8632830aed39f7d7574dd8d47／CRC PASS，原始報告保持未改。詳 verification/20261031/conversation-workspace-baseline.json 及 conversation-workspace-audit.json。
