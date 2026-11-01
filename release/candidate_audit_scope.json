@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "slice": "VPS-CONVERSATIONS-019",
+  "slice": "MODEL-BATCH-020",
   "browser_baseline": {
     "id": 12622386762,
     "bytes": 39268692,
@@ -190,7 +190,11 @@
     "TestAssistantMappingDescriptorListsCannotBeSilentlyCutByToolJournal": "pass",
     "TestAssistantMappingTypedRowPointersKeepCanonicalRecoveryAndRejectInventedUnits": "pass",
     "TestAssistantMappingObservedScopeAndUnitLocationsAreCopyableEvidence": "pass",
-    "TestAssistantMappingReasoningOutputLimitDoesNotCompleteAnEmptyTask": "pass"
+    "TestAssistantMappingReasoningOutputLimitDoesNotCompleteAnEmptyTask": "pass",
+    "TestModelBatchExactScopesReceiptsAndPreflight": "pass",
+    "TestModelBatchStopsAtRateLimitWithoutRetry": "pass",
+    "TestModelBatchCancellationStopsActiveSocketAndPendingModels": "pass",
+    "TestBrowserModelBatchTestWorkflow": "skip"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",
@@ -263,7 +267,14 @@
     "conversation-workspace-320-large-dark.png",
     "conversation-workspace-320-large-aqua.png",
     "conversation-workspace-draft-recovery-375-dark.png",
-    "conversation-workspace-write-uncertain-375-dark.png"
+    "conversation-workspace-write-uncertain-375-dark.png",
+    "model-batch-1280-light.png",
+    "model-batch-375-dark.png",
+    "model-batch-320-large-dark.png",
+    "model-batch-completed.png",
+    "model-batch-limited.png",
+    "model-batch-cancelled-320-large.png",
+    "model-batch-unconfirmed.png"
   ],
   "rejected_aa_browser": {
     "id": 12625684013,
@@ -545,5 +556,25 @@
     "13-settings-320-large-dark.png",
     "14-reduced-transparency-dark.png",
     "15-landscape-large-dark.png"
+  ],
+  "new_mac_batch_images": [
+    "58-model-batch-ready-light.png",
+    "59-model-batch-results-dark.png"
+  ],
+  "new_mac_batch_cases": [
+    "AtlasCoreTests.ManualModelTestsTests/testBatchAllowsDifferentModelsButRequiresBoundedDistinctUsableTextScopes",
+    "AtlasCoreTests.ManualModelTestsTests/testReceiptsCannotBorrowAccountGroupEndpointOrSkipPendingScope",
+    "AtlasCoreTests.ManualModelTestsTests/testLimitAndCancellationStopPendingSelectionsWithoutFakeResults",
+    "AtlasCoreTests.ManualModelTestsTests/testDisconnectedRequestIsUnconfirmedRatherThanDeclaredUntested"
+  ],
+  "new_android_batch_cases": {
+    "dev.modelatlas.app.ui.ProviderModelActionViewModelTest#explicitBatchRunsEachModelOnceInSelectedScopeAndKeepsTelemetry": "pass",
+    "dev.modelatlas.app.ui.ProviderModelActionViewModelTest#batchRateLimitStopsBeforeSendingPendingModelsAndPreservesFailure": "pass",
+    "dev.modelatlas.app.ui.ProviderModelActionViewModelTest#batchCancellationJoinsActiveProbeBeforeReleasingOwnership": "pass",
+    "dev.modelatlas.app.ui.ProviderModelActionViewModelTest#leavingBeforeFirstBatchProbeCancelsWithoutSendingAnyPendingRequest": "pass",
+    "dev.modelatlas.app.ui.ProviderModelBatchScreenTest#explicitSelectionUsesCallbackAndBatchOwnershipDisablesRestart": "pass"
+  },
+  "new_android_app_batch_cases": [
+    "dev.modelatlas.app.ProviderModelBatchStateTest#explicitModelsAreBoundedDistinctAndNotSilentlyNormalized"
   ]
 }

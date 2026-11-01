@@ -91,6 +91,7 @@ struct ModelBatchTestsView: View {
                 else if !controller.started { Button("開始測試 \(controller.plan.offers.count) 個模型") { if let api = store.api { controller.start(using: api) } }.buttonStyle(AtlasActionStyle(prominent: true)).disabled(store.api == nil).accessibilityIdentifier("model-batch-start") }
             }.padding(24)
         }.frame(width: 760, height: 700).background(atlasCanvas).atlasModal(store)
+            .background(AtlasLoadedMarker(name: controller.started ? "model-batch-results" : "model-batch-ready"))
             .onDisappear { controller.cancel(); Task { await store.refresh() } }
             .sheet(item: $receipt) { ref in RequestReceiptView(store: store, sampleID: ref.id).atlasModal(store) }
     }

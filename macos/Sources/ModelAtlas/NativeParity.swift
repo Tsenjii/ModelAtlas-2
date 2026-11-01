@@ -245,8 +245,9 @@ import SwiftUI
             let wireAfterKilo = try await fixtureJSON(fixture + "/fixture/parity-state")
             try require(wireBeforeKilo == wireAfterKilo && store.messages.isEmpty && !store.generating)
             stage = "native-workspace-transfer-pause-restart-resume"
+            try await verifyManualModelTests(store, chat: chat, foreign: foreign, output: output)
             try await verifyWorkspaceTransfer(store, output: output, fixture: fixture)
-            let result: JSONValue = .object(["workspace_transfer_controls": .bool(true), "result": .string("PASS"), "screenshots": .number(57), "kilo_factory_defaults": .bool(true), "kilo_no_automatic_inference": .bool(true), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "account_checkin_scope": .bool(true), "checkin_retry_cancel": .bool(true), "native_motion": .bool(true), "reduced_motion": .bool(true), "public_site_auto_read": .bool(true), "provider_series_scope": .bool(true), "site_partial_retry": .bool(true), "connection_actions": .bool(true), "provider_window_restored": .bool(true), "provider_form_feedback": .bool(true), "provider_account_write_guards": .bool(true), "provider_next_draft": .bool(true), "credential_restore_scope": .bool(true), "saved_refresh_no_repost": .bool(true), "workspace_sync_entry": .bool(true), "wire_counts": counts])
+            let result: JSONValue = .object(["workspace_transfer_controls": .bool(true), "result": .string("PASS"), "screenshots": .number(59), "manual_model_tests": .bool(true), "kilo_factory_defaults": .bool(true), "kilo_no_automatic_inference": .bool(true), "real_tls_media": .bool(true), "batch_confirm_undo": .bool(true), "stale_guards": .bool(true), "connector_caller": .bool(true), "knowledge_versions": .bool(true), "manual_evidence": .bool(true), "safe_references": .bool(true), "retained_history": .bool(true), "native_composer": .bool(true), "adaptive_composer": .bool(true), "composer_focus": .bool(true), "sidebar_toggle": .bool(true), "price_scope_guards": .bool(true), "native_intelligence": .bool(true), "telemetry_trends": .bool(true), "quota_scope_guards": .bool(true), "read_only_no_inference": .bool(true), "native_comparison": .bool(true), "comparison_receipts": .bool(true), "comparison_scope_guards": .bool(true), "appearance_choices": .bool(true), "chart_keyboard_selection": .bool(true), "observation_archive": .bool(true), "chart_receipt_identity": .bool(true), "chart_export_exact": .bool(true), "account_checkin_scope": .bool(true), "checkin_retry_cancel": .bool(true), "native_motion": .bool(true), "reduced_motion": .bool(true), "public_site_auto_read": .bool(true), "provider_series_scope": .bool(true), "site_partial_retry": .bool(true), "connection_actions": .bool(true), "provider_window_restored": .bool(true), "provider_form_feedback": .bool(true), "provider_account_write_guards": .bool(true), "provider_next_draft": .bool(true), "credential_restore_scope": .bool(true), "saved_refresh_no_repost": .bool(true), "workspace_sync_entry": .bool(true), "wire_counts": counts])
             try JSONEncoder().encode(result).write(to: output.appendingPathComponent("native-parity.json"), options: .atomic)
         } catch { try? Data(("Native parity failed at " + stage + ": " + error.localizedDescription).utf8).write(to: output.appendingPathComponent("FAILURE.txt")) }
         DispatchQueue.main.async { NSApp.terminate(nil) }
@@ -673,6 +674,42 @@ import SwiftUI
         window.sendEvent(arrow)
         try await wait { contains(window.contentView, "chart-point-" + id + "-" + nextID) }
     }
+    private static func verifyManualModelTests(_ store: AtlasStore, chat: JSONValue, foreign: JSONValue, output: URL) async throws {
+        guard let api = store.api else { throw AtlasError.engineUnavailable }
+        let scopes = [ModelScope(chat), ModelScope(foreign)]
+        let models = try scopes.map { scope -> JSONValue in
+            guard let model = store.myModels.first(where: { ModelScope($0) == scope }) else { throw AtlasError.invalidResponse }
+            return model
+        }
+        let offers = models.map { ComparisonOffer(model: $0, title: $0["model_id"].string, context: store.scopeTitle($0), operation: store.operationName($0)) }
+        let query = [URLQueryItem(name: "q", value: "MANUAL_TEST"), URLQueryItem(name: "limit", value: "200")]
+        let before = try await api.get("/telemetry", query: query).requiredArray()
+        let controller = try ModelBatchTestsController(offers: offers)
+        try await capture(ModelBatchTestsView(store: store, controller: controller), output, "58-model-batch-ready-light", dark: false, marker: "model-batch-ready")
+        let afterPreview = try await api.get("/telemetry", query: query).requiredArray()
+        try require(before == afterPreview)
+        controller.start(using: api); controller.start(using: api)
+        try await wait { !controller.pending }
+        try require(controller.problem == nil && controller.report.status == "COMPLETED" && controller.report.items.map(\.scope) == scopes)
+        try require(controller.report.items.allSatisfy { $0.outcome == "SUCCESS" && !$0.sampleID.isEmpty } && Set(controller.report.items.map(\.sampleID)).count == 2)
+        let after = try await api.get("/telemetry", query: query).requiredArray()
+        try require(after.count == before.count + 2)
+        for item in controller.report.items {
+            let value = try await api.get("/telemetry/detail", query: [URLQueryItem(name: "id", value: item.sampleID)])
+            let sample = value["sample"] == .null ? value : value["sample"]
+            try require(ModelScope(sample) == item.scope && sample["source"].string == "MANUAL_TEST")
+        }
+        try require(!controller.report.raw.pretty.contains("native-fixture-provider-key"))
+        try await capture(ModelBatchTestsView(store: store, controller: controller), output, "59-model-batch-results-dark", dark: true, marker: "model-batch-results")
+        let cancelled = try ModelBatchTestsController(offers: offers)
+        cancelled.start(using: api); cancelled.cancel()
+        try await wait { !cancelled.pending }
+        let unchanged = try await api.get("/telemetry", query: query).requiredArray()
+        try require(unchanged.count == after.count && cancelled.report.items.isEmpty && cancelled.report.status == "CANCELLED")
+        let proof: JSONValue = .object(["result": .string("PASS"), "real_requests": .number(2), "exact_scopes": .bool(true), "no_preview_request": .bool(true), "duplicate_start_guard": .bool(true), "durable_receipts": .bool(true), "cancel_before_send": .bool(true), "export_no_secret": .bool(true)])
+        try JSONEncoder().encode(proof).write(to: output.appendingPathComponent("model-batch-tests.json"), options: .atomic)
+    }
+
     private static func verifyComparison(_ store: AtlasStore, chat: JSONValue, foreign: JSONValue, output: URL) async throws {
         guard let api = store.api else { throw AtlasError.engineUnavailable }
         let selected = store.selectedModel, session = store.sessionID, messages = store.messages, draft = store.draft

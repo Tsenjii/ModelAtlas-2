@@ -50,7 +50,7 @@ def browser_image_scopes(config):
     return {"candidate": (509+len(current), set(current)), "rejected_aa": (523, set(frozen))}
 
 def visual_review_count(config):
-    return len(browser_image_scopes(config)["candidate"][1])+8+2*(6+len(config["new_mac_research_images"])+len(native_aqua_image_scope(config)))
+    return len(browser_image_scopes(config)["candidate"][1])+8+2*(6+len(config["new_mac_research_images"])+len(native_aqua_image_scope(config))+len(config.get("new_mac_batch_images",[])))
 
 def android_aqua_image_scope(config):
     names = config["new_android_aqua_images"]
@@ -81,7 +81,7 @@ def validate_native_transparency_fixture(resource, fixture):
     require(len(phases) == 3 and [phase.get("system_transparency") for phase in phases] == observed and all(type(phase.get("system_transparency")) is bool for phase in phases), "native process did not observe actual system states")
 
 def validate_browser_screenshot_names(names):
-    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-", "cloud-backup-", "assistant-mapping-", "conversation-workspace-")) and "failure" not in name for name in names), "unexpected new screenshot")
+    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-", "cloud-backup-", "assistant-mapping-", "conversation-workspace-", "model-batch-")) and "failure" not in name for name in names), "unexpected new screenshot")
 
 def linux_inventory(directory, arch, config):
     require(arch in ("amd64", "arm64"), "unsupported Linux architecture")
@@ -177,6 +177,15 @@ def validate_android_aqua_case_extension(counts, cases, old_cases, accepted_case
     validate_device_case_extension(dict(tests=997, failures=0, errors=0, skipped=5), preserved, old_cases, config)
     require(len(accepted_cases) == 997 and preserved == accepted_cases, "accepted997 device outcomes changed")
     require({name: action for name, action in cases.items() if name not in accepted_cases} == added, "Android Aqua regression missing or replaced")
+    return sorted(added)
+
+def validate_android_batch_case_extension(counts, cases, old_cases, accepted_cases, config):
+    added = config["new_android_batch_cases"]
+    require(isinstance(added, dict) and len(added) == 5 and all(action == "pass" for action in added.values()), "five Android model batch cases must pass")
+    require(counts == dict(tests=1010, failures=0, errors=0, skipped=5), "Android model batch device outcomes changed")
+    preserved = {name: action for name, action in cases.items() if name not in added}
+    validate_android_aqua_case_extension(dict(tests=1005, failures=0, errors=0, skipped=5), preserved, old_cases, accepted_cases, config)
+    require({name: action for name, action in cases.items() if name not in preserved} == added, "Android model batch regression missing or replaced")
     return sorted(added)
 
 def validate_android_aqua_reports(light, dark, expected_images):
@@ -478,7 +487,9 @@ def main():
         require(core_cases == old_core_cases, "accepted core case removed or regressed")
         html = p.member(z,"reports/tests/testDebugUnitTest/index.html").decode()
         actual_counts = {key:int(re.search(r'id="'+key+r'">\s*<div class="counter">(\d+)</div>', html).group(1)) for key in ("tests","failures","ignored")}
-        require(actual_counts == dict(tests=423,failures=0,ignored=0), "Android app JVM outcomes changed")
+        require(actual_counts == dict(tests=424,failures=0,ignored=0), "Android app JVM outcomes changed")
+        batch_html = p.member(z,"classes/dev.modelatlas.app.ProviderModelBatchStateTest.html").decode()
+        require("explicitModelsAreBoundedDistinctAndNotSilentlyNormalized" in batch_html and 'class="failures"' not in batch_html, "Android model batch JVM case missing")
         meta = json.loads(p.member(z,"android.json"))
         apk = p.member(z,"debug/app-debug.apk")
         require(apk_certificate(apk) == meta["certificate_sha256"], "actual APK certificate differs from metadata")
@@ -496,7 +507,7 @@ def main():
         counts, cases = xml_cases(z)
         accepted_metadata = json.loads((ROOT/"docs/verification/20261028/android-metadata-baseline.json").read_text())
         require(accepted_metadata["source"] == "3c37fd07b0f7b0dc4935bc16db1a5f901025b338" and accepted_metadata["status"] == "ACCEPTED_LISTED_SCOPE", "accepted Android metadata baseline missing")
-        added_device_cases = validate_android_aqua_case_extension(counts, cases, old_cases, accepted_metadata["device_case_events"], config)
+        added_device_cases = validate_android_batch_case_extension(counts, cases, old_cases, accepted_metadata["device_case_events"], config)
         (out/"device-case-events.json").write_text(json.dumps(cases, indent=2)+"\n")
         (out/"core-case-events.json").write_text(json.dumps(core_cases, indent=2)+"\n")
         runtime = json.loads(p.member(z,"instrumentation-runtime.json"))
@@ -537,22 +548,26 @@ def main():
             original_mac_cases = {x[2] for x in re.findall(r"\[(\d+)/(\d+)\] Testing ([^\n]+)", p.member(old,"swift-tests.log").decode())}
             require(len(original_mac_cases) == 85, "accepted Mac test inventory changed")
         with archive("ModelAtlas-macOS-QA-"+arch) as z:
-            actual_images = {Path(n).name for n in pngs(z, 104+len(native_aqua_views))}
-            require(old_images <= actual_images and actual_images-old_images == set(config["new_mac_research_images"])|native_aqua_views, "original Mac images removed or new native views missing")
+            batch_views = set(config["new_mac_batch_images"])
+            require(batch_views == {"58-model-batch-ready-light.png", "59-model-batch-results-dark.png"}, "native model batch image scope changed")
+            actual_images = {Path(n).name for n in pngs(z, 104+len(native_aqua_views)+len(batch_views))}
+            require(old_images <= actual_images and actual_images-old_images == set(config["new_mac_research_images"])|native_aqua_views|batch_views, "original Mac images removed or new native views missing")
             smoke = json.loads(p.member(z,"ui/native-smoke.json"))
             parity = json.loads(p.member(z,"parity-ui/native-parity.json"))
-            require(smoke["result"] == parity["result"] == "PASS" and smoke["screenshots"] == 25 and parity["screenshots"] == 57, "native Mac proof missing")
+            require(smoke["result"] == parity["result"] == "PASS" and smoke["screenshots"] == 25 and parity["screenshots"] == 59, "native Mac proof missing")
+            batch = json.loads(p.member(z,"parity-ui/model-batch-tests.json"))
+            require(parity["manual_model_tests"] is True and batch["result"] == "PASS" and batch["real_requests"] == 2 and all(batch[name] is True for name in ("exact_scopes", "no_preview_request", "duplicate_start_guard", "durable_receipts", "cancel_before_send", "export_no_secret")), "native model batch caller proof missing")
             require(parity["kilo_factory_defaults"] is True and parity["kilo_no_automatic_inference"] is True, "native factory caller missing")
             transfer = json.loads(p.member(z,"parity-ui/workspace-transfer.diagnostics.json"))
             require(parity["workspace_transfer_controls"] is True and transfer["result"] == "PASS" and transfer["destination_models"] == 15 and transfer["paused_progress_bytes"] > 0 and transfer["outgoing_acked"] > 0, "native transfer receipts missing")
             require(all(transfer[x] is True for x in ("same_transfer_after_restart","pause_during_busy","actual_keychain_restart","source_product_retained","no_inference")), "native transfer controls/restart failed")
             cases = re.findall(r"\[(\d+)/(\d+)\] Testing ([^\n]+)", p.member(z,"swift-tests.log").decode())
-            require(len(cases) == 89 and {int(x[0]) for x in cases} == set(range(1,90)) and {int(x[1]) for x in cases} == {89} and len({x[2] for x in cases}) == 89, "Mac core cases missing")
+            require(len(cases) == 93 and {int(x[0]) for x in cases} == set(range(1,94)) and {int(x[1]) for x in cases} == {93} and len({x[2] for x in cases}) == 93, "Mac core cases missing")
             actual_mac_cases = {x[2] for x in cases}
-            require(original_mac_cases <= actual_mac_cases and len(actual_mac_cases-original_mac_cases) == 4 and actual_mac_cases-original_mac_cases == set(config["accepted_native_research_cases"]), "original Mac core case removed or replaced")
+            require(original_mac_cases <= actual_mac_cases and len(actual_mac_cases-original_mac_cases) == 8 and actual_mac_cases-original_mac_cases == set(config["accepted_native_research_cases"])|set(config["new_mac_batch_cases"]), "original Mac core case removed or replaced")
             require(sum("KiloFactoryTests/" in x[2] for x in cases) == 3, "native factory tests missing")
-            selected = [n for n in z.namelist() if n.endswith(".png") and Path(n).name.startswith(("52-kilo-","53-kilo-","54-workspace-","55-workspace-","56-workspace-","57-workspace-"))]
-            require(len(selected) == 6, "Mac factory screenshot inventory changed")
+            selected = [n for n in z.namelist() if n.endswith(".png") and Path(n).name.startswith(("52-kilo-","53-kilo-","54-workspace-","55-workspace-","56-workspace-","57-workspace-","58-model-batch-","59-model-batch-"))]
+            require(len(selected) == 8, "Mac factory and model batch screenshot inventory changed")
             images.extend(("mac-"+arch+"/"+Path(n).name,z.read(n)) for n in selected)
             research = json.loads(p.member(z,"research-ui/native-research.json"))
             require(research["result"] == "PASS" and research["screenshots"] == 8, "native research UI proof missing")
@@ -574,7 +589,7 @@ def main():
             aqua_images = [n for n in z.namelist() if "/aqua-ui/" in "/"+n and n.endswith(".png")]
             require({Path(n).name for n in aqua_images} == native_aqua_views, "native Aqua views missing or replaced")
             images.extend(("mac-"+arch+"/aqua/"+Path(n).name,z.read(n)) for n in aqua_images)
-            report["mac_"+arch] = {"png":104+len(native_aqua_views),"preserved_png":104,"core_tests":89,"preserved_core_tests":89,"smoke":smoke,"parity":parity,"workspace_transfer":transfer,"research":research,"research_resource":resource,"aqua":aqua,"aqua_resource":aqua_resource}
+            report["mac_"+arch] = {"png":104+len(native_aqua_views)+len(batch_views),"preserved_png":104,"core_tests":93,"preserved_core_tests":89,"smoke":smoke,"parity":parity,"workspace_transfer":transfer,"research":research,"research_resource":resource,"aqua":aqua,"aqua_resource":aqua_resource}
     with archive("ModelAtlas-macOS-Universal") as z:
         with zipfile.ZipFile(io.BytesIO(p.member(z,"ModelAtlas-macOS-Universal.zip"))) as app:
             for item in json.loads((ROOT/"macos/Resources/Wallpapers/manifest.json").read_text())["images"]:

@@ -48,7 +48,7 @@ with (root / "parity-app.log").open("w") as log:
 report = out / "native-parity.json"
 assert report.exists(), (out / "FAILURE.txt").read_text() if (out / "FAILURE.txt").exists() else "Native parity did not finish"
 value = json.loads(report.read_text())
-assert value["result"] == "PASS" and value["screenshots"] == 57, value
+assert value["result"] == "PASS" and value["screenshots"] == 59, value
 for field in ["workspace_transfer_controls", "kilo_factory_defaults", "kilo_no_automatic_inference", "real_tls_media", "batch_confirm_undo", "stale_guards", "connector_caller", "knowledge_versions", "manual_evidence", "safe_references", "retained_history", "native_composer", "adaptive_composer", "composer_focus", "sidebar_toggle", "price_scope_guards"]:
     assert value[field], field
 for field in ["native_intelligence", "telemetry_trends", "quota_scope_guards", "read_only_no_inference"]:
@@ -61,7 +61,7 @@ for field in ["account_checkin_scope", "checkin_retry_cancel", "native_motion", 
     assert value[field], field
 for field in ["provider_form_feedback", "provider_account_write_guards", "provider_next_draft", "credential_restore_scope", "saved_refresh_no_repost", "workspace_sync_entry"]:
     assert value[field], field
-assert len(list(out.glob("*.png"))) == 57
+assert len(list(out.glob("*.png"))) == 59
 assert len(list((out / "motion").glob("*.png"))) == 14
 management = json.loads((out / "provider-management.diagnostics.log").read_text())
 assert management["result"] == "PASS" and all(v for v in management.values() if type(v) is bool)
@@ -81,3 +81,7 @@ assert len(ids["additional_engine_pids"]) == 3 and peaks["additional_fixture_rss
 for pid in ids["additional_engine_pids"]:
     child = subprocess.run(["ps", "-o", "pid=", "-p", str(int(pid))], capture_output=True, text=True)
     assert not child.stdout.strip(), "Workspace transfer fixture engine still running"
+
+assert value["manual_model_tests"] is True
+batch = json.loads((out / "model-batch-tests.json").read_text())
+assert batch["result"] == "PASS" and batch["real_requests"] == 2 and all(batch[name] is True for name in ("exact_scopes", "no_preview_request", "duplicate_start_guard", "durable_receipts", "cancel_before_send", "export_no_secret"))

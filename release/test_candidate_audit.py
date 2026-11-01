@@ -57,12 +57,21 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
             "read-recovery-375-dark", "1280-light", "375-light", "375-dark", "320-large-dark",
             "320-large-aqua", "draft-recovery-375-dark", "write-uncertain-375-dark")}
         config = self.config()
+        config["new_browser_images"] = [name for name in config["new_browser_images"] if not name.startswith("model-batch-")]
         self.assertEqual(len(previous),63)
         self.assertEqual(set(config["new_browser_images"]),set(previous)|added)
         self.assertEqual(audit.browser_image_scopes(config)["candidate"][0],580)
 
+    def test_model_batch_preserves_every_conversation_view_and_adds_seven_exact_views(self):
+        previous = json.loads((Path(__file__).resolve().parents[1]/"docs/verification/20261031/conversation-workspace-audit.json").read_text())["browser_images"]["added"]
+        added = {"model-batch-"+name+".png" for name in ("1280-light","375-dark","320-large-dark","completed","limited","cancelled-320-large","unconfirmed")}
+        config = self.config()
+        self.assertEqual(len(previous),71)
+        self.assertEqual(set(config["new_browser_images"]),set(previous)|added)
+        self.assertEqual(audit.browser_image_scopes(config)["candidate"][0],587)
+
     def test_crash_captures_remain_forbidden_in_declared_and_actual_views(self):
-        for name in ("research-history-failure.png", "research-history-scope-failure-390-dark.png", "aqua-failure.png", "assistant-mapping-failure.png", "conversation-workspace-failure.png", "unreviewed-view.png"):
+        for name in ("research-history-failure.png", "research-history-scope-failure-390-dark.png", "aqua-failure.png", "assistant-mapping-failure.png", "conversation-workspace-failure.png", "model-batch-failure.png", "unreviewed-view.png"):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, "unexpected new screenshot"):
                 audit.validate_browser_screenshot_names([name])
 
@@ -142,11 +151,16 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
     def test_contact_inventory_grows_without_rewriting_frozen_views(self):
         config = self.config()
         original = copy.deepcopy(config)
-        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith("conversation-workspace-")]
+        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith(("conversation-workspace-","model-batch-"))]
+        original["new_mac_batch_images"] = []
         self.assertEqual(audit.visual_review_count(original),125)
-        self.assertEqual(audit.visual_review_count(config),133)
+        conversation = copy.deepcopy(config)
+        conversation["new_browser_images"] = [name for name in conversation["new_browser_images"] if not name.startswith("model-batch-")]
+        conversation["new_mac_batch_images"] = []
+        self.assertEqual(audit.visual_review_count(conversation),133)
+        self.assertEqual(audit.visual_review_count(config),144)
         config["new_browser_images"].append("future-new-view.png")
-        self.assertEqual(audit.visual_review_count(config),134)
+        self.assertEqual(audit.visual_review_count(config),145)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
 class CandidateDeviceExtensionTest(unittest.TestCase):
@@ -204,11 +218,17 @@ class CandidateAndroidAquaTest(unittest.TestCase):
 
     def test_fifteen_android_views_are_added_to_all110_original_views(self):
         original = copy.deepcopy(self.config)
-        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith("conversation-workspace-")]
+        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith(("conversation-workspace-","model-batch-"))]
+        original["new_mac_batch_images"] = []
         self.assertEqual(audit.visual_review_count(original),125)
         self.assertEqual(audit.candidate_visual_review_count(original),140)
-        self.assertEqual(audit.visual_review_count(self.config),133)
-        self.assertEqual(audit.candidate_visual_review_count(self.config),148)
+        conversation = copy.deepcopy(self.config)
+        conversation["new_browser_images"] = [name for name in conversation["new_browser_images"] if not name.startswith("model-batch-")]
+        conversation["new_mac_batch_images"] = []
+        self.assertEqual(audit.visual_review_count(conversation),133)
+        self.assertEqual(audit.candidate_visual_review_count(conversation),148)
+        self.assertEqual(audit.visual_review_count(self.config),144)
+        self.assertEqual(audit.candidate_visual_review_count(self.config),159)
         changed = copy.deepcopy(self.config)
         changed["new_android_aqua_images"][13] = "14-replacement.png"
         with self.assertRaisesRegex(ValueError,"image scope"):
@@ -244,6 +264,42 @@ class CandidateAndroidAquaTest(unittest.TestCase):
             changed = copy.deepcopy(dark); changed["pictures"][0][field] = value
             with self.subTest(field=field,value=value), self.assertRaisesRegex(ValueError,"display capture"):
                 audit.validate_android_aqua_reports(light,changed,set(names))
+
+class CandidateManualBatchExtensionTest(unittest.TestCase):
+    def setUp(self):
+        self.config = json.loads((Path(__file__).parent/"candidate_audit_scope.json").read_text())
+        self.old = {"old#"+str(i): "pass" if i < 991 else "skipped" for i in range(996)}
+        self.accepted = {**self.old, **self.config["new_device_cases"]}
+        self.preserved = {**self.accepted, **self.config["new_android_aqua_cases"]}
+        self.cases = {**self.preserved, **self.config["new_android_batch_cases"]}
+        self.counts = dict(tests=1010, failures=0, errors=0, skipped=5)
+
+    def test_five_new_cases_preserve_every_original_outcome(self):
+        added = audit.validate_android_batch_case_extension(self.counts,self.cases,self.old,self.accepted,self.config)
+        self.assertEqual(set(added),set(self.config["new_android_batch_cases"]))
+        for key in ("old#0",next(iter(self.config["new_android_aqua_cases"])),next(iter(self.config["new_android_batch_cases"]))):
+            changed = dict(self.cases); changed.pop(key); changed["same-count-replacement#wrong"] = "pass"
+            with self.subTest(key=key),self.assertRaises(ValueError):
+                audit.validate_android_batch_case_extension(self.counts,changed,self.old,self.accepted,self.config)
+
+    def test_new_batch_case_cannot_be_skipped_or_removed_from_scope(self):
+        key = next(iter(self.config["new_android_batch_cases"]))
+        changed = dict(self.cases); changed[key] = "skipped"
+        with self.assertRaises(ValueError):
+            audit.validate_android_batch_case_extension(self.counts,changed,self.old,self.accepted,self.config)
+        config = copy.deepcopy(self.config); config["new_android_batch_cases"].pop(key)
+        with self.assertRaisesRegex(ValueError,"five Android"):
+            audit.validate_android_batch_case_extension(self.counts,self.cases,self.old,self.accepted,config)
+
+    def test_go_manifest_covers_actual_registered_tests_without_removing_baseline(self):
+        root = Path(__file__).resolve().parents[1]
+        baseline = json.loads((root/"docs/verification/20261026/workspace-chunks-baseline.json").read_text())["go_case_events"]
+        existing = {name for name in baseline if "/" not in name}
+        declared = {name for name in self.config["go_new_events"] if "/" not in name}
+        self.assertEqual(audit.go_test_functions(root/"vps"),existing|declared)
+        for name in ("TestModelBatchExactScopesReceiptsAndPreflight","TestModelBatchStopsAtRateLimitWithoutRetry","TestModelBatchCancellationStopsActiveSocketAndPendingModels"):
+            self.assertEqual(self.config["go_new_events"][name],"pass")
+        self.assertEqual(self.config["go_new_events"]["TestBrowserModelBatchTestWorkflow"],"skip")
 
 class CandidateRegistryIntegrityTest(unittest.TestCase):
     def test_new_research_files_cannot_disappear_from_the_audited_registry(self):
