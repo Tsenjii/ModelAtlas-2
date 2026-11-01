@@ -1,0 +1,146 @@
+{
+  "slice": "MAC-AQUA-015W",
+  "source": "f581874a9fdf2fe8203909af29a22942a40f28f4",
+  "tree": "271b7deb05c983b24f4095bd25d798d00b2afcd6",
+  "status": "REJECTED_VISUAL_COMPOSITION_NOT_ACCEPTED",
+  "same_source_nine_jobs": "SUCCESS",
+  "audit": {
+    "run": 40553743340,
+    "job": 122364102455,
+    "artifact": 12755949537,
+    "bytes": 2052162,
+    "sha256": "53cf8c95912042c8c67149f7d7b9f7e12d02234f61467d1523bd8839b5cf5765",
+    "crc": "PASS",
+    "result": "BYTE_AUDIT_PASS_PENDING_VISUAL_REVIEW"
+  },
+  "go_suite": {
+    "result": "PASS",
+    "source": "f581874a9fdf2fe8203909af29a22942a40f28f4",
+    "working_tree_dirty": false,
+    "race": true,
+    "suite_deadline_seconds": 600,
+    "started_at": "2026-10-27T17:47:25.628696+00:00",
+    "seconds": 361.046,
+    "package": "github.com/Tsenjii/ModelAtlas-2/vps",
+    "registry_sha256": "00b04fe9fa24352f62964aaca5d67f38ad7b0a281b07fde38ba098256fd73d3b"
+  },
+  "android_device": {
+    "tests": 996,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5
+  },
+  "native": {
+    "arm_png": 117,
+    "intel_png": 117,
+    "core_each": 89,
+    "system_fixture": {
+      "before": {
+        "present": true,
+        "value": true
+      },
+      "requested": [
+        false,
+        false,
+        true
+      ],
+      "observed": [
+        false,
+        false,
+        true
+      ],
+      "restored": true,
+      "after": {
+        "present": true,
+        "value": true
+      }
+    },
+    "actual_three_launches": [
+      {
+        "app_pid": 1644,
+        "engine_pid": 1651,
+        "exit": 0,
+        "system_transparency": false
+      },
+      {
+        "app_pid": 1836,
+        "engine_pid": 1838,
+        "exit": 0,
+        "system_transparency": false
+      },
+      {
+        "app_pid": 1881,
+        "engine_pid": 1883,
+        "exit": 0,
+        "system_transparency": true
+      }
+    ]
+  },
+  "manual_visual_review": {
+    "reviewer": "primary agent self-review",
+    "reviewed_current_aqua_views": 13,
+    "contact_sheets": 4,
+    "result": "FAIL",
+    "findings": [
+      "02/03 portrait fill cropped faces out of the useful viewport, leaving bangs/hat",
+      "04/05/11 centered welcome plate overlapped Q-character face"
+    ],
+    "screenshots": [
+      {
+        "file": "01-classic-invalid-preference-light.png",
+        "sha256": "864449fc0bf9fbac564d0eb9d3e6d8369b0cd863a0ecfccf46c6389973456b1b"
+      },
+      {
+        "file": "02-kotoha-light.png",
+        "sha256": "022cd7da73952edd3e413e8f160ce0c4cd0addf211eb33ec53a55d813dbf4e09"
+      },
+      {
+        "file": "03-elaina-light.png",
+        "sha256": "a0448c3e1737078bfeff45cd22ba831bdf4ca744dab22efc2b8d78c67db82cf2"
+      },
+      {
+        "file": "04-kotoha-chibi-light.png",
+        "sha256": "7e35c21dd23195def66a7e3811c37716a03e1f5c8702cd7dacf49b7250cdd8f1"
+      },
+      {
+        "file": "05-elaina-chibi-dark.png",
+        "sha256": "c4c93f5bb6aa61ed92fa231407eccef35a36af7668b7ef440231aeeea0f97dd6"
+      },
+      {
+        "file": "06-settings-four-choices-dark.png",
+        "sha256": "8e5ff9830a5d3caa81deb586858f90acbdf97f52711eb142969a50d734d5430f"
+      },
+      {
+        "file": "07-providers-light.png",
+        "sha256": "ca19c5be692ddfa5d73fd43baa4887380f64fad9347f639a63cab4a2b404634e"
+      },
+      {
+        "file": "08-models-compact-dark.png",
+        "sha256": "1eb6becf4aae71841d6512611da76c2b2e3254fd2eee3fd4a1c814a193a969a5"
+      },
+      {
+        "file": "09-provider-form-retained-dark.png",
+        "sha256": "5ee4221f2f3db6f68b3c67b7af11c7defc610f001e785395ad5d4edac9d255d9"
+      },
+      {
+        "file": "10-classic-retained-dark.png",
+        "sha256": "c4d017fc124fd2b2e1604facfff43af1c0b60df0ccbed8b0687b0a6d88769a3f"
+      },
+      {
+        "file": "11-relaunch-retained-dark.png",
+        "sha256": "228527d0638671b939ab2d4eeef1644164e5c8be0a8efcf0f83d59a171644af4"
+      },
+      {
+        "file": "12-reduced-transparency-light.png",
+        "sha256": "e34bc93d749c52cf3447ffa27df630324faa92f80494ac23648ab4aa7ee78f1c"
+      },
+      {
+        "file": "13-system-reduced-transparency-dark.png",
+        "sha256": "223e5393aa69e06e3b920b29d329d5d6238ac94692c4e31e41f1a821f655d540"
+      }
+    ]
+  },
+  "resolution": "retain original image proportions on right, shrink Q art, reserve illustration space for wide visible-art layouts; narrow/opaque/classic retain full content width. Same data/view identity and all13 new/104 old views,89 core and original deadlines retained.",
+  "whole_next_release": "PARTIAL",
+  "historical_android_c1_timeout": "new source996 passed, individual old4d timeout cause remains UNKNOWN; not claimed fixed"
+}

@@ -1,0 +1,48 @@
+{
+  "slice": "MAC-AQUA-015W",
+  "status": "CANDIDATE",
+  "parent": "f581874a9fdf2fe8203909af29a22942a40f28f4",
+  "expected": {
+    "go_registry": 438,
+    "go_terminal_events": 660,
+    "go_pass": 608,
+    "go_skip": 52,
+    "browser_flows": 44,
+    "browser_png": 557,
+    "mac_core_each": 89,
+    "mac_png_each": 117,
+    "preserved_mac_png_each": 104,
+    "new_mac_aqua_png_each": 13,
+    "android_core": 594,
+    "android_app": 423,
+    "android_device": 996,
+    "android_original_skip": 5,
+    "visual_views": 110,
+    "contacts": 28
+  },
+  "local": {
+    "release_regressions": {
+      "result": "PASS",
+      "tests": 55,
+      "seconds": 0.035
+    },
+    "artwork_bytes_and_rgba": "PASS",
+    "shell_and_python_syntax": "PASS",
+    "native_compile_and_actual_ui": "PENDING_MAC_CI; AppKit unavailable in Linux workspace",
+    "corrected_native_seed_against_actual_packaged_engine": "PASS; five POSTs, active model, no inference or research; engine source73 unchanged product Go"
+  },
+  "original_workloads_and_deadlines": "UNCHANGED; additional fourth native phase bounded separately",
+  "same_source_nine_jobs": "PENDING",
+  "actual_nine_archives": "PENDING",
+  "whole_next_release": "PARTIAL",
+  "android_native_aqua": "NOT_IMPLEMENTED",
+  "public_release_frozen": true,
+  "first_candidate": "mac-aqua-first-candidate.json",
+  "transparency_validation": "three real packaged app launches observe system false,false,true; actual app toggle on/off; exact system and app preferences restored",
+  "second_candidate": "mac-aqua-second-candidate.json",
+  "third_candidate": "mac-aqua-third-candidate.json",
+  "native_first_settings_failure": "diagnostic source proved opaque accessibility path; official runner image enables Reduce Transparency",
+  "fourth_candidate": "mac-aqua-fourth-candidate.json",
+  "fifth_candidate": "mac-aqua-fifth-candidate.json",
+  "visual_composition": "prior functional source rejected for cropped original faces/covered Q faces; preserve aspect and right-side space, own visual acceptance pending"
+}

@@ -1,0 +1,203 @@
+{
+  "slice": "RESEARCH-POOL-015H",
+  "status": "ACCEPTED_LISTED_SCOPE",
+  "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+  "tree": "1c64e4427c2c095d52e080316942eadb47f75ae3",
+  "runs": [
+    {
+      "id": 40074926904,
+      "path": ".github/workflows/vps.yml",
+      "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 120816129174,
+          "name": "vps-browser",
+          "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T07:38:22Z",
+          "completed_at": "2026-10-24T07:44:24Z"
+        },
+        {
+          "id": 120816129319,
+          "name": "vps-test",
+          "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T07:38:23Z",
+          "completed_at": "2026-10-24T07:46:13Z"
+        },
+        {
+          "id": 120816129330,
+          "name": "vps-linux-arm64",
+          "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T07:38:23Z",
+          "completed_at": "2026-10-24T07:39:20Z"
+        },
+        {
+          "id": 120816129345,
+          "name": "vps-linux-amd64",
+          "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T07:38:23Z",
+          "completed_at": "2026-10-24T07:39:18Z"
+        }
+      ]
+    },
+    {
+      "id": 40074926883,
+      "path": ".github/workflows/android.yml",
+      "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 120816129196,
+          "name": "build",
+          "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T07:38:23Z",
+          "completed_at": "2026-10-24T07:43:12Z"
+        },
+        {
+          "id": 120816129286,
+          "name": "device-tests",
+          "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T07:38:23Z",
+          "completed_at": "2026-10-24T07:46:59Z"
+        }
+      ]
+    },
+    {
+      "id": 40074926876,
+      "path": ".github/workflows/macos-native.yml",
+      "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 120816129227,
+          "name": "macos-build",
+          "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T07:38:24Z",
+          "completed_at": "2026-10-24T07:42:56Z"
+        },
+        {
+          "id": 120817015205,
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T07:42:59Z",
+          "completed_at": "2026-10-24T07:50:46Z"
+        },
+        {
+          "id": 120817015264,
+          "name": "macos-test (macos-15, arm64)",
+          "head_sha": "9ba29050aca90e6e639cc36786edae3ce89a97da",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T07:42:59Z",
+          "completed_at": "2026-10-24T07:48:22Z"
+        }
+      ]
+    }
+  ],
+  "verified_downloads": [
+    {
+      "id": 12552856371,
+      "name": "modelatlas-vps-linux-amd64",
+      "bytes": 12513238,
+      "sha256": "d789110a7b013559f94406da49eb8b3510e0fb4e625c197dc0d6eefb7f2c2f9d",
+      "run_id": 40074926904,
+      "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da"
+    },
+    {
+      "id": 12552469016,
+      "name": "modelatlas-vps-linux-arm64",
+      "bytes": 11630581,
+      "sha256": "7dd9438adf5ff910e60dd963546d5af7b708c5dfa845aebeffe3e91b7957f586",
+      "run_id": 40074926904,
+      "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da"
+    },
+    {
+      "id": 12552619330,
+      "name": "modelatlas-vps-footprint",
+      "bytes": 1063,
+      "sha256": "c949217457246e0944f760d4ce60ecc7dd923554f88e36a489df0cef0ea06550",
+      "run_id": 40074926904,
+      "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da"
+    },
+    {
+      "id": 12552831860,
+      "name": "modelatlas-vps-browser",
+      "bytes": 28581052,
+      "sha256": "45b1a35e4d9e8fb58762fa4c5718e84ee5142fd48d9af01cec2fdc996f6b53c3",
+      "run_id": 40074926904,
+      "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da"
+    },
+    {
+      "id": 12553365326,
+      "name": "modelatlas-debug-and-reports",
+      "bytes": 17207592,
+      "sha256": "b87c8422ffe4e44f68e5fb7a9b26616e96d74e5c6f2be7eb5eb6bc9f1e55e493",
+      "run_id": 40074926883,
+      "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da"
+    },
+    {
+      "id": 12553165854,
+      "name": "modelatlas-device-test-reports",
+      "bytes": 1225642,
+      "sha256": "6179c7459b46a2a5765f0d41eb770fd0c8210aab4136b6f9276060ecf7eb74a7",
+      "run_id": 40074926883,
+      "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da"
+    },
+    {
+      "id": 12552821782,
+      "name": "ModelAtlas-macOS-Universal",
+      "bytes": 41608650,
+      "sha256": "884f893d8949857922f06b69f9e0eba3ddfb009d3733a6369bec5de20e331cdd",
+      "run_id": 40074926876,
+      "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da"
+    },
+    {
+      "id": 12553175869,
+      "name": "ModelAtlas-macOS-QA-arm64",
+      "bytes": 5275494,
+      "sha256": "546829d8a922508846049b3f159d235150573b0e7c800e5f21251ead32c7f454",
+      "run_id": 40074926876,
+      "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da"
+    },
+    {
+      "id": 12552609990,
+      "name": "ModelAtlas-macOS-QA-x86_64",
+      "bytes": 5419954,
+      "sha256": "619c4c7da2ce81d970c50301fc01d17c9d5d792311b4d75f8ea0ae0ad87a0acb",
+      "run_id": 40074926876,
+      "sha": "9ba29050aca90e6e639cc36786edae3ce89a97da"
+    }
+  ],
+  "evidence": "Draft PR #20：九份實際ZIP bytes/SHA256/CRC與成功producer原始時間窗、同來源、內層報告及實圖已核對；不是完整下一版完成聲明。"
+}

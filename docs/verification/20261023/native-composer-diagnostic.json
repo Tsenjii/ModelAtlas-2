@@ -1,0 +1,111 @@
+{
+  "purpose": "DIAGNOSTIC_ONLY_NOT_RESEARCH_DAILY_ACCEPTANCE",
+  "source": "422d5634fc80526faf1babdbfd9d740739daf53a",
+  "run_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39922377324",
+  "jobs": [
+    {
+      "id": 120310434440,
+      "name": "macos-build",
+      "conclusion": "success",
+      "run_id": 39922377324,
+      "head_sha": "422d5634fc80526faf1babdbfd9d740739daf53a",
+      "started_at": "2026-10-23T08:07:02Z",
+      "completed_at": "2026-10-23T08:12:58Z"
+    },
+    {
+      "id": 120312769462,
+      "name": "macos-test (macos-15, arm64)",
+      "conclusion": "success",
+      "run_id": 39922377324,
+      "head_sha": "422d5634fc80526faf1babdbfd9d740739daf53a",
+      "started_at": "2026-10-23T08:13:00Z",
+      "completed_at": "2026-10-23T08:16:08Z"
+    },
+    {
+      "id": 120312769384,
+      "name": "macos-test (macos-15-intel, x86_64)",
+      "conclusion": "success",
+      "run_id": 39922377324,
+      "head_sha": "422d5634fc80526faf1babdbfd9d740739daf53a",
+      "started_at": "2026-10-23T08:13:06Z",
+      "completed_at": "2026-10-23T08:22:46Z"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "ModelAtlas-macOS-Universal",
+      "id": 12487997593,
+      "digest": "sha256:314da3495e85e7f12d76902c0ae216d8e4b442c76bbec3af587c1b711366b748",
+      "run_id": 39922377324,
+      "producer_job_id": 120310434440,
+      "producer_job_name": "macos-build",
+      "created_at": "2026-10-23T08:12:51Z",
+      "bytes": 41408238
+    },
+    {
+      "name": "ModelAtlas-macOS-QA-arm64",
+      "id": 12488571409,
+      "digest": "sha256:6b57dc84147f4379cbaebc82d35804d40d18cdfc6c65ba1162006672f6e0c82a",
+      "run_id": 39922377324,
+      "producer_job_id": 120312769462,
+      "producer_job_name": "macos-test (macos-15, arm64)",
+      "created_at": "2026-10-23T08:16:02Z",
+      "bytes": 5284501
+    },
+    {
+      "name": "ModelAtlas-macOS-QA-x86_64",
+      "id": 12488946167,
+      "digest": "sha256:64547ad656eb65d20659948d5a89b8b26dc21141784a97e4f8c09c2d8e6062b4",
+      "run_id": 39922377324,
+      "producer_job_id": 120312769384,
+      "producer_job_name": "macos-test (macos-15-intel, x86_64)",
+      "created_at": "2026-10-23T08:22:38Z",
+      "bytes": 5410893
+    }
+  ],
+  "files": {
+    "macos/Sources/ModelAtlas/ComposerTextEditor.swift": {
+      "sha256": "b92c97f580317d7c9902d4daa3a7cd8781be5657701b8804688738b91a7f11f8"
+    },
+    "macos/Sources/ModelAtlas/NativeParity.swift": {
+      "sha256": "1d41fe447a9ccf60b3060a119b1be640973dd1d07360bc65301f5a3ae0547b23"
+    }
+  },
+  "results": {
+    "arm64": {
+      "core_tests": 82,
+      "png": 90,
+      "native_smoke": "PASS",
+      "native_parity": "PASS"
+    },
+    "x86_64": {
+      "core_tests": 82,
+      "png": 90,
+      "native_smoke": "PASS",
+      "native_parity": "PASS"
+    }
+  },
+  "negative": {
+    "source": "a9ddd4c341ab6ed6a87ae6e71c478bd38693f978",
+    "run": 39917487754,
+    "job": 120297212328,
+    "artifact": 12486401513,
+    "sha256": "3a969fbbf4ca0cece0dab94abd68a6df4dfd51bdbd13bfaa212dd046bc612ba3",
+    "checkpoint": "container-width-before-frame",
+    "view_width": 871,
+    "container_before": 863,
+    "container_after": 560.95,
+    "height_before": 61,
+    "height_after": 61,
+    "draft_characters": 192,
+    "marked_text": false
+  },
+  "not_accepted_candidates": [
+    "ef69ccabf71970133b1c66187eb2cf3e5d2b2918",
+    "833a80a2c4feff2a0c93df867ab43c7a31c712b1"
+  ],
+  "limitations": [
+    "只驗證兩份原生檔與整合候選一致；最終整合來源仍須獨立九項成功並核對全部實際產物。",
+    "CI AppKit runner 不作使用者實體 Mac 的驗收證據。"
+  ]
+}

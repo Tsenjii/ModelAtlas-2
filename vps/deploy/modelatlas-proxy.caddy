@@ -1,0 +1,8 @@
+# HTTP upstreams preserve the original Host. Replace forwarding headers at this
+# trusted HTTPS boundary; never trust a client's claim that HTTP was HTTPS.
+reverse_proxy app:8787 {
+    header_up X-Forwarded-Proto https
+    header_up -Forwarded
+    header_up -X-Forwarded-Host
+    flush_interval -1
+}

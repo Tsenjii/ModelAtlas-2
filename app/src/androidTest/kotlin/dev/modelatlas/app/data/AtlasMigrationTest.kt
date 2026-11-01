@@ -41,7 +41,7 @@ class AtlasMigrationTest {
             close()
         }
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val db = Room.databaseBuilder(context, AtlasDatabase::class.java, dbName).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15).allowMainThreadQueries().build()
+        val db = Room.databaseBuilder(context, AtlasDatabase::class.java, dbName).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16).allowMainThreadQueries().build()
         try {
             val repo = AtlasRepository(db)
             val rows = repo.connections.first()
@@ -67,7 +67,7 @@ class AtlasMigrationTest {
             assertNull(legacyOffering.verificationEvidenceId)
             assertNull(db.availabilityDao().getById("off-1")!!.group)
             // 全鏈到 v14；既有連線、telemetry、evidence、checkin 仍保留。
-            assertEquals(15, db.openHelper.writableDatabase.version)
+            assertEquals(16, db.openHelper.writableDatabase.version)
             assertV8TablesEmptyAndTyped(db)
             assertV10TablesEmptyAndTyped(db)
         } finally {
@@ -88,7 +88,7 @@ class AtlasMigrationTest {
             close()
         }
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val db = Room.databaseBuilder(context, AtlasDatabase::class.java, dbName).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15).allowMainThreadQueries().build()
+        val db = Room.databaseBuilder(context, AtlasDatabase::class.java, dbName).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16).allowMainThreadQueries().build()
         try {
             val legacy = db.checkinDao().get("pm", "2026-09-27", "")
             assertNotNull(legacy)
@@ -101,7 +101,7 @@ class AtlasMigrationTest {
             assertNull(db.offeringDao().getById("missing"))
             assertNull(db.availabilityDao().getById("missing"))
             // 全鏈到 v14；多帳號 legacy checkin 不被重新歸因。
-            assertEquals(15, db.openHelper.writableDatabase.version)
+            assertEquals(16, db.openHelper.writableDatabase.version)
             assertV8TablesEmptyAndTyped(db)
             assertV10TablesEmptyAndTyped(db)
         } finally {

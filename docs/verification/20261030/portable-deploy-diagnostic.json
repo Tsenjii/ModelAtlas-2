@@ -1,0 +1,1577 @@
+{
+  "schema": 1,
+  "slice": "VPS-PORTABLE-OPS-016",
+  "status": "DIAGNOSTIC_NOT_FINAL_SOURCE_ACCEPTANCE",
+  "source": "2ff4be18c4e5160bb29e879f1d539575ac7fd84d",
+  "tree": "47165874b81e1327d30e05c97c5527470c10fa59",
+  "run": 41004406491,
+  "jobs": [
+    {
+      "id": 123895910557,
+      "name": "portable-container-amd64",
+      "result": "SUCCESS"
+    },
+    {
+      "id": 123895910922,
+      "name": "portable-container-arm64",
+      "result": "SUCCESS"
+    },
+    {
+      "id": 123895910938,
+      "name": "portable-contracts",
+      "result": "SUCCESS"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12954582485,
+      "name": "contracts",
+      "bytes": 2439,
+      "sha256": "42765f0bb2bae85af4dd56e3161ddd8cc67687e3b1c14f820e6d305941d98185",
+      "crc": "PASS",
+      "terminal": [
+        {
+          "Test": "TestPortableOnlineBackupKeepsLiveWriterAndConsistentCompleteHistory",
+          "Action": "pass",
+          "Elapsed": 2.39
+        },
+        {
+          "Test": "TestPortableOnlineBackupRejectsWrongKeysAndNeverOverwritesLastGood",
+          "Action": "pass",
+          "Elapsed": 2.83
+        },
+        {
+          "Test": "TestPortableCloudPolicyCASAndZeroExitNeverPretendVerifiedBackup",
+          "Action": "pass",
+          "Elapsed": 2.89
+        },
+        {
+          "Test": "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed",
+          "Action": "pass",
+          "Elapsed": 1.42
+        },
+        {
+          "Test": "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup",
+          "Action": "pass",
+          "Elapsed": 2.07
+        },
+        {
+          "Test": "TestPortableCloudCommandsRequirePrivateIdentityAndExplicitKeyRecovery",
+          "Action": "pass",
+          "Elapsed": 0.01
+        },
+        {
+          "Test": "TestPortableCloudActualScheduleIdempotenceFetchAndCancellation",
+          "Action": "pass",
+          "Elapsed": 6.79
+        },
+        {
+          "Test": "TestPortableCloudParentCrashStopsOwnedTransferAndRecoversUncertainty",
+          "Action": "pass",
+          "Elapsed": 58.04
+        },
+        {
+          "Test": "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/plaintext-backend",
+          "Action": "pass",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-data",
+          "Action": "pass",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-filenames",
+          "Action": "pass",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-type",
+          "Action": "pass",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-remote",
+          "Action": "pass",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unreadable-encrypted-config",
+          "Action": "pass",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes",
+          "Action": "pass",
+          "Elapsed": 0.01
+        },
+        {
+          "Test": "TestPortableCloudBackupWithActualCryptAndRecovery",
+          "Action": "pass",
+          "Elapsed": 4.36
+        },
+        {
+          "Test": "TestPortableAssetsRevalidateAcrossBinaryUpgrade",
+          "Action": "pass",
+          "Elapsed": 0.2
+        },
+        {
+          "Test": "TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery",
+          "Action": "skip",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableConfigurationOwnsIdentityWithoutExecutingOrInheritingSecrets",
+          "Action": "pass",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableInitializationPreservesKeysAndRefusesLostOrSharedState",
+          "Action": "pass",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableConcurrentInitializationCannotReplaceConfirmedIdentity",
+          "Action": "pass",
+          "Elapsed": 0
+        },
+        {
+          "Test": "TestPortableForegroundUsesRealHTTPSAPIAndKeepsVaultAcrossRestart",
+          "Action": "pass",
+          "Elapsed": 1.91
+        },
+        {
+          "Action": "pass",
+          "Elapsed": 83.944
+        }
+      ]
+    },
+    {
+      "id": 12954796932,
+      "name": "browser",
+      "bytes": 802139,
+      "sha256": "a182f90317302a3c9c338f4b8d414d0200de81281c44854dc150560ff7bdf4ef",
+      "crc": "PASS",
+      "terminal": [
+        {
+          "Test": "TestBrowserPortableCloudBackupRealWorkflowAndReadRecovery",
+          "Action": "pass",
+          "Elapsed": 7.43
+        },
+        {
+          "Action": "pass",
+          "Elapsed": 9.536
+        }
+      ],
+      "images": [
+        {
+          "name": "cloud-backup-history-375-light.png",
+          "bytes": 81615,
+          "sha256": "01c128b8406584b9f74dbd31bb2f204daf9356fde7bccc04b044dd6fc5b18b46"
+        },
+        {
+          "name": "cloud-backup-last-good-375-light.png",
+          "bytes": 84628,
+          "sha256": "5de3115846c50061bc0c7641e0ce9d0ef1e85d5bf7d33270e0d06a3d154e0250"
+        },
+        {
+          "name": "cloud-backup-lost-ack-320-200-light.png",
+          "bytes": 81017,
+          "sha256": "e80ea937edd5f08584c7e274f692f9f8dfd1e4f27251966dd9added1d6c34036"
+        },
+        {
+          "name": "cloud-backup-ready-1280-light.png",
+          "bytes": 130968,
+          "sha256": "02802156aa37a642cdec89d83169677953086307db4a35208bd82997b4196ee0"
+        },
+        {
+          "name": "cloud-backup-running-375-dark.png",
+          "bytes": 77729,
+          "sha256": "d3160a738abbd39d9336b2f0c90125619be438a841b7da7fe4366a40435e7a4b"
+        },
+        {
+          "name": "cloud-backup-saved-read-recovery-375-dark.png",
+          "bytes": 89578,
+          "sha256": "33aa57bc8e4321d28818a913535413842e0c643fe219f6915fb514880b97741e"
+        },
+        {
+          "name": "cloud-backup-schedule-320-200-dark.png",
+          "bytes": 73827,
+          "sha256": "27b622be46c18393e801871bd80494079d4f2ad8985c39b957a8acb4f11ca413"
+        },
+        {
+          "name": "cloud-backup-unconfigured-375-light.png",
+          "bytes": 82824,
+          "sha256": "3cc2f41a6b18f4e5f009bed75d56cc5f117f0f0a9c8f8ad973138b07e31473c9"
+        },
+        {
+          "name": "cloud-backup-verified-1280-dark.png",
+          "bytes": 131422,
+          "sha256": "0658f772ea4ba0f1e375c6d11e7290920eeb1ebb1de31ddf8390b15874da1d4d"
+        }
+      ]
+    },
+    {
+      "id": 12955515042,
+      "name": "container-amd64",
+      "bytes": 3249,
+      "sha256": "6b851b8396e7774851cd7bdadfb2db16b99def8134548284623b279469058bf4",
+      "crc": "PASS",
+      "terminal": [
+        {
+          "Test": "TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery",
+          "Action": "pass",
+          "Elapsed": 154.15
+        },
+        {
+          "Action": "pass",
+          "Elapsed": 155.169
+        }
+      ],
+      "receipt": {
+        "actual_crypt_readback": true,
+        "architecture": "amd64",
+        "backend_not_published": true,
+        "bundle_container": true,
+        "compose_recreation": true,
+        "full_history": true,
+        "https": true,
+        "image": [
+          {
+            "Id": "sha256:08af93f8e4b9d5bc0eac205f2e25a6756a8310013e24185f49a9069a4a0f3edc",
+            "RepoTags": [
+              "atlas-test-021652fad8d0f8b16b9fcb0aa73ca090-bundle:local"
+            ],
+            "RepoDigests": [],
+            "Parent": "",
+            "Comment": "buildkit.dockerfile.v0",
+            "Created": "2026-10-30T04:46:26.098265118Z",
+            "DockerVersion": "",
+            "Author": "",
+            "Config": {
+              "Hostname": "",
+              "Domainname": "",
+              "User": "10001:10001",
+              "AttachStdin": false,
+              "AttachStdout": false,
+              "AttachStderr": false,
+              "ExposedPorts": {
+                "8787/tcp": {}
+              },
+              "Tty": false,
+              "OpenStdin": false,
+              "StdinOnce": false,
+              "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "HOME=/data",
+                "TMPDIR=/data/tmp"
+              ],
+              "Cmd": [
+                "portable",
+                "run",
+                "--directory",
+                "/data/state"
+              ],
+              "Healthcheck": {
+                "Test": [
+                  "CMD",
+                  "/usr/local/bin/modelatlas-vps",
+                  "ops",
+                  "ready",
+                  "--env-file",
+                  "/data/state/config/modelatlas.env"
+                ],
+                "Interval": 30000000000,
+                "Timeout": 5000000000,
+                "StartPeriod": 30000000000,
+                "Retries": 3
+              },
+              "ArgsEscaped": true,
+              "Image": "",
+              "Volumes": null,
+              "WorkingDir": "/data",
+              "Entrypoint": [
+                "/usr/local/bin/modelatlas-entrypoint"
+              ],
+              "OnBuild": null,
+              "Labels": {
+                "org.opencontainers.image.revision": "2ff4be18c4e5160bb29e879f1d539575ac7fd84d",
+                "org.opencontainers.image.source": "https://github.com/Tsenjii/ModelAtlas-2"
+              },
+              "StopSignal": "SIGTERM"
+            },
+            "Architecture": "amd64",
+            "Os": "linux",
+            "Size": 159107180,
+            "GraphDriver": {
+              "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/1byiwtx8imh5apy4mgx5sgmic/diff:/var/lib/docker/overlay2/t4vn5pk83oug79396kkbjxafe/diff:/var/lib/docker/overlay2/wsjbkoseehbuxdyggl4hq9ue7/diff:/var/lib/docker/overlay2/07eaf9c2e2f5ae599ae4bdffab09842cf6c12ae5f94558da3f9432a598d636d3/diff",
+                "MergedDir": "/var/lib/docker/overlay2/fuqrpzmuay7zg6rk0iaitcyuu/merged",
+                "UpperDir": "/var/lib/docker/overlay2/fuqrpzmuay7zg6rk0iaitcyuu/diff",
+                "WorkDir": "/var/lib/docker/overlay2/fuqrpzmuay7zg6rk0iaitcyuu/work"
+              },
+              "Name": "overlay2"
+            },
+            "RootFS": {
+              "Type": "layers",
+              "Layers": [
+                "sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818",
+                "sha256:d1270d0345a99d368baaf58bd3f24e2cecb0a8f75636f39391314751bfc15fa6",
+                "sha256:0824980818e98ed18d31593bd0c941735ce22746134eb8e106fbfd4dceb2d693",
+                "sha256:bd05219fae1b7b975eaaa9085abba6ca628092e7db6718a7775c7ef2ae1b9459",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+              ]
+            },
+            "Metadata": {
+              "LastTagTime": "2026-10-30T04:46:27.009393069Z"
+            }
+          }
+        ],
+        "inference_calls": 1,
+        "native": true,
+        "nonroot": true,
+        "proxy_image": [
+          {
+            "Id": "sha256:3067cc4e02c091399edbd5d65f85a3ff4d511574aecadb47f280c3761e68852e",
+            "RepoTags": [
+              "caddy:2-alpine"
+            ],
+            "RepoDigests": [
+              "caddy@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f"
+            ],
+            "Parent": "",
+            "Comment": "buildkit.dockerfile.v0",
+            "Created": "2026-10-21T21:32:33.967060949Z",
+            "DockerVersion": "",
+            "Author": "",
+            "Config": {
+              "Hostname": "",
+              "Domainname": "",
+              "User": "",
+              "AttachStdin": false,
+              "AttachStdout": false,
+              "AttachStderr": false,
+              "ExposedPorts": {
+                "2019/tcp": {},
+                "443/tcp": {},
+                "443/udp": {},
+                "80/tcp": {}
+              },
+              "Tty": false,
+              "OpenStdin": false,
+              "StdinOnce": false,
+              "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "CADDY_VERSION=v2.11.7",
+                "XDG_CONFIG_HOME=/config",
+                "XDG_DATA_HOME=/data"
+              ],
+              "Cmd": [
+                "caddy",
+                "run",
+                "--config",
+                "/etc/caddy/Caddyfile",
+                "--adapter",
+                "caddyfile"
+              ],
+              "Image": "",
+              "Volumes": null,
+              "WorkingDir": "/srv",
+              "Entrypoint": null,
+              "OnBuild": null,
+              "Labels": {
+                "org.opencontainers.image.description": "a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go",
+                "org.opencontainers.image.documentation": "https://caddyserver.com/docs",
+                "org.opencontainers.image.licenses": "Apache-2.0",
+                "org.opencontainers.image.source": "https://github.com/caddyserver/caddy-docker",
+                "org.opencontainers.image.title": "Caddy",
+                "org.opencontainers.image.url": "https://caddyserver.com",
+                "org.opencontainers.image.vendor": "Light Code Labs",
+                "org.opencontainers.image.version": "v2.11.7"
+              }
+            },
+            "Architecture": "amd64",
+            "Os": "linux",
+            "Size": 66325911,
+            "GraphDriver": {
+              "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/1d7f66b68a81bb71d2652c91364fa68b36626967d2f5572665218b2021b60230/diff:/var/lib/docker/overlay2/4b0d34ecb15dbf9c9a60b378c5651a9b64cfbefd430d25ffcf1462c64508a5fc/diff:/var/lib/docker/overlay2/93aab8a0273ec5cedf6098ce00ed6ea2a3e837ef9f0becbaf34bd26128a260ec/diff:/var/lib/docker/overlay2/01f4907d19f160e28609b8807d2895e50b4e363723937e0a8e4912388e3cacfd/diff",
+                "MergedDir": "/var/lib/docker/overlay2/f054284a287cc4e31169b55d1be39353aaaddd8a29de1d42fd27373f0f3f6d23/merged",
+                "UpperDir": "/var/lib/docker/overlay2/f054284a287cc4e31169b55d1be39353aaaddd8a29de1d42fd27373f0f3f6d23/diff",
+                "WorkDir": "/var/lib/docker/overlay2/f054284a287cc4e31169b55d1be39353aaaddd8a29de1d42fd27373f0f3f6d23/work"
+              },
+              "Name": "overlay2"
+            },
+            "RootFS": {
+              "Type": "layers",
+              "Layers": [
+                "sha256:54ea9baa1bbd7651dbda5c61569dad60fa601c73e5b784e154e8ba0f314e84fd",
+                "sha256:ffe3f66a572836b76678fc7bd0f6cc19a2ef8585cca6fe0ba7c2e1037d2e1159",
+                "sha256:4bb692fe970995252617470d76a9c95d18cd822a52a59558822b5f1d29d6cf2f",
+                "sha256:d08f1a0adb5011e488b16040328bb140738ff8248022d359170147464b656e5b",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+              ]
+            },
+            "Metadata": {
+              "LastTagTime": "0001-01-01T00:00:00Z"
+            }
+          }
+        ],
+        "read_only_root": true,
+        "real_caddy": true,
+        "result": "PASS",
+        "schedule_default_off": true,
+        "source": "2ff4be18c4e5160bb29e879f1d539575ac7fd84d",
+        "source_image": [
+          {
+            "Id": "sha256:d09affcddf4b689dba5825209c28d8da9b4f70dd0e2d0054ca544cb93ea788eb",
+            "RepoTags": [
+              "atlas-test-021652fad8d0f8b16b9fcb0aa73ca090:local"
+            ],
+            "RepoDigests": [],
+            "Parent": "",
+            "Comment": "buildkit.dockerfile.v0",
+            "Created": "2026-10-30T04:45:09.144681038Z",
+            "DockerVersion": "",
+            "Author": "",
+            "Config": {
+              "Hostname": "",
+              "Domainname": "",
+              "User": "10001:10001",
+              "AttachStdin": false,
+              "AttachStdout": false,
+              "AttachStderr": false,
+              "ExposedPorts": {
+                "8787/tcp": {}
+              },
+              "Tty": false,
+              "OpenStdin": false,
+              "StdinOnce": false,
+              "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "HOME=/data",
+                "TMPDIR=/data/tmp"
+              ],
+              "Cmd": [
+                "portable",
+                "run",
+                "--directory",
+                "/data/state"
+              ],
+              "Healthcheck": {
+                "Test": [
+                  "CMD",
+                  "/usr/local/bin/modelatlas-vps",
+                  "ops",
+                  "ready",
+                  "--env-file",
+                  "/data/state/config/modelatlas.env"
+                ],
+                "Interval": 30000000000,
+                "Timeout": 5000000000,
+                "StartPeriod": 30000000000,
+                "Retries": 3
+              },
+              "ArgsEscaped": true,
+              "Image": "",
+              "Volumes": null,
+              "WorkingDir": "/data",
+              "Entrypoint": [
+                "/usr/local/bin/modelatlas-entrypoint"
+              ],
+              "OnBuild": null,
+              "Labels": {
+                "org.opencontainers.image.revision": "2ff4be18c4e5160bb29e879f1d539575ac7fd84d",
+                "org.opencontainers.image.source": "https://github.com/Tsenjii/ModelAtlas-2"
+              },
+              "StopSignal": "SIGTERM"
+            },
+            "Architecture": "amd64",
+            "Os": "linux",
+            "Size": 159107180,
+            "GraphDriver": {
+              "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/1sb5kta9628jhpf48p3j76arb/diff:/var/lib/docker/overlay2/vq9v8nbzj313rwmwe35jnk6ri/diff:/var/lib/docker/overlay2/wsjbkoseehbuxdyggl4hq9ue7/diff:/var/lib/docker/overlay2/07eaf9c2e2f5ae599ae4bdffab09842cf6c12ae5f94558da3f9432a598d636d3/diff",
+                "MergedDir": "/var/lib/docker/overlay2/u31nouqchok7kgvsqbrebxmlc/merged",
+                "UpperDir": "/var/lib/docker/overlay2/u31nouqchok7kgvsqbrebxmlc/diff",
+                "WorkDir": "/var/lib/docker/overlay2/u31nouqchok7kgvsqbrebxmlc/work"
+              },
+              "Name": "overlay2"
+            },
+            "RootFS": {
+              "Type": "layers",
+              "Layers": [
+                "sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818",
+                "sha256:d1270d0345a99d368baaf58bd3f24e2cecb0a8f75636f39391314751bfc15fa6",
+                "sha256:88270ffc6f0cd8c4f2e46815e7d035bf9e95c1b661bfc26f7a5aa8223296e7f5",
+                "sha256:2eed71fbfdf8caba685a7105c0c19fd79882b6471112240c88fe588f1041bf73",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+              ]
+            },
+            "Metadata": {
+              "LastTagTime": "2026-10-30T04:45:10.009708397Z"
+            }
+          }
+        ],
+        "sse_before_completion": true,
+        "stable_identity": true,
+        "vault": true,
+        "volume_recreation": true
+      }
+    },
+    {
+      "id": 12954418016,
+      "name": "container-arm64",
+      "bytes": 3256,
+      "sha256": "ee49f1ac373d33693ccc74caf2d94e3503b03be66d9accdab005980c370a1355",
+      "crc": "PASS",
+      "terminal": [
+        {
+          "Test": "TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery",
+          "Action": "pass",
+          "Elapsed": 140.64
+        },
+        {
+          "Action": "pass",
+          "Elapsed": 141.662
+        }
+      ],
+      "receipt": {
+        "actual_crypt_readback": true,
+        "architecture": "arm64",
+        "backend_not_published": true,
+        "bundle_container": true,
+        "compose_recreation": true,
+        "full_history": true,
+        "https": true,
+        "image": [
+          {
+            "Id": "sha256:6880c0ac0a00e4a1bc5a40a6ae5c1536e84d84ff64539ff48746a165c5fe9997",
+            "RepoTags": [
+              "atlas-test-4ea92beddf999143c960a6e078886f22-bundle:local"
+            ],
+            "RepoDigests": [],
+            "Parent": "",
+            "Comment": "buildkit.dockerfile.v0",
+            "Created": "2026-10-30T04:46:00.447519822Z",
+            "DockerVersion": "",
+            "Author": "",
+            "Config": {
+              "Hostname": "",
+              "Domainname": "",
+              "User": "10001:10001",
+              "AttachStdin": false,
+              "AttachStdout": false,
+              "AttachStderr": false,
+              "ExposedPorts": {
+                "8787/tcp": {}
+              },
+              "Tty": false,
+              "OpenStdin": false,
+              "StdinOnce": false,
+              "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "HOME=/data",
+                "TMPDIR=/data/tmp"
+              ],
+              "Cmd": [
+                "portable",
+                "run",
+                "--directory",
+                "/data/state"
+              ],
+              "Healthcheck": {
+                "Test": [
+                  "CMD",
+                  "/usr/local/bin/modelatlas-vps",
+                  "ops",
+                  "ready",
+                  "--env-file",
+                  "/data/state/config/modelatlas.env"
+                ],
+                "Interval": 30000000000,
+                "Timeout": 5000000000,
+                "StartPeriod": 30000000000,
+                "Retries": 3
+              },
+              "ArgsEscaped": true,
+              "Image": "",
+              "Volumes": null,
+              "WorkingDir": "/data",
+              "Entrypoint": [
+                "/usr/local/bin/modelatlas-entrypoint"
+              ],
+              "OnBuild": null,
+              "Labels": {
+                "org.opencontainers.image.revision": "2ff4be18c4e5160bb29e879f1d539575ac7fd84d",
+                "org.opencontainers.image.source": "https://github.com/Tsenjii/ModelAtlas-2"
+              },
+              "StopSignal": "SIGTERM"
+            },
+            "Architecture": "arm64",
+            "Os": "linux",
+            "Size": 178845474,
+            "GraphDriver": {
+              "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/bczsif420ss7r0jtd2xx8xhpz/diff:/var/lib/docker/overlay2/xi5cafs4pfb0uxp5rsz3mzj4g/diff:/var/lib/docker/overlay2/nx28qq9ike0uf50fzra2loaxr/diff:/var/lib/docker/overlay2/f2ae584104082f5c7a114b2eeea6ba9eba5c9e422af068bb522aeb5ead28dec2/diff",
+                "MergedDir": "/var/lib/docker/overlay2/n7sb2p63igmcvhcp6fghm4pzl/merged",
+                "UpperDir": "/var/lib/docker/overlay2/n7sb2p63igmcvhcp6fghm4pzl/diff",
+                "WorkDir": "/var/lib/docker/overlay2/n7sb2p63igmcvhcp6fghm4pzl/work"
+              },
+              "Name": "overlay2"
+            },
+            "RootFS": {
+              "Type": "layers",
+              "Layers": [
+                "sha256:8197d9c14b22d4cd79198c0722a18035760a85613211f2127ee6f5888735ca98",
+                "sha256:01abebf3e2e0aebd44d891ac49e478d630cf7ecd82a59563ddcaba658722227d",
+                "sha256:436be20f753caf6b96ca25002a6fa5ebc115eee4b473e26a16863b28d2832a67",
+                "sha256:7fc8878656742e5ff645def2ff6d7d0b8e26eb1684feba23386f318bf3d8990a",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+              ]
+            },
+            "Metadata": {
+              "LastTagTime": "2026-10-30T04:46:01.007937605Z"
+            }
+          }
+        ],
+        "inference_calls": 1,
+        "native": true,
+        "nonroot": true,
+        "proxy_image": [
+          {
+            "Id": "sha256:c7d68e4fa1bb71ae97c0b7e2c468aa3ccad2ae75d0294697d401e28794a5b5ab",
+            "RepoTags": [
+              "caddy:2-alpine"
+            ],
+            "RepoDigests": [
+              "caddy@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f"
+            ],
+            "Parent": "",
+            "Comment": "buildkit.dockerfile.v0",
+            "Created": "2026-10-21T21:34:47.656511251Z",
+            "DockerVersion": "",
+            "Author": "",
+            "Config": {
+              "Hostname": "",
+              "Domainname": "",
+              "User": "",
+              "AttachStdin": false,
+              "AttachStdout": false,
+              "AttachStderr": false,
+              "ExposedPorts": {
+                "2019/tcp": {},
+                "443/tcp": {},
+                "443/udp": {},
+                "80/tcp": {}
+              },
+              "Tty": false,
+              "OpenStdin": false,
+              "StdinOnce": false,
+              "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "CADDY_VERSION=v2.11.7",
+                "XDG_CONFIG_HOME=/config",
+                "XDG_DATA_HOME=/data"
+              ],
+              "Cmd": [
+                "caddy",
+                "run",
+                "--config",
+                "/etc/caddy/Caddyfile",
+                "--adapter",
+                "caddyfile"
+              ],
+              "Image": "",
+              "Volumes": null,
+              "WorkingDir": "/srv",
+              "Entrypoint": null,
+              "OnBuild": null,
+              "Labels": {
+                "org.opencontainers.image.description": "a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go",
+                "org.opencontainers.image.documentation": "https://caddyserver.com/docs",
+                "org.opencontainers.image.licenses": "Apache-2.0",
+                "org.opencontainers.image.source": "https://github.com/caddyserver/caddy-docker",
+                "org.opencontainers.image.title": "Caddy",
+                "org.opencontainers.image.url": "https://caddyserver.com",
+                "org.opencontainers.image.vendor": "Light Code Labs",
+                "org.opencontainers.image.version": "v2.11.7"
+              }
+            },
+            "Architecture": "arm64",
+            "Variant": "v8",
+            "Os": "linux",
+            "Size": 63658409,
+            "GraphDriver": {
+              "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/b08f72a98eb54f20f7a28b4ac72feeea7b2623284c9b19f0e9faeb625cdd1548/diff:/var/lib/docker/overlay2/d3ae0bfb9f9abf46ba1bb4feea539c1582ad0772934baa9d6badfdf258cd13f9/diff:/var/lib/docker/overlay2/1f99001b0223bed80c1e63bd876000d19a78b5edf721ebd507bfd0ab8e76f066/diff:/var/lib/docker/overlay2/75b0220d806839b9055f949d315b1274f678966e1c7a2ad16b31eb242e965744/diff",
+                "MergedDir": "/var/lib/docker/overlay2/ad554e4a5769963f71c05891bbaac755afcffbab940955c3abaeb456bc156dcb/merged",
+                "UpperDir": "/var/lib/docker/overlay2/ad554e4a5769963f71c05891bbaac755afcffbab940955c3abaeb456bc156dcb/diff",
+                "WorkDir": "/var/lib/docker/overlay2/ad554e4a5769963f71c05891bbaac755afcffbab940955c3abaeb456bc156dcb/work"
+              },
+              "Name": "overlay2"
+            },
+            "RootFS": {
+              "Type": "layers",
+              "Layers": [
+                "sha256:2f7dba9f9c89c5b6e380a5b9715b862f20d7e33da6e6923a90f089210f2a5de9",
+                "sha256:75c603cdd8cbb64c6533bb3622f4bf9402d7266aeedac641b5776e21758e5d92",
+                "sha256:b1ffc5d14a06124c3f72236c1e5643a60685e001e5e1033b5633e3db9ab4729a",
+                "sha256:e33c43b193ef565348ee443846b6d5fb32e86b94808715295f14d7ea2fdd736c",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+              ]
+            },
+            "Metadata": {
+              "LastTagTime": "0001-01-01T00:00:00Z"
+            }
+          }
+        ],
+        "read_only_root": true,
+        "real_caddy": true,
+        "result": "PASS",
+        "schedule_default_off": true,
+        "source": "2ff4be18c4e5160bb29e879f1d539575ac7fd84d",
+        "source_image": [
+          {
+            "Id": "sha256:5f761bd5675679d9a9ad66aa624b53b7dceae587b5a638d92883498d35100c41",
+            "RepoTags": [
+              "atlas-test-4ea92beddf999143c960a6e078886f22:local"
+            ],
+            "RepoDigests": [],
+            "Parent": "",
+            "Comment": "buildkit.dockerfile.v0",
+            "Created": "2026-10-30T04:44:51.650108956Z",
+            "DockerVersion": "",
+            "Author": "",
+            "Config": {
+              "Hostname": "",
+              "Domainname": "",
+              "User": "10001:10001",
+              "AttachStdin": false,
+              "AttachStdout": false,
+              "AttachStderr": false,
+              "ExposedPorts": {
+                "8787/tcp": {}
+              },
+              "Tty": false,
+              "OpenStdin": false,
+              "StdinOnce": false,
+              "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "HOME=/data",
+                "TMPDIR=/data/tmp"
+              ],
+              "Cmd": [
+                "portable",
+                "run",
+                "--directory",
+                "/data/state"
+              ],
+              "Healthcheck": {
+                "Test": [
+                  "CMD",
+                  "/usr/local/bin/modelatlas-vps",
+                  "ops",
+                  "ready",
+                  "--env-file",
+                  "/data/state/config/modelatlas.env"
+                ],
+                "Interval": 30000000000,
+                "Timeout": 5000000000,
+                "StartPeriod": 30000000000,
+                "Retries": 3
+              },
+              "ArgsEscaped": true,
+              "Image": "",
+              "Volumes": null,
+              "WorkingDir": "/data",
+              "Entrypoint": [
+                "/usr/local/bin/modelatlas-entrypoint"
+              ],
+              "OnBuild": null,
+              "Labels": {
+                "org.opencontainers.image.revision": "2ff4be18c4e5160bb29e879f1d539575ac7fd84d",
+                "org.opencontainers.image.source": "https://github.com/Tsenjii/ModelAtlas-2"
+              },
+              "StopSignal": "SIGTERM"
+            },
+            "Architecture": "arm64",
+            "Os": "linux",
+            "Size": 178845474,
+            "GraphDriver": {
+              "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/21h6t7r6evxzb50axz30rskoc/diff:/var/lib/docker/overlay2/oe5dnxjw967i5fp4t912zgl4m/diff:/var/lib/docker/overlay2/nx28qq9ike0uf50fzra2loaxr/diff:/var/lib/docker/overlay2/f2ae584104082f5c7a114b2eeea6ba9eba5c9e422af068bb522aeb5ead28dec2/diff",
+                "MergedDir": "/var/lib/docker/overlay2/cr7xbpior7ix5rfx6vzkmy9ld/merged",
+                "UpperDir": "/var/lib/docker/overlay2/cr7xbpior7ix5rfx6vzkmy9ld/diff",
+                "WorkDir": "/var/lib/docker/overlay2/cr7xbpior7ix5rfx6vzkmy9ld/work"
+              },
+              "Name": "overlay2"
+            },
+            "RootFS": {
+              "Type": "layers",
+              "Layers": [
+                "sha256:8197d9c14b22d4cd79198c0722a18035760a85613211f2127ee6f5888735ca98",
+                "sha256:01abebf3e2e0aebd44d891ac49e478d630cf7ecd82a59563ddcaba658722227d",
+                "sha256:451af2776be282168b4d9f0a9f413e1cfc9ebebe12d8f1f677ef97d8d36d98fa",
+                "sha256:dce78ccb191e4ec179e5f736612dcf2bbf16006afd4d5afe525493233595c8c4",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+              ]
+            },
+            "Metadata": {
+              "LastTagTime": "2026-10-30T04:44:52.010456208Z"
+            }
+          }
+        ],
+        "sse_before_completion": true,
+        "stable_identity": true,
+        "vault": true,
+        "volume_recreation": true
+      }
+    }
+  ],
+  "local_full_go": {
+    "result": "PASS",
+    "source": "386d6976e2b5374ee3a4e0b24fde0e28ebad7742",
+    "working_tree_dirty": true,
+    "registry": 455,
+    "events": 683,
+    "seconds": 434.668,
+    "deadline": 600,
+    "cases": {
+      "TestAccountCheckinRejectsMissingScopeWrongDateAndBadTimezone": "pass",
+      "TestAccountCheckinIsolatedIdempotentAndLegacyNeverCompletesAccounts": "pass",
+      "TestCheckinCivilDateUsesLocalMidnightIncludingDST": "pass",
+      "TestAccountCheckinNotificationUsesExactAccountAndDoesNotRepeat": "pass",
+      "TestDesktopAccountCheckinNotificationsUseMachineDate": "pass",
+      "TestAccountCheckinMigrationPreservesLegacyHistoryAndEncryptedCredentials": "pass",
+      "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery": "skip",
+      "TestAquaArtworkAuthenticationCacheAndRange": "pass",
+      "TestAssistantControlChangesUndoAndCriticalRefs": "pass",
+      "TestAssistantRealToolsSharedReviewAndSecretBoundary": "pass",
+      "TestAssistantCancelClosesRealModelAndPreservesStatus": "pass",
+      "TestSpeechWAVRejectsUnplayableFormatAndIncompleteFrames": "pass",
+      "TestBrowserAuthenticityEvidenceReviewAndPersistentUndo": "skip",
+      "TestAssistantInterruptedToolResumeDoesNotReplay": "pass",
+      "TestAuthenticityGeminiWireModeIsAComparisonCondition": "pass",
+      "TestAuthenticityEffectiveAnthropicVersionIsAComparisonCondition": "pass",
+      "TestAuthenticityOlderPolicyKeepsHistoryWithoutComparisonAuthority": "pass",
+      "TestAuthenticityReportReusesScopedTrafficWithoutSendingInference": "pass",
+      "TestAuthenticityReviewedReferenceComparisonAndPersistentUndo": "pass",
+      "TestAuthenticityReferenceCASStalenessCanonicalAndOriginGates": "pass",
+      "TestAuthenticityCostPrecisionAndUnknownsRemainSeparate": "pass",
+      "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution/1": "pass",
+      "TestAuthenticityDoesNotPersistPromptsResponsesOrRawSecrets": "pass",
+      "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution/2": "pass",
+      "TestAuthenticityConflictingNamesAndToolFormatNeverProveSubstitution": "pass",
+      "TestAuthenticityIdempotencyHistoryPagingAndUnavailableDatabase": "pass",
+      "TestAuthenticityRequiresExactConditionsAndMeaningfulReference": "pass",
+      "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/unattested": "pass",
+      "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/tampered": "pass",
+      "TestAuthenticitySchema25UpgradeAndSyncNeverCarryLocalAuthority": "pass",
+      "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/cancelled": "pass",
+      "TestAuthenticityCaptureFailurePreservesAnswerAndRequestHistory": "pass",
+      "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/interrupted": "pass",
+      "TestAuthenticityExactAccountKeyGroupAndOperationDoNotBorrowSamples": "pass",
+      "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/running": "pass",
+      "TestAuthenticityResearchReportAndEvidenceUseBoundCredentialOrigin": "pass",
+      "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/material": "pass",
+      "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/config": "pass",
+      "TestPortableOnlineBackupRejectsWrongKeysAndNeverOverwritesLastGood": "pass",
+      "TestBrowserProductionWorkflow": "skip",
+      "TestBrowserAssistantWorkflow": "skip",
+      "TestBrowserKnowledgeWorkflow": "skip",
+      "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence/origin": "pass",
+      "TestAuthenticityUnattestedChangedAndCancelledRecordsAreNotEvidence": "pass",
+      "TestAuthenticityCredentialRotationAndLateOldTrafficStayIsolated": "pass",
+      "TestResearchCatalogEvidenceUsesWholeExactResponse": "pass",
+      "TestBrowserChatExperienceWorkflow": "skip",
+      "TestBrowserPortableCloudBackupRealWorkflowAndReadRecovery": "skip",
+      "TestAuthenticityAssistantUsesSharedLocalSuiteWithoutActivation": "pass",
+      "TestAuthenticityReferenceExpiryCanonicalAndDuplicateOriginRequireNewReview": "pass",
+      "TestPortableCloudPolicyCASAndZeroExitNeverPretendVerifiedBackup": "pass",
+      "TestAuthenticityInFlightCredentialRotationDoesNotAttestCurrentRevision": "pass",
+      "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed": "pass",
+      "TestPortableCloudCommandsRequirePrivateIdentityAndExplicitKeyRecovery": "pass",
+      "TestPortableCloudActualScheduleIdempotenceFetchAndCancellation": "skip",
+      "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero/0": "pass",
+      "TestConnectorDiscoveryRequestIDIsDurableAndDoesNotRepeatHTTP": "pass",
+      "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero/0.000000100000000001": "pass",
+      "TestAuthenticityProviderReportedUSDUsesExactReceiptAndKnownZero": "pass",
+      "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/no-scope": "pass",
+      "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/no-unit": "pass",
+      "TestPortableOnlineBackupKeepsLiveWriterAndConsistentCompleteHistory": "pass",
+      "TestBrowserResearchWorkflow": "skip",
+      "TestBrowserManagementWorkflow": "skip",
+      "TestBrowserOriginWorkflow": "skip",
+      "TestBrowserProtocolAndSpeechWorkflow": "skip",
+      "TestBrowserCatalogExperienceWorkflow": "skip",
+      "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/currency-conflict": "pass",
+      "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup": "pass",
+      "TestPortableCloudParentCrashStopsOwnedTransferAndRecoversUncertainty": "skip",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/plaintext-backend": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-data": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-filenames": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-type": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-remote": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unreadable-encrypted-config": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes": "pass",
+      "TestPortableCloudBackupWithActualCryptAndRecovery": "skip",
+      "TestBrowserConnectorDiscoveryReviewAndPersistentRollback": "skip",
+      "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/account": "pass",
+      "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/wrong-group": "pass",
+      "TestConnectorDiscoveryCreatesEvidenceBackedDraftFromPublicSite": "pass",
+      "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown/invalid-numeric": "pass",
+      "TestConnectorDiscoveryMissingAmbiguousUnitsAndScopesRemainUnknown": "pass",
+      "TestConnectorDiscoveryShapeOrUnitChangesKeepLastGoodAndCannotActivate": "pass",
+      "TestConnectorDiscoveryFixtureAndCredentialChangesBlockBeforeHTTP": "pass",
+      "TestConnectorDiscoveryBoundedPathsOriginsRedirectAuthAndSecrets": "pass",
+      "TestConnectorDiscoveryDoesNotCommitLateChangedScope": "pass",
+      "TestConnectorDiscoveryRootScopeFixtureAndExplicitMetricUnits": "pass",
+      "TestConnectorDiscoverySourceConflictsAndNewVersionsDoNotReplaceActive": "pass",
+      "TestConnectorDiscoveryLocalReceiptCurrentScopeAndFreshnessRequired": "pass",
+      "TestConnectorDiscoveryAtomicDraftsAndFixtureFailure": "pass",
+      "TestConnectorDiscoveryOpenAPIGetHintsFamilyAndCancelledWork": "pass",
+      "TestConnectorDiscoverySchema24UpgradeAndSyncDoNotCopyExecutionAuthority": "pass",
+      "TestConnectorDiscoveryAssistantUsesSharedPipelineAndWebBudget": "pass",
+      "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/duplicate-model": "pass",
+      "TestConnectorDiscoveryFixedFeeNeedsExplicitPerRequestUnit": "pass",
+      "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/bound-origin": "pass",
+      "TestConnectorMappingIdempotentRequestPreservesParentAndOriginalActive": "pass",
+      "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown/cooldown": "pass",
+      "TestConnectorDiscoveryAmbiguousRowsBoundOriginAndSharedCooldown": "pass",
+      "TestConnectorMappingRejectsGuessedUnitsScopePointersAndHiddenDuplicates": "pass",
+      "TestConnectorDiscoveryChangedActiveDefinitionNeedsNewReview": "pass",
+      "TestBrowserConnectorMappingUnknownFieldsRecoveryRuntimeAndUndo": "skip",
+      "TestConnectorMappingChangedEvidenceAfterTestCannotActivate": "pass",
+      "TestConnectorMappingQuotaZeroAndMissingRemainDistinct": "pass",
+      "TestConnectorMappingSnapshotMigrationAndLocalOnlyData": "pass",
+      "TestConnectorMappingScopeRotationAndExpiredSamplesBlockWithoutHTTP": "pass",
+      "TestConnectorMappingExpiredSampleNeedsNewDiscoveryButExistingVersionCanRetest": "pass",
+      "TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo": "skip",
+      "TestConnectorMappingFormalSavedSourceReviewRuntimeAndPersistentUndo": "pass",
+      "TestConnectorPrivateMappingPATKeepsAccountAuthorityAndExactCredits": "pass",
+      "TestConnectorMappingStorageFailureAndAtomicReservationRollback": "pass",
+      "TestConnectorPrivateMappingAssistantCannotAuthorizeItsOwnRead": "pass",
+      "TestConnectorMappingConcurrentSameIntentCreatesOneVersion": "pass",
+      "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/auth": "pass",
+      "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/forbidden": "pass",
+      "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/redirect": "pass",
+      "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/malformed": "pass",
+      "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/oversize": "pass",
+      "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys/trailing": "pass",
+      "TestConnectorPrivateMappingFailuresDoNotFollowRedirectOrTryOtherKeys": "pass",
+      "TestConnectorPrivateMappingExplicitReadKeepsPublicAnonymousAndSecretsOut": "pass",
+      "TestConnectorPrivateMappingLateRotationAndDurableReplayKeepNoSample": "pass",
+      "TestConnectorPrivateMappingKeyGroupReviewRealUseAndUndo": "pass",
+      "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/scope": "pass",
+      "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/unit": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/unconfirmed": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/role": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/inference-pat": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/missing-pat": "pass",
+      "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/group": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/inference-as-pat": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/root": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/action": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/references": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/secret-path": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP/not-member": "pass",
+      "TestConnectorPrivateMappingRejectsUnconfirmedAuthorityBeforeHTTP": "pass",
+      "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood/duplicate": "pass",
+      "TestConnectorPrivateMappingScopeUnitGroupDriftRetainsLastGood": "pass",
+      "TestConnectorPrivateMappingStorageFailureRetainsUnknownReservation": "pass",
+      "TestConversationCreationConcurrentRetriesAreAtomic": "pass",
+      "TestConversationCreationRequestSurvivesReopenAndPreservesHistory": "pass",
+      "TestConnectorPrivateMappingOtherKeyCannotBorrowRuntimeOrActiveSlot": "pass",
+      "TestBrowserConversationCreationWorkflow": "skip",
+      "TestConversationCreationRejectsMalformedRequestIdentity": "pass",
+      "TestConversationCreationSameRequestKeepsOneCommittedIdentity": "pass",
+      "TestConversationCreationRequestCannotBeReusedForAnotherScopeOrTitle": "pass",
+      "TestConversationCreationLegacyClientsStillCreateDistinctSessions": "pass",
+      "TestConversationsSearchArchiveStaleEditAndCompleteExport": "pass",
+      "TestBrowserConversationsWorkflow": "skip",
+      "TestReviewedOnboardingPersistsCustomProtocolAndNoSecretMetadata": "pass",
+      "TestCustomRejectsIncompleteAndUnsafeDefinitions": "pass",
+      "TestManualConversationSettingsPersistAndProtectAgent": "pass",
+      "TestCustomProtocolRealTLSAndNativeTools/false": "pass",
+      "TestCustomProtocolRealTLSAndNativeTools/true": "pass",
+      "TestCustomProtocolRealTLSAndNativeTools": "pass",
+      "TestLocalDeploymentDoesNotInheritPublicPort": "pass",
+      "TestPlatformDeploymentProcess/occupied-port-exits-nonzero": "pass",
+      "TestPlatformDeploymentProcess/short-admin-token": "pass",
+      "TestPlatformDeploymentProcess/invalid-port": "pass",
+      "TestPlatformDeploymentProcess/invalid-mode": "pass",
+      "TestPlatformDeploymentProcess/plaintext-origin": "pass",
+      "TestPlatformDeploymentProcess/origin-with-secret": "pass",
+      "TestPlatformDeploymentProcess/public-without-opt-in": "pass",
+      "TestPlatformDeploymentProcess/missing-origin": "pass",
+      "TestPlatformDeploymentProcess/origin-with-path": "pass",
+      "TestPlatformDeploymentProcess/relative-db": "pass",
+      "TestPlatformDeploymentProcess/missing-master-key": "pass",
+      "TestPlatformDeploymentProcess": "pass",
+      "TestBrowserDetailWorkspaceWorkflow": "skip",
+      "TestBrowserKiloFactoryAnonymousChatPriceGuardAndExistingWorkspaceRecovery": "skip",
+      "TestGeminiSpeechActualWireAndAudio": "pass",
+      "TestRealInferenceHTTPAndHistory": "pass",
+      "TestTruncatedInferenceNeverCountsSuccess": "pass",
+      "TestAssistantConfirmationUndo": "pass",
+      "TestReflectionDoesNotRewardRepeatedEmptyHTTP200": "pass",
+      "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/insufficient-and-new-data": "pass",
+      "TestDesktopDynamicLoopbackAndParentPipeLifetime": "pass",
+      "TestBrowserExtractionMeasuredTrialRecoveryMonitoringAndUndo": "skip",
+      "TestLiveFactoryKiloDefaultProfileAndConversation": "skip",
+      "TestStandaloneProcessFootprint": "skip",
+      "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/changed-source-and-active-plan": "pass",
+      "TestNativeSpeechRejectsMalformedTruncationAndSecret": "pass",
+      "TestRecipeVersionedRollback": "pass",
+      "TestBrowserKnowledgeEvaluationTrialAndPersistentRollback": "skip",
+      "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource/measured-regression": "pass",
+      "TestKnowledgeEvaluationRejectsInsufficientStaleRegressionAndChangedSource": "pass",
+      "TestKnowledgeMeasuredTrialUsesFrozenVersionMonitorsAndRollsBackAfterRestart": "pass",
+      "TestKnowledgeRestoredVersionStartsNewMonitoringEpoch": "pass",
+      "TestKnowledgeQualityAdmissionCancellationSyncAndV21Migration": "pass",
+      "TestKnowledgeEvaluationKeepsAgedHistoryAndExplainsChangedActiveSource": "pass",
+      "TestKnowledgeScheduledContinuationRetainsItsPlannedVersion": "pass",
+      "TestKnowledgeQualityAttributesSharedDiscoveryOnlyOnce": "pass",
+      "TestLiveKiloProviderDiscovery": "skip",
+      "TestBrowserMacAlignmentWorkflow": "skip",
+      "TestKnowledgeQualityRetainsFalseFreeCounterexamplesWithoutReward": "pass",
+      "TestLiveKiloAnonymousConversationToolsAndAssistant": "skip",
+      "TestBrowserMacParityWorkflow": "skip",
+      "TestMetricHistoryUsesExactScopeWindowAndKeepsNonStreamingUnknown": "pass",
+      "TestScheduledSyncAndEvidenceBasedNotificationEpoch": "pass",
+      "TestFullHistorySQLStatisticsAndPagedRetention": "pass",
+      "TestUnknownPriceCannotGenerateConfirmedChangeNotification": "pass",
+      "TestBoundedConversationDoesNotPreventReadingRetainedMessages": "pass",
+      "TestSafeBackupV2RoundTripAndUnsafeAtomicRollback": "pass",
+      "TestRankingAndTopFourCannotBorrowManualCanonicalIdentity": "pass",
+      "TestHumanReadableAliasesPreserveRawModelIdentity": "pass",
+      "TestMediaResultFormatsAndOperationWire": "pass",
+      "TestBulkModelReviewAtomicStaleGuardAndUndo": "pass",
+      "TestMediaHTTPErrorAndInputMismatch": "pass",
+      "TestBrowserMobileAlignmentWorkflow": "skip",
+      "TestBrowserScopedModelPickerWorkflow": "skip",
+      "TestBrowserModelViewsWorkflow": "skip",
+      "TestManualChatAndSpeechNeverSendAnotherStoredCredential": "pass",
+      "TestNewApiPublicVersionZeroUsesSchemaWithoutSendingInferenceKey": "pass",
+      "TestMediaRejectsEchoMalformedResultsAndUnconfirmedScope": "pass",
+      "TestNewApiFailureRetainsLastGoodAndReportsActualUpstreamStatus": "pass",
+      "TestMultilinePublicContentStillRedactsCredentialEchoes": "pass",
+      "TestInferenceGatewayErrorKeepsUpstreamHTTPStatusAndReceipt": "pass",
+      "TestMediaFlightBudgetAndExplicitCancel": "pass",
+      "TestBrowserModelConnectionsWorkflow": "skip",
+      "TestNewApiCredentialRolesAndProvenance": "pass",
+      "TestCertifiedPublicNominalPriceStillReachesSelectedOffer": "pass",
+      "TestObservationArchiveFiltersApplyBeforePagingAndExposeWholeRangeFacets": "pass",
+      "TestObservationArchiveRejectsInvalidOrForeignContinuations": "pass",
+      "TestNewApiPublicRejectsForeignModelAndMalformedMetrics": "pass",
+      "TestNewApiCapturedPublicResponses": "skip",
+      "TestNewApiUnknownVersionBlocksPrivilegedEndpoints": "pass",
+      "TestOperationsSnapshotPreflightAndRestorePreserveVaultAndHistory": "pass",
+      "TestObservationArchiveFrozenPagesKeepAllRowsAndExactScope": "pass",
+      "TestMaintenanceGateBlocksWritesSyncAndBackground": "pass",
+      "TestObservationArchiveFailureDoesNotEraseOldGoodFact": "pass",
+      "TestReportedTokenGroupCannotBorrowAnotherGroupOrCredentialEpoch": "pass",
+      "TestPDFAndAudioSignatureBoundaries": "pass",
+      "TestLmspeedBudgetProvenanceAndLastGood": "pass",
+      "TestOperationsWrongMasterKeyCorruptionAndEnvironmentAreSafe": "pass",
+      "TestCSRFAuthenticationOriginBoundary": "pass",
+      "TestCustomFieldsVaultAndCredentialRollback": "pass",
+      "TestAutomaticMigrationSnapshotAndFutureSchemaGuard": "pass",
+      "TestSafeBackupRoundTripDisablesCredentialsAndIsAtomic": "pass",
+      "TestMultipleOriginsKeepKeysSessionsPATsAndUndoIsolated": "pass",
+      "TestStartupInterruptRecoveryAndSingleWriterLock": "pass",
+      "TestAssistantSafeReferenceCanPrepareReviewedSecondaryCredential": "pass",
+      "TestAssistantPublicSourceAndAnonymousOnboardingBoundary": "pass",
+      "TestEmptyTelemetryUnknownAndLongLastGoodHistory": "pass",
+      "TestMultimodalHistoryRevalidationAndNoRawPersistence": "pass",
+      "TestStaleAssistantUndoCannotRemoveLaterMembership": "pass",
+      "TestCancelBlockedSocketExcludedFromUptime": "pass",
+      "TestMultipleEndpointProfilesKeepHistoryAndCapabilitiesSeparate": "pass",
+      "TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery": "skip",
+      "TestPortableInitializationPreservesKeysAndRefusesLostOrSharedState": "pass",
+      "TestPortableConcurrentInitializationCannotReplaceConfirmedIdentity": "pass",
+      "TestCompleteHistoryZeroUsageAndNonStreamingTTFT": "pass",
+      "TestNativeProtocolsAndToolContinuation/CHAT_COMPLETIONS/false": "pass",
+      "TestOnboardingReviewAtomicAndSecretIsolation": "pass",
+      "TestPricingExactArithmeticAndParserBounds": "pass",
+      "TestNativeProtocolsAndToolContinuation/CHAT_COMPLETIONS/true": "pass",
+      "TestNewApiExactPricingAndMalformedPerfNeverPanics": "pass",
+      "TestNativeProtocolsAndToolContinuation/RESPONSES/false": "pass",
+      "TestQueuedEnrichmentHasRealProductionHTTPCaller": "pass",
+      "TestNativeProtocolsAndToolContinuation/RESPONSES/true": "pass",
+      "TestMetadataSearchLifecycleAndHistoryScopes": "pass",
+      "TestNativeProtocolsAndToolContinuation/ANTHROPIC_MESSAGES/false": "pass",
+      "TestRegisteredMediaTransportsUseScopedTelemetry": "pass",
+      "TestTinyExactPricesNeverRoundToFree": "pass",
+      "TestNativeProtocolsAndToolContinuation/ANTHROPIC_MESSAGES/true": "pass",
+      "TestEndpointPathEditCannotRewriteOldConversation": "pass",
+      "TestNativeProtocolsAndToolContinuation/GEMINI_NATIVE/false": "pass",
+      "TestCustomCredentialEchoRemovedBeforeMetadataPersistence": "pass",
+      "TestNativeProtocolsAndToolContinuation/GEMINI_NATIVE/true": "pass",
+      "TestNativeProtocolsAndToolContinuation": "pass",
+      "TestNativeTruncationAndUnsupportedInput": "pass",
+      "TestResourcePoolsOnlyAttachSelectedAccountAndKey": "pass",
+      "TestPortableAssetsRevalidateAcrossBinaryUpgrade": "pass",
+      "TestPortableConfigurationOwnsIdentityWithoutExecutingOrInheritingSecrets": "pass",
+      "TestSpeechVectorsThroughRealHTTP": "pass",
+      "TestAudioGuardsAndStreamingSecret": "pass",
+      "TestBrowserProviderFormsWorkflow": "skip",
+      "TestPublicResearchBlocksSpecialAndEmbeddedPrivateAddresses": "pass",
+      "TestPortableForegroundUsesRealHTTPSAPIAndKeepsVaultAcrossRestart": "pass",
+      "TestPublicSnapshotLastGoodFiltersBeforeLimit": "pass",
+      "TestRawAttachmentSecretBlockedBeforeHTTPHistoryOrCache": "pass",
+      "TestRequestReceiptFreezesQuoteUsageQuotaAndActualCharge": "pass",
+      "TestExplicitRetryRetainsOneUserMessageAndAllAttempts": "pass",
+      "TestCostUnknownZeroCacheAndNativeUsageStayDistinct": "pass",
+      "TestBrowserRequestReceiptsWorkflow": "skip",
+      "TestPagedRequestExportBeyondUIWindow": "pass",
+      "TestNominalZeroDoesNotClaimKeyFreeAndExplicitConfirmationDoes": "pass",
+      "TestResearchReflectionFrozenSourcesVersionedLearningAndUndo": "pass",
+      "TestRequestExportFreezesSelectionDuringConcurrentUpdates": "pass",
+      "TestResearchDoesNotReuseEarlierCredentialVersion": "pass",
+      "TestUnavailableIntelligenceDoesNotBlockInference": "pass",
+      "TestRequestJSONSecretBoundaries": "pass",
+      "TestBrowserAAResearchPageRecoveryWorkflow": "skip",
+      "TestMissingTerminalReflectionRetriesFromDurableState": "pass",
+      "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/run": "pass",
+      "TestDeclarativeConnectorRealTestActivationSyncCatalogAndRollback": "pass",
+      "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/integration": "pass",
+      "TestRequestJSONWireAndReplay": "pass",
+      "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages/scheduled-day": "pass",
+      "TestAAResearchAdmissionChargesBothBudgetsOnlyForAdmittedPages": "pass",
+      "TestAAResearchResumesFailedPageAfterRestart": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood/attempt-limit": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood/long-wait": "pass",
+      "TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal/UTC-midnight": "pass",
+      "TestAAResearchRetryLimitIsPerPageAndContinuationKeepsJournal": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood/key-change": "pass",
+      "TestAAResearchKeyChangedDuringLastPageCannotPublish": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood/expired": "pass",
+      "TestAAResearchDirectSyncExcludesWorkerAndCompletedReplayUsesNoHTTP": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood/version-change": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood/page-count-change": "pass",
+      "TestResearchConversationConcurrentAdmissionCannotOverspendEitherMeter": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood/duplicate": "pass",
+      "TestResearchConversationSentFailureOrCancellationRetainsAdmission/1": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood/secret-echo": "pass",
+      "TestResearchConversationSentFailureOrCancellationRetainsAdmission/2": "pass",
+      "TestResearchConversationSentFailureOrCancellationRetainsAdmission": "pass",
+      "TestBrowserBraveResearchPageRecoveryWorkflow": "skip",
+      "TestAAResearchStopsWithoutReplacingLastGood/malformed": "pass",
+      "TestBraveResearchRateLimitWaitsDurably": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood/auth": "pass",
+      "TestAAResearchStopsWithoutReplacingLastGood": "pass",
+      "TestBraveResearchOverlapCompleteReplayAndScopedReflection": "pass",
+      "TestBraveResearchBoundedRetriesAndSharedCooldown": "pass",
+      "TestAAResearchCheckpointSyncIsHistoryOnlyAndUpgradeRetainsData": "pass",
+      "TestAAResearchInFlightRestartsCannotResetPageAttemptLimit": "pass",
+      "TestBraveResearchCheckpointSyncIsReadOnlyAndV23UpgradeKeepsHistory": "pass",
+      "TestResearchConversationSecretRejectionDoesNotSpendBudget": "pass",
+      "TestBraveResearchStorageFailuresRollbackAdmissionAndPage/admission": "pass",
+      "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/session_options": "pass",
+      "TestBraveResearchStorageFailuresRollbackAdmissionAndPage/page": "pass",
+      "TestBraveResearchStorageFailuresRollbackAdmissionAndPage": "pass",
+      "TestBraveResearchLMSpeedSearchKeepsFrozenRegionAndPageLimit": "pass",
+      "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/messages": "pass",
+      "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/telemetry": "pass",
+      "TestResearchHistoryArchiveKeepsAllRowsStableAcrossInsertionsAndScheduleScopes": "pass",
+      "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/request_context": "pass",
+      "TestResearchHistorySchema37UpgradePreservesRecordsAndUsesBoundedOrderedIndex": "pass",
+      "TestBrowserResearchInferenceDailyBudgetWorkflow": "skip",
+      "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/message_requests": "pass",
+      "TestResearchOriginCooldownCanonicalScopeAndLateSuccess": "pass",
+      "TestResearchOriginCooldownInFlightSuccessCannotClearLaterFailure": "pass",
+      "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory/research_task_usage": "pass",
+      "TestResearchConversationAdmissionRollsBackEveryLocalWriteAndPreservesHistory": "pass",
+      "TestResearchOriginCooldownSchedulePauseCancelAndNoBudgetCharge": "pass",
+      "TestResearchConversationWorkerRecoversWithoutExtraBudgetAndUsesNewEvidence": "pass",
+      "TestBraveResearchSlowInterruptedBodyBackoffStartsAfterFailure": "pass",
+      "TestResearchOriginCooldownV19UpgradeAndUnavailableStore": "pass",
+      "TestBrowserResearchProgressiveWorkflow": "skip",
+      "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/run": "pass",
+      "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/integration": "pass",
+      "TestPublicResearchRetryScheduleContinuationRetainsAllowance/UTC-midnight": "pass",
+      "TestPublicResearchRetryScheduleContinuationRetainsAllowance": "pass",
+      "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap/scheduled-day": "pass",
+      "TestBraveResearchAdmissionIsAtomicAndRotatingKeyDoesNotResetGlobalCap": "pass",
+      "TestPublicResearchRetryLongWaitAndPrivateTasksNeverAutoRetry": "pass",
+      "TestBraveResearchFailureSemanticsAndOptionBounds/auth": "pass",
+      "TestBraveResearchFailureSemanticsAndOptionBounds/redirect": "pass",
+      "TestBraveResearchFailureSemanticsAndOptionBounds/schema": "pass",
+      "TestPublicResearchRetryHistorySyncNeverActivatesPeer": "pass",
+      "TestBraveResearchFailureSemanticsAndOptionBounds/bad-more": "pass",
+      "TestPublicResearchRetryInterruptedLimitRetainsHistory": "pass",
+      "TestBraveResearchFailureSemanticsAndOptionBounds/missing-hint": "pass",
+      "TestResearchRunLookupKeepsExactOlderRecordAndScheduleScope": "pass",
+      "TestBraveResearchFailureSemanticsAndOptionBounds/no-more": "pass",
+      "TestResearchSourceRunnerBudgetReviewAndNoImplicitMembership": "pass",
+      "TestBraveResearchFailureSemanticsAndOptionBounds/legacy-one-page": "pass",
+      "TestAAFixedWindowAndIncompletePageKeepsLastGood": "pass",
+      "TestBrowserResearchScheduleWorkflow": "skip",
+      "TestBraveResearchFailureSemanticsAndOptionBounds/ten-page-limit": "pass",
+      "TestResearchScheduleDisableCancelsLiveTLSAndProtectsOtherEntryPoint": "pass",
+      "TestBraveResearchFailureSemanticsAndOptionBounds": "pass",
+      "TestResearchScheduleWorkspaceHistoryNeverResumesAndDefinitionsStayLocal": "pass",
+      "TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation/UTC-midnight": "pass",
+      "TestBraveResearchCheckpointSurvivesScheduledBudgetContinuation": "pass",
+      "TestResearchScheduleBoundsRevisionsAndPrivateInferenceRejected": "pass",
+      "TestBraveResearchLateKeyChangePauseAndCrashAttempts/rotate": "pass",
+      "TestResearchScheduleRoundLimitContinuesRemainingTasksWithoutStarvation": "pass",
+      "TestBraveResearchLateKeyChangePauseAndCrashAttempts/pause": "pass",
+      "TestResearchScheduleUsesOnlySelectedLanguagesAndCurrentApprovedKnowledge": "pass",
+      "TestBraveResearchLateKeyChangePauseAndCrashAttempts/cancel": "pass",
+      "TestResearchScheduleIntegrationAdmissionWaitDoesNotSpin": "pass",
+      "TestBraveResearchLateKeyChangePauseAndCrashAttempts/crash-bound": "pass",
+      "TestBraveResearchLateKeyChangePauseAndCrashAttempts": "pass",
+      "TestBraveResearchTransportRecoveryAndLongWait/transport": "pass",
+      "TestResearchScheduleOwningPeerSyncAcknowledgementPreservesLocalIntent": "pass",
+      "TestBraveResearchTransportRecoveryAndLongWait/long-wait": "pass",
+      "TestCatalogSyncFailurePreservesLastGood": "pass",
+      "TestBraveResearchTransportRecoveryAndLongWait/expired": "pass",
+      "TestUnimplementedGroupIsRefusedBeforeAnyRequest": "pass",
+      "TestBraveResearchTransportRecoveryAndLongWait/secret-url": "pass",
+      "TestBraveResearchTransportRecoveryAndLongWait": "pass",
+      "TestResearchManualEvidenceCannotForgeVerifiedQuota": "pass",
+      "TestBraveResearchPersistsPageAndResumesAfterRestart": "pass",
+      "TestBrowserResearchHistoryArchiveAndExactRecovery": "skip",
+      "TestProtectedResponsiveAssets": "pass",
+      "TestAuthorizationAndSecretEncryption": "pass",
+      "TestResearchHistoryRejectsBadCursorsAndUnreadableRowsWithoutInventingEmptyHistory": "pass",
+      "TestSessionFlightIsolationAndStableOrder": "pass",
+      "TestBrowserSystemStatusWorkflow": "skip",
+      "TestSystemdDeploymentLifecycle": "skip",
+      "TestResearchScheduleMetadataReportsSavedConcurrencyAndKeepsUnavailableUnknown": "pass",
+      "TestResearchMacNativeFixture": "skip",
+      "TestBrowserResearchOriginCooldownWorkflow": "skip",
+      "TestResearchOriginCooldownSharedAcrossTasksAndRuns": "pass",
+      "TestWorkspaceChunkExplicitResetRetainsOfflineProductAndSecret": "pass",
+      "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened/90000": "pass",
+      "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened/9999999999999999999999999999999": "pass",
+      "TestResearchOriginCooldownLongRemoteWaitIsNeverShortened": "pass",
+      "TestWorkspaceChunkMigrationPreservesOldPeerVaultAndTakesActualV36Snapshot": "pass",
+      "TestResearchOriginCooldownHistorySyncDoesNotControlPeer": "pass",
+      "TestBrowserPrivateResearchScheduleWorkflow": "skip",
+      "TestBrowserReflectionGeneratedQueryPairedTrialWorkflow": "skip",
+      "TestBrowserResearchRetryWorkflow": "skip",
+      "TestPublicResearchRetryAfterParsing/120": "pass",
+      "TestPublicResearchRetryAfterParsing/0": "pass",
+      "TestPublicResearchRetryAfterParsing/_90_": "pass",
+      "TestPublicResearchRetryAfterParsing/Wed,_21_Oct_2026_02:03:00_GMT": "pass",
+      "TestPublicResearchRetryAfterParsing/Wed,_21_Oct_2026_01:59:00_GMT": "pass",
+      "TestPublicResearchRetryAfterParsing/86400": "pass",
+      "TestPublicResearchRetryAfterParsing/86401": "pass",
+      "TestPublicResearchRetryAfterParsing/9999999999999999999999999999999": "pass",
+      "TestPublicResearchRetryAfterParsing/Thu,_22_Oct_2026_03:00:00_GMT": "pass",
+      "TestPublicResearchRetryAfterParsing/#00": "pass",
+      "TestPublicResearchRetryAfterParsing/-1": "pass",
+      "TestPublicResearchRetryAfterParsing/+1": "pass",
+      "TestPublicResearchRetryAfterParsing/1.5": "pass",
+      "TestPublicResearchRetryAfterParsing/3,_4": "pass",
+      "TestPublicResearchRetryAfterParsing/Bearer_must-not-be-persisted": "pass",
+      "TestPublicResearchRetryAfterParsing": "pass",
+      "TestPublicResearchRetryTLSBudgetsAndOtherTasksProceed": "pass",
+      "TestPublicResearchRetryLimitAndPermanentFailures/Too_Many_Requests": "pass",
+      "TestPublicResearchRetryLimitAndPermanentFailures/Bad_Gateway": "pass",
+      "TestPublicResearchRetryLimitAndPermanentFailures/Service_Unavailable": "pass",
+      "TestPublicResearchRetryLimitAndPermanentFailures/Gateway_Timeout": "pass",
+      "TestPublicResearchRetryLimitAndPermanentFailures/Unauthorized": "pass",
+      "TestPublicResearchRetryLimitAndPermanentFailures/Forbidden": "pass",
+      "TestPublicResearchRetryLimitAndPermanentFailures/Not_Found": "pass",
+      "TestPublicResearchRetryLimitAndPermanentFailures/Internal_Server_Error": "pass",
+      "TestPublicResearchRetryLimitAndPermanentFailures": "pass",
+      "TestPublicResearchRetryRestartPauseCancelAndRemainingBudget": "pass",
+      "TestPublicResearchRetryInspectKeepsLastGoodFacts": "pass",
+      "TestAALatestCompleteRankingAndExpiry": "pass",
+      "TestPublicFetchBoundaryAndEvidenceGate": "pass",
+      "TestResearchResumeAfterInterruptedStoreAndReuseTraffic": "pass",
+      "TestResearchPauseClosesPublicSocketAndPreservesCharge": "pass",
+      "TestResearchMultilingualSearchUsesSafeIntegrationAndDeduplicatesProvider": "pass",
+      "TestWorkspaceChunkLargeConflictPreviewKeepsFullCASAndHistory": "pass",
+      "TestResearchScheduleDisabledDueDedupAndNoMembership": "pass",
+      "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC/global": "pass",
+      "TestWorkspaceChunkRejectsCorruptionIdentityAndScopeBeforeApply": "pass",
+      "TestWorkspaceChunkBoundedEncodingAndLegacyCanonicalBytes": "pass",
+      "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC/schedule": "pass",
+      "TestResearchScheduleDailyLimitsSurviveRestartAndResumeAtUTC": "pass",
+      "TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork/metadata-only": "pass",
+      "TestResearchScheduleRestartIntentAndHumanPause": "pass",
+      "TestResearchScheduleAtomicDailyReservationsAcrossConcurrentTLS": "pass",
+      "TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork/with-secrets": "pass",
+      "TestWorkspaceChunkCapabilitiesRequireCurrentDeviceAndNoWork": "pass",
+      "TestBrowserWorkspaceRecoveryWorkflow": "skip",
+      "TestResearchScheduleSourceEditsRequireLocalReviewAndKeepHistory": "pass",
+      "TestWorkspacePairingSingleUseExpiryAndDeviceRevocation": "pass",
+      "TestResearchScheduleV18UpgradeKeepsManualHistoryAndDefaultsOff": "pass",
+      "TestWorkspaceMetadataOnlyNeverTransfersSecretAndDoesNotLoop": "pass",
+      "TestResearchScheduleWorkspaceSourceEditStopsExistingRound": "pass",
+      "TestScopedOptInAndHistoryPreservation": "pass",
+      "TestWorkspaceRotationLargeIntegersAndRemoteConflictChoice": "pass",
+      "TestBrowserWorkspaceWorkflow": "skip",
+      "TestSQLiteDurability": "pass",
+      "TestUnknownNeverBecomesFree": "pass",
+      "TestBrowserSiteRecipePublicEvidenceReviewAtomicUseAndUndo": "skip",
+      "TestSyncHistoryPollingPageRetainsHistory": "pass",
+      "TestWorkspaceAndroidFixture": "skip",
+      "TestBrowserWorkspaceSyncWorkflow": "skip",
+      "TestResearchExecutionParallelRunsKeepEachRunSequentialAndReceiptsScoped": "pass",
+      "TestResearchProgressiveWrongAnswerIsEvidenceWithoutAutomaticRetry": "pass",
+      "TestExtractionChangedKeyBlocksComparisonAndProductionWithoutLosingHistory": "pass",
+      "TestResearchProgressiveObservationReadFailureDoesNotSpend": "pass",
+      "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/research_quota_pool_admissions": "pass",
+      "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability/legacy": "pass",
+      "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/messages": "pass",
+      "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation/request_context": "pass",
+      "TestResearchQuotaPoolFaultRollbackPolicyCASAndValidation": "pass",
+      "TestResearchProgressiveTaskPayloadCannotAuthorizeDeeperWork": "pass",
+      "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability/invalid-scope": "pass",
+      "TestResearchProgressiveRealProbesAndZeroHTTPReuse": "pass",
+      "TestResearchProgressivePlannedConnectionChangeStopsBeforeHTTP": "pass",
+      "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability/revoked": "pass",
+      "TestSiteRecipeLocalExecutionAuthorityDoesNotTravelWithHistory": "pass",
+      "TestResearchPrivateScheduleCannotBorrowAccountPATOrAnotherKey": "pass",
+      "TestResearchProgressiveCancelRetainsAdmissionAndUngradedObservation": "pass",
+      "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability/legacy-paused": "pass",
+      "TestWorkspaceChunkPreferredCallerFallsBackOnlyForLegacyCapability": "pass",
+      "TestBrowserWorkspaceChunksResumePauseAndRetainPermanentHistory": "skip",
+      "TestResearchProgressiveDoesNotReuseChangedRequestConfiguration": "pass",
+      "TestResearchPrivateScheduleApprovalHistoryIsPagedAndAtomic": "pass",
+      "TestSiteRecipeReviewCannotBorrowChangedTestsKeySourceOrDefinition": "pass",
+      "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation/TOKENS": "pass",
+      "TestSiteRecipeApprovedReadersContinueAfterDraftAdmissionExpires": "pass",
+      "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation/USD": "pass",
+      "TestResearchQuotaPoolAllApplicablePoolsAreAtomicAndUnknownRetainsReservation": "pass",
+      "TestResearchResourceBudgetUsesSameUTCAdmissionDayAtMidnight": "pass",
+      "TestResearchPrivateScheduleExplicitApprovalAndDailyStop": "pass",
+      "TestQueryComparisonRealRegressionAndStaleDatasetCannotActivate": "pass",
+      "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/invalid-cost-sticky": "pass",
+      "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart/1": "pass",
+      "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/truncated-larger-report": "pass",
+      "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation/truncated-smaller-report": "pass",
+      "TestResearchResourceBudgetInvalidCostAndPartialResponseKeepReservation": "pass",
+      "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart/2": "pass",
+      "TestResearchInferenceDailyBudgetSentFailureRetainedAcrossRestart": "pass",
+      "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns/ENGINE": "pass",
+      "TestResearchInferenceDailyBudgetWorkerWaitExplicitResumeAndTrafficReuse": "pass",
+      "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns/CREDENTIAL": "pass",
+      "TestResearchInferenceDailyBudgetConcurrentReservationsAcrossRuns": "pass",
+      "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/custom_scopes": "pass",
+      "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/legacy_unknown": "pass",
+      "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope/pool_output_envelope": "pass",
+      "TestResearchQuotaPoolCustomScopesLegacyUnknownAndOutputEnvelope": "pass",
+      "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending/ENGINE": "pass",
+      "TestResearchQuotaPoolLocalAuthorityMigrationAndPagedHistory": "pass",
+      "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume/1": "pass",
+      "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending/CREDENTIAL": "pass",
+      "TestResearchResourceBudgetConcurrentReservationsWhileTLSIsPending": "pass",
+      "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume/2": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-complete": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-partial": "pass",
+      "TestResearchResourceBudgetFailureCancelUTCDayAndExplicitWorkerResume": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-negative": "pass",
+      "TestSiteRecipeCatalogReadFailureKeepsLastGoodWithoutAnotherEndpoint": "pass",
+      "TestSiteFamilySourceConstantsStayPassiveBoundedAndIndependentlyAttributed": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent-reasoning": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/chat-inconsistent-cache": "pass",
+      "TestResearchCostTLSReceiptsStayExactScopedAndSeparateFromAllocations": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/responses-exact-int64": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-complete": "pass",
+      "TestResearchCostPublicComparisonDoesNotTurnNoInferenceIntoFree": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-inconsistent-tool-prompt": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/gemini-partial": "pass",
+      "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn/false": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/anthropic-cache-complete": "pass",
+      "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn/true": "pass",
+      "TestResearchPrivateScheduleUTCRecoveryIsSeparateOptIn": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete/anthropic-cache-missing": "pass",
+      "TestResearchResourceBudgetNativeMeasurementsStayExactAndComplete": "pass",
+      "TestResearchPrivateScheduleReviewRejectsRotationRaceAndPreservesScope": "pass",
+      "TestResearchProgressiveInterruptedPrivateDepthNeverAutomaticallyReplays": "pass",
+      "TestWorkspaceChunkLargeRecordResumeRestartAndLostFinishReceipt": "pass",
+      "TestQueryComparisonFixedBudgetCancelPauseAndRestart": "pass",
+      "TestWorkspaceChunkEncryptedSecretScopeAndAtomicRollback": "pass",
+      "TestSiteRecipePublicEvidenceGeneratesDraftAndRequiresActualRuleTests": "pass",
+      "TestSiteRecipeBindingReadFailureAndExplicitLegacyRollback": "pass",
+      "TestResearchInferenceDailyBudgetLocalOnlySyncBackupAndMigration": "pass",
+      "TestResearchExecutionDefaultAndFourTaskBatchRemainBounded/1": "pass",
+      "TestResearchExecutionPolicyFaultsStopWorkWithoutChangingThePreference": "pass",
+      "TestQueryGenerationAndComparisonStorageFaultsStayAtomicAndLocal": "pass",
+      "TestResearchExecutionDefaultAndFourTaskBatchRemainBounded/4": "pass",
+      "TestResearchExecutionDefaultAndFourTaskBatchRemainBounded": "pass",
+      "TestReflectionQueryGenerationLocalEvidenceIdempotenceAndRevision": "pass",
+      "TestQueryComparisonMeasuredTrialNextRunMonitorAndPersistentUndo": "pass",
+      "TestExtractionSchema34UpgradeKeepsExactOriginalDataAndConsistentSnapshot": "pass",
+      "TestFactoryKiloSchema33UpgradeDoesNotChangeExistingModelsOrPreferences": "pass",
+      "TestFactoryKiloFirstStartExistingWorkspaceAndPersistentRemoval": "pass",
+      "TestExtractionStorageFailureIsNotReclassifiedAsChangedReview": "pass",
+      "TestExtractionReviewRotationRaceKeepsActivationAtomic": "pass",
+      "TestExtractionFailureSharesOneAttemptKeepsLastGoodAndAutoUndoIsEpochBound": "pass",
+      "TestFactoryKiloOfflineInstallCreatesUsableAnonymousSelections": "pass",
+      "TestExtractionInterruptedComparisonAndBatchStayUnknownWithoutAutomaticHTTP": "pass",
+      "TestExtractionLocalBudgetRefusalDoesNotDegradeOrDisableTrial": "pass",
+      "TestResearchProgressiveDailyStopAndExplicitRecovery": "pass",
+      "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference/real-TLS-cancel": "pass",
+      "TestResearchPrivateScheduleInterruptedInferenceNeverAutoReplays": "pass",
+      "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference/catalog-client-timeout": "pass",
+      "TestFactoryKiloCatalogCancellationAndTimeoutDoNotBecomeBudgetOrInference": "pass",
+      "TestWorkspaceChunkFormalCallerLargeHistoryAndLostAcknowledgement": "pass",
+      "TestWorkspaceChunkCallerCancellationPauseAndConcurrentEdit": "pass",
+      "TestWorkspaceManualSyncJoinsRealBackgroundSyncAndCanceledWaiterDoesNotConsumeLock": "pass",
+      "TestWorkspaceRealTLSBidirectionalSecretsHistoryAndTombstone": "pass",
+      "TestWorkspaceOfflineConflictKeepsBothAndExplicitLocalWins": "pass",
+      "TestResearchExecutionPolicyCASPersistsLocallyAndRejectsUnknownAuthority": "pass",
+      "TestSiteRecipeAtomicActivationAndUndoFailuresKeepWholeGroup": "pass",
+      "TestExtractionDifferentValidFactsCannotQualifyAsImprovement": "pass",
+      "TestSiteRecipeCancelledRuleKeepsPartialResultsAndActualAdmission": "pass",
+      "TestResearchProgressivePrivateRoundCapCarriesUnadmittedProbe": "pass",
+      "TestSiteRecipeManualSettingsCannotRemoveGroupScopeApproval": "pass",
+      "TestResearchExecutionParallelPrivateRunsStillShareCredentialBudget": "pass",
+      "TestResearchPrivateScheduleFormalEntry": "pass",
+      "TestResearchExecutionScheduledSlotsPreserveDedupResumeAndDailyBudget": "pass",
+      "TestResearchExecutionCancellationAndRestartKeepOtherRunAndExactReceipts": "pass",
+      "TestResearchInferenceDailyBudgetStableScopeRotationAndUTCDay": "pass",
+      "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/research_inference_admissions": "pass",
+      "TestResearchInferenceDailyBudgetPaginationAndImmutablePolicyHistory": "pass",
+      "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/messages": "pass",
+      "TestResearchInferenceDailyBudgetFormalSettingsEntry": "pass",
+      "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection/telemetry": "pass",
+      "TestExtractionReviewedComparisonProductionBatchAndPersistentUndo": "pass",
+      "TestResearchInferenceDailyBudgetAtomicFaultsAndRevisionProtection": "pass",
+      "TestResearchCostUnknownFailureCannotBecomeMeasuredSavings": "pass",
+      "TestResearchPrivateScheduleSharesOneUTCAdmissionDay": "pass",
+      "TestResearchBudgetFixtureIsolationAcrossPoliciesClocksAndRestart": "pass",
+      "TestReflectionQueryDoesNotBorrowDifferentCountryOrPageScope": "pass",
+      "TestResearchProgressiveAdmissionRechecksScopeInsideTransaction": "pass",
+      "TestResearchCostReplayKeepsLegacyUnknownAndImmutableTaskCoverage": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/paid": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/extra-fee": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/oversized-price": "pass",
+      "TestResearchPrivateScheduleLocalAuthorityAndMigration": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/unpriced": "pass",
+      "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/TOKENS": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/missing": "pass",
+      "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/USD": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/duplicate": "pass",
+      "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps/DB": "pass",
+      "TestResearchPrivateScheduleAtomicFailuresAndResourceCaps": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/expired": "pass",
+      "TestFactoryKiloResearchCatalogBudgetRejectionAndExplicitResume": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/auth": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/offline": "pass",
+      "TestResearchPrivateScheduleDisableCancelsFlightAndKeepsAdmission": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest/malformed": "pass",
+      "TestFactoryKiloChangedMissingAmbiguousOrUnavailableCatalogCannotSendModelRequest": "pass",
+      "TestFactoryKiloInstallIsAtomicAndCannotOverwriteAnExistingProfile": "pass",
+      "TestResearchQuotaPoolAccountAcrossKeysRotationRestartAndDay": "pass",
+      "TestResearchProgressiveForeignMetadataIsNotLocalTraffic": "pass",
+      "TestSiteRecipeCompositeReviewActualCallerAndPersistentUndo": "pass",
+      "TestResearchQuotaPoolMembershipRetainsSpendAndCountsBeforeAttachment": "pass",
+      "TestSiteRecipeSchema32SnapshotCapturesOnlyCurrentLegacyApproval": "pass",
+      "TestSiteRecipeReceiptReadFailureIsUnavailableWithoutPartialWrites": "pass",
+      "TestQueryComparisonLocalAuthoritySyncPortableAndSchema31Snapshot": "pass",
+      "TestSiteRecipeActiveDefinitionCannotBorrowEarlierApproval": "pass",
+      "TestQueryComparisonNoGainRegressionStaleAndForeignHistory": "pass",
+      "TestResearchQuotaPoolFormalEntry": "pass",
+      "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/country": "pass",
+      "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/options": "pass",
+      "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval/probe": "pass",
+      "TestQueryComparisonTamperedScopeOptionsAndProbeCannotBorrowApproval": "pass",
+      "TestResearchProgressiveLocalAuthoritySyncPortableAndSchema30Upgrade": "pass",
+      "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation/connection": "pass",
+      "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation/allocation": "pass",
+      "TestResearchProgressiveReviewedPlanRejectsChangedScopeAndAllocation": "pass",
+      "TestResearchProgressiveOversizeCompletePlanIsRejectedBeforePartialEnqueue": "pass",
+      "TestResearchProgressiveCandidateRevalidationUsesOnlyFreshLocalReceipt": "pass",
+      "TestExtractionStaleUndoAndAtomicBindingFailureKeepWholeCurrentPlan": "pass",
+      "TestSiteFamilyReferencesRejectSecretsOriginsAndUnboundedPaths": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/missing-explicit-cap": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/unknown-field": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/negative": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/fractional-token": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/zero-reservation": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/zero-money-reservation": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/nonfinite-money": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/numeric-money": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/negative-money": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites/too-large": "pass",
+      "TestExtractionCancellationRetainsActualAdmissionWithoutModelFailure": "pass",
+      "TestResearchResourceBudgetRejectsMalformedPoliciesAndStaleWrites": "pass",
+      "TestFactoryKiloActualEngineAnonymousPriceCheckAndPersistentTelemetry": "pass",
+      "TestQueryComparisonExplicitAtomicReviewRetryAndKeyRace": "pass",
+      "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/research_resource_admissions": "pass",
+      "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/messages": "pass",
+      "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/telemetry": "pass",
+      "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/settlement-retains-reservation": "pass",
+      "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements/policy-and-journal": "pass",
+      "TestResearchResourceBudgetAtomicFaultsAndUnavailableMeasurements": "pass",
+      "TestResearchResourceBudgetLocalAuthorityMigrationAndPagedHistory": "pass",
+      "TestResearchResourceBudgetFormalSettingsAndUnknownReservation": "pass",
+      "TestResearchQuotaPoolExactSettlementAcrossKeys": "pass",
+      "TestResearchResourceBudgetExactReportedSettlementZeroOverrunAndRotation": "pass",
+      "TestResearchQuotaPoolConcurrentInFlightKeys": "pass",
+      "TestExtractionLatestNegativeMeasurementCannotBorrowOldGreenReceipt": "pass",
+      "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/receipt": "pass",
+      "TestResearchProgressiveTokenPrecisionAndPagedImmutableHistory": "pass",
+      "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/rule": "pass",
+      "TestExtractionIntentRecoveryDoesNotRepeatProposalOrComparisonHTTP": "pass",
+      "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP/binding": "pass",
+      "TestExtractionMutatedApprovedProofOrRuleBlocksBeforeAnotherHTTP": "pass",
+      "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/OUTPUT_ENVELOPE": "pass",
+      "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/USD": "pass",
+      "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic/DB": "pass",
+      "TestResearchProgressiveDeeperAdmissionResourceAndStorageFailuresAreAtomic": "pass"
+    }
+  },
+  "ledger_counterexamples": {
+    "before": [
+      {
+        "Test": "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed",
+        "Action": "output",
+        "Output": "    cloud_backup_service_test.go:116: missing durable job acquired a successful transfer transition\n"
+      },
+      {
+        "Test": "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed",
+        "Action": "fail",
+        "Elapsed": 1.03
+      },
+      {
+        "Test": "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup",
+        "Action": "output",
+        "Output": "    cloud_backup_service_test.go:266: unrecorded crash recovery left automatic transfer authority enabled\n"
+      },
+      {
+        "Test": "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup",
+        "Action": "fail",
+        "Elapsed": 1.74
+      },
+      {
+        "Action": "fail",
+        "Elapsed": 2.798
+      }
+    ],
+    "after": [
+      {
+        "Test": "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed",
+        "Action": "pass",
+        "Elapsed": 1.23
+      },
+      {
+        "Test": "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup",
+        "Action": "pass",
+        "Elapsed": 1.76
+      },
+      {
+        "Action": "pass",
+        "Elapsed": 4.013
+      }
+    ]
+  },
+  "limitations": [
+    "後續ledger原子化／lookup錯誤分類及UI文字有修正，須正式最後來源重驗",
+    "未主張完整十一項CI／正式artifact稽核已通過",
+    "未取得Muse終端、使用者指定雲端目的地及固定HTTPS入口",
+    "真rclone使用本機crypt backend／受控TLS，不冒充使用者雲端帳戶",
+    "原公開Release／tag／11附件不變，PR20維持Draft"
+  ]
+}

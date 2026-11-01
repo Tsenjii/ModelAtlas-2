@@ -38,12 +38,12 @@ class AtlasMigration10To11Test {
         }
 
         val db = Room.databaseBuilder(context, AtlasDatabase::class.java, dbName)
-            .addMigrations(MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+            .addMigrations(MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
             .allowMainThreadQueries()
             .build()
         try {
             val sql = db.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
 
             val provider = db.providerDao().getById("p11")!!
             assertEquals("Seek", provider.name)

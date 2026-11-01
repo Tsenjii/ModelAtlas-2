@@ -183,12 +183,86 @@ class AtlasViewModel @JvmOverloads constructor(
     private val providerModelTestEngine: InferenceEngine? = null,
     private val compareTestEngine: InferenceEngine? = null,
     private val credentialEnableTestWriter: (suspend (String, Boolean) -> Unit)? = null,
+    private val myModelToggleReadObserver: (suspend (MyModelKey, Boolean) -> Unit)? = null,
 ) : AndroidViewModel(application) {
     private val app: AtlasApplication = application as AtlasApplication
 
+    private val _kiloFactory = MutableStateFlow(dev.modelatlas.app.data.KiloFactoryState())
+    val kiloFactory: StateFlow<dev.modelatlas.app.data.KiloFactoryState> = _kiloFactory.asStateFlow()
+    private var kiloFactoryBusy = false
+    fun loadKiloFactoryDefaults() = changeKiloFactoryDefaults(false)
+    fun addKiloFactoryDefaults() = changeKiloFactoryDefaults(true)
+    private fun changeKiloFactoryDefaults(add: Boolean) {
+        if (kiloFactoryBusy) return
+        kiloFactoryBusy = true
+        _kiloFactory.value = _kiloFactory.value.copy(loading = true, problem = false)
+        viewModelScope.launch {
+            try {
+                _kiloFactory.value = withContext(Dispatchers.IO) {
+                    val defaults = dev.modelatlas.app.data.KiloFactoryDefaults(app, app.database)
+                    if (add) defaults.install(automatic = false)
+                    defaults.info()
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { _kiloFactory.value = _kiloFactory.value.copy(loading = false, problem = true) }
+            finally { kiloFactoryBusy = false }
+        }
+    }
+
     private fun string(id: Int): String = getApplication<Application>().getString(id)
 
+    val workspaceSyncStatus get() = app.workspaceSync.status
+    fun refreshWorkspaceSync() { viewModelScope.launch { app.workspaceSync.initialize() } }
+    fun connectWorkspace(url: String,label: String,code: String) {
+        viewModelScope.launch {
+            if(app.workspaceSync.connect(url,label,code)) {
+                dev.modelatlas.app.work.WorkspaceSyncWorker.schedule(app)
+                app.workspaceSync.syncNow()
+            }
+        }
+    }
+    fun syncWorkspace() { viewModelScope.launch { app.workspaceSync.syncNow() } }
+    fun pauseWorkspace(paused: Boolean) { viewModelScope.launch {
+        app.workspaceSync.pause(paused)
+        if(!paused) app.workspaceSync.syncNow()
+    } }
+    fun resetWorkspaceTransfer() { viewModelScope.launch { app.workspaceSync.discardPending() } }
+    fun disconnectWorkspace() { viewModelScope.launch {
+        app.workspaceSync.disconnect(); dev.modelatlas.app.work.WorkspaceSyncWorker.cancel(app)
+    } }
+    fun resolveWorkspaceConflict(id: String,hash: String,keepLocal: Boolean) { viewModelScope.launch {
+        if(app.workspaceSync.resolve(id,hash,keepLocal)) app.workspaceSync.syncNow()
+    } }
+
     // X-013 / D-005: app-owned durable choices; no permission request or automatic opt-in.
+    val interfaceAppearance get() = app.appearanceSettings.state
+    private val _appearanceSaving = MutableStateFlow(false)
+    val appearanceSaving = _appearanceSaving.asStateFlow()
+    private val _appearanceSaveFailed = MutableStateFlow(false)
+    val appearanceSaveFailed = _appearanceSaveFailed.asStateFlow()
+
+    fun setInterfaceStyle(value: dev.modelatlas.app.data.InterfaceStyle) = saveAppearance {
+        app.appearanceSettings.setStyle(value)
+    }
+    fun setAquaWallpaper(value: dev.modelatlas.app.data.AquaWallpaper) = saveAppearance {
+        app.appearanceSettings.setWallpaper(value)
+    }
+    fun setReduceTransparency(value: Boolean) = saveAppearance {
+        app.appearanceSettings.setReduceTransparency(value)
+    }
+    private fun saveAppearance(write: suspend () -> Boolean) {
+        if (_appearanceSaving.value) return
+        _appearanceSaving.value = true
+        _appearanceSaveFailed.value = false
+        viewModelScope.launch {
+            try {
+                _appearanceSaveFailed.value = !write()
+            } finally {
+                _appearanceSaving.value = false
+            }
+        }
+    }
+
     val notificationSettings get() = app.notificationSettings.state
     private val _notificationSettingsSaving = MutableStateFlow(false)
     val notificationSettingsSaving = _notificationSettingsSaving.asStateFlow()
@@ -230,6 +304,8 @@ class AtlasViewModel @JvmOverloads constructor(
     private var sampleCache: List<PerformanceSample> = emptyList()
     private var checkinCache: List<CheckinEntity> = emptyList()
     private val pendingById: MutableMap<String, ConnectionRecord> = mutableMapOf()
+    // 成功憑證寫入的管理列交接；永不加入 active／send pending 或選取投影。
+    private val managementHandoffById: MutableMap<String, ConnectionRecord> = mutableMapOf()
     private val historyByConnection: MutableMap<String, MutableList<PromptMessage>> = mutableMapOf()
     // Room Flow 可稍晚才送出變更；本機先封鎖整把 credential，不能只清單一 offering。
     private val blockedCredentialIds = mutableSetOf<String>()
@@ -404,6 +480,9 @@ class AtlasViewModel @JvmOverloads constructor(
     private val _providerModelAction = MutableStateFlow(ProviderModelActionState())
     val providerModelAction: StateFlow<ProviderModelActionState> = _providerModelAction.asStateFlow()
     private var providerModelJob: Job? = null
+    private val _providerModelBatch = MutableStateFlow(ProviderModelBatchState())
+    val providerModelBatch: StateFlow<ProviderModelBatchState> = _providerModelBatch.asStateFlow()
+    private var providerModelBatchJob: Job? = null
 
     // D-028 F1 in-memory registries — MUST be declared before the init block:
     // the session hook launched from init reads them immediately (Kotlin
@@ -420,76 +499,7 @@ class AtlasViewModel @JvmOverloads constructor(
     private val bundleFlightMutex = kotlinx.coroutines.sync.Mutex()
     private val bundleFlights = mutableMapOf<BundleEnrichmentKey, CompletableDeferred<MyModelBundleResult>>()
 
-    init {
-        viewModelScope.launch {
-            app.ready.collect { readyCache = it }
-        }
-        viewModelScope.launch {
-            app.initializationError.collect { failed ->
-                initErrorCache = failed
-                if (failed) _state.update { it.copy(error = string(R.string.error_initialization)) }
-            }
-        }
-        viewModelScope.launch {
-            app.repository.connections
-                .catch {
-                    connectionsFirstLoaded = true
-                    _state.update { it.copy(error = string(R.string.error_load), connectionsLoading = false) }
-                }
-                .collect {
-                    connectionCache = it
-                    syncEvaluatedCache = emptySet()
-                    connectionsFirstLoaded = true
-                    refresh()
-                }
-        }
-        viewModelScope.launch {
-            app.repository.managementConnections
-                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
-                .collect {
-                    managementCache = it
-                    syncEvaluatedCache = emptySet()
-                    refresh()
-                }
-        }
-        viewModelScope.launch {
-            app.repository.samples
-                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
-                .collect {
-                    sampleCache = it
-                    refresh()
-                }
-        }
-        viewModelScope.launch {
-            app.repository.checkins
-                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
-                .collect {
-                    checkinCache = it
-                    refresh()
-                }
-        }
-        registerDateObservers()
-        // D-028 F1 V2 session hook（H1 形狀）：啟動時對持久化成員做一次 bounded
-        // SESSION_AUTO pass（生產預設：無 leg ports、無 observer、無 reader）。
-        // 預算在 [myModelRefreshPolicy] 內 per-exact-W；follower 併入、spent 抑制，
-        // 永不二次 charge。best-effort：失敗靜默，後續 membership emission 補跑（H2/H3）。
-        viewModelScope.launch {
-            try {
-                val keys = myModelsStore.myModelKeys()
-                for (k in keys) {
-                    requestMyModelRefresh(
-                        providerId = k.providerId,
-                        providerModelId = k.providerModelId,
-                        origin = RefreshOrigin.SESSION_AUTO,
-                    )
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                // Session pass best-effort：DAO 失敗 fail-closed，不在此重試。
-            }
-        }
-    }
+
 
     fun saveConnection(name: String, baseUrl: String, modelId: String, secret: String) {
         if (_state.value.saving) return
@@ -747,7 +757,7 @@ class AtlasViewModel @JvmOverloads constructor(
     ) {
         require(listOfNotNull(image, file, audio).size <= 1) { "Only one local attachment per turn" }
         if (_state.value.busy) return
-        if (_providerModelAction.value.busy || _compareRunning.value) {
+        if (_providerModelAction.value.busy || _providerModelBatch.value.running || _compareRunning.value) {
             _state.update { it.copy(error = string(R.string.error_busy)) }
             return
         }
@@ -1010,16 +1020,78 @@ class AtlasViewModel @JvmOverloads constructor(
     fun testProviderModel(providerId: String, modelId: String) =
         startProviderModelAction(providerId, modelId, test = true)
 
+    fun testProviderModels(providerId: String, modelIds: List<String>) {
+        if (providerModelBatchJob != null || providerModelJob != null ||
+            !ProviderModelBatchState.validModels(modelIds)) return
+        val record = recordFor(_state.value.selectedId) ?: return
+        val group = _selectedGroup.value
+        val models = modelIds.toList()
+        if (record.providerId != providerId || !providerModelScopeIsCurrent(record, group)) return
+        _providerModelBatch.value = ProviderModelBatchState(
+            providerId = providerId, connectionId = record.id, group = group,
+            models = models, running = true, status = "RUNNING",
+        )
+        var owner: Job? = null
+        owner = viewModelScope.launch(start = CoroutineStart.LAZY) {
+            var status = "COMPLETED"
+            try {
+                for (model in models) {
+                    ensureActive()
+                    if (!providerModelScopeIsCurrent(record, group)) throw CancellationException()
+                    startProviderModelAction(providerId, model, test = true, batchOwned = true)
+                    val child = providerModelJob
+                    if (child == null) { status = "STOPPED"; break }
+                    child.join()
+                    ensureActive()
+                    val result = _providerModelAction.value
+                    if (result.providerId != providerId || result.connectionId != record.id ||
+                        result.group != group || result.modelId != model || result.busy) {
+                        status = "STOPPED"; break
+                    }
+                    _providerModelBatch.update { it.copy(results = it.results + result) }
+                    if (result.httpStatus == 429 || result.httpStatus == 402) {
+                        status = "LIMIT_REACHED"; break
+                    }
+                    if (result.status == "CANCELLED") { status = "CANCELLED"; break }
+                }
+            } catch (cancelled: CancellationException) {
+                status = "CANCELLED"
+                throw cancelled
+            } finally {
+                // Do not release ownership before the active socket and telemetry
+                // cleanup have finished. No pending item is replayed after cancel.
+                withContext(NonCancellable) {
+                    providerModelJob?.let { child -> child.cancel(); child.join() }
+                }
+                if (providerModelBatchJob === owner) {
+                    providerModelBatchJob = null
+                    _providerModelBatch.update { it.copy(running = false, status = status) }
+                }
+            }
+        }
+        providerModelBatchJob = owner
+        owner.invokeOnCompletion {
+            if (providerModelBatchJob === owner) {
+                providerModelBatchJob = null
+                _providerModelBatch.update { it.copy(running = false, status = "CANCELLED") }
+            }
+        }
+        owner.start()
+    }
+
     fun cancelProviderModelAction() {
+        providerModelBatchJob?.cancel()
         providerModelJob?.cancel()
         // Keep ownership until finally: socket close and final telemetry must finish first.
     }
 
     fun leaveProviderDetail(providerId: String) {
-        if (_providerModelAction.value.providerId == providerId) cancelProviderModelAction()
+        if (_providerModelAction.value.providerId == providerId ||
+            _providerModelBatch.value.providerId == providerId && _providerModelBatch.value.running) cancelProviderModelAction()
     }
 
     private suspend fun cancelAndJoinProviderModelAction() {
+        providerModelBatchJob?.let { batch -> batch.cancel(); batch.join() }
         val job = providerModelJob ?: return
         job.cancel()
         job.join()
@@ -1039,7 +1111,8 @@ class AtlasViewModel @JvmOverloads constructor(
             (selected.anonymous || (selected.credentialEnabled && selected.credentialId !in blockedCredentialIds))
     }
 
-    private fun startProviderModelAction(providerId: String, modelId: String, test: Boolean) {
+    private fun startProviderModelAction(providerId: String, modelId: String, test: Boolean, batchOwned: Boolean = false) {
+        if (providerModelBatchJob != null && !batchOwned) return
         if (providerModelJob != null) return
         val model = modelId.trim()
         val record = recordFor(_state.value.selectedId)
@@ -1049,6 +1122,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 providerId = providerId, modelId = model, connectionId = record?.id,
                 group = _selectedGroup.value,
                 kind = if (test) "TEST" else "ADD", status = "FAILURE", message = message,
+                httpStatus = null,
             )
         }
         if (initErrorCache) { reject(string(R.string.error_initialization)); return }
@@ -1069,12 +1143,14 @@ class AtlasViewModel @JvmOverloads constructor(
             providerId = providerId, modelId = model, connectionId = record.id,
             group = group,
             kind = if (test) "TEST" else "ADD", status = "RUNNING", message = null,
+            httpStatus = null,
         )
         var myJob: Job? = null
         myJob = viewModelScope.launch(start = CoroutineStart.LAZY) {
             var result = "FAILURE"
             var message: String? = string(R.string.error_request)
             var savedCandidate = false
+            var statusCode: Int? = null
             try {
                 val offeringId = withContext(Dispatchers.IO) {
                     app.repository.addProviderModelCandidate(record, model, group)
@@ -1132,6 +1208,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 if (!providerModelScopeIsCurrent(record, group)) throw CancellationException()
                 if (verified) {
                     result = "SUCCESS"
+                    statusCode = 200
                     message = string(R.string.provider_detail_verified)
                 }
             } catch (e: CancellationException) {
@@ -1139,6 +1216,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 message = null
                 throw e
             } catch (e: InferenceFailure) {
+                statusCode = e.status
                 message = messageFor(e.outcome)
             } catch (_: Exception) {
                 // Only localized, fixed error text crosses the UI boundary.
@@ -1149,6 +1227,7 @@ class AtlasViewModel @JvmOverloads constructor(
                     _providerModelAction.update { action ->
                         action.copy(
                             status = result, message = message,
+                            httpStatus = statusCode,
                             clearToken = action.clearToken + if (!test && result == "SUCCESS") 1 else 0,
                             refreshToken = action.refreshToken + if (savedCandidate) 1 else 0,
                         )
@@ -1466,6 +1545,7 @@ class AtlasViewModel @JvmOverloads constructor(
 
     private fun findManagedRecord(connectionId: String): ConnectionRecord? =
         managementCache.firstOrNull { it.id == connectionId }
+            ?: managementHandoffById[connectionId]
             ?: pendingById[connectionId]
             ?: connectionCache.firstOrNull { it.id == connectionId }
 
@@ -1528,6 +1608,7 @@ class AtlasViewModel @JvmOverloads constructor(
         val record = managementCache.firstOrNull { it.id == connectionId }
             ?: connectionCache.firstOrNull { it.id == connectionId }
             ?: pendingById[connectionId]
+            ?: managementHandoffById[connectionId]
         if (record == null || !record.requiresDailyCheckin) {
             _state.update { it.copy(error = string(R.string.error_checkin_not_required)) }
             return
@@ -1564,6 +1645,12 @@ class AtlasViewModel @JvmOverloads constructor(
                     failure = string(R.string.error_credential_update)
                     return@launch
                 }
+                // Active 與 management 的 Room emission 獨立到達。寫入前保留精確
+                // credential 的已知列，避免停用後 active 先清空、management 尚無列，
+                // 使管理入口與緊接著的重新啟用失去同一筆已提交的連線。
+                val handoffRows = (managementCache + connectionCache + pendingById.values + managementHandoffById.values + record)
+                    .filter { !it.anonymous && it.credentialId == record.credentialId }
+                    .distinctBy { it.id }
                 cancelAndJoinSend()
                 cancelAndJoinProviderModelAction()
                 cancelCompareForCredential(record.credentialId)
@@ -1577,6 +1664,12 @@ class AtlasViewModel @JvmOverloads constructor(
                 }
                 if (enabled) blockedCredentialIds.remove(record.credentialId)
                 else blockCredentialLocally(record.credentialId)
+                // 只有真寫入成功才交接管理列；失敗保留原 pending／blocked／Room／vault。
+                // 已收到 management 的列由原投影接手，缺席列暫存成功的 enabled 值。
+                val managedIds = managementCache.map { it.id }.toSet()
+                handoffRows.filter { it.id !in managedIds }.forEach {
+                    managementHandoffById[it.id] = it.copy(credentialEnabled = enabled)
+                }
             } finally {
                 _state.update { it.copy(saving = false, error = failure ?: it.error) }
                 refresh()
@@ -1670,10 +1763,11 @@ class AtlasViewModel @JvmOverloads constructor(
     private fun blockCredentialLocally(credentialId: String) {
         if (credentialId.isBlank()) return
         blockedCredentialIds += credentialId
-        val affected = (connectionCache + managementCache + pendingById.values)
+        val affected = (connectionCache + managementCache + pendingById.values + managementHandoffById.values)
             .filter { !it.anonymous && it.credentialId == credentialId }.map { it.id }.toSet()
         affected.forEach {
             pendingById.remove(it)
+            managementHandoffById.remove(it)
             historyByConnection.remove(it)
         }
         _state.update {
@@ -1685,10 +1779,10 @@ class AtlasViewModel @JvmOverloads constructor(
     private fun refresh() {
         val activeIds = connectionCache.map { it.id }.toSet()
         val managedBaseIds = managementCache.map { it.id }.toSet()
-        // pending 待 active／management 兩個 cache 都已 publish 才移除（AND）：兩邊
-        // emission 獨立到達，任一先到不得提前移除；下方 per-list bridging 已 dedup，
-        // 保留較久不會在列表重複。
+        // 新增連線的 pending 保留原 AND：active／management 兩邊都接手才移除。
         pendingById.keys.removeAll { it in activeIds && it in managedBaseIds }
+        // 管理交接只等真 management 接手；它不參與 active／send／選取。
+        managementHandoffById.keys.removeAll { it in managedBaseIds }
         val today = LocalDate.now()
         currentDate = today
         val todayStr = today.toString()
@@ -1734,7 +1828,8 @@ class AtlasViewModel @JvmOverloads constructor(
         val pendingForActive = pendingById.values.filter { p -> p.id !in activeIds }
         val managedBase = if (managementCache.isNotEmpty()) managementCache else connectionCache
         val managedBaseIdSet = managedBase.map { it.id }.toSet()
-        val pendingForManaged = pendingById.values.filter { p -> p.id !in managedBaseIdSet }
+        val pendingForManaged = (pendingById.values + managementHandoffById.values)
+            .distinctBy { it.id }.filter { p -> p.id !in managedBaseIdSet }
         val connections = (connectionCache + pendingForActive)
             .filter { it.anonymous || (it.credentialEnabled && it.credentialId !in blockedCredentialIds) }.map(::toItem)
         val managedConnections = managedBase.map(::toItem) + pendingForManaged.map(::toItem)
@@ -1743,6 +1838,8 @@ class AtlasViewModel @JvmOverloads constructor(
             val selected = when {
                 s.selectedId != null &&
                     (connections.any { it.id == s.selectedId } || pendingById.containsKey(s.selectedId)) -> s.selectedId
+                s.selectedId == null && connections.isNotEmpty() && connections.all { it.providerId == dev.modelatlas.core.network.KiloFactoryPolicy.PROVIDER } ->
+                    (connections.firstOrNull { it.modelId == dev.modelatlas.core.network.KiloFactoryPolicy.DEFAULT_MODEL } ?: connections.first()).id
                 connections.isNotEmpty() -> connections.first().id
                 else -> null
             }
@@ -2804,53 +2901,7 @@ class AtlasViewModel @JvmOverloads constructor(
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
-    // ── FR-002：membership 變更 → 重跑 rows load（自觸發與初始 emission 的解法） ──
-    //
-    // 為什麼需要：`_pendingMemberRows` 只在 `loadModelRows` 跑完後才更新，而
-    // `toggleMyModel`（:2227）不呼叫 `refreshModelRows()`。既有可見列不會暴露這件事
-    // （visible offering 早已在 `_allModelRows`，combine 立刻接得住），hidden 成員列
-    // 會——這正是 FR-002 V2。
-    //
-    // 為什麼不用 `myModelKeys.drop(1)`：`drop(1)` 會把「collector 啟動瞬間的當前值」
-    // 當成初始值丟掉。若 membership 在首次 `all()` 讀取之後、collector 附加之前變更，
-    // 該次變更即被吞掉，pending 列永久缺一筆。StateFlow conflates＋replays，無
-    // drop 的 collector 附加時立即拿到當前值，與 marker 比較後自行決定是否補跑。
-    //
-    // 解法（write-back 比較，無 drop）：
-    //   - load 成功回填時把「本次實際使用的 membership」寫回 `modelRowsMembershipUsed`；
-    //   - collector 只在 `keys != modelRowsMembershipUsed` 時重跑；
-    //   - `modelRowsMembershipUsed` 是 `@Volatile var`，**collector 不收集它**，故
-    //     load 寫它不會產生 emission，不存在 load → 寫標記 → emission → load 的
-    //     迴圈（這是本設計唯一的自觸發陷阱，必須維持 var，不得改成 flow）。
-    //
-    // 時序結果（無 drop 漏洞、無無條件雙跑）：
-    //   · membership 空：首次 emission == 標記(emptySet) → 不重跑（零額外成本）。
-    //   · membership 非空且首次 load 已完成：標記 == emission → 不重跑（零額外成本）。
-    //   · membership 非空且首次 load 尚未完成：標記仍是 emptySet → 重跑一次；既有
-    //     `modelRowsDirty`（:1925-1927）讓在途 load 於 finally（:1957-1960）補跑，
-    //     token 守門丟棄先到的那批 → 收斂為同一結果。**至多一次**額外 load，且只在
-    //     使用者真的已有成員時發生。
-    //
-    // collect 經 suspension point 傳播取消（viewModelScope 於 VM 清除時自動取消）；
-    // 不得加 catch-and-swallow（會吞掉 scope 取消）。
-    init {
-        viewModelScope.launch {
-            myModelKeys.collect { keys ->
-                if (keys != modelRowsMembershipUsed) refreshModelRows()
-                // D-028 F1 V2 membership-emission gating（H2/H3）：每 session 可多次
-                // pass；每次 emission 逐 key 經 [requestMyModelRefresh] 的 per-W 預算機
-                // 器 gating（SESSION_AUTO）。不另起第二個 collector，不用 drop(1)；
-                // 本 load 不寫 membership，故無自觸發迴圈（A7）。
-                for (k in keys) {
-                    requestMyModelRefresh(
-                        providerId = k.providerId,
-                        providerModelId = k.providerModelId,
-                        origin = RefreshOrigin.SESSION_AUTO,
-                    )
-                }
-            }
-        }
-    }
+
 
     fun toggleMyModel(
         providerId: String,
@@ -2868,7 +2919,11 @@ class AtlasViewModel @JvmOverloads constructor(
                 _myModelToggleInFlight.value += key
                 _myModelToggleError.value -= key
                 try {
-                    if (myModelsStore.isMyModel(providerId, providerModelId)) {
+                    val wasMember = myModelsStore.isMyModel(providerId, providerModelId)
+                    // 裝置並行測試可在真 Room 讀取後等待另一讀取；正式 caller 不傳此觀察器。
+                    // 不替換 membership、不改寫入或 in-flight 語意，也不持有 DB transaction。
+                    myModelToggleReadObserver?.invoke(key, wasMember)
+                    if (wasMember) {
                         myModelsStore.removeFromMyModels(providerId, providerModelId)
                     } else {
                         val selected = recordFor(_state.value.selectedId)
@@ -3277,44 +3332,48 @@ class AtlasViewModel @JvmOverloads constructor(
             emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
             return outcome
         }
-        if (origin == RefreshOrigin.SESSION_AUTO) {
-            // T5 原子認領：第二個同 W 即拒（C1 單 charge）；拒否 → spent 抑制。
-            if (!myModelRefreshPolicy.reserve(w)) {
-                val st = myModelRefreshPolicy.autoStateOf(w)
-                val outcome = if (st == MyModelMetadataRetryPolicy.AutoState.RESERVED_AUTO ||
-                    st == MyModelMetadataRetryPolicy.AutoState.CHARGED_RUNNING
-                ) {
-                    RefreshOutcome.SUPPRESSED_ALREADY_RUNNING
-                } else {
-                    RefreshOutcome.SUPPRESSED_BUDGET
-                }
-                emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
-                return outcome
-            }
-        } else {
-            // T13/D3-YES：per-press user 預算，不碰 auto 機器（no-op 見證分離）。
-            myModelRefreshPolicy.onUserExplicit(w)
-        }
-        // Flight 認領（與 reserve 同一 W；中間 suspend 期間若同 W flight 出現則併入
-        // follower——auto 的 reserve 經 onQueuedCancel 釋放，T11，預算 intact）。
+        // T5：重查同 W flight、預留與發布必須原子完成。若先 reserve 再等待
+        // flight mutex，其他已讀完 passport 的 caller 會在 flight 尚未發布時
+        // 被誤判為 already-running，無法 Joined。取消等待 mutex 的 caller 也
+        // 不應留下無主 reservation。鎖內只有同步 policy／map 操作；讀取、
+        // observer、await 與 provider lock 都在鎖外，沒有額外鎖巢狀。
         val flight = CompletableDeferred<RefreshOutcome>()
+        var suppressed: RefreshOutcome? = null
         val dup = refreshFlightMutex.withLock {
             val cur = refreshFlights[w]
-            if (cur == null) {
-                refreshFlights[w] = flight
+            if (cur != null) {
+                cur // Follower 不預留，也不可釋放另一個 leader 的 reservation。
+            } else if (origin == RefreshOrigin.SESSION_AUTO && !myModelRefreshPolicy.reserve(w)) {
+                val st = myModelRefreshPolicy.autoStateOf(w)
+                suppressed = if (st == MyModelMetadataRetryPolicy.AutoState.RESERVED_AUTO ||
+                    st == MyModelMetadataRetryPolicy.AutoState.CHARGED_RUNNING
+                ) RefreshOutcome.SUPPRESSED_ALREADY_RUNNING else RefreshOutcome.SUPPRESSED_BUDGET
                 null
             } else {
-                cur
+                // T13/D3-YES：per-press user 預算，不碰 auto 機器。
+                if (origin == RefreshOrigin.USER_EXPLICIT) myModelRefreshPolicy.onUserExplicit(w)
+                refreshFlights[w] = flight
+                null
             }
         }
+        suppressed?.let { outcome ->
+            emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
+            return outcome
+        }
         if (dup != null) {
-            if (origin == RefreshOrigin.SESSION_AUTO) myModelRefreshPolicy.onQueuedCancel(w)
             emit(RefreshAttemptEvent.Joined(w, origin))
             try {
                 dup.await()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
+            }
+            try {
+                readRefreshPassport(w, passportReader, lmspeedFetcher, newApiAdapterFactory, newApiPerfAdapterFactory)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // 與快路一致：await 後重讀失敗仍只 Joined，不承接 leader 工作。
             }
             val outcome = RefreshOutcome.JOINED_EXISTING_FLIGHT
             emit(RefreshAttemptEvent.Evaluated(w, origin, outcome))
@@ -4161,6 +4220,129 @@ class AtlasViewModel @JvmOverloads constructor(
     val myUptimeCurrentObservedRates: StateFlow<MyUptimeObservedRates?> =
         myUptimeLoaded.map { it?.current }
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    // 所有 instance fields 必須先完成，才註冊可能立即回呼的 observers。
+    // Main.immediate + 已快取的 membership 會在 launch 內同步進入 refresh；
+    // 若 init 放在中段，後方的 certified operations / wave registries 仍為 JVM null。
+    // 保留初始 emission、原預算與 cancellation，不用 delay / drop / catch 掩蓋。
+    init {
+        viewModelScope.launch {
+            app.ready.collect { readyCache = it }
+        }
+        viewModelScope.launch {
+            app.initializationError.collect { failed ->
+                initErrorCache = failed
+                if (failed) _state.update { it.copy(error = string(R.string.error_initialization)) }
+            }
+        }
+        viewModelScope.launch {
+            app.repository.connections
+                .catch {
+                    connectionsFirstLoaded = true
+                    _state.update { it.copy(error = string(R.string.error_load), connectionsLoading = false) }
+                }
+                .collect {
+                    connectionCache = it
+                    syncEvaluatedCache = emptySet()
+                    connectionsFirstLoaded = true
+                    refresh()
+                }
+        }
+        viewModelScope.launch {
+            app.repository.managementConnections
+                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
+                .collect {
+                    managementCache = it
+                    syncEvaluatedCache = emptySet()
+                    refresh()
+                }
+        }
+        viewModelScope.launch {
+            app.repository.samples
+                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
+                .collect {
+                    sampleCache = it
+                    refresh()
+                }
+        }
+        viewModelScope.launch {
+            app.repository.checkins
+                .catch { _state.update { it.copy(error = string(R.string.error_load)) } }
+                .collect {
+                    checkinCache = it
+                    refresh()
+                }
+        }
+        registerDateObservers()
+        // D-028 F1 V2 session hook（H1 形狀）：啟動時對持久化成員做一次 bounded
+        // SESSION_AUTO pass（生產預設：無 leg ports、無 observer、無 reader）。
+        // 預算在 [myModelRefreshPolicy] 內 per-exact-W；follower 併入、spent 抑制，
+        // 永不二次 charge。best-effort：失敗靜默，後續 membership emission 補跑（H2/H3）。
+        viewModelScope.launch {
+            try {
+                val keys = myModelsStore.myModelKeys()
+                for (k in keys) {
+                    requestMyModelRefresh(
+                        providerId = k.providerId,
+                        providerModelId = k.providerModelId,
+                        origin = RefreshOrigin.SESSION_AUTO,
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Session pass best-effort：DAO 失敗 fail-closed，不在此重試。
+            }
+        }
+    }
+
+    // ── FR-002：membership 變更 → 重跑 rows load（自觸發與初始 emission 的解法） ──
+    //
+    // 為什麼需要：`_pendingMemberRows` 只在 `loadModelRows` 跑完後才更新，而
+    // `toggleMyModel`（:2227）不呼叫 `refreshModelRows()`。既有可見列不會暴露這件事
+    // （visible offering 早已在 `_allModelRows`，combine 立刻接得住），hidden 成員列
+    // 會——這正是 FR-002 V2。
+    //
+    // 為什麼不用 `myModelKeys.drop(1)`：`drop(1)` 會把「collector 啟動瞬間的當前值」
+    // 當成初始值丟掉。若 membership 在首次 `all()` 讀取之後、collector 附加之前變更，
+    // 該次變更即被吞掉，pending 列永久缺一筆。StateFlow conflates＋replays，無
+    // drop 的 collector 附加時立即拿到當前值，與 marker 比較後自行決定是否補跑。
+    //
+    // 解法（write-back 比較，無 drop）：
+    //   - load 成功回填時把「本次實際使用的 membership」寫回 `modelRowsMembershipUsed`；
+    //   - collector 只在 `keys != modelRowsMembershipUsed` 時重跑；
+    //   - `modelRowsMembershipUsed` 是 `@Volatile var`，**collector 不收集它**，故
+    //     load 寫它不會產生 emission，不存在 load → 寫標記 → emission → load 的
+    //     迴圈（這是本設計唯一的自觸發陷阱，必須維持 var，不得改成 flow）。
+    //
+    // 時序結果（無 drop 漏洞、無無條件雙跑）：
+    //   · membership 空：首次 emission == 標記(emptySet) → 不重跑（零額外成本）。
+    //   · membership 非空且首次 load 已完成：標記 == emission → 不重跑（零額外成本）。
+    //   · membership 非空且首次 load 尚未完成：標記仍是 emptySet → 重跑一次；既有
+    //     `modelRowsDirty`（:1925-1927）讓在途 load 於 finally（:1957-1960）補跑，
+    //     token 守門丟棄先到的那批 → 收斂為同一結果。**至多一次**額外 load，且只在
+    //     使用者真的已有成員時發生。
+    //
+    // collect 經 suspension point 傳播取消（viewModelScope 於 VM 清除時自動取消）；
+    // 不得加 catch-and-swallow（會吞掉 scope 取消）。
+    init {
+        viewModelScope.launch {
+            myModelKeys.collect { keys ->
+                if (keys != modelRowsMembershipUsed) refreshModelRows()
+                // D-028 F1 V2 membership-emission gating（H2/H3）：每 session 可多次
+                // pass；每次 emission 逐 key 經 [requestMyModelRefresh] 的 per-W 預算機
+                // 器 gating（SESSION_AUTO）。不另起第二個 collector，不用 drop(1)；
+                // 本 load 不寫 membership，故無自觸發迴圈（A7）。
+                for (k in keys) {
+                    requestMyModelRefresh(
+                        providerId = k.providerId,
+                        providerModelId = k.providerModelId,
+                        origin = RefreshOrigin.SESSION_AUTO,
+                    )
+                }
+            }
+        }
+    }
 }
 
 /**

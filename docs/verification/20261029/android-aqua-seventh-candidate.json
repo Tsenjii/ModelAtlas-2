@@ -1,0 +1,24 @@
+{
+  "source": "60ddef458402275350842a75b02a2325efbd47b8",
+  "tree": "1a0257e929574ff4e4fbb1474ba5a0b7634f9792",
+  "run": 40855416110,
+  "job": 123385023676,
+  "artifact_id": 12888844318,
+  "bytes": 21817554,
+  "sha256": "e2d9caaedadeb74a331a0a18fc85dfc0ae00816e5162cb5425aeccd80a39de3a",
+  "crc": "PASS",
+  "status": "REJECTED_MEASURED_PDF_WIDTH",
+  "measurements": {
+    "text_width_px": 44,
+    "text_height_px": 28,
+    "line_count": 1,
+    "width_overflow": true,
+    "height_overflow": false,
+    "font_sp": 12,
+    "font_scale": 2,
+    "max_width_px": 272
+  },
+  "frame_capture": "每次擷取前等待真實硬體frame提交；第12張窄螢幕／200%深色圖已在原斷言前保存，本輪沒有截圖null。",
+  "next": "使用文字完整固有寬度、有界排版與maxLines1；保留原無溢出斷言及全部15張實圖。",
+  "frame_commit_reference": "https://developer.android.com/reference/kotlin/android/view/ViewTreeObserver.html"
+}

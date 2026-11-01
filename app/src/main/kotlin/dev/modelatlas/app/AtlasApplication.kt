@@ -89,6 +89,8 @@ object StartupRecovery {
  *   絕不假裝成功。
  */
 class AtlasApplication : Application() {
+    /** Test application fixtures opt out before onCreate; production defaults on. */
+    internal var factoryDefaultsEnabled: Boolean = true
     companion object {
         /** F29 有限重試上限：初次＋2 次重試，共 3 次。 */
         const val MAX_RECOVERY_ATTEMPTS = 3
@@ -109,9 +111,13 @@ class AtlasApplication : Application() {
         private set
     lateinit var repository: AtlasRepository
         private set
+    lateinit var workspaceSync: dev.modelatlas.app.data.DeviceWorkspaceSync
+        private set
     lateinit var engine: InferenceEngine
         private set
     lateinit var notificationSettings: NotificationSettingsStore
+        private set
+    lateinit var appearanceSettings: dev.modelatlas.app.data.AppearanceSettingsStore
         private set
 
     lateinit var credentialLifecycle: CredentialLifecycle
@@ -141,8 +147,11 @@ class AtlasApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         notificationSettings = NotificationSettingsStore(this)
+        appearanceSettings = dev.modelatlas.app.data.AppearanceSettingsStore(this)
         vault = AndroidCredentialVault(this)
         database = AtlasDatabase.create(this)
+        vault.attachSyncDatabase { database.openHelper.writableDatabase }
+        workspaceSync = dev.modelatlas.app.data.DeviceWorkspaceSync(database,vault)
         // X-014: OUTAGE_RECOVERY／PRICE_CHANGE／QUOTA_LOW 各用獨立事件管線（共用 append-only 事件庫），
         // 並各自在使用者開啟對應通知規則後才投遞。
         repository = AtlasRepository(
@@ -191,7 +200,12 @@ class AtlasApplication : Application() {
         }
         synchronized(recoveryLock) {
             startupJob = applicationScope.launch {
-                runStartupRecovery(recover = { repository.recoverInterrupted() })
+                runStartupRecovery(recover = {
+                    if (factoryDefaultsEnabled) dev.modelatlas.app.data.KiloFactoryDefaults(this@AtlasApplication, database, freshMarkerRequired = true).install(automatic = true)
+                    repository.recoverInterrupted()
+                })
+                workspaceSync.initialize()
+                if (workspaceSync.status.value.connected) dev.modelatlas.app.work.WorkspaceSyncWorker.schedule(this@AtlasApplication)
             }
         }
     }

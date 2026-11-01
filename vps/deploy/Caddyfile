@@ -1,0 +1,3 @@
+{$MODELATLAS_PUBLIC_ORIGIN} {
+    import /etc/caddy/modelatlas-proxy.caddy
+}

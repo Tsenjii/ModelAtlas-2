@@ -1,0 +1,212 @@
+{
+  "source": "e601703c820698c45fe5d83856c76ba5152bd072",
+  "artifact": {
+    "id": 12890495848,
+    "name": "modelatlas-android-aqua-diagnostic",
+    "size_in_bytes": 21915079,
+    "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12890495848",
+    "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12890495848/zip",
+    "expired": false,
+    "created_at": "2026-10-29T10:29:22Z",
+    "expires_at": "2027-01-27T10:20:29Z",
+    "updated_at": "2026-10-29T10:29:22Z",
+    "digest": "sha256:68fe921bc5caa41b70bbc2d7294163ed6689c6504deb8392962287fd9bf8c390",
+    "workflow_run": {
+      "id": 40856785966,
+      "repository_id": 1415404214,
+      "head_repository_id": 1415404214,
+      "head_branch": "diagnostic/android-aqua-015y-20261028",
+      "head_sha": "e601703c820698c45fe5d83856c76ba5152bd072"
+    }
+  },
+  "bytes": 21915079,
+  "sha256": "68fe921bc5caa41b70bbc2d7294163ed6689c6504deb8392962287fd9bf8c390",
+  "crc": "PASS",
+  "cases": {
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#successfulChoicesSurviveStoreReconstructionAndOpaqueKeepsTheArtwork": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#malformedSavedTypesCannotEnableStyleOrOpenAnArbitraryPath": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#failedCommitRetainsConfirmedStateAndNextEditRepairsTheFailedCache": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#freshChoicesStayClassicWithoutWritingDefaults": "pass",
+    "dev.modelatlas.app.data.AppearanceSettingsStoreTest#concurrentIndependentEditsKeepEveryConfirmedChoice": "pass",
+    "dev.modelatlas.app.ui.AquaArtworkAssetsTest#actualBundledImagesDecodeWithOriginalDimensionsAlphaAndBoundedCache": "pass",
+    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable": "pass",
+    "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualFourArtworkButtonsKeepScopeChatAndProviderDrafts": "pass"
+  },
+  "light": {
+    "result": "PASS",
+    "pictures": [
+      {
+        "file": "01-classic-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "986a0bca24fee37a134a8630aa52301e1876abeb583c69bfe01261c054579961"
+      },
+      {
+        "file": "02-kotoha-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "5fc765c87767ccacd7e48a54855aad78adf7af5286b4327618ede657e9c109a1"
+      },
+      {
+        "file": "03-elaina-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "08b5f7567bb6f9f7a76b8cb33cd999184fee1dc82aada2e30b76b682af0e1ef6"
+      },
+      {
+        "file": "04-kotoha-chibi-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "80f71bea002546a672ece28cae0ae8a390f5df0c51d86e089374580f5535db8f"
+      },
+      {
+        "file": "05-elaina-chibi-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "5bc3ef2c134df4490e785049a74d0d4d46000b2688b4b36a3f4de93fb7d6959d"
+      },
+      {
+        "file": "06-settings-four-choices-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "dab656207ed471c79c67b4431f84fbac827cd2ea3e97aa2ae889b7afe9a657dc"
+      },
+      {
+        "file": "07-providers-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "cf9f0082fa4a82024219d37deb818e84dda678549762a1b98fe966ea19d66dd7"
+      },
+      {
+        "file": "08-models-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "0e8680812de86aed3a7b03d1f3f4020fd8bb9ab50f83a54ab5a1cd30c24df2f4"
+      },
+      {
+        "file": "09-provider-form-retained-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "fa68f65c94ac0e92adb86800ed10eefb398bcd1b818d7a9728f6530e392d37d1"
+      },
+      {
+        "file": "10-classic-draft-retained-light.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": false,
+        "sha256": "106606d66d63e2cb46e91e0ca70de1298b1e4f505468b6c28539c2431cd9fa78"
+      }
+    ],
+    "pid": 4831,
+    "system_settings_restored": true,
+    "preferences_restored": true,
+    "production_secure_before": true,
+    "secure_restored": true,
+    "night_before": 1,
+    "night_after": 1,
+    "font_before": "null",
+    "font_after": "null",
+    "resolved_font_before": 1,
+    "resolved_font_after": 1,
+    "no_inference": true,
+    "cache_bytes": 12580128
+  },
+  "dark": {
+    "result": "PASS",
+    "pictures": [
+      {
+        "file": "11-relaunch-retained-dark.png",
+        "width": 320,
+        "height": 640,
+        "screen_width_dp": 320,
+        "font_scale": 1,
+        "dark": true,
+        "sha256": "52f8a3c0be8081b412ed3d90a45d3b8da79bc28fc5854c140d0070a92c8c7570"
+      },
+      {
+        "file": "12-playground-320-large-dark.png",
+        "width": 320,
+        "height": 740,
+        "screen_width_dp": 320,
+        "font_scale": 2,
+        "dark": true,
+        "sha256": "48e59ea008ad6f81bb421abc5f78e52d799e77f80f3fb53bd4b4e0ec18700ad1"
+      },
+      {
+        "file": "13-settings-320-large-dark.png",
+        "width": 320,
+        "height": 740,
+        "screen_width_dp": 320,
+        "font_scale": 2,
+        "dark": true,
+        "sha256": "a11a5c64c42d7335cf98cc76bea374d5c3047d42a07a98af3f2692d006698de7"
+      },
+      {
+        "file": "14-reduced-transparency-dark.png",
+        "width": 320,
+        "height": 740,
+        "screen_width_dp": 320,
+        "font_scale": 2,
+        "dark": true,
+        "sha256": "0a50695993d886722873a344c273e74cd325dedd3c7ccec62b557d08fa7843b0"
+      },
+      {
+        "file": "15-landscape-large-dark.png",
+        "width": 740,
+        "height": 320,
+        "screen_width_dp": 740,
+        "font_scale": 2,
+        "dark": true,
+        "sha256": "a2738f9e98e3ef74d77ab0f0091048deec5a6809bd484658d7e93ec4e86a2e9c"
+      }
+    ],
+    "pid": 4831,
+    "system_settings_restored": true,
+    "preferences_restored": true,
+    "production_secure_before": true,
+    "secure_restored": true,
+    "night_before": 1,
+    "night_after": 1,
+    "font_before": "null",
+    "font_after": "null",
+    "resolved_font_before": 1,
+    "resolved_font_after": 1,
+    "no_inference": true,
+    "cache_bytes": 10985104
+  },
+  "status": "DIAGNOSTIC_SCOPE_PASSED_NOT_WHOLE_SLICE_ACCEPTED",
+  "run": 40856785966,
+  "job": 123389629253,
+  "actual_native_images_reviewed": 15,
+  "visual_review": "PASS；15張實際Android圖與4張接觸表均由主要agent自行檢視，另核對320dp／200%與橫向PDF完整；沒有第二位獨立reviewer。",
+  "limits": "診斷只執行8個新增裝置案例；正式整合來源仍須自己的完整1005例、九項必要CI及九份實際ZIP／125視圖。原全部工作量與deadline不減。"
+}

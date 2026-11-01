@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "images": [
+    {
+      "id": "kotoha",
+      "file": "aqua-kotoha-v1.jpg",
+      "bytes": 135772,
+      "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282",
+      "origin": "same user-selected original file as accepted VPS appearance; original chibi PNG retained for macOS 12 compatibility"
+    },
+    {
+      "id": "elaina",
+      "file": "aqua-elaina-v1.jpg",
+      "bytes": 422004,
+      "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6",
+      "origin": "same user-selected original file as accepted VPS appearance; original chibi PNG retained for macOS 12 compatibility"
+    },
+    {
+      "id": "kotoha-chibi",
+      "file": "aqua-kotoha-chibi-v1.png",
+      "bytes": 2363841,
+      "sha256": "f54666c7bb7714fa03919830d8404dd5dc5c37f12a4cd18c51353a34235c6eb0",
+      "origin": "same user-selected original file as accepted VPS appearance; original chibi PNG retained for macOS 12 compatibility"
+    },
+    {
+      "id": "elaina-chibi",
+      "file": "aqua-elaina-chibi-v1.png",
+      "bytes": 2272459,
+      "sha256": "8be85b8f0db24f937576f6f6091e25cad560e4aecc64f0a08560b2cc0c52a415",
+      "origin": "same user-selected original file as accepted VPS appearance; original chibi PNG retained for macOS 12 compatibility"
+    }
+  ]
+}

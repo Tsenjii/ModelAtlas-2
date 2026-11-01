@@ -1,0 +1,100 @@
+{
+  "source_head": "b7444fe9be8f6a397521422aa40e340a908807ca",
+  "source_tree": "b000dbadb71f928a0d0e5b9401f839692daca6f0",
+  "retrieved_at": "2026-10-19T13:08:38.757Z",
+  "check_runs": [
+    {
+      "name": "live-kilo-research",
+      "id": 118067240978,
+      "head_sha": "b7444fe9be8f6a397521422aa40e340a908807ca",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39254772494/job/118067240978"
+    },
+    {
+      "name": "live-kilo-research",
+      "id": 118062902484,
+      "head_sha": "b7444fe9be8f6a397521422aa40e340a908807ca",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253489526/job/118062902484"
+    },
+    {
+      "name": "live-kilo-research",
+      "id": 118062477930,
+      "head_sha": "b7444fe9be8f6a397521422aa40e340a908807ca",
+      "status": "completed",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363978/job/118062477930"
+    },
+    {
+      "name": "vps-linux-arm64",
+      "id": 118062403622,
+      "head_sha": "b7444fe9be8f6a397521422aa40e340a908807ca",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363969/job/118062403622"
+    },
+    {
+      "name": "vps-linux-amd64",
+      "id": 118062403594,
+      "head_sha": "b7444fe9be8f6a397521422aa40e340a908807ca",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363969/job/118062403594"
+    },
+    {
+      "name": "vps-browser",
+      "id": 118062403359,
+      "head_sha": "b7444fe9be8f6a397521422aa40e340a908807ca",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363969/job/118062403359"
+    },
+    {
+      "name": "vps-test",
+      "id": 118062402990,
+      "head_sha": "b7444fe9be8f6a397521422aa40e340a908807ca",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363969/job/118062402990"
+    },
+    {
+      "name": "device-tests",
+      "id": 118062402704,
+      "head_sha": "b7444fe9be8f6a397521422aa40e340a908807ca",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363984/job/118062402704"
+    },
+    {
+      "name": "build",
+      "id": 118062402366,
+      "head_sha": "b7444fe9be8f6a397521422aa40e340a908807ca",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/39253363984/job/118062402366"
+    }
+  ],
+  "vps_run": 39253363969,
+  "android_run": 39253363984,
+  "browser": {
+    "flows": 19,
+    "pngs": 263,
+    "self_review": true,
+    "independent_reviewer": false
+  },
+  "footprint": {
+    "binary_bytes": 13893794,
+    "idle_rss_bytes": 26345472,
+    "peak_rss_bytes": 208445440,
+    "excludes": [
+      "OS",
+      "proxy",
+      "browser",
+      "fixture",
+      "runner"
+    ]
+  },
+  "scope": "Only this exact baseline SHA; later heads require their own complete gates."
+}

@@ -1,0 +1,145 @@
+{
+  "slice": "MAC-AQUA-015W",
+  "source": "4d178c6a0d1d914ea976b2160e6326c553718f14",
+  "tree": "6c0a848f2d5daf36e6e8dd593fd63388c9d54af9",
+  "status": "REJECTED_NOT_ACCEPTED",
+  "jobs": [
+    {
+      "run": 40550620345,
+      "jobs": [
+        {
+          "id": 122353027958,
+          "name": "macos-build",
+          "status": "completed",
+          "result": "success"
+        },
+        {
+          "id": 122356704052,
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "status": "completed",
+          "result": "failure"
+        },
+        {
+          "id": 122356704156,
+          "name": "macos-test (macos-15, arm64)",
+          "status": "completed",
+          "result": "failure"
+        }
+      ]
+    },
+    {
+      "run": 40550621223,
+      "jobs": [
+        {
+          "id": 122353029978,
+          "name": "vps-browser",
+          "status": "completed",
+          "result": "success"
+        },
+        {
+          "id": 122353030502,
+          "name": "vps-linux-arm64",
+          "status": "completed",
+          "result": "success"
+        },
+        {
+          "id": 122353030542,
+          "name": "vps-private-mapping-diagnostic",
+          "status": "completed",
+          "result": "success"
+        },
+        {
+          "id": 122353030565,
+          "name": "vps-linux-amd64",
+          "status": "completed",
+          "result": "success"
+        },
+        {
+          "id": 122353030585,
+          "name": "vps-test",
+          "status": "completed",
+          "result": "success"
+        }
+      ]
+    },
+    {
+      "run": 40550620335,
+      "jobs": [
+        {
+          "id": 122353027049,
+          "name": "device-tests",
+          "status": "completed",
+          "result": "failure"
+        },
+        {
+          "id": 122353027288,
+          "name": "build",
+          "status": "completed",
+          "result": "success"
+        }
+      ]
+    },
+    {
+      "run": 40550620342,
+      "jobs": [
+        {
+          "id": 122353027941,
+          "name": "candidate-artifact-audit",
+          "status": "completed",
+          "result": "failure"
+        }
+      ]
+    }
+  ],
+  "native_failure": "background-ready-kotoha: 收到無法辨識的資料，請重試。",
+  "arm_artifact": {
+    "id": 12754164708,
+    "bytes": 150475,
+    "sha256": "48da83ddf2b9e827b6676c64709285b6bd3514bd87653cde18e0ec1ad3444bef",
+    "crc": "PASS"
+  },
+  "intel_artifact_metadata": {
+    "id": 12754234746,
+    "bytes": 150456,
+    "sha256": "645512a73fc0e3bc44dae38642a50a6bf7a31e438a058ec1bd58762df046bb2d"
+  },
+  "actual_progress": {
+    "interface": "aqua",
+    "wallpaper": "kotoha",
+    "markers": [
+      "native-interface-aqua",
+      "aqua-opaque-background"
+    ],
+    "sheets": 0
+  },
+  "actual_failure_png": "Aqua solid readable light-blue canvas; no artwork; style selection and sheet dismissal succeeded",
+  "root_cause": "official macOS runner image enables reduceTransparency; production correctly selected its opaque accessibility path while QA wrongly waited for artwork",
+  "primary_source": "https://github.com/actions/runner-images/blob/19874e7af7ed79e9036b52cc749da639f5c9130f/images/macos/scripts/build/configure-system.sh",
+  "primary_source_line": "defaults write com.apple.universalaccess reduceTransparency -bool true",
+  "original_native_core_smoke_parity_research": "NOT_REACHED because new Aqua probe is first; all original code/workloads/deadlines retained",
+  "next_change": "reversible real system preference fixture across three packaged app launches; first two observed false for four art choices, app opaque toggle and relaunch; third observed true with app toggle off. Restore exact original system/app preferences on success/failure. Preserve all12 planned new views and add13 actual system screenshot. Original150s/180s and all legacy deadlines unchanged.",
+  "expected_next": {
+    "mac_png_each": 117,
+    "original_mac_png_preserved": 104,
+    "new_aqua_png_each": 13,
+    "related_views": 110,
+    "contacts": 28
+  },
+  "whole_next_release": "PARTIAL",
+  "android_failure": {
+    "run": 40550620335,
+    "job": 122353027049,
+    "case": "MyModelsMetadataRetryStateTest.c1FiveIdenticalCallersChargeOnce",
+    "exception": "TimeoutCancellationException: Timed out waiting for15000ms",
+    "tests": 996,
+    "failures": 1,
+    "original_skip": 5,
+    "artifact": {
+      "id": 12755223529,
+      "bytes": 1278091,
+      "sha256": "ea5ea239692b79a1221ec2755301675f19f12c2969f08b51244dfa4770d5d38b"
+    },
+    "cause": "UNKNOWN; preserve failure and original15000ms condition; investigate independently of Mac system preference fixture",
+    "android_source_changes_since_accepted_V": false
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "slice": "MAC-AQUA-015W",
+  "source": "73d864cb72dfc2e1544fc4d9156b4f3226f8d00e",
+  "tree": "f1da12257f1872b667d13250cd9bcffab3d4e766",
+  "status": "NOT_ACCEPTED_LOCAL_NATIVE_SETUP_COUNTEREXAMPLE",
+  "mac_build": {
+    "run": 40544934618,
+    "job": 122332879327,
+    "result": "SUCCESS"
+  },
+  "mac_ui": "current source native completion not claimed; source must be replaced due verified seed rejection",
+  "local_counterexample": {
+    "binary_artifact": 12752147941,
+    "binary_source": "73d864cb72dfc2e1544fc4d9156b4f3226f8d00e",
+    "endpoint": "POST /api/v1/models",
+    "unexpected_field": "enabled",
+    "status": 400,
+    "response": "invalid JSON",
+    "cause": "strict Model input does not declare enabled; native QA fixture added an unsupported property"
+  },
+  "corrected_request_actual_runtime": {
+    "result": "PASS",
+    "startup_seconds": 0.0613198519999969,
+    "images": [
+      {
+        "file": "aqua-kotoha-v1.jpg",
+        "bytes": 135772,
+        "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282"
+      },
+      {
+        "file": "aqua-elaina-v1.jpg",
+        "bytes": 422004,
+        "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6"
+      },
+      {
+        "file": "aqua-kotoha-chibi-v1.webp",
+        "bytes": 1560556,
+        "sha256": "81953319738d7b14009fc06768e968fe1321ad6d9322d49f3717ab4626bbe373"
+      },
+      {
+        "file": "aqua-elaina-chibi-v1.webp",
+        "bytes": 1528248,
+        "sha256": "3f46afcba742572cf80b9cffae8af6d4d66648dd3bce35843d1a621d02aa81bc"
+      }
+    ],
+    "old_garden_status": 404,
+    "unauthorized_status": 401,
+    "all_five_native_seed_mutations": "PASS",
+    "selected_model_active": true,
+    "no_inference_or_research": true,
+    "parent_pipe_shutdown": "PASS"
+  },
+  "factory_runtime": {
+    "startup_seconds": 0.08178214100007608,
+    "first_members": 15,
+    "after_restart": 14,
+    "after_explicit_add": 14,
+    "empty": {
+      "telemetry": 0,
+      "sessions": 0,
+      "research_runs": 0
+    },
+    "secret_count": 0,
+    "install_ledgers": 1,
+    "parent_pipe_shutdown": "PASS"
+  },
+  "actual_linux_bundle_inspection": [
+    {
+      "arch": "amd64",
+      "files": 49,
+      "version": {
+        "commit": "73d864cb72dfc2e1544fc4d9156b4f3226f8d00e",
+        "built_at": "2026-10-27T16:52:48Z",
+        "os": "linux",
+        "arch": "amd64",
+        "schema": 38
+      }
+    },
+    {
+      "arch": "arm64",
+      "files": 49,
+      "version": {
+        "commit": "73d864cb72dfc2e1544fc4d9156b4f3226f8d00e",
+        "built_at": "2026-10-27T16:52:46Z",
+        "os": "linux",
+        "arch": "arm64",
+        "schema": 38
+      }
+    }
+  ],
+  "direct_downloads": [
+    {
+      "id": 12753130834,
+      "name": "modelatlas-vps-linux-arm64",
+      "bytes": 19580686,
+      "sha256": "4694d60cc13fc3cba7fa0303e70cb0b78e8c590c3fc113e88fcc78762ae2d273",
+      "crc": "PASS",
+      "source": "73d864cb72dfc2e1544fc4d9156b4f3226f8d00e",
+      "run": 40544934723
+    },
+    {
+      "id": 12752147941,
+      "name": "modelatlas-vps-linux-amd64",
+      "bytes": 20541301,
+      "sha256": "c08d0fb08ec52d5d0dcad1537312060330fdfee06301e0859e0c09c91f761216",
+      "crc": "PASS",
+      "source": "73d864cb72dfc2e1544fc4d9156b4f3226f8d00e",
+      "run": 40544934723
+    }
+  ],
+  "resolution": "remove only unsupported QA seed property; production API, enabled/state assertions, all 12 new native captures, original 89 core and104 PNG plus complete workloads/deadlines unchanged",
+  "whole_next_release": "PARTIAL"
+}

@@ -42,7 +42,7 @@ import org.junit.runner.RunWith
  *
  * This test is modeled 1:1 on the verified `AtlasMigration13To14Test` pattern:
  *   - legacy DB from committed CI-exported `14.json` via MigrationTestHelper
- *   - reopen through `AtlasDatabase.create` (registers MIGRATION_14_15)
+ *   - reopen through `AtlasDatabase.create` (registers MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
  *   - tables/schema/rows/FK captured before and after
  *   - fresh-generated DDL compared per object
  *   - PRAGMA foreign_key_check clean
@@ -118,7 +118,7 @@ class AtlasMigration14To15Test {
             val opened = AtlasDatabase.create(context, name)
             room = opened
             val sql = opened.openHelper.writableDatabase
-            assertEquals(NEXT_VERSION, sql.version)
+            assertEquals(16, sql.version)
 
             // (a) Slice heads derived from facts where unambiguous.
             assertSliceHead(sql, TRIO_SCOPE_KEY, "DEDICATED_ACCOUNT_QUOTA", "STANDARD_INTERACTIVE", "ev-trio-std", 2100, "snap-std", 2100)
@@ -478,7 +478,7 @@ class AtlasMigration14To15Test {
             val sql = opened.openHelper.writableDatabase
             assertEquals(LEGACY_VERSION + 1, NEXT_VERSION) // placeholder sanity
             // Documented additive table only.
-            assertEquals(legacyTables + SLICE_HEAD_TABLE, tables(sql))
+            assertEquals(legacyTables + SLICE_HEAD_TABLE + workspaceSyncTables, tables(sql))
             for ((table, before) in legacyRows) {
                 assertEquals(table, before, rows(sql, table))
             }

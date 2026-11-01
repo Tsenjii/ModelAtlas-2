@@ -1,0 +1,82 @@
+{
+  "status": "DETERMINISTIC_OLD_SOURCE_FAILURE_REPRODUCED_FIX_PENDING_FULL_CI",
+  "source": "f581874a9fdf2fe8203909af29a22942a40f28f4",
+  "observed_failure": {
+    "source": "4d178c6a0d1d914ea976b2160e6326c553718f14",
+    "job": 122353027049,
+    "artifact": 12755223529,
+    "bytes": 1278091,
+    "sha256": "ea5ea239692b79a1221ec2755301675f19f12c2969f08b51244dfa4770d5d38b",
+    "crc": "PASS",
+    "case": "MyModelsMetadataRetryStateTest.c1FiveIdenticalCallersChargeOnce",
+    "duration": 15.131,
+    "exception": "TimeoutCancellationException15000ms",
+    "exact_old_CI_cause": "UNKNOWN; stack has no barrier stage"
+  },
+  "static_publication_gap": {
+    "file": "app/src/main/kotlin/dev/modelatlas/app/AtlasViewModel.kt",
+    "fast_lookup_line": 3185,
+    "reserve_line": 3237,
+    "publish_lock_line": 3256,
+    "reason": "five readers can all observe no flight; one reserves budget then awaits refreshFlightMutex to publish; another fails reservation before flight is published and returns SUPPRESSED_ALREADY_RUNNING rather than joining. Existing c1 waits for4 Joined, so this interleaving could explain the observed timeout.",
+    "proof_status": "Actual unchanged production VM failed deterministically at held-publication barrier: four SUPPRESSED_ALREADY_RUNNING, 0.229s. Exact historical 4d interleaving remains UNKNOWN."
+  },
+  "next_required": "reproduce with controlled publication mutex + all-five passport barrier before fixing; keep old996 cases and15000ms plus assertions. Potential atomic fix: recheck current flight and reserve/publish under same refreshFlightMutex; budget and single charge unchanged. No Android code changed during current Mac acceptance.",
+  "slice": "ANDROID-METADATA-015X",
+  "diagnostic": {
+    "source": "4bebf6455ab029d764d85b271ba6b2b8b2798b9d",
+    "tree": "76eba5e4936e76629de52c75c6aebdb12b168098",
+    "run": 40565637909,
+    "job": 122406019275,
+    "production": "unchanged from accepted ad346fe source",
+    "status": "EXPECTED_FAILURE",
+    "artifact": {
+      "id": 12763815264,
+      "bytes": 20172,
+      "sha256": "7dd4187ed60e87ace406b258538d32fc4fbc3e2ec37157de77c633f5af75ba68",
+      "crc": "PASS"
+    },
+    "testcase": {
+      "name": "c1PublicationContentionKeepsAllFiveCallersInOneFlight",
+      "classname": "dev.modelatlas.app.data.MyModelsMetadataRetryStateTest",
+      "time": "0.229"
+    },
+    "failure": "java.lang.AssertionError: no suppression before flight publication expected:<[]> but was:<[SUPPRESSED_ALREADY_RUNNING, SUPPRESSED_ALREADY_RUNNING, SUPPRESSED_ALREADY_RUNNING, SUPPRESSED_ALREADY_RUNNING]>\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.failNotEquals(Assert.java:835)\nat org.junit.Assert.assertEquals(Assert.java:120)\nat dev.modelatlas.app.data.MyModelsMetadataRetryStateTest$c1PublicationContentionKeepsAllFiveCallersInOneFlight$1.invokeSuspend(MyModelsMetadataRetryStateTest.kt:371)\nat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)\nat kotlinx.coroutines.internal.ScopeCoroutine.afterResume(Scopes.kt:35)\nat kotlinx.coroutines.AbstractCoroutine.resumeWith(AbstractCoroutine.kt:101)\nat kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:46)\nat kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)\nat kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)\nat kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:95)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:69)\nat kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)\nat kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:47)\nat kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)\nat dev.modelatlas.app.data.MyModelsMetadataRetryStateTest.c1PublicationContentionKeepsAllFiveCallersInOneFlight(MyModelsMetadataRetryStateTest.kt:326)\n",
+    "preflight": {
+      "configured_heap": "512m",
+      "expected_runtime_max_heap_bytes": 536870912,
+      "growth_limit": "",
+      "initial_zygote_observations": [
+        "1663"
+      ],
+      "sdk": "29",
+      "zygote_after": "3207",
+      "zygote_before": "1663"
+    }
+  },
+  "expected": {
+    "device": 997,
+    "preserved_device_cases": 996,
+    "jvm_core": 594,
+    "jvm_app": 423,
+    "mac_core_each": 89,
+    "mac_png_each": 117,
+    "browser": 44,
+    "browser_png": 557,
+    "go_events": 660,
+    "original_deadlines_and_workloads": "unchanged"
+  },
+  "fix": {
+    "atomic_region": "same refreshFlightMutex: recheck existing flight, synchronous budget reservation, publish new flight",
+    "outside_lock": [
+      "passport reads",
+      "observer callbacks",
+      "await leader",
+      "provider lock and enrichment"
+    ],
+    "followers": "join before claiming budget; never release another leader reservation; await then reread passport",
+    "cancel_before_publication": "no reservation claimed while waiting for publication mutex",
+    "preserved": "original c1 byte-identical, 15000ms and all 996 cases/old budgets/unknown/last-good/scope/cancel semantics and every original cross-platform workload/deadline unchanged",
+    "acceptance": "own same-source nine jobs, actual nine ZIPs, original 996 outcomes + exactly1 new PASS and110 relevant views required"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "source": "00b6a67ef112c86b750a588503de7b05bfa0bb12",
+  "document": "vps/DEPLOY_AND_BACKUP.md",
+  "test_environment": "一次性Linux AMD64目錄；真原始套件binary與rclone crypt，底層為本機目錄，不是使用者雲端帳戶",
+  "checks": [
+    "架構套件內校驗與binary來源commit／schema一致",
+    "portable重複初始化保留同一私密identity",
+    "前景服務與指定HTTPS origin的認證ops ready",
+    "專用crypt目的地配置，排程維持關閉",
+    "真線上一致快照→crypt上傳→重新下載驗證→SUCCESS",
+    "fetch驗完整三檔，沒有替換運作中的DB",
+    "--database隔離還原找回驗收註記，原服務仍ready",
+    "更新前一致快照、停止writer後副本preflight及相同版本restore",
+    "底層檔案為密文，沒有明文驗收註記"
+  ],
+  "bash_blocks_checked": 18,
+  "result": "PASS",
+  "limitations": [
+    "此說明驗證未使用Docker daemon、真外部HTTPS或使用者雲端帳戶。",
+    "Docker／Compose／TLS與原生架構保留固定來源先前CI證據；Muse仍須驗其真環境。",
+    "沒有修改產品程式、原測試workload／timeout或公開Release。"
+  ],
+  "draft_command_correction": "說明草稿的preflight曾漏--database快照參數，被真命令以snapshot manifest missing or invalid拒絕；已改為指定帶manifest的更新前快照並完整重驗PASS。只修說明，沒有放寬產品驗證。"
+}

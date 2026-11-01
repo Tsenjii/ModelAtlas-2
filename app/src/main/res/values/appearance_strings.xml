@@ -1,0 +1,17 @@
+<resources>
+    <string name="appearance_heading">介面外觀</string>
+    <string name="appearance_local_hint">外觀選擇只保存在這台裝置。</string>
+    <string name="interface_classic">經典</string>
+    <string name="interface_aqua">Aqua · 水光玻璃</string>
+    <string name="appearance_wallpaper">背景插畫</string>
+    <string name="aqua_kotoha_original">Kotoha · 原圖</string>
+    <string name="aqua_elaina_original">伊蕾娜 · 原圖</string>
+    <string name="aqua_kotoha_chibi">Kotoha · Q版</string>
+    <string name="aqua_elaina_chibi">伊蕾娜 · Q版</string>
+    <string name="appearance_reduce_transparency">減少背景透明度</string>
+    <string name="appearance_opaque_hint">使用實色背景，插畫選擇會保留。</string>
+    <string name="appearance_preview_hint">選擇 Aqua 即可預覽背景。</string>
+    <string name="appearance_loading">載入背景…</string>
+    <string name="appearance_save_failed">外觀未儲存，請再試一次。</string>
+    <string name="appearance_image_failed">背景暫時無法顯示。</string>
+</resources>

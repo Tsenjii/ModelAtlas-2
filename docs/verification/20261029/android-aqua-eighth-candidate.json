@@ -1,0 +1,59 @@
+{
+  "source": "2a286b445bf3bf087f4eabd3d41d316879b6bf3f",
+  "tree": "6d1f964b79802d9689452b08b8de0dba637a8a8e",
+  "status": "REJECTED_DISPLAY_CAPTURE_AND_BROWSER_DEADLINE",
+  "device": {
+    "run": 40858433696,
+    "job": 123395230553,
+    "artifact_id": 12890982127,
+    "bytes": 1950052,
+    "sha256": "a45dd1cf34979b71fd74b52c06cdc24e435c71426b02245a11acb881ded0711c",
+    "crc": "PASS",
+    "counts": {
+      "tests": 1005,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 5
+    },
+    "accepted997_exact_outcomes_preserved": true,
+    "failure_case": "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable",
+    "failure": "第11張實際深色重建畫面，硬體frame已提交，但UiAutomation.takeScreenshot回傳null。10張淺色圖存在；深色5張缺失，不以8例診斷通過代替。",
+    "restoration": "真回條確認系統、原始null字級、有效字級、偏好與FLAG_SECURE均還原；no_inference=true。",
+    "root_cause": "UNKNOWN：API允許失敗回傳null；尚無證據把歷史null歸因於特定平台問題。"
+  },
+  "browser": {
+    "run": 40858433805,
+    "job": 123395231658,
+    "artifact_id": 12890213179,
+    "bytes": 47856815,
+    "sha256": "9b6439137f587275dabb5865689f774c358b3bf90ab9b4e306dc7b40b76d5d21",
+    "crc": "PASS",
+    "timeout_seconds": 300,
+    "running_test": "TestBrowserModelConnectionsWorkflow",
+    "png": 556,
+    "missing_png": "model-connections-checkins-375-dark.png",
+    "root_cause": "UNKNOWN：Go逾時stack位於Node CombinedOutput等待，子程序尚未輸出緩衝紀錄；VPS程式／測試與前已通過候選逐byte一致。已請同源完整Browser單job重跑一次作診斷，不能把重跑當成根因修復。",
+    "same_source_rerun": {
+      "job": 123401867301,
+      "conclusion": "SUCCESS",
+      "seconds": 242.91,
+      "artifact_id": 12890789352,
+      "bytes": 47910061,
+      "sha256": "bc619340c97866f75e715e76146e3e6b4e66cfd2b2851a337050d092c8a07fbc",
+      "crc": "PASS",
+      "root_cause": "首次逾時仍UNKNOWN；重跑成功不冒充修復。",
+      "png": 557
+    },
+    "controlled_experiment": {
+      "result": "未重現所疑入場競態，真流程8.05秒成功；實驗修改已移除，VPS正式程式／測試保持原byte。",
+      "log_sha256": "28d770b339f0357523840ab17685578db585c49b13ccecc40cbaa636e1692637"
+    }
+  },
+  "other_required_jobs": "另外7項SUCCESS；Browser重跑亦SUCCESS，來源仍因Android失敗而拒絕。",
+  "next": "新截圖就緒檢查仍用總共15000ms：每次等真硬體frame，再由同一實際顯示截圖API取得非null像素；紀錄嘗試／null次數／時間，無view renderer替代。所有1005例、原997結果、15圖、九項／九ZIP、125視圖與原負載／上限保留。",
+  "references": [
+    "https://developer.android.com/reference/android/app/UiAutomation#takeScreenshot()",
+    "https://developer.android.com/reference/android/view/ViewTreeObserver#registerFrameCommitCallback(java.lang.Runnable)"
+  ],
+  "whole_next_release": "PARTIAL；公開版本凍結、PR20 Draft，不merge／部署／發布。"
+}

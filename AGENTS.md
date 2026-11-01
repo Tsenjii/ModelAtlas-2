@@ -10,6 +10,7 @@
 4. Provider/Model/Pricing/Quota/FREE/UI/Assistant Research 領域必讀 `docs/PROVIDER_MODEL_INTELLIGENCE_CONTRACT.md`。
 5. Crawler/eligibility 必讀 `docs/RESEARCH_POLICY.md`。
 6. `docs/TRACEABILITY.md`、`docs/IMPLEMENTATION_PLAN.md`、相關 Kotlin production/tests。
+   跨平台接續亦讀 `docs/CROSS_PLATFORM_STRENGTHS.md`，保留各平台優點與尚未補齊情境。
 7. 同一 repo 最新 main code SHA、Actions build + device job；不能用文件「已測」取代目前 repo 的 CI。
 
 衝突時：本輪使用者明確指示 > `DECISIONS` 較新適用條目 > Intelligence 專門契約的已拍板內容 > `PRODUCT_SPEC` > Master Spec 原始提示詞 > implementation/status/historical docs。不能因摘要漏寫而刪除既有需求。
@@ -38,11 +39,12 @@
 
 ## UI：延續原版寫法，禁止另起設計系統
 
-- **延用** `AtlasTheme.kt` 的 Jetpack Compose + Material 3、Light/Dark、teal accent、`AtlasSpace` / `AtlasRadius`、`AtlasCard`、`AtlasBadge`、`AtlasEmptyState`。
+- 依 D-009，本輪先將 VPS 介面及功能對齊 Mac，Android 介面接續。
+- Android 未改版部分**延用** `AtlasTheme.kt` 的 Jetpack Compose + Material 3、Light/Dark、teal accent、`AtlasSpace` / `AtlasRadius`、`AtlasCard`、`AtlasBadge`、`AtlasEmptyState`。
 - 導航始終只有 Playground / Providers / Models；Settings 右上；Playground 像聊天產品，不像 debug console。
 - Default zh-TW + Android string resources；保留 i18n。正確運用 icons（非 emoji）、48dp touch targets、IME/safe insets、可捲動、窄螢幕/大字/深色適配。
 - Provider/Model 主清單可掃描、少文字、整卡可點；重要 Evidence/History/詳細效能留在 Detail。沒有可靠 Balance/Quota 值時不硬塞 `Unknown` 進卡片。
-- 不擅自改色系、底導覽、既有 navigation/callback/state flow；追加 UI 需維持 `Flow`→VM→Compose reactive。
+- VPS 採 Mac 中性色與可選重點色、桌面側欄／行動底導覽；Android 追加 UI 維持 `Flow`→VM→Compose reactive。
 - UI 可由現有 composables 增量擴展。**不得宣稱 PLAY-004 已完成**：目前 transport 有能力，不代表 Composer/Result UI 全接線。
 
 ## 安全與公開協作

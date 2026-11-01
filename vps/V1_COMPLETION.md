@@ -1,0 +1,94 @@
+# VPS 完整 V1 實作與驗收
+
+使用者於 2026-10-14 指示：繼續全部做完，可以超過 Android；輕量應從實作處理，功能不可刪減。Android 主線仍為 `5009e0c8`，VPS 基線 `c1b474a2`。
+
+| 範圍 | 真實入口與完成條件 | 目前 |
+|---|---|---|
+| 完整 Playground | Chat / Responses / Anthropic / Gemini、多輪工具結果、語音生成播放下載、embedding / rerank；同一 scope / telemetry / cancel | 已驗 `29eff56` 六項 CI |
+| 研究執行 | 持久佇列、逐步 probe、預算、取消／重啟恢復、來源與語言、完整漏斗、動態 AA top-4 | 已驗 `fa7c291` 六項 CI |
+| App Assistant | 選擇任意已加入的模型、safe refs 與工具、實際讀取／研究／測試／新增／修改、共享 Review、confirm / undo / action log | 已驗 `69652c9` 六項 CI |
+| Reflection | 每輪成效、可測試的提案、版本化知識、有限權重與 recipe、可逆啟用／回復；禁止改程式或安全政策 | 已驗 `293bd516` 六項 CI |
+| 模型與管理 | 完整篩選／排序、notes / tags、背景同步與規則通知、匯出研究知識；FREE 採確認的 effective evidence | 已驗 `57ef23e` 六項 CI |
+| 對話與請求管理 | 搜尋／命名／置頂／封存／完整匯出、安全 Markdown、當次用量／價格／額度、明確重試 | 已驗 `57ef23e` 六項 CI、九個 Browser workflows |
+| 輕量與交付 | 單一 Go binary / SQLite、有界執行、全量 SQL／分批匯出、race / vet、雙架構、同 SHA Android CI | 已驗 `57ef23e` 六項 CI，擴充 workload RAM 406.36 MiB peak |
+
+沿用既有功能，不重寫 Android；使用者金鑰僅由 privileged HTTP layer 使用。所有來源、失敗、歷史永久保留；Unknown 不推成 0 或 Free。未接真 caller 的功能不得寫完成。測試中的自建 TLS Provider 只驗 protocol / production flow，不冒充使用者帳號或外部實測。
+
+每一整合片先測試與 CI 再續下一片；最新證據放 PR #20，避免以較早 SHA 綠燈取代目前版本。沒有目標 VPS 存取時，交付可安裝 binary 與部署文件，不聲稱已部署。
+
+研究片：`fa7c291`／VPS run `38558907867` 四項 SUCCESS；Android run `38558907976` attempt 2 build `115846373240`、device `115846370638` SUCCESS。首輪 device 的既有快速連按測試 15 秒逾時；同 SHA 原斷言重跑通過，未變更 Android source/tests。Assistant 片含固定 system 邊界、安全參照、多輪工具、共用 onboarding Review、stale-safe confirm/Undo、取消及中斷日誌恢复；新增真 TLS 與 Browser 入口，尚待其新 SHA CI。
+
+Assistant 片：`69652c9435985a8c5b62837586b4e1c454d0d1e7`／VPS `38567589731` 四項 SUCCESS，Android `38567589525` build `115864358311`、device `115864357829` SUCCESS。Browser artifact `11895842772`，digest `04be16a764c4d85a9021a6b4529febaa5f3f8b9a47efcb9471d811526c51aa1e`。前輪 Browser 找出 Assistant 混入 Playground 清單、過期完成訊息造成確認 race、200% 按鈕 overflow；產品已修，原斷言及 10 次媒體請求保留。
+
+Reflection 候選：每輪反思、來源定義快照／版本、來源／語言優先序的可逆啟用、Auth／Endpoint／Discovery／Recipe／Verification 知識、宣告式唯讀 GET connector 草稿→真 HTTP 測試→確認→正式 Catalog／intelligence caller→Undo。價格單位／已知 0／缺值、精確 model/group、account PAT 角色分離；失敗保留 last-good。Credential version 由同一 auth snapshot 帶進 telemetry，研究不借舊 Key material 的測試。新增 Browser；尚待本片新 SHA 六項 CI，未宣稱完整 V1 驗收。
+
+使用者於 20:56 指定可用 Kilo 免 Key 模型測試。`TestLiveKiloAnonymousConversationToolsAndAssistant` 以一次性 SQLite、合成資料、只允許無 Authorization 的 api.kilo.ai 請求，實測 `nvidia/nemotron-3.5-lightning:free` 成功：串流對話（2020ms）、原生工具呼叫／結果接續、真 App Assistant pending action→共享確認→持久 membership，共 6 次 HTTP／26.31s。時間為 2026-10-14 本片工作樹，非使用者資料；不以回報 model ID 當身份證明，也不推定 recurring free／台灣可用。測試需明確設 `MODELATLAS_LIVE_KILO_TEST=1`；一般 CI 不耗外部免費服務，外部可用性變動會如實 fail。官方入口依 https://kilo.ai/docs/gateway/authentication 與當時 live catalog 確認。
+
+Reflection／connector／credential epoch：`293bd5169a9038769935389e054a6b653b21a119` 同 SHA 全綠。VPS run `38572762140`：browser `115881961928`、test `115881962099`、amd64 `115881962116`、arm64 `115881962239` SUCCESS；Android `38572762176`：build `115881963335`、device `115881962869` SUCCESS。Browser artifact `11897834419`／digest `94cc6a6954fc8689dfbde8f94877e3aa864f42a7c4eb4d37a6acda2be36b5189` 已檢視 375px／200% 深色研究工作台。
+
+管理／資源候選：模型 fuzzy aliases、多條件 filter、價格／額度／AA 強度／最近使用排序，可設定強度／速度／額度的加權再套用可靠度，Unknown 不當 0。Provider ranking 僅計目前 enabled 的 My Models，Global Catalog 不借我的 Key 數據。Notes／tags 與 Provider 編輯共用可逆 action Review；能力更新 reactive；對話工具顯示修正。所有原始歷史完整保留，SQL 計算全量 mean/p50/p90/p95；只顯示 400 個 chart 樣本，其他 history／catalog／membership 有 API paging。預設 SQLite 2 MiB cache、檔案暫存與 192 MiB Go soft memory limit、2..4 flights；靜態 JS/CSS gzip/ETag。真正 standalone process（100,000 raw telemetry、完整分位數查詢、4 個 TLS inference）RSS 量測加入 CI；本機 proc namespace 無法讀取子行程 RSS，不以本機數值冒充實測。
+
+定期 metadata/catalog sync 接真 queue，15..10080 分鐘、每輪 1..10 scopes，預設 OFF；不自動 inference 或 membership。Notification master + 7 rules 全部 OFF，依 credential epoch 保留確認值，價格／quota／outage／recovery transition 與日簽到 dedupe，持久事件與本機通知 caller。Safe backup v2 增加 aliases／notes／settings／收藏狀態／recipes／研究來源／版本知識／connector 定義；v1 可還原，完整 transaction、憑證禁用需重新輸入、網路工作不自動啟用，imported knowledge 需新 evidence-backed proposal，connector 需再真測。SQLite 全庫備份另保留完整聊天、觀測、研究 raw history；設定匯出不冒充全庫 backup。管理 Browser 與 standalone footprint 待候選 CI，剩餘 multi-origin／CUSTOM／native speech／最终回歸繼續。
+
+管理前輪 `9d61ceb1`：VPS test／amd64／arm64 SUCCESS，既有四個 Browser workflow 通過；新增管理 Browser 在 multiword alias fixture 發現產品 alias validator 只容許 ID（不能含空格）。修正 search alias 可用安全人類名稱、拒絕控制字元，保持原始 model ID 不變；不降低 Browser assertion。VPS test run 38579671767 的 standalone workload 實測 binary 13,308,066 bytes、idle RSS 26,468,352、warm/peak RSS 29,188,096，十萬筆 raw history 全量 percentiles＋四個真 TLS inference 已過（22.07s）。此數據是指定工作負載，不宣称所有媒體峰值相同；管理整片仍待修正版六項 CI。
+
+管理第二輪 `4acd725` 前四個 Browser 流程与新增管理流程前半通過；最後 Settings 的測試在展開 details 前等待內部欄位可見而逾時，已改為先等待可見時區，再實際展開背景設定，保留功能斷言。產品 review 另修 notification 不以缺 output/fixed price 當「已確認變更」、保留當前 epoch 的已確認值，事件時間避免重複轉換被永久 dedupe；新增 Unknown 回歸。上下文記憶體上限回傳明確 413／新對話提示，1025 訊息仍可完整分頁閱讀。
+
+管理完整 review 新增 Model batch hide/archive/restore：共用 action Preview→confirm→Undo，2..100 exact scopes，一個 transaction；任一 scope 更新／移除／ABA 都以 membership revision 拒絕整批 stale 變更，已加真 API 回歸與 Browser；內部 revision 不進 Review UI。排序權重保存後重新載入且保護未提交輸入。
+
+Ranking review 修正：搜尋／grouping aliases 與 manual canonical 不借 AA 身分或 top-4 特例；只比較實際 raw ID／AA ID／名稱及不移除版本後綴的 separator normalization。`winner-latest` 不自動當作 `winner`，exact AA raw model 仍正常；新增 regression。
+
+管理／資源片 `8f0696256cff19a360b8b7e29e75932c2c3a054b` 同 SHA 全綠：VPS `38582129810` browser `115914470596`、test `115914471220`、amd64 `115914471212`、arm64 `115914470849` SUCCESS；Android `38582129791` build `115914470312`、device `115914470641` SUCCESS。Browser `11904166438` digest `a9fc914f9023b0d84b9e3a22b49c790000ce98f10ce8294521be830277803207` 已檢視管理 375px／200% 深色。最終本片 standalone artifact `11904471293`：binary 13,316,258 bytes、idle RSS 26,447,872、warm/peak RSS 29,134,848、SQLite 20,578,304 bytes；十萬筆 raw history＋四個 TLS streams，尚未把媒體負載當作已量測。
+
+22:37 使用者新增：全部完成後量測程式 RAM，先讓 Kilo 找 Provider，再繼續 UI。`live_research_test.go` 以匿名 Kilo 真 Agent 工具嘗試 Groq／Cerebras／OpenRouter 公開官方來源與 durable research，未登入／註冊／動使用者憑證。當前 Work 執行環境無外部 direct DNS（實測 DNS unavailable），不降低 production DNS pin／SSRF 邊界；已保存失敗紀錄，改由獨立 opt-in Actions Linux workflow 執行。普通 deterministic CI 不耗免費服務。Provider leads 須實際頁面、source/evidence/history；不能以 LLM 文本或任務建立冒充擷取成功。
+
+Kilo 研究 code `b7ecdaa976ed4f26cfdd2783f83e054500ef19c6` 同 SHA 全綠：VPS `38584571842` 四項 SUCCESS；Android `38584572181` build `115923005384`、device `115923006296` SUCCESS。明確 opt-in live run `38584572569`／job `115923745767` 真實成功（33.54s）：6 次匿名 Kilo HTTP、7 次 public HTTP，7 tasks 中 3 SUCCESS，2 個候選、3 evidence。Groq／OpenRouter HTTP 200；Cerebras 307 未跟隨，不冒充讀到資料。Artifact `11904961510` digest `cd43b898a23bd6318737bf8c7ed9518bf87aff31a88161df58b7d7d5003782f4`；本機 DNS 失敗歷程保留，沒有削弱 SSRF。沒有宣稱這些 leads 已過 ordinary gate 或新發現未見服務；模型建議只作文字，不以 Kilo anonymous account 借給其他 Provider。已關閉 PR title opt-in 標記，普通 CI 不再執行外部免費服務。
+
+當前多 origin／App research 能力候選：immutable credential origins＋optional auth override，舊 Key／PAT／endpoint／session 不隨 primary URL 修改，secondary URL 要 explicit profile，primary change 先有新的 bound credential且共享 Review/Undo；已接 creation/onboarding/Assistant/PAT/connector/backup 與 Provider UI。Token Group 只用同 credential epoch/origin、最新 certified explicit group assertion；錯誤 Group 不借免費價格／不可 inference，rotation 不借舊 assertion。Nominal group quote保留獨立資料，不轉成此 Key effective/free。Assistant 能保存 public source與匿名 Provider Review（使用 DNS-pinned public client）；typed tool registry最多32definitions，單run12tools/4web budgets不變。來源抓取失敗仍保留FAILED lead与failureevidence、last-good不覆蓋。Provider表單收合、Review顯示具體scope，新TLS與Browser待新SHA gate。CUSTOM／native speech／session設定／最終媒體RAM仍接續。
+
+多origin候選 `60f6c8e`：VPS test/footprint/amd64/arm64通過；新Origin Browser (2.31s) 與Research/Assistant/Knowledge/Management五項均通過，既有Production Browser需配合Provider表單收合新增實際展開動作，原10次media/下載/播放/無橫向overflow斷言不變。更新測試後仍要新SHA完整六項，其他剩餘功能接續。
+
+
+多網址／Group epoch／Agent public source 片 `d3da38c50a90976de5eac95c764b7cac66f80ddb` 同 SHA 六項 SUCCESS：VPS `38590860925` test `115945054314`、amd64 `115945054916`、browser `115945054937`、arm64 `115945055188`；Android `38590861082` build `115945620723`、device `115945553268`。現在整合剩餘 Playground：原生 Gemini 語音 CURRENT／LEGACY／雙人 metadata、宣告式 CUSTOM 對話、逐段 system/max_tokens/streaming 設定；共用 scope／工具／取消／telemetry，Assistant 固定 system 不受手動設定覆寫。新增 TLS／Browser／safe backup 與全服務 heavy media RAM profile；本片待新 SHA CI，不把前片或未執行的 footprint 當驗收。
+
+研究 Catalog review：正式 caller 現在直接使用同一 HTTP/auth snapshot 的全部回傳 CatalogEntry，保留 origin/material version 與每個 raw model 的 selection；不從 Provider union Catalog 借模型，不截成 50 個。新增 65 模型／其他 Key 舊模型隔離 regression。
+
+`747f457` 第一輪 VPS test／amd64／arm64 SUCCESS：standalone peak 166,162,432 bytes（約 158.5 MiB），idle 26,370,048、chat 29,794,304、research 29,982,720、image 97,390,592；binary 13,418,658 bytes，100k raw history＋4 chats＋65 Catalog＋4 個同時 4 MiPixels 圖片＋4 個同時 4 MiB 原生語音。Browser 前六個全過，新語音 CURRENT／LEGACY／雙人及真播放下載通過；新後半因測試未展開「探索 Catalog」而逾時，修正實際展開流程，斷言不變。下一版減少多 MiB JSON 音訊解析的副本，WAV 增加 codec／bits／frame／byteRate 一致性驗證；公開擷取依 IANA special-use registry 防保留位址及 embedded-private NAT64／tunnel，保留 public NAT64 與真 public IPv4-mapped，相同 DNS pin／無 proxy。UI 收合進階語音設定。
+
+Reflection 最後 review：terminal run 的暫時 DB/vault save failure 加入 local-only bounded retry（每分鐘最多兩輪），依 status/HTTP used 查缺失或過期報告；保留 raw tasks/舊 report/版本，不自動 activate knowledge，不增加外部 HTTP。新增持久重建／idempotence／summary change／no autoactivation regression。
+
+
+## VPS 完整 V1 code 驗收（2026-10-15）
+
+`ce2ca91a8ff21606bcc335c76d3e6dd47bc0ada8` 同 SHA 六項 SUCCESS：VPS `38612813568` test `116020220644`、amd64 `116020220452`、arm64 `116020220414`、browser `116020220318`；Android `38612813557` build `116020220795`、device `116020219982`。七個 Browser workflows 均成功。剩餘 native speech／CUSTOM／manual session settings、Catalog exact-response 與 security／reflection recovery 均已接正式 caller 並驗收。完整功能、實測 RAM/Kilo、限制與安裝見 `vps/DELIVERY.md`；這不改 Android 本身 PLAY-004／P8–P10 的状态。無獨立外部 reviewer／無 merge／無目標 VPS 部署證據。
+
+Standalone：idle 26,714,112、chat 30,040,064、research 30,273,536、images 97,619,968、peak 162,525,184 bytes（155 MiB），binary 13,439,138；完整保留10萬samples，4 chats／65 Catalog／4 simultaneous 4MiPixels images／4 simultaneous 4MiB audio。Live Kilo `38612880443` 真成功 41.19s、6 inference HTTP＋7 public HTTP、3 candidates/4 evidence/3 SUCCESS tasks；Groq/OpenRouter200，Cerebras307 FAILED線索也保留，不當eligibility。
+
+末尾交付提交含資料與文件、200% decorative mark overflow 修整及 screenshot transition 固定；必須再查此新 HEAD 的六項 gate，不以 code 基線代替文件 HEAD。
+
+交付首輪 `eba1549` VPS test/雙架構成功、既有六個 Browser 成功，新增 Browser 截圖注入 inline style 被原有 CSP 正確拒絕（run 38615340166）；改用 browser context 的原生 `reducedMotion=reduce`，不修改 CSP、不跳過 assertions、不重試本機 Chromium。新 HEAD 六項 gate 重新驗證。
+
+
+## V1 後續體驗擴充（2026-10-15，已驗收）
+
+- `/sessions`：只查手動 Playground 對話；精確 scope、全文 literal search、ACTIVE／ARCHIVED／ALL，依置頂與近期活動排序，最多200列一頁，UI 紀錄每頁50。
+- `/sessions/update`：命名、置頂、可恢復封存、revision stale guard、生成中拒絕變更；保留獨立變更歷史，從不刪訊息或成員。
+- `/sessions/export`：認證後串流全部保留訊息／tools／session settings，JSON 或 Markdown；不受 inference 1024 則上下文界限截斷，不含原始附件，已知目前／歷史 secrets 遮罩。
+- 安全 DOM Markdown：程式碼、表格、標題、清單、引言、explicit HTTP(S) links；不使用 innerHTML，不抓遠端圖片，不執行 HTML／scripts；有界解析，過大內容保留純文字。
+- 實際 Browser caller 驗完整較早訊息只載一次、streamed reply、clipboard、命名／置頂／封存／恢復／全文搜尋、下載回讀／reload，375／1024／dark／200%。
+- RAM 目標依最新需求：512 MiB 優先，1 GiB 可接受；production 無 Node／瀏覽器。
+
+
+## 請求收據與計費正確性續片（已驗收）
+
+- 每個真 chat／Test／Compare／Assistant／media request 在 HTTP 前保存 RUNNING 和當次證據快照。停止／失敗／重啟仍保留；訊息連到 sample，原始內容不進 telemetry。
+- pricing 引用 observedAt／Source／精確 Scope／原 HTTP material epoch／origin；fresh ≤24h，原始證據永久保留。Catalog nominal、手動標價、已明確確認的 Key effective rates、站方實際回報扣款分開；未知 cache/write／native billing basis 不杜撰成本。OpenRouter `usage.cost` 的 USD 語意只在精確官方 origin 使用，其他 origin 回報單位 UNKNOWN。官方來源：<https://openrouter.ai/docs/cookbook/administration/usage-accounting>、<https://openrouter.ai/support/>（2026-10-14 查核）；沒有额外 billing HTTP。
+- Models FREE／PAID 與 BecameFree notification 改依 effective evidence；Catalog price=0 仍保留標價及 filter/sort，不會推導 Key 免費。手動價格頁提供明確確認、固定費單位／不存在確認；declarative connector `prices_are_effective` 只限 PRICING×MODEL_KEY_GROUP×INFERENCE，仍需真測試與 Review。
+- `/telemetry/detail`、篩選／分頁／完整NDJSON export；UI 從訊息／Models／Settings 進詳情。Export 固定開始時選定的rowset，再按rowid前進讀取，CSV式頁數不截完整歷史，也不長期占用唯一 DB connection。匯出結尾提供完整件數；出錯中止下載，不回傳假完成。
+- 明確 `retry_id` 只用最後一筆失敗／停止／中斷請求，在同 session/current selected scope 用目前設定重試；不追加重複 user input，全部 attempt 與 ancestry 保留。過期／成功／busy／archived／capability revoked 仍拒發。
+- 精確零與 Unknown 使用 TLS／完整 HTTP integration 與正式 Browser驗證；包含價格中途改變、憑證rotation、cache extra、native-exclusive usage不誤減cache、header及raw attachment secret、501+ rows／concurrent export／完整較早歷史。
+- 新 standalone workload：原測試不減，增加4路各31MiB原始context全部由TLS讀取後一起完成、11000訊息完整下載、100008請求export。這是服務PID RSS；目標512MiB，192MiB只是soft Go limit，使用者整台VPS／OS尚未量測。
+
+本輪最終 code `57ef23e96c335413003b497b06cd99b7b8838b6e`：VPS `38631190515` 四項及 Android `38631190578` 兩項同 SHA SUCCESS，九個 Browser workflows 全過。第一次大量匯出發現 OFFSET 重掃逾時，已新增 schema16 sequence index／rowid cursor，保留完整 workload、原 timeout 及斷言。實際畫面與自行 diff review 已完成，沒有獨立外部 reviewer。服務待機 25.36 MiB，擴充 profile 全程峰值 **406.36 MiB**；舊 155 MiB 是較小 profile，不混為同條件數字。
+
+Kilo 真研究 `a39fa2a`／Actions `38629907160`／job `116078568504` 20.06s SUCCESS：6 inference HTTP／7 public HTTP、3 candidates／4 evidence／3 SUCCESS tasks。Groq／OpenRouter 200；Cerebras 307 如實保留。精簡證據、所有功能及安裝／限制集中在 `DELIVERY.md` 與 `verification/20261015/`。末尾文件 HEAD 另驗 PR #20 最新六項 gate，不借 code SHA 的結果；未 merge／未遠端部署。

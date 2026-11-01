@@ -1,0 +1,457 @@
+{
+  "source": "810d069393ce678437166469396885cd9ccd50db",
+  "tree": "a0f112a4b29c2111ab76617ba5c044f9e6a67d52",
+  "status": "REJECTED_VISUAL_BUTTON_TEXT_ARTWORK",
+  "slice": "ANDROID-AQUA-015Y",
+  "checks": {
+    ".github/workflows/vps.yml": {
+      "id": 40861335851,
+      "attempt": 1,
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40861335851",
+      "jobs": [
+        {
+          "id": 123405031920,
+          "name": "vps-browser",
+          "conclusion": "success",
+          "run_id": 40861335851,
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db",
+          "started_at": "2026-10-29T10:55:21Z",
+          "completed_at": "2026-10-29T11:00:56Z"
+        },
+        {
+          "id": 123405031909,
+          "name": "vps-linux-amd64",
+          "conclusion": "success",
+          "run_id": 40861335851,
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db",
+          "started_at": "2026-10-29T10:55:21Z",
+          "completed_at": "2026-10-29T10:56:43Z"
+        },
+        {
+          "id": 123405032002,
+          "name": "vps-linux-arm64",
+          "conclusion": "success",
+          "run_id": 40861335851,
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db",
+          "started_at": "2026-10-29T10:55:21Z",
+          "completed_at": "2026-10-29T10:56:44Z"
+        },
+        {
+          "id": 123405031853,
+          "name": "vps-test",
+          "conclusion": "success",
+          "run_id": 40861335851,
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db",
+          "started_at": "2026-10-29T10:55:20Z",
+          "completed_at": "2026-10-29T11:07:54Z"
+        }
+      ]
+    },
+    ".github/workflows/android.yml": {
+      "id": 40861335778,
+      "attempt": 1,
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40861335778",
+      "jobs": [
+        {
+          "id": 123405031252,
+          "name": "build",
+          "conclusion": "success",
+          "run_id": 40861335778,
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db",
+          "started_at": "2026-10-29T10:55:20Z",
+          "completed_at": "2026-10-29T11:01:18Z"
+        },
+        {
+          "id": 123405031515,
+          "name": "device-tests",
+          "conclusion": "success",
+          "run_id": 40861335778,
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db",
+          "started_at": "2026-10-29T10:55:20Z",
+          "completed_at": "2026-10-29T11:07:59Z"
+        }
+      ]
+    },
+    ".github/workflows/macos-native.yml": {
+      "id": 40861335782,
+      "attempt": 1,
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40861335782",
+      "jobs": [
+        {
+          "id": 123405031420,
+          "name": "macos-build",
+          "conclusion": "success",
+          "run_id": 40861335782,
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db",
+          "started_at": "2026-10-29T10:55:21Z",
+          "completed_at": "2026-10-29T11:01:26Z"
+        },
+        {
+          "id": 123407726258,
+          "name": "macos-test (macos-15, arm64)",
+          "conclusion": "success",
+          "run_id": 40861335782,
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db",
+          "started_at": "2026-10-29T11:01:31Z",
+          "completed_at": "2026-10-29T11:07:26Z"
+        },
+        {
+          "id": 123407726178,
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "conclusion": "success",
+          "run_id": 40861335782,
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db",
+          "started_at": "2026-10-29T11:01:31Z",
+          "completed_at": "2026-10-29T11:13:14Z"
+        }
+      ]
+    }
+  },
+  "audit_run": 40861335854,
+  "audit_job": 123405031813,
+  "audit_artifact": {
+    "id": 12893200407,
+    "bytes": 2315740,
+    "sha256": "264c06f22dfb756da9d9512f28d225963dbfbc8e6e27431a59dd15c61fb5eb5c",
+    "crc": "PASS"
+  },
+  "direct_downloads": [
+    {
+      "artifact": {
+        "id": 12891219540,
+        "name": "modelatlas-vps-footprint",
+        "size_in_bytes": 18167,
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12891219540",
+        "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12891219540/zip",
+        "expired": false,
+        "created_at": "2026-10-29T11:07:47Z",
+        "expires_at": "2027-01-27T10:55:18Z",
+        "updated_at": "2026-10-29T11:07:47Z",
+        "digest": "sha256:803c7b4e7de1157f61708a06a0e0eea1272a45a4051ae2d23c1b663d6bcacef5",
+        "workflow_run": {
+          "id": 40861335851,
+          "repository_id": 1415404214,
+          "head_repository_id": 1415404214,
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db"
+        }
+      },
+      "file": "/workspace/scratch/7cc1017ea077/aqua-810d-archives/12891219540.zip",
+      "bytes": 18167,
+      "sha256": "803c7b4e7de1157f61708a06a0e0eea1272a45a4051ae2d23c1b663d6bcacef5",
+      "crc": "PASS",
+      "members": 3
+    },
+    {
+      "artifact": {
+        "id": 12891509565,
+        "name": "ModelAtlas-macOS-QA-arm64",
+        "size_in_bytes": 11882789,
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12891509565",
+        "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12891509565/zip",
+        "expired": false,
+        "created_at": "2026-10-29T11:07:17Z",
+        "expires_at": "2027-01-27T10:55:18Z",
+        "updated_at": "2026-10-29T11:07:17Z",
+        "digest": "sha256:82c50f455d276e9953b253843039ad20e979354849bc7952e765602bba8fdddf",
+        "workflow_run": {
+          "id": 40861335782,
+          "repository_id": 1415404214,
+          "head_repository_id": 1415404214,
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db"
+        }
+      },
+      "file": "/workspace/scratch/7cc1017ea077/aqua-810d-archives/12891509565.zip",
+      "bytes": 11882789,
+      "sha256": "82c50f455d276e9953b253843039ad20e979354849bc7952e765602bba8fdddf",
+      "crc": "PASS",
+      "members": 153
+    },
+    {
+      "artifact": {
+        "id": 12891607276,
+        "name": "modelatlas-vps-linux-arm64",
+        "size_in_bytes": 19580638,
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12891607276",
+        "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12891607276/zip",
+        "expired": false,
+        "created_at": "2026-10-29T10:56:40Z",
+        "expires_at": "2027-01-27T10:55:18Z",
+        "updated_at": "2026-10-29T10:56:40Z",
+        "digest": "sha256:0790f4dca2b956a3437c48d9ecff6ab6c797fd0291c5627f206bc6c44a4e72ee",
+        "workflow_run": {
+          "id": 40861335851,
+          "repository_id": 1415404214,
+          "head_repository_id": 1415404214,
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db"
+        }
+      },
+      "file": "/workspace/scratch/7cc1017ea077/aqua-810d-archives/12891607276.zip",
+      "bytes": 19580638,
+      "sha256": "0790f4dca2b956a3437c48d9ecff6ab6c797fd0291c5627f206bc6c44a4e72ee",
+      "crc": "PASS",
+      "members": 3
+    },
+    {
+      "artifact": {
+        "id": 12891908236,
+        "name": "modelatlas-device-test-reports",
+        "size_in_bytes": 2259386,
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12891908236",
+        "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12891908236/zip",
+        "expired": false,
+        "created_at": "2026-10-29T11:07:55Z",
+        "expires_at": "2027-01-27T10:55:18Z",
+        "updated_at": "2026-10-29T11:07:55Z",
+        "digest": "sha256:82918e14edb5ec7c934c7696cf768b4156cd8080540eb5d26b1a8f2f55606e2a",
+        "workflow_run": {
+          "id": 40861335778,
+          "repository_id": 1415404214,
+          "head_repository_id": 1415404214,
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db"
+        }
+      },
+      "file": "/workspace/scratch/7cc1017ea077/aqua-810d-archives/12891908236.zip",
+      "bytes": 2259386,
+      "sha256": "82918e14edb5ec7c934c7696cf768b4156cd8080540eb5d26b1a8f2f55606e2a",
+      "crc": "PASS",
+      "members": 1185
+    },
+    {
+      "artifact": {
+        "id": 12892076978,
+        "name": "modelatlas-vps-browser",
+        "size_in_bytes": 47901570,
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892076978",
+        "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892076978/zip",
+        "expired": false,
+        "created_at": "2026-10-29T11:00:53Z",
+        "expires_at": "2027-01-27T10:55:18Z",
+        "updated_at": "2026-10-29T11:00:53Z",
+        "digest": "sha256:cdb21ad32b3401c322ee06b67c4f115677ba589b2f47650f69b844971399587d",
+        "workflow_run": {
+          "id": 40861335851,
+          "repository_id": 1415404214,
+          "head_repository_id": 1415404214,
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db"
+        }
+      },
+      "file": "/workspace/scratch/7cc1017ea077/aqua-810d-archives/12892076978.zip",
+      "bytes": 47901570,
+      "sha256": "cdb21ad32b3401c322ee06b67c4f115677ba589b2f47650f69b844971399587d",
+      "crc": "PASS",
+      "members": 558
+    },
+    {
+      "artifact": {
+        "id": 12892112007,
+        "name": "ModelAtlas-macOS-Universal",
+        "size_in_bytes": 69037150,
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892112007",
+        "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892112007/zip",
+        "expired": false,
+        "created_at": "2026-10-29T11:01:21Z",
+        "expires_at": "2027-01-27T10:55:18Z",
+        "updated_at": "2026-10-29T11:01:21Z",
+        "digest": "sha256:893576bebd2b9b9328374d526ba890584b5131aaee934936221595c3c02c2c94",
+        "workflow_run": {
+          "id": 40861335782,
+          "repository_id": 1415404214,
+          "head_repository_id": 1415404214,
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db"
+        }
+      },
+      "file": "/workspace/scratch/7cc1017ea077/aqua-810d-archives/12892112007.zip",
+      "bytes": 69037150,
+      "sha256": "893576bebd2b9b9328374d526ba890584b5131aaee934936221595c3c02c2c94",
+      "crc": "PASS",
+      "members": 3
+    },
+    {
+      "artifact": {
+        "id": 12892255407,
+        "name": "modelatlas-vps-linux-amd64",
+        "size_in_bytes": 20540941,
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892255407",
+        "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892255407/zip",
+        "expired": false,
+        "created_at": "2026-10-29T10:56:39Z",
+        "expires_at": "2027-01-27T10:55:18Z",
+        "updated_at": "2026-10-29T10:56:39Z",
+        "digest": "sha256:8e60037630f1cce084cbf9914c43045a15391589682138a112fbceec168c47d5",
+        "workflow_run": {
+          "id": 40861335851,
+          "repository_id": 1415404214,
+          "head_repository_id": 1415404214,
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db"
+        }
+      },
+      "file": "/workspace/scratch/7cc1017ea077/aqua-810d-archives/12892255407.zip",
+      "bytes": 20540941,
+      "sha256": "8e60037630f1cce084cbf9914c43045a15391589682138a112fbceec168c47d5",
+      "crc": "PASS",
+      "members": 3
+    },
+    {
+      "artifact": {
+        "id": 12892545100,
+        "name": "modelatlas-debug-and-reports",
+        "size_in_bytes": 21066164,
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892545100",
+        "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892545100/zip",
+        "expired": false,
+        "created_at": "2026-10-29T11:01:15Z",
+        "expires_at": "2027-01-27T10:55:18Z",
+        "updated_at": "2026-10-29T11:01:15Z",
+        "digest": "sha256:7d54448847dc1b580a714908a475d82cced9b2f9a44ee069bf969db4aae73491",
+        "workflow_run": {
+          "id": 40861335778,
+          "repository_id": 1415404214,
+          "head_repository_id": 1415404214,
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db"
+        }
+      },
+      "file": "/workspace/scratch/7cc1017ea077/aqua-810d-archives/12892545100.zip",
+      "bytes": 21066164,
+      "sha256": "7d54448847dc1b580a714908a475d82cced9b2f9a44ee069bf969db4aae73491",
+      "crc": "PASS",
+      "members": 181
+    },
+    {
+      "artifact": {
+        "id": 12892566913,
+        "name": "ModelAtlas-macOS-QA-x86_64",
+        "size_in_bytes": 12564708,
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892566913",
+        "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12892566913/zip",
+        "expired": false,
+        "created_at": "2026-10-29T11:13:05Z",
+        "expires_at": "2027-01-27T10:55:18Z",
+        "updated_at": "2026-10-29T11:13:05Z",
+        "digest": "sha256:2c7ad3c121275b5ef60162dca21afb68a5ef4ed18731dea7ffa50191ae46e0dc",
+        "workflow_run": {
+          "id": 40861335782,
+          "repository_id": 1415404214,
+          "head_repository_id": 1415404214,
+          "head_branch": "feature/vps-rebuild-20261014",
+          "head_sha": "810d069393ce678437166469396885cd9ccd50db"
+        }
+      },
+      "file": "/workspace/scratch/7cc1017ea077/aqua-810d-archives/12892566913.zip",
+      "bytes": 12564708,
+      "sha256": "2c7ad3c121275b5ef60162dca21afb68a5ef4ed18731dea7ffa50191ae46e0dc",
+      "crc": "PASS",
+      "members": 153
+    }
+  ],
+  "audit_status": "BYTE_AUDIT_PASS_PENDING_VISUAL_REVIEW",
+  "visual_scope": 125,
+  "visual_review": "未把125圖宣稱全部目視通過；已在Android全尺寸第07圖發現透明按鈕文字受到Q版背景干擾，故停止接受。先前接觸表15圖初判PASS已修正為FAIL；第08圖同步按鈕同類缺口。",
+  "negative_views": {
+    "07-providers-light.png": "a95ed885b6aebe2d1cff9b5c7b7553c9e8712caabd83dbcc3640518bc2d2690c",
+    "08-models-light.png": "dc9e83a66103cf4f4945a86cf9a768a862b887101c452f9df644bb98f29a102f"
+  },
+  "android_device": {
+    "counts": {
+      "tests": 1005,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    },
+    "preserved_cases": 997,
+    "added": [
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#concurrentIndependentEditsKeepEveryConfirmedChoice",
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#failedCommitRetainsConfirmedStateAndNextEditRepairsTheFailedCache",
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#freshChoicesStayClassicWithoutWritingDefaults",
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#malformedSavedTypesCannotEnableStyleOrOpenAnArbitraryPath",
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#successfulChoicesSurviveStoreReconstructionAndOpaqueKeepsTheArtwork",
+      "dev.modelatlas.app.ui.AquaArtworkAssetsTest#actualBundledImagesDecodeWithOriginalDimensionsAlphaAndBoundedCache",
+      "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable",
+      "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualFourArtworkButtonsKeepScopeChatAndProviderDrafts"
+    ],
+    "runtime": {
+      "expected_max_heap_bytes": 536870912,
+      "max_heap_bytes": 536870912,
+      "pid": 4778,
+      "stages": [
+        "start",
+        "finish"
+      ]
+    },
+    "preflight": {
+      "configured_heap": "512m",
+      "expected_runtime_max_heap_bytes": 536870912,
+      "growth_limit": "",
+      "initial_zygote_observations": [
+        "1661"
+      ],
+      "sdk": "29",
+      "zygote_after": "3209",
+      "zygote_before": "1661"
+    }
+  },
+  "android_capture": {
+    "file": "11-relaunch-retained-dark.png",
+    "attempts": 2,
+    "null_results": 1,
+    "elapsed_ms": 276,
+    "budget_ms": 15000,
+    "actual15": "PASS_FOR_CAPTURE_AND_PDF_NOT_OVERALL_VISUAL",
+    "root_cause_of_first_null": "UNKNOWN；本輪明確量得同API第二次非null，沒有renderer替代。"
+  },
+  "go_suite": {
+    "result": "PASS",
+    "source": "810d069393ce678437166469396885cd9ccd50db",
+    "working_tree_dirty": false,
+    "race": true,
+    "suite_deadline_seconds": 600,
+    "started_at": "2026-10-29T10:56:28.946504+00:00",
+    "seconds": 574.882,
+    "package": "github.com/Tsenjii/ModelAtlas-2/vps",
+    "registry_sha256": "00b04fe9fa24352f62964aaca5d67f38ad7b0a281b07fde38ba098256fd73d3b"
+  },
+  "browser_seconds": 263.567,
+  "browser_cases": 44,
+  "browser_png": 557,
+  "footprint": {
+    "binary_bytes": 19734690,
+    "catalog_http": 4,
+    "chat_peak_bytes": 30375936,
+    "chat_rss_bytes": 30375936,
+    "export_messages": 11000,
+    "export_peak_bytes": 207933440,
+    "export_requests": 100008,
+    "export_rss_bytes": 34635776,
+    "gomemlimit_bytes": 201326592,
+    "idle_rss_bytes": 21823488,
+    "image_peak_bytes": 207933440,
+    "image_pixels_each": 4194304,
+    "image_rss_bytes": 100929536,
+    "long_context_bytes_each": 32505856,
+    "long_context_http": 4,
+    "long_context_peak_bytes": 163000320,
+    "long_context_rss_bytes": 163000320,
+    "media_http": 8,
+    "peak_rss_bytes": 207933440,
+    "profile": "100000 retained samples/full SQL percentiles; 4 TLS chats + 4 simultaneous full 31-MiB contexts; retained 11000-message and full request exports; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each",
+    "research_peak_bytes": 207933440,
+    "research_rss_bytes": 34672640,
+    "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser",
+    "rss_target_bytes": 536870912,
+    "speech_bytes_each": 4194304,
+    "speech_peak_bytes": 207933440,
+    "speech_rss_bytes": 165781504,
+    "sqlite_bytes": 163364864,
+    "warm_rss_bytes": 165781504
+  },
+  "next": "沿用現有Material3及atlasChromeColor：只有顯示Aqua插畫時替既有17個OutlinedButton caller補94%surface底色，啟用／停用皆有底。經典及實色背景仍走原OutlinedButtonDefaults。onClick、scope、尺寸、最小48dp、原997＋新8例、15圖、九項／九ZIP與125視圖及全部timeout不變。修後來源自身完整驗證前不接受、不接下一功能片。",
+  "public_release": "FROZEN；PR20 Draft，不merge／部署／發布。",
+  "whole_next_release": "PARTIAL"
+}

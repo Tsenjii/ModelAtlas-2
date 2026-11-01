@@ -1,0 +1,23 @@
+{
+  "status": "REPRODUCED_ORIGINAL_UI",
+  "slice": "VPS-CONVERSATIONS-019",
+  "source": "a55cf700f33c26a848dd4c13615526eaedd0bb06",
+  "runtime_ui_baseline": "c2a335a8a802cb0015cad74613971b7386c08e4c",
+  "run": 41185228275,
+  "job": 124490690577,
+  "result": "EXPECTED_ASSERTION_FAILURE",
+  "seconds": 5.08,
+  "assertion": "read failure cleared the last successful conversation list",
+  "actual_rows": 0,
+  "expected_last_good_rows": 1,
+  "artifact": {
+    "id": 13036737952,
+    "bytes": 311946,
+    "sha256": "16bcc097bcb1bfef60d0cc6901b51a3244e886d7e6f3f8f1c301c459c88a160f",
+    "crc": "PASS"
+  },
+  "observation": "真HTTP讀取回503後，舊介面清空清單但仍顯示已顯示1段對話；已檢視原清單與失敗原圖。",
+  "test_boundary": "只有fixture與診斷workflow／e2e增加；原正式UI未改。正常資料與每筆寫入仍走正式handler／SQLite／CAS；錯誤回讀為明確HTTP fault injection，不偽造成功API。",
+  "local_browser": "官方CFT下載已校驗，但本機socket()被執行環境拒絕，未改sandbox或偽造Browser結果；實際互動與畫面改由CI原固定Playwright／Chromium／NotoCJK取得。",
+  "scope_limits": "僅此讀取失敗反例已由原UI證明；新UI／額外寫入恢復情境與完整同源驗收仍待完成。"
+}

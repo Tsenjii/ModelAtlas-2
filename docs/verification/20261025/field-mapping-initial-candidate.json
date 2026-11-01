@@ -1,0 +1,845 @@
+{
+  "slice": "FIELD-MAPPING-015O",
+  "status": "NOT_ACCEPTED",
+  "source": "6221b9892a09f10d3f51209d9360b29b42e982dc",
+  "tree": "3793c28c3f5f15b16399fb3a0410110a2d9b5067",
+  "reason": "來源辨識遇到飛行期間scope變更，會在SCOPE_CHANGED歷史顯示未提交的mapping_sample_id；正式原測試追加斷言於0.946s真實失敗，補清除與UI入口guard後擴大35.756s／兩Browser7.279s成功。新來源需自己的九項及全部實際產物，不借此候選綠燈。",
+  "workflow_snapshot": [
+    {
+      "id": 40197755140,
+      "name": "VPS Go Build and Integration",
+      "status": "in_progress",
+      "conclusion": null,
+      "run_number": 217,
+      "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755140/jobs",
+      "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755140/logs",
+      "workflow_id": 383514759
+    },
+    {
+      "id": 40197755132,
+      "name": "Three-platform Release",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 58,
+      "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755132/jobs",
+      "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755132/logs",
+      "workflow_id": 390770714
+    },
+    {
+      "id": 40197755233,
+      "name": "Android Build and Test",
+      "status": "in_progress",
+      "conclusion": null,
+      "run_number": 309,
+      "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755233/jobs",
+      "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755233/logs",
+      "workflow_id": 382045642
+    },
+    {
+      "id": 40197755167,
+      "name": "macOS Native App",
+      "status": "in_progress",
+      "conclusion": null,
+      "run_number": 114,
+      "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755167/jobs",
+      "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755167/logs",
+      "workflow_id": 386979292
+    },
+    {
+      "id": 40197755136,
+      "name": "VPS Opt-in Live Kilo Research",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_number": 378,
+      "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755136/jobs",
+      "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755136/logs",
+      "workflow_id": 384450256
+    }
+  ],
+  "jobs_snapshot": [
+    {
+      "run_id": 40197755140,
+      "jobs": [
+        {
+          "id": 121182202835,
+          "run_id": 40197755140,
+          "workflow_name": "VPS Go Build and Integration",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755140",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcNwWr0w",
+          "head_sha": "6221b9892a09f10d3f51209d9360b29b42e982dc",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121182202835",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40197755140/job/121182202835",
+          "status": "in_progress",
+          "conclusion": null,
+          "created_at": "2026-10-25T13:28:20Z",
+          "started_at": "2026-10-25T13:28:22Z",
+          "completed_at": null,
+          "name": "vps-browser",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T13:28:23Z",
+              "completed_at": "2026-10-25T13:28:24Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T13:28:24Z",
+              "completed_at": "2026-10-25T13:28:25Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T13:28:25Z",
+              "completed_at": "2026-10-25T13:28:36Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T13:28:36Z",
+              "completed_at": "2026-10-25T13:28:37Z"
+            },
+            {
+              "name": "Bound CI package downloads and use the official HTTPS mirror",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T13:28:37Z",
+              "completed_at": "2026-10-25T13:28:37Z"
+            },
+            {
+              "name": "Install browser test dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-25T13:28:37Z",
+              "completed_at": "2026-10-25T13:29:13Z"
+            },
+            {
+              "name": "Browser production flow and responsive UI",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 7,
+              "started_at": "2026-10-25T13:29:13Z",
+              "completed_at": null
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 8,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 14,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "pending",
+              "conclusion": null,
+              "number": 15,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 16,
+              "started_at": null,
+              "completed_at": null
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121182202835",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004621,
+          "runner_name": "GitHub Actions 1000004621",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121182202910,
+          "run_id": 40197755140,
+          "workflow_name": "VPS Go Build and Integration",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755140",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcNwWsHg",
+          "head_sha": "6221b9892a09f10d3f51209d9360b29b42e982dc",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121182202910",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40197755140/job/121182202910",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-25T13:28:20Z",
+          "started_at": "2026-10-25T13:28:22Z",
+          "completed_at": "2026-10-25T13:29:28Z",
+          "name": "vps-linux-arm64",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T13:28:23Z",
+              "completed_at": "2026-10-25T13:28:26Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T13:28:26Z",
+              "completed_at": "2026-10-25T13:28:28Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T13:28:28Z",
+              "completed_at": "2026-10-25T13:28:37Z"
+            },
+            {
+              "name": "Build",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T13:28:37Z",
+              "completed_at": "2026-10-25T13:29:22Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T13:29:22Z",
+              "completed_at": "2026-10-25T13:29:25Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-25T13:29:25Z",
+              "completed_at": "2026-10-25T13:29:25Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-10-25T13:29:25Z",
+              "completed_at": "2026-10-25T13:29:25Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-25T13:29:25Z",
+              "completed_at": "2026-10-25T13:29:25Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121182202910",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004620,
+          "runner_name": "GitHub Actions 1000004620",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121182202955,
+          "run_id": 40197755140,
+          "workflow_name": "VPS Go Build and Integration",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755140",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcNwWsSw",
+          "head_sha": "6221b9892a09f10d3f51209d9360b29b42e982dc",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121182202955",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40197755140/job/121182202955",
+          "status": "in_progress",
+          "conclusion": null,
+          "created_at": "2026-10-25T13:28:20Z",
+          "started_at": "2026-10-25T13:28:22Z",
+          "completed_at": null,
+          "name": "vps-test",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T13:28:23Z",
+              "completed_at": "2026-10-25T13:28:24Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T13:28:24Z",
+              "completed_at": "2026-10-25T13:28:25Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T13:28:25Z",
+              "completed_at": "2026-10-25T13:28:36Z"
+            },
+            {
+              "name": "Resolve pinned SQLite dependency",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T13:28:36Z",
+              "completed_at": "2026-10-25T13:28:38Z"
+            },
+            {
+              "name": "Unit and HTTP integration tests",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 5,
+              "started_at": "2026-10-25T13:28:38Z",
+              "completed_at": null
+            },
+            {
+              "name": "Vet",
+              "status": "pending",
+              "conclusion": null,
+              "number": 6,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Genuine systemd install, upgrade, rollback and crash recovery",
+              "status": "pending",
+              "conclusion": null,
+              "number": 7,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Measure standalone resource footprint",
+              "status": "pending",
+              "conclusion": null,
+              "number": 8,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Compare full-context JSON encoding allocations",
+              "status": "pending",
+              "conclusion": null,
+              "number": 9,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 10,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Smoke Linux runtime",
+              "status": "pending",
+              "conclusion": null,
+              "number": 11,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "pending",
+              "conclusion": null,
+              "number": 21,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 22,
+              "started_at": null,
+              "completed_at": null
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121182202955",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004623,
+          "runner_name": "GitHub Actions 1000004623",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121182205010,
+          "run_id": 40197755140,
+          "workflow_name": "VPS Go Build and Integration",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755140",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcNwW0Ug",
+          "head_sha": "6221b9892a09f10d3f51209d9360b29b42e982dc",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121182205010",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40197755140/job/121182205010",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-25T13:28:21Z",
+          "started_at": "2026-10-25T13:28:23Z",
+          "completed_at": "2026-10-25T13:29:36Z",
+          "name": "vps-linux-amd64",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T13:28:23Z",
+              "completed_at": "2026-10-25T13:28:24Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T13:28:24Z",
+              "completed_at": "2026-10-25T13:28:25Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T13:28:25Z",
+              "completed_at": "2026-10-25T13:28:36Z"
+            },
+            {
+              "name": "Build",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T13:28:36Z",
+              "completed_at": "2026-10-25T13:29:32Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T13:29:32Z",
+              "completed_at": "2026-10-25T13:29:34Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-25T13:29:34Z",
+              "completed_at": "2026-10-25T13:29:34Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-10-25T13:29:34Z",
+              "completed_at": "2026-10-25T13:29:34Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-25T13:29:34Z",
+              "completed_at": "2026-10-25T13:29:34Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121182205010",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004626,
+          "runner_name": "GitHub Actions 1000004626",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        }
+      ]
+    },
+    {
+      "run_id": 40197755233,
+      "jobs": [
+        {
+          "id": 121182203108,
+          "run_id": 40197755233,
+          "workflow_name": "Android Build and Test",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755233",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcNwWs5A",
+          "head_sha": "6221b9892a09f10d3f51209d9360b29b42e982dc",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121182203108",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40197755233/job/121182203108",
+          "status": "in_progress",
+          "conclusion": null,
+          "created_at": "2026-10-25T13:28:20Z",
+          "started_at": "2026-10-25T13:28:22Z",
+          "completed_at": null,
+          "name": "device-tests",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T13:28:23Z",
+              "completed_at": "2026-10-25T13:28:27Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T13:28:27Z",
+              "completed_at": "2026-10-25T13:28:28Z"
+            },
+            {
+              "name": "Run actions/setup-java@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T13:28:28Z",
+              "completed_at": "2026-10-25T13:28:28Z"
+            },
+            {
+              "name": "Run gradle/actions/setup-gradle@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T13:28:28Z",
+              "completed_at": "2026-10-25T13:28:39Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T13:28:39Z",
+              "completed_at": "2026-10-25T13:28:53Z"
+            },
+            {
+              "name": "Start real TLS workspace hub for native sync integration",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-25T13:28:53Z",
+              "completed_at": "2026-10-25T13:29:14Z"
+            },
+            {
+              "name": "Enable emulator acceleration",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-25T13:29:14Z",
+              "completed_at": "2026-10-25T13:29:14Z"
+            },
+            {
+              "name": "Run reactivecircus/android-emulator-runner@v2",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 8,
+              "started_at": "2026-10-25T13:29:14Z",
+              "completed_at": null
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 9,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "pending",
+              "conclusion": null,
+              "number": 15,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run gradle/actions/setup-gradle@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 16,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/setup-java@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 17,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 18,
+              "started_at": null,
+              "completed_at": null
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121182203108",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004624,
+          "runner_name": "GitHub Actions 1000004624",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121182203180,
+          "run_id": 40197755233,
+          "workflow_name": "Android Build and Test",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755233",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcNwWtLA",
+          "head_sha": "6221b9892a09f10d3f51209d9360b29b42e982dc",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121182203180",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40197755233/job/121182203180",
+          "status": "in_progress",
+          "conclusion": null,
+          "created_at": "2026-10-25T13:28:20Z",
+          "started_at": "2026-10-25T13:28:22Z",
+          "completed_at": null,
+          "name": "build",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T13:28:23Z",
+              "completed_at": "2026-10-25T13:28:26Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T13:28:26Z",
+              "completed_at": "2026-10-25T13:28:28Z"
+            },
+            {
+              "name": "Run actions/setup-java@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T13:28:28Z",
+              "completed_at": "2026-10-25T13:28:28Z"
+            },
+            {
+              "name": "Run gradle/actions/setup-gradle@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T13:28:28Z",
+              "completed_at": "2026-10-25T13:28:41Z"
+            },
+            {
+              "name": "Unit tests and APKs",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 5,
+              "started_at": "2026-10-25T13:28:41Z",
+              "completed_at": null
+            },
+            {
+              "name": "Record installable APK provenance and signing certificate",
+              "status": "pending",
+              "conclusion": null,
+              "number": 6,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 7,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run gradle/actions/setup-gradle@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 12,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/setup-java@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 13,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 14,
+              "started_at": null,
+              "completed_at": null
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121182203180",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004625,
+          "runner_name": "GitHub Actions 1000004625",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        }
+      ]
+    },
+    {
+      "run_id": 40197755167,
+      "jobs": [
+        {
+          "id": 121182202883,
+          "run_id": 40197755167,
+          "workflow_name": "macOS Native App",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40197755167",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcNwWsAw",
+          "head_sha": "6221b9892a09f10d3f51209d9360b29b42e982dc",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121182202883",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40197755167/job/121182202883",
+          "status": "in_progress",
+          "conclusion": null,
+          "created_at": "2026-10-25T13:28:20Z",
+          "started_at": "2026-10-25T13:28:23Z",
+          "completed_at": null,
+          "name": "macos-build",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T13:28:24Z",
+              "completed_at": "2026-10-25T13:28:25Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T13:28:25Z",
+              "completed_at": "2026-10-25T13:28:28Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T13:28:28Z",
+              "completed_at": "2026-10-25T13:28:50Z"
+            },
+            {
+              "name": "Build universal native app and disk image",
+              "status": "in_progress",
+              "conclusion": null,
+              "number": 4,
+              "started_at": "2026-10-25T13:28:50Z",
+              "completed_at": null
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 5,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "pending",
+              "conclusion": null,
+              "number": 9,
+              "started_at": null,
+              "completed_at": null
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "pending",
+              "conclusion": null,
+              "number": 10,
+              "started_at": null,
+              "completed_at": null
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121182202883",
+          "labels": [
+            "macos-15"
+          ],
+          "runner_id": 1000004622,
+          "runner_name": "GitHub Actions 1000004622",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        }
+      ]
+    }
+  ],
+  "downloaded_zips": [
+    {
+      "id": 12600767870,
+      "bytes": 12984958,
+      "sha256": "0333000f4b3d82fdc62c8370a58322c27133b4c892434195e19c72e88f102f77"
+    },
+    {
+      "id": 12600538466,
+      "bytes": 12058239,
+      "sha256": "08b05053d901f3667297961c945459b095f43b2fef85667889eb5cc9c29f4905"
+    }
+  ],
+  "snapshot_note": "以上為修正前觀察的metadata快照，不是最終成功報告；九份產物沒有全部驗收。"
+}

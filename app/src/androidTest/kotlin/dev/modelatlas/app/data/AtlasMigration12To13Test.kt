@@ -80,12 +80,12 @@ class AtlasMigration12To13Test {
         try {
             // 第二段：實際 Room 由 v13 開到 v14，資料仍保留（v14 差異由 13→14 專測覆蓋）。
             val opened = Room.databaseBuilder(context, AtlasDatabase::class.java, name)
-                .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+                .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
                 .allowMainThreadQueries()
                 .build()
             room = opened
             val sql = opened.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
             // Legacy metadata／snapshot／perf／evidence 精確值一字不動。
             assertEquals("Seek", opened.providerDao().getById("p12")!!.name)
             assertEquals("FREE_NOW", opened.sampleDao().getById("legacy-sample-12")!!.priceState)
@@ -117,12 +117,12 @@ class AtlasMigration12To13Test {
         var room: AtlasDatabase? = null
         try {
             val opened = Room.databaseBuilder(context, AtlasDatabase::class.java, name)
-                .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+                .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, dev.modelatlas.app.data.MIGRATION_15_16)
                 .allowMainThreadQueries()
                 .build()
             room = opened
             val sql = opened.openHelper.writableDatabase
-            assertEquals(15, sql.version)
+            assertEquals(16, sql.version)
             val samplesBefore = rows(sql, "samples").size
             val snapshotBefore = rows(sql, "snapshot_facts").size
             val perfBefore = rows(sql, "provider_perf_facts").size

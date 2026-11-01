@@ -1,3 +1,27 @@
+> 015M首輪歡迎卡修後完整38 Browser race186.450s成功，473圖保留原458＋15；首輪訊息的native-welcome必須為0，實際375px對話已重新檢視。原369 Go／557結果等價與全負載、全部原生情境保留；新來源自己的九項與實際產物前仍候選。
+
+> 015M實圖追加反例：f7e2af0f的九項CI已SUCCESS，但實際Browser首輪聊天仍殘留native welcome，375px標題被截斷；新增正式操作斷言2.055s重現，沒有把CI綠燈當完整UI驗收。bubble移除真正空白歡迎卡，保留原訊息／草稿與scope；含Kilo／原Production／ChatExperience／Conversations四流程race15.003s成功，新來源重跑完整38 Browser與自己的九項／實際產物。
+
+> 015M完整兩程序race240.844s成功：369個註冊案例185／184各執行一次，與原單程序463.795s的所有case／subcase結果逐項完全相同；共同600秒上限、每個原fixture／migration／HTTP／負載／斷言皆保留，覆蓋checker四項亦成功。新的來源尚待自己的九項與實際產物，仍不借0f的8項成功。
+
+> 015M首0f60e209未接受：8項CI成功，vps-test121064231573在原600秒上限600.032s逾時；原stack保留。另以正式caller重現Kilo目錄budget原因誤分類0.068s及probe漏列目錄HTTP0.133s，已修正等待／明確resume、取消與每次實際HTTP報告。擴大聚焦47.992s及原完整單程序race463.795s成功（369個top-level案例、324pass／45明確opt-in skip）；完整案例改以兩個獨立程序共用原600秒上限，沒有減測試／migration／負載，待此來源自己的九項與全部實際產物。
+
+> 015M本機：完整Go race580.494s、vet及原27發布回歸0.037s成功；核心JVM585項成功。完整38 Browser先147.434s／162.741s成功；實圖修正Kilo拒絕提示遮擋、來源說明過高與scope提示後再跑clean完整473圖，保留原458。原生Mac追加3項／2圖、Android追加8項與fresh PENDING／既有空工作區隔離；自己的同源九項與全部實際產物前仍候選。
+
+> 2026-10-25 唯一新片 KILO-DEFAULTS-015M：依使用者「出廠預設放入kilo的模型、全部弄好」優先補三平台首次啟動的免Key Kilo模型、正式選用／價格檢查、既有資料升級與不覆寫選擇。015L來源d51cda7587dff8fb5821e9d85882ae262b405b2b／treea58808e93fedb1f1e3db437580a5247a0da4492a所列範圍已經同源九項、九份實際ZIP與21實圖驗收，證據見verification/20261025/site-recipe-baseline.json及Draft PR #20。main仍cba901d／39536090788兩項SUCCESS，FEATURE FREEZE=OFF。015M自己的正式caller、回歸與同源九項／實際產物前仍候選；原擷取效率閉環接續於本片後，完整願望及全部測試／負載／timeout保留。公開0.8.5-preview.1、發布請求／tag／11附件不變、不merge／部署。
+
+> 015L本機候選進度：具體公開配方與來源別站型／版本證據、正式逐項實測／差異確認／原子整組啟用／持久共用Undo已接正式caller。15個後端race12.896s、含原Connector聚焦37.072s、三個Browser14.652s與15新實圖已檢視；完整Go race466.545s成功、vet與原27發布回歸0.030s成功；完整37 Browser187.592s／458PNG（原443+新增15）成功，自己的九項／全部產物仍待驗。新增真TLS反例與限制詳[vps/SITE_RECIPES.md](../vps/SITE_RECIPES.md)，原全部測試／負載／timeout及完整願望保留。
+
+> 2026-10-25 唯一新片 SITE-RECIPE-015L：015K來源b8c2080b3e0063accdbc5974043825b61c661ce7／treec27298d91ded21d2d28a49ba72616c93b06183b2已由同源九項attempt1及九份實際產物／20實圖驗收所列範圍，精確證據見verification/20261025/reflection-query-baseline.json。完整Go本機511.884s／CI578.042s、36 Browser183.268s／203.252s及443PNG、systemd41.979s與原負載24.552s均保留。main仍cba901d187aa5312cc71f5c2440b23fa04104aee／39536090788兩項SUCCESS，FEATURE FREEZE=OFF。015L先補本機配方執行綁定、逐來源family/version證據、具體草稿／正式驗證／確認及持久回退；自己的新來源全九項與實際產物前候選。公開版本與11附件不變、PR #20仍Draft、不merge／部署，原全部願望與原生／真站實機缺口保留。
+
+> 2026-10-25 接續 REFLECTION-015K：015J來源 b3e27ba04f533e255390124a736e893129e77093／tree0355f4db780559ec7bfa14a785a77e0d3f601b88 已由同源九項及九份實際產物驗收所列範圍，精確證據保存在 Draft PR #20。main cba901d187aa5312cc71f5c2440b23fa04104aee／39536090788 build119016886469、device119016884592本輪重查SUCCESS，FEATURE FREEZE=OFF。目前唯一候選015K：本機公開證據生成具體查詢、精確語言／地區／頁數、明確預覽及有界成對實測、成本與Unknown、多輪評估／試用／監測／持久Undo。新來源自己的全部九項及實際產物前不接受、不接下一片。公開0.8.5-preview.1／發布請求／tag／11附件不變、不merge／部署；完整擷取規則／站點family/version／同步／原生與真站實機缺口保留。
+
+> 2026-10-24接續：015I已由970d566同來源九項、九份實際產物與17實圖驗收所列範圍（verification/20261024/private-schedule-baseline.json）。唯一新片015J逐級研究／候選重驗及有效流量重用，自己的新來源完整九項前候選。D-017要求下一版穩定可用且完成主要正式流程，原完整願望、專用原生缺口與版本凍結不變；詳ACTIVE_TASK。
+
+> 2026-10-24接續：015H已由9ba2905同來源九項、九份實際產物及16實圖驗收所列範圍（verification/20261024/research-pool-baseline.json）。唯一新片PRIVATE-RESEARCH-015I補明確私人排程／來源確認／排程每日預算／中斷不重播與本機確認歷史；Mac同源引擎取得後端，專用原生UI仍待補。自己的完整本機／九項與實際產物前候選；D-016要求片內驗收後連續推進，公開版本與原需求不變。詳ACTIVE_TASK、vps/RESEARCH_PRIVATE_SCHEDULES.md。
+
+> 2026-10-24：015G已由abcffa0同來源九項及PR #20持久證據驗所列範圍；本輪重查九項仍SUCCESS。唯一新片015H共用研究額度池，正式VPS設定／原子用量與恢復；Mac內建同源引擎取得後端，Mac／Android專用原生呈現仍待補。完整本機與自己的九項／產物前候選；公開版本不變，原功能與願望保留。詳ACTIVE_TASK、RESEARCH_QUOTA_POOLS.md。
+
 # ModelAtlas Research Policy
 
 > 這是 Runtime Research Agent / Crawler 的當前 authoritative policy。

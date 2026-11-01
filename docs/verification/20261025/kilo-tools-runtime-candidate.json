@@ -1,0 +1,1983 @@
+{
+  "slice": "KILO-DEFAULTS-015M",
+  "sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+  "tree": "44363e4c2920150134e7651320045b811c02f0f8",
+  "status": "NOT_ACCEPTED",
+  "reason": "Browser正式工具結果草稿在同範圍紀錄刷新時清空；Android984原測試成功但AGP卸載後的run-as報告收集失敗。任何其他成功均不借作新來源驗收。",
+  "browserActualZip": {
+    "id": 12591722146,
+    "bytes": 36358568,
+    "png": 473,
+    "missingOriginal": [
+      "tools-375-dark.png"
+    ],
+    "unexpected": [
+      "failure.png"
+    ],
+    "deterministicBeforeSeconds": 19.239,
+    "focusedAfterSeconds": 20.049,
+    "fullAfterSeconds": 187.646
+  },
+  "androidActualZip": {
+    "id": 12591513357,
+    "bytes": 1258871,
+    "tests": 984,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5,
+    "configuredHeap": "512m",
+    "zygoteBefore": 1665,
+    "zygoteAfter": 3215,
+    "runtimeReportBytes": 0
+  },
+  "localActualBinary": {
+    "source": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+    "firstModels": 15,
+    "restartAfterRemoval": 14,
+    "automaticInference": 0,
+    "nonemptyKeys": 0,
+    "seconds": 0.164
+  },
+  "runs": [
+    {
+      "run": {
+        "id": 40174288862,
+        "name": "VPS Go Build and Integration",
+        "node_id": "WFR_kwLOVF1ats8AAAAJWpL_3g",
+        "head_branch": "feature/vps-rebuild-20261014",
+        "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+        "path": ".github/workflows/vps.yml",
+        "display_title": "feat: Kilo免Key出廠模型與跨平台穩定性",
+        "run_number": 214,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "failure",
+        "workflow_id": 383514759,
+        "check_suite_id": 108887726592,
+        "check_suite_node_id": "CS_kwDOVF1ats8AAAAZWjbaAA",
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862",
+        "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288862",
+        "pull_requests": [
+          {
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls/20",
+            "id": 4847449941,
+            "number": 20,
+            "head": {
+              "ref": "feature/vps-rebuild-20261014",
+              "sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+              "repo": {
+                "id": 1415404214,
+                "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                "name": "ModelAtlas-2"
+              }
+            },
+            "base": {
+              "ref": "main",
+              "sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+              "repo": {
+                "id": 1415404214,
+                "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                "name": "ModelAtlas-2"
+              }
+            }
+          }
+        ],
+        "created_at": "2026-10-25T07:50:19Z",
+        "updated_at": "2026-10-25T07:59:42Z",
+        "actor": {
+          "login": "Tsenjii",
+          "id": 314288148,
+          "node_id": "U_kgDOEruoFA",
+          "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Tsenjii",
+          "html_url": "https://github.com/Tsenjii",
+          "followers_url": "https://api.github.com/users/Tsenjii/followers",
+          "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+          "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+          "repos_url": "https://api.github.com/users/Tsenjii/repos",
+          "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "run_attempt": 1,
+        "referenced_workflows": [],
+        "run_started_at": "2026-10-25T07:50:19Z",
+        "triggering_actor": {
+          "login": "Tsenjii",
+          "id": 314288148,
+          "node_id": "U_kgDOEruoFA",
+          "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Tsenjii",
+          "html_url": "https://github.com/Tsenjii",
+          "followers_url": "https://api.github.com/users/Tsenjii/followers",
+          "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+          "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+          "repos_url": "https://api.github.com/users/Tsenjii/repos",
+          "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862/jobs",
+        "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862/logs",
+        "check_suite_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-suites/108887726592",
+        "artifacts_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862/artifacts",
+        "cancel_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862/cancel",
+        "rerun_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862/rerun",
+        "previous_attempt_url": null,
+        "workflow_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/workflows/383514759",
+        "head_commit": {
+          "id": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "tree_id": "44363e4c2920150134e7651320045b811c02f0f8",
+          "message": "fix: stabilize Android 10 cold boot before full device tests",
+          "timestamp": "2026-10-25T07:50:13Z",
+          "author": {
+            "name": "Tsenjii",
+            "email": "b310103@gm.tnfsh.tn.edu.tw"
+          },
+          "committer": {
+            "name": "Tsenjii",
+            "email": "b310103@gm.tnfsh.tn.edu.tw"
+          }
+        },
+        "repository": {
+          "id": 1415404214,
+          "node_id": "R_kgDOVF1atg",
+          "name": "ModelAtlas-2",
+          "full_name": "Tsenjii/ModelAtlas-2",
+          "private": false,
+          "owner": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+          "description": null,
+          "fork": false,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+          "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+          "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+          "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+          "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+          "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+          "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+          "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+          "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+          "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+          "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+          "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+          "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+          "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+          "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+          "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+          "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+          "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+          "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+          "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+          "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+          "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+          "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+          "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+          "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+          "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+          "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+          "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+          "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+          "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+          "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+          "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+          "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+          "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+        },
+        "head_repository": {
+          "id": 1415404214,
+          "node_id": "R_kgDOVF1atg",
+          "name": "ModelAtlas-2",
+          "full_name": "Tsenjii/ModelAtlas-2",
+          "private": false,
+          "owner": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+          "description": null,
+          "fork": false,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+          "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+          "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+          "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+          "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+          "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+          "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+          "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+          "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+          "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+          "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+          "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+          "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+          "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+          "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+          "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+          "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+          "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+          "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+          "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+          "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+          "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+          "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+          "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+          "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+          "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+          "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+          "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+          "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+          "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+          "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+          "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+          "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+          "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+        }
+      },
+      "jobs": [
+        {
+          "id": 121111525061,
+          "run_id": 40174288862,
+          "workflow_name": "VPS Go Build and Integration",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcMs82xQ",
+          "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121111525061",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288862/job/121111525061",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-25T07:50:20Z",
+          "started_at": "2026-10-25T07:50:22Z",
+          "completed_at": "2026-10-25T07:59:41Z",
+          "name": "vps-test",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T07:50:22Z",
+              "completed_at": "2026-10-25T07:50:23Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T07:50:23Z",
+              "completed_at": "2026-10-25T07:50:24Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T07:50:24Z",
+              "completed_at": "2026-10-25T07:50:33Z"
+            },
+            {
+              "name": "Resolve pinned SQLite dependency",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T07:50:33Z",
+              "completed_at": "2026-10-25T07:50:35Z"
+            },
+            {
+              "name": "Unit and HTTP integration tests",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T07:50:35Z",
+              "completed_at": "2026-10-25T07:57:57Z"
+            },
+            {
+              "name": "Vet",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-25T07:57:57Z",
+              "completed_at": "2026-10-25T07:58:16Z"
+            },
+            {
+              "name": "Genuine systemd install, upgrade, rollback and crash recovery",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-25T07:58:16Z",
+              "completed_at": "2026-10-25T07:59:08Z"
+            },
+            {
+              "name": "Measure standalone resource footprint",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-10-25T07:59:08Z",
+              "completed_at": "2026-10-25T07:59:33Z"
+            },
+            {
+              "name": "Compare full-context JSON encoding allocations",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-25T07:59:33Z",
+              "completed_at": "2026-10-25T07:59:34Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-10-25T07:59:34Z",
+              "completed_at": "2026-10-25T07:59:35Z"
+            },
+            {
+              "name": "Smoke Linux runtime",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-25T07:59:35Z",
+              "completed_at": "2026-10-25T07:59:39Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 21,
+              "started_at": "2026-10-25T07:59:39Z",
+              "completed_at": "2026-10-25T07:59:39Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 22,
+              "started_at": "2026-10-25T07:59:39Z",
+              "completed_at": "2026-10-25T07:59:39Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 23,
+              "started_at": "2026-10-25T07:59:39Z",
+              "completed_at": "2026-10-25T07:59:39Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121111525061",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004590,
+          "runner_name": "GitHub Actions 1000004590",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121111525281,
+          "run_id": 40174288862,
+          "workflow_name": "VPS Go Build and Integration",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcMs83oQ",
+          "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121111525281",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288862/job/121111525281",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-25T07:50:20Z",
+          "started_at": "2026-10-25T07:50:22Z",
+          "completed_at": "2026-10-25T07:51:18Z",
+          "name": "vps-linux-amd64",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T07:50:22Z",
+              "completed_at": "2026-10-25T07:50:24Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T07:50:24Z",
+              "completed_at": "2026-10-25T07:50:26Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T07:50:26Z",
+              "completed_at": "2026-10-25T07:50:34Z"
+            },
+            {
+              "name": "Build",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T07:50:34Z",
+              "completed_at": "2026-10-25T07:51:12Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T07:51:12Z",
+              "completed_at": "2026-10-25T07:51:14Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-25T07:51:14Z",
+              "completed_at": "2026-10-25T07:51:14Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-10-25T07:51:14Z",
+              "completed_at": "2026-10-25T07:51:15Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-25T07:51:15Z",
+              "completed_at": "2026-10-25T07:51:15Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121111525281",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004594,
+          "runner_name": "GitHub Actions 1000004594",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121111525304,
+          "run_id": 40174288862,
+          "workflow_name": "VPS Go Build and Integration",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcMs83uA",
+          "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121111525304",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288862/job/121111525304",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-25T07:50:20Z",
+          "started_at": "2026-10-25T07:50:22Z",
+          "completed_at": "2026-10-25T07:51:26Z",
+          "name": "vps-linux-arm64",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T07:50:23Z",
+              "completed_at": "2026-10-25T07:50:24Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T07:50:24Z",
+              "completed_at": "2026-10-25T07:50:26Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T07:50:26Z",
+              "completed_at": "2026-10-25T07:50:35Z"
+            },
+            {
+              "name": "Build",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T07:50:35Z",
+              "completed_at": "2026-10-25T07:51:20Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T07:51:20Z",
+              "completed_at": "2026-10-25T07:51:22Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-25T07:51:22Z",
+              "completed_at": "2026-10-25T07:51:22Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-10-25T07:51:22Z",
+              "completed_at": "2026-10-25T07:51:22Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-25T07:51:22Z",
+              "completed_at": "2026-10-25T07:51:23Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121111525304",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004595,
+          "runner_name": "GitHub Actions 1000004595",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121111525383,
+          "run_id": 40174288862,
+          "workflow_name": "VPS Go Build and Integration",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288862",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcMs84Bw",
+          "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121111525383",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288862/job/121111525383",
+          "status": "completed",
+          "conclusion": "failure",
+          "created_at": "2026-10-25T07:50:20Z",
+          "started_at": "2026-10-25T07:50:22Z",
+          "completed_at": "2026-10-25T07:55:25Z",
+          "name": "vps-browser",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T07:50:23Z",
+              "completed_at": "2026-10-25T07:50:25Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T07:50:25Z",
+              "completed_at": "2026-10-25T07:50:26Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T07:50:26Z",
+              "completed_at": "2026-10-25T07:50:39Z"
+            },
+            {
+              "name": "Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T07:50:39Z",
+              "completed_at": "2026-10-25T07:50:41Z"
+            },
+            {
+              "name": "Bound CI package downloads and use the official HTTPS mirror",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T07:50:41Z",
+              "completed_at": "2026-10-25T07:50:41Z"
+            },
+            {
+              "name": "Install browser test dependencies",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-25T07:50:41Z",
+              "completed_at": "2026-10-25T07:51:22Z"
+            },
+            {
+              "name": "Browser production flow and responsive UI",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 7,
+              "started_at": "2026-10-25T07:51:22Z",
+              "completed_at": "2026-10-25T07:55:19Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8,
+              "started_at": "2026-10-25T07:55:19Z",
+              "completed_at": "2026-10-25T07:55:22Z"
+            },
+            {
+              "name": "Post Run actions/setup-node@v4",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 14,
+              "started_at": "2026-10-25T07:55:22Z",
+              "completed_at": "2026-10-25T07:55:22Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 15,
+              "started_at": "2026-10-25T07:55:22Z",
+              "completed_at": "2026-10-25T07:55:22Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16,
+              "started_at": "2026-10-25T07:55:22Z",
+              "completed_at": "2026-10-25T07:55:22Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-10-25T07:55:22Z",
+              "completed_at": "2026-10-25T07:55:22Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121111525383",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004596,
+          "runner_name": "GitHub Actions 1000004596",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 12591826414,
+          "node_id": "MDg6QXJ0aWZhY3QxMjU5MTgyNjQxNA==",
+          "name": "modelatlas-vps-linux-amd64",
+          "size_in_bytes": 12864625,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591826414",
+          "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591826414/zip",
+          "expired": false,
+          "digest": "sha256:0d55fd50ad54f14a085884896a7ab8c625bfbaef1b9394f49b663ec6f16f58d5",
+          "created_at": "2026-10-25T07:51:14Z",
+          "updated_at": "2026-10-25T07:51:14Z",
+          "expires_at": "2027-01-23T07:50:20Z",
+          "workflow_run": {
+            "id": 40174288862,
+            "repository_id": 1415404214,
+            "head_repository_id": 1415404214,
+            "head_branch": "feature/vps-rebuild-20261014",
+            "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa"
+          }
+        },
+        {
+          "id": 12591722146,
+          "node_id": "MDg6QXJ0aWZhY3QxMjU5MTcyMjE0Ng==",
+          "name": "modelatlas-vps-browser",
+          "size_in_bytes": 36358568,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591722146",
+          "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591722146/zip",
+          "expired": false,
+          "digest": "sha256:07cb3b8315e5f834f747035d4c514772aecad2bd743900150b9c01dcf4bc22ba",
+          "created_at": "2026-10-25T07:55:22Z",
+          "updated_at": "2026-10-25T07:55:22Z",
+          "expires_at": "2027-01-23T07:50:20Z",
+          "workflow_run": {
+            "id": 40174288862,
+            "repository_id": 1415404214,
+            "head_repository_id": 1415404214,
+            "head_branch": "feature/vps-rebuild-20261014",
+            "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa"
+          }
+        },
+        {
+          "id": 12591457146,
+          "node_id": "MDg6QXJ0aWZhY3QxMjU5MTQ1NzE0Ng==",
+          "name": "modelatlas-vps-linux-arm64",
+          "size_in_bytes": 11947243,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591457146",
+          "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591457146/zip",
+          "expired": false,
+          "digest": "sha256:2b640c39fe35d003cf264650579f62ebed8b19c55c3279e0a121b4d1019eeb01",
+          "created_at": "2026-10-25T07:51:22Z",
+          "updated_at": "2026-10-25T07:51:22Z",
+          "expires_at": "2027-01-23T07:50:20Z",
+          "workflow_run": {
+            "id": 40174288862,
+            "repository_id": 1415404214,
+            "head_repository_id": 1415404214,
+            "head_branch": "feature/vps-rebuild-20261014",
+            "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa"
+          }
+        },
+        {
+          "id": 12591308822,
+          "node_id": "MDg6QXJ0aWZhY3QxMjU5MTMwODgyMg==",
+          "name": "modelatlas-vps-footprint",
+          "size_in_bytes": 15497,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591308822",
+          "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591308822/zip",
+          "expired": false,
+          "digest": "sha256:1bd6f5f1b73d7e1dc77a2b993ea2499e63e9e8c984b65f0fff6dbff3ff9571db",
+          "created_at": "2026-10-25T07:59:35Z",
+          "updated_at": "2026-10-25T07:59:35Z",
+          "expires_at": "2027-01-23T07:50:20Z",
+          "workflow_run": {
+            "id": 40174288862,
+            "repository_id": 1415404214,
+            "head_repository_id": 1415404214,
+            "head_branch": "feature/vps-rebuild-20261014",
+            "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa"
+          }
+        }
+      ]
+    },
+    {
+      "run": {
+        "id": 40174288872,
+        "name": "Android Build and Test",
+        "node_id": "WFR_kwLOVF1ats8AAAAJWpL_6A",
+        "head_branch": "feature/vps-rebuild-20261014",
+        "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+        "path": ".github/workflows/android.yml",
+        "display_title": "feat: Kilo免Key出廠模型與跨平台穩定性",
+        "run_number": 306,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "failure",
+        "workflow_id": 382045642,
+        "check_suite_id": 108887726612,
+        "check_suite_node_id": "CS_kwDOVF1ats8AAAAZWjbaFA",
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288872",
+        "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288872",
+        "pull_requests": [
+          {
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls/20",
+            "id": 4847449941,
+            "number": 20,
+            "head": {
+              "ref": "feature/vps-rebuild-20261014",
+              "sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+              "repo": {
+                "id": 1415404214,
+                "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                "name": "ModelAtlas-2"
+              }
+            },
+            "base": {
+              "ref": "main",
+              "sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+              "repo": {
+                "id": 1415404214,
+                "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                "name": "ModelAtlas-2"
+              }
+            }
+          }
+        ],
+        "created_at": "2026-10-25T07:50:19Z",
+        "updated_at": "2026-10-25T08:02:17Z",
+        "actor": {
+          "login": "Tsenjii",
+          "id": 314288148,
+          "node_id": "U_kgDOEruoFA",
+          "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Tsenjii",
+          "html_url": "https://github.com/Tsenjii",
+          "followers_url": "https://api.github.com/users/Tsenjii/followers",
+          "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+          "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+          "repos_url": "https://api.github.com/users/Tsenjii/repos",
+          "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "run_attempt": 1,
+        "referenced_workflows": [],
+        "run_started_at": "2026-10-25T07:50:19Z",
+        "triggering_actor": {
+          "login": "Tsenjii",
+          "id": 314288148,
+          "node_id": "U_kgDOEruoFA",
+          "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Tsenjii",
+          "html_url": "https://github.com/Tsenjii",
+          "followers_url": "https://api.github.com/users/Tsenjii/followers",
+          "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+          "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+          "repos_url": "https://api.github.com/users/Tsenjii/repos",
+          "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288872/jobs",
+        "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288872/logs",
+        "check_suite_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-suites/108887726612",
+        "artifacts_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288872/artifacts",
+        "cancel_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288872/cancel",
+        "rerun_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288872/rerun",
+        "previous_attempt_url": null,
+        "workflow_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/workflows/382045642",
+        "head_commit": {
+          "id": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "tree_id": "44363e4c2920150134e7651320045b811c02f0f8",
+          "message": "fix: stabilize Android 10 cold boot before full device tests",
+          "timestamp": "2026-10-25T07:50:13Z",
+          "author": {
+            "name": "Tsenjii",
+            "email": "b310103@gm.tnfsh.tn.edu.tw"
+          },
+          "committer": {
+            "name": "Tsenjii",
+            "email": "b310103@gm.tnfsh.tn.edu.tw"
+          }
+        },
+        "repository": {
+          "id": 1415404214,
+          "node_id": "R_kgDOVF1atg",
+          "name": "ModelAtlas-2",
+          "full_name": "Tsenjii/ModelAtlas-2",
+          "private": false,
+          "owner": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+          "description": null,
+          "fork": false,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+          "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+          "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+          "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+          "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+          "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+          "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+          "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+          "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+          "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+          "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+          "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+          "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+          "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+          "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+          "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+          "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+          "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+          "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+          "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+          "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+          "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+          "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+          "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+          "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+          "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+          "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+          "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+          "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+          "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+          "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+          "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+          "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+          "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+        },
+        "head_repository": {
+          "id": 1415404214,
+          "node_id": "R_kgDOVF1atg",
+          "name": "ModelAtlas-2",
+          "full_name": "Tsenjii/ModelAtlas-2",
+          "private": false,
+          "owner": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+          "description": null,
+          "fork": false,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+          "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+          "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+          "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+          "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+          "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+          "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+          "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+          "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+          "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+          "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+          "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+          "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+          "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+          "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+          "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+          "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+          "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+          "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+          "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+          "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+          "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+          "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+          "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+          "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+          "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+          "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+          "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+          "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+          "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+          "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+          "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+          "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+          "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+        }
+      },
+      "jobs": [
+        {
+          "id": 121111525098,
+          "run_id": 40174288872,
+          "workflow_name": "Android Build and Test",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288872",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcMs826g",
+          "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121111525098",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288872/job/121111525098",
+          "status": "completed",
+          "conclusion": "failure",
+          "created_at": "2026-10-25T07:50:20Z",
+          "started_at": "2026-10-25T07:50:23Z",
+          "completed_at": "2026-10-25T08:02:17Z",
+          "name": "device-tests",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T07:50:24Z",
+              "completed_at": "2026-10-25T07:50:27Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T07:50:27Z",
+              "completed_at": "2026-10-25T07:50:30Z"
+            },
+            {
+              "name": "Run actions/setup-java@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T07:50:30Z",
+              "completed_at": "2026-10-25T07:50:30Z"
+            },
+            {
+              "name": "Run gradle/actions/setup-gradle@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T07:50:30Z",
+              "completed_at": "2026-10-25T07:50:50Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T07:50:50Z",
+              "completed_at": "2026-10-25T07:51:04Z"
+            },
+            {
+              "name": "Start real TLS workspace hub for native sync integration",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-25T07:51:04Z",
+              "completed_at": "2026-10-25T07:51:39Z"
+            },
+            {
+              "name": "Enable emulator acceleration",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-25T07:51:39Z",
+              "completed_at": "2026-10-25T07:51:39Z"
+            },
+            {
+              "name": "Run reactivecircus/android-emulator-runner@v2",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 8,
+              "started_at": "2026-10-25T07:51:39Z",
+              "completed_at": "2026-10-25T08:02:10Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-25T08:02:10Z",
+              "completed_at": "2026-10-25T08:02:13Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 15,
+              "started_at": "2026-10-25T08:02:13Z",
+              "completed_at": "2026-10-25T08:02:13Z"
+            },
+            {
+              "name": "Post Run gradle/actions/setup-gradle@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16,
+              "started_at": "2026-10-25T08:02:13Z",
+              "completed_at": "2026-10-25T08:02:13Z"
+            },
+            {
+              "name": "Post Run actions/setup-java@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17,
+              "started_at": "2026-10-25T08:02:13Z",
+              "completed_at": "2026-10-25T08:02:13Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18,
+              "started_at": "2026-10-25T08:02:13Z",
+              "completed_at": "2026-10-25T08:02:13Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19,
+              "started_at": "2026-10-25T08:02:13Z",
+              "completed_at": "2026-10-25T08:02:13Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121111525098",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004591,
+          "runner_name": "GitHub Actions 1000004591",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121111525354,
+          "run_id": 40174288872,
+          "workflow_name": "Android Build and Test",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288872",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcMs836g",
+          "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121111525354",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288872/job/121111525354",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-25T07:50:20Z",
+          "started_at": "2026-10-25T07:50:22Z",
+          "completed_at": "2026-10-25T07:56:24Z",
+          "name": "build",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T07:50:23Z",
+              "completed_at": "2026-10-25T07:50:25Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T07:50:25Z",
+              "completed_at": "2026-10-25T07:50:27Z"
+            },
+            {
+              "name": "Run actions/setup-java@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T07:50:27Z",
+              "completed_at": "2026-10-25T07:50:27Z"
+            },
+            {
+              "name": "Run gradle/actions/setup-gradle@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T07:50:27Z",
+              "completed_at": "2026-10-25T07:50:50Z"
+            },
+            {
+              "name": "Unit tests and APKs",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T07:50:50Z",
+              "completed_at": "2026-10-25T07:56:16Z"
+            },
+            {
+              "name": "Record installable APK provenance and signing certificate",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-25T07:56:16Z",
+              "completed_at": "2026-10-25T07:56:17Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7,
+              "started_at": "2026-10-25T07:56:17Z",
+              "completed_at": "2026-10-25T07:56:20Z"
+            },
+            {
+              "name": "Post Run gradle/actions/setup-gradle@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-10-25T07:56:20Z",
+              "completed_at": "2026-10-25T07:56:20Z"
+            },
+            {
+              "name": "Post Run actions/setup-java@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-10-25T07:56:20Z",
+              "completed_at": "2026-10-25T07:56:21Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14,
+              "started_at": "2026-10-25T07:56:21Z",
+              "completed_at": "2026-10-25T07:56:21Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15,
+              "started_at": "2026-10-25T07:56:21Z",
+              "completed_at": "2026-10-25T07:56:21Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121111525354",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000004593,
+          "runner_name": "GitHub Actions 1000004593",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 12591513357,
+          "node_id": "MDg6QXJ0aWZhY3QxMjU5MTUxMzM1Nw==",
+          "name": "modelatlas-device-test-reports",
+          "size_in_bytes": 1258871,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591513357",
+          "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591513357/zip",
+          "expired": false,
+          "digest": "sha256:5ecf485944b452cbe954f6701f179880ab2df937f3521bb7b25bff02c96d4d2a",
+          "created_at": "2026-10-25T08:02:12Z",
+          "updated_at": "2026-10-25T08:02:12Z",
+          "expires_at": "2027-01-23T07:50:20Z",
+          "workflow_run": {
+            "id": 40174288872,
+            "repository_id": 1415404214,
+            "head_repository_id": 1415404214,
+            "head_branch": "feature/vps-rebuild-20261014",
+            "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa"
+          }
+        },
+        {
+          "id": 12591338257,
+          "node_id": "MDg6QXJ0aWZhY3QxMjU5MTMzODI1Nw==",
+          "name": "modelatlas-debug-and-reports",
+          "size_in_bytes": 17239954,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591338257",
+          "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591338257/zip",
+          "expired": false,
+          "digest": "sha256:0a9c38a6fe88f8f371774fd3192d269e9b5c3b18463fef2692f717f598442b25",
+          "created_at": "2026-10-25T07:56:20Z",
+          "updated_at": "2026-10-25T07:56:20Z",
+          "expires_at": "2027-01-23T07:50:20Z",
+          "workflow_run": {
+            "id": 40174288872,
+            "repository_id": 1415404214,
+            "head_repository_id": 1415404214,
+            "head_branch": "feature/vps-rebuild-20261014",
+            "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa"
+          }
+        }
+      ]
+    },
+    {
+      "run": {
+        "id": 40174288852,
+        "name": "macOS Native App",
+        "node_id": "WFR_kwLOVF1ats8AAAAJWpL_1A",
+        "head_branch": "feature/vps-rebuild-20261014",
+        "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+        "path": ".github/workflows/macos-native.yml",
+        "display_title": "feat: Kilo免Key出廠模型與跨平台穩定性",
+        "run_number": 111,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "workflow_id": 386979292,
+        "check_suite_id": 108887726584,
+        "check_suite_node_id": "CS_kwDOVF1ats8AAAAZWjbZ-A",
+        "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288852",
+        "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288852",
+        "pull_requests": [
+          {
+            "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls/20",
+            "id": 4847449941,
+            "number": 20,
+            "head": {
+              "ref": "feature/vps-rebuild-20261014",
+              "sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+              "repo": {
+                "id": 1415404214,
+                "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                "name": "ModelAtlas-2"
+              }
+            },
+            "base": {
+              "ref": "main",
+              "sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+              "repo": {
+                "id": 1415404214,
+                "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+                "name": "ModelAtlas-2"
+              }
+            }
+          }
+        ],
+        "created_at": "2026-10-25T07:50:19Z",
+        "updated_at": "2026-10-25T08:06:01Z",
+        "actor": {
+          "login": "Tsenjii",
+          "id": 314288148,
+          "node_id": "U_kgDOEruoFA",
+          "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Tsenjii",
+          "html_url": "https://github.com/Tsenjii",
+          "followers_url": "https://api.github.com/users/Tsenjii/followers",
+          "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+          "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+          "repos_url": "https://api.github.com/users/Tsenjii/repos",
+          "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "run_attempt": 1,
+        "referenced_workflows": [],
+        "run_started_at": "2026-10-25T07:50:19Z",
+        "triggering_actor": {
+          "login": "Tsenjii",
+          "id": 314288148,
+          "node_id": "U_kgDOEruoFA",
+          "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/Tsenjii",
+          "html_url": "https://github.com/Tsenjii",
+          "followers_url": "https://api.github.com/users/Tsenjii/followers",
+          "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+          "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+          "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+          "repos_url": "https://api.github.com/users/Tsenjii/repos",
+          "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "jobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288852/jobs",
+        "logs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288852/logs",
+        "check_suite_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-suites/108887726584",
+        "artifacts_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288852/artifacts",
+        "cancel_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288852/cancel",
+        "rerun_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288852/rerun",
+        "previous_attempt_url": null,
+        "workflow_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/workflows/386979292",
+        "head_commit": {
+          "id": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "tree_id": "44363e4c2920150134e7651320045b811c02f0f8",
+          "message": "fix: stabilize Android 10 cold boot before full device tests",
+          "timestamp": "2026-10-25T07:50:13Z",
+          "author": {
+            "name": "Tsenjii",
+            "email": "b310103@gm.tnfsh.tn.edu.tw"
+          },
+          "committer": {
+            "name": "Tsenjii",
+            "email": "b310103@gm.tnfsh.tn.edu.tw"
+          }
+        },
+        "repository": {
+          "id": 1415404214,
+          "node_id": "R_kgDOVF1atg",
+          "name": "ModelAtlas-2",
+          "full_name": "Tsenjii/ModelAtlas-2",
+          "private": false,
+          "owner": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+          "description": null,
+          "fork": false,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+          "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+          "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+          "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+          "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+          "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+          "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+          "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+          "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+          "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+          "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+          "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+          "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+          "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+          "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+          "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+          "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+          "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+          "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+          "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+          "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+          "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+          "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+          "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+          "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+          "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+          "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+          "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+          "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+          "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+          "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+          "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+          "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+          "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+        },
+        "head_repository": {
+          "id": 1415404214,
+          "node_id": "R_kgDOVF1atg",
+          "name": "ModelAtlas-2",
+          "full_name": "Tsenjii/ModelAtlas-2",
+          "private": false,
+          "owner": {
+            "login": "Tsenjii",
+            "id": 314288148,
+            "node_id": "U_kgDOEruoFA",
+            "avatar_url": "https://avatars.githubusercontent.com/u/314288148?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/Tsenjii",
+            "html_url": "https://github.com/Tsenjii",
+            "followers_url": "https://api.github.com/users/Tsenjii/followers",
+            "following_url": "https://api.github.com/users/Tsenjii/following{/other_user}",
+            "gists_url": "https://api.github.com/users/Tsenjii/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/Tsenjii/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/Tsenjii/subscriptions",
+            "organizations_url": "https://api.github.com/users/Tsenjii/orgs",
+            "repos_url": "https://api.github.com/users/Tsenjii/repos",
+            "events_url": "https://api.github.com/users/Tsenjii/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/Tsenjii/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2",
+          "description": null,
+          "fork": false,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2",
+          "forks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/forks",
+          "keys_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/keys{/key_id}",
+          "collaborators_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/collaborators{/collaborator}",
+          "teams_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/teams",
+          "hooks_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/hooks",
+          "issue_events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/events{/number}",
+          "events_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/events",
+          "assignees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/assignees{/user}",
+          "branches_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/branches{/branch}",
+          "tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/tags",
+          "blobs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/blobs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/tags{/sha}",
+          "git_refs_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/refs{/sha}",
+          "trees_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/trees{/sha}",
+          "statuses_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/statuses/{sha}",
+          "languages_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/languages",
+          "stargazers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/stargazers",
+          "contributors_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contributors",
+          "subscribers_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscribers",
+          "subscription_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/subscription",
+          "commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/commits{/sha}",
+          "git_commits_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/git/commits{/sha}",
+          "comments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/comments{/number}",
+          "issue_comment_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues/comments{/number}",
+          "contents_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/contents/{+path}",
+          "compare_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/compare/{base}...{head}",
+          "merges_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/merges",
+          "archive_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/{archive_format}{/ref}",
+          "downloads_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/downloads",
+          "issues_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/issues{/number}",
+          "pulls_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/pulls{/number}",
+          "milestones_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/notifications{?since,all,participating}",
+          "labels_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/labels{/name}",
+          "releases_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/releases{/id}",
+          "deployments_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/deployments"
+        }
+      },
+      "jobs": [
+        {
+          "id": 121111524822,
+          "run_id": 40174288852,
+          "workflow_name": "macOS Native App",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288852",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcMs811g",
+          "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121111524822",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288852/job/121111524822",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-25T07:50:20Z",
+          "started_at": "2026-10-25T07:50:24Z",
+          "completed_at": "2026-10-25T07:57:53Z",
+          "name": "macos-build",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T07:50:26Z",
+              "completed_at": "2026-10-25T07:50:28Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T07:50:28Z",
+              "completed_at": "2026-10-25T07:50:31Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T07:50:31Z",
+              "completed_at": "2026-10-25T07:50:59Z"
+            },
+            {
+              "name": "Build universal native app and disk image",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T07:50:59Z",
+              "completed_at": "2026-10-25T07:57:44Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T07:57:44Z",
+              "completed_at": "2026-10-25T07:57:47Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9,
+              "started_at": "2026-10-25T07:57:47Z",
+              "completed_at": "2026-10-25T07:57:48Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10,
+              "started_at": "2026-10-25T07:57:48Z",
+              "completed_at": "2026-10-25T07:57:48Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-25T07:57:48Z",
+              "completed_at": "2026-10-25T07:57:49Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121111524822",
+          "labels": [
+            "macos-15"
+          ],
+          "runner_id": 1000004589,
+          "runner_name": "GitHub Actions 1000004589",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121112962736,
+          "run_id": 40174288852,
+          "workflow_name": "macOS Native App",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288852",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcMuUmsA",
+          "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121112962736",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288852/job/121112962736",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-25T07:57:53Z",
+          "started_at": "2026-10-25T07:57:56Z",
+          "completed_at": "2026-10-25T08:02:58Z",
+          "name": "macos-test (macos-15, arm64)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T07:57:57Z",
+              "completed_at": "2026-10-25T07:57:59Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T07:57:59Z",
+              "completed_at": "2026-10-25T07:58:02Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T07:58:02Z",
+              "completed_at": "2026-10-25T07:58:23Z"
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T07:58:23Z",
+              "completed_at": "2026-10-25T07:58:29Z"
+            },
+            {
+              "name": "Test the same signed universal artifact on this architecture",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T07:58:29Z",
+              "completed_at": "2026-10-25T08:02:47Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-25T08:02:47Z",
+              "completed_at": "2026-10-25T08:02:50Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-25T08:02:50Z",
+              "completed_at": "2026-10-25T08:02:51Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-10-25T08:02:51Z",
+              "completed_at": "2026-10-25T08:02:51Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-10-25T08:02:51Z",
+              "completed_at": "2026-10-25T08:02:53Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121112962736",
+          "labels": [
+            "macos-15"
+          ],
+          "runner_id": 1000004597,
+          "runner_name": "GitHub Actions 1000004597",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        },
+        {
+          "id": 121112962787,
+          "run_id": 40174288852,
+          "workflow_name": "macOS Native App",
+          "head_branch": "feature/vps-rebuild-20261014",
+          "run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/runs/40174288852",
+          "run_attempt": 1,
+          "node_id": "CR_kwDOVF1ats8AAAAcMuUm4w",
+          "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa",
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/jobs/121112962787",
+          "html_url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/40174288852/job/121112962787",
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-25T07:57:53Z",
+          "started_at": "2026-10-25T07:57:55Z",
+          "completed_at": "2026-10-25T08:06:00Z",
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1,
+              "started_at": "2026-10-25T07:57:56Z",
+              "completed_at": "2026-10-25T07:57:58Z"
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2,
+              "started_at": "2026-10-25T07:57:58Z",
+              "completed_at": "2026-10-25T07:58:01Z"
+            },
+            {
+              "name": "Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3,
+              "started_at": "2026-10-25T07:58:01Z",
+              "completed_at": "2026-10-25T07:58:33Z"
+            },
+            {
+              "name": "Run actions/download-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4,
+              "started_at": "2026-10-25T07:58:33Z",
+              "completed_at": "2026-10-25T07:58:37Z"
+            },
+            {
+              "name": "Test the same signed universal artifact on this architecture",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5,
+              "started_at": "2026-10-25T07:58:37Z",
+              "completed_at": "2026-10-25T08:05:49Z"
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6,
+              "started_at": "2026-10-25T08:05:49Z",
+              "completed_at": "2026-10-25T08:05:52Z"
+            },
+            {
+              "name": "Post Run actions/setup-go@v5",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11,
+              "started_at": "2026-10-25T08:05:52Z",
+              "completed_at": "2026-10-25T08:05:52Z"
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12,
+              "started_at": "2026-10-25T08:05:52Z",
+              "completed_at": "2026-10-25T08:05:54Z"
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13,
+              "started_at": "2026-10-25T08:05:54Z",
+              "completed_at": "2026-10-25T08:05:54Z"
+            }
+          ],
+          "check_run_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/check-runs/121112962787",
+          "labels": [
+            "macos-15-intel"
+          ],
+          "runner_id": 1000004598,
+          "runner_name": "GitHub Actions 1000004598",
+          "runner_group_id": 0,
+          "runner_group_name": "GitHub Actions"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": 12591583197,
+          "node_id": "MDg6QXJ0aWZhY3QxMjU5MTU4MzE5Nw==",
+          "name": "ModelAtlas-macOS-QA-arm64",
+          "size_in_bytes": 5398383,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591583197",
+          "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591583197/zip",
+          "expired": false,
+          "digest": "sha256:db51b857000aeb60c1c8cbc0e9689551e02be3806a1f1fda6d73a6fb64c75aec",
+          "created_at": "2026-10-25T08:02:51Z",
+          "updated_at": "2026-10-25T08:02:51Z",
+          "expires_at": "2027-01-23T07:50:20Z",
+          "workflow_run": {
+            "id": 40174288852,
+            "repository_id": 1415404214,
+            "head_repository_id": 1415404214,
+            "head_branch": "feature/vps-rebuild-20261014",
+            "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa"
+          }
+        },
+        {
+          "id": 12591493777,
+          "node_id": "MDg6QXJ0aWZhY3QxMjU5MTQ5Mzc3Nw==",
+          "name": "ModelAtlas-macOS-QA-x86_64",
+          "size_in_bytes": 5542214,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591493777",
+          "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591493777/zip",
+          "expired": false,
+          "digest": "sha256:d3e12fd505ceb06d2bdfd76d0a2f5bd7c6dd0f0f779c63c2120f2569eb1aceb6",
+          "created_at": "2026-10-25T08:05:52Z",
+          "updated_at": "2026-10-25T08:05:52Z",
+          "expires_at": "2027-01-23T07:50:20Z",
+          "workflow_run": {
+            "id": 40174288852,
+            "repository_id": 1415404214,
+            "head_repository_id": 1415404214,
+            "head_branch": "feature/vps-rebuild-20261014",
+            "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa"
+          }
+        },
+        {
+          "id": 12591417891,
+          "node_id": "MDg6QXJ0aWZhY3QxMjU5MTQxNzg5MQ==",
+          "name": "ModelAtlas-macOS-Universal",
+          "size_in_bytes": 42297160,
+          "url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591417891",
+          "archive_download_url": "https://api.github.com/repos/Tsenjii/ModelAtlas-2/actions/artifacts/12591417891/zip",
+          "expired": false,
+          "digest": "sha256:4be95c75995e1e546d84ef24958092e04c9f7ea690b146dca9d0e3c9e8aebbbe",
+          "created_at": "2026-10-25T07:57:47Z",
+          "updated_at": "2026-10-25T07:57:47Z",
+          "expires_at": "2027-01-23T07:50:20Z",
+          "workflow_run": {
+            "id": 40174288852,
+            "repository_id": 1415404214,
+            "head_repository_id": 1415404214,
+            "head_branch": "feature/vps-rebuild-20261014",
+            "head_sha": "cfbce684d3f812697a87ea3d4ed4679a7b6c4faa"
+          }
+        }
+      ]
+    }
+  ],
+  "whole_next_release": "PARTIAL"
+}
+

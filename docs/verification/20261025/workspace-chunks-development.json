@@ -1,0 +1,67 @@
+{
+  "slice": "WORKSPACE-CHUNKS-015P",
+  "status": "INTEGRATED_CANDIDATE_NOT_ACCEPTED",
+  "parent_source": "73baf3b1087bd7d24ec1fa217084740264164945",
+  "whole_next_release": "PARTIAL",
+  "local_first_full_go": {
+    "scope": "before subsequent preference, administration, preview and browser additions",
+    "registry": 402,
+    "events": 595,
+    "pass": 548,
+    "skip": 47,
+    "seconds": 341.43,
+    "deadline": 600,
+    "accepted_original_events_preserved": 586
+  },
+  "local_focused_backend": {
+    "seconds": 45.835,
+    "race": true
+  },
+  "local_browser": {
+    "seconds": 11.246,
+    "race": true,
+    "new_pngs": 8,
+    "actual_transfer_bytes": "1 MiB retained message; transport max not inferred from UI test",
+    "original_case_preserved": "TestBrowserWorkspaceSyncWorkflow",
+    "visual_refinement_seconds": 13.186,
+    "visual_review": "8 views reviewed; intentional pause localized as a normal retained-progress state; waiting result is not shown as zero-sized result"
+  },
+  "local_android": {
+    "core_tests": 591,
+    "app_tests": 423,
+    "debug_apk": true,
+    "android_test_apk": true,
+    "last_build_seconds": 143,
+    "instrumentation": "11 new cases compiled; actual device execution pending"
+  },
+  "preserved_negative": {
+    "original_browser_test_failure": "Selected remote name remained local while prior sync was finishing; original assertion unchanged",
+    "fix": "Confirmed follow-up sync is coalesced and queued after active task; pending UI state stays until it completes",
+    "first_local_fixture_corrections": [
+      "Non-200 test helper had incorrectly attempted JSON error-body decode",
+      "Synthetic secret test used incomplete credential composite ID; exact expected key set corrected"
+    ],
+    "schema_fixture_correction": "Original mapping backup glob hardcoded target36; now uses current schemaVersion, preserving exact backup and product assertions"
+  },
+  "acceptance_pending": [
+    "final exact-source nine required jobs",
+    "all nine actual ZIP byte verification",
+    "actual API29 ART512MiB full original and new instrumentation",
+    "actual Mac native build and new UI review",
+    "final full Go and all 41 Browser workloads at unchanged deadlines"
+  ],
+  "expected_final_inventory": {
+    "go_registered": 407,
+    "go_terminal_events": 603,
+    "go_pass": 555,
+    "go_opt_in_skip": 48,
+    "browser": 41,
+    "browser_png": 509,
+    "core_jvm": 591,
+    "app_jvm": 423,
+    "device": 996,
+    "original_device_skip": 5,
+    "mac_core_each": 85,
+    "mac_png_each": 92
+  }
+}

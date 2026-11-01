@@ -1,0 +1,70 @@
+{
+  "source": "3691e4ecf73ed35363b6a0302cec36b237dd538a",
+  "tree": "ec5d9cabdec5dce0fde1e840501eb863721dc2df",
+  "status": "REJECTED_PREINSTRUMENTATION_INFRASTRUCTURE",
+  "run": 40254207019,
+  "job": 121352711829,
+  "device_cases_executed": false,
+  "artifact_metadata_observed": [],
+  "diagnostics": [
+    "2026-10-26T01:29:08.5544244Z INFO         |   qemu.dalvik.vm.heapsize=512m",
+    "2026-10-26T01:29:17.9610171Z adb: device offline",
+    "2026-10-26T01:29:25.4891303Z WARNING      | adb command '/usr/local/lib/android/sdk/platform-tools/adb -s emulator-5554 shell settings put system screen_off_timeout 2147483647 ' failed: 'adb: device 'emulator-5554' not found'",
+    "2026-10-26T01:29:25.9696176Z     raise RuntimeError(\"Expected one API 29 zygote64\")",
+    "2026-10-26T01:29:25.9696666Z RuntimeError: Expected one API 29 zygote64"
+  ],
+  "interpretation": "實際錯誤發生於prepare讀取初始zygote64。舊錯誤未保存PID值，不能斷言是缺少或多個PID；同時間有adbd／device unavailable紀錄。不代表近64MiB案例已通過或失敗。",
+  "fix": "在原共用90秒預檢deadline內等待唯一初始PID，再保留原唯一新PID／boot完成／package manager／512MiB配置與真ART start+finish證據；只重啟framework一次、不重試案例、不變更VM屬性；預檢失敗也保存明確FAIL artifact。",
+  "additional_browser_review": {
+    "source": "3691e4ecf73ed35363b6a0302cec36b237dd538a",
+    "artifact_id": 12622340501,
+    "bytes": 39288693,
+    "actual_sha256": "94d9ff4e519861d6df3b5997ad8acfffac553f8ce6c1a9e3b013a8ef4c38fa80",
+    "zip_crc": "PASS",
+    "png_count": 509,
+    "reviewed_workspace_views": 8,
+    "finding": "暫停提示與正在上傳phase同時出現，修後三端改顯示傳輸進度已保存；Browser追加暫停後不得宣告上傳／接收的斷言，原8圖／全部流程保留。",
+    "final_source_visual_verification": "仍待修後來源自己的完整九項及20視圖"
+  },
+  "local_verification": {
+    "release_regressions": 41,
+    "original_release_regressions_preserved": 39,
+    "before_fix_controlled_preflight_cases": {
+      "count": 2,
+      "expected_exit": 1
+    },
+    "core_cases": 594,
+    "app_jvm_cases": 423,
+    "debug_and_android_test_apks": "BUILD_SUCCESSFUL_7m11s",
+    "bounded_json": {
+      "encoded_bytes": 67107985,
+      "allocated_bytes": 484184,
+      "max_utf8_write_bytes": 8192,
+      "measurement": "HotSpot17 thread-allocated bytes in core JVM test; not ART runtime evidence"
+    }
+  },
+  "additional_macos_arm_review": {
+    "source": "3691e4ecf73ed35363b6a0302cec36b237dd538a",
+    "build_job": 121352781685,
+    "arm_job": 121354292146,
+    "artifact_id": 12622635468,
+    "bytes": 5567468,
+    "actual_sha256": "f4020e1a8903857b35f1233a7d6596ebee2806cd04bb48b8a1c4820022bf07fc",
+    "zip_crc": "PASS",
+    "png_count": 96,
+    "native_smoke": 25,
+    "native_parity": 57,
+    "motion": 14,
+    "workspace_transfer_controls": true,
+    "reviewed_transfer_views": 4,
+    "finding": "真按暫停／Keychain及引擎重啟／原ID恢復已通過；paused畫面也有正在上傳phase，修後一致改為進度已保存。尚不是修後來源實圖驗收。",
+    "parity_footprint": {
+      "app_rss_bytes": 199933952,
+      "engine_rss_bytes": 37781504,
+      "combined_including_all_owned_engines_rss_bytes": 286736384,
+      "additional_fixture_rss_bytes": 58589184,
+      "samples": 233
+    },
+    "artifact_manifest_fix": "新增workspace-transfer diagnostics與全部受測PID清單進原QA附件，不包含產品DB或秘密。"
+  }
+}

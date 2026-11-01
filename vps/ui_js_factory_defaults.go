@@ -1,0 +1,14 @@
+package main
+
+const jsFactoryDefaults = `
+let factoryKiloInfo=null,factoryKiloBusy=false,factoryKiloReadRequired=false,factoryKiloSerial=0;
+function factoryKiloChatError(message=''){let p=$('factory-kilo-problem');if(!p){p=el('p',undefined,'error section-description');p.id='factory-kilo-problem';p.setAttribute('role','alert');p.style.margin='6px 12px';$('factory-kilo-notice').after(p);}p.textContent=message;p.dataset.scope=$('target').value;p.hidden=!message;}
+const factoryKiloNotice='Kilo免Key來源可能保存對話並用於改善模型；請勿輸入個人或機密資料。預載資料不是實測，送出前會核對公開目錄。';
+function renderFactoryKiloNotice(){let p=$('factory-kilo-notice');if(!p){p=el('details',undefined,'section-description');p.id='factory-kilo-notice';p.style.margin='6px 12px';p.append(el('summary','Kilo免Key · 請勿輸入機密資料'),el('p',factoryKiloNotice));$('chat-ui').prepend(p);}p.hidden=!$('target').value||JSON.parse($('target').value).provider_id!=='builtin-kilo-anonymous';const error=$('factory-kilo-problem');if(error)error.hidden=!error.textContent||error.dataset.scope!==$('target').value;}
+function renderFactoryDefaults(){const box=$('factory-kilo-card');if(!box)return;box.replaceChildren();box.append(el('h2','Kilo 免Key預設模型'),el('p','加入預載的公開模型與匿名連線；不自動聊天，也不更動原有帳戶、偏好與已移除模型。','section-description'));if(factoryKiloInfo)box.append(el('p',factoryKiloInfo.model_count+' 個預載模型 · 來源時間 '+new Date(factoryKiloInfo.observed_at).toLocaleDateString()));box.append(el('p',factoryKiloNotice,'section-description'));
+ const add=action(box,factoryKiloInfo?.installed?'已加入Kilo預設模型':'加入Kilo免費預設',async()=>{if(factoryKiloBusy||factoryKiloReadRequired||!factoryKiloInfo||factoryKiloInfo.installed)return;factoryKiloBusy=true;renderFactoryDefaults();try{await submit('/defaults/kilo',{confirm:true});await loadFactoryDefaults();if(factoryKiloReadRequired)throw Error('無法讀取已保存狀態');await refresh();notice('Kilo預設模型已加入，沒有自動發送聊天');}catch(e){factoryKiloReadRequired=true;}finally{factoryKiloBusy=false;renderFactoryDefaults();}},false);add.disabled=factoryKiloBusy||factoryKiloReadRequired||!factoryKiloInfo||factoryKiloInfo.installed;
+ if(factoryKiloReadRequired)box.append(el('p','請先讀取已保存狀態，避免重複加入。','error'));const retry=action(box,'重新讀取預設資料',async()=>{await loadFactoryDefaults(true);});retry.disabled=factoryKiloBusy;
+}
+async function loadFactoryDefaults(refreshSavedWorkspace=false){if(!$('factory-kilo-card'))return;const ticket=++factoryKiloSerial;try{const value=await api('/defaults');if(ticket!==factoryKiloSerial)return;factoryKiloInfo=value;if(refreshSavedWorkspace)await refresh();if(ticket!==factoryKiloSerial)return;factoryKiloReadRequired=false;renderFactoryDefaults();}catch(e){if(ticket===factoryKiloSerial){factoryKiloReadRequired=true;renderFactoryDefaults();}}}
+function bindFactoryDefaults(){const box=el('section',undefined,'card');box.id='factory-kilo-card';$('settings-general').append(box);renderFactoryDefaults();}
+`

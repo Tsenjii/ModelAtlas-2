@@ -1,0 +1,18 @@
+{
+  "status": "REJECTED_DIAGNOSTIC",
+  "slice": "VPS-CONVERSATIONS-019",
+  "source": "63000f80b313bdb0f8c890b6da165efa9672d1c5",
+  "run": 41186258655,
+  "job": 124493678778,
+  "seconds": 4.49,
+  "failure": "新觸控幾何測試量到checkbox內框20px，而實際可點label為48px；原讀取失敗保留1列的反例已先通過，其他新情境尚未跑完。",
+  "correction": "量測原生label實際點擊範圍，仍要求至少48px，並在20px內框以外實際點擊label兩次確認切換，沒有降低尺寸斷言。",
+  "additional_review": "Aqua改經實際設定介面選擇風格／背景並等待CSS與原圖解碼；不以只寫DOM屬性冒充真Aqua。置頂圖示補可讀標籤，搜尋不在晚完成時搶回焦點，衝突改用真正第二個分頁操作。",
+  "artifact": {
+    "id": 13037110804,
+    "bytes": 322569,
+    "sha256": "c259c0c1e311be376aec295527b7aab007fe0ba8a10c65c93b9c6d32a8d6512c",
+    "crc": "PASS"
+  },
+  "scope_limits": "修正來源必須重新跑實際Browser；前版未接受。"
+}

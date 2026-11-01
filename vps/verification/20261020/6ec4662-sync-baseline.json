@@ -1,0 +1,71 @@
+{
+  "code_sha": "6ec46624f51e4bc4562e9decdff985eb876ead60",
+  "tree_sha": "ad35c5b09eb31b3cb5aba328185ba11a6322dca2",
+  "verified_at": "2026-10-20T10:05:51.710408+00:00",
+  "slice": "SYNC-001",
+  "status": "VPS／Android 同 SHA 六項成功；Mac 整合候選另驗；完整願望清單仍待完成",
+  "workflows": {
+    "vps": {
+      "run": 39403490771,
+      "jobs": {
+        "test": 118563698302,
+        "browser": 118563699126,
+        "linux_arm64": 118563698770,
+        "linux_amd64": 118563698787
+      },
+      "result": "SUCCESS"
+    },
+    "android": {
+      "run": 39403490790,
+      "jobs": {
+        "build": 118563699088,
+        "device_tests": 118563698831
+      },
+      "result": "SUCCESS",
+      "tests": 973,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5,
+      "skip_reason": "既有 API 29 通知權限條件"
+    }
+  },
+  "native_cross_runtime": {
+    "production": "DeviceWorkspaceSync／Room／Keystore ↔ 真 Go HTTPS 引擎",
+    "duration_seconds": 4.766,
+    "cases": [
+      "中心→Android 與 Android→中心→第二台 Android",
+      "目的端重新加密與原始 Offering／Availability ID",
+      "4 MiB 歷史與超出 CursorWindow 的 Unicode 保留",
+      "離線衝突及明確採用中心",
+      "裝置撤銷後模型／Key 留存",
+      "同名 Key 的跨帳號／origin 隔離",
+      "匿名連線與逐 scope 刪除不影響另一帳號"
+    ]
+  },
+  "browser": {
+    "flows": 21,
+    "screenshots": 288,
+    "artifact_id": 12255452762,
+    "zip_sha256": "a8d60a7f01f769f849f3e673ce6132ffb131608ba1ce41fa5da6c0fdcba10900",
+    "new_sync_screenshots_reviewed": 7,
+    "coverage": "320／375px、深淺色、200% 字級、48px 控制、真 TLS 配對／衝突／撤銷；原全部流程保留"
+  },
+  "android_report": {
+    "artifact_id": 12255633446,
+    "zip_sha256": "9b3f0179fe6820fac6d59b8d3965d30e360550a1252faadb76f619dac8544085"
+  },
+  "footprint": {
+    "idle_rss_bytes": 23658496,
+    "peak_rss_bytes": 180740096,
+    "warm_rss_bytes": 128389120,
+    "workload": "100000 samples；4 TLS chats＋4×完整31 MiB context；11000則訊息／全量請求匯出；65模型研究／catalog；4×2048²圖片；4×4 MiB PCM→WAV",
+    "scope": "單服務程序，不含 OS／代理／瀏覽器"
+  },
+  "limits": [
+    "無目標 VPS 部署與 Sharp R8s／iPhone／實體 M2 驗收",
+    "Mac 新候選 f0f6e802 的九項與實圖另驗，不借本文件結果",
+    "Android 尚未有同義原生呈現的研究／對話資料完整保存但不冒充既有原生功能",
+    "大於單筆32 MiB傳輸上限的紀錄保留本機，仍待分塊協定",
+    "無獨立外部 reviewer；Part V 排程／未知站點／Reflection／authenticity 各自仍 OPEN"
+  ]
+}

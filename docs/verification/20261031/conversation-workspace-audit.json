@@ -1,0 +1,2195 @@
+{
+  "status": "BYTE_AUDIT_PASS_PENDING_VISUAL_REVIEW",
+  "slice": "VPS-CONVERSATIONS-019",
+  "source": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+  "tree": "9f5f46add8b30303b3fe63275629b90fae77b5f2",
+  "checks": {
+    ".github/workflows/vps.yml": {
+      "id": 41187695485,
+      "attempt": 1,
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/41187695485",
+      "jobs": [
+        {
+          "id": 124498140952,
+          "name": "vps-browser",
+          "conclusion": "success",
+          "run_id": 41187695485,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:13:20Z",
+          "completed_at": "2026-10-31T09:17:38Z"
+        },
+        {
+          "id": 124498141016,
+          "name": "vps-linux-amd64",
+          "conclusion": "success",
+          "run_id": 41187695485,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:13:20Z",
+          "completed_at": "2026-10-31T09:14:28Z"
+        },
+        {
+          "id": 124498140979,
+          "name": "vps-linux-arm64",
+          "conclusion": "success",
+          "run_id": 41187695485,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:13:20Z",
+          "completed_at": "2026-10-31T09:14:36Z"
+        },
+        {
+          "id": 124498141014,
+          "name": "vps-portable-amd64",
+          "conclusion": "success",
+          "run_id": 41187695485,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:13:20Z",
+          "completed_at": "2026-10-31T09:17:53Z"
+        },
+        {
+          "id": 124498140824,
+          "name": "vps-portable-arm64",
+          "conclusion": "success",
+          "run_id": 41187695485,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:13:22Z",
+          "completed_at": "2026-10-31T09:17:18Z"
+        },
+        {
+          "id": 124498141011,
+          "name": "vps-test",
+          "conclusion": "success",
+          "run_id": 41187695485,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:13:20Z",
+          "completed_at": "2026-10-31T09:23:54Z"
+        }
+      ]
+    },
+    ".github/workflows/android.yml": {
+      "id": 41187695541,
+      "attempt": 1,
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/41187695541",
+      "jobs": [
+        {
+          "id": 124498138517,
+          "name": "build",
+          "conclusion": "success",
+          "run_id": 41187695541,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:13:19Z",
+          "completed_at": "2026-10-31T09:17:07Z"
+        },
+        {
+          "id": 124498138769,
+          "name": "device-tests",
+          "conclusion": "success",
+          "run_id": 41187695541,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:13:19Z",
+          "completed_at": "2026-10-31T09:28:11Z"
+        }
+      ]
+    },
+    ".github/workflows/macos-native.yml": {
+      "id": 41187695639,
+      "attempt": 1,
+      "url": "https://github.com/Tsenjii/ModelAtlas-2/actions/runs/41187695639",
+      "jobs": [
+        {
+          "id": 124498148212,
+          "name": "macos-build",
+          "conclusion": "success",
+          "run_id": 41187695639,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:13:23Z",
+          "completed_at": "2026-10-31T09:20:45Z"
+        },
+        {
+          "id": 124499678687,
+          "name": "macos-test (macos-15, arm64)",
+          "conclusion": "success",
+          "run_id": 41187695639,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:20:48Z",
+          "completed_at": "2026-10-31T09:25:29Z"
+        },
+        {
+          "id": 124499678696,
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "conclusion": "success",
+          "run_id": 41187695639,
+          "head_sha": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+          "started_at": "2026-10-31T09:20:50Z",
+          "completed_at": "2026-10-31T09:28:18Z"
+        }
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "name": "modelatlas-vps-linux-amd64",
+      "id": 13038090608,
+      "digest": "sha256:46a062647e6c7f5d85125ae27a0f5642051f8b261fd38e6ee1c85706e45a1924",
+      "run_id": 41187695485,
+      "producer_job_id": 124498141016,
+      "producer_job_name": "vps-linux-amd64",
+      "created_at": "2026-10-31T09:14:25Z"
+    },
+    {
+      "name": "modelatlas-vps-linux-arm64",
+      "id": 13037572266,
+      "digest": "sha256:1631b08051fa8a9c96b6042d982f4b6bee88be105604260c987cab235f9eeff6",
+      "run_id": 41187695485,
+      "producer_job_id": 124498140979,
+      "producer_job_name": "vps-linux-arm64",
+      "created_at": "2026-10-31T09:14:32Z"
+    },
+    {
+      "name": "modelatlas-vps-footprint",
+      "id": 13037786729,
+      "digest": "sha256:b56c5b87178dbe4c7d0e1baf07b7b94d054dc11ac05453bbe3f9fbe83f26bcad",
+      "run_id": 41187695485,
+      "producer_job_id": 124498141011,
+      "producer_job_name": "vps-test",
+      "created_at": "2026-10-31T09:23:46Z"
+    },
+    {
+      "name": "modelatlas-vps-browser",
+      "id": 13037876967,
+      "digest": "sha256:5ab1725c24e989d9173fb12c50fc0da2df73fe3cfe4c096e0861da7744ca1003",
+      "run_id": 41187695485,
+      "producer_job_id": 124498140952,
+      "producer_job_name": "vps-browser",
+      "created_at": "2026-10-31T09:17:35Z"
+    },
+    {
+      "name": "modelatlas-vps-portable-amd64",
+      "id": 13037807144,
+      "digest": "sha256:544be609ba843a47505b7b3456242727e3e79f095023e726c7a287e426b49cf0",
+      "run_id": 41187695485,
+      "producer_job_id": 124498141014,
+      "producer_job_name": "vps-portable-amd64",
+      "created_at": "2026-10-31T09:17:49Z"
+    },
+    {
+      "name": "modelatlas-vps-portable-arm64",
+      "id": 13037378027,
+      "digest": "sha256:3e0bc042aadea4dc8cf76b16f5a0e292ea58a918871cf3163521f4255f4d9e36",
+      "run_id": 41187695485,
+      "producer_job_id": 124498140824,
+      "producer_job_name": "vps-portable-arm64",
+      "created_at": "2026-10-31T09:17:15Z"
+    },
+    {
+      "name": "modelatlas-debug-and-reports",
+      "id": 13037776203,
+      "digest": "sha256:35b0827ac32d06684a23bfc5aa5760a65df6401d6d938f52e9cf2f43b78f65aa",
+      "run_id": 41187695541,
+      "producer_job_id": 124498138517,
+      "producer_job_name": "build",
+      "created_at": "2026-10-31T09:17:03Z"
+    },
+    {
+      "name": "modelatlas-device-test-reports",
+      "id": 13038245062,
+      "digest": "sha256:4a8c4b92512c3dc4eb255a2e6bcf734c7d2ba6393732239e7824092fa553c63e",
+      "run_id": 41187695541,
+      "producer_job_id": 124498138769,
+      "producer_job_name": "device-tests",
+      "created_at": "2026-10-31T09:28:08Z"
+    },
+    {
+      "name": "ModelAtlas-macOS-Universal",
+      "id": 13037154006,
+      "digest": "sha256:a319a1c9e89c22841e005e8304119d06fc07a566de909a22e592c90044022a00",
+      "run_id": 41187695639,
+      "producer_job_id": 124498148212,
+      "producer_job_name": "macos-build",
+      "created_at": "2026-10-31T09:20:39Z"
+    },
+    {
+      "name": "ModelAtlas-macOS-QA-arm64",
+      "id": 13037254340,
+      "digest": "sha256:f2799a4cdc4635f46052d4767e16284ace1ee0619582300c5db8b2ecd40237bb",
+      "run_id": 41187695639,
+      "producer_job_id": 124499678687,
+      "producer_job_name": "macos-test (macos-15, arm64)",
+      "created_at": "2026-10-31T09:25:23Z"
+    },
+    {
+      "name": "ModelAtlas-macOS-QA-x86_64",
+      "id": 13037414197,
+      "digest": "sha256:64c9dd502efb63a5e47279b596f098c708319bf04046ef4d0aeab2dee4890fca",
+      "run_id": 41187695639,
+      "producer_job_id": 124499678696,
+      "producer_job_name": "macos-test (macos-15-intel, x86_64)",
+      "created_at": "2026-10-31T09:28:12Z"
+    }
+  ],
+  "whole_next_release": "PARTIAL",
+  "browser_images": {
+    "count": 580,
+    "preserved": 509,
+    "added": [
+      "aqua-background-elaina-390-light.png",
+      "aqua-background-elaina-chibi-390-dark.png",
+      "aqua-background-kotoha-390-light.png",
+      "aqua-background-kotoha-chibi-1280-light.png",
+      "aqua-model-detail-390-dark.png",
+      "aqua-models-1280-light.png",
+      "aqua-models-320-200-dark.png",
+      "aqua-offline-390-light.png",
+      "aqua-offline-draft-390-light.png",
+      "aqua-playground-1280-light.png",
+      "aqua-playground-390-light.png",
+      "aqua-playground-390-saved.png",
+      "aqua-playground-812-safe-dark.png",
+      "aqua-provider-editor-375-200-light.png",
+      "aqua-providers-390-light.png",
+      "aqua-settings-390-dark.png",
+      "assistant-mapping-active-375-dark.png",
+      "assistant-mapping-agent-375-light.png",
+      "assistant-mapping-fields-1280-light.png",
+      "assistant-mapping-review-320-200-dark.png",
+      "assistant-mapping-review-375-light.png",
+      "assistant-mapping-undo-1280-dark.png",
+      "cloud-backup-history-375-light.png",
+      "cloud-backup-last-good-375-light.png",
+      "cloud-backup-lost-ack-320-200-light.png",
+      "cloud-backup-ready-1280-light.png",
+      "cloud-backup-running-375-dark.png",
+      "cloud-backup-saved-read-recovery-375-dark.png",
+      "cloud-backup-schedule-320-200-dark.png",
+      "cloud-backup-unconfigured-375-light.png",
+      "cloud-backup-verified-1280-dark.png",
+      "connector-private-mapping-draft-1280-dark.png",
+      "connector-private-mapping-draft-1280-light.png",
+      "connector-private-mapping-draft-320-dark.png",
+      "connector-private-mapping-draft-320-light.png",
+      "connector-private-mapping-draft-375-dark.png",
+      "connector-private-mapping-draft-375-light.png",
+      "connector-private-mapping-fields-320-dark.png",
+      "connector-private-mapping-fields-375-large-dark.png",
+      "connector-private-mapping-group-375-light.png",
+      "connector-private-mapping-pat-account-375-light.png",
+      "connector-private-mapping-pat-draft-1280-dark.png",
+      "connector-private-mapping-pat-undo-375-dark.png",
+      "connector-private-mapping-runtime-last-good-1280-dark.png",
+      "connector-private-mapping-source-375-light.png",
+      "conversation-workspace-1280-light.png",
+      "conversation-workspace-320-large-aqua.png",
+      "conversation-workspace-320-large-dark.png",
+      "conversation-workspace-375-dark.png",
+      "conversation-workspace-375-light.png",
+      "conversation-workspace-draft-recovery-375-dark.png",
+      "conversation-workspace-read-recovery-375-dark.png",
+      "conversation-workspace-write-uncertain-375-dark.png",
+      "knowledge-evaluation-cost-375-200-light.png",
+      "research-execution-1280-dark.png",
+      "research-execution-320-200-dark.png",
+      "research-execution-375-last-good.png",
+      "research-execution-375-light.png",
+      "research-history-detail-375-200-dark.png",
+      "research-history-detail-390-dark.png",
+      "research-history-last-good-390-dark.png",
+      "research-history-list-1280-light.png",
+      "research-history-list-320-200-dark.png",
+      "research-history-list-390-light.png",
+      "research-history-lost-ack-390-light.png",
+      "research-history-read-recovered-390-light.png",
+      "research-history-scope-1280-light.png",
+      "research-history-scope-recovery-390-dark.png",
+      "research-query-cost-1280-dark.png",
+      "research-query-cost-320-200-dark.png",
+      "research-query-cost-375-light.png"
+    ]
+  },
+  "footprint": {
+    "binary_bytes": 20050082,
+    "catalog_http": 4,
+    "chat_peak_bytes": 30429184,
+    "chat_rss_bytes": 30429184,
+    "export_messages": 11000,
+    "export_peak_bytes": 185593856,
+    "export_requests": 100008,
+    "export_rss_bytes": 33345536,
+    "gomemlimit_bytes": 201326592,
+    "idle_rss_bytes": 24961024,
+    "image_peak_bytes": 185593856,
+    "image_pixels_each": 4194304,
+    "image_rss_bytes": 101126144,
+    "long_context_bytes_each": 32505856,
+    "long_context_http": 4,
+    "long_context_peak_bytes": 163188736,
+    "long_context_rss_bytes": 163188736,
+    "media_http": 8,
+    "peak_rss_bytes": 185593856,
+    "profile": "100000 retained samples/full SQL percentiles; 4 TLS chats + 4 simultaneous full 31-MiB contexts; retained 11000-message and full request exports; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each",
+    "research_peak_bytes": 185593856,
+    "research_rss_bytes": 33415168,
+    "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser",
+    "rss_target_bytes": 536870912,
+    "speech_bytes_each": 4194304,
+    "speech_peak_bytes": 185593856,
+    "speech_rss_bytes": 143626240,
+    "sqlite_bytes": 163270656,
+    "warm_rss_bytes": 143626240
+  },
+  "go_suite": {
+    "result": "PASS",
+    "source": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+    "working_tree_dirty": false,
+    "race": true,
+    "suite_deadline_seconds": 600,
+    "started_at": "2026-10-31T09:14:23.495187+00:00",
+    "seconds": 469.821,
+    "package": "github.com/Tsenjii/ModelAtlas-2/vps",
+    "registry_sha256": "76295c6bd1635f619220180ac6c4730d741b1de810154d495dc35bdc57170540"
+  },
+  "async_wait_cases": [
+    "awaits actual async results and keeps only one predicate in flight",
+    "false conditions time out and stop polling after the deadline",
+    "a hung browser Promise is bounded and late resolution cannot repoll",
+    "browser exceptions propagate without waiting for the deadline",
+    "the host deadline works while the page clock is frozen",
+    "closing a page rejects a pending wait and leaves no later poll",
+    "invalid or unbounded timer settings are rejected",
+    "all nineteen original async conditions retain awaited polling"
+  ],
+  "browser_cases": [
+    [
+      "TestBrowserAuthenticityEvidenceReviewAndPersistentUndo",
+      "6.46"
+    ],
+    [
+      "TestBrowserMacAlignmentWorkflow",
+      "11.66"
+    ],
+    [
+      "TestBrowserWorkspaceWorkflow",
+      "18.53"
+    ],
+    [
+      "TestBrowserResearchOriginCooldownWorkflow",
+      "20.06"
+    ],
+    [
+      "TestBrowserWorkspaceChunksResumePauseAndRetainPermanentHistory",
+      "17.76"
+    ],
+    [
+      "TestBrowserWorkspaceSyncWorkflow",
+      "14.58"
+    ],
+    [
+      "TestBrowserSystemStatusWorkflow",
+      "7.90"
+    ],
+    [
+      "TestBrowserWorkspaceRecoveryWorkflow",
+      "9.27"
+    ],
+    [
+      "TestBrowserResearchRetryWorkflow",
+      "16.60"
+    ],
+    [
+      "TestBrowserResearchScheduleWorkflow",
+      "22.04"
+    ],
+    [
+      "TestBrowserReflectionGeneratedQueryPairedTrialWorkflow",
+      "26.68"
+    ],
+    [
+      "TestBrowserSiteRecipePublicEvidenceReviewAtomicUseAndUndo",
+      "24.57"
+    ],
+    [
+      "TestBrowserChatExperienceWorkflow",
+      "11.00"
+    ],
+    [
+      "TestBrowserKnowledgeEvaluationTrialAndPersistentRollback",
+      "8.83"
+    ],
+    [
+      "TestBrowserPrivateResearchScheduleWorkflow",
+      "19.72"
+    ],
+    [
+      "TestBrowserExtractionMeasuredTrialRecoveryMonitoringAndUndo",
+      "12.52"
+    ],
+    [
+      "TestBrowserKiloFactoryAnonymousChatPriceGuardAndExistingWorkspaceRecovery",
+      "21.11"
+    ],
+    [
+      "TestBrowserDetailWorkspaceWorkflow",
+      "15.83"
+    ],
+    [
+      "TestBrowserMacParityWorkflow",
+      "20.95"
+    ],
+    [
+      "TestBrowserConversationCreationWorkflow",
+      "21.94"
+    ],
+    [
+      "TestBrowserConversationsWorkflow",
+      "17.81"
+    ],
+    [
+      "TestBrowserConnectorMappingUnknownFieldsRecoveryRuntimeAndUndo",
+      "14.71"
+    ],
+    [
+      "TestBrowserConnectorPrivateMappingExplicitAuthorityGroupAccountAndUndo",
+      "20.85"
+    ],
+    [
+      "TestBrowserPortableCloudBackupRealWorkflowAndReadRecovery",
+      "13.37"
+    ],
+    [
+      "TestBrowserProviderFormsWorkflow",
+      "12.39"
+    ],
+    [
+      "TestBrowserResearchHistoryArchiveAndExactRecovery",
+      "11.92"
+    ],
+    [
+      "TestBrowserBraveResearchPageRecoveryWorkflow",
+      "14.21"
+    ],
+    [
+      "TestBrowserResearchProgressiveWorkflow",
+      "21.84"
+    ],
+    [
+      "TestBrowserResearchInferenceDailyBudgetWorkflow",
+      "25.19"
+    ],
+    [
+      "TestBrowserAAResearchPageRecoveryWorkflow",
+      "23.17"
+    ],
+    [
+      "TestBrowserModelConnectionsWorkflow",
+      "17.32"
+    ],
+    [
+      "TestBrowserModelViewsWorkflow",
+      "22.56"
+    ],
+    [
+      "TestBrowserRequestReceiptsWorkflow",
+      "12.11"
+    ],
+    [
+      "TestBrowserScopedModelPickerWorkflow",
+      "20.72"
+    ],
+    [
+      "TestBrowserAssistantWorkflow",
+      "11.80"
+    ],
+    [
+      "TestBrowserConnectorDiscoveryReviewAndPersistentRollback",
+      "13.13"
+    ],
+    [
+      "TestBrowserProtocolAndSpeechWorkflow",
+      "12.32"
+    ],
+    [
+      "TestBrowserOriginWorkflow",
+      "13.27"
+    ],
+    [
+      "TestBrowserManagementWorkflow",
+      "14.08"
+    ],
+    [
+      "TestBrowserKnowledgeWorkflow",
+      "12.72"
+    ],
+    [
+      "TestBrowserCatalogExperienceWorkflow",
+      "14.58"
+    ],
+    [
+      "TestBrowserMobileAlignmentWorkflow",
+      "49.01"
+    ],
+    [
+      "TestBrowserResearchWorkflow",
+      "14.73"
+    ],
+    [
+      "TestBrowserAquaInterfaceRealWorkflowAndMobileRecovery",
+      "13.26"
+    ],
+    [
+      "TestBrowserAssistantMappingPublicDraftSharedReviewAndPersistentUndo",
+      "14.63"
+    ],
+    [
+      "TestBrowserProductionWorkflow",
+      "26.85"
+    ]
+  ],
+  "portable_amd64": {
+    "contracts": {
+      "TestPortableOnlineBackupKeepsLiveWriterAndConsistentCompleteHistory": "pass",
+      "TestPortableOnlineBackupRejectsWrongKeysAndNeverOverwritesLastGood": "pass",
+      "TestPortableCloudPolicyCASAndZeroExitNeverPretendVerifiedBackup": "pass",
+      "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed": "pass",
+      "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup": "pass",
+      "TestPortableCloudCommandsRequirePrivateIdentityAndExplicitKeyRecovery": "pass",
+      "TestPortableCloudActualScheduleIdempotenceFetchAndCancellation": "pass",
+      "TestPortableCloudParentCrashStopsOwnedTransferAndRecoversUncertainty": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/plaintext-backend": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-data": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-filenames": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-type": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-remote": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unreadable-encrypted-config": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes": "pass",
+      "TestPortableCloudBackupWithActualCryptAndRecovery": "pass",
+      "TestPortableAssetsRevalidateAcrossBinaryUpgrade": "pass",
+      "TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery": "skip",
+      "TestPortableConfigurationOwnsIdentityWithoutExecutingOrInheritingSecrets": "pass",
+      "TestPortableInitializationPreservesKeysAndRefusesLostOrSharedState": "pass",
+      "TestPortableConcurrentInitializationCannotReplaceConfirmedIdentity": "pass",
+      "TestPortableForegroundUsesRealHTTPSAPIAndKeepsVaultAcrossRestart": "pass"
+    },
+    "container_contracts": {
+      "TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery": "pass"
+    },
+    "container": {
+      "actual_crypt_readback": true,
+      "architecture": "amd64",
+      "backend_not_published": true,
+      "bundle_container": true,
+      "compose_recreation": true,
+      "full_history": true,
+      "https": true,
+      "image": [
+        {
+          "Id": "sha256:a3528663f74eaaad66437bc980746417d868844e7981713f3574d9b6dd83172b",
+          "RepoTags": [
+            "atlas-test-f7d7c29ad2997347fa3cec42dc8d4f00-bundle:local"
+          ],
+          "RepoDigests": [],
+          "Parent": "",
+          "Comment": "buildkit.dockerfile.v0",
+          "Created": "2026-10-31T09:17:45.718074772Z",
+          "DockerVersion": "",
+          "Author": "",
+          "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "10001:10001",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+              "8787/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "HOME=/data",
+              "TMPDIR=/data/tmp"
+            ],
+            "Cmd": [
+              "portable",
+              "run",
+              "--directory",
+              "/data/state"
+            ],
+            "Healthcheck": {
+              "Test": [
+                "CMD",
+                "/usr/local/bin/modelatlas-vps",
+                "ops",
+                "ready",
+                "--env-file",
+                "/data/state/config/modelatlas.env"
+              ],
+              "Interval": 30000000000,
+              "Timeout": 5000000000,
+              "StartPeriod": 30000000000,
+              "Retries": 3
+            },
+            "ArgsEscaped": true,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "/data",
+            "Entrypoint": [
+              "/usr/local/bin/modelatlas-entrypoint"
+            ],
+            "OnBuild": null,
+            "Labels": {
+              "org.opencontainers.image.revision": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+              "org.opencontainers.image.source": "https://github.com/Tsenjii/ModelAtlas-2"
+            },
+            "StopSignal": "SIGTERM"
+          },
+          "Architecture": "amd64",
+          "Os": "linux",
+          "Size": 159176812,
+          "GraphDriver": {
+            "Data": {
+              "LowerDir": "/var/lib/docker/overlay2/79kpudmxym6tosip1h06av2c4/diff:/var/lib/docker/overlay2/kh7cs268hwonwvuqag3ak6j7e/diff:/var/lib/docker/overlay2/f6akwbi3gj6qv836nxmu7gh74/diff:/var/lib/docker/overlay2/af715501aecb1b260e65be4bd1627ed478a92b000ce9aa630e136a4c6ea824fe/diff",
+              "MergedDir": "/var/lib/docker/overlay2/1qfdznnjo418ecmowx3xx043p/merged",
+              "UpperDir": "/var/lib/docker/overlay2/1qfdznnjo418ecmowx3xx043p/diff",
+              "WorkDir": "/var/lib/docker/overlay2/1qfdznnjo418ecmowx3xx043p/work"
+            },
+            "Name": "overlay2"
+          },
+          "RootFS": {
+            "Type": "layers",
+            "Layers": [
+              "sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818",
+              "sha256:761c2700e485555a810f942efc353de6e085ccf84106d0236352fdd38ffa1192",
+              "sha256:c50581e47460a96b1e4c38cc8e7be90f2466452d91a69b3410cefa016c778fa3",
+              "sha256:3ccf277d03f8cb18eb9fddcdb13e2515b23655d86cab0cec17d1cf57fc9a1fe7",
+              "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+            ]
+          },
+          "Metadata": {
+            "LastTagTime": "2026-10-31T09:17:46.007487746Z"
+          }
+        }
+      ],
+      "inference_calls": 1,
+      "native": true,
+      "nonroot": true,
+      "proxy_image": [
+        {
+          "Id": "sha256:3067cc4e02c091399edbd5d65f85a3ff4d511574aecadb47f280c3761e68852e",
+          "RepoTags": [
+            "caddy:2-alpine"
+          ],
+          "RepoDigests": [
+            "caddy@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5"
+          ],
+          "Parent": "",
+          "Comment": "buildkit.dockerfile.v0",
+          "Created": "2026-10-21T21:32:33.967060949Z",
+          "DockerVersion": "",
+          "Author": "",
+          "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+              "2019/tcp": {},
+              "443/tcp": {},
+              "443/udp": {},
+              "80/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "CADDY_VERSION=v2.11.7",
+              "XDG_CONFIG_HOME=/config",
+              "XDG_DATA_HOME=/data"
+            ],
+            "Cmd": [
+              "caddy",
+              "run",
+              "--config",
+              "/etc/caddy/Caddyfile",
+              "--adapter",
+              "caddyfile"
+            ],
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "/srv",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": {
+              "org.opencontainers.image.description": "a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go",
+              "org.opencontainers.image.documentation": "https://caddyserver.com/docs",
+              "org.opencontainers.image.licenses": "Apache-2.0",
+              "org.opencontainers.image.source": "https://github.com/caddyserver/caddy-docker",
+              "org.opencontainers.image.title": "Caddy",
+              "org.opencontainers.image.url": "https://caddyserver.com",
+              "org.opencontainers.image.vendor": "Light Code Labs",
+              "org.opencontainers.image.version": "v2.11.7"
+            }
+          },
+          "Architecture": "amd64",
+          "Os": "linux",
+          "Size": 66325911,
+          "GraphDriver": {
+            "Data": {
+              "LowerDir": "/var/lib/docker/overlay2/c4d78e913479484bd1ed505b533db1bd4baf38d0ad983e31ad4f2f95005c9da1/diff:/var/lib/docker/overlay2/8620a79ada1cade25bee57bb1c770077a544cdb025aeb9c641c5cc910a5ac06d/diff:/var/lib/docker/overlay2/0027a5a4881441eca0a4f7672f3615075b9d888705831cb5a7aec42e141b66ea/diff:/var/lib/docker/overlay2/e887146af3b3b29fbae526853632d0ce99b71c4182e2434af10ead4eb574c933/diff",
+              "MergedDir": "/var/lib/docker/overlay2/a6b2592c9480f8222de2017f3765d2d055c96845a440e7356a03676ca427340c/merged",
+              "UpperDir": "/var/lib/docker/overlay2/a6b2592c9480f8222de2017f3765d2d055c96845a440e7356a03676ca427340c/diff",
+              "WorkDir": "/var/lib/docker/overlay2/a6b2592c9480f8222de2017f3765d2d055c96845a440e7356a03676ca427340c/work"
+            },
+            "Name": "overlay2"
+          },
+          "RootFS": {
+            "Type": "layers",
+            "Layers": [
+              "sha256:54ea9baa1bbd7651dbda5c61569dad60fa601c73e5b784e154e8ba0f314e84fd",
+              "sha256:ffe3f66a572836b76678fc7bd0f6cc19a2ef8585cca6fe0ba7c2e1037d2e1159",
+              "sha256:4bb692fe970995252617470d76a9c95d18cd822a52a59558822b5f1d29d6cf2f",
+              "sha256:d08f1a0adb5011e488b16040328bb140738ff8248022d359170147464b656e5b",
+              "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+            ]
+          },
+          "Metadata": {
+            "LastTagTime": "0001-01-01T00:00:00Z"
+          }
+        }
+      ],
+      "read_only_root": true,
+      "real_caddy": true,
+      "result": "PASS",
+      "schedule_default_off": true,
+      "source": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+      "source_image": [
+        {
+          "Id": "sha256:8d5f245c7bf5c99a657c2ce8a9e79fb99a75f6f70f9e123eb2164575c60fa07b",
+          "RepoTags": [
+            "atlas-test-f7d7c29ad2997347fa3cec42dc8d4f00:local"
+          ],
+          "RepoDigests": [],
+          "Parent": "",
+          "Comment": "buildkit.dockerfile.v0",
+          "Created": "2026-10-31T09:17:23.168263472Z",
+          "DockerVersion": "",
+          "Author": "",
+          "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "10001:10001",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+              "8787/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "HOME=/data",
+              "TMPDIR=/data/tmp"
+            ],
+            "Cmd": [
+              "portable",
+              "run",
+              "--directory",
+              "/data/state"
+            ],
+            "Healthcheck": {
+              "Test": [
+                "CMD",
+                "/usr/local/bin/modelatlas-vps",
+                "ops",
+                "ready",
+                "--env-file",
+                "/data/state/config/modelatlas.env"
+              ],
+              "Interval": 30000000000,
+              "Timeout": 5000000000,
+              "StartPeriod": 30000000000,
+              "Retries": 3
+            },
+            "ArgsEscaped": true,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "/data",
+            "Entrypoint": [
+              "/usr/local/bin/modelatlas-entrypoint"
+            ],
+            "OnBuild": null,
+            "Labels": {
+              "org.opencontainers.image.revision": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+              "org.opencontainers.image.source": "https://github.com/Tsenjii/ModelAtlas-2"
+            },
+            "StopSignal": "SIGTERM"
+          },
+          "Architecture": "amd64",
+          "Os": "linux",
+          "Size": 159176812,
+          "GraphDriver": {
+            "Data": {
+              "LowerDir": "/var/lib/docker/overlay2/h6qib5ycezpwn3fpjrxqml8gi/diff:/var/lib/docker/overlay2/wo6dnd2250jztbq28zhquec6g/diff:/var/lib/docker/overlay2/f6akwbi3gj6qv836nxmu7gh74/diff:/var/lib/docker/overlay2/af715501aecb1b260e65be4bd1627ed478a92b000ce9aa630e136a4c6ea824fe/diff",
+              "MergedDir": "/var/lib/docker/overlay2/orc6e1we9v6m1gjk4ndyyvm23/merged",
+              "UpperDir": "/var/lib/docker/overlay2/orc6e1we9v6m1gjk4ndyyvm23/diff",
+              "WorkDir": "/var/lib/docker/overlay2/orc6e1we9v6m1gjk4ndyyvm23/work"
+            },
+            "Name": "overlay2"
+          },
+          "RootFS": {
+            "Type": "layers",
+            "Layers": [
+              "sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818",
+              "sha256:761c2700e485555a810f942efc353de6e085ccf84106d0236352fdd38ffa1192",
+              "sha256:a14e509b2334b7da1fcfcb06bbef2365d9df02e70c0a39c8a43645fa78143832",
+              "sha256:d4392b9318945d38544520213607df66562baf9ca835f2a62ca240856edeb307",
+              "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+            ]
+          },
+          "Metadata": {
+            "LastTagTime": "2026-10-31T09:17:24.012306473Z"
+          }
+        }
+      ],
+      "sse_before_completion": true,
+      "stable_identity": true,
+      "vault": true,
+      "volume_recreation": true
+    }
+  },
+  "portable_arm64": {
+    "contracts": {
+      "TestPortableOnlineBackupKeepsLiveWriterAndConsistentCompleteHistory": "pass",
+      "TestPortableOnlineBackupRejectsWrongKeysAndNeverOverwritesLastGood": "pass",
+      "TestPortableCloudPolicyCASAndZeroExitNeverPretendVerifiedBackup": "pass",
+      "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed": "pass",
+      "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup": "pass",
+      "TestPortableCloudCommandsRequirePrivateIdentityAndExplicitKeyRecovery": "pass",
+      "TestPortableCloudActualScheduleIdempotenceFetchAndCancellation": "pass",
+      "TestPortableCloudParentCrashStopsOwnedTransferAndRecoversUncertainty": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/plaintext-backend": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-data": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unencrypted-filenames": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-type": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/duplicate-remote": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes/unreadable-encrypted-config": "pass",
+      "TestPortableCloudDestinationRejectsPlaintextOverridesAndUnsafeScopes": "pass",
+      "TestPortableCloudBackupWithActualCryptAndRecovery": "pass",
+      "TestPortableAssetsRevalidateAcrossBinaryUpgrade": "pass",
+      "TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery": "skip",
+      "TestPortableConfigurationOwnsIdentityWithoutExecutingOrInheritingSecrets": "pass",
+      "TestPortableInitializationPreservesKeysAndRefusesLostOrSharedState": "pass",
+      "TestPortableConcurrentInitializationCannotReplaceConfirmedIdentity": "pass",
+      "TestPortableForegroundUsesRealHTTPSAPIAndKeepsVaultAcrossRestart": "pass"
+    },
+    "container_contracts": {
+      "TestPortableContainerHTTPSVolumeVaultSSEAndCloudRecovery": "pass"
+    },
+    "container": {
+      "actual_crypt_readback": true,
+      "architecture": "arm64",
+      "backend_not_published": true,
+      "bundle_container": true,
+      "compose_recreation": true,
+      "full_history": true,
+      "https": true,
+      "image": [
+        {
+          "Id": "sha256:06e31c15db91fffa9136be7314bca701a88174cd9e40736af5ba4b3e29ca3437",
+          "RepoTags": [
+            "atlas-test-cad8424dc17a25a95457b6346205f0cc-bundle:local"
+          ],
+          "RepoDigests": [],
+          "Parent": "",
+          "Comment": "buildkit.dockerfile.v0",
+          "Created": "2026-10-31T09:17:12.878782357Z",
+          "DockerVersion": "",
+          "Author": "",
+          "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "10001:10001",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+              "8787/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "HOME=/data",
+              "TMPDIR=/data/tmp"
+            ],
+            "Cmd": [
+              "portable",
+              "run",
+              "--directory",
+              "/data/state"
+            ],
+            "Healthcheck": {
+              "Test": [
+                "CMD",
+                "/usr/local/bin/modelatlas-vps",
+                "ops",
+                "ready",
+                "--env-file",
+                "/data/state/config/modelatlas.env"
+              ],
+              "Interval": 30000000000,
+              "Timeout": 5000000000,
+              "StartPeriod": 30000000000,
+              "Retries": 3
+            },
+            "ArgsEscaped": true,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "/data",
+            "Entrypoint": [
+              "/usr/local/bin/modelatlas-entrypoint"
+            ],
+            "OnBuild": null,
+            "Labels": {
+              "org.opencontainers.image.revision": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+              "org.opencontainers.image.source": "https://github.com/Tsenjii/ModelAtlas-2"
+            },
+            "StopSignal": "SIGTERM"
+          },
+          "Architecture": "arm64",
+          "Os": "linux",
+          "Size": 178976542,
+          "GraphDriver": {
+            "Data": {
+              "LowerDir": "/var/lib/docker/overlay2/mkjv51hj8u0hntv1mm7swzcy0/diff:/var/lib/docker/overlay2/raenaxo9jaxug5pa3lc6lqvhf/diff:/var/lib/docker/overlay2/wv0jryir4yb1vojfe9divt91x/diff:/var/lib/docker/overlay2/4625697e5a313ab51f7241f9138557e62bb03af98be34ba116598dcb6e0f962d/diff",
+              "MergedDir": "/var/lib/docker/overlay2/ykwqins2d7rr4cipfwgiogjsl/merged",
+              "UpperDir": "/var/lib/docker/overlay2/ykwqins2d7rr4cipfwgiogjsl/diff",
+              "WorkDir": "/var/lib/docker/overlay2/ykwqins2d7rr4cipfwgiogjsl/work"
+            },
+            "Name": "overlay2"
+          },
+          "RootFS": {
+            "Type": "layers",
+            "Layers": [
+              "sha256:8197d9c14b22d4cd79198c0722a18035760a85613211f2127ee6f5888735ca98",
+              "sha256:b7d97226ad57e66531d611185b08f1bfcc8df28ee817140b0d4b2d933cc09cac",
+              "sha256:3915d75ed29ff61c237fee09c793f82ce30f1bc104ea32dc22b8302d052c71b7",
+              "sha256:bb5edac6af04358ae9ec69b5d45f3a69227d3da55e9995e209ec2cd6921f8030",
+              "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+            ]
+          },
+          "Metadata": {
+            "LastTagTime": "2026-10-31T09:17:13.031155289Z"
+          }
+        }
+      ],
+      "inference_calls": 1,
+      "native": true,
+      "nonroot": true,
+      "proxy_image": [
+        {
+          "Id": "sha256:c7d68e4fa1bb71ae97c0b7e2c468aa3ccad2ae75d0294697d401e28794a5b5ab",
+          "RepoTags": [
+            "caddy:2-alpine"
+          ],
+          "RepoDigests": [
+            "caddy@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5"
+          ],
+          "Parent": "",
+          "Comment": "buildkit.dockerfile.v0",
+          "Created": "2026-10-21T21:34:47.656511251Z",
+          "DockerVersion": "",
+          "Author": "",
+          "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+              "2019/tcp": {},
+              "443/tcp": {},
+              "443/udp": {},
+              "80/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "CADDY_VERSION=v2.11.7",
+              "XDG_CONFIG_HOME=/config",
+              "XDG_DATA_HOME=/data"
+            ],
+            "Cmd": [
+              "caddy",
+              "run",
+              "--config",
+              "/etc/caddy/Caddyfile",
+              "--adapter",
+              "caddyfile"
+            ],
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "/srv",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": {
+              "org.opencontainers.image.description": "a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go",
+              "org.opencontainers.image.documentation": "https://caddyserver.com/docs",
+              "org.opencontainers.image.licenses": "Apache-2.0",
+              "org.opencontainers.image.source": "https://github.com/caddyserver/caddy-docker",
+              "org.opencontainers.image.title": "Caddy",
+              "org.opencontainers.image.url": "https://caddyserver.com",
+              "org.opencontainers.image.vendor": "Light Code Labs",
+              "org.opencontainers.image.version": "v2.11.7"
+            }
+          },
+          "Architecture": "arm64",
+          "Variant": "v8",
+          "Os": "linux",
+          "Size": 63658409,
+          "GraphDriver": {
+            "Data": {
+              "LowerDir": "/var/lib/docker/overlay2/93cf3f9946e403385e9e5e6ea84007d31b78476ef98be58e1da8768fa781c8f5/diff:/var/lib/docker/overlay2/1f933c38110908c19b0e4a393891db8c54b4a4b9877847f92ef52600d11f05b0/diff:/var/lib/docker/overlay2/0211f90c7a4e5bb42fc5f39d1d293b1d711d5e1fd23c8d4f1a4809514ddc212a/diff:/var/lib/docker/overlay2/c259ada62db5e60b4911dd116a966362b465e37ab5b163dbe5a22e8d74ea87ee/diff",
+              "MergedDir": "/var/lib/docker/overlay2/5fc40bbbfe2b6a41093abc226e5f71de37826b37f069ecf7cc0932eebb51fc40/merged",
+              "UpperDir": "/var/lib/docker/overlay2/5fc40bbbfe2b6a41093abc226e5f71de37826b37f069ecf7cc0932eebb51fc40/diff",
+              "WorkDir": "/var/lib/docker/overlay2/5fc40bbbfe2b6a41093abc226e5f71de37826b37f069ecf7cc0932eebb51fc40/work"
+            },
+            "Name": "overlay2"
+          },
+          "RootFS": {
+            "Type": "layers",
+            "Layers": [
+              "sha256:2f7dba9f9c89c5b6e380a5b9715b862f20d7e33da6e6923a90f089210f2a5de9",
+              "sha256:75c603cdd8cbb64c6533bb3622f4bf9402d7266aeedac641b5776e21758e5d92",
+              "sha256:b1ffc5d14a06124c3f72236c1e5643a60685e001e5e1033b5633e3db9ab4729a",
+              "sha256:e33c43b193ef565348ee443846b6d5fb32e86b94808715295f14d7ea2fdd736c",
+              "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+            ]
+          },
+          "Metadata": {
+            "LastTagTime": "0001-01-01T00:00:00Z"
+          }
+        }
+      ],
+      "read_only_root": true,
+      "real_caddy": true,
+      "result": "PASS",
+      "schedule_default_off": true,
+      "source": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+      "source_image": [
+        {
+          "Id": "sha256:b3b182b70af8fce4ab6b56f15b0c1f9741547b0c21c457ac4a76131f6368cd37",
+          "RepoTags": [
+            "atlas-test-cad8424dc17a25a95457b6346205f0cc:local"
+          ],
+          "RepoDigests": [],
+          "Parent": "",
+          "Comment": "buildkit.dockerfile.v0",
+          "Created": "2026-10-31T09:16:52.237716809Z",
+          "DockerVersion": "",
+          "Author": "",
+          "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "10001:10001",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+              "8787/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "HOME=/data",
+              "TMPDIR=/data/tmp"
+            ],
+            "Cmd": [
+              "portable",
+              "run",
+              "--directory",
+              "/data/state"
+            ],
+            "Healthcheck": {
+              "Test": [
+                "CMD",
+                "/usr/local/bin/modelatlas-vps",
+                "ops",
+                "ready",
+                "--env-file",
+                "/data/state/config/modelatlas.env"
+              ],
+              "Interval": 30000000000,
+              "Timeout": 5000000000,
+              "StartPeriod": 30000000000,
+              "Retries": 3
+            },
+            "ArgsEscaped": true,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "/data",
+            "Entrypoint": [
+              "/usr/local/bin/modelatlas-entrypoint"
+            ],
+            "OnBuild": null,
+            "Labels": {
+              "org.opencontainers.image.revision": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+              "org.opencontainers.image.source": "https://github.com/Tsenjii/ModelAtlas-2"
+            },
+            "StopSignal": "SIGTERM"
+          },
+          "Architecture": "arm64",
+          "Os": "linux",
+          "Size": 178976542,
+          "GraphDriver": {
+            "Data": {
+              "LowerDir": "/var/lib/docker/overlay2/mtx66sl3lb18shbjxdy8g31b6/diff:/var/lib/docker/overlay2/x8cnz2uitbnszwa954ocdnife/diff:/var/lib/docker/overlay2/wv0jryir4yb1vojfe9divt91x/diff:/var/lib/docker/overlay2/4625697e5a313ab51f7241f9138557e62bb03af98be34ba116598dcb6e0f962d/diff",
+              "MergedDir": "/var/lib/docker/overlay2/e3me71qvw25qhggk2td6xt6bc/merged",
+              "UpperDir": "/var/lib/docker/overlay2/e3me71qvw25qhggk2td6xt6bc/diff",
+              "WorkDir": "/var/lib/docker/overlay2/e3me71qvw25qhggk2td6xt6bc/work"
+            },
+            "Name": "overlay2"
+          },
+          "RootFS": {
+            "Type": "layers",
+            "Layers": [
+              "sha256:8197d9c14b22d4cd79198c0722a18035760a85613211f2127ee6f5888735ca98",
+              "sha256:b7d97226ad57e66531d611185b08f1bfcc8df28ee817140b0d4b2d933cc09cac",
+              "sha256:a2b8830166ef72aa5aba17484488855ed600a2ca11292d9179f7f639ba1f5434",
+              "sha256:e45396d84a3b062faa516cb8d8ddd9a7c64baf9081d5da85b0fc2df4b54dcdc5",
+              "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+            ]
+          },
+          "Metadata": {
+            "LastTagTime": "2026-10-31T09:16:53.020933294Z"
+          }
+        }
+      ],
+      "sse_before_completion": true,
+      "stable_identity": true,
+      "vault": true,
+      "volume_recreation": true
+    }
+  },
+  "android_build": {
+    "core": {
+      "tests": 594,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "app": {
+      "tests": 423,
+      "failures": 0,
+      "ignored": 0
+    },
+    "certificate_sha256": "f15f5bec8bb6a3495e2f1a5512d1d4016136ecc198e147c05a1502c26d7ccf35",
+    "production_signing": false
+  },
+  "android_device": {
+    "counts": {
+      "tests": 1005,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    },
+    "preserved_cases": 997,
+    "added": [
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#concurrentIndependentEditsKeepEveryConfirmedChoice",
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#failedCommitRetainsConfirmedStateAndNextEditRepairsTheFailedCache",
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#freshChoicesStayClassicWithoutWritingDefaults",
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#malformedSavedTypesCannotEnableStyleOrOpenAnArbitraryPath",
+      "dev.modelatlas.app.data.AppearanceSettingsStoreTest#successfulChoicesSurviveStoreReconstructionAndOpaqueKeepsTheArtwork",
+      "dev.modelatlas.app.ui.AquaArtworkAssetsTest#actualBundledImagesDecodeWithOriginalDimensionsAlphaAndBoundedCache",
+      "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualDarkRecreationNarrowLargeTypeAndOpaqueRemainReadable",
+      "dev.modelatlas.app.ui.AquaInterfaceFlowTest#actualFourArtworkButtonsKeepScopeChatAndProviderDrafts"
+    ],
+    "runtime": {
+      "expected_max_heap_bytes": 536870912,
+      "max_heap_bytes": 536870912,
+      "pid": 4733,
+      "stages": [
+        "start",
+        "finish"
+      ]
+    },
+    "preflight": {
+      "configured_heap": "512m",
+      "expected_runtime_max_heap_bytes": 536870912,
+      "growth_limit": "",
+      "initial_zygote_observations": [
+        "1661"
+      ],
+      "sdk": "29",
+      "zygote_after": "3199",
+      "zygote_before": "1661"
+    }
+  },
+  "android_aqua": {
+    "light": {
+      "result": "PASS",
+      "pictures": [
+        {
+          "file": "01-classic-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 62,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "cc0aa0d8868dad90d7b7192abab5067c9da3188ddd07a0ccebeac3b7c13ff1f1"
+        },
+        {
+          "file": "02-kotoha-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 59,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "5b03315e3ac48aaa5792971cee74d30b8caf37f599adb6c1ad1abe34bad8c815"
+        },
+        {
+          "file": "03-elaina-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 75,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "c12f2ce5bedc44614af42209e7dae0aa332cf53f547c8bece895d3110562f9d6"
+        },
+        {
+          "file": "04-kotoha-chibi-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 60,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "51a00a1db9a68a878b244579151a7d5a72e2ee7f6150cd489a055c907bdf15cf"
+        },
+        {
+          "file": "05-elaina-chibi-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 60,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "47fa6cda75be7502f045f6aa1e0caa71ec5f46c21a0455affe854751265103b3"
+        },
+        {
+          "file": "06-settings-four-choices-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 63,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "e61ef069112f5b3780b556fd13c340a04d297284cedfcc027c5c4ca88079656a"
+        },
+        {
+          "file": "07-providers-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 62,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "28fb685c22b29379dfe24fa8b87e80f9fa3c01533794bd8e4ccedc47bfe2ce7e"
+        },
+        {
+          "file": "08-models-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 58,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "0a1c6dddb27df1311ecd7ec48b08df632721314b3a2771ce80dcfd852e2e925b"
+        },
+        {
+          "file": "09-provider-form-retained-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 61,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "ed085ed0d1f0ee00a02ebced3aeb041820cdd556a98b7ca6ec2b2954d5236696"
+        },
+        {
+          "file": "10-classic-draft-retained-light.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 60,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": false,
+          "sha256": "6b3cda1da02d74004e3e7d5b6f3afe990669e95223cc701710a2f45254ab780d"
+        }
+      ],
+      "pid": 4733,
+      "system_settings_restored": true,
+      "preferences_restored": true,
+      "production_secure_before": true,
+      "secure_restored": true,
+      "night_before": 1,
+      "night_after": 1,
+      "font_before": "null",
+      "font_after": "null",
+      "resolved_font_before": 1,
+      "resolved_font_after": 1,
+      "no_inference": true,
+      "cache_bytes": 12580128
+    },
+    "dark_large": {
+      "result": "PASS",
+      "pictures": [
+        {
+          "file": "11-relaunch-retained-dark.png",
+          "width": 320,
+          "height": 640,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 288,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 1,
+          "dark": true,
+          "sha256": "f7ee7dc9cb34339c8350e822fdc3933bb549f66576f82e051b63f951e84a71ce"
+        },
+        {
+          "file": "12-playground-320-large-dark.png",
+          "width": 320,
+          "height": 740,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 187,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 2,
+          "dark": true,
+          "sha256": "d6ec1ec4c854a368cec172ff00f6acb1fd0caef67664ef4b20045c97b0ec2f3d"
+        },
+        {
+          "file": "13-settings-320-large-dark.png",
+          "width": 320,
+          "height": 740,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 83,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 2,
+          "dark": true,
+          "sha256": "a942ebfdbda3c55927be530893170b4060ddc5e5f12c26913f3aed077b6fae61"
+        },
+        {
+          "file": "14-reduced-transparency-dark.png",
+          "width": 320,
+          "height": 740,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 82,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 320,
+          "font_scale": 2,
+          "dark": true,
+          "sha256": "b7739d0822b9b8c7a43584e9176da0edb82cf1261733dca436218123b02b4194"
+        },
+        {
+          "file": "15-landscape-large-dark.png",
+          "width": 740,
+          "height": 320,
+          "capture_method": "UiAutomation.takeScreenshot",
+          "capture_attempts": 1,
+          "capture_null_results": 0,
+          "capture_ms": 63,
+          "capture_budget_ms": 15000,
+          "screen_width_dp": 740,
+          "font_scale": 2,
+          "dark": true,
+          "sha256": "3f73ff85acd248474d546ba6fc1a23988478d2c7296b8c92b019e8579ffc54db"
+        }
+      ],
+      "pid": 4733,
+      "system_settings_restored": true,
+      "preferences_restored": true,
+      "production_secure_before": true,
+      "secure_restored": true,
+      "night_before": 1,
+      "night_after": 1,
+      "font_before": "null",
+      "font_after": "null",
+      "resolved_font_before": 1,
+      "resolved_font_after": 1,
+      "no_inference": true,
+      "cache_bytes": 10985104
+    },
+    "screenshots": 15,
+    "original_asset_bytes": true
+  },
+  "rejected_candidate": {
+    "source": "3ef96c39669c6d1b14eea31624bfa020e23c6124",
+    "actual_sha256": "sha256:de07fe5b6b5bcf580278edcebfbdd5d97fa495e4552d8e14b11dc35a0f60511b",
+    "counts": {
+      "tests": 985,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 5
+    },
+    "failure": "dev.modelatlas.app.ui.PendingConnectionHandoffTest#disabledPendingIsEvictedAndNeverResurrectsAsUsable"
+  },
+  "rejected_aa_candidate": {
+    "source": "7d612a4009a77cce431a30b23a129761827f80e0",
+    "actual_sha256": "sha256:c84bd007ae15f12914b6eb9eae627747699c9ce47915851539ff18c5e2971d31",
+    "png": 523,
+    "aa_images": [
+      "research-aa-1280-dark.png",
+      "research-aa-1280-light.png",
+      "research-aa-320-dark.png",
+      "research-aa-320-light.png",
+      "research-aa-375-dark.png",
+      "research-aa-375-large.png",
+      "research-aa-375-light.png",
+      "research-aa-recovered-375.png"
+    ],
+    "failure": "TestBrowserAAResearchPageRecoveryWorkflow: page1=3/page2=3, expected 3/4; original task failure cause unavailable, not inferred"
+  },
+  "mac_arm64": {
+    "png": 117,
+    "preserved_png": 104,
+    "core_tests": 89,
+    "preserved_core_tests": 89,
+    "smoke": {
+      "search_scope_guards": true,
+      "providers": 2,
+      "native_markdown": true,
+      "draft_scope_guards": true,
+      "native_windows": true,
+      "real_engine": true,
+      "real_tls_chat": true,
+      "attachment_guards": true,
+      "messages": 2,
+      "request_receipt": true,
+      "models": 4,
+      "chat_settings_guards": true,
+      "screenshots": 25,
+      "result": "PASS",
+      "live_session_search": true,
+      "keyboard_picker_guards": true,
+      "chat_reading_guards": true
+    },
+    "parity": {
+      "comparison_scope_guards": true,
+      "telemetry_trends": true,
+      "checkin_retry_cancel": true,
+      "provider_form_feedback": true,
+      "price_scope_guards": true,
+      "composer_focus": true,
+      "wire_counts": {
+        "connector": 2,
+        "images": 1,
+        "native-dual": 1,
+        "embeddings": 1,
+        "transcription": 1,
+        "rerank": 1,
+        "speech": 1,
+        "image-edit": 1,
+        "native-legacy": 1,
+        "native-current": 1
+      },
+      "result": "PASS",
+      "adaptive_composer": true,
+      "connector_caller": true,
+      "real_tls_media": true,
+      "provider_next_draft": true,
+      "sidebar_toggle": true,
+      "stale_guards": true,
+      "appearance_choices": true,
+      "quota_scope_guards": true,
+      "screenshots": 57,
+      "workspace_sync_entry": true,
+      "site_partial_retry": true,
+      "comparison_receipts": true,
+      "credential_restore_scope": true,
+      "native_motion": true,
+      "native_composer": true,
+      "knowledge_versions": true,
+      "read_only_no_inference": true,
+      "saved_refresh_no_repost": true,
+      "reduced_motion": true,
+      "provider_series_scope": true,
+      "provider_window_restored": true,
+      "batch_confirm_undo": true,
+      "retained_history": true,
+      "manual_evidence": true,
+      "workspace_transfer_controls": true,
+      "native_comparison": true,
+      "observation_archive": true,
+      "connection_actions": true,
+      "provider_account_write_guards": true,
+      "account_checkin_scope": true,
+      "kilo_factory_defaults": true,
+      "native_intelligence": true,
+      "chart_receipt_identity": true,
+      "public_site_auto_read": true,
+      "chart_keyboard_selection": true,
+      "kilo_no_automatic_inference": true,
+      "safe_references": true,
+      "chart_export_exact": true
+    },
+    "workspace_transfer": {
+      "no_inference": true,
+      "outgoing_acked": 1,
+      "result": "PASS",
+      "source_product_retained": true,
+      "same_transfer_after_restart": true,
+      "pause_during_busy": true,
+      "destination_models": 15,
+      "paused_progress_bytes": 28307,
+      "actual_keychain_restart": true
+    },
+    "research": {
+      "seven_exact_requests": true,
+      "last_good_preserved": true,
+      "no_inference": true,
+      "reopen_same_run": true,
+      "wire": {
+        "direct_sync": 0,
+        "telemetry": 0,
+        "held": false,
+        "used": 7,
+        "second": 4,
+        "first": 3,
+        "runs": 3,
+        "resumes": 2,
+        "starts": 3,
+        "controls": 3
+      },
+      "real_tls": true,
+      "concurrent_control_guard": true,
+      "live_run_state": true,
+      "result": "PASS",
+      "screenshots": 8,
+      "lost_ack_no_repost": true,
+      "native_update_buttons": true,
+      "saved_refresh_no_repost": true
+    },
+    "research_resource": {
+      "app_rss_bytes": 129826816,
+      "engine_rss_bytes": 25690112,
+      "fixture_rss_bytes": 31440896,
+      "combined_rss_bytes": 185647104,
+      "samples": 14,
+      "method": "ps RSS for third standalone native launch, its owned packaged engine and separate synthetic TLS test fixture; original smoke/parity workloads and deadlines unchanged",
+      "app_exit_code": 0,
+      "owned_engine_exited": true,
+      "fixture_exit_code": 0
+    },
+    "aqua": {
+      "scope_and_draft_retained": true,
+      "four_bundled_artworks": true,
+      "same_original_bytes": true,
+      "classic_default_and_invalid_fallback": true,
+      "reduced_transparency": true,
+      "transparency_control": "actual app toggle and separately launched system preference fixture",
+      "screenshots": 13,
+      "provider_form_retained": true,
+      "actual_settings_buttons": true,
+      "no_inference_or_research": true,
+      "result": "PASS",
+      "system_reduced_transparency": true,
+      "system_transparency": true,
+      "relaunch_preference_retained": true,
+      "images": [
+        {
+          "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282",
+          "id": "kotoha",
+          "bytes": 135772
+        },
+        {
+          "id": "elaina",
+          "bytes": 422004,
+          "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6"
+        },
+        {
+          "id": "kotoha-chibi",
+          "bytes": 2363841,
+          "sha256": "f54666c7bb7714fa03919830d8404dd5dc5c37f12a4cd18c51353a34235c6eb0"
+        },
+        {
+          "bytes": 2272459,
+          "sha256": "8be85b8f0db24f937576f6f6091e25cad560e4aecc64f0a08560b2cc0c52a415",
+          "id": "elaina-chibi"
+        }
+      ]
+    },
+    "aqua_resource": {
+      "app_rss_bytes": 205111296,
+      "engine_rss_bytes": 27377664,
+      "samples": 83,
+      "method": "three standalone packaged launches; exact artworks, actual app toggle and real system accessibility states",
+      "phases": [
+        {
+          "app_pid": 2086,
+          "engine_pid": 2094,
+          "exit": 0,
+          "system_transparency": false
+        },
+        {
+          "app_pid": 2400,
+          "engine_pid": 2403,
+          "exit": 0,
+          "system_transparency": false
+        },
+        {
+          "app_pid": 2615,
+          "engine_pid": 2616,
+          "exit": 0,
+          "system_transparency": true
+        }
+      ],
+      "result": "PASS",
+      "owned_engines_exited": true,
+      "system_fixture_restored": true
+    }
+  },
+  "mac_x86_64": {
+    "png": 117,
+    "preserved_png": 104,
+    "core_tests": 89,
+    "preserved_core_tests": 89,
+    "smoke": {
+      "providers": 2,
+      "screenshots": 25,
+      "chat_settings_guards": true,
+      "keyboard_picker_guards": true,
+      "messages": 2,
+      "attachment_guards": true,
+      "result": "PASS",
+      "search_scope_guards": true,
+      "chat_reading_guards": true,
+      "live_session_search": true,
+      "native_windows": true,
+      "real_engine": true,
+      "request_receipt": true,
+      "models": 4,
+      "native_markdown": true,
+      "draft_scope_guards": true,
+      "real_tls_chat": true
+    },
+    "parity": {
+      "connector_caller": true,
+      "native_motion": true,
+      "observation_archive": true,
+      "adaptive_composer": true,
+      "provider_series_scope": true,
+      "provider_next_draft": true,
+      "chart_export_exact": true,
+      "kilo_factory_defaults": true,
+      "kilo_no_automatic_inference": true,
+      "checkin_retry_cancel": true,
+      "native_composer": true,
+      "batch_confirm_undo": true,
+      "native_comparison": true,
+      "workspace_sync_entry": true,
+      "public_site_auto_read": true,
+      "saved_refresh_no_repost": true,
+      "stale_guards": true,
+      "site_partial_retry": true,
+      "provider_account_write_guards": true,
+      "account_checkin_scope": true,
+      "telemetry_trends": true,
+      "safe_references": true,
+      "composer_focus": true,
+      "wire_counts": {
+        "speech": 1,
+        "images": 1,
+        "transcription": 1,
+        "native-legacy": 1,
+        "native-current": 1,
+        "embeddings": 1,
+        "native-dual": 1,
+        "image-edit": 1,
+        "connector": 2,
+        "rerank": 1
+      },
+      "read_only_no_inference": true,
+      "price_scope_guards": true,
+      "chart_receipt_identity": true,
+      "native_intelligence": true,
+      "quota_scope_guards": true,
+      "retained_history": true,
+      "result": "PASS",
+      "reduced_motion": true,
+      "comparison_scope_guards": true,
+      "appearance_choices": true,
+      "manual_evidence": true,
+      "screenshots": 57,
+      "workspace_transfer_controls": true,
+      "provider_form_feedback": true,
+      "credential_restore_scope": true,
+      "connection_actions": true,
+      "chart_keyboard_selection": true,
+      "knowledge_versions": true,
+      "provider_window_restored": true,
+      "real_tls_media": true,
+      "sidebar_toggle": true,
+      "comparison_receipts": true
+    },
+    "workspace_transfer": {
+      "result": "PASS",
+      "destination_models": 15,
+      "same_transfer_after_restart": true,
+      "no_inference": true,
+      "paused_progress_bytes": 28307,
+      "actual_keychain_restart": true,
+      "outgoing_acked": 1,
+      "source_product_retained": true,
+      "pause_during_busy": true
+    },
+    "research": {
+      "native_update_buttons": true,
+      "result": "PASS",
+      "no_inference": true,
+      "seven_exact_requests": true,
+      "wire": {
+        "used": 7,
+        "direct_sync": 0,
+        "resumes": 2,
+        "first": 3,
+        "starts": 3,
+        "second": 4,
+        "runs": 3,
+        "telemetry": 0,
+        "held": false,
+        "controls": 3
+      },
+      "last_good_preserved": true,
+      "lost_ack_no_repost": true,
+      "screenshots": 8,
+      "saved_refresh_no_repost": true,
+      "concurrent_control_guard": true,
+      "live_run_state": true,
+      "reopen_same_run": true,
+      "real_tls": true
+    },
+    "research_resource": {
+      "app_rss_bytes": 96460800,
+      "engine_rss_bytes": 20520960,
+      "fixture_rss_bytes": 25681920,
+      "combined_rss_bytes": 142123008,
+      "samples": 17,
+      "method": "ps RSS for third standalone native launch, its owned packaged engine and separate synthetic TLS test fixture; original smoke/parity workloads and deadlines unchanged",
+      "app_exit_code": 0,
+      "owned_engine_exited": true,
+      "fixture_exit_code": 0
+    },
+    "aqua": {
+      "provider_form_retained": true,
+      "images": [
+        {
+          "sha256": "e606900526c42aa479d930eec612cb829a4828d4e51c3ededf28fc7c3ddde282",
+          "id": "kotoha",
+          "bytes": 135772
+        },
+        {
+          "bytes": 422004,
+          "id": "elaina",
+          "sha256": "7897163cc6f609ffc29161e95b2fefc6d56619b6bda2daafdef808e2bc8f07c6"
+        },
+        {
+          "sha256": "f54666c7bb7714fa03919830d8404dd5dc5c37f12a4cd18c51353a34235c6eb0",
+          "id": "kotoha-chibi",
+          "bytes": 2363841
+        },
+        {
+          "id": "elaina-chibi",
+          "bytes": 2272459,
+          "sha256": "8be85b8f0db24f937576f6f6091e25cad560e4aecc64f0a08560b2cc0c52a415"
+        }
+      ],
+      "transparency_control": "actual app toggle and separately launched system preference fixture",
+      "screenshots": 13,
+      "reduced_transparency": true,
+      "no_inference_or_research": true,
+      "same_original_bytes": true,
+      "scope_and_draft_retained": true,
+      "system_reduced_transparency": true,
+      "actual_settings_buttons": true,
+      "classic_default_and_invalid_fallback": true,
+      "four_bundled_artworks": true,
+      "result": "PASS",
+      "system_transparency": true,
+      "relaunch_preference_retained": true
+    },
+    "aqua_resource": {
+      "app_rss_bytes": 152219648,
+      "engine_rss_bytes": 22228992,
+      "samples": 111,
+      "method": "three standalone packaged launches; exact artworks, actual app toggle and real system accessibility states",
+      "phases": [
+        {
+          "app_pid": 2269,
+          "engine_pid": 2278,
+          "exit": 0,
+          "system_transparency": false
+        },
+        {
+          "app_pid": 2677,
+          "engine_pid": 2680,
+          "exit": 0,
+          "system_transparency": false
+        },
+        {
+          "app_pid": 2735,
+          "engine_pid": 2784,
+          "exit": 0,
+          "system_transparency": true
+        }
+      ],
+      "result": "PASS",
+      "owned_engines_exited": true,
+      "system_fixture_restored": true
+    }
+  },
+  "linux_amd64": {
+    "schema": 38,
+    "files": 62,
+    "version": {
+      "commit": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+      "built_at": "2026-10-31T09:13:36Z",
+      "os": "linux",
+      "arch": "amd64",
+      "schema": 38
+    }
+  },
+  "linux_arm64": {
+    "schema": 38,
+    "files": 62,
+    "version": {
+      "commit": "8152615b32c9b0210aebe2d1f4903d311d6016cf",
+      "built_at": "2026-10-31T09:13:33Z",
+      "os": "linux",
+      "arch": "arm64",
+      "schema": 38
+    }
+  },
+  "actual_binary": {
+    "startup_seconds": 0.06116923600006885,
+    "first_members": 15,
+    "after_restart": 14,
+    "after_explicit_add": 14,
+    "empty": {
+      "telemetry": 0,
+      "sessions": 0,
+      "research_runs": 0
+    },
+    "secret_count": 0,
+    "install_ledgers": 1,
+    "parent_pipe_shutdown": "PASS"
+  },
+  "main": {
+    "sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+    "run": 39536090788,
+    "jobs": [
+      {
+        "id": 119016886469,
+        "name": "build",
+        "conclusion": "success",
+        "run_id": 39536090788,
+        "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+        "started_at": "2026-10-21T02:59:47Z",
+        "completed_at": "2026-10-21T03:05:13Z"
+      },
+      {
+        "id": 119016884592,
+        "name": "device-tests",
+        "conclusion": "success",
+        "run_id": 39536090788,
+        "head_sha": "cba901d187aa5312cc71f5c2440b23fa04104aee",
+        "started_at": "2026-10-21T03:12:55Z",
+        "completed_at": "2026-10-21T03:21:59Z"
+      }
+    ]
+  },
+  "frozen": {
+    "release_id": 420473654,
+    "tag": "699d4d57ff8264506c2b2f6e5eed0021327bf602",
+    "assets": [
+      [
+        665188178,
+        "ModelAtlas-macOS-Universal.zip",
+        19245844,
+        "sha256:bb4490b500bd11af56ba7a54fd1e6278b0579b40760dcb1e2eae40d9f3eec709"
+      ],
+      [
+        665188179,
+        "ModelAtlas-Android-preview.apk",
+        14177371,
+        "sha256:5a2c698915f345e42c1c36108495685d634f5535f61171aaebc747ad314cb8df"
+      ],
+      [
+        665188180,
+        "ModelAtlas-macOS-Universal.dmg",
+        22399249,
+        "sha256:1387e79894fa4bfdcf9924ed74a08746fd4ad70d41db069842acee71ed714ca7"
+      ],
+      [
+        665188182,
+        "RELEASE-MANIFEST.json",
+        9304,
+        "sha256:1624476118fe9aa318cd8100b7fda7cc76cf156e1f66b7fe56c9c6435b505e44"
+      ],
+      [
+        665188188,
+        "ModelAtlas-Android.json",
+        724,
+        "sha256:80221ef954bc06309d0e6ad00be2da0e785d008354390ca579b9b2c6c95d6216"
+      ],
+      [
+        665188203,
+        "RELEASE-NOTES.md",
+        5460,
+        "sha256:fc1c1129900d70b5ff3f3a7e3691679f0a4cfe9f7ee45452cded8d2a7341275d"
+      ],
+      [
+        665188207,
+        "SHA256SUMS.txt",
+        883,
+        "sha256:2c37dd98855fa93289ee8b90037ce2a4bd8300a9673e91e44ad12f171892e3e9"
+      ],
+      [
+        665188222,
+        "modelatlas-vps-linux-amd64.tar.gz",
+        6028488,
+        "sha256:f22b86d3fdc65603c464854e25df5c92fec92aef23f7c3244fb578c14af86ad4"
+      ],
+      [
+        665188224,
+        "modelatlas-vps-linux-amd64.tar.gz.sha256",
+        100,
+        "sha256:bd9b776a1c8a094d244245cf1d51abb9c8babd3033e4b4f96c0f9539c0e9dfde"
+      ],
+      [
+        665188225,
+        "modelatlas-vps-linux-arm64.tar.gz",
+        5583965,
+        "sha256:f6294bf4551c9ce50875fc5d8efc3769382d55aab6121b56ca17cc64bd99ef8a"
+      ],
+      [
+        665188231,
+        "modelatlas-vps-linux-arm64.tar.gz.sha256",
+        100,
+        "sha256:a8000802aa1b4ecc17ee38db2077ecbbedd440e3ba7688f8c63a96d9cb4f4a39"
+      ]
+    ]
+  },
+  "visual_review_required": [
+    "browser/aqua-background-elaina-390-light.png",
+    "browser/aqua-background-elaina-chibi-390-dark.png",
+    "browser/aqua-background-kotoha-390-light.png",
+    "browser/aqua-background-kotoha-chibi-1280-light.png",
+    "browser/aqua-models-1280-light.png",
+    "browser/aqua-models-320-200-dark.png",
+    "browser/aqua-offline-390-light.png",
+    "browser/aqua-model-detail-390-dark.png",
+    "browser/aqua-offline-draft-390-light.png",
+    "browser/aqua-playground-1280-light.png",
+    "browser/aqua-playground-390-light.png",
+    "browser/aqua-playground-390-saved.png",
+    "browser/aqua-playground-812-safe-dark.png",
+    "browser/aqua-provider-editor-375-200-light.png",
+    "browser/aqua-providers-390-light.png",
+    "browser/aqua-settings-390-dark.png",
+    "browser/assistant-mapping-active-375-dark.png",
+    "browser/assistant-mapping-agent-375-light.png",
+    "browser/assistant-mapping-fields-1280-light.png",
+    "browser/assistant-mapping-review-320-200-dark.png",
+    "browser/assistant-mapping-undo-1280-dark.png",
+    "browser/assistant-mapping-review-375-light.png",
+    "browser/cloud-backup-history-375-light.png",
+    "browser/cloud-backup-last-good-375-light.png",
+    "browser/cloud-backup-lost-ack-320-200-light.png",
+    "browser/cloud-backup-ready-1280-light.png",
+    "browser/cloud-backup-running-375-dark.png",
+    "browser/cloud-backup-saved-read-recovery-375-dark.png",
+    "browser/cloud-backup-schedule-320-200-dark.png",
+    "browser/cloud-backup-unconfigured-375-light.png",
+    "browser/cloud-backup-verified-1280-dark.png",
+    "browser/connector-private-mapping-draft-1280-dark.png",
+    "browser/connector-private-mapping-draft-1280-light.png",
+    "browser/connector-private-mapping-draft-320-dark.png",
+    "browser/connector-private-mapping-draft-320-light.png",
+    "browser/connector-private-mapping-draft-375-dark.png",
+    "browser/connector-private-mapping-draft-375-light.png",
+    "browser/connector-private-mapping-fields-375-large-dark.png",
+    "browser/connector-private-mapping-fields-320-dark.png",
+    "browser/connector-private-mapping-group-375-light.png",
+    "browser/connector-private-mapping-pat-account-375-light.png",
+    "browser/connector-private-mapping-pat-draft-1280-dark.png",
+    "browser/connector-private-mapping-pat-undo-375-dark.png",
+    "browser/connector-private-mapping-source-375-light.png",
+    "browser/connector-private-mapping-runtime-last-good-1280-dark.png",
+    "browser/conversation-workspace-1280-light.png",
+    "browser/conversation-workspace-320-large-aqua.png",
+    "browser/conversation-workspace-375-dark.png",
+    "browser/conversation-workspace-375-light.png",
+    "browser/conversation-workspace-320-large-dark.png",
+    "browser/conversation-workspace-draft-recovery-375-dark.png",
+    "browser/conversation-workspace-read-recovery-375-dark.png",
+    "browser/conversation-workspace-write-uncertain-375-dark.png",
+    "browser/knowledge-evaluation-cost-375-200-light.png",
+    "browser/research-execution-1280-dark.png",
+    "browser/research-execution-320-200-dark.png",
+    "browser/research-execution-375-last-good.png",
+    "browser/research-execution-375-light.png",
+    "browser/research-history-detail-375-200-dark.png",
+    "browser/research-history-list-320-200-dark.png",
+    "browser/research-history-detail-390-dark.png",
+    "browser/research-history-last-good-390-dark.png",
+    "browser/research-history-list-1280-light.png",
+    "browser/research-history-list-390-light.png",
+    "browser/research-history-lost-ack-390-light.png",
+    "browser/research-history-read-recovered-390-light.png",
+    "browser/research-history-scope-1280-light.png",
+    "browser/research-history-scope-recovery-390-dark.png",
+    "browser/research-query-cost-1280-dark.png",
+    "browser/research-query-cost-320-200-dark.png",
+    "browser/research-query-cost-375-light.png",
+    "browser/workspace-chunks-complete-1280-light.png",
+    "browser/workspace-chunks-complete-375-dark.png",
+    "browser/workspace-chunks-paused-320-dark-large.png",
+    "browser/workspace-chunks-paused-320-light-large.png",
+    "browser/workspace-chunks-paused-375-dark-large.png",
+    "browser/workspace-chunks-paused-375-light-large.png",
+    "browser/workspace-chunks-ready-375-light.png",
+    "browser/workspace-chunks-uploading-375-dark.png",
+    "android/aqua/01-classic-light.png",
+    "android/aqua/02-kotoha-light.png",
+    "android/aqua/03-elaina-light.png",
+    "android/aqua/04-kotoha-chibi-light.png",
+    "android/aqua/05-elaina-chibi-light.png",
+    "android/aqua/06-settings-four-choices-light.png",
+    "android/aqua/07-providers-light.png",
+    "android/aqua/08-models-light.png",
+    "android/aqua/09-provider-form-retained-light.png",
+    "android/aqua/10-classic-draft-retained-light.png",
+    "android/aqua/11-relaunch-retained-dark.png",
+    "android/aqua/12-playground-320-large-dark.png",
+    "android/aqua/13-settings-320-large-dark.png",
+    "android/aqua/14-reduced-transparency-dark.png",
+    "android/aqua/15-landscape-large-dark.png",
+    "mac-arm64/52-kilo-defaults-light.png",
+    "mac-arm64/53-kilo-ready-dark.png",
+    "mac-arm64/54-workspace-transfer-light.png",
+    "mac-arm64/55-workspace-paused-light.png",
+    "mac-arm64/56-workspace-restarted-dark.png",
+    "mac-arm64/57-workspace-completed-dark.png",
+    "mac-arm64/research/01-aa-partial-light.png",
+    "mac-arm64/research/02-aa-partial-dark.png",
+    "mac-arm64/research/03-saved-read-failure-dark.png",
+    "mac-arm64/research/04-paused-dark.png",
+    "mac-arm64/research/05-lost-ack-dark.png",
+    "mac-arm64/research/06-aa-complete-dark.png",
+    "mac-arm64/research/07-services-aa-complete-light.png",
+    "mac-arm64/research/08-research-aa-complete-dark.png",
+    "mac-arm64/aqua/01-classic-invalid-preference-light.png",
+    "mac-arm64/aqua/02-kotoha-light.png",
+    "mac-arm64/aqua/03-elaina-light.png",
+    "mac-arm64/aqua/04-kotoha-chibi-light.png",
+    "mac-arm64/aqua/05-elaina-chibi-dark.png",
+    "mac-arm64/aqua/06-settings-four-choices-dark.png",
+    "mac-arm64/aqua/07-providers-light.png",
+    "mac-arm64/aqua/08-models-compact-dark.png",
+    "mac-arm64/aqua/09-provider-form-retained-dark.png",
+    "mac-arm64/aqua/10-classic-retained-dark.png",
+    "mac-arm64/aqua/11-relaunch-retained-dark.png",
+    "mac-arm64/aqua/12-reduced-transparency-light.png",
+    "mac-arm64/aqua/13-system-reduced-transparency-dark.png",
+    "mac-x86_64/52-kilo-defaults-light.png",
+    "mac-x86_64/53-kilo-ready-dark.png",
+    "mac-x86_64/54-workspace-transfer-light.png",
+    "mac-x86_64/55-workspace-paused-light.png",
+    "mac-x86_64/56-workspace-restarted-dark.png",
+    "mac-x86_64/57-workspace-completed-dark.png",
+    "mac-x86_64/research/01-aa-partial-light.png",
+    "mac-x86_64/research/03-saved-read-failure-dark.png",
+    "mac-x86_64/research/02-aa-partial-dark.png",
+    "mac-x86_64/research/04-paused-dark.png",
+    "mac-x86_64/research/05-lost-ack-dark.png",
+    "mac-x86_64/research/06-aa-complete-dark.png",
+    "mac-x86_64/research/07-services-aa-complete-light.png",
+    "mac-x86_64/research/08-research-aa-complete-dark.png",
+    "mac-x86_64/aqua/01-classic-invalid-preference-light.png",
+    "mac-x86_64/aqua/02-kotoha-light.png",
+    "mac-x86_64/aqua/03-elaina-light.png",
+    "mac-x86_64/aqua/04-kotoha-chibi-light.png",
+    "mac-x86_64/aqua/05-elaina-chibi-dark.png",
+    "mac-x86_64/aqua/06-settings-four-choices-dark.png",
+    "mac-x86_64/aqua/07-providers-light.png",
+    "mac-x86_64/aqua/08-models-compact-dark.png",
+    "mac-x86_64/aqua/09-provider-form-retained-dark.png",
+    "mac-x86_64/aqua/10-classic-retained-dark.png",
+    "mac-x86_64/aqua/11-relaunch-retained-dark.png",
+    "mac-x86_64/aqua/12-reduced-transparency-light.png",
+    "mac-x86_64/aqua/13-system-reduced-transparency-dark.png"
+  ]
+}

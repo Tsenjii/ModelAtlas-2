@@ -1,0 +1,25 @@
+package main
+
+// Compare retained local observations without probing providers or borrowing a
+// different account, credential, group, endpoint or performance source.
+const jsModelConnections = `
+function modelCanonical(m){return m.metadata?.canonical_id||modelRecord(m)?.metadata?.canonical_id||m.model_id;}
+function modelConnectionMetrics(m){const p=m.performance?.source==="MY_KEY_LOCAL"?m.performance:{};return {samples:knownNumber(p.samples),success:knownNumber(p.success_rate),tps:meanMetric(p.tps),ttft:meanMetric(p.ttft),latency:meanMetric(p.latency)};}
+function modelConnections(parent,selected,ticket){
+ const section=detailSection(parent,"各家連線速度","我的實測；每個帳戶、Key、群組與端點分開比較。"),controls=el("div",undefined,"connection-controls"),label=el("label","連線排序"),sort=el("select"),summary=el("p",undefined,"section-description"),list=el("div",undefined,"connection-speed-list"),footer=el("div",undefined,"actions"),picked=new Set();sort.setAttribute("aria-label","連線排序");for(const [value,title]of [["tps","TPS 由快到慢"],["ttft","首字延遲由短到長"],["success","上線率由高到低"],["latency","總延遲由短到長"],["provider","供應商名稱"]])option(sort,value,title);label.append(sort);controls.append(label);section.append(controls,summary,list,footer);section.classList.add("model-connections");let limit=25;
+ const canonical=()=>modelCanonical(myModels.find(m=>key(m)===key(selected))||selected),selectedRows=()=>myModels.filter(m=>picked.has(key(m))&&m.state==="ACTIVE"&&modelCanonical(m)===canonical());
+ const compare=action(footer,"比較選取的連線",()=>openComparison(selectedRows().map(scope)),false),count=el("span",undefined,"section-description"),more=action(footer,"顯示更多連線",()=>{limit+=25;render();});footer.append(count);const updateSelection=()=>{const rows=selectedRows();compare.disabled=!!comparisonProblem(rows);count.textContent=rows.length?"已選 "+rows.length+" / 4":"選擇 2–4 個連線可開始比較";};
+ const render=()=>{
+  if(!detailCurrent(ticket))return;const rows=myModels.filter(m=>m.state==="ACTIVE"&&modelCanonical(m)===canonical()),ids=new Set(rows.filter(m=>m.enabled&&chatOperation(targetOperation(m))).map(key));for(const id of picked)if(!ids.has(id))picked.delete(id);
+  const names=m=>providers.find(p=>p.id===m.provider_id)?.name||m.provider_id;
+  rows.sort((a,b)=>{if(sort.value!=="provider"){const x=modelConnectionMetrics(a)[sort.value],y=modelConnectionMetrics(b)[sort.value];if(x===null||y===null){if(x!==y)return x===null?1:-1;}else if(x!==y)return ["ttft","latency"].includes(sort.value)?x-y:y-x;}return names(a).localeCompare(names(b))||connectionLabel(a).localeCompare(connectionLabel(b))||key(a).localeCompare(key(b));});
+  const windowName={"1h":"最近 1 小時","24h":"最近 24 小時","7d":"最近 7 天","30d":"最近 30 天"}[settings.performance_window||"7d"]||"目前設定期間";summary.textContent=new Set(rows.map(m=>m.provider_id)).size+" 家供應商 · "+rows.length+" 個連線 · "+windowName;list.replaceChildren();more.hidden=rows.length<=limit;
+  for(const m of rows.slice(0,limit)){
+   const metric=modelConnectionMetrics(m),card=el("article",undefined,"connection-speed-card"),heading=el("div",undefined,"connection-speed-heading"),identity=el("div"),state=el("span",key(m)===key(selected)?"目前連線":m.enabled?"已啟用":"連線未就緒","state-chip");card.dataset.modelConnectionScope=key(m);identity.append(el("strong",names(m)),el("small",connectionLabel(m)),el("small",m.model_id+" · "+(operationLabels[targetOperation(m)]||targetOperation(m))));heading.append(identity,state);card.append(heading);list.append(card);
+   const values=el("dl",undefined,"connection-speed-metrics");for(const [title,value]of [["TPS",metric.tps===null?null:Number(metric.tps.toFixed(1))+" tokens/s"],["首字延遲",metric.ttft===null?null:Math.round(metric.ttft)+" ms"],["上線率",metric.success===null?null:(metric.success*100).toFixed(1)+"%"],["總延遲",metric.latency===null?null:Math.round(metric.latency)+" ms"]]){const cell=el("div");cell.append(el("dt",title),el("dd",value===null?"尚無資料":value));values.append(cell);}card.append(values,el("small","我的實測 · "+(metric.samples===null?"樣本數未知":metric.samples+" 次請求"),"source-line"));
+   const actions=el("div",undefined,"actions connection-speed-actions"),check=el("input"),choice=el("label","選入比較","check");check.type="checkbox";check.checked=picked.has(key(m));check.disabled=!m.enabled||!chatOperation(targetOperation(m));check.setAttribute("aria-label","選入比較："+names(m)+" · "+connectionLabel(m)+" · "+m.model_id+" · "+m.endpoint);check.addEventListener("change",()=>{if(check.checked&&picked.size>=4){check.checked=false;count.textContent="一次最多比較 4 個連線，請先取消一個選取。";return;}if(check.checked)picked.add(key(m));else picked.delete(key(m));updateSelection();});choice.prepend(check);actions.append(choice);action(actions,"查看這個連線",()=>modelDetail(m,settings.performance_window||"7d","performance"));const use=action(actions,"切換到這個連線",()=>openModelConnection(m),false);use.disabled=busy||!pickerAvailable().some(row=>key(row)===key(m));card.append(actions);
+  }
+  if(!rows.length)list.append(el("p","尚無這個模型的使用中連線。","section-description"));updateSelection();
+ };sort.addEventListener("change",()=>{limit=25;render();});$("detail-content").modelConnectionsReload=render;render();return render;
+}
+`

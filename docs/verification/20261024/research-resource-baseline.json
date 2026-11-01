@@ -1,0 +1,82 @@
+{
+  "source_sha": "abcffa0a907484bb36454b1d73857e8c2b892014",
+  "source_tree": "24687c6cea24025151ed2d702212f19507d90846",
+  "checked_at": "2026-10-24",
+  "acceptance_scope": "RESEARCH-RESOURCE-015G",
+  "prior_artifact_verification": "https://github.com/Tsenjii/ModelAtlas-2/pull/20",
+  "artifact_note": "先前已持久驗收；本輪重新讀取來源及九項job，不聲稱本輪重新下載前片全部產物。",
+  "runs": [
+    {
+      "id": 39947435364,
+      "attempt": 1,
+      "jobs": [
+        {
+          "id": 120393419729,
+          "name": "vps-linux-amd64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 120393419929,
+          "name": "vps-browser",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 120393420034,
+          "name": "vps-test",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 120393420144,
+          "name": "vps-linux-arm64",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 39947435282,
+      "attempt": 1,
+      "jobs": [
+        {
+          "id": 120393419441,
+          "name": "device-tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 120393419831,
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 39947435322,
+      "attempt": 1,
+      "jobs": [
+        {
+          "id": 120393419338,
+          "name": "macos-build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 120395615082,
+          "name": "macos-test (macos-15, arm64)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 120395615229,
+          "name": "macos-test (macos-15-intel, x86_64)",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}

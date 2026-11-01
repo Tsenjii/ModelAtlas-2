@@ -635,6 +635,64 @@ class ProviderModelActionViewModelTest {
     )
 
     /** 走真 `saveConnection`（真 vault ＋真 Room ＋自動選取），只記下自己建立的 provider。 */
+    @Test
+    fun explicitBatchRunsEachModelOnceInSelectedScopeAndKeepsTelemetry() {
+        val fixture = givenConnection("batch-complete")
+        selectAndAwait(fixture)
+        val before = sampleIds(fixture.providerId)
+        val models = listOf("batch-first", "batch-second", "batch-third")
+        transport.mode = FakeProbeTransport.Mode.COMPLETE
+        onMain { viewModel.testProviderModels(fixture.providerId, models) }
+        val done = await { viewModel.providerModelBatch.first { !it.running && it.status == "COMPLETED" } }
+        assertEquals(models, done.results.map { it.modelId })
+        assertTrue(done.results.all { it.status == "SUCCESS" && it.connectionId == fixture.connectionId && it.group == viewModel.selectedGroup.value })
+        assertEquals(3, transport.callCount)
+        assertEquals(3, (sampleIds(fixture.providerId) - before).size)
+        assertNoSecretInOwnRows(fixture.providerId)
+    }
+
+    @Test
+    fun batchRateLimitStopsBeforeSendingPendingModelsAndPreservesFailure() {
+        val fixture = givenConnection("batch-limit")
+        selectAndAwait(fixture)
+        transport.mode = FakeProbeTransport.Mode.RATE_LIMIT
+        onMain { viewModel.testProviderModels(fixture.providerId, listOf("limited-model", "untested-model")) }
+        val done = await { viewModel.providerModelBatch.first { !it.running && it.status == "LIMIT_REACHED" } }
+        assertEquals(1, transport.callCount)
+        assertEquals(429, done.results.single().httpStatus)
+        assertEquals("FAILURE", done.results.single().status)
+        assertNull(offeringOf(fixture.providerId, "untested-model"))
+    }
+
+    @Test
+    fun batchCancellationJoinsActiveProbeBeforeReleasingOwnership() {
+        val fixture = givenConnection("batch-cancel")
+        selectAndAwait(fixture)
+        transport.mode = FakeProbeTransport.Mode.GATE
+        onMain { viewModel.testProviderModels(fixture.providerId, listOf("cancel-model", "never-model")) }
+        awaitProbeStarted(0, fixture, "cancel-model")
+        onMain { viewModel.cancelProviderModelAction() }
+        val done = await { viewModel.providerModelBatch.first { !it.running && it.status == "CANCELLED" } }
+        assertFalse(done.running)
+        assertEquals(1, transport.callCount)
+        assertTrue(sampleRows(fixture.providerId).any { it["outcome"] == Outcome.CANCELLED.name })
+        assertNull(offeringOf(fixture.providerId, "never-model"))
+    }
+
+    @Test
+    fun leavingBeforeFirstBatchProbeCancelsWithoutSendingAnyPendingRequest() {
+        val fixture = givenConnection("batch-early-leave")
+        selectAndAwait(fixture)
+        transport.mode = FakeProbeTransport.Mode.COMPLETE
+        onMain {
+            viewModel.testProviderModels(fixture.providerId, listOf("never-first", "never-second"))
+            viewModel.leaveProviderDetail(fixture.providerId)
+        }
+        await { viewModel.providerModelBatch.first { !it.running && it.status == "CANCELLED" } }
+        assertEquals(0, transport.callCount)
+        assertTrue(sampleRows(fixture.providerId).isEmpty())
+    }
+
     private fun givenConnection(label: String): Fixture {
         val name = "Provider Action Fixture $label ${UUID.randomUUID()}"
         onMain { viewModel.saveConnection(name, BASE_URL, "fixture-model-$label", FIXTURE_SECRET) }
@@ -892,7 +950,7 @@ class ProviderModelActionViewModelTest {
      * 因此永遠不會在 stream 尚未進入時越界；完成本身是 suspend 點，測試不需要 sleep 或 busy wait。
      */
     private class FakeProbeTransport : InferenceTransport {
-        enum class Mode { COMPLETE, FAIL, GATE }
+        enum class Mode { COMPLETE, FAIL, GATE, RATE_LIMIT }
 
         @Volatile
         var mode: Mode = Mode.GATE
@@ -949,6 +1007,7 @@ class ProviderModelActionViewModelTest {
             when (mode) {
                 Mode.COMPLETE -> emit(StreamEvent.Finished)
                 Mode.FAIL -> throw InferenceFailure(Outcome.SERVER, 500)
+                Mode.RATE_LIMIT -> throw InferenceFailure(Outcome.RATE_LIMIT, 429)
                 Mode.GATE -> {
                     gates[slot].await()
                     emit(StreamEvent.Finished)
