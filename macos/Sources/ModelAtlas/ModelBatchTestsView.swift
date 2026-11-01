@@ -22,17 +22,21 @@ import UniformTypeIdentifiers
         task = Task { [weak self] in
             guard let self else { return }
             defer { self.pending = false; self.stopping = false; self.task = nil }
+            var requestInFlight = false
             do {
                 while self.report.canContinue {
                     try Task.checkCancellation()
                     let scope = self.plan.offers[self.report.items.count].scope
+                    requestInFlight = true
                     let response = try await api.call("/models/test", method: "POST", body: scope.json)
                     // A returned receipt is retained even when cancellation arrives
                     // immediately after the engine has committed it.
                     try self.report.append(response)
+                    requestInFlight = false
                     try Task.checkCancellation()
                 }
             } catch {
+                self.report.stop(cancelled: Task.isCancelled, requestUnconfirmed: requestInFlight)
                 self.problem = Task.isCancelled ? "已停止測試。已發送的請求仍保留在實測歷史。" : error.localizedDescription
             }
         }

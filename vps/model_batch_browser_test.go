@@ -46,6 +46,10 @@ func TestBrowserModelBatchTestWorkflow(t *testing.T) {
 			mode.Store(2)
 			jsonOK(w, 200, true)
 			return
+		case "/__batch_fixture/complete":
+			mode.Store(0)
+			jsonOK(w, 200, true)
+			return
 		}
 		handler.ServeHTTP(w, r)
 	}))
@@ -56,7 +60,7 @@ func TestBrowserModelBatchTestWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("batch browser: %v\n%s", err, out)
 	}
-	if calls.Load() != 5 {
+	if calls.Load() != 8 {
 		t.Fatalf("unexpected extra batch inference: %d", calls.Load())
 	}
 	t.Log(string(out))

@@ -679,6 +679,20 @@ class ProviderModelActionViewModelTest {
         assertNull(offeringOf(fixture.providerId, "never-model"))
     }
 
+    @Test
+    fun leavingBeforeFirstBatchProbeCancelsWithoutSendingAnyPendingRequest() {
+        val fixture = givenConnection("batch-early-leave")
+        selectAndAwait(fixture)
+        transport.mode = FakeProbeTransport.Mode.COMPLETE
+        onMain {
+            viewModel.testProviderModels(fixture.providerId, listOf("never-first", "never-second"))
+            viewModel.leaveProviderDetail(fixture.providerId)
+        }
+        await { viewModel.providerModelBatch.first { !it.running && it.status == "CANCELLED" } }
+        assertEquals(0, transport.callCount)
+        assertTrue(sampleRows(fixture.providerId).isEmpty())
+    }
+
     private fun givenConnection(label: String): Fixture {
         val name = "Provider Action Fixture $label ${UUID.randomUUID()}"
         onMain { viewModel.saveConnection(name, BASE_URL, "fixture-model-$label", FIXTURE_SECRET) }

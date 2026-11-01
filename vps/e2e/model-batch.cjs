@@ -40,6 +40,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await close();await page.locator('#model-batch-progress').click();assert.equal((await fixture('state')).calls,5,'progress view duplicated active request');
   await dialog().getByRole('button',{name:'停止測試',exact:true}).click();await state().filter({hasText:'已停止測試 · 1 / 3'}).waitFor();assert.equal((await fixture('state')).calls,5);
   await page.setViewportSize({width:320,height:1000});await page.evaluate(()=>document.documentElement.style.fontSize='200%');await screenshot('cancelled-320-large');
-  assert.deepEqual(errors,[]);console.log('Batch testing: explicit three-scope HTTP, receipts/export, no preview/reopen requests, quota stop, active socket cancellation, retained progress, 320/375/1280 and 200% passed.');
+  await close();await page.setViewportSize({width:1280,height:1000});await page.evaluate(()=>document.documentElement.style.fontSize='');await fixture('complete');
+  // Drop a real response after its first progress frame. The server may have
+  // committed every request before a proxy loses the buffered response.
+  await page.route('**/api/v1/models/test-batch',async route=>{const response=await route.fetch(),body=await response.text();await route.fulfill({response,body:body.slice(0,body.indexOf('\n')+1)});},{times:1});
+  await page.locator('#bulk-test').click();await dialog().getByRole('button',{name:'開始測試 3 個模型',exact:true}).click();
+  await state().filter({hasText:'3 個結果尚未確認'}).waitFor();assert.equal((await fixture('state')).calls,8);
+  const droppedDownload=page.waitForEvent('download');await dialog().getByRole('button',{name:'匯出測試結果',exact:true}).click();
+  const dropped=JSON.parse(await readDownload(droppedDownload,'utf8'));assert(dropped.results.every(r=>r.outcome==='OUTCOME_UNCONFIRMED'));assert.equal((await fixture('state')).calls,8,'ambiguous batch was automatically replayed');await screenshot('unconfirmed');
+  assert.deepEqual(errors,[]);console.log('Batch testing: explicit three-scope HTTP, receipts/export, no preview/reopen requests, quota stop, active socket cancellation, retained progress, dropped committed response remains unconfirmed without replay, 320/375/1280 and 200% passed.');
  }catch(e){await page.screenshot({path:'e2e/screenshots/model-batch-failure.png'}).catch(()=>{});throw e;}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1);});

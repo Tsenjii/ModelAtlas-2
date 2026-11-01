@@ -21,6 +21,7 @@ public struct ManualModelTestReport: Sendable {
     public let plan: ManualModelTestPlan
     public private(set) var items: [LiveComparisonItem] = []
     public private(set) var status = "READY"
+    public private(set) var unconfirmedIndex: Int?
     public init(plan: ManualModelTestPlan) { self.plan = plan }
     public mutating func append(_ response: JSONValue) throws {
         guard ["READY", "RUNNING"].contains(status), items.count < plan.offers.count,
@@ -32,9 +33,13 @@ public struct ManualModelTestReport: Sendable {
         else { status = items.count == plan.offers.count ? "COMPLETED" : "RUNNING" }
     }
     public var canContinue: Bool { ["READY", "RUNNING"].contains(status) && items.count < plan.offers.count }
+    public mutating func stop(cancelled: Bool, requestUnconfirmed: Bool) {
+        status = cancelled ? "CANCELLED" : "DISCONNECTED"
+        if requestUnconfirmed && items.count < plan.offers.count { unconfirmedIndex = items.count }
+    }
     public var raw: JSONValue {
         .object(["format": .string("modelatlas-manual-test-batch"), "status": .string(status), "results": .array(plan.offers.enumerated().map { index, offer in
-            index < items.count ? items[index].raw : .object(["selection": offer.scope.json, "outcome": .string("NOT_TESTED")])
+            index < items.count ? items[index].raw : .object(["selection": offer.scope.json, "outcome": .string(index == unconfirmedIndex ? "OUTCOME_UNCONFIRMED" : "NOT_TESTED")])
         })])
     }
 }

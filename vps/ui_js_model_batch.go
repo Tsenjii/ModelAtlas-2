@@ -30,13 +30,13 @@ function openModelBatch(selections=null){
   const card=item(list,modelDisplayName(m),(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" · "+connectionLabel(m));
   card.dataset.batchModelScope=key(m);const outcome=el("p"),metrics=el("small"),actions=el("div",undefined,"actions");card.append(outcome,metrics,actions);nodes.push({outcome,metrics,actions,index});
  }
- const start=action(controls,"開始測試 "+state.rows.length+" 個模型",()=>runModelBatch(state),false),stop=action(controls,"停止測試",()=>stopModelBatch(state)),save=action(controls,"匯出測試結果",()=>downloadJSON("modelatlas-model-tests.json",{format:"modelatlas-manual-test-batch",id:state.id,status:state.status,results:state.rows.map((m,index)=>({selection:scope(m),...(state.results.get(index)||{outcome:state.started?"NOT_TESTED":"PENDING"})}))}));
+ const start=action(controls,"開始測試 "+state.rows.length+" 個模型",()=>runModelBatch(state),false),stop=action(controls,"停止測試",()=>stopModelBatch(state)),save=action(controls,"匯出測試結果",()=>downloadJSON("modelatlas-model-tests.json",{format:"modelatlas-manual-test-batch",id:state.id,status:state.status,results:state.rows.map((m,index)=>({selection:scope(m),...(state.results.get(index)||{outcome:state.status==="DISCONNECTED"?"OUTCOME_UNCONFIRMED":state.started?"NOT_TESTED":"PENDING"})}))}));
  const render=()=>{
   updateModelBatchActions();if(!detailCurrent(ticket))return;
   const completed=state.results.size;bar.value=completed;progress.textContent=(state.running?(state.stopRequested?"正在停止…":"正在測試"):modelBatchStatus[state.status]||"準備測試")+" · "+completed+" / "+state.rows.length;
-  if(state.started&&!state.running&&completed<state.rows.length)progress.textContent+=" · "+(state.rows.length-completed)+" 個尚未測試";
+  if(state.started&&!state.running&&completed<state.rows.length)progress.textContent+=" · "+(state.rows.length-completed)+(state.status==="DISCONNECTED"?" 個結果尚未確認":" 個尚未測試");
   start.hidden=state.started;stop.hidden=!state.running;stop.disabled=state.stopRequested;save.disabled=!state.started;
-  for(const node of nodes){const result=state.results.get(node.index);node.outcome.textContent=result?(result.outcome==="SUCCESS"?"可用":result.outcome):state.running&&node.index===state.active?"測試中…":state.started&&!state.running?"尚未取得結果":"等待測試";
+  for(const node of nodes){const result=state.results.get(node.index);node.outcome.textContent=result?(result.outcome==="SUCCESS"?"可用":result.outcome):state.running&&node.index===state.active?"測試中…":state.status==="DISCONNECTED"?"結果未確認，請查閱請求紀錄":state.started&&!state.running?"尚未取得結果":"等待測試";
    if(result){const d=result.details||{};node.metrics.textContent="首字 "+(d.ttft_ms==null?"尚無資料":d.ttft_ms+" ms")+" · 速率 "+(d.tps==null?"尚無資料":Number(d.tps).toFixed(1)+" tokens/s")+" · 延遲 "+(d.latency_ms==null?"尚無資料":d.latency_ms+" ms");if(d.sample_id&&!node.actions.children.length)action(node.actions,"查看這次請求",()=>requestDetail(d.sample_id));}
   }
  };

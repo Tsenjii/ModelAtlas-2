@@ -50,4 +50,14 @@ final class ManualModelTestsTests: XCTestCase {
             XCTAssertThrowsError(try report.append(result(b)))
         }
     }
+    func testDisconnectedRequestIsUnconfirmedRatherThanDeclaredUntested() throws {
+        let a = offer("one"), b = offer("two"), c = offer("three")
+        var report = ManualModelTestReport(plan: try ManualModelTestPlan(offers: [a, b, c]))
+        try report.append(result(a))
+        report.stop(cancelled: false, requestUnconfirmed: true)
+        XCTAssertEqual(report.status, "DISCONNECTED")
+        XCTAssertEqual(report.raw["results"].array[1]["outcome"], .string("OUTCOME_UNCONFIRMED"))
+        XCTAssertEqual(report.raw["results"].array[2]["outcome"], .string("NOT_TESTED"))
+        XCTAssertFalse(report.canContinue)
+    }
 }

@@ -1086,7 +1086,8 @@ class AtlasViewModel @JvmOverloads constructor(
     }
 
     fun leaveProviderDetail(providerId: String) {
-        if (_providerModelAction.value.providerId == providerId) cancelProviderModelAction()
+        if (_providerModelAction.value.providerId == providerId ||
+            _providerModelBatch.value.providerId == providerId && _providerModelBatch.value.running) cancelProviderModelAction()
     }
 
     private suspend fun cancelAndJoinProviderModelAction() {
