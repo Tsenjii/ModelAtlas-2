@@ -3,6 +3,7 @@ package dev.modelatlas.app.ui
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +54,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.modelatlas.app.ProviderModelActionState
+import dev.modelatlas.app.ProviderModelBatchState
 import dev.modelatlas.app.R
 import dev.modelatlas.core.domain.HealthState
 import dev.modelatlas.core.domain.PriceState
@@ -209,6 +212,7 @@ data class ProviderDetailState(
      * 訊息／token 不得出現在此頁。
      */
     val action: ProviderModelActionState = ProviderModelActionState(),
+    val modelBatch: ProviderModelBatchState? = null,
     /** 已選連線的安全 metadata；null＝尚未有可用連線（畫面顯示選擇指引，動作 disabled）。 */
     val actionScope: ProviderDetailActionScope? = null,
     /** 本 provider 可明確選取的連線；不自動選、不猜另一把 key。 */
@@ -342,12 +346,14 @@ fun ProviderDetailScreen(
     saving: Boolean = false,
     syncEnabled: Boolean = true,
     newApiSyncSupported: Boolean = false,
+    onTestBatch: ((List<String>) -> Unit)? = null,
 ) = AtlasTheme {
     val unknown = stringResource(R.string.value_unknown)
     val syncingLabel = stringResource(R.string.provider_detail_syncing)
     val newApiLabel = stringResource(R.string.action_sync_new_api, stringResource(R.string.provider_detail_sync))
     val syncingNewApi = newApiOpState?.syncing ?: state.header.syncing
     var draft by remember(state.header.providerId) { mutableStateOf("") }
+    var batchSelected by remember(state.header.providerId, state.actionScope?.connectionId, state.actionScope?.group) { mutableStateOf(emptySet<String>()) }
     // draft 只依 clearToken 的一次性成功回填清空；點按鈕、失敗、取消都不清。
     var seenClearToken by remember(state.header.providerId) { mutableIntStateOf(state.action.clearToken) }
     LaunchedEffect(state.action.clearToken, state.action.kind, state.action.status) {
@@ -433,6 +439,9 @@ fun ProviderDetailScreen(
                     onTestNow = onTestNow,
                     onCancelAction = onCancelAction,
                     onSelectConnection = onSelectConnection,
+                    onTestBatch = onTestBatch,
+                    batchSelected = batchSelected,
+                    onBatchSelection = { batchSelected = it },
                 )
                 ProviderDetailTab.PERFORMANCE -> item { DetailPerformanceTab(state.performance) }
                 ProviderDetailTab.HISTORY -> detailHistoryTab(state.history)
@@ -655,9 +664,12 @@ private fun LazyListScope.detailModelsTab(
     onTestNow: ((modelId: String) -> Unit)?,
     onCancelAction: () -> Unit,
     onSelectConnection: ((connectionId: String) -> Unit)?,
+    onTestBatch: ((List<String>) -> Unit)?,
+    batchSelected: Set<String>,
+    onBatchSelection: (Set<String>) -> Unit,
 ) {
     val action = state.action
-    val busy = providerModelActionBusy(action)
+    val busy = providerModelActionBusy(action) || state.modelBatch?.running == true
     val scopeReady = state.actionScope != null
     val testingModelId = action.modelId.takeIf { busy && action.kind == PROVIDER_MODEL_ACTION_TEST }
 
@@ -712,6 +724,35 @@ private fun LazyListScope.detailModelsTab(
         item { DetailEmptyState(stringResource(R.string.provider_detail_no_models), stringResource(R.string.provider_detail_no_models_body), Icons.Filled.List) }
         return
     }
+    if (onTestBatch != null) {
+        item {
+            AtlasCard {
+                AtlasSectionHeading(stringResource(R.string.model_batch_title))
+                Text(stringResource(R.string.model_batch_description), style = MaterialTheme.typography.bodySmall)
+                state.modelBatch?.takeIf { it.models.isNotEmpty() }?.let { batch ->
+                    Text(stringResource(R.string.model_batch_progress, batch.results.size, batch.models.size))
+                    Text(stringResource(when (batch.status) {
+                        "COMPLETED" -> R.string.model_batch_completed
+                        "CANCELLED" -> R.string.model_batch_cancelled
+                        "LIMIT_REACHED" -> R.string.model_batch_limited
+                        "RUNNING" -> R.string.provider_detail_testing
+                        else -> R.string.model_batch_stopped
+                    }))
+                    if (batch.running) OutlinedButton(onClick = onCancelAction, modifier = Modifier.fillMaxWidth().heightIn(min = AtlasSpace.touch)) { Text(stringResource(R.string.model_batch_stop)) }
+                }
+                OutlinedButton(
+                    onClick = { onBatchSelection(if (batchSelected.isNotEmpty()) emptySet() else models.map { it.modelId }.toSet()) },
+                    enabled = !busy && scopeReady && (batchSelected.isNotEmpty() || models.size <= 100),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = AtlasSpace.touch),
+                ) { Text(stringResource(if (batchSelected.isEmpty()) R.string.model_batch_select_all else R.string.model_batch_clear)) }
+                Button(
+                    onClick = { onTestBatch(batchSelected.sorted()) },
+                    enabled = !busy && scopeReady && batchSelected.size in 1..100,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = AtlasSpace.touch).testTag("provider_model_batch_start"),
+                ) { Text(stringResource(R.string.model_batch_start, batchSelected.size)) }
+            }
+        }
+    }
     items(
         items = models,
         key = { it.modelId },
@@ -720,6 +761,20 @@ private fun LazyListScope.detailModelsTab(
         val free = model.priceState == PriceState.FREE_NOW.name
         AtlasCard(subdued = !free) {
             Column(verticalArrangement = Arrangement.spacedBy(AtlasSpace.md)) {
+                if (onTestBatch != null) {
+                    Row {
+                        Checkbox(
+                            checked = model.modelId in batchSelected,
+                            onCheckedChange = { checked -> onBatchSelection(if (checked) batchSelected + model.modelId else batchSelected - model.modelId) },
+                            enabled = !busy && scopeReady && (model.modelId in batchSelected || batchSelected.size < 100),
+                            modifier = Modifier.heightIn(min = AtlasSpace.touch).semantics { contentDescription = model.modelId },
+                        )
+                        Text(stringResource(R.string.model_batch_select_model), style = MaterialTheme.typography.bodySmall)
+                    }
+                    state.modelBatch?.results?.firstOrNull { it.modelId == model.modelId }?.let { result ->
+                        Text(result.message ?: stringResource(R.string.model_batch_cancelled), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
                 DetailIdentityText(
                     value = model.modelId,
                     label = stringResource(R.string.label_model),

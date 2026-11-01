@@ -32,6 +32,7 @@ let modelSelectionMode=false;
 function updateModelSelection(){
  const count=selectedCompare.size,global=$("model-scope").value==="GLOBAL";$("my-models").classList.toggle("selecting",modelSelectionMode&&!global);$("model-select").disabled=global;$("model-select").setAttribute("aria-pressed",String(modelSelectionMode&&!global));$("model-select-label").textContent=modelSelectionMode?"完成選取":"選取";
  $("model-selection-bar").hidden=!count||global;$("model-selected-count").textContent="已選 "+count+" 個模型";$("compare").disabled=count<2;
+ updateModelBatchActions();
 }
 const filterDefaults={"model-lifecycle":"ACTIVE","model-scope":"MY_KEYS","model-sort":"smart","model-performance-source":"local"};
 const modelFilterIDs=["model-search","model-lifecycle","model-scope","model-sort","model-performance-source","model-provider","model-capability","model-price","model-favorites","model-key","model-group","model-category","model-modality","model-vendor","model-context-min","model-tps-min","model-ttft-max","model-latency-max","model-success-1h","model-success-24h","model-samples-min","model-input-max","model-output-max","model-cache-max","model-changes","model-usable"];

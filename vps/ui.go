@@ -376,6 +376,7 @@ const homeHTML = `<!doctype html>
 <span id="model-select-label">選取</span>
 </button>
 </div>
+<button id="model-batch-progress" type="button" class="ghost" hidden>測試結果</button>
 <div class="model-filter-strip">
 <div class="quick-filters" aria-label="模型快速篩選">
 <button type="button" data-model-quick="all" aria-pressed="true">全部</button>
@@ -438,6 +439,7 @@ const homeHTML = `<!doctype html>
 <button id="model-selection-clear" type="button" class="ghost">清除選取</button>
 <div class="actions">
 <button id="compare" class="ghost" type="button">比較勾選的模型</button>
+<button id="bulk-test" class="ghost" type="button">測試勾選的模型</button>
 <button id="bulk-hide" class="ghost" type="button">預覽隱藏勾選模型</button>
 <button id="bulk-archive" class="ghost" type="button">預覽封存勾選模型</button>
 <button id="bulk-restore" class="ghost" type="button">預覽恢復勾選模型</button>

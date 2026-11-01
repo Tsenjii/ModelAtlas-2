@@ -36,6 +36,7 @@ type Server struct {
 	flightMu        sync.Mutex
 	flights         map[string]bool
 	cancels         map[string]context.CancelFunc
+	batchTests      map[string]context.CancelFunc
 	media           map[string][]Attachment
 	mediaBytes      int
 	MaxFlights      int
@@ -228,6 +229,8 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /models/lifecycle", s.lifecycle)
 	api.HandleFunc("POST /models/compare", s.compare)
 	api.HandleFunc("POST /models/test", s.testModelHTTP)
+	api.HandleFunc("POST /models/test-batch", s.testModelBatchHTTP)
+	api.HandleFunc("POST /models/test-batch/cancel", s.cancelModelTestBatchHTTP)
 	api.HandleFunc("POST /authenticity/analyze", s.analyzeAuthenticityHTTP)
 	api.HandleFunc("GET /authenticity/reports", s.listAuthenticityReports)
 	api.HandleFunc("POST /authenticity/references/preview", s.previewAuthenticityReferenceHTTP)

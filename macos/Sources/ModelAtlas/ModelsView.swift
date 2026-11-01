@@ -11,6 +11,8 @@ struct ModelsView: View {
     @State private var compareSelection: Set<ModelScope> = []
     @State private var comparison: ComparisonController?
     @State private var bulkPending = false
+    @State private var modelTests: ModelBatchTestsController?
+    @State private var modelTestsOpen = false
     var body: some View {
         let entries = filtered
         ScrollView {
@@ -55,6 +57,7 @@ struct ModelsView: View {
         }.safeAreaInset(edge: .bottom) {
             if selecting && ["My Models", "Hidden"].contains(tab) { compareBar }
         }.sheet(item: $comparison) { ComparisonView(store: store, controller: $0) }
+            .sheet(isPresented: $modelTestsOpen) { if let modelTests { ModelBatchTestsView(store: store, controller: modelTests) } }
     }
     private var filters: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -64,6 +67,7 @@ struct ModelsView: View {
                 AtlasFilterChip(title: "收藏", icon: "star", selected: modelFilters.favorite == "favorite") { modelFilters.favorite = "favorite"; modelFilters.price = "" }
                 AtlasFilterChip(title: "目前免費", icon: "gift", selected: modelFilters.price == "FREE_NOW") { modelFilters.price = "FREE_NOW"; modelFilters.favorite = "" }
                 Spacer()
+                if let modelTests { Button(modelTests.pending ? "測試進度" : "測試結果") { modelTestsOpen = true }.buttonStyle(.plain).font(.caption) }
                 Button(selecting ? "完成選取" : "選取") { selecting.toggle(); if !selecting { compareSelection = [] } }.buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.secondary)
                 Button { search = ""; modelFilters = ModelFilters(); shown = 100 } label: { Image(systemName: "arrow.counterclockwise") }.buttonStyle(.plain).foregroundStyle(.secondary).help("重設所有篩選")
                 Text("\(filtered.count) 個連線").font(.caption).foregroundStyle(.secondary)
@@ -85,6 +89,10 @@ struct ModelsView: View {
             if !compareSelection.isEmpty { Button("清除") { compareSelection = [] }.buttonStyle(.plain).foregroundStyle(.secondary) }
             Spacer()
             Menu("批次管理") {
+                Button("測試勾選的模型") {
+                    do { modelTests = try ModelBatchTestsController(offers: offers); modelTestsOpen = true }
+                    catch { store.problem = error.localizedDescription }
+                }.disabled(modelTests?.pending == true || ManualModelTestPlan.problem(offers) != nil)
                 ForEach(["HIDDEN", "ARCHIVED", "ACTIVE"], id: \.self) { state in
                     Button(["HIDDEN":"預覽隱藏", "ARCHIVED":"預覽封存", "ACTIVE":"預覽恢復"][state]!) {
                         guard !bulkPending else { return }; bulkPending = true
@@ -97,9 +105,9 @@ struct ModelsView: View {
                                 store.controlReview = ActionReviewController(api: api, value: value)
                             } catch { store.problem = error.localizedDescription }
                         }
-                    }
+                    }.disabled(!(2...100).contains(compareSelection.count))
                 }
-            }.fixedSize().disabled(bulkPending || !(2...100).contains(compareSelection.count))
+            }.fixedSize().disabled(bulkPending || !(1...100).contains(compareSelection.count))
             if bulkPending { ProgressView().controlSize(.small).accessibilityLabel("正在準備批次預覽") }
             Button { comparison = ComparisonController(offers: offers, refresh: { try await store.reload() }) } label: { Label("並列比較", systemImage: "rectangle.split.2x1") }
                 .buttonStyle(AtlasActionStyle(prominent: true)).disabled(!canCompare || bulkPending)

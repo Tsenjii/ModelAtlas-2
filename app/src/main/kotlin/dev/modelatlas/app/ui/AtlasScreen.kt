@@ -296,6 +296,7 @@ private fun AtlasScreenContent(
   val dedicatedSupported: (String) -> Boolean = { it in dedicatedSupportedProviders }
   // PROV-001／MODEL-006：Provider Detail 模型動作單一狀態（新增／立即測試／取消）。
   val providerModelAction by viewModel.providerModelAction.collectAsStateWithLifecycle()
+  val providerModelBatch by viewModel.providerModelBatch.collectAsStateWithLifecycle()
   // P6-DC（UI 入口接線）：detail 選擇態（VM 為單一真相；搜尋／篩選／同步行為不動）。
   val modelDetailRow by viewModel.modelDetailRow.collectAsStateWithLifecycle()
   val detailEvidenceVersion by viewModel.detailEvidenceVersion.collectAsStateWithLifecycle()
@@ -756,6 +757,7 @@ private fun AtlasScreenContent(
                     syncing = detailPid in state.syncingProviders || detailPid in dedicatedSyncing,
                   ),
                   action = action,
+                  modelBatch = providerModelBatch.takeIf { it.providerId == detailPid && it.connectionId == state.selectedId && it.group == selectedGroup },
                   staleLoad = providerDetailStale,
                 )
               },
@@ -782,6 +784,7 @@ private fun AtlasScreenContent(
               selectedConnectionId = state.selectedId,
               onAddModel = viewModel::addProviderModel,
               onTestModel = viewModel::testProviderModel,
+              onTestModels = viewModel::testProviderModels,
               onCancelModelAction = viewModel::cancelProviderModelAction,
               onSelectConnection = viewModel::selectConnection,
               dedicatedOpStateFor = scopedDedicatedStateFor,
@@ -1324,6 +1327,7 @@ private fun ProviderDetailHost(
   selectedConnectionId: String? = null,
   onAddModel: ((providerId: String, modelId: String) -> Unit)? = null,
   onTestModel: ((providerId: String, modelId: String) -> Unit)? = null,
+  onTestModels: ((providerId: String, modelIds: List<String>) -> Unit)? = null,
   onCancelModelAction: (() -> Unit)? = null,
   onSelectConnection: ((String) -> Unit)? = null,
   dedicatedOpStateFor: (ConnectionItem, String?) -> OpState = { _, _ -> OpState() },
@@ -1409,6 +1413,7 @@ private fun ProviderDetailHost(
     },
     onCancelAction = { onCancelModelAction?.invoke() },
     onSelectConnection = onSelectConnection,
+    onTestBatch = if (scopeUsable && onTestModels != null) { { ids -> onTestModels(providerId, ids) } } else null,
     onOpenCheckin = { url ->
       val safeUri = runCatching { Uri.parse(url) }.getOrNull()
         ?.takeIf { it.scheme == "https" }

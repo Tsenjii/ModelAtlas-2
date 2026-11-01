@@ -480,6 +480,9 @@ class AtlasViewModel @JvmOverloads constructor(
     private val _providerModelAction = MutableStateFlow(ProviderModelActionState())
     val providerModelAction: StateFlow<ProviderModelActionState> = _providerModelAction.asStateFlow()
     private var providerModelJob: Job? = null
+    private val _providerModelBatch = MutableStateFlow(ProviderModelBatchState())
+    val providerModelBatch: StateFlow<ProviderModelBatchState> = _providerModelBatch.asStateFlow()
+    private var providerModelBatchJob: Job? = null
 
     // D-028 F1 in-memory registries — MUST be declared before the init block:
     // the session hook launched from init reads them immediately (Kotlin
@@ -754,7 +757,7 @@ class AtlasViewModel @JvmOverloads constructor(
     ) {
         require(listOfNotNull(image, file, audio).size <= 1) { "Only one local attachment per turn" }
         if (_state.value.busy) return
-        if (_providerModelAction.value.busy || _compareRunning.value) {
+        if (_providerModelAction.value.busy || _providerModelBatch.value.running || _compareRunning.value) {
             _state.update { it.copy(error = string(R.string.error_busy)) }
             return
         }
@@ -1017,7 +1020,67 @@ class AtlasViewModel @JvmOverloads constructor(
     fun testProviderModel(providerId: String, modelId: String) =
         startProviderModelAction(providerId, modelId, test = true)
 
+    fun testProviderModels(providerId: String, modelIds: List<String>) {
+        if (providerModelBatchJob != null || providerModelJob != null ||
+            !ProviderModelBatchState.validModels(modelIds)) return
+        val record = recordFor(_state.value.selectedId) ?: return
+        val group = _selectedGroup.value
+        val models = modelIds.toList()
+        if (record.providerId != providerId || !providerModelScopeIsCurrent(record, group)) return
+        _providerModelBatch.value = ProviderModelBatchState(
+            providerId = providerId, connectionId = record.id, group = group,
+            models = models, running = true, status = "RUNNING",
+        )
+        var owner: Job? = null
+        owner = viewModelScope.launch(start = CoroutineStart.LAZY) {
+            var status = "COMPLETED"
+            try {
+                for (model in models) {
+                    ensureActive()
+                    if (!providerModelScopeIsCurrent(record, group)) throw CancellationException()
+                    startProviderModelAction(providerId, model, test = true, batchOwned = true)
+                    val child = providerModelJob
+                    if (child == null) { status = "STOPPED"; break }
+                    child.join()
+                    ensureActive()
+                    val result = _providerModelAction.value
+                    if (result.providerId != providerId || result.connectionId != record.id ||
+                        result.group != group || result.modelId != model || result.busy) {
+                        status = "STOPPED"; break
+                    }
+                    _providerModelBatch.update { it.copy(results = it.results + result) }
+                    if (result.httpStatus == 429 || result.httpStatus == 402) {
+                        status = "LIMIT_REACHED"; break
+                    }
+                    if (result.status == "CANCELLED") { status = "CANCELLED"; break }
+                }
+            } catch (cancelled: CancellationException) {
+                status = "CANCELLED"
+                throw cancelled
+            } finally {
+                // Do not release ownership before the active socket and telemetry
+                // cleanup have finished. No pending item is replayed after cancel.
+                withContext(NonCancellable) {
+                    providerModelJob?.let { child -> child.cancel(); child.join() }
+                }
+                if (providerModelBatchJob === owner) {
+                    providerModelBatchJob = null
+                    _providerModelBatch.update { it.copy(running = false, status = status) }
+                }
+            }
+        }
+        providerModelBatchJob = owner
+        owner.invokeOnCompletion {
+            if (providerModelBatchJob === owner) {
+                providerModelBatchJob = null
+                _providerModelBatch.update { it.copy(running = false, status = "CANCELLED") }
+            }
+        }
+        owner.start()
+    }
+
     fun cancelProviderModelAction() {
+        providerModelBatchJob?.cancel()
         providerModelJob?.cancel()
         // Keep ownership until finally: socket close and final telemetry must finish first.
     }
@@ -1027,6 +1090,7 @@ class AtlasViewModel @JvmOverloads constructor(
     }
 
     private suspend fun cancelAndJoinProviderModelAction() {
+        providerModelBatchJob?.let { batch -> batch.cancel(); batch.join() }
         val job = providerModelJob ?: return
         job.cancel()
         job.join()
@@ -1046,7 +1110,8 @@ class AtlasViewModel @JvmOverloads constructor(
             (selected.anonymous || (selected.credentialEnabled && selected.credentialId !in blockedCredentialIds))
     }
 
-    private fun startProviderModelAction(providerId: String, modelId: String, test: Boolean) {
+    private fun startProviderModelAction(providerId: String, modelId: String, test: Boolean, batchOwned: Boolean = false) {
+        if (providerModelBatchJob != null && !batchOwned) return
         if (providerModelJob != null) return
         val model = modelId.trim()
         val record = recordFor(_state.value.selectedId)
@@ -1056,6 +1121,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 providerId = providerId, modelId = model, connectionId = record?.id,
                 group = _selectedGroup.value,
                 kind = if (test) "TEST" else "ADD", status = "FAILURE", message = message,
+                httpStatus = null,
             )
         }
         if (initErrorCache) { reject(string(R.string.error_initialization)); return }
@@ -1076,12 +1142,14 @@ class AtlasViewModel @JvmOverloads constructor(
             providerId = providerId, modelId = model, connectionId = record.id,
             group = group,
             kind = if (test) "TEST" else "ADD", status = "RUNNING", message = null,
+            httpStatus = null,
         )
         var myJob: Job? = null
         myJob = viewModelScope.launch(start = CoroutineStart.LAZY) {
             var result = "FAILURE"
             var message: String? = string(R.string.error_request)
             var savedCandidate = false
+            var statusCode: Int? = null
             try {
                 val offeringId = withContext(Dispatchers.IO) {
                     app.repository.addProviderModelCandidate(record, model, group)
@@ -1139,6 +1207,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 if (!providerModelScopeIsCurrent(record, group)) throw CancellationException()
                 if (verified) {
                     result = "SUCCESS"
+                    statusCode = 200
                     message = string(R.string.provider_detail_verified)
                 }
             } catch (e: CancellationException) {
@@ -1146,6 +1215,7 @@ class AtlasViewModel @JvmOverloads constructor(
                 message = null
                 throw e
             } catch (e: InferenceFailure) {
+                statusCode = e.status
                 message = messageFor(e.outcome)
             } catch (_: Exception) {
                 // Only localized, fixed error text crosses the UI boundary.
@@ -1156,6 +1226,7 @@ class AtlasViewModel @JvmOverloads constructor(
                     _providerModelAction.update { action ->
                         action.copy(
                             status = result, message = message,
+                            httpStatus = statusCode,
                             clearToken = action.clearToken + if (!test && result == "SUCCESS") 1 else 0,
                             refreshToken = action.refreshToken + if (savedCandidate) 1 else 0,
                         )

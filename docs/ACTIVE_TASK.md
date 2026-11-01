@@ -1,3 +1,5 @@
+> 2026-11-01（台北）使用者要求全平台完成、VPS 優先至全部功能可使用。接續三平台批次模型實測 MODEL-BATCH-020：VPS 從現有模型多選啟動、有界逐筆結果／取消／額度停止／匯出，Mac 原生多選與 Android 指定連線下的原生模型多選沿用正式推論／telemetry，禁止自動重送不確定的請求。這是目前唯一整合片；既有 Mac015Z 暫停優先序由本次全平台指示更新，但不刪原研究／同步／多模態缺口。VPS 聚焦真 TLS 與 Browser 已通過；新增來源自己的完整回歸、十一項 CI、原生及產物驗證前仍候選。原全部 workload／timeout、P1–P10／Part V、公開版本凍結及 PR20 Draft 保留；不宣稱使用者目標已部署。
+
 > 2026-10-31 VPS-CONVERSATIONS-019 所列對話介面與恢復功能已完成工程驗證，完整產品／Part V及獨立review仍PARTIAL。正式來源8152615b32c9b0210aebe2d1f4903d311d6016cf／tree9f5f46add8b30303b3fe63275629b90fae77b5f2；VPS41187695485六必要項、Android41187695541兩項、Mac41187695639三項同來源全SUCCESS。稽核41187695453／124498116264成功核對十一真產物；另下載稽核13038081869，2728546bytes／SHA256 5410bcb90b305107be08a40a3ad361ec2bea45b8632830aed39f7d7574dd8d47／CRC PASS，原始報告保持未改。詳 verification/20261031/conversation-workspace-baseline.json 及 conversation-workspace-audit.json。
 >
 > 對話清單現在保留最後成功結果、取消過期搜尋、IME／Enter／清除、50列分頁與局部GET重試；卡片顯示置頂、精確連線、兩行名稱／預覽、訊息數與實際更新時間。改名／置頂／封存採每ID單一提交、保留後輸入名稱草稿及關閉重開；已保存但讀取失敗與結果未知分開，先精確ID／state=ALL讀取，不自動重播POST。原完整歷史、107則匯出、Markdown／剪貼簿、精確可用範圍及composer草稿保持，DB schema38與權限不改。320px／200%、深淺色、真Aqua及原四張背景／48px點擊已驗；148視圖／37接觸表自行檢視，受影響9張另看原圖，未冒稱獨立review。
