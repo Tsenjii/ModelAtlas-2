@@ -99,7 +99,7 @@ func pcmWAV(raw []byte, rate int) []byte {
 	return out
 }
 
-func parseGeminiSpeech(raw []byte, v MediaRequest, result *MediaResponse, secrets []string) (*int64, *int64, bool) {
+func (s *Server) parseGeminiSpeech(raw []byte, v MediaRequest, result *MediaResponse, secrets []string) (*int64, *int64, bool) {
 	var root struct {
 		Error      json.RawMessage `json:"error"`
 		Model      string          `json:"modelVersion"`
@@ -129,13 +129,14 @@ func parseGeminiSpeech(raw []byte, v MediaRequest, result *MediaResponse, secret
 	}
 	data := root.Candidates[0].Content.Parts[0].Data
 	encoded := data.Base64
+	if len(encoded) == 0 || len(encoded) > ((maxAttachment+2)/3)*4 {
+		return nil, nil, false
+	}
+	encoded = strings.ReplaceAll(strings.ReplaceAll(encoded, "\r", ""), "\n", "")
 	for _, secret := range secrets {
 		if secret != "" && strings.Contains(encoded, secret) {
 			return nil, nil, false
 		}
-	}
-	if len(encoded) == 0 || len(encoded) > ((maxAttachment+2)/3)*4 {
-		return nil, nil, false
 	}
 	audio, err := base64.StdEncoding.Strict().DecodeString(encoded)
 	if err != nil {
@@ -166,17 +167,17 @@ func parseGeminiSpeech(raw []byte, v MediaRequest, result *MediaResponse, secret
 			return nil, nil, false
 		}
 		format, mediaType = "pcm", "audio/pcm"
-		if v.Format == "wav" {
+		if s.desktop && v.Format == "wav" {
 			if len(audio)+44 > maxAttachment {
 				return nil, nil, false
 			}
-			audio = pcmWAV(audio, rate)
+			encoded = base64.StdEncoding.EncodeToString(pcmWAV(audio, rate))
 			format, mediaType = "wav", "audio/wav"
 		}
 	default:
 		return nil, nil, false
 	}
-	result.Data = []mediaWire{{Base64: base64.StdEncoding.EncodeToString(audio), MIME: mediaType, Format: format, SampleRate: rate}}
+	result.Data = []mediaWire{{Base64: encoded, MIME: mediaType, Format: format, SampleRate: rate}}
 	result.Details["reported_model"] = safeText(root.Model, 256, secrets...)
 	result.Details["speech_dialect"] = v.SpeechDialect
 	for name, count := range map[string]*int64{"cache_read_tokens": root.Usage.Cache, "reasoning_tokens": root.Usage.Reasoning, "total_tokens": root.Usage.Total} {

@@ -1,6 +1,7 @@
 package main
 
 const jsMedia = `
+const desktopMedia=document.documentElement.dataset.desktopMedia==="true";
 let speechOperation="";
 function isSpeech(op){return ["AUDIO_SPEECH","GEMINI_SPEECH"].includes(op);}
 function selectedOperation(){return $("target").value?targetOperation(JSON.parse($("target").value)):"";}
@@ -12,11 +13,22 @@ function updatePlayground(){
  $("chat-ui").hidden=media;$("media-ui").hidden=!media;$("new-session").hidden=media;
  $("new-session").disabled=busy||!chatOperation(operation)||sessionScope!==$("target").value;$("send").disabled=busy||attachmentBatchPending||!chatOperation(operation)||!$("session").value||sessionScope!==$("target").value;
  $("media-send").disabled=busy||!media;$("media-clear").disabled=busy;
- $("media-operation").textContent=operationLabels[operation]||"";$("playground-description").textContent={IMAGES_GENERATION:"描述想生成的圖片。",IMAGES_EDIT:"選擇圖片，描述要修改的內容。",AUDIO:"上傳一段音訊，取得轉寫文字。",AUDIO_SPEECH:"輸入文字，生成可播放及下載的語音。",GEMINI_SPEECH:"輸入文字或雙人對話，生成可播放及下載的語音。",EMBEDDINGS:"取得文字向量，可供搜尋與比較使用。",RERANK:"輸入查詢與文件，依相關度排序。"}[operation]||"選一個模型，開始對話。";$("media-size-label").hidden=operation!=="IMAGES_GENERATION";
+ $("media-operation").textContent=operationLabels[operation]||"";$("playground-description").textContent={IMAGES_GENERATION:"描述想生成的圖片。",IMAGES_EDIT:"選擇圖片，描述要修改的內容。",AUDIO:"上傳一段音訊，取得轉寫文字。",AUDIO_SPEECH:"輸入文字，生成語音。",GEMINI_SPEECH:"輸入文字或雙人對話，生成語音。",EMBEDDINGS:"取得文字向量，可供搜尋與比較使用。",RERANK:"輸入查詢與文件，依相關度排序。"}[operation]||"選一個模型，開始對話。";$("media-size-label").hidden=operation!=="IMAGES_GENERATION";
  $("vector-options").hidden=!["EMBEDDINGS","RERANK"].includes(operation);$("vector-inputs").required=["EMBEDDINGS","RERANK"].includes(operation);$("vector-dimensions-label").hidden=operation!=="EMBEDDINGS";$("rerank-top-label").hidden=operation!=="RERANK";$("media-prompt-label").hidden=operation==="EMBEDDINGS";$("media-prompt").hidden=operation==="EMBEDDINGS";$("vector-input-label").firstChild.textContent=operation==="RERANK"?"待排序文件（每行一筆）":"輸入文字（每行一筆）";$("speech-options").hidden=!isSpeech(operation);$("speech-voice").required=isSpeech(operation);$("media-file-label").hidden=["IMAGES_GENERATION","AUDIO_SPEECH","GEMINI_SPEECH","EMBEDDINGS","RERANK"].includes(operation);$("media-input-name").hidden=["IMAGES_GENERATION","AUDIO_SPEECH","GEMINI_SPEECH","EMBEDDINGS","RERANK"].includes(operation);
  $("media-file-caption").textContent=operation==="AUDIO"?"選擇 WAV／MP3":"選擇要編輯的圖片";
  $("media-file").accept=operation==="AUDIO"?"audio/wav,audio/mpeg,.wav,.mp3":"image/png,image/jpeg,image/webp";
- const native=operation==="GEMINI_SPEECH";$("native-speech-options").hidden=!native;$("speech-speed-label").hidden=native;[...$("speech-format").options].forEach(o=>{o.hidden=native&&!["wav","pcm"].includes(o.value);});if(isSpeech(operation)&&speechOperation!==operation){$("speech-voice").value=native?"Kore":"alloy";$("speech-format").value=native?"wav":"mp3";speechOperation=operation;}
+ const native=operation==="GEMINI_SPEECH",format=$("speech-format");
+ $("native-speech-options").hidden=!native;
+ $("speech-speed-label").hidden=native;
+ for(const option of format.options){
+  option.hidden=native&&!["wav","pcm"].includes(option.value);
+  if(option.value==="wav")option.textContent=native&&!desktopMedia?"上游原始格式":"WAV";
+ }
+ if(isSpeech(operation)&&speechOperation!==operation){
+  $("speech-voice").value=native?"Kore":"alloy";
+  format.value=native?"wav":"mp3";
+  speechOperation=operation;
+ }
  $("media-prompt").required=!["AUDIO","EMBEDDINGS","GEMINI_SPEECH"].includes(operation);$("media-prompt-label").textContent=operation==="RERANK"?"查詢":operation==="AUDIO"?"轉寫提示（選填）":"描述";
  $("media-prompt").placeholder=operation==="AUDIO"?"可提供人名、專有名詞等上下文":"描述想生成的圖片，或這次要修改的內容";
  $("media-send").textContent=operation==="EMBEDDINGS"?"取得向量":operation==="RERANK"?"排序文件":isSpeech(operation)?"生成語音":operation==="AUDIO"?"開始轉寫":operation==="IMAGES_EDIT"?"編輯圖片":"生成圖片";
@@ -24,6 +36,27 @@ function updatePlayground(){
 function clearMediaResult(){mediaResultURLs.forEach(url=>URL.revokeObjectURL(url));mediaResultURLs=[];$("media-result").replaceChildren();}
 function resetMediaDraft(){fileReadVersion++;mediaAttachment=null;$("media-file").value="";$("media-prompt").value="";$("media-input-name").textContent="每份檔案限 4 MiB";$("vector-inputs").value="";$("speech-instructions").value="";$("speech-speakers").value="";$("speech-turns").value="";$("speech-dialect").value="CURRENT";clearMediaResult();}
 function mediaBlob(encoded,mime){const raw=atob(encoded),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);const url=URL.createObjectURL(new Blob([bytes],{type:mime}));mediaResultURLs.push(url);return url;}
+function desktopSpeechWAV(audio){
+ const pcm=atob(audio.b64_json),bytes=new Uint8Array(44+pcm.length),view=new DataView(bytes.buffer);
+ const word=(offset,text)=>{for(let i=0;i<text.length;i++)bytes[offset+i]=text.charCodeAt(i);};
+ const rate=audio.sample_rate||24000;
+ word(0,"RIFF");
+ view.setUint32(4,36+pcm.length,true);
+ word(8,"WAVEfmt ");
+ view.setUint32(16,16,true);
+ view.setUint16(20,1,true);
+ view.setUint16(22,1,true);
+ view.setUint32(24,rate,true);
+ view.setUint32(28,rate*2,true);
+ view.setUint16(32,2,true);
+ view.setUint16(34,16,true);
+ word(36,"data");
+ view.setUint32(40,pcm.length,true);
+ for(let i=0;i<pcm.length;i++)bytes[44+i]=pcm.charCodeAt(i);
+ const url=URL.createObjectURL(new Blob([bytes],{type:"audio/wav"}));
+ mediaResultURLs.push(url);
+ return url;
+}
 function mediaDownload(parent,url,filename,label){const a=el("a",label,"link-button");a.href=url;a.download=filename;parent.append(a);}
 function renderMediaResult(result){
  clearMediaResult();const box=$("media-result"),operation=targetOperation(result.selection);requestLink(box,result.details?.sample_id,"查看本次請求");
@@ -32,8 +65,21 @@ function renderMediaResult(result){
   const value=result.vectors||result.rankings;box.append(el("pre",JSON.stringify(value,null,2)));const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:"application/json"}));mediaResultURLs.push(url);mediaDownload(box,url,"modelatlas-"+operation.toLowerCase()+".json","下載結果");
  }else if(isSpeech(operation)){
   const audio=result.data?.[0];if(!audio||!["audio/mpeg","audio/wav","audio/flac","audio/ogg","audio/aac","audio/pcm"].includes(audio.mime))throw Error("不支援的音訊格式");
-  let url;if(audio.mime==="audio/pcm"){const raw=atob(audio.b64_json),bytes=new Uint8Array(44+raw.length),view=new DataView(bytes.buffer);const word=(o,t)=>[...t].forEach((c,i)=>bytes[o+i]=c.charCodeAt(0));word(0,"RIFF");view.setUint32(4,36+raw.length,true);word(8,"WAVEfmt ");view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);const rate=audio.sample_rate||24000;view.setUint32(24,rate,true);view.setUint32(28,rate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);word(36,"data");view.setUint32(40,raw.length,true);for(let i=0;i<raw.length;i++)bytes[44+i]=raw.charCodeAt(i);url=URL.createObjectURL(new Blob([bytes],{type:"audio/wav"}));mediaResultURLs.push(url);}else url=mediaBlob(audio.b64_json,audio.mime);
-  const player=el("audio");player.controls=true;player.preload="metadata";player.src=url;player.setAttribute("aria-label","生成的語音");box.append(player);mediaDownload(box,url,"modelatlas-speech."+(audio.format==="pcm"?"wav":audio.format),"下載語音");box.append(el("p","這段語音由 AI 生成。"));
+  const pcm=audio.mime==="audio/pcm",wrap=pcm&&desktopMedia;
+  const url=wrap?desktopSpeechWAV(audio):mediaBlob(audio.b64_json,audio.mime);
+  if(pcm&&!wrap){
+   box.append(el("p","原始 PCM · "+(audio.sample_rate||24000)+" Hz · 16-bit 單聲道"));
+   mediaDownload(box,url,"modelatlas-speech.pcm","下載原始 PCM");
+  }else{
+   const player=el("audio");
+   player.controls=true;
+   player.preload="metadata";
+   player.src=url;
+   player.setAttribute("aria-label","生成的語音");
+   box.append(player);
+   mediaDownload(box,url,"modelatlas-speech."+(wrap?"wav":audio.format),"下載語音");
+  }
+  box.append(el("p","這段語音由 AI 生成。"));
  }else if(operation==="AUDIO"){
   const transcript=el("div",result.text,"bubble transcript");box.append(transcript);
   const url=URL.createObjectURL(new Blob([result.text],{type:"text/plain;charset=utf-8"}));mediaResultURLs.push(url);mediaDownload(box,url,"modelatlas-transcript.txt","下載文字");

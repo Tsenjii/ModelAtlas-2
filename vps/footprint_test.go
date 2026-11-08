@@ -38,8 +38,8 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 	if out, e := build.CombinedOutput(); e != nil {
 		t.Fatalf("build: %v %s", e, out)
 	}
-	// Four megapixels exercise real decode allocations even when compression
-	// is efficient. Speech separately exercises the full four-MiB byte cap.
+	// Keep the four-megapixel image workload. Speech separately exercises the
+	// full four-MiB byte cap with native PCM.
 	img := image.NewRGBA(image.Rect(0, 0, 2048, 2048))
 	for y := 0; y < 2048; y++ {
 		for x := 0; x < 2048; x++ {
@@ -50,9 +50,11 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 	if png.Encode(&encodedImage, img) != nil {
 		t.Fatal("profile PNG")
 	}
-	imagePayload, _ := json.Marshal(map[string]any{"data": []any{map[string]any{"b64_json": base64.StdEncoding.EncodeToString(encodedImage.Bytes())}}})
-	pcm := make([]byte, maxAttachment-44)
+	imageBase64 := base64.StdEncoding.EncodeToString(encodedImage.Bytes())
+	imagePayload, _ := json.Marshal(map[string]any{"data": []any{map[string]any{"b64_json": imageBase64}}})
+	pcm := make([]byte, maxAttachment)
 	speechPayload, _ := json.Marshal(speechFixture(pcm, "audio/L16;codec=pcm;rate=24000"))
+	pcmBase64 := base64.StdEncoding.EncodeToString(pcm)
 	var catalogHTTP, mediaHTTP, longChatHTTP atomic.Int32
 	longReady := make(chan struct{})
 	var longOnce sync.Once
@@ -395,7 +397,7 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 		t.Fatal("research did not fetch provider")
 	}
 	researchRSS, researchPeak := memory()
-	mediaProfile := func(scope Selection) (int64, int64) {
+	mediaProfile := func(scope Selection, wantMIME, wantBase64 string) (int64, int64) {
 		errs := make(chan error, 4)
 		var wg sync.WaitGroup
 		for i := 0; i < 4; i++ {
@@ -414,6 +416,8 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 					var result MediaResponse
 					if json.Unmarshal(raw, &result) != nil || result.Outcome != "SUCCESS" || scopeKey(result.Selection) != scopeKey(scope) || len(result.Data) != 1 {
 						e = fmt.Errorf("media not complete")
+					} else if result.Data[0].MIME != wantMIME || result.Data[0].Base64 != wantBase64 {
+						e = fmt.Errorf("media not passed through unchanged")
 					}
 				}
 				errs <- e
@@ -428,15 +432,15 @@ func TestStandaloneProcessFootprint(t *testing.T) {
 		}
 		return memory()
 	}
-	imageRSS, imagePeak := mediaProfile(imageScope)
-	speechRSS, speechPeak := mediaProfile(speechScope)
+	imageRSS, imagePeak := mediaProfile(imageScope, "image/png", imageBase64)
+	speechRSS, speechPeak := mediaProfile(speechScope, "audio/pcm", pcmBase64)
 	if mediaHTTP.Load() != 8 {
 		t.Fatal("missing actual media work")
 	}
 	warm, hwm := memory()
 	info, _ := os.Stat(binary)
 	dbInfo, _ := os.Stat(dbPath)
-	report := map[string]any{"profile": "100000 retained samples/full SQL percentiles; 4 TLS chats + 4 simultaneous full 31-MiB contexts; retained 11000-message and full request exports; durable research/catalog 65 models; 4 simultaneous 2048x2048 image decodes; 4 simultaneous native PCM-to-WAV responses at 4 MiB each", "binary_bytes": info.Size(), "idle_rss_bytes": idle, "warm_rss_bytes": warm, "peak_rss_bytes": hwm, "sqlite_bytes": dbInfo.Size(), "gomemlimit_bytes": 192 << 20, "chat_rss_bytes": chatRSS, "chat_peak_bytes": chatPeak, "research_rss_bytes": researchRSS, "research_peak_bytes": researchPeak, "image_rss_bytes": imageRSS, "image_peak_bytes": imagePeak, "speech_rss_bytes": speechRSS, "speech_peak_bytes": speechPeak, "long_context_rss_bytes": longRSS, "long_context_peak_bytes": longPeak, "long_context_bytes_each": 31 << 20, "long_context_http": longChatHTTP.Load(), "export_rss_bytes": exportRSS, "export_peak_bytes": exportPeak, "export_messages": 11000, "export_requests": 100008, "rss_target_bytes": 512 << 20, "catalog_http": catalogHTTP.Load(), "media_http": mediaHTTP.Load(), "image_pixels_each": 2048 * 2048, "speech_bytes_each": maxAttachment, "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser"}
+	report := map[string]any{"profile": "100000 retained samples/full SQL percentiles; 4 TLS chats + 4 simultaneous full 31-MiB contexts; retained 11000-message and full request exports; durable research/catalog 65 models; 4 simultaneous 2048x2048 image results; 4 simultaneous native PCM responses at 4 MiB each; original media bytes passed through", "binary_bytes": info.Size(), "idle_rss_bytes": idle, "warm_rss_bytes": warm, "peak_rss_bytes": hwm, "sqlite_bytes": dbInfo.Size(), "gomemlimit_bytes": 192 << 20, "chat_rss_bytes": chatRSS, "chat_peak_bytes": chatPeak, "research_rss_bytes": researchRSS, "research_peak_bytes": researchPeak, "image_rss_bytes": imageRSS, "image_peak_bytes": imagePeak, "speech_rss_bytes": speechRSS, "speech_peak_bytes": speechPeak, "long_context_rss_bytes": longRSS, "long_context_peak_bytes": longPeak, "long_context_bytes_each": 31 << 20, "long_context_http": longChatHTTP.Load(), "export_rss_bytes": exportRSS, "export_peak_bytes": exportPeak, "export_messages": 11000, "export_requests": 100008, "rss_target_bytes": 512 << 20, "catalog_http": catalogHTTP.Load(), "media_http": mediaHTTP.Load(), "image_pixels_each": 2048 * 2048, "speech_bytes_each": maxAttachment, "rss_method": "standalone PID /proc VmRSS + cumulative VmHWM; excludes test runner, fixture server and browser"}
 	raw, _ := json.MarshalIndent(report, "", "  ")
 	t.Log(string(raw))
 	if path := os.Getenv("MODELATLAS_FOOTPRINT_OUT"); path != "" {
