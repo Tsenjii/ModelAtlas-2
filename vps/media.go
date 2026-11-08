@@ -5,9 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"image"
-	_ "image/jpeg"
-	_ "image/png"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -16,8 +13,6 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
-
-	_ "golang.org/x/image/webp"
 )
 
 type MediaRequest struct {
@@ -301,7 +296,7 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	}
 	if operation == "GEMINI_SPEECH" {
 		var ok bool
-		input, output, ok = parseGeminiSpeech(raw, v, &result, secrets)
+		input, output, ok = s.parseGeminiSpeech(raw, v, &result, secrets)
 		if !ok {
 			result.Outcome = "PARSER"
 			return
@@ -376,7 +371,7 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 			if data.Base64 != "" {
 				var size int
 				var pixels int64
-				data.MIME, size, pixels = mediaImageType(data.Base64, pixelsLeft, secrets...)
+				data.MIME, size, pixels = s.mediaImageType(data.Base64, pixelsLeft, secrets...)
 				imageBytes += size
 				pixelsLeft -= pixels
 				if data.MIME == "" || imageBytes > maxAttachment {
@@ -390,42 +385,6 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	}
 	result.Outcome = "SUCCESS"
 	responseStatus = 200
-}
-
-// Check dimensions before decoding raster pixels. All results in one request
-// share a four-megapixel budget, rather than allocating arbitrary provider sizes.
-func mediaImageType(encoded string, pixelsLeft int64, secrets ...string) (string, int, int64) {
-	if len(encoded) == 0 || len(encoded) > ((maxAttachment+2)/3)*4 {
-		return "", 0, 0
-	}
-	for _, secret := range secrets {
-		if secret != "" && strings.Contains(encoded, secret) {
-			return "", 0, 0
-		}
-	}
-	raw, err := base64.StdEncoding.Strict().DecodeString(encoded)
-	if err != nil || len(raw) == 0 || len(raw) > maxAttachment {
-		return "", 0, 0
-	}
-	for _, secret := range secrets {
-		if secret != "" && bytes.Contains(raw, []byte(secret)) {
-			return "", 0, 0
-		}
-	}
-	cfg, format, err := image.DecodeConfig(bytes.NewReader(raw))
-	pixels := int64(cfg.Width) * int64(cfg.Height)
-	if err != nil || cfg.Width < 1 || cfg.Height < 1 || cfg.Width > 4096 || cfg.Height > 4096 || pixels > pixelsLeft {
-		return "", 0, 0
-	}
-	mime := map[string]string{"png": "image/png", "jpeg": "image/jpeg", "webp": "image/webp"}[format]
-	if mime == "" {
-		return "", 0, 0
-	}
-	decoded, decodedFormat, err := image.Decode(bytes.NewReader(raw))
-	if err != nil || decodedFormat != format || decoded.Bounds().Dx() != cfg.Width || decoded.Bounds().Dy() != cfg.Height {
-		return "", 0, 0
-	}
-	return mime, len(raw), pixels
 }
 
 func validTranscript(text string, secrets []string) bool {

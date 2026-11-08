@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"image"
 	"image/color"
@@ -106,8 +107,8 @@ func TestMediaResultFormatsAndOperationWire(t *testing.T) {
 			if result.Text != "First line\n第二行\t專有名詞" || result.Details["output_tokens"] != nil {
 				t.Fatal("multiline transcript lost or negative usage accepted")
 			}
-		} else if len(result.Data) != 1 || result.Data[0].MIME != "image/png" {
-			t.Fatal("trusted upstream MIME instead of validated raster type")
+		} else if len(result.Data) != 1 || result.Data[0].MIME != "image/png" || result.Data[0].Base64 != encoded {
+			t.Fatal("image bytes changed or MIME was not derived from the file")
 		}
 	}
 	if calls.Load() != 3 {
@@ -122,16 +123,34 @@ func TestMediaResultFormatsAndOperationWire(t *testing.T) {
 	if err := jpeg.Encode(&jpegBytes, image.NewRGBA(image.Rect(0, 0, 2, 2)), nil); err != nil {
 		t.Fatal(err)
 	}
-	if mime, _, _ := mediaImageType(base64.StdEncoding.EncodeToString(jpegBytes.Bytes()), 4<<20); mime != "image/jpeg" {
+	if mime, _, _ := s.mediaImageType(base64.StdEncoding.EncodeToString(jpegBytes.Bytes()), 4<<20); mime != "image/jpeg" {
 		t.Fatal("JPEG preview unavailable")
 	}
-	if mime, _, _ := mediaImageType("UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA", 4<<20); mime != "image/webp" {
+	if mime, _, _ := s.mediaImageType(base64.StdEncoding.EncodeToString(jpegBytes.Bytes()[:jpegBytes.Len()-2]), 4<<20); mime != "" {
+		t.Fatal("truncated JPEG accepted")
+	}
+	const webp = "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA"
+	if mime, _, _ := s.mediaImageType(webp, 4<<20); mime != "image/webp" {
 		t.Fatal("WebP preview unavailable")
+	}
+	frame := mustDecodeImage(t, webp)
+	extended := append(append([]byte{}, frame[:12]...), []byte("VP8X\x0a\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00")...)
+	extended = append(extended, frame[12:]...)
+	binary.LittleEndian.PutUint32(extended[4:8], uint32(len(extended)-8))
+	if mime, _, _ := s.mediaImageType(base64.StdEncoding.EncodeToString(extended), 4<<20); mime != "" {
+		t.Fatal("WebP accepted a canvas that disagrees with the coded frame")
+	}
+	extended[24] = 0 // Match the VP8 frame's one-pixel width.
+	if mime, _, _ := s.mediaImageType(base64.StdEncoding.EncodeToString(extended), 4<<20); mime != "image/webp" {
+		t.Fatal("valid extended WebP rejected")
 	}
 }
 
 func TestMediaRejectsEchoMalformedResultsAndUnconfirmedScope(t *testing.T) {
 	encoded := testPNG(t)
+	pngBytes := mustDecodeImage(t, encoded)
+	badChecksum := append([]byte{}, pngBytes...)
+	badChecksum[41] ^= 1 // Change the first IDAT payload byte without updating its CRC.
 	var reply atomic.Value
 	reply.Store(`{"data":[{"b64_json":"invalid"}]}`)
 	var calls atomic.Int32
@@ -159,7 +178,9 @@ func TestMediaRejectsEchoMalformedResultsAndUnconfirmedScope(t *testing.T) {
 	request.Selection = v
 	for _, data := range []map[string]string{
 		{"b64_json": "invalid"},
-		{"b64_json": base64.StdEncoding.EncodeToString(mustDecodeImage(t, encoded)[:33])},
+		{"b64_json": base64.StdEncoding.EncodeToString(pngBytes[:33])},
+		{"b64_json": base64.StdEncoding.EncodeToString(pngBytes[:len(pngBytes)-12])},
+		{"b64_json": base64.StdEncoding.EncodeToString(badChecksum)},
 		{"b64_json": base64.StdEncoding.EncodeToString([]byte(`<svg xmlns="http://www.w3.org/2000/svg"/>`))},
 		{"url": "http://images.example/a.png"},
 		{"url": "https://images.example/a.png?key=extra-secret-example"},

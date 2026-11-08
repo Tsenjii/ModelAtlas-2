@@ -2,10 +2,15 @@ package main
 
 import (
 	"net/http"
+	"strings"
 )
 
 func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if s.desktop {
+		_, _ = w.Write([]byte(strings.Replace(homeHTML, `<html lang="zh-Hant"`, `<html lang="zh-Hant" data-desktop-media="true"`, 1)))
+		return
+	}
 	_, _ = w.Write([]byte(homeHTML))
 }
 func (s *Server) stylesheet(w http.ResponseWriter, r *http.Request) {

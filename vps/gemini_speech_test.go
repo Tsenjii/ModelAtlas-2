@@ -32,6 +32,7 @@ func TestGeminiSpeechActualWireAndAudio(t *testing.T) {
 	}))
 	defer up.Close()
 	s := testServer(t)
+	s.desktop = true
 	s.Client = up.Client()
 	scope := seed(t, s, up.URL+"/v1")
 	scope.Endpoint = "GEMINI_SPEECH"
@@ -91,18 +92,19 @@ func TestGeminiSpeechActualWireAndAudio(t *testing.T) {
 }
 
 func TestNativeSpeechRejectsMalformedTruncationAndSecret(t *testing.T) {
+	s := &Server{}
 	v := MediaRequest{Format: "wav", SpeechDialect: "CURRENT"}
 	good, _ := json.Marshal(speechFixture(pcmWAV(make([]byte, 48000), 24000), "audio/wav"))
 	for _, raw := range [][]byte{append(append([]byte{}, good...), []byte(" {}")...), good[:len(good)-1], []byte(`{"candidates":[]}`)} {
 		result := MediaResponse{Details: map[string]any{}}
-		if _, _, ok := parseGeminiSpeech(raw, v, &result, nil); ok {
+		if _, _, ok := s.parseGeminiSpeech(raw, v, &result, nil); ok {
 			t.Fatal("malformed response accepted")
 		}
 	}
 	for _, fixture := range []map[string]any{speechFixture([]byte("private-speech-key"), "audio/L16;rate=24000"), speechFixture([]byte{0, 1, 2}, "audio/pcm"), speechFixture(make([]byte, 100), "audio/l16;rate=0"), speechFixture(make([]byte, 100), "text/html")} {
 		raw, _ := json.Marshal(fixture)
 		result := MediaResponse{Details: map[string]any{}}
-		if _, _, ok := parseGeminiSpeech(raw, v, &result, []string{"private-speech-key"}); ok {
+		if _, _, ok := s.parseGeminiSpeech(raw, v, &result, []string{"private-speech-key"}); ok {
 			t.Fatal("unusable audio accepted")
 		}
 	}
@@ -111,7 +113,7 @@ func TestNativeSpeechRejectsMalformedTruncationAndSecret(t *testing.T) {
 	object(list(f["candidates"])[0])["finishReason"] = "SAFETY"
 	raw, _ := json.Marshal(f)
 	result := MediaResponse{Details: map[string]any{}}
-	if _, _, ok := parseGeminiSpeech(raw, v, &result, nil); ok {
+	if _, _, ok := s.parseGeminiSpeech(raw, v, &result, nil); ok {
 		t.Fatal("blocked candidate accepted")
 	}
 	// A key made only of base64 characters must not escape by being returned
@@ -120,11 +122,38 @@ func TestNativeSpeechRejectsMalformedTruncationAndSecret(t *testing.T) {
 	f = speechFixture(make([]byte, 18), "audio/pcm")
 	candidate := object(list(f["candidates"])[0])
 	part := object(list(object(candidate["content"])["parts"])[0])
-	object(part["inlineData"])["data"] = secret
+	for _, encoded := range []string{secret, secret[:12] + "\r\n" + secret[12:]} {
+		object(part["inlineData"])["data"] = encoded
+		raw, _ = json.Marshal(f)
+		result = MediaResponse{Details: map[string]any{}}
+		if _, _, ok := s.parseGeminiSpeech(raw, v, &result, []string{secret}); ok {
+			t.Fatal("raw base64-shaped secret escaped")
+		}
+	}
+}
 
-	raw, _ = json.Marshal(f)
-	result = MediaResponse{Details: map[string]any{}}
-	if _, _, ok := parseGeminiSpeech(raw, v, &result, []string{secret}); ok {
-		t.Fatal("raw base64-shaped secret escaped")
+func TestVPSNativeSpeechPreservesUpstreamBytes(t *testing.T) {
+	s := &Server{}
+	pcm := []byte{1, 2, 3, 4}
+	for _, tc := range []struct {
+		audio        []byte
+		upstreamType string
+		wantType     string
+		format       string
+		rate         int
+	}{
+		{pcm, "audio/L16;codec=pcm;rate=16000", "audio/pcm", "pcm", 16000},
+		{pcmWAV(pcm, 24000), "audio/x-wav", "audio/wav", "wav", 24000},
+	} {
+		result := MediaResponse{Details: map[string]any{}}
+		raw, err := json.Marshal(speechFixture(tc.audio, tc.upstreamType))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _, ok := s.parseGeminiSpeech(raw, MediaRequest{Format: "wav"}, &result, nil)
+		want := mediaWire{Base64: base64.StdEncoding.EncodeToString(tc.audio), MIME: tc.wantType, Format: tc.format, SampleRate: tc.rate}
+		if !ok || len(result.Data) != 1 || result.Data[0] != want {
+			t.Fatalf("VPS changed upstream %s bytes or format", tc.upstreamType)
+		}
 	}
 }
