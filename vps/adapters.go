@@ -386,6 +386,12 @@ func (s *Server) workerTick(ctx context.Context) {
 	if s.maintenancePending() {
 		return
 	}
+	if s.distribution {
+		if s.backups != nil {
+			s.backups.tick(ctx)
+		}
+		return
+	}
 	s.backgroundTick(ctx)
 	s.runPending(ctx)
 	s.runResearchPending(ctx)

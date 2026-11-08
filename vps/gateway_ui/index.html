@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-Hant" data-interface="aqua" data-wallpaper="kotoha-chibi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>ModelAtlas · 模型與 Key</title>
+<link rel="stylesheet" href="/aqua.css">
+<link rel="stylesheet" href="/gateway.css">
+<script src="/gateway.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+<header class="gateway-bar">
+  <div class="brand"><span class="mark" aria-hidden="true">M</span><div><strong>ModelAtlas</strong><small>模型與 Key</small></div></div>
+  <div class="header-actions">
+    <button id="refresh" class="icon-button" type="button" aria-label="重新整理" title="重新整理"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 8a7 7 0 0 1 11.6-2L20 9M4 15l2.8 3A7 7 0 0 0 18.4 16"/></svg></button>
+    <button id="appearance-open" class="icon-button" type="button" aria-label="外觀設定" title="外觀設定"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m9 4 1-2h4l1 2 2 1 2-.1 2 3-1 2v3l1 2-2 3-2-.1-2 1-1 2h-4l-1-2-2-1-2 .1-2-3 1-2v-3l-1-2 2-3 2 .1z"/></svg></button>
+  </div>
+</header>
+<nav class="gateway-nav bottom-nav" aria-label="主要頁面">
+  <button type="button" data-page="models" aria-current="page" class="active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/></svg>模型</button>
+  <button type="button" data-page="providers"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></svg>供應商</button>
+  <button type="button" data-page="share"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="10" r="4"/><path d="m11.5 13 8 8m-3-3 2-2m-4.5-.5 2-2"/></svg>分發</button>
+</nav>
+
+<main id="main">
+  <section id="page-models" aria-label="模型">
+    <div id="model-index">
+      <div class="page-heading">
+        <div><p class="eyebrow">Model library</p><h1>我的模型</h1></div>
+        <button id="model-add-provider" type="button" class="primary">＋ 新增供應商</button>
+      </div>
+      <div class="card overview">
+        <form id="model-filters" class="stack">
+          <label>搜尋模型<input id="model-search" type="search" placeholder="例如 DeepSeek 4.1 Flash"></label>
+          <div id="model-provider-filter" class="section-inline" hidden><span id="model-provider-name"></span><button id="clear-model-provider" type="button">顯示所有供應商</button></div>
+        </form>
+        <div class="line-meta"><span id="model-count" role="status"></span><span>選一個模型，比較各站的實測</span></div>
+        <div id="model-list" class="rows" aria-live="polite"></div>
+        <button id="models-more" type="button" hidden>載入更多模型</button>
+      </div>
+    </div>
+    <div id="model-detail" hidden>
+      <button id="models-back" class="back" type="button">‹ 我的模型</button>
+      <div class="page-heading"><div><p class="eyebrow">Connection performance</p><h1 id="model-title" tabindex="-1"></h1><p id="model-canonical" class="quiet"></p></div>
+        <button id="route-pick" type="button" aria-pressed="false" hidden>選取分發連線</button>
+      </div>
+      <div class="card overview">
+        <div class="section-inline"><h2>各家連線速度</h2><label>排序<select id="offer-sort"><option value="ttft">首字最快</option><option value="tps">生成最快</option><option value="success">成功率最高</option><option value="latency">總延遲最低</option></select></label></div>
+        <div class="line-meta"><span id="offer-count" role="status"></span><span>近 7 天實測，每個連線最多 100 筆</span></div>
+        <div id="route-tray" class="route-tray" hidden><strong id="route-count"></strong><button id="configure-route" type="button">前往分發</button></div>
+        <div id="offer-list" class="rows" aria-live="polite"></div>
+        <button id="offers-more" type="button" hidden>載入更多連線</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-providers" hidden aria-label="供應商">
+    <div id="provider-index">
+      <div class="page-heading"><div><p class="eyebrow">Provider management</p><h1>供應商</h1></div><button id="add-upstream" type="button" class="primary">＋ 新增供應商</button></div>
+      <div class="card overview">
+        <form id="provider-filters" class="stack"><label>搜尋供應商<input id="provider-search" type="search" placeholder="名稱或網址"></label></form>
+        <div class="line-meta"><span id="provider-count" role="status"></span><span>額度依帳戶或 Key 顯示</span></div>
+        <div id="provider-list" class="rows" aria-live="polite"></div>
+        <button id="providers-more" type="button" hidden>載入更多供應商</button>
+      </div>
+    </div>
+    <div id="provider-detail" hidden>
+      <button id="providers-back" class="back" type="button">‹ 供應商</button>
+      <div id="provider-detail-content" class="rows" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="page-share" hidden aria-labelledby="share-heading">
+    <div class="page-heading"><div><p class="eyebrow">API access</p><h1 id="share-heading">模型分發</h1></div></div>
+    <div class="share-switch" aria-label="分發頁面"><button id="share-setup" type="button" aria-pressed="true">模型與 Key</button><button id="share-history" type="button" aria-pressed="false">用量紀錄</button></div>
+    <div id="share-settings">
+    <div class="card endpoint-card">
+      <div><strong>Base URL</strong><code id="gateway-url"></code></div>
+      <button id="copy-base" type="button">複製網址</button>
+    </div>
+    <details id="model-editor" class="card details-card">
+      <summary id="model-editor-title">新增公開模型</summary>
+      <form id="model-form" class="stack">
+        <label>對外模型 ID<input id="public-model" name="id" maxlength="256" placeholder="例如 atlas-chat" required></label>
+        <div class="section-inline"><strong>上游路由</strong><button id="select-routes" type="button">挑選上游</button></div>
+        <div id="selected-routes" class="rows"></div>
+        <p class="quiet">最多 8 個連線。沒有足夠實測時，依這裡的順序選站。</p>
+        <div class="section-inline"><button id="publish-model" type="submit" class="primary">發布模型</button><button id="cancel-model" type="button">取消</button></div>
+      </form>
+    </details>
+    <div class="card"><h2>已發布模型</h2><div id="public-models" class="rows"></div></div>
+    <details id="key-editor" class="card details-card">
+      <summary>發出新 Key</summary>
+      <form id="key-form" class="stack">
+        <label>Key 名稱<input name="label" placeholder="例如 手機或朋友的名稱" maxlength="120" required></label>
+        <label>每日請求上限<input type="number" name="daily_limit" min="1" max="1000000" step="1" value="100" required></label>
+        <p class="quiet">每日在 UTC 00:00 更新，台灣時間為上午 8:00。</p>
+        <fieldset><legend>可用模型</legend><div id="key-models" class="choices"></div></fieldset>
+        <button id="issue-key" type="submit" class="primary">產生 Key</button>
+      </form>
+    </details>
+    <div class="card"><h2>分發 Key</h2><div id="key-list" class="rows"></div></div>
+    </div>
+    <div id="share-usage" hidden>
+    <div id="usage-summary" class="summary-grid" aria-label="最近 24 小時"></div>
+    <div class="card overview">
+      <div class="section-inline"><h2>最近請求</h2><label class="check"><input id="only-failures" type="checkbox">只看失敗</label></div>
+      <label>分發 Key<select id="usage-key"><option value="">全部 Key</option></select></label>
+      <div id="usage-list" class="rows" aria-live="polite"></div>
+      <button id="usage-more" type="button" hidden>載入更多紀錄</button>
+    </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="upstream-dialog" aria-labelledby="upstream-dialog-title">
+  <form id="upstream-form" class="stack">
+    <div class="section-inline"><h2 id="upstream-dialog-title">新增供應商</h2><button type="button" data-close="upstream-dialog">關閉</button></div>
+    <label>名稱<input name="name" placeholder="例如 潮汐 API" maxlength="120" required></label>
+    <label>簡介<textarea name="description" maxlength="1000" rows="2" placeholder="選填，記下站點特色"></textarea></label>
+    <label>Base URL<input name="base_url" type="url" placeholder="https://api.example.com/v1" maxlength="4096" required></label>
+    <label>上游 API Key<input name="api_key" type="password" autocomplete="new-password" maxlength="8192" placeholder="匿名連線可留空"></label>
+    <button type="submit" class="primary">儲存並同步模型</button>
+  </form>
+</dialog>
+<dialog id="connection-dialog" aria-labelledby="connection-title">
+  <form id="connection-form" class="stack">
+    <div class="section-inline"><h2 id="connection-title"></h2><button type="button" data-close="connection-dialog">關閉</button></div>
+    <label id="connection-value-label" for="connection-value"></label>
+    <input id="connection-value" name="value" autocomplete="off" required>
+    <button type="submit" class="primary">儲存</button>
+  </form>
+</dialog>
+<dialog id="group-dialog" aria-labelledby="group-dialog-title">
+  <form id="group-form" class="stack">
+    <div class="section-inline"><h2 id="group-dialog-title">調整模型歸類</h2><button type="button" data-close="group-dialog">關閉</button></div>
+    <p id="group-scope" class="quiet"></p>
+    <label>模型歸類 ID<input name="canonical_id" maxlength="256" required></label>
+    <p class="quiet">相同歸類 ID 會在同一頁比較。原站的模型 ID 會保留。</p>
+    <button type="submit" class="primary">儲存歸類</button>
+  </form>
+</dialog>
+<dialog id="provider-dialog" aria-labelledby="provider-dialog-title">
+  <form id="provider-form" class="stack">
+    <div class="section-inline"><h2 id="provider-dialog-title">供應商資料</h2><button type="button" data-close="provider-dialog">關閉</button></div>
+    <label>名稱<input name="name" maxlength="120" required></label>
+    <label>簡介<textarea name="description" maxlength="1000" rows="3"></textarea></label>
+    <label>網站<input name="website" type="url" placeholder="https://"></label>
+    <label class="check"><input type="checkbox" name="requires_checkin">需要每日簽到</label>
+    <label>簽到網址<input name="checkin_url" type="url" placeholder="https://"></label>
+    <button type="submit" class="primary">儲存供應商資料</button>
+  </form>
+</dialog>
+<dialog id="account-dialog" aria-labelledby="account-dialog-title">
+  <form id="account-form" class="stack">
+    <div class="section-inline"><h2 id="account-dialog-title">新增帳戶</h2><button type="button" data-close="account-dialog">關閉</button></div>
+    <label>帳戶名稱<input name="label" maxlength="120" required></label>
+    <button type="submit" class="primary">儲存帳戶</button>
+  </form>
+</dialog>
+<dialog id="credential-dialog" aria-labelledby="credential-dialog-title">
+  <form id="credential-form" class="stack">
+    <div class="section-inline"><h2 id="credential-dialog-title">新增 Key</h2><button type="button" data-close="credential-dialog">關閉</button></div>
+    <label>Key 名稱<input name="label" maxlength="120" required></label>
+    <label>用途<select name="role"><option value="INFERENCE">模型推論</option><option value="ACCOUNT_PAT">查詢帳戶額度（PAT）</option></select></label>
+    <label>Key<input name="secret" type="password" maxlength="8192" autocomplete="new-password" required></label>
+    <label>備註<input name="note" maxlength="512"></label>
+    <button type="submit" class="primary">儲存 Key</button>
+  </form>
+</dialog>
+<dialog id="quota-dialog" aria-labelledby="quota-dialog-title">
+  <form id="quota-form" class="stack">
+    <div class="section-inline"><h2 id="quota-dialog-title">記錄帳戶額度</h2><button type="button" data-close="quota-dialog">關閉</button></div>
+    <label>剩餘額度<input name="remaining" inputmode="decimal" maxlength="32" required></label>
+    <label>單位<select name="unit"><option>USD</option><option>TWD</option><option>點</option><option>次</option><option>Token</option></select></label>
+    <button type="submit" class="primary">儲存額度</button>
+  </form>
+</dialog>
+<dialog id="issued-dialog" aria-labelledby="issued-title">
+  <div class="stack">
+    <div class="section-inline"><h2 id="issued-title">已發出 Key</h2><button type="button" data-close="issued-dialog">完成</button></div>
+    <p>完整 Key 只會在這裡顯示一次。</p>
+    <label>Base URL<input id="issued-base" readonly></label>
+    <label>API Key<input id="issued-key" readonly></label>
+    <button id="copy-key" type="button" class="primary">複製 API Key</button>
+  </div>
+</dialog>
+<dialog id="appearance-dialog" aria-labelledby="appearance-title">
+  <div class="stack">
+    <div class="section-inline"><h2 id="appearance-title">Aqua 外觀</h2><button type="button" data-close="appearance-dialog">完成</button></div>
+    <label>色彩<select id="theme"><option value="system">跟隨系統</option><option value="light">淺色</option><option value="dark">深色</option></select></label>
+    <label>背景<select id="wallpaper"><option value="kotoha-chibi">Kotoha Q 版</option><option value="elaina-chibi">伊蕾娜 Q 版</option><option value="kotoha">Kotoha 原圖</option><option value="elaina">伊蕾娜原圖</option></select></label>
+  </div>
+</dialog>
+<p id="notice" role="status" aria-live="polite" hidden></p>
+</body>
+</html>

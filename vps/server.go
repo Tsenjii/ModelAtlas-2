@@ -42,6 +42,7 @@ type Server struct {
 	MaxFlights      int
 	AutoSync        bool
 	desktop         bool
+	distribution    bool
 	maintenanceFile string
 	vaultVerified   bool
 	backups         *cloudBackupService
@@ -205,6 +206,9 @@ func (s *Server) decrypt(enc string) (string, error) {
 	return string(plain), nil
 }
 func (s *Server) Handler() http.Handler {
+	if s.distribution {
+		return s.gatewayHandler()
+	}
 	api := http.NewServeMux()
 	s.workspaceRoutes(api)
 	api.HandleFunc("GET /status", s.status)
@@ -385,14 +389,7 @@ func (s *Server) Handler() http.Handler {
 	root.Handle("/api/workspace/transfers/reply", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkReplyHTTP)))
 	root.Handle("/api/workspace/transfers/ack", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkAckHTTP)))
 	root.Handle("/api/workspace/transfers/abort", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkAbortHTTP)))
-	root.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		security(w)
-		if err := s.Store.DB.PingContext(r.Context()); err != nil {
-			http.Error(w, "unavailable", 503)
-			return
-		}
-		jsonOK(w, 200, map[string]any{"service": "modelatlas-vps", "status": "ok"})
-	})
+	root.HandleFunc("GET /healthz", s.health)
 	root.Handle("GET /{$}", s.auth(http.HandlerFunc(s.home)))
 	root.Handle("GET /app.css", s.auth(http.HandlerFunc(s.stylesheet)))
 	root.Handle("GET /aqua.css", s.auth(http.HandlerFunc(s.aquaStylesheet)))
@@ -403,6 +400,14 @@ func (s *Server) Handler() http.Handler {
 	root.Handle("GET /assets/", s.auth(http.NotFoundHandler()))
 	root.Handle("/api/v1/", s.auth(http.StripPrefix("/api/v1", api)))
 	return s.maintenanceHandler(root)
+}
+func (s *Server) health(w http.ResponseWriter, r *http.Request) {
+	security(w)
+	if err := s.Store.DB.PingContext(r.Context()); err != nil {
+		http.Error(w, "unavailable", 503)
+		return
+	}
+	jsonOK(w, 200, map[string]any{"service": "modelatlas-vps", "status": "ok"})
 }
 func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 	var providers, models, sessions, samples int
@@ -467,8 +472,12 @@ func runConfiguredApplication(config deploymentConfig) error {
 	}
 	defer listener.Close()
 	client := &http.Client{Timeout: 120 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: true, MaxFlights: configuredFlights(), desktop: config.desktopReady != "", maintenanceFile: config.maintenanceFile, vaultVerified: len(config.key) == 32}
-	if os.Getenv("MODELATLAS_FACTORY_DEFAULTS") != "0" {
+	flights := configuredFlights()
+	if config.distribution && os.Getenv("MODELATLAS_MAX_FLIGHTS") == "" {
+		flights = 2
+	}
+	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: !config.distribution, MaxFlights: flights, desktop: config.desktopReady != "", distribution: config.distribution, maintenanceFile: config.maintenanceFile, vaultVerified: len(config.key) == 32}
+	if !config.distribution && os.Getenv("MODELATLAS_FACTORY_DEFAULTS") != "0" {
 		if _, err = srv.installKiloFactory(context.Background(), true); err != nil {
 			return fmt.Errorf("factory defaults initialization failed: %w", err)
 		}
@@ -491,7 +500,11 @@ func runConfiguredApplication(config deploymentConfig) error {
 		}()
 	}
 	workerDone := make(chan struct{})
-	go func() { defer close(workerDone); srv.worker(ctx) }()
+	if !config.distribution || srv.backups != nil {
+		go func() { defer close(workerDone); srv.worker(ctx) }()
+	} else {
+		close(workerDone)
+	}
 	server := &http.Server{Addr: config.addr, Handler: config.handler(srv.Handler()), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 130 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 1 << 16}
 	if config.publicOrigin != "" {
 		log.Print("Platform mode requires an isolated HTTPS reverse proxy that overwrites X-Forwarded-Proto")

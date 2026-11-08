@@ -40,7 +40,13 @@ func (s *Server) accountPAT(ctx context.Context, q NewApiQuery) (Provider, strin
 	var p Provider
 	var enc string
 	var enabled int
-	err := s.Store.DB.QueryRowContext(ctx, "SELECT p.id,p.name,COALESCE(o.base_url,p.base_url),p.description,p.auth_mode,c.encrypted_key,c.enabled FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id WHERE p.id=? AND a.id=? AND c.id=? AND c.role='ACCOUNT_PAT'", q.ProviderID, q.AccountID, q.CredentialID).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode, &enc, &enabled)
+	err := s.Store.DB.QueryRowContext(ctx, `SELECT p.id,p.name,COALESCE(o.base_url,p.base_url),p.description,p.auth_mode,c.encrypted_key,c.enabled,
+		(SELECT COALESCE(MAX(v.version),0) FROM credential_secret_versions v
+		WHERE v.provider_id=c.provider_id AND v.account_id=c.account_id AND v.credential_id=c.id)
+		FROM providers p JOIN accounts a ON a.provider_id=p.id JOIN credentials c ON c.provider_id=a.provider_id AND c.account_id=a.id
+		LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id
+		WHERE p.id=? AND a.id=? AND c.id=? AND c.role='ACCOUNT_PAT'`, q.ProviderID, q.AccountID, q.CredentialID).
+		Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode, &enc, &enabled, &p.CredentialVersion)
 	if err != nil || enabled != 1 || !validateHTTPS(p.BaseURL) {
 		return Provider{}, "", sql.ErrNoRows
 	}
@@ -280,10 +286,7 @@ func (s *Server) newApiRead(ctx context.Context, q NewApiQuery, path string) (Ne
 					facts["group_known"] = true
 				}
 			}
-			if path == "/api/usage/token/" {
-				facts["credential_version"] = p.CredentialVersion
-				facts["origin"] = p.BaseURL
-			}
+			facts["credential_version"] = p.CredentialVersion
 		case "/api/perf-metrics/summary", "/api/perf-metrics":
 			facts, err = parseNewApiPerformance(root, token, path == "/api/perf-metrics")
 			if err == nil {

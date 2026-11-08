@@ -1,0 +1,361 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"testing"
+	"time"
+)
+
+const gatewayTestKeyA = "upstream-a-fixture-Key_abcdefghijklmnopqrstuvwxyz"
+const gatewayTestKeyB = "upstream-b-fixture-Key_ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const gatewayTestPAT = "upstream-account-fixture-PAT_0123456789"
+
+type gatewayFixture struct {
+	*httptest.Server
+	a, b atomic.Int32
+}
+
+func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixture {
+	t.Helper()
+	f := &gatewayFixture{}
+	f.Server = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		switch r.URL.Path {
+		case "/api/status":
+			if auth != "" {
+				t.Error("public provider status received a credential")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"success":true,"data":{"version":"v1.0.0-rc.25","checkin_enabled":true}}`)
+			return
+		case "/api/usage/token/":
+			if auth != "Bearer "+gatewayTestKeyA {
+				t.Error("provider Key quota received the wrong credential")
+				http.Error(w, "unauthorized", 401)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"code":true,"data":{"total_available":0,"total_granted":1200,"total_used":1200}}`)
+			return
+		case "/api/user/self":
+			if auth != "Bearer "+gatewayTestPAT {
+				t.Error("provider account quota received the wrong credential")
+				http.Error(w, "unauthorized", 401)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"success":true,"data":{"quota":45600,"used_quota":400}}`)
+			return
+		}
+		side, key, model := "a", gatewayTestKeyA, models[0]
+		if strings.HasPrefix(r.URL.Path, "/b/") {
+			side, key, model = "b", gatewayTestKeyB, models[1]
+		}
+		if auth != "Bearer "+key {
+			t.Error("gateway sent the wrong upstream credential")
+			http.Error(w, "unauthorized", 401)
+			return
+		}
+		switch r.URL.Path {
+		case "/" + side + "/v1/models":
+			w.Header().Set("Content-Type", "application/json")
+			display := model
+			if strings.Contains(strings.ToLower(model), "deepseek") {
+				display = "DeepSeek 4.1 Flash"
+			}
+			fmt.Fprintf(w, `{"data":[{"id":%q,"name":%q},{"id":%q}]}`, model, display, model)
+			return
+		case "/" + side + "/v1/chat/completions":
+		default:
+			http.NotFound(w, r)
+			return
+		}
+		var in struct {
+			Model    string `json:"model"`
+			Stream   bool   `json:"stream"`
+			Messages []struct {
+				Content string `json:"content"`
+			} `json:"messages"`
+			Tools []json.RawMessage `json:"tools"`
+		}
+		if json.NewDecoder(r.Body).Decode(&in) != nil || in.Model != model || len(in.Messages) == 0 {
+			t.Error("gateway did not send the selected model or chat body")
+			http.Error(w, "bad body", 400)
+			return
+		}
+		prompt := in.Messages[0].Content
+		if side == "a" {
+			f.a.Add(1)
+			if prompt == "fallback" {
+				http.Error(w, "upstream capacity", 429)
+				return
+			}
+		} else {
+			f.b.Add(1)
+			time.Sleep(50 * time.Millisecond)
+		}
+		if prompt == "upstream-error" {
+			http.Error(w, key, 500)
+			return
+		}
+		if !in.Stream {
+			if len(in.Tools) != 1 {
+				t.Error("gateway did not forward the tools parameter")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `{"model":%q,"choices":[{"message":{"role":"assistant","content":"ok"}}],"usage":{"prompt_tokens":4,"completion_tokens":0}}`, model)
+			return
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		if prompt == "split-secret" {
+			for _, part := range []string{key[:18], key[18:]} {
+				fmt.Fprintf(w, "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":%q}}]}\n\n", part)
+				w.(http.Flusher).Flush()
+			}
+		} else {
+			for _, part := range []string{"O", "K"} {
+				fmt.Fprintf(w, "data: {\"model\":%q,\"choices\":[{\"index\":0,\"delta\":{\"content\":%q}}]}\n\n", model, part)
+				w.(http.Flusher).Flush()
+				time.Sleep(4 * time.Millisecond)
+			}
+		}
+		if prompt != "broken-stream" {
+			fmt.Fprint(w, "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":3,\"completion_tokens\":2}}\n\ndata: [DONE]\n\n")
+		}
+	}))
+	s.Client = f.Client()
+	t.Cleanup(f.Close)
+	return f
+}
+
+func gatewayDecode[T any](t *testing.T, r *httptest.ResponseRecorder, code int) (v T) {
+	t.Helper()
+	requireCode(t, r, code)
+	if err := json.Unmarshal(r.Body.Bytes(), &v); err != nil {
+		t.Fatal(err)
+	}
+	return v
+}
+
+func gatewayClient(s *Server, token, method, path string, body any) *httptest.ResponseRecorder {
+	raw, _ := json.Marshal(body)
+	r := httptest.NewRequest(method, path, bytes.NewReader(raw))
+	r.Header.Set("Authorization", "Bearer "+token)
+	r.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	s.Handler().ServeHTTP(w, r)
+	return w
+}
+
+func gatewayTestChat(alias, prompt string, stream bool) map[string]any {
+	return map[string]any{"model": alias, "messages": []map[string]string{{"role": "user", "content": prompt}},
+		"stream": stream, "tools": []map[string]any{{"type": "function", "function": map[string]string{"name": "test_tool"}}}}
+}
+
+func TestGatewayDistributionWorkflow(t *testing.T) {
+	s := testServer(t)
+	f := newGatewayFixture(t, s, [2]string{"model-a", "model-b"})
+	const admin = "/api/v1/gateway"
+	requireCode(t, req(t, s, "GET", admin+"/upstreams", nil), 404)
+	s.distribution = true
+	requireCode(t, req(t, s, "GET", "/api/v1/providers", nil), 404)
+	requireCode(t, req(t, s, "POST", "/api/v1/research/probe", map[string]any{}), 404)
+
+	add := func(side, name, key string) gatewayUpstream {
+		r := req(t, s, "POST", admin+"/upstreams", map[string]string{"name": name, "base_url": f.URL + "/" + side + "/v1", "api_key": key})
+		up := gatewayDecode[gatewayUpstream](t, r, 201)
+		if strings.Contains(r.Body.String(), key) || up.AuthMode != "BEARER" || !up.Enabled {
+			t.Fatal("invalid upstream response")
+		}
+		for _, want := range []int{1, 0} {
+			result := gatewayDecode[map[string]int](t, req(t, s, "POST", admin+"/sync", up.syncRequest), 200)
+			if result["added"] != want || result["models_seen"] != 1 {
+				t.Fatalf("unexpected catalog counts: %v", result)
+			}
+		}
+		return up
+	}
+	a, b := add("a", "供應商 A", gatewayTestKeyA), add("b", "供應商 B", gatewayTestKeyB)
+	manual := struct {
+		syncRequest
+		Model string `json:"model_id"`
+	}{a.syncRequest, "aaa-manual-model"}
+	requireCode(t, req(t, s, "POST", admin+"/upstream-model", manual), 200)
+	scope := func(up gatewayUpstream, id string) Selection {
+		return Selection{ProviderID: up.ProviderID, AccountID: up.AccountID, CredentialID: up.CredentialID, ModelID: id, Endpoint: "CHAT_COMPLETIONS"}
+	}
+	routeA, routeB := scope(a, "model-a"), scope(b, "model-b")
+	// A canonical identity saved in the original workspace must group the
+	// same model in the lightweight UI without changing the real destinations.
+	s.distribution = false
+	requireCode(t, req(t, s, "POST", "/api/v1/models/metadata", ModelMetadata{
+		ProviderID: a.ProviderID, ModelID: routeA.ModelID, CanonicalID: "family-model", Category: "OTHER",
+	}), 200)
+	s.distribution = true
+	requireCode(t, req(t, s, "POST", admin+"/model-group", map[string]string{
+		"provider_id": b.ProviderID, "model_id": routeB.ModelID, "canonical_id": "family-model",
+	}), 200)
+	groups := gatewayDecode[struct{ Models []gatewayModelGroup }](t, req(t, s, "GET", admin+"/model-groups?provider_id="+a.ProviderID+"&q=family-model", nil), 200)
+	if len(groups.Models) != 1 || groups.Models[0].Providers != 2 || groups.Models[0].Connections != 2 {
+		t.Fatalf("same model did not group both sites: %+v", groups.Models)
+	}
+	for _, v := range []Selection{routeA, routeB} {
+		for i := 0; i < 3; i++ {
+			out := gatewayDecode[struct {
+				Outcome     string
+				Performance gatewayPerformance
+			}](t, req(t, s, "POST", admin+"/probe", v), 200)
+			if out.Outcome != "SUCCESS" || out.Performance.Samples != i+1 || out.Performance.TTFT == nil || out.Performance.TPS == nil {
+				t.Fatalf("incorrect measured performance: %+v", out)
+			}
+		}
+	}
+	ordered, err := s.gatewayRankRoutes(context.Background(), []Selection{routeB, routeA}, true)
+	if err != nil || len(ordered) != 2 || ordered[0] != routeA {
+		t.Fatal("healthy routes were not ordered by measured TTFT", err)
+	}
+	type offeringsPage struct {
+		Offerings []gatewayOffering
+		More      bool
+	}
+	for _, query := range []string{"?limit=1", "?limit=1&sort=ttft"} {
+		page := gatewayDecode[offeringsPage](t, req(t, s, "GET", admin+"/offerings"+query, nil), 200)
+		want := manual.Model
+		if strings.Contains(query, "sort") {
+			want = routeA.ModelID
+		}
+		if !page.More || len(page.Offerings) != 1 || page.Offerings[0].ModelID != want {
+			t.Fatalf("first result did not honor sort before paging: %+v", page)
+		}
+	}
+	page := gatewayDecode[offeringsPage](t, req(t, s, "GET", admin+"/offerings?canonical_id=family-model&sort=ttft", nil), 200)
+	if len(page.Offerings) != 2 || page.Offerings[0].Selection != routeA || page.Offerings[1].Selection != routeB ||
+		*page.Offerings[0].Performance.TTFT >= *page.Offerings[1].Performance.TTFT {
+		t.Fatalf("group failed to compare exact scope measurements: %+v", page.Offerings)
+	}
+	for _, model := range []gatewayModel{
+		{ID: "atlas-chat", Routes: []Selection{routeA, routeB}, Enabled: true},
+		{ID: "private", Routes: []Selection{routeB}, Enabled: true},
+	} {
+		requireCode(t, req(t, s, "POST", admin+"/models", model), 200)
+	}
+	type issuedKey struct {
+		gatewayKey
+		Token string
+	}
+	issue := func(label, model string, limit int) issuedKey {
+		v := gatewayDecode[issuedKey](t, req(t, s, "POST", admin+"/keys", map[string]any{"label": label, "models": []string{model}, "daily_limit": limit}), 201)
+		if !strings.HasPrefix(v.Token, gatewayKeyPrefix) {
+			t.Fatal("missing one-time key")
+		}
+		var digest []byte
+		want := sha256.Sum256([]byte(v.Token))
+		if err := s.Store.DB.QueryRow("SELECT digest FROM gateway_keys WHERE id=?", v.ID).Scan(&digest); err != nil || !bytes.Equal(digest, want[:]) {
+			t.Fatal("key was not stored as its digest", err)
+		}
+		return v
+	}
+	k := issue("手機", "atlas-chat", 3)
+	call := func(method, path string, body any) *httptest.ResponseRecorder {
+		return gatewayClient(s, k.Token, method, path, body)
+	}
+	requireCode(t, req(t, s, "GET", "/v1/models", nil), 401)
+	requireCode(t, call("GET", admin+"/keys", nil), 401)
+	r := call("GET", "/v1/models", nil)
+	requireCode(t, r, 200)
+	if !strings.Contains(r.Body.String(), `"id":"atlas-chat"`) || strings.Contains(r.Body.String(), "private") {
+		t.Fatal("public catalog exceeded key scope")
+	}
+	requireCode(t, call("POST", "/v1/chat/completions", gatewayTestChat("private", "ok", false)), 404)
+	if f.a.Load() != 3 || f.b.Load() != 3 {
+		t.Fatal("unauthorized chat reached an upstream")
+	}
+	r = call("POST", "/v1/chat/completions", gatewayTestChat("atlas-chat", "fallback", true))
+	requireCode(t, r, 200)
+	if !strings.Contains(r.Body.String(), "data: [DONE]") || !strings.Contains(r.Body.String(), `"model":"atlas-chat"`) ||
+		strings.Contains(r.Body.String(), "model-b") || !strings.HasPrefix(r.Header().Get("Content-Type"), "text/event-stream") {
+		t.Fatal("stream did not retain its public alias and terminator")
+	}
+	if f.a.Load() != 4 || f.b.Load() != 4 {
+		t.Fatalf("429 failed to fall back once: %d / %d", f.a.Load(), f.b.Load())
+	}
+	receipt := gatewayDecode[struct {
+		Summary gatewayUsageSummary
+		Items   []gatewayUsageItem
+	}](t, req(t, s, "GET", admin+"/usage?key_id="+k.ID, nil), 200)
+	if receipt.Summary.Requests != 1 || receipt.Summary.Successes != 1 || len(receipt.Items) != 1 {
+		t.Fatal("failover consumed more than one request")
+	}
+	v := receipt.Items[0]
+	if v.Provider != "供應商 B" || v.UpstreamModel != "model-b" || v.Attempts != 2 || v.Output == nil || *v.Output != 2 {
+		t.Fatalf("inaccurate fallback usage: %+v", v)
+	}
+	r = call("POST", "/v1/chat/completions", gatewayTestChat("atlas-chat", "ok", false))
+	requireCode(t, r, 200)
+	if !strings.Contains(r.Body.String(), `"model":"atlas-chat"`) || !strings.Contains(r.Body.String(), `"completion_tokens":0`) {
+		t.Fatal("ordinary JSON response changed the model or known zero usage")
+	}
+	// B now has a better success rate. A failed request with assigned
+	// connection must never be retried on A.
+	beforeA := f.a.Load()
+	r = call("POST", "/v1/chat/completions", gatewayTestChat("atlas-chat", "broken-stream", true))
+	requireCode(t, r, 200)
+	if f.a.Load() != beforeA || !strings.Contains(r.Body.String(), "stream_interrupted") || strings.Contains(r.Body.String(), "[DONE]") {
+		t.Fatal("interrupted stream was retried or reported as complete")
+	}
+	r = call("POST", "/v1/chat/completions", gatewayTestChat("atlas-chat", "quota", true))
+	requireCode(t, r, 429)
+	if !strings.Contains(r.Body.String(), "daily_limit_reached") || r.Header().Get("Retry-After") == "" {
+		t.Fatal("daily limit was not enforced")
+	}
+	requireCode(t, req(t, s, "POST", admin+"/keys/revoke", map[string]string{"id": k.ID}), 200)
+	requireCode(t, call("GET", "/v1/models", nil), 401)
+	requireCode(t, call("POST", "/v1/chat/completions", gatewayTestChat("atlas-chat", "revoked", true)), 401)
+
+	private := issue("限額", "private", 1)
+	var wg sync.WaitGroup
+	results := make(chan *httptest.ResponseRecorder, 2)
+	for i := 0; i < 2; i++ {
+		wg.Go(func() {
+			results <- gatewayClient(s, private.Token, "POST", "/v1/chat/completions", gatewayTestChat("private", "quota-race", false))
+		})
+	}
+	wg.Wait()
+	close(results)
+	statuses := map[int]int{}
+	for result := range results {
+		statuses[result.Code]++
+	}
+	if statuses[200] != 1 || statuses[429] != 1 {
+		t.Fatalf("concurrent quota check produced %v", statuses)
+	}
+	private = issue("測試敏感資料", "private", 1)
+	r = gatewayClient(s, private.Token, "POST", "/v1/chat/completions", gatewayTestChat("private", "split-secret", true))
+	requireCode(t, r, 502)
+	if strings.Contains(r.Body.String(), gatewayTestKeyB[:18]) || !strings.Contains(r.Body.String(), "secret_in_response") {
+		t.Fatal("stream exposed a prefix of an upstream key")
+	}
+	failureKey := issue("測試錯誤", "atlas-chat", 1)
+	before := f.a.Load() + f.b.Load()
+	r = gatewayClient(s, failureKey.Token, "POST", "/v1/chat/completions", gatewayTestChat("atlas-chat", "upstream-error", true))
+	requireCode(t, r, 502)
+	if f.a.Load()+f.b.Load() != before+1 || strings.Contains(r.Body.String(), "fixture-Key") {
+		t.Fatal("upstream 5xx retried or returned a private response")
+	}
+	r = req(t, s, "GET", admin+"/keys", nil)
+	requireCode(t, r, 200)
+	for _, secret := range []string{k.Token, private.Token, failureKey.Token, gatewayTestKeyA, gatewayTestKeyB} {
+		if strings.Contains(r.Body.String(), secret) {
+			t.Fatal("listing returned a full secret")
+		}
+	}
+}

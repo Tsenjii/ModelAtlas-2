@@ -10,6 +10,28 @@
 
 # ModelAtlas VPS — Go / SQLite
 
+## 輕量模型與 Key 管理
+
+以 `lite` 啟動後，首頁是「我的模型」。同一模型依既有 Canonical ID 集中在一張卡。打開後可以按首字延遲、生成速度、成功率或總延遲比較各站。若同一模型在站上的名稱不同，可在明細調整歸類。實測仍依原站模型 ID、帳戶、Key、群組和端點分別紀錄。統計取最近七天、每條連線最多 100 筆結果。生成速度需要上游回報 Token 用量，資料不足時顯示「—」。
+
+「供應商」顯示簡介、站內實測、額度和簽到狀態。可以管理多個帳戶和 Key、同步 `/models` 或手動加入模型 ID、填寫簽到網址並逐帳戶記錄。站方額度沿用已保存的 New API 讀取結果。支援的站點可按推論 Key 或帳戶 PAT 更新，也可為帳戶手動記錄額度與單位。每筆額度保留其帳戶、來源和觀測時間。
+
+需要中轉時，從模型挑選連線，發布一個對外模型 ID，再建立限定模型與每日請求量的分發 Key。每日額度於 UTC 00:00 更新，每個受理的請求扣一次，包含上游失敗或備援。Key 只顯示一次，日後可個別撤銷。「分發」頁的用量紀錄會顯示實際站點、模型、結果、延遲、上游回報的 Token 及請求嘗試次數。
+
+客戶端填入 `https://你的網域/v1`、分發 Key 和對外模型 ID。支援 `GET /v1/models` 與 `POST /v1/chat/completions`，包含串流。路由優先選最近至少三筆觀測且成功率達 95% 的連線，再比較串流的首字延遲或非串流的總延遲。沒有足夠實測時依挑選順序。上游回 429 或請求尚未取得連線時，最多試一個備援。請求已開始串流時，連線中斷會回報失敗。
+
+使用本版來源編譯的 Linux binary，將下列路徑換成自己的持久路徑，並以 HTTPS 反代連到 `127.0.0.1:8787`。詳細反代與備份流程見 [部署、備份與還原說明](DEPLOY_AND_BACKUP.md)。
+
+```sh
+ATLAS_STATE="$HOME/modelatlas-state"
+./modelatlas-vps portable init --directory "$ATLAS_STATE" --public-origin https://atlas.example.com
+./modelatlas-vps portable run --directory "$ATLAS_STATE" --edition lite
+```
+
+管理員帳號為 `admin`，密碼在狀態目錄內的 `config/modelatlas.env`。已有部署可保留原資料目錄及金鑰，並在啟動時指定版別。Docker Compose 可在專案的 `.env` 設定 `MODELATLAS_EDITION=lite`。輕量版預設最多同時處理兩個上游請求，單次轉發請求最多 2 MiB，並跳過工作區的背景工作。雲端備份可依原流程獨立啟用。原工作區可用 `--edition workspace` 啟動。
+
+## 原工作區
+
 逐級研究開發候選015J的正式入口、明確深入選取、精確流量重用、候選重驗、預算與歷史／恢復見 [RESEARCH_PROGRESSIVE.md](RESEARCH_PROGRESSIVE.md)。新來源仍須自己的完整本機與同來源九項／實際產物驗收，完整下一版願望尚未完成，公開版本與部署狀態不變。
 
 最新優先序是 **VPS 第一、Mac 第二、Android 第三**。同一來源的三平台下載見 [Releases](https://github.com/Tsenjii/ModelAtlas-2/releases)，固定 tag／完整套件／發布檢查見 [RELEASES.md](../docs/RELEASES.md)。VPS 提供 AMD64／ARM64 tar.gz、VERSION.json／RELEASE.json、逐檔校驗與 install／update／download 工具；原備份、健康驗證與失敗／中斷回復保留。不使用自動安裝 HEAD 的更新方式。

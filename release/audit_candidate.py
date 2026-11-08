@@ -34,9 +34,9 @@ def validate_browser_case_extension(cases, registry):
     accepted = json.loads((ROOT/"docs/verification/20261031/conversation-workspace-audit.json").read_text())["browser_cases"]
     previous = {row[0] for row in accepted}
     require(len(accepted) == len(previous) == 46, "accepted Browser inventory changed")
-    expected = previous | {"TestBrowserModelBatchTestWorkflow"}
+    expected = previous | {"TestBrowserModelBatchTestWorkflow", "TestBrowserDistributionWorkflow"}
     actual = [row[0] for row in cases]
-    require(len(actual) == len(set(actual)) == 47 and set(actual) == expected, "complete browser results missing or replaced")
+    require(len(actual) == len(set(actual)) == len(expected) and set(actual) == expected, "complete browser results missing or replaced")
     require({name for name in registry if name.startswith("TestBrowser")} == expected, "browser registry mismatch")
     return len(actual)
 
@@ -91,7 +91,7 @@ def validate_native_transparency_fixture(resource, fixture):
     require(len(phases) == 3 and [phase.get("system_transparency") for phase in phases] == observed and all(type(phase.get("system_transparency")) is bool for phase in phases), "native process did not observe actual system states")
 
 def validate_browser_screenshot_names(names):
-    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-", "cloud-backup-", "assistant-mapping-", "conversation-workspace-", "model-batch-")) and "failure" not in name for name in names), "unexpected new screenshot")
+    require(all(name.startswith(("connector-private-mapping-", "research-query-cost-", "knowledge-evaluation-cost-", "research-execution-", "aqua-", "research-history-", "cloud-backup-", "assistant-mapping-", "conversation-workspace-", "model-batch-", "distribution-")) and "failure" not in name for name in names), "unexpected new screenshot")
 
 def linux_inventory(directory, arch, config):
     require(arch in ("amd64", "arm64"), "unsupported Linux architecture")
@@ -611,10 +611,12 @@ def main():
                 require({struct.unpack_from(">I",raw,8+20*i)[0] for i in range(count)} == {0x1000007,0x100000c}, "missing Mac binary architecture")
                 if name == "ModelAtlasEngine":
                     require(raw.count((ROOT/"vps/defaults/kilo-anonymous.json").read_bytes()) >= 2, "Mac engine factory snapshot absent")
+    schema_source = (ROOT/"vps/migrations.go").read_text()
+    database_schema = int(re.search(r"^const schemaVersion = (\d+)$", schema_source, re.M)[1])
     for arch in ("amd64","arm64"):
         files, version = p.linux_bundle((package/("modelatlas-vps-linux-"+arch+".tar.gz")).read_bytes(), arch, sha, p.properties()["tag"])
-        require(version["schema"] == 38 and set(files) == linux_inventory(ROOT/"vps", arch, config), "Linux bundle scope mismatch")
-        report["linux_"+arch] = {"schema":38,"files":len(files),"version":version}
+        require(version["schema"] == database_schema and set(files) == linux_inventory(ROOT/"vps", arch, config), "Linux bundle scope mismatch")
+        report["linux_"+arch] = {"schema":database_schema,"files":len(files),"version":version}
     report["actual_binary"] = binary_smoke(package/"linux-check/bin/modelatlas-vps-linux-amd64", out)
     frozen = config["frozen"]
     release = api.get("/repos/"+p.REPOSITORY+"/releases/"+str(frozen["release_id"]))

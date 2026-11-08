@@ -116,7 +116,7 @@ func openStore(path string, autoSnapshot bool, vaultKey ...[]byte) (*Store, erro
 		db.Close()
 		return nil, err
 	}
-	if _, err = db.Exec("UPDATE telemetry SET outcome='INTERRUPTED' WHERE outcome='RUNNING'"); err != nil {
+	if _, err = db.Exec("UPDATE telemetry SET outcome='INTERRUPTED' WHERE outcome='RUNNING'; UPDATE gateway_requests SET outcome='INTERRUPTED' WHERE outcome='RUNNING'"); err != nil {
 		db.Close()
 		return nil, err
 	}

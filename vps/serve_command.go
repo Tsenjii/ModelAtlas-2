@@ -14,11 +14,15 @@ func serveConfig(args []string, getenv func(string) string) (deploymentConfig, e
 	f.SetOutput(io.Discard)
 	path := f.String("env-file", "", "private configuration file")
 	backup := f.String("backup-destination", "", "explicit private backup destination")
+	edition := f.String("edition", "", "workspace or lite")
 	if f.Parse(args) != nil || f.NArg() != 0 {
 		return deploymentConfig{}, errors.New("usage: serve [--env-file PRIVATE_FILE]")
 	}
 	if *path == "" {
 		return readDeploymentConfig(func(name string) string {
+			if name == "MODELATLAS_EDITION" && *edition != "" {
+				return *edition
+			}
 			if name == "MODELATLAS_BACKUP_DESTINATION" && *backup != "" {
 				return *backup
 			}
@@ -35,11 +39,14 @@ func serveConfig(args []string, getenv func(string) string) (deploymentConfig, e
 		return deploymentConfig{}, errors.New("serve configuration requires its own admin token, stable master key and absolute database path")
 	}
 	for name := range values {
-		if !oneOf(name, "MODELATLAS_ADMIN_TOKEN", "MODELATLAS_MASTER_KEY", "MODELATLAS_DB", "MODELATLAS_LISTEN", "MODELATLAS_DEPLOYMENT", "MODELATLAS_PUBLIC_ORIGIN", "MODELATLAS_MAINTENANCE_FILE", "MODELATLAS_DESKTOP_READY", "MODELATLAS_BACKUP_DESTINATION", "PORT") {
+		if !oneOf(name, "MODELATLAS_ADMIN_TOKEN", "MODELATLAS_MASTER_KEY", "MODELATLAS_DB", "MODELATLAS_LISTEN", "MODELATLAS_DEPLOYMENT", "MODELATLAS_PUBLIC_ORIGIN", "MODELATLAS_MAINTENANCE_FILE", "MODELATLAS_DESKTOP_READY", "MODELATLAS_BACKUP_DESTINATION", "MODELATLAS_EDITION", "PORT") {
 			return deploymentConfig{}, errors.New("unsupported serve configuration field; runtime resource options belong in the supervisor environment")
 		}
 	}
 	return readDeploymentConfig(func(name string) string {
+		if name == "MODELATLAS_EDITION" && *edition != "" {
+			return *edition
+		}
 		if name == "MODELATLAS_BACKUP_DESTINATION" && *backup != "" {
 			return *backup
 		}

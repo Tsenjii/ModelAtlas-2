@@ -1,3 +1,5 @@
+> 2026-11-08（台北）依 D-024 實作 VPS 輕量管理候選。模型首頁按模型歸類並比較各站的實測。供應商頁管理帳戶與 Key，沿用簡介、額度與簽到資料。分發頁提供選用的模型發布、限額 Key、用量與備援。以 PR #23 的媒體轉送變更作為基底。候選來源與同 SHA 驗證在 PR 記錄，待原有 CI 與使用者目標環境驗收。
+
 > 2026-11-01（台北）MODEL-BATCH-020所列三平台批次實測已完成工程驗證。正式程式來源 `7aecf289d8fb2fd2dd0e237bb79ebf0f4c650322`／tree `b88330cf901ae6a08bb6313407ed0307ab3cba0f`；VPS41329331638六項、Android41329331607兩項、Mac41329331646三項同來源全SUCCESS，稽核41329331630／124915907069成功核對十一真產物。另下載稽核13092349535，2870631bytes／SHA256 de78104deea2acec6ee478a2cd51d4af2f606511b468ea4bf3fbe667aea33b82／CRC PASS，原始BYTE_AUDIT_PASS_PENDING_VISUAL_REVIEW報告不改；159視圖依平台42接觸表及11張新增原圖已自行檢視，沒有獨立reviewer主張。詳 verification/20261101/model-batch-baseline.json 及其 audit／visual-review／delivery紀錄。
 >
 > VPS Models多選1–100個精確文字連線，可預覽、逐筆進度／停止／收據／JSON匯出及頁面內重開；Mac原生多選與兩帳號同名模型caller、Android指定連線下的原生多選／VM／Room／引擎均接正式流程。429／402停止後續，取消保留owned job至socket與telemetry完成；掉線不重送，VPS缺失回應保守標示結果未確認。批次不是RPM壓測，也不支援跨頁面／服務重啟自動續跑。

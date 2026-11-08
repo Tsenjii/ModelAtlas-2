@@ -23,6 +23,7 @@ func portableCommand(args []string, out io.Writer) error {
 	origin := f.String("public-origin", "", "HTTPS ingress origin for a new deployment")
 	listen := f.String("listen", "127.0.0.1:8787", "numeric listener for a new deployment")
 	backup := f.String("backup-destination", "", "explicit private backup destination for run")
+	edition := f.String("edition", "", "workspace or lite for run")
 	if f.Parse(args[1:]) != nil || f.NArg() != 0 || !filepath.IsAbs(*directory) || filepath.Clean(*directory) != *directory || strings.ContainsAny(*directory, "\r\n\x00\"\\") {
 		return errors.New("portable operations require an absolute private state directory and valid options")
 	}
@@ -31,7 +32,7 @@ func portableCommand(args []string, out io.Writer) error {
 		if *origin != "" || *listen != "127.0.0.1:8787" {
 			return errors.New("configure an existing deployment in its private environment file")
 		}
-		config, err := serveConfig([]string{"--env-file", env, "--backup-destination", *backup}, os.Getenv)
+		config, err := serveConfig([]string{"--env-file", env, "--backup-destination", *backup, "--edition", *edition}, os.Getenv)
 		if err != nil {
 			return err
 		}
@@ -39,6 +40,9 @@ func portableCommand(args []string, out io.Writer) error {
 	}
 	if *backup != "" {
 		return errors.New("select the backup destination on portable run or in the private environment")
+	}
+	if *edition != "" {
+		return errors.New("select the edition on portable run or in the private environment")
 	}
 	return initializePortable(*directory, env, *origin, *listen, out)
 }

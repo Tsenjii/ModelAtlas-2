@@ -131,7 +131,8 @@ func (s *Server) addProvider(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, p)
 }
 func (s *Server) listAccounts(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,label FROM accounts ORDER BY provider_id,id")
+	p := r.URL.Query().Get("provider_id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,label FROM accounts WHERE (?='' OR provider_id=?) ORDER BY provider_id,id", p, p)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -163,7 +164,8 @@ func (s *Server) addAccount(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, a)
 }
 func (s *Server) listCredentials(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT c.id,c.provider_id,c.account_id,c.label,c.enabled,c.role,COALESCE(x.group_id,''),COALESCE(x.note,''),COALESCE(x.priority,0),COALESCE(o.base_url,p.base_url),COALESCE(o.auth_mode,'') FROM credentials c JOIN providers p ON p.id=c.provider_id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id LEFT JOIN credential_context x ON x.provider_id=c.provider_id AND x.account_id=c.account_id AND x.credential_id=c.id ORDER BY c.provider_id,c.account_id,c.id")
+	p := r.URL.Query().Get("provider_id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT c.id,c.provider_id,c.account_id,c.label,c.enabled,c.role,COALESCE(x.group_id,''),COALESCE(x.note,''),COALESCE(x.priority,0),COALESCE(o.base_url,p.base_url),COALESCE(o.auth_mode,'') FROM credentials c JOIN providers p ON p.id=c.provider_id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id LEFT JOIN credential_context x ON x.provider_id=c.provider_id AND x.account_id=c.account_id AND x.credential_id=c.id WHERE (?='' OR c.provider_id=?) ORDER BY c.provider_id,c.account_id,c.id", p, p)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -185,6 +187,10 @@ func (s *Server) addCredential(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &v) {
 		return
 	}
+	s.saveCredential(w, r, v)
+}
+
+func (s *Server) saveCredential(w http.ResponseWriter, r *http.Request, v Credential) {
 	if v.Role == "" {
 		v.Role = "INFERENCE"
 	}

@@ -10,11 +10,11 @@ import audit_candidate as audit
 class CandidateBrowserCaseExtensionTest(unittest.TestCase):
     def setUp(self):
         previous = json.loads((Path(__file__).resolve().parents[1]/"docs/verification/20261031/conversation-workspace-audit.json").read_text())["browser_cases"]
-        self.cases = previous+[("TestBrowserModelBatchTestWorkflow", "4.39")]
+        self.cases = previous+[("TestBrowserModelBatchTestWorkflow", "4.39"), ("TestBrowserDistributionWorkflow", "7.0")]
         self.registry = audit.go_test_functions(Path(__file__).resolve().parents[1]/"vps")
 
-    def test_original_46_and_real_batch_case_match_current_registry(self):
-        self.assertEqual(audit.validate_browser_case_extension(self.cases,self.registry),47)
+    def test_original_46_and_new_cases_match_current_registry(self):
+        self.assertEqual(audit.validate_browser_case_extension(self.cases,self.registry),48)
 
     def test_missing_duplicate_and_same_count_replacements_are_rejected(self):
         for cases in (self.cases[:-1], self.cases+[self.cases[-1]], self.cases[1:]+[("TestBrowserReplacement", "1.0")]):
@@ -73,7 +73,7 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
             "read-recovery-375-dark", "1280-light", "375-light", "375-dark", "320-large-dark",
             "320-large-aqua", "draft-recovery-375-dark", "write-uncertain-375-dark")}
         config = self.config()
-        config["new_browser_images"] = [name for name in config["new_browser_images"] if not name.startswith("model-batch-")]
+        config["new_browser_images"] = [name for name in config["new_browser_images"] if not name.startswith(("model-batch-","distribution-"))]
         self.assertEqual(len(previous),63)
         self.assertEqual(set(config["new_browser_images"]),set(previous)|added)
         self.assertEqual(audit.browser_image_scopes(config)["candidate"][0],580)
@@ -82,9 +82,16 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
         previous = json.loads((Path(__file__).resolve().parents[1]/"docs/verification/20261031/conversation-workspace-audit.json").read_text())["browser_images"]["added"]
         added = {"model-batch-"+name+".png" for name in ("1280-light","375-dark","320-large-dark","completed","limited","cancelled-320-large","unconfirmed")}
         config = self.config()
+        config["new_browser_images"] = [name for name in config["new_browser_images"] if not name.startswith("distribution-")]
         self.assertEqual(len(previous),71)
         self.assertEqual(set(config["new_browser_images"]),set(previous)|added)
         self.assertEqual(audit.browser_image_scopes(config)["candidate"][0],587)
+
+    def test_distribution_adds_desktop_and_mobile_views(self):
+        config = self.config()
+        expected = {"distribution-model-1344-light.png", "distribution-model-402-light.png", "distribution-providers-402-light.png"}
+        self.assertEqual({name for name in config["new_browser_images"] if name.startswith("distribution-")}, expected)
+        self.assertEqual(audit.browser_image_scopes(config)["candidate"][0],590)
 
     def test_crash_captures_remain_forbidden_in_declared_and_actual_views(self):
         for name in ("research-history-failure.png", "research-history-scope-failure-390-dark.png", "aqua-failure.png", "assistant-mapping-failure.png", "conversation-workspace-failure.png", "model-batch-failure.png", "unreviewed-view.png"):
@@ -167,16 +174,16 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
     def test_contact_inventory_grows_without_rewriting_frozen_views(self):
         config = self.config()
         original = copy.deepcopy(config)
-        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith(("conversation-workspace-","model-batch-"))]
+        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith(("conversation-workspace-","model-batch-","distribution-"))]
         original["new_mac_batch_images"] = []
         self.assertEqual(audit.visual_review_count(original),125)
         conversation = copy.deepcopy(config)
-        conversation["new_browser_images"] = [name for name in conversation["new_browser_images"] if not name.startswith("model-batch-")]
+        conversation["new_browser_images"] = [name for name in conversation["new_browser_images"] if not name.startswith(("model-batch-","distribution-"))]
         conversation["new_mac_batch_images"] = []
         self.assertEqual(audit.visual_review_count(conversation),133)
-        self.assertEqual(audit.visual_review_count(config),144)
+        self.assertEqual(audit.visual_review_count(config),147)
         config["new_browser_images"].append("future-new-view.png")
-        self.assertEqual(audit.visual_review_count(config),145)
+        self.assertEqual(audit.visual_review_count(config),148)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
 class CandidateDeviceExtensionTest(unittest.TestCase):
@@ -234,17 +241,17 @@ class CandidateAndroidAquaTest(unittest.TestCase):
 
     def test_fifteen_android_views_are_added_to_all110_original_views(self):
         original = copy.deepcopy(self.config)
-        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith(("conversation-workspace-","model-batch-"))]
+        original["new_browser_images"] = [name for name in original["new_browser_images"] if not name.startswith(("conversation-workspace-","model-batch-","distribution-"))]
         original["new_mac_batch_images"] = []
         self.assertEqual(audit.visual_review_count(original),125)
         self.assertEqual(audit.candidate_visual_review_count(original),140)
         conversation = copy.deepcopy(self.config)
-        conversation["new_browser_images"] = [name for name in conversation["new_browser_images"] if not name.startswith("model-batch-")]
+        conversation["new_browser_images"] = [name for name in conversation["new_browser_images"] if not name.startswith(("model-batch-","distribution-"))]
         conversation["new_mac_batch_images"] = []
         self.assertEqual(audit.visual_review_count(conversation),133)
         self.assertEqual(audit.candidate_visual_review_count(conversation),148)
-        self.assertEqual(audit.visual_review_count(self.config),144)
-        self.assertEqual(audit.candidate_visual_review_count(self.config),159)
+        self.assertEqual(audit.visual_review_count(self.config),147)
+        self.assertEqual(audit.candidate_visual_review_count(self.config),162)
         changed = copy.deepcopy(self.config)
         changed["new_android_aqua_images"][13] = "14-replacement.png"
         with self.assertRaisesRegex(ValueError,"image scope"):

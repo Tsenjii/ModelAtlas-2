@@ -34,11 +34,12 @@ func (s *Server) accountCheckinsHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid timezone", 400)
 		return
 	}
+	provider := r.URL.Query().Get("provider_id")
 	rows, err := s.Store.DB.QueryContext(r.Context(), `SELECT a.provider_id,a.id,a.label,p.name,p.base_url,p.description,p.auth_mode,c.config_json,x.completed_at,x.source
  FROM accounts a JOIN providers p ON p.id=a.provider_id
  LEFT JOIN provider_config c ON c.provider_id=a.provider_id
  LEFT JOIN account_checkins x ON x.provider_id=a.provider_id AND x.account_id=a.id AND x.date=?
- ORDER BY a.provider_id,a.id`, date)
+ WHERE (?='' OR a.provider_id=?) ORDER BY a.provider_id,a.id`, date, provider, provider)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

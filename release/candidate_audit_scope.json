@@ -98,6 +98,9 @@
     "source": "bc4a735e9144564c5d78433b196038d2452c8def"
   },
   "go_new_events": {
+    "TestBrowserDistributionWorkflow": "skip",
+    "TestGatewayDistributionWorkflow": "pass",
+    "TestVPSNativeSpeechPreservesUpstreamBytes": "pass",
     "TestConnectorPrivateMappingExplicitReadKeepsPublicAnonymousAndSecretsOut": "pass",
     "TestConnectorPrivateMappingKeyGroupReviewRealUseAndUndo": "pass",
     "TestConnectorPrivateMappingPATKeepsAccountAuthorityAndExactCredits": "pass",
@@ -274,7 +277,10 @@
     "model-batch-completed.png",
     "model-batch-limited.png",
     "model-batch-cancelled-320-large.png",
-    "model-batch-unconfirmed.png"
+    "model-batch-unconfirmed.png",
+    "distribution-model-1344-light.png",
+    "distribution-model-402-light.png",
+    "distribution-providers-402-light.png"
   ],
   "rejected_aa_browser": {
     "id": 12625684013,
