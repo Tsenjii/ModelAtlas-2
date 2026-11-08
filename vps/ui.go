@@ -355,9 +355,9 @@ const homeHTML = `<!doctype html>
 </div>
 </section>
 <section id="models" class="pane" hidden aria-labelledby="models-title">
-<div class="heading">
-<small class="page-eyebrow">Model Library</small><h1 id="models-title">模型</h1>
-<p>你的模型收藏與探索空間。</p>
+<div class="heading model-overview-heading">
+<h1 id="models-title">模型</h1>
+<p>比較各家模型的速度和成功率。</p>
 </div>
 <div class="workspace-tabs" role="tablist" aria-label="models 工作區" data-workspace-tabs="models">
 <button type="button" role="tab" id="models-owned-tab" aria-controls="models-owned" aria-selected="true" tabindex="0" data-icon="models">我的模型</button>
@@ -367,11 +367,15 @@ const homeHTML = `<!doctype html>
 <button type="button" role="tab" id="knowledge-panel-tab" aria-controls="knowledge-panel" aria-selected="false" tabindex="-1" data-icon="book">研究知識</button>
 </div>
 <div id="models-owned" class="workspace-panel" role="tabpanel" aria-labelledby="models-owned-tab" data-workspace-panel="models">
-<div class="collection-search">
+<div class="collection-search model-collection-search">
 <label class="search-field">
 <span class="sr-only">搜尋模型</span>
-<input id="model-search" type="search" placeholder="搜尋模型、帳戶、Key 或群組">
+<input id="model-search" type="search" placeholder="搜尋模型或供應商">
 </label>
+<div class="model-scan-controls">
+<label>供應商<select id="model-provider"><option value="">全部</option></select></label>
+` + modelSortHTML + `
+</div>
 <button id="model-select" type="button" class="ghost" aria-pressed="false" data-icon="check">
 <span id="model-select-label">選取</span>
 </button>
@@ -389,6 +393,7 @@ const homeHTML = `<!doctype html>
 <summary data-icon="filter">篩選模型<span id="model-filter-count">
 </span>
 </summary>
+` + modelViewsHTML + `
 <div class="toolbar">
 <label>顯示<select id="model-lifecycle">
 <option value="ACTIVE">使用中</option>
@@ -423,14 +428,12 @@ const homeHTML = `<!doctype html>
 </select>
 </label>
 </div>
-<label>Provider<select id="model-provider">
-<option value="">全部</option>
-</select>
-</label>` + modelControlsHTML + `</details>
-</div>` + modelViewsHTML + `
+` + modelControlsHTML + `</details>
+</div>
 <div class="collection-meta">
 <span id="model-result-count">
 </span>
+<span id="model-scan-note" class="model-scan-note" hidden></span>
 <button id="model-filter-reset" type="button" class="text-button" hidden>重設篩選</button>
 </div>
 <div id="model-selection-bar" class="selection-bar" role="region" aria-label="批次模型管理" hidden>

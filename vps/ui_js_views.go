@@ -24,18 +24,47 @@ function renderProviders(){
  rows.forEach(p=>{const count=myModels.filter(m=>m.provider_id===p.id&&m.state==="ACTIVE").length,{body}=collectionItem(box,"provider",p.name,p.description||adapterLabels[p.config?.adapter]||"自訂連線",()=>providerDetail(p));let host=p.base_url;try{host=new URL(p.base_url).host;}catch(e){}body.append(el("small",host));const metrics=el("div",undefined,"metric-line");metricChip(metrics,"模型",String(count));metricChip(metrics,"帳戶",String(accounts.filter(a=>a.provider_id===p.id).length));metricChip(metrics,"已啟用 Key",String(credentials.filter(c=>c.provider_id===p.id&&c.enabled&&c.role==="INFERENCE").length));if(pendingCheckins(p.id).length)metrics.append(el("span",pendingCheckins(p.id).length+" 個帳戶待簽到","state-chip"));body.append(metrics);});
  if(!rows.length)workspaceEmpty(box,providerQuick==="pending"?"目前沒有待簽到的帳戶":providers.length?"沒有符合的供應商":"連接你的第一個 Provider",providerQuick==="pending"?"當日完成紀錄會依設定時區更新。":providers.length?"換個名稱或網址搜尋。":"加入 API 連線後，就能探索模型、開始對話。","provider",providers.length?"清除搜尋":"新增連線",()=>{if(providers.length){$("provider-search").value="";providerQuick="all";document.querySelectorAll("[data-provider-quick]").forEach(n=>n.setAttribute("aria-pressed",String(n.dataset.providerQuick==="all")));renderProviders();}else workspace("providers","providers-new",true);});renderCheckinSummary();
 }
+const modelSuccessPercent=new Intl.NumberFormat("zh-TW",{style:"percent",maximumFractionDigits:1});
+function modelPerformanceValues(model,speed){
+ const local=modelConnectionMetrics(model);
+ const metrics=el("span",undefined,"model-performance-values");
+ const success=local.success===null?null:modelSuccessPercent.format(local.success);
+ const samples=local.samples>0?local.samples+" 次":"未實測";
+ const values=[
+  ["首字等待",speed.ttft===null?null:Math.round(speed.ttft)+" ms"],
+  ["生成速度",speed.tps===null?null:Number(speed.tps.toFixed(1))+" tok/s"],
+  ["成功率",success,samples]
+ ];
+ for(const [label,value,caption] of values){
+  const cell=el("span",undefined,"model-performance-cell");
+  cell.append(el("span",label),el("b",value??"—"));
+  if(caption)cell.append(el("small",caption));
+  metrics.append(cell);
+ }
+ return metrics;
+}
 function renderModels(){
  const box=$("my-models"),global=$("model-scope").value==="GLOBAL";box.replaceChildren();
  const matching=(global?models.map(catalogOffer):myModels).filter(modelPasses).sort(compareModelSort);$("model-more").hidden=matching.length<=modelDisplayLimit;
+ const hasPerformance=!global&&matching.length>0,note=$("model-scan-note");
+ box.classList.toggle("has-model-performance",hasPerformance);
+ note.hidden=!hasPerformance;
+ if(hasPerformance){
+  const windowName={"1h":"最近 1 小時","24h":"最近 24 小時","7d":"最近 7 天","30d":"最近 30 天","all":"全部紀錄"}[settings.performance_window||"7d"]||"設定的期間";
+  const source=modelMetrics(matching[0]).source;
+  note.textContent=source==="我的實測"?"我的實測 · "+windowName:"速度為 "+source+" · 成功率為我的實測（"+windowName+"）";
+ }
  matching.slice(0,modelDisplayLimit).forEach(m=>{
   if(global){const original=modelRecord(m);collectionItem(box,"models",original.display_name,original.provider_id+" · Catalog",()=>catalogDetail(original));return;}
   const row=el("div",undefined,"model-row"),check=el("input");check.type="checkbox";check.title="勾選進行管理；比較僅限可用的文字對話";check.checked=selectedCompare.has(key(m));check.setAttribute("aria-label","比較 "+m.model_id+" · "+m.provider_id);check.addEventListener("change",()=>{if(check.checked)selectedCompare.set(key(m),scope(m));else selectedCompare.delete(key(m));updateModelSelection();});const hit=el("label",undefined,"model-select-check");hit.append(check);row.append(hit);
-  const op=targetOperation(m),kind=/IMAGE/.test(op)?"image":/AUDIO|SPEECH/.test(op)?"audio":"models",provider=providers.find(p=>p.id===m.provider_id)?.name||m.provider_id,credential=credentials.find(c=>c.id===m.credential_id&&c.provider_id===m.provider_id&&c.account_id===m.account_id),{body}=collectionItem(row,kind,modelDisplayName(m),provider+" · "+(operationLabels[op]||op)+" · "+connectionLabel(m),()=>modelDetail(m));
+  const op=targetOperation(m),kind=/IMAGE/.test(op)?"image":/AUDIO|SPEECH/.test(op)?"audio":"models",provider=providers.find(p=>p.id===m.provider_id)?.name||m.provider_id,{button,body}=collectionItem(row,kind,modelDisplayName(m),provider+" · "+(operationLabels[op]||op)+" · "+connectionLabel(m),()=>modelDetail(m));
   if(modelDisplayName(m)!==m.model_id)body.append(el("small",m.model_id,"model-id"));
   if(m.favorite){const star=icon("star");star.classList.add("favorite-mark");star.setAttribute("aria-label","已加入最愛");star.removeAttribute("aria-hidden");body.querySelector("strong").prepend(star);}
   if(m.price_state==="FREE_NOW")body.append(el("span","FREE NOW","state-chip"));
   if(!m.enabled)body.append(el("small","連線未就緒"));
-  const metric=modelMetrics(m),metrics=el("div",undefined,"metric-line");if(metric.source==="我的實測"&&m.performance?.success_rate!==null&&m.performance?.success_rate!==undefined)metricChip(metrics,"上線率",(m.performance.success_rate*100).toFixed(0)+"%");if(metric.ttft!==null)metricChip(metrics,"TTFT",Math.round(metric.ttft)+" ms");if(metric.tps!==null)metricChip(metrics,"TPS",Number(metric.tps.toFixed(1)).toString());if(metrics.children.length){body.append(metrics,el("div",metric.source+(metric.source==="我的實測"&&Number.isInteger(m.performance?.samples)?" · "+m.performance.samples+" 次請求":""),"source-line"));}box.append(row);
+  button.classList.add("model-performance-row");
+  button.insertBefore(modelPerformanceValues(m,modelMetrics(m)),button.lastElementChild);
+  box.append(row);
  });
  if(!matching.length){const any=myModels.some(m=>m.state==="ACTIVE"),filtered=modelFilterIDs.some(id=>{const n=$(id);return n.type==="checkbox"?n.checked:n.value!==(filterDefaults[id]||"");});workspaceEmpty(box,filtered?"沒有符合的模型":any?"目前沒有可顯示的模型":"打造你的模型收藏",filtered?"調整搜尋或篩選條件，再找一次。":"從 Catalog 選擇模型，或手動加入連線。","models",filtered?"清除搜尋與篩選":"探索模型",()=>{if(filtered)resetModelFilters();else workspace("models","models-catalog",true);});}
  const old=$("model-provider").value;$("model-provider").replaceChildren();option($("model-provider"),"","全部");providers.forEach(p=>option($("model-provider"),p.id,p.name));$("model-provider").value=old;modelFilterStatus(matching.length);
