@@ -2,8 +2,8 @@
 
 const $ = id => document.getElementById(id);
 const state = {
-  page: "models", shareMode: "setup", upstreams: [], offers: [], models: [], keys: [], routes: [],
-  modelGroup: null, modelProvider: null, providerID: "", routeGroup: null, routePicking: false, usage: [], usageOffset: 0
+  page: "models", upstreams: [], offers: [], models: [], keys: [], routes: [],
+  modelGroup: null, modelProvider: null, providerID: "", routeGroup: null, routePicking: false
 };
 const statuses = {
   SUCCESS: "成功", RUNNING: "處理中", RATE_LIMITED: "上游限流", CANCELLED: "已取消",
@@ -25,13 +25,25 @@ const errors = {
   "anonymous connection cannot receive a secret": "匿名連線可另新增一個有 Key 的上游。",
   "invalid provider profile or check-in URL": "請檢查名稱與 HTTPS 網址。標記需要簽到時，請填簽到網址。",
   "valid non-negative amount and unit required": "請填寫非負數額度和單位。",
-  "valid model grouping ID required": "請輸入有效的模型歸類 ID。"
+  "valid model grouping ID required": "請輸入有效的模型歸類 ID。",
+  "expiration must be in the future": "請選擇未來的到期時間，或留白。",
+  "key or selected models unavailable": "這把 Key 或選取的模型目前無法更新。"
 };
 
 function el(tag, text, className) {
   const node = document.createElement(tag);
   if (text !== undefined) node.textContent = text;
   if (className) node.className = className;
+  return node;
+}
+function svgNode(tag, attributes = {}) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [name, value] of Object.entries(attributes)) node.setAttribute(name, value);
+  return node;
+}
+function icon(name) {
+  const node = svgNode("svg", {"aria-hidden": "true"});
+  node.append(svgNode("use", {href: "#icon-" + name}));
   return node;
 }
 function button(text, handler) {
@@ -170,7 +182,7 @@ async function copy(value, field) {
 }
 async function showPage(page) {
   state.page = page;
-  for (const id of ["models", "providers", "share"]) $("page-" + id).hidden = id !== page;
+  for (const id of ["models", "providers", "share", "usage"]) $("page-" + id).hidden = id !== page;
   for (const nav of document.querySelectorAll("[data-page]")) {
     nav.classList.toggle("active", nav.dataset.page === page);
     if (nav.dataset.page === page) nav.setAttribute("aria-current", "page");
@@ -182,15 +194,8 @@ async function showPage(page) {
 async function refresh() {
   if (state.page === "models") return showModelView();
   if (state.page === "providers") return showProviderView();
-  const setup = state.shareMode === "setup";
-  $("share-settings").hidden = !setup;
-  $("share-usage").hidden = setup;
-  $("share-setup").setAttribute("aria-pressed", String(setup));
-  $("share-history").setAttribute("aria-pressed", String(!setup));
-  if (setup) return loadShare();
-  state.keys = await api("/gateway/keys");
-  putOptions($("usage-key"), [["", "全部 Key"], ...state.keys.map(k => [k.id, k.label])]);
-  await loadUsage(true);
+  if (state.page === "share") return loadShare();
+  return showUsage();
 }
 function renderRoutes() {
   $("route-tray").hidden = state.routes.length === 0;
@@ -235,78 +240,9 @@ function renderShare() {
       await loadShare();
       notice(v.enabled ? "公開模型已停用。" : "公開模型已啟用。");
     })))) : [empty("先從上游選一個模型，就能發布成對外 ID。")]));
-  const selected = new Set(Array.from($("key-models").querySelectorAll("input:checked"), v => v.value));
-  const available = state.models.filter(v => v.enabled);
-  $("key-models").replaceChildren(...(available.length ? available.map(v => {
-    const label = el("label", undefined, "choice");
-    const check = el("input");
-    check.type = "checkbox";
-    check.name = "model";
-    check.value = v.id;
-    check.checked = selected.has(v.id);
-    label.append(check, el("span", v.id));
-    return label;
-  }) : [empty("先發布至少一個模型。")]));
-  $("issue-key").disabled = available.length === 0;
-  $("key-list").replaceChildren(...(state.keys.length ? state.keys.map(k => {
-    const revoke = button("撤銷", async () => {
-      if (!window.confirm("要撤銷「" + k.label + "」嗎？這把 Key 會立即停用。")) return;
-      await api("/gateway/keys/revoke", {id: k.id});
-      await loadShare();
-      notice("分發 Key 已撤銷。");
-    });
-    revoke.hidden = !k.enabled;
-    return compact(k.label, [k.prefix + "…", k.models.join("、"), k.enabled ? "今日 " + k.used_today + " / " + k.daily_limit + " 次" : "已撤銷"], controls(revoke));
-  }) : [empty("還沒有分發 Key。")]));
+  renderKeys();
   renderRoutes();
 }
-
-let usageRead;
-async function loadUsage(reset) {
-  usageRead?.abort();
-  const read = new AbortController();
-  usageRead = read;
-  const offset = reset ? 0 : state.usageOffset;
-  const params = new URLSearchParams({limit: "30", offset: String(offset), key_id: $("usage-key").value, failures: String($("only-failures").checked)});
-  $("usage-more").disabled = true;
-  try {
-    const data = await api("/gateway/usage?" + params, undefined, read.signal);
-    if (usageRead !== read) return;
-    state.usage = reset ? data.items : state.usage.concat(data.items);
-    state.usageOffset = offset + data.items.length;
-    $("usage-more").hidden = !data.more;
-    renderUsage(data.summary);
-  } finally {
-    if (usageRead === read) $("usage-more").disabled = false;
-  }
-}
-function renderUsage(summary) {
-  const stat = (label, value, detail) => {
-    const card = el("div", undefined, "card");
-    card.append(metric(label, value, detail));
-    return card;
-  };
-  $("usage-summary").replaceChildren(
-    stat("近 24 小時請求", number(summary.requests)),
-    stat("完成請求成功率", ratio(summary.successes, summary.completed), summary.completed ? summary.successes + " / " + summary.completed + " 次" : "尚無已完成請求"),
-    stat("上游回報 Token", number(summary.input_tokens) + " / " + number(summary.output_tokens), "輸入 / 輸出")
-  );
-  const cards = state.usage.map(v => {
-    const row = el("article", undefined, "entry usage-row");
-    const date = new Date(v.at).toLocaleString("zh-TW");
-    const values = el("div", undefined, "metrics");
-    values.append(metric("總延遲", v.latency_ms == null ? "—" : number(v.latency_ms) + " ms"),
-      metric("首字等待", v.ttft_ms == null ? "—" : number(v.ttft_ms) + " ms"),
-      metric("輸入 / 輸出", number(v.input_tokens) + " / " + number(v.output_tokens)));
-    row.append(identity(v.model, [v.key + " · " + date, v.provider ? v.provider + " / " + v.upstream_model : "",
-      v.upstream_status && v.upstream_status !== v.http_status ? "上游 HTTP " + v.upstream_status : "",
-      v.attempts > 1 ? "含備援 · 共 " + v.attempts + " 次上游請求" : ""]), values,
-    el("span", (statuses[v.outcome] || v.outcome) + (v.http_status ? " · " + v.http_status : ""), "badge"));
-    return row;
-  });
-  $("usage-list").replaceChildren(...(cards.length ? cards : [empty("這個範圍還沒有請求。")]));
-}
-
 function bindAppearance() {
   const set = (id, storage, fallback) => {
     const input = $(id);
@@ -324,7 +260,7 @@ function bindAppearance() {
     apply();
   };
   set("theme", "modelatlas.appearance", "system");
-  set("wallpaper", "modelatlas.wallpaper", "kotoha-chibi");
+  set("wallpaper", "modelatlas.wallpaper", "elaina");
 }
 function submit(id, work) {
   $(id).addEventListener("submit", event => {
@@ -348,16 +284,8 @@ for (const dialog of document.querySelectorAll("dialog")) dialog.addEventListene
 });
 $("appearance-open").addEventListener("click", () => $("appearance-dialog").showModal());
 $("refresh").addEventListener("click", () => action($("refresh"), refresh));
-$("share-setup").addEventListener("click", () => action(null, async () => {
-  state.shareMode = "setup";
-  await refresh();
-}));
-$("share-history").addEventListener("click", () => action(null, async () => {
-  state.shareMode = "usage";
-  await refresh();
-}));
+$("share-history").addEventListener("click", () => action(null, () => showPage("usage")));
 $("configure-route").addEventListener("click", () => action(null, async () => {
-  state.shareMode = "setup";
   await showPage("share");
   $("model-editor").open = true;
   $("public-model").focus();
@@ -369,10 +297,6 @@ $("select-routes").addEventListener("click", () => action(null, () => {
 $("cancel-model").addEventListener("click", resetModelDraft);
 $("copy-base").addEventListener("click", () => copy(baseURL(), $("gateway-url")));
 $("copy-key").addEventListener("click", () => copy($("issued-key").value, $("issued-key")));
-$("usage-key").addEventListener("change", () => action(null, () => loadUsage(true)));
-$("only-failures").addEventListener("change", () => action(null, () => loadUsage(true)));
-$("usage-more").addEventListener("click", () => action(null, () => loadUsage(false)));
-
 submit("model-form", async form => {
   if (!state.routes.length) throw new Error("請先選擇上游路由。");
   const id = new FormData(form).get("id").trim();
@@ -380,18 +304,6 @@ submit("model-form", async form => {
   resetModelDraft();
   await loadShare();
   notice("已發布 " + id + "。");
-});
-submit("key-form", async form => {
-  const data = new FormData(form);
-  const models = data.getAll("model");
-  if (!models.length) throw new Error("請選擇至少一個可用模型。");
-  const result = await api("/gateway/keys", {label: data.get("label"), daily_limit: Number(data.get("daily_limit")), models});
-  $("issued-base").value = baseURL();
-  $("issued-key").value = result.token;
-  form.reset();
-  $("key-editor").open = false;
-  $("issued-dialog").showModal();
-  await loadShare();
 });
 bindAppearance();
 renderRoutes();

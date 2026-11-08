@@ -100,6 +100,8 @@
   "go_new_events": {
     "TestBrowserDistributionWorkflow": "skip",
     "TestGatewayDistributionWorkflow": "pass",
+    "TestGatewayKeyPolicyEnforced": "pass",
+    "TestGatewayUsageIntervalsAndSources": "pass",
     "TestVPSNativeSpeechPreservesUpstreamBytes": "pass",
     "TestConnectorPrivateMappingExplicitReadKeepsPublicAnonymousAndSecretsOut": "pass",
     "TestConnectorPrivateMappingKeyGroupReviewRealUseAndUndo": "pass",
@@ -280,7 +282,10 @@
     "model-batch-unconfirmed.png",
     "distribution-model-1344-light.png",
     "distribution-model-402-light.png",
-    "distribution-providers-402-light.png"
+    "distribution-providers-402-light.png",
+    "distribution-key-402-light.png",
+    "distribution-usage-1344-light.png",
+    "distribution-usage-402-light.png"
   ],
   "rejected_aa_browser": {
     "id": 12625684013,

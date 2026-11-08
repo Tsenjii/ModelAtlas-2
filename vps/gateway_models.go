@@ -24,6 +24,9 @@ func init() {
 	})
 }
 
+const gatewayPreferredModelIDSQL = `NULLIF(CASE WHEN json_extract(md.metadata_json,'$.source') IS NOT 'MANUAL'
+	THEN json_extract(k.data_json,'$.canonical_id') END,''),NULLIF(md.canonical_id,'')`
+
 // Match the existing metadata precedence. The group is an index for reading
 // measurements, while inference and publication still use exact selections.
 const gatewayCatalogSQL = `WITH scopes AS (
@@ -31,9 +34,7 @@ const gatewayCatalogSQL = `WITH scopes AS (
 		p.name AS provider,a.label AS account,c.label AS credential,c.enabled,
 		COALESCE(e.operation,m.endpoint) AS operation,
 		COALESCE(NULLIF(d.display_name,''),m.model_id) AS display_name,
-		COALESCE(NULLIF(CASE WHEN json_extract(md.metadata_json,'$.source') IS NOT 'MANUAL'
-			THEN json_extract(k.data_json,'$.canonical_id') END,''),
-			NULLIF(md.canonical_id,''),atlas_canonical_id(m.model_id)) AS canonical_id
+		COALESCE(` + gatewayPreferredModelIDSQL + `,atlas_canonical_id(m.model_id)) AS canonical_id
 	FROM my_models m JOIN providers p ON p.id=m.provider_id
 	JOIN accounts a ON a.provider_id=m.provider_id AND a.id=m.account_id
 	JOIN credentials c ON c.provider_id=m.provider_id AND c.account_id=m.account_id AND c.id=m.credential_id

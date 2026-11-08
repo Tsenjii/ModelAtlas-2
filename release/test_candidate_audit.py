@@ -89,9 +89,10 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
 
     def test_distribution_adds_desktop_and_mobile_views(self):
         config = self.config()
-        expected = {"distribution-model-1344-light.png", "distribution-model-402-light.png", "distribution-providers-402-light.png"}
+        expected = {"distribution-" + view + "-light.png" for view in (
+            "model-1344", "model-402", "providers-402", "key-402", "usage-1344", "usage-402")}
         self.assertEqual({name for name in config["new_browser_images"] if name.startswith("distribution-")}, expected)
-        self.assertEqual(audit.browser_image_scopes(config)["candidate"][0],590)
+        self.assertEqual(audit.browser_image_scopes(config)["candidate"][0],593)
 
     def test_crash_captures_remain_forbidden_in_declared_and_actual_views(self):
         for name in ("research-history-failure.png", "research-history-scope-failure-390-dark.png", "aqua-failure.png", "assistant-mapping-failure.png", "conversation-workspace-failure.png", "model-batch-failure.png", "unreviewed-view.png"):
@@ -181,9 +182,9 @@ class CandidateBrowserArchiveIsolationTest(unittest.TestCase):
         conversation["new_browser_images"] = [name for name in conversation["new_browser_images"] if not name.startswith(("model-batch-","distribution-"))]
         conversation["new_mac_batch_images"] = []
         self.assertEqual(audit.visual_review_count(conversation),133)
-        self.assertEqual(audit.visual_review_count(config),147)
+        self.assertEqual(audit.visual_review_count(config),150)
         config["new_browser_images"].append("future-new-view.png")
-        self.assertEqual(audit.visual_review_count(config),148)
+        self.assertEqual(audit.visual_review_count(config),151)
         self.assertEqual(audit.browser_image_scopes(config)["rejected_aa"][0],523)
 
 class CandidateDeviceExtensionTest(unittest.TestCase):
@@ -250,8 +251,8 @@ class CandidateAndroidAquaTest(unittest.TestCase):
         conversation["new_mac_batch_images"] = []
         self.assertEqual(audit.visual_review_count(conversation),133)
         self.assertEqual(audit.candidate_visual_review_count(conversation),148)
-        self.assertEqual(audit.visual_review_count(self.config),147)
-        self.assertEqual(audit.candidate_visual_review_count(self.config),162)
+        self.assertEqual(audit.visual_review_count(self.config),150)
+        self.assertEqual(audit.candidate_visual_review_count(self.config),165)
         changed = copy.deepcopy(self.config)
         changed["new_android_aqua_images"][13] = "14-replacement.png"
         with self.assertRaisesRegex(ValueError,"image scope"):

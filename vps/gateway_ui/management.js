@@ -49,8 +49,9 @@ async function loadGroups(reset) {
     tile.className = "model-tile";
     const label = el("span", undefined, "model-tile-label");
     label.append(el("strong", group.name), el("small", group.providers + " 家供應商 · " + group.connections + " 個連線"));
-    tile.append(label, el("span", "›", "tile-arrow"));
-    tile.lastElementChild.setAttribute("aria-hidden", "true");
+    const mark = el("span", undefined, "item-icon");
+    mark.append(icon("model"));
+    tile.append(mark, label, icon("chevron"));
     return tile;
   });
   $("model-list").replaceChildren(...(nodes.length ? nodes : [empty("這裡會列出你的模型。可新增供應商、同步目錄或手動加入模型 ID。")]));

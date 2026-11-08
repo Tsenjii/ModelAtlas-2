@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
@@ -34,6 +33,15 @@ CREATE INDEX IF NOT EXISTS gateway_provider_telemetry ON telemetry(provider_id,c
 const gatewayMaxRoutes = 8
 const gatewayKeyPrefix = "sk-ma-"
 
+const gatewayConsoleSchema = `
+CREATE TABLE IF NOT EXISTS gateway_key_policies (
+	key_id TEXT PRIMARY KEY REFERENCES gateway_keys(id), expires_at INTEGER,
+	paused INTEGER NOT NULL DEFAULT 0 CHECK(paused IN(0,1))
+);
+CREATE INDEX IF NOT EXISTS gateway_manual_tests_recent ON telemetry(created_at DESC,id)
+	WHERE source IN ('GATEWAY_TEST','MANUAL_TEST');
+`
+
 var (
 	errGatewayKey   = errors.New("invalid gateway key")
 	errGatewayModel = errors.New("gateway model unavailable")
@@ -55,6 +63,9 @@ type gatewayKey struct {
 	DailyLimit int      `json:"daily_limit"`
 	UsedToday  int      `json:"used_today"`
 	Enabled    bool     `json:"enabled"`
+	Paused     bool     `json:"paused"`
+	CreatedAt  int64    `json:"created_at"`
+	ExpiresAt  *int64   `json:"expires_at"`
 }
 
 func (s *Server) gatewayHandler() http.Handler {
@@ -87,6 +98,8 @@ func (s *Server) gatewayHandler() http.Handler {
 	admin.HandleFunc("POST /gateway/models", s.gatewaySaveModel)
 	admin.HandleFunc("GET /gateway/keys", s.gatewayListKeys)
 	admin.HandleFunc("POST /gateway/keys", s.gatewayIssueKey)
+	admin.HandleFunc("POST /gateway/keys/edit", s.gatewayEditKey)
+	admin.HandleFunc("POST /gateway/keys/pause", s.gatewayPauseKey)
 	admin.HandleFunc("POST /gateway/keys/revoke", s.gatewayRevokeKey)
 	admin.HandleFunc("GET /gateway/usage", s.gatewayUsage)
 	root := http.NewServeMux()
@@ -124,7 +137,10 @@ func gatewayCredentials(r *http.Request) (string, [32]byte, error) {
 func gatewayAccess(ctx context.Context, db queryRows, digest [32]byte) (gatewayKey, error) {
 	var key gatewayKey
 	var models string
-	err := db.QueryRowContext(ctx, "SELECT id,models_json,daily_limit FROM gateway_keys WHERE digest=? AND enabled=1", digest[:]).Scan(&key.ID, &models, &key.DailyLimit)
+	err := db.QueryRowContext(ctx, `SELECT k.id,k.models_json,k.daily_limit FROM gateway_keys k
+		LEFT JOIN gateway_key_policies p ON p.key_id=k.id
+		WHERE k.digest=? AND k.enabled=1 AND COALESCE(p.paused,0)=0 AND (p.expires_at IS NULL OR p.expires_at>?)`,
+		digest[:], now()).Scan(&key.ID, &models, &key.DailyLimit)
 	if errors.Is(err, sql.ErrNoRows) {
 		return key, errGatewayKey
 	}
@@ -242,107 +258,6 @@ func (s *Server) gatewaySaveModel(w http.ResponseWriter, r *http.Request) {
 
 func gatewayDayStart(at time.Time) int64 {
 	return at.UTC().Truncate(24 * time.Hour).UnixMilli()
-}
-
-func (s *Server) gatewayListKeys(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), `SELECT k.id,k.label,k.prefix,k.models_json,k.daily_limit,k.enabled,
-		(SELECT COUNT(*) FROM gateway_requests r WHERE r.key_id=k.id AND r.created_at>=?)
-		FROM gateway_keys k ORDER BY k.created_at DESC,k.id`, gatewayDayStart(time.Now()))
-	if err != nil {
-		http.Error(w, "database error", 500)
-		return
-	}
-	defer rows.Close()
-	keys := []gatewayKey{}
-	for rows.Next() {
-		var k gatewayKey
-		var models string
-		if rows.Scan(&k.ID, &k.Label, &k.Prefix, &models, &k.DailyLimit, &k.Enabled, &k.UsedToday) != nil || json.Unmarshal([]byte(models), &k.Models) != nil {
-			http.Error(w, "database error", 500)
-			return
-		}
-		keys = append(keys, k)
-	}
-	if rows.Err() != nil {
-		http.Error(w, "database error", 500)
-		return
-	}
-	jsonOK(w, 200, keys)
-}
-
-func (s *Server) gatewayIssueKey(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Label      string   `json:"label"`
-		Models     []string `json:"models"`
-		DailyLimit int      `json:"daily_limit"`
-	}
-	if !decodeJSON(w, r, &in) {
-		return
-	}
-	ctx := r.Context()
-	in.Label = strings.TrimSpace(in.Label)
-	secrets, err := s.knownSecrets(ctx)
-	if err != nil {
-		http.Error(w, "vault unavailable", 503)
-		return
-	}
-	if in.Label == "" || safeText(in.Label, 120, secrets...) != in.Label || len(in.Models) < 1 || len(in.Models) > 100 || in.DailyLimit < 1 || in.DailyLimit > 1_000_000 {
-		http.Error(w, "key label, 1–100 models and a daily limit are required", 400)
-		return
-	}
-	seen := make(map[string]bool, len(in.Models))
-	for _, id := range in.Models {
-		if !validID(id) || seen[id] {
-			http.Error(w, "invalid or duplicate model", 400)
-			return
-		}
-		seen[id] = true
-	}
-	var entropy [32]byte
-	if _, err = rand.Read(entropy[:]); err != nil {
-		http.Error(w, "key generation unavailable", 500)
-		return
-	}
-	token := gatewayKeyPrefix + base64.RawURLEncoding.EncodeToString(entropy[:])
-	digest := sha256.Sum256([]byte(token))
-	models, _ := json.Marshal(in.Models)
-	k := gatewayKey{ID: newID(), Label: in.Label, Prefix: token[:12], Models: in.Models, DailyLimit: in.DailyLimit, Enabled: true}
-	result, err := s.Store.DB.ExecContext(ctx, `INSERT INTO gateway_keys(id,label,digest,prefix,models_json,daily_limit,enabled,created_at)
-		SELECT ?,?,?,?,?,?,1,? WHERE (SELECT COUNT(*) FROM gateway_models WHERE enabled=1 AND id IN(SELECT value FROM json_each(?)))=?`,
-		k.ID, k.Label, digest[:], k.Prefix, string(models), k.DailyLimit, now(), string(models), len(k.Models))
-	if err != nil {
-		http.Error(w, "database error", 500)
-		return
-	}
-	n, err := result.RowsAffected()
-	if err != nil || n != 1 {
-		http.Error(w, "select published models", 422)
-		return
-	}
-	jsonOK(w, 201, struct {
-		gatewayKey
-		Token string `json:"token"`
-	}{k, token})
-}
-
-func (s *Server) gatewayRevokeKey(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		ID string `json:"id"`
-	}
-	if !decodeJSON(w, r, &in) {
-		return
-	}
-	res, err := s.Store.DB.ExecContext(r.Context(), "UPDATE gateway_keys SET enabled=0 WHERE id=?", in.ID)
-	if err != nil {
-		http.Error(w, "database error", 500)
-		return
-	}
-	n, err := res.RowsAffected()
-	if err != nil || n != 1 {
-		http.Error(w, "key not found", 404)
-		return
-	}
-	jsonOK(w, 200, map[string]string{"id": in.ID})
 }
 
 // The single SQLite writer serializes revocation, authorization, the quota

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"testing"
+	"time"
 )
 
 func TestBrowserDistributionWorkflow(t *testing.T) {
@@ -15,6 +17,24 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 	s := testServer(t)
 	s.distribution = true
 	f := newGatewayFixture(t, s, [2]string{"deepseek-v4.1-flash", "DeepSeek-V4_1-Flash"})
+	// A dated archive fixture exercises the same stored measurement and
+	// aggregation path as the two live model probes below.
+	for day, count := range []int{0, 8, 4, 11, 7, 3, 5} {
+		for i := range count {
+			outcome := "SUCCESS"
+			if i == 2 {
+				outcome = "RATE_LIMITED"
+			}
+			models := []string{"deepseek-v4.1-flash", "qwen-3.8-max", "glm-5.3"}
+			if _, err := s.Store.DB.Exec(`INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,
+				source,outcome,ttft_ms,latency_ms,input_tokens,output_tokens,created_at)
+				VALUES(?,'archive-site','archive-account','archive-key',?,'','CHAT_COMPLETIONS','CHAT_COMPLETIONS',
+				'MANUAL_TEST',?,?,?,?,?,?)`, fmt.Sprintf("archive-%d-%d", day, i), models[i%len(models)], outcome,
+				115+i*7, 450+i*17, 80+i*12, 130+i*23, time.Now().AddDate(0, 0, -day).UnixMilli()); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
 	app := httptest.NewServer(s.Handler())
 	defer app.Close()
 	cmd := exec.Command("node", "e2e/distribution.cjs", app.URL, f.URL)
