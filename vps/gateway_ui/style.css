@@ -405,7 +405,12 @@ html[data-motion="reduced"] main > section:not([hidden]) { animation: none; }
 #offer-site-data,#offer-local-summary { min-width: 0; }
 #offer-window-form { grid-template-columns: minmax(0,1fr); }
 
-#offer-actions,#offer-site > .row-actions,#offer-site-data > .row-actions { justify-content: flex-start; }
+.connection-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.connection-grid > button { padding-inline: 8px; text-align: center; }
+.connection-grid > label { align-self: end; }
+.connection-site-toolbar { align-items: end; }
+#offer-actions { grid-auto-rows: 1fr; }
+#offer-actions > :last-child:nth-child(3) { grid-column: 1/-1; }
 #offer-detail [aria-pressed="true"] { background: var(--accent); color: var(--primary); }
 #offer-custom-range { display: grid; gap: 8px; }
 #offer-custom-range input { width: 100%; }

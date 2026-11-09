@@ -46,28 +46,86 @@ function svgNode(tag, attributes = {}) {
   for (const [name, value] of Object.entries(attributes)) node.setAttribute(name, value);
   return node;
 }
-function icon(name) {
+function icon(name, sprite = "") {
   const node = svgNode("svg", {"aria-hidden": "true"});
-  node.append(svgNode("use", {href: "#icon-" + name}));
+  node.append(svgNode("use", {href: sprite + "#icon-" + name}));
   return node;
 }
-function itemIcon(name) {
+function itemIcon(name, sprite = "") {
   const mark = el("span", undefined, "item-icon");
-  mark.append(icon(name));
+  mark.append(icon(name, sprite));
   return mark;
 }
+const modelBrands = [
+  ["openai", "gpt|chatgpt|o[134](?![a-z0-9])|dall[-_. ·]?e|whisper|sora|text[-_. ]embedding[-_. ](?:ada|3)|openai(?=$|[.])"],
+  ["claude", "(?:anthropic[-_. ]+)?claude|anthropic(?=$|[.])"],
+  ["gemini", "(?:google[-_. ]+)?gemini"],
+  ["gemma", "(?:google[-_. ]+)?(?:gemma|paligemma|shieldgemma)"],
+  ["google", "imagen|veo|lyria|learnlm|google(?=$|[.])"],
+  ["deepseek", "deep[-_. ]?seek"],
+  ["qwen", "qwen|qwq|qvq|tongyi"],
+  ["meta", "llama|meta[-_. ]llama|muse[-_. ](?:spark|glimmer)|meta(?=$|[.])"],
+  ["mistral", "mistral|mixtral|codestral|pixtral|ministral|magistral|devstral|voxtral|mathstral"],
+  ["zhipu", "chatglm|glm|cogview|cogvideo|zhipu|z[-_. ]ai"],
+  ["grok", "(?:x[-_. ]?ai[-_. ]+)?grok|xai(?=$|[.])"],
+  ["kimi", "kimi|moonshot(?=$|[.])"],
+  ["minimax", "mini[-_. ]?max|hailuo"],
+  ["mimo", "(?:xiaomi[-_. ]?)?mimo|xiaomi(?=$|[.])"],
+  ["stepfun", "stepfun|step(?=[-_. ]?[0-9])|step[-_. ]?(?:audio|video)"],
+  ["antgroup", "inclusion[-_. ]?ai|ant[-_. ]?group|(?:ling|ring|ming)(?=[-_. ]?(?:[0-9]|(?:flash|mini|lite|omni|max)(?=$|[^a-z])))"],
+  ["lg", "exaone|lg[-_. ]ai"],
+  ["hunyuan", "hunyuan|tencent(?=$|[.])|hy(?=[-_. ]?[0-9])"],
+  ["doubao", "doubao"],
+  ["bytedance", "seed(?=[-_. ]?[0-9])|seed[-_. ](?:ance|ream|edit|tts)|seedance|seedream|bytedance(?=$|[.])"],
+  ["baidu", "ernie|wenxin|baidu(?=$|[.])"],
+  ["yi", "01[-_. ]?ai|yi(?=[-_. ](?:[0-9]|coder|large|lightning|vision))"],
+  ["nvidia", "nemotron|nvidia(?=$|[.])"],
+  ["cohere", "command(?=$|[-_. ](?:a|r|light|nightly)(?=$|[^a-z]))|aya|cohere(?=$|[.])"],
+  ["perplexity", "sonar|perplexity(?=$|[.])"],
+  ["aws", "amazon[-_. ]nova|nova(?=[-_. ](?:[0-9]|micro|lite|pro|premier|sonic|canvas|reel|act))|amazon(?=$|[.])|aws(?=$|[.])"],
+  ["ai21", "ai21|jamba|jurassic"],
+  ["microsoft", "phi(?=$|[-_. ]?[0-9])|microsoft(?=$|[.])"],
+  ["ibm", "granite|ibm(?=$|[.])"],
+  ["longcat", "long[-_. ]?cat|meituan(?=$|[.])"],
+  ["internlm", "internlm"],
+  ["baichuan", "bai[-_. ]?chuan"],
+  ["spark", "iflytek|spark[-_. ](?:max|ultra|lite|desk|x1)"],
+  ["sensenova", "sensenova|sensetime(?=$|[.])"],
+  ["skywork", "skywork|tiangong"],
+  ["huggingface", "hugging[-_. ]?face(?:h4)?|smollm|zephyr"],
+  ["jina", "jina"],
+  ["voyage", "voyage"],
+  ["snowflake", "snowflake(?=$|[.])|arctic"],
+  ["bfl", "flux|bfl(?=$|[.])|black[-_. ]forest[-_. ]labs"],
+  ["stability", "stability(?:ai)?|stable[-_. ]?(?:diffusion|image|audio|video|lm)|sdxl|sd3"],
+  ["recraft", "recraft"],
+  ["runway", "runway"],
+  ["luma", "luma(?=$|[-_. ]?(?:ai|labs|[0-9]))|dream[-_. ]machine|ray(?=[-_. ]?[23])"],
+  ["elevenlabs", "eleven[-_. ]?(?:labs|multilingual|turbo|flash|monolingual|v[0-9])|scribe[-_. ]v"],
+  ["suno", "suno"],
+  ["udio", "udio"]
+].map(([brand, family]) => [brand, new RegExp("^(?:" + family + ")(?=$|[^a-z]|v[0-9])")]);
+const modelBrandNamespaces = new Map([
+  ...modelBrands.map(([brand]) => [brand, brand]),
+  ["01-ai", "yi"], ["anthropic", "claude"], ["black-forest-labs", "bfl"], ["deepseek-ai", "deepseek"],
+  ["inclusionai", "antgroup"], ["lgai-exaone", "lg"], ["meta-llama", "meta"], ["mistralai", "mistral"],
+  ["moonshotai", "kimi"], ["xiaomi", "mimo"], ["x-ai", "grok"], ["xai", "grok"], ["zai-org", "zhipu"]
+]);
+
 function modelIcon(...names) {
-  const id = names.join(" ").toLowerCase();
-  const brands = [
-    ["deepseek", /(?:^|[^a-z0-9])deepseek(?=$|[^a-z0-9]|v?\d)/],
-    ["gemini", /(?:^|[^a-z0-9])gemini(?=$|[^a-z0-9]|\d)/],
-    ["openai", /(?:^|[^a-z0-9])(?:gpt(?=$|[^a-z0-9]|\d)|chatgpt(?=$|[^a-z0-9])|o[134](?=$|[^a-z0-9]))/],
-    ["zhipu", /(?:^|[^a-z0-9])(?:chatglm|glm)(?=$|[^a-z0-9]|\d)/]
-  ];
-  const brand = brands.find(([, pattern]) => pattern.test(id));
-  const mark = itemIcon(brand ? "brand-" + brand[0] : "model");
-  if (brand) mark.classList.add("brand-icon");
-  return mark;
+  for (const name of names) {
+    if (!name) continue;
+    // Prefer the model family. Only an exact known namespace can be a fallback.
+    const path = name.toLowerCase().split("/").map(part => part.trim());
+    const id = path.pop().split(":", 1)[0].replace(/^(?:us|eu|apac|global|au|ca|jp|sa)\.(?=[^.]+\.)/, "");
+    const brand = modelBrands.find(([, family]) => family.test(id))?.[0] ??
+      path.reverse().map(part => modelBrandNamespaces.get(part)).find(Boolean);
+    if (!brand) continue;
+    const mark = itemIcon("brand-" + brand, "/gateway-model-brands.svg");
+    mark.classList.add("brand-icon");
+    return mark;
+  }
+  return itemIcon("model");
 }
 function button(text, handler, {glyph, iconOnly} = {}) {
   const node = el("button", iconOnly ? undefined : text);

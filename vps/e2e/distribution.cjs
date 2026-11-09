@@ -44,6 +44,34 @@ const fs = require("node:fs/promises");
     assert.deepEqual(layout.controls, [], "tap targets shorter than 48px");
     assert.deepEqual(layout.iconControls, [], "icon buttons without names or 48px width");
   };
+  const assertConnectionGrid = async history => {
+    const {actions, source, toolbar, filters} = await history.evaluate(dialog => {
+      const boxes = selector => Array.from(dialog.querySelectorAll(selector), element => {
+        const rect = element.getBoundingClientRect();
+        return {x: rect.x, y: rect.y, bottom: rect.bottom, w: rect.width, h: rect.height,
+          overflow: element.scrollWidth > element.clientWidth + 1};
+      });
+      return {
+        actions: boxes("#offer-actions > button"),
+        source: boxes('[aria-label="效能資料來源"] > button'),
+        toolbar: boxes("#site-hours, #offer-site-refresh"),
+        filters: boxes("#offer-site-data select")
+      };
+    });
+    const same = values => values.every(value => Math.abs(value - values[0]) <= 1);
+    assert.equal(actions.length, 4);
+    assert(same(actions.map(box => box.w)) && same(actions.map(box => box.h)), "connection actions have unequal sizes");
+    assert(same([actions[0].x, actions[2].x]) && same([actions[1].x, actions[3].x]) &&
+      same([actions[0].y, actions[1].y]) && same([actions[2].y, actions[3].y]), "connection actions are not on a two-column grid");
+    assert.equal(source.length, 2);
+    assert(same(source.map(box => box.y)) && same(source.map(box => box.w)), "performance buttons are not aligned");
+    assert.equal(toolbar.length, 2);
+    assert(same(toolbar.map(box => box.bottom)) && same(toolbar.map(box => box.w)), "site time and refresh controls are not aligned");
+    assert.equal(filters.length, 2);
+    assert(same(filters.map(box => box.y)) && same(filters.map(box => box.w)), "site filters are not aligned");
+    assert([...actions, ...source, ...toolbar, ...filters].every(box => box.w > 0 && box.h >= 47.9 && !box.overflow),
+      "a connection control clips its content or has a small touch target");
+  };
   const shot = async name => {
     await assertLayout();
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -121,7 +149,81 @@ const fs = require("node:fs/promises");
     await tile.waitFor();
     assert.equal(await tile.count(), 1, "same model appeared more than once");
     assert((await tile.innerText()).includes("2 家供應商 · 2 個連線"));
-    assert.equal(await tile.locator(".brand-icon use").getAttribute("href"), "#icon-brand-deepseek");
+    assert.equal(await tile.locator(".brand-icon use").getAttribute("href"), "/gateway-model-brands.svg#icon-brand-deepseek");
+    const brandCases = [
+      ["openrouter/gpt-oss-120b:free","openai"],
+      ["us.anthropic.claude-sonnet-4-6:0","claude"],
+      ["google/gemini3.8-flash","gemini"],
+      ["google/gemma-3-27b","gemma"],
+      ["imagen-4","google"],
+      ["deepseek-ai/DeepSeek-R1-Distill-Qwen-32B","deepseek"],
+      ["Qwen/Qwen3.5-Flash","qwen"],
+      ["Muse Spark 1.3","meta"],
+      ["mistralai/Mistral-Large-4","mistral"],
+      ["zai-org/GLM-5.1","zhipu"],
+      ["xai/grok-4","grok"],
+      ["moonshotai/Kimi-K2.5","kimi"],
+      ["MiniMax-M3.1","minimax"],
+      ["Xiaomi/MiMo2.6-Flash","mimo"],
+      ["stepfun/step5-flash","stepfun"],
+      ["Ling-3.2","antgroup"],
+      ["LGAI-EXAONE/EXAONE-4.0-32B","lg"],
+      ["tencent/HY4","hunyuan"],
+      ["Doubao-1.8-Pro","doubao"],
+      ["seedance-2.0","bytedance"],
+      ["ERNIE-5.5-Flash","baidu"],
+      ["01-ai/Yi-1.5-34B","yi"],
+      ["nvidia/Nemotron-3.5-Lightning","nvidia"],
+      ["cohere/command-a","cohere"],
+      ["sonar-pro","perplexity"],
+      ["global.amazon.nova-2-lite-v1:0","aws"],
+      ["ai21/Jamba-1.5-Large","ai21"],
+      ["microsoft/Phi-4-reasoning","microsoft"],
+      ["ibm-granite/granite-4.0","ibm"],
+      ["meituan/LongCat-Flash-Chat","longcat"],
+      ["internlm/internlm3-8b","internlm"],
+      ["Baichuan-M3","baichuan"],
+      ["Spark-X1","spark"],
+      ["SenseNova-V6","sensenova"],
+      ["Skywork-o1","skywork"],
+      ["HuggingFaceTB/SmolLM3-3B","huggingface"],
+      ["jinaai/jina-reranker-v3","jina"],
+      ["voyage-4-lite","voyage"],
+      ["snowflake/arctic-embed-l","snowflake"],
+      ["black-forest-labs/FLUX.2-pro","bfl"],
+      ["stabilityai/stable-diffusion-3.5-large","stability"],
+      ["recraft-v4","recraft"],
+      ["runway/gen-4.5","runway"],
+      ["luma/ray-3","luma"],
+      ["eleven_multilingual_v2","elevenlabs"],
+      ["suno-v5","suno"],
+      ["udio-32","udio"],
+      ["Google Gemma 3", "gemma"],
+      ["Anthropic Claude Sonnet 4", "claude"],
+      ["anthropic/gpt-oss-120b", "openai"],
+      ["DALL·E 3", "openai"],
+      ["openai-compatible/custom-model", null],
+      ["deepseek-bridge/novel-model", null],
+      ["private-model:gemini", null],
+      ["unknown-o34", null]
+    ];
+    const resolved = await page.evaluate(cases => {
+      const icons = document.createElement("div");
+      icons.id = "test-brand-icons";
+      Object.assign(icons.style, {position: "absolute", left: "-10000px", top: "0", visibility: "hidden"});
+      document.body.append(icons);
+      return cases.map(([name]) => {
+        const mark = modelIcon(name);
+        icons.append(mark);
+        return mark.querySelector("use").getAttribute("href");
+      });
+    }, brandCases);
+    assert.deepEqual(resolved, brandCases.map(([, brand]) => brand ? "/gateway-model-brands.svg#icon-brand-" + brand : "#icon-model"));
+    await page.waitForFunction(() => {
+      const icons = Array.from(document.querySelectorAll("#test-brand-icons use"));
+      return icons.length > 0 && icons.every(icon => icon.getBBox().width > 0 && icon.getBBox().height > 0);
+    });
+    await page.locator("#test-brand-icons").evaluate(icons => icons.remove());
     await tile.click();
     await page.waitForFunction(() => document.querySelectorAll("#offer-list article").length === 2);
     for (const name of ["潮汐 API", "曙光 API"]) {
@@ -293,6 +395,13 @@ const fs = require("node:fs/promises");
     const official = history.getByRole("region", {name: "站方效能", exact: true});
     await official.locator(".metrics").getByText("81 ms", {exact: true}).waitFor();
     await official.locator(".metrics").getByText("98.7%", {exact: true}).waitFor();
+    await assertConnectionGrid(history);
+    const narrowSize = page.viewportSize();
+    await page.evaluate(() => { document.documentElement.style.fontSize = ""; });
+    await page.setViewportSize({width: 1344, height: 900});
+    await assertConnectionGrid(history);
+    await page.setViewportSize(narrowSize);
+    await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
     await official.getByLabel("站方群組").selectOption("standard");
     await official.locator(".metrics").getByText("82 ms", {exact: true}).waitFor();
     await official.getByLabel("站方趨勢指標").selectOption("success_rate");
@@ -358,24 +467,38 @@ const fs = require("node:fs/promises");
     await offering("潮汐 API").getByText("2 / 3 次", { exact: true }).waitFor();
     await offering("曙光 API").getByText("3 / 3 次", { exact: true }).waitFor();
     await page.locator("#offer-sort").selectOption("success");
-    await page.waitForFunction(() => document.querySelector("#offer-list article")?.textContent.includes("曙光 API"));
+    await page.waitForFunction(() => {
+      const offers = document.querySelector("#offer-list");
+      return !offers.hasAttribute("aria-busy") && offers.querySelector("article")?.textContent.includes("曙光 API");
+    });
 
-    // Delay delivery of the first real TLS probe result until the stop action.
+    // Hold the first request until the stop click, then let Chromium send it
+    // through the original TLS/auth path with no API-context replay.
     let releaseProbe;
-    const probeDelivery = new Promise(resolve => { releaseProbe = resolve; });
+    const probeRelease = new Promise(resolve => { releaseProbe = resolve; });
     await page.route("**/ui/api/gateway/probe", async route => {
-      const response = await route.fetch();
-      await probeDelivery;
-      await route.fulfill({ response });
+      await probeRelease;
+      await route.continue();
     }, { times: 1 });
     await openBatch();
-    await start.click();
     try {
+      const [pendingProbe] = await Promise.all([
+        page.waitForRequest(origin + "/ui/api/gateway/probe"), start.click()
+      ]);
+      assert.equal(pendingProbe.postDataJSON().model_id, "DeepSeek-V4_1-Flash");
       await batch.getByRole("button", { name: "本筆完成後停止" }).click();
+      await batch.getByText("本筆完成後停止…", { exact: true }).waitFor();
     } finally {
       releaseProbe();
     }
-    await batch.getByText("已完成 1 / 2，成功 1 · 已停止", { exact: true }).waitFor();
+    try {
+      await batch.getByText("已完成 1 / 2，成功 1 · 已停止", { exact: true }).waitFor();
+    } catch (error) {
+      const progress = await batch.locator("#offer-batch-progress").textContent();
+      const results = await batch.locator(".batch-result").allTextContents();
+      const refreshing = await page.locator("#offer-list").getAttribute("aria-busy");
+      throw new Error("Stopped probe progress: " + progress + " / " + JSON.stringify(results) + " / refreshing=" + refreshing, {cause: error});
+    }
     assert.equal(await batch.getByText("未執行", { exact: true }).count(), 1);
     await close.click();
 

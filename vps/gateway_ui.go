@@ -35,9 +35,13 @@ var metricPlotJS string
 //go:embed gateway_ui/mark.svg
 var gatewayMarkSVG string
 
+//go:embed gateway_ui/model-brands.svg
+var gatewayModelBrandsSVG string
+
 var gatewayStyleAsset = staticAsset{raw: gatewayCSS, revalidate: true}
 var gatewayScriptAsset = staticAsset{raw: gatewayJS + "\n" + gatewayConsoleJS + "\n" + metricPlotJS + "\n" + gatewayConnectionJS + "\n" + gatewayManagementJS + "\n" + gatewayUpdateJS, revalidate: true}
 var gatewayMarkAsset = staticAsset{raw: gatewayMarkSVG, revalidate: true}
+var gatewayModelBrandsAsset = staticAsset{raw: gatewayModelBrandsSVG, revalidate: true}
 
 func (s *Server) gatewayPage(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -95,6 +99,10 @@ func (s *Server) gatewayUIRoutes(root *http.ServeMux, workspace bool) {
 	root.HandleFunc("GET /gateway-mark.svg", func(w http.ResponseWriter, r *http.Request) {
 		security(w)
 		gatewayMarkAsset.serve(w, r, "image/svg+xml")
+	})
+	root.HandleFunc("GET /gateway-model-brands.svg", func(w http.ResponseWriter, r *http.Request) {
+		security(w)
+		gatewayModelBrandsAsset.serve(w, r, "image/svg+xml")
 	})
 	root.HandleFunc("GET /gateway.js", s.gatewayPrivateAsset(func(w http.ResponseWriter, r *http.Request) {
 		gatewayScriptAsset.serve(w, r, "text/javascript; charset=utf-8")

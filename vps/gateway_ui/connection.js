@@ -135,7 +135,9 @@ function renderSitePerformance(v, value) {
   }
   metricLabel.append(measure);
   const provenance = el("p", "站方公開資料 · " + connectionTime.format(value.observed_at) + " · " + facts.origin, "quiet");
-  data.replaceChildren(controls(groupLabel, metricLabel), body, provenance);
+  const filters = el("div", undefined, "connection-grid");
+  filters.append(groupLabel, metricLabel);
+  data.replaceChildren(filters, body, provenance);
   const draw = () => {
     const row = group.value ? facts.groups.find(row => row.group === group.value) : facts.summary;
     const points = group.value ? row?.series : facts.series;
