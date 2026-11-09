@@ -97,9 +97,10 @@ body::before {
 .brand,.header-actions { display: flex; align-items: center; min-width: 0; gap: 8px; border-radius: 18px; }
 .brand { padding: 6px 13px 6px 6px; }
 .brand img { flex: none; object-fit: contain; }
+.brand > div { min-width: 0; }
 .brand strong { display: block; font-size: 1.01rem; letter-spacing: -.026em; overflow-wrap: anywhere; }
-.brand small { display: block; color: var(--muted); font-size: .68rem; letter-spacing: .09em; }
-.header-actions { padding: 3px; border-radius: 40px; gap: 2px; }
+.brand small { display: block; color: var(--muted); font-size: .68rem; letter-spacing: .09em; overflow-wrap: anywhere; }
+.header-actions { flex: none; padding: 3px; border-radius: 40px; gap: 2px; }
 .login-body {
   background: radial-gradient(ellipse at 15% 8%, var(--accent), transparent 52%),
     radial-gradient(ellipse at 88% 92%, color-mix(in srgb, var(--indigo) 17%, transparent), transparent 47%), var(--canvas);

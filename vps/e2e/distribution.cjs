@@ -28,6 +28,10 @@ const fs = require("node:fs/promises");
       scroll: document.documentElement.scrollWidth,
       headerOverlaps: scrollY === 0 && document.querySelector(".gateway-bar")?.getBoundingClientRect().bottom >
         [...document.querySelectorAll("main h1")].find(node => node.checkVisibility()).getBoundingClientRect().top,
+      clippedHeaderActions: [...document.querySelectorAll(".gateway-bar .header-actions .icon-button")].filter(node => {
+        const rect = node.getBoundingClientRect();
+        return rect.left < -0.1 || rect.right > innerWidth + 0.1;
+      }).map(node => node.getAttribute("aria-label")),
       controls: [...document.querySelectorAll('button,summary,input:not([type=checkbox]),select,textarea,.check,.choice,.link-button')]
         .filter(node => node.checkVisibility() && node.getBoundingClientRect().height < 47.9)
         .map(node => node.id || node.textContent),
@@ -36,6 +40,7 @@ const fs = require("node:fs/promises");
     }));
     assert(layout.scroll <= layout.width, "horizontal overflow " + JSON.stringify(layout));
     assert(!layout.headerOverlaps, "header overlays the page title");
+    assert.deepEqual(layout.clippedHeaderActions, [], "header actions outside the viewport");
     assert.deepEqual(layout.controls, [], "tap targets shorter than 48px");
     assert.deepEqual(layout.iconControls, [], "icon buttons without names or 48px width");
   };
