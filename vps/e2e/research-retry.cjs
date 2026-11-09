@@ -28,13 +28,19 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises');
   await page.locator('#detail-content').getByRole('button',{name:'確認恢復研究',exact:true}).click();await page.waitForFunction(({id,after})=>{const r=researchRuns.find(r=>r.id===id);return r?.used===2&&r.summary?.next_retry_at>after;},{id:runID,after:firstDeadline});
   await card.getByRole('button',{name:'執行紀錄',exact:true}).click();await task.locator('summary').first().click();await panel.getByText(/來源暫時無法連線（HTTP 502）/).waitFor();assert.equal(await panel.locator('li').count(),2);
   assert.equal((await context.request.post(origin+'/test/advance-retry-clock')).status(),204);
-  await page.waitForFunction(id=>researchRuns.find(r=>r.id===id)?.status==='COMPLETED',runID);await page.locator('#detail-content').getByRole('button',{name:'更新執行紀錄',exact:true}).click();await task.locator('summary').first().click();await panel.getByText('來源已恢復連線，暫時失敗的紀錄已保留。',{exact:true}).waitFor();assert.equal(await panel.locator('li').count(),2);assert.equal(await page.locator('#detail-content').getByRole('button',{name:'確認恢復研究',exact:true}).count(),0,'completed successful run advertised an invalid resume');
+  const recovered=panel.getByText('來源已恢復連線，暫時失敗的紀錄已保留。',{exact:true});
+  await page.waitForFunction(id=>researchRuns.find(r=>r.id===id)?.status==='COMPLETED',runID);
+  await page.locator('#detail-content').getByRole('button',{name:'更新執行紀錄',exact:true}).click();
+  // The refresh replaces the task disclosure. Wait for the new task before clicking.
+  await recovered.waitFor({state:'attached'});
+  await task.locator('summary').first().click();await recovered.waitFor();
+  assert.equal(await panel.locator('li').count(),2);assert.equal(await page.locator('#detail-content').getByRole('button',{name:'確認恢復研究',exact:true}).count(),0,'completed successful run advertised an invalid resume');
   await page.locator('#detail').screenshot({path:'e2e/screenshots/research-retry-recovered-375.png',animations:'disabled'});
   for(const button of await page.locator('#detail button:visible').all()){const box=await button.boundingBox();assert(box.height>=48,'48px recovery action');}
   // A failed or late detail refresh keeps the visible result and cannot reopen a closed dialog.
   const taskURL='**/api/v1/research/tasks?run_id='+runID;
   await page.route(taskURL,route=>route.fulfill({status:503,contentType:'text/plain',body:'temporary detail read failure'}));
-  await page.locator('#detail-content').getByRole('button',{name:'更新執行紀錄',exact:true}).click();await page.locator('#research-run-problem').filter({hasText:'讀取失敗'}).waitFor();await panel.getByText('來源已恢復連線，暫時失敗的紀錄已保留。',{exact:true}).waitFor();assert.equal(await panel.locator('li').count(),2);await page.unroute(taskURL);
+  await page.locator('#detail-content').getByRole('button',{name:'更新執行紀錄',exact:true}).click();await page.locator('#research-run-problem').filter({hasText:'讀取失敗'}).waitFor();await recovered.waitFor();assert.equal(await panel.locator('li').count(),2);await page.unroute(taskURL);
   let arrived,release;const entered=new Promise(r=>arrived=r),hold=new Promise(r=>release=r);
   await page.route(taskURL,async route=>{const response=await route.fetch();arrived();await hold;await route.fulfill({response});});
   await page.locator('#detail-content').getByRole('button',{name:'更新執行紀錄',exact:true}).click();await entered;await page.locator('#detail-close').click();const finished=page.waitForResponse(r=>r.url().includes('/research/tasks?run_id='+runID));release();await finished;await page.evaluate(()=>new Promise(requestAnimationFrame));assert(!await page.locator('#detail').evaluate(n=>n.open),'late refresh reopened a closed dialog');
