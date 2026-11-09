@@ -9,9 +9,9 @@ const fs = require("node:fs/promises");
   const [origin, upstream] = process.argv.slice(2);
   const context = await browser.newContext({
     viewport: { width: 402, height: 874 }, isMobile: true, hasTouch: true, reducedMotion: "reduce",
-    httpCredentials: { username: "admin", password: process.env.MODELATLAS_TEST_TOKEN }
+    ignoreHTTPSErrors: true
   });
-  const client = await request.newContext();
+  const client = await request.newContext({ ignoreHTTPSErrors: true });
   const page = await context.newPage();
   page.setDefaultTimeout(12000);
   const errors = [];
@@ -24,7 +24,7 @@ const fs = require("node:fs/promises");
     const layout = await page.evaluate(() => ({
       width: innerWidth,
       scroll: document.documentElement.scrollWidth,
-      headerOverlaps: scrollY === 0 && document.querySelector(".gateway-bar").getBoundingClientRect().bottom >
+      headerOverlaps: scrollY === 0 && document.querySelector(".gateway-bar")?.getBoundingClientRect().bottom >
         [...document.querySelectorAll("main h1")].find(node => node.checkVisibility()).getBoundingClientRect().top,
       controls: [...document.querySelectorAll('button,summary,input:not([type=checkbox]),select,textarea,.check,.choice,.link-button')]
         .filter(node => node.checkVisibility() && node.getBoundingClientRect().height < 47.9)
@@ -56,6 +56,23 @@ const fs = require("node:fs/promises");
 
   try {
     await page.goto(origin);
+    await page.waitForURL(origin + "/login");
+    await page.getByRole("heading", { name: "管理員登入", exact: true }).waitFor();
+    assert.equal(await page.getByText("註冊", { exact: false }).count(), 0);
+    await assertLayout();
+    const blocked = await context.request.get(origin + "/ui/api/status");
+    assert.equal(blocked.status(), 401);
+    assert.equal(blocked.headers()["www-authenticate"], undefined);
+    const signIn = page.getByRole("button", { name: "登入", exact: true });
+    await page.getByLabel("密碼", { exact: true }).fill("fixture-invalid-password");
+    await signIn.click();
+    await page.getByRole("alert").getByText("帳號或密碼不正確。", { exact: true }).waitFor();
+    await page.getByLabel("密碼", { exact: true }).fill(process.env.MODELATLAS_TEST_TOKEN);
+    await signIn.click();
+    await page.waitForURL(origin + "/");
+    const session = (await context.cookies(origin)).find(cookie => cookie.name === "__Host-modelatlas-session");
+    assert(session?.httpOnly && session.secure && session.sameSite === "Lax", "missing protected web session");
+    assert.equal((await context.request.get(origin + "/v1/models")).status(), 401, "web cookie grants distribution access");
     const description = "日常主力模型站\n\n" + "各模型額度與適用場景依帳戶而異。".repeat(16);
     await add("潮汐 API", "a", process.env.MODELATLAS_TEST_UPSTREAM_A, description);
     const provider = page.locator("#provider-detail");
@@ -277,7 +294,7 @@ const fs = require("node:fs/promises");
     // Delay delivery of the first real TLS probe result until the stop action.
     let releaseProbe;
     const probeDelivery = new Promise(resolve => { releaseProbe = resolve; });
-    await page.route("**/api/v1/gateway/probe", async route => {
+    await page.route("**/ui/api/gateway/probe", async route => {
       const response = await route.fetch();
       await probeDelivery;
       await route.fulfill({ response });
@@ -307,12 +324,25 @@ const fs = require("node:fs/promises");
     assert.equal(await page.locator("#offer-sort").inputValue(), "success");
     await go("用量");
     assert.equal(await page.locator("#usage-range").inputValue(), "30d");
+    await page.getByRole("button", { name: "設定", exact: true }).click();
+    await page.getByRole("button", { name: "登出", exact: true }).click();
+    await page.waitForURL(origin + "/login");
+    await page.getByRole("heading", { name: "管理員登入", exact: true }).waitFor();
+    await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+    await assertLayout();
+    assert(!(await context.cookies(origin)).some(cookie => cookie.name === session.name), "logout did not clear the session");
+    assert.equal((await context.request.get(origin + "/ui/api/status")).status(), 401);
+    await page.goBack();
+    await page.waitForURL(origin + "/login");
+    await page.getByRole("heading", { name: "管理員登入", exact: true }).waitFor();
+    const basic = Buffer.from("admin:" + process.env.MODELATLAS_TEST_TOKEN).toString("base64");
+    assert.equal((await client.get(origin + "/api/v1/status", { headers: { Authorization: "Basic " + basic } })).status(), 200);
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log(JSON.stringify({ result: "PASS", screenshots: 6, realTLSUpstreams: 2, groupedModel: true, scopedQuota: true,
       accountCheckin: true, streamedFailover: true, narrowDarkLargeText: true, activityCharts: true, keyPolicy: true,
       scopedOfferHistory: true, batchProbes: true, batchStop: true, batchRateLimit: true,
-      providerCardHitArea: true, scopedKeyUsage: true, batchSelectAll: true, dialogCopyFeedback: true }));
+      providerCardHitArea: true, scopedKeyUsage: true, batchSelectAll: true, dialogCopyFeedback: true, browserSignIn: true }));
   } finally {
     await client.dispose();
     await browser.close();

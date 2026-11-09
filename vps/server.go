@@ -43,6 +43,7 @@ type Server struct {
 	AutoSync        bool
 	desktop         bool
 	distribution    bool
+	gatewaySessions gatewayBrowserSessions
 	maintenanceFile string
 	vaultVerified   bool
 	backups         *cloudBackupService
@@ -84,6 +85,9 @@ func (s *Server) authorized(r *http.Request) bool {
 			}
 		}
 	}
+	return s.matchesAdminToken(raw)
+}
+func (s *Server) matchesAdminToken(raw string) bool {
 	actual, expected := sha256.Sum256([]byte(raw)), sha256.Sum256([]byte(s.Token))
 	return s.Token != "" && subtle.ConstantTimeCompare(actual[:], expected[:]) == 1
 }

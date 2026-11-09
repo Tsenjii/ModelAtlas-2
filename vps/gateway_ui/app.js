@@ -111,12 +111,16 @@ async function api(path, data, signal) {
     init.headers = {"Content-Type": "application/json"};
     init.body = JSON.stringify(data);
   }
-  const response = await fetch("/api/v1" + path, init);
+  const response = await fetch("/ui/api" + path, init);
   const text = await response.text();
   if (!response.ok) {
     let problem;
     try { problem = JSON.parse(text); } catch {}
     const info = problem?.error || problem;
+    if (response.status === 401 && info?.code === "LOGIN_REQUIRED") {
+      location.replace("/login");
+      throw new DOMException("Browser session expired", "AbortError");
+    }
     const status = info?.upstream_status;
     if (info?.code === "UNSUPPORTED_PRIVATE_VERSION") throw new Error("這個站點版本尚未驗證額度查詢。");
     if (info?.code === "CREDENTIAL_ROLE") throw new Error("請確認這把 Key 的用途與帳戶。");
@@ -330,3 +334,7 @@ submit("model-form", async form => {
 });
 bindSettings();
 renderRoutes();
+window.addEventListener("pageshow", event => {
+  // Revalidate a console page restored from the browser's back/forward cache.
+  if (event.persisted) location.reload();
+});

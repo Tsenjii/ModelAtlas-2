@@ -36,7 +36,10 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 			}
 		}
 	}
-	app := httptest.NewServer(s.Handler())
+	app := httptest.NewUnstartedServer(nil)
+	config := deploymentConfig{publicOrigin: "https://" + app.Listener.Addr().String(), distribution: true}
+	app.Config.Handler = config.handler(s.Handler())
+	app.StartTLS()
 	defer app.Close()
 	cmd := exec.Command("node", "e2e/distribution.cjs", app.URL, f.URL)
 	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token, "MODELATLAS_TEST_UPSTREAM_A="+gatewayTestKeyA,

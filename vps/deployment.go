@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"net"
@@ -10,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+type verifiedPublicOrigin struct{}
 
 type deploymentConfig struct {
 	addr, db, token, publicOrigin string
@@ -155,6 +158,9 @@ func (c deploymentConfig) handler(next http.Handler) http.Handler {
 		if origin := r.Header.Get("Origin"); origin != "" && origin != c.publicOrigin {
 			http.Error(w, "origin mismatch", http.StatusForbidden)
 			return
+		}
+		if c.distribution {
+			r = r.WithContext(context.WithValue(r.Context(), verifiedPublicOrigin{}, c.publicOrigin))
 		}
 		next.ServeHTTP(w, r)
 	})

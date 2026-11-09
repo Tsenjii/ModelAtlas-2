@@ -100,6 +100,19 @@ body::before {
 .brand strong { display: block; font-size: 1.01rem; letter-spacing: -.026em; overflow-wrap: anywhere; }
 .brand small { display: block; color: var(--muted); font-size: .68rem; letter-spacing: .09em; }
 .header-actions { padding: 3px; border-radius: 40px; gap: 2px; }
+.login-body {
+  background: radial-gradient(ellipse at 15% 8%, var(--accent), transparent 52%),
+    radial-gradient(ellipse at 88% 92%, color-mix(in srgb, var(--indigo) 17%, transparent), transparent 47%), var(--canvas);
+}
+main.login-shell {
+  min-height: 100dvh; display: grid; place-items: center;
+  padding: max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right))
+    max(20px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+}
+.login-card { width: min(100%, 440px); padding: clamp(18px, 5vw, 32px); margin: 0; gap: 17px; border-radius: 22px; }
+.login-brand { padding: 0; }
+.login-card form { gap: 12px; }
+.login-error { color: var(--danger); font-size: .85rem; }
 .edition-label { display: inline-flex; align-items: center; gap: 6px; padding-inline: 10px 8px; font-size: .75rem; color: var(--primary); }
 .edition-label i { height: 6px; width: 6px; background: #60acd4; border-radius: 50%; box-shadow: 0 0 0 3px #60acd438; }
 .navigation-shell { margin-top: calc(var(--hero) - 127px); position: relative; z-index: 2; }

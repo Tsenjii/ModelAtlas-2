@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-Hant" data-wallpaper="plain">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>管理員登入 · ModelAtlas</title>
+<link rel="icon" href="/gateway-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/gateway.css">
+</head>
+<body class="login-body">
+<main class="login-shell">
+  <section class="card stack login-card" aria-labelledby="login-title">
+    <div class="brand login-brand">
+      <img src="/gateway-mark.svg" width="44" height="44" alt="">
+      <div><strong>ModelAtlas</strong><small>Lite 管理台</small></div>
+    </div>
+    <div><h1 id="login-title">管理員登入</h1><p class="page-caption">使用部署時設定的管理員帳號與密碼。</p></div>
+    <form class="stack" method="post" action="/login">
+      {{if .}}<p class="login-error" role="alert">{{.}}</p>{{end}}
+      <label>帳號<input name="username" value="admin" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+      <label>密碼<input name="password" type="password" autocomplete="current-password" required></label>
+      <button class="primary" type="submit">登入</button>
+    </form>
+  </section>
+</main>
+</body>
+</html>

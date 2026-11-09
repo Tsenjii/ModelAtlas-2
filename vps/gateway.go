@@ -108,6 +108,8 @@ func (s *Server) gatewayHandler() http.Handler {
 	root.HandleFunc("GET /v1/models", s.gatewayPublicModels)
 	root.HandleFunc("POST /v1/chat/completions", s.gatewayChat)
 	root.Handle("/api/v1/", s.auth(http.StripPrefix("/api/v1", admin)))
+	// Web sign-in and programmatic credentials authorize separate entry points.
+	root.Handle("/ui/api/", s.gatewayBrowserAPI(http.StripPrefix("/ui/api", admin)))
 	s.gatewayUIRoutes(root)
 	return s.maintenanceHandler(root)
 }

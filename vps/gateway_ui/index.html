@@ -335,6 +335,13 @@
       <label>用量期間<select id="default-usage-range"><option value="24h">近 24 小時</option><option value="7d">近 7 日</option><option value="30d">近 30 日</option></select></label>
     </fieldset>
     <p class="quiet">偏好儲存在這個瀏覽器。</p>
+    <fieldset>
+      <legend>登入狀態</legend>
+      <div class="section-inline">
+        <p class="quiet">管理員</p>
+        <form method="post" action="/logout"><button type="submit">登出</button></form>
+      </div>
+    </fieldset>
   </div>
 </dialog>
 <p id="notice" role="status" aria-live="polite" hidden></p>

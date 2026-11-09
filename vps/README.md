@@ -32,7 +32,9 @@ ATLAS_STATE="$HOME/modelatlas-state"
 ./modelatlas-vps portable run --directory "$ATLAS_STATE" --edition lite
 ```
 
-管理員帳號為 `admin`，密碼在狀態目錄內的 `config/modelatlas.env`。已有部署可保留原資料目錄及金鑰，並在啟動時指定版別。Docker Compose 可在專案的 `.env` 設定 `MODELATLAS_EDITION=lite`。輕量版預設最多同時處理兩個上游請求，單次轉發請求最多 2 MiB，並跳過工作區的背景工作。雲端備份可依原流程獨立啟用。原工作區可用 `--edition workspace` 啟動。
+瀏覽器從首頁進入 Lite 的管理員登入頁，帳號為 `admin`，密碼是狀態目錄 `config/modelatlas.env` 裡原有的 `MODELATLAS_ADMIN_TOKEN`。管理員由部署建立，右上「設定」可登出。瀏覽器工作階段閒置一小時或達十二小時後到期，服務重啟也會要求重新登入。管理腳本沿用 `/api/v1` 的 Basic 或 Bearer 驗證，分發端使用 `/v1` 的分發 Key。
+
+已有部署可保留原資料目錄及金鑰，並在啟動時指定版別。Docker Compose 可在專案的 `.env` 設定 `MODELATLAS_EDITION=lite`。輕量版預設最多同時處理兩個上游請求，單次轉發請求最多 2 MiB，並跳過工作區的背景工作。雲端備份可依原流程獨立啟用。原工作區可用 `--edition workspace` 啟動。
 
 ## 原工作區
 

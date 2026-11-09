@@ -171,6 +171,7 @@ func TestGatewayDistributionWorkflow(t *testing.T) {
 	const admin = "/api/v1/gateway"
 	requireCode(t, req(t, s, "GET", admin+"/upstreams", nil), 404)
 	s.distribution = true
+	checkGatewayBrowserLogin(t, s)
 	requireCode(t, req(t, s, "GET", "/api/v1/providers", nil), 404)
 	requireCode(t, req(t, s, "POST", "/api/v1/research/probe", map[string]any{}), 404)
 
