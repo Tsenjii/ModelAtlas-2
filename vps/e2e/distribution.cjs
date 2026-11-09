@@ -210,13 +210,76 @@ const fs = require("node:fs/promises");
     await revoke.click();
     await page.locator("#key-list").getByText("已撤銷", { exact: true }).waitFor();
     assert.equal((await client.get(origin + "/v1/models", { headers })).status(), 401);
+
+    await go("模型");
+    const history = page.locator("#offer-detail");
+    await offering("潮汐 API").getByRole("button", { name: "連線詳情" }).click();
+    await history.getByText("模型實測", { exact: true }).waitFor();
+    await history.getByText("分發請求", { exact: true }).waitFor();
+    assert.equal(await history.locator(".history-sample").count(), 2);
+    await history.getByText("上游限流 · 429", { exact: true }).waitFor();
+    await assertLayout();
+    await history.getByRole("button", { name: "關閉" }).click();
+    await offering("曙光 API").getByRole("button", { name: "連線詳情" }).click();
+    await history.getByText("分發請求", { exact: true }).waitFor();
+    assert.equal(await history.locator(".history-sample").count(), 2);
+    assert.equal(await history.getByText("上游限流 · 429", { exact: true }).count(), 0);
+    await history.getByRole("button", { name: "關閉" }).click();
+
+    const batch = page.locator("#offer-batch-dialog");
+    const openBatch = () => page.locator("#offer-batch").click();
+    const start = batch.getByRole("button", { name: "開始測速" });
+    const close = batch.getByRole("button", { name: "關閉" });
+    await openBatch();
+    const choices = batch.getByRole("checkbox");
+    assert.equal(await choices.count(), 2);
+    for (const choice of await choices.all()) await choice.uncheck();
+    assert(await start.isDisabled());
+    for (const choice of await choices.all()) await choice.check();
+    await assertLayout();
+    await start.click();
+    await batch.getByText("已完成 2 / 2，成功 2", { exact: true }).waitFor();
+    assert.equal(await batch.locator(".batch-result").filter({ hasText: "成功" }).count(), 2);
+    await close.click();
+    await offering("潮汐 API").getByText("2 / 3 次", { exact: true }).waitFor();
+    await offering("曙光 API").getByText("3 / 3 次", { exact: true }).waitFor();
+    await page.locator("#offer-sort").selectOption("success");
+    await page.waitForFunction(() => document.querySelector("#offer-list article")?.textContent.includes("曙光 API"));
+
+    // Delay delivery of the first real TLS probe result until the stop action.
+    let releaseProbe;
+    const probeDelivery = new Promise(resolve => { releaseProbe = resolve; });
+    await page.route("**/api/v1/gateway/probe", async route => {
+      const response = await route.fetch();
+      await probeDelivery;
+      await route.fulfill({ response });
+    }, { times: 1 });
+    await openBatch();
+    await start.click();
+    try {
+      await batch.getByRole("button", { name: "本筆完成後停止" }).click();
+    } finally {
+      releaseProbe();
+    }
+    await batch.getByText("已完成 1 / 2，成功 1 · 已停止", { exact: true }).waitFor();
+    assert.equal(await batch.getByText("未執行", { exact: true }).count(), 1);
+    await close.click();
+
+    await openBatch();
+    await start.click();
+    await batch.getByText("已完成 1 / 2，成功 0 · 上游限流", { exact: true }).waitFor();
+    await batch.getByText("上游限流 · HTTP 429", { exact: true }).waitFor();
+    assert.equal(await batch.getByText("未執行", { exact: true }).count(), 1);
+    await close.click();
+
     await page.reload();
     assert.equal(await page.locator("html").getAttribute("data-wallpaper"), "elaina-chibi");
     assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log(JSON.stringify({ result: "PASS", screenshots: 6, realTLSUpstreams: 2, groupedModel: true, scopedQuota: true,
-      accountCheckin: true, streamedFailover: true, narrowDarkLargeText: true, activityCharts: true, keyPolicy: true }));
+      accountCheckin: true, streamedFailover: true, narrowDarkLargeText: true, activityCharts: true, keyPolicy: true,
+      scopedOfferHistory: true, batchProbes: true, batchStop: true, batchRateLimit: true }));
   } finally {
     await client.dispose();
     await browser.close();

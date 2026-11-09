@@ -139,4 +139,24 @@ func TestGatewayUsageIntervalsAndSources(t *testing.T) {
 	if tests.Summary.Requests != 1 || len(tests.Items) != 1 || tests.Items[0].Source != "tests" || tests.Items[0].Model != "Probe_Model" {
 		t.Fatalf("invalid model-test filter: %+v", tests)
 	}
+
+	for i := range 21 {
+		sample(fmt.Sprintf("history-%d", i), "MANUAL_TEST", "up-b", first+int64(i+1), &zero, nil, &ttft)
+	}
+	exec(`UPDATE telemetry SET details_json='{"tps":0,"private":"internal-detail"}' WHERE id='history-20'`)
+	exec(`UPDATE telemetry SET group_id='other',model_id='up-b',created_at=? WHERE id='first-attempt'`, last)
+	const history = "/api/v1/gateway/offering-history?provider_id=site-a&account_id=acct&credential_id=up-key&model_id=up-b&endpoint=CHAT_COMPLETIONS"
+	requireCode(t, req(t, s, "GET", history, nil), 400)
+	requireCode(t, gatewayClient(s, "invalid", "GET", history+"&group=", nil), 401)
+	reply := req(t, s, "GET", history+"&group=", nil)
+	samples := gatewayDecode[[]gatewayOfferSample](t, reply, 200)
+	if len(samples) != 20 || samples[0].At != first+21 || samples[19].At != first+2 ||
+		samples[0].TPS == nil || *samples[0].TPS != 0 || samples[0].InputTokens == nil || *samples[0].InputTokens != 0 ||
+		samples[0].OutputTokens != nil || samples[0].TTFB != nil || strings.Contains(reply.Body.String(), "internal-detail") {
+		t.Fatalf("incorrect scoped history, bounds or missing-data representation: %s", reply.Body)
+	}
+	other := gatewayDecode[[]gatewayOfferSample](t, req(t, s, "GET", history+"&group=other", nil), 200)
+	if len(other) != 1 || other[0].At != last {
+		t.Fatalf("expected the selected group only: %+v", other)
+	}
 }

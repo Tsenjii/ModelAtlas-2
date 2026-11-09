@@ -10,16 +10,130 @@ const operationNames = {
   AUDIO: "語音轉寫", AUDIO_SPEECH: "語音合成", GEMINI_SPEECH: "Gemini 語音",
   EMBEDDINGS: "嵌入", RERANK: "重排", CUSTOM: "自訂端點"
 };
-let groupRead, offerRead, providerRead, detailRead;
+let groupRead, offerRead, providerRead, detailRead, historyRead;
+let offerBatch = null;
+let singleOfferTests = 0;
+
+function offerTestable(v) {
+  return ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE"].includes(v.operation);
+}
+
+function testOffer(v) {
+  return api(v.operation === "CHAT_COMPLETIONS" ? "/gateway/probe" : "/models/test", selection(v));
+}
+
+function renderOfferBatch() {
+  $("offer-batch").disabled = !!offerBatch?.running || singleOfferTests > 0 || !state.offers.some(v => v.enabled && offerTestable(v));
+}
+
+function updateBatchSelection() {
+  const count = offerBatch.items.filter(item => item.input.checked).length;
+  $("offer-batch-start").disabled = !count;
+  $("offer-batch-progress").textContent = "已選 " + count + " / " + offerBatch.items.length + " 條連線";
+}
+
+function openOfferBatch() {
+  const entries = state.offers.filter(v => v.enabled && offerTestable(v)).slice(0, 100);
+  if (!entries.length) return;
+  const items = entries.map(v => {
+    const label = el("label", undefined, "choice batch-choice");
+    const input = el("input");
+    input.type = "checkbox";
+    input.checked = true;
+    const details = el("span", undefined, "identity");
+    details.append(el("strong", v.provider), el("small", [v.account, v.credential, v.group].filter(Boolean).join(" · ")),
+      el("small", v.model_id + " · " + (operationNames[v.operation] || v.operation)));
+    const result = el("small", "", "batch-result quiet");
+    label.append(input, details, result);
+    return {v, input, result, label};
+  });
+  offerBatch = {group: state.modelGroup, items, running: false, stop: false};
+  $("offer-batch-list").replaceChildren(...items.map(item => item.label));
+  $("offer-batch-start").hidden = false;
+  $("offer-batch-stop").disabled = false;
+  updateBatchSelection();
+  $("offer-batch-dialog").showModal();
+}
+
+async function runOfferBatch() {
+  const batch = offerBatch;
+  if (!batch || batch.running || singleOfferTests) return;
+  const entries = batch.items.filter(item => item.input.checked);
+  if (!entries.length) return;
+  batch.running = true;
+  renderOfferBatch();
+  for (const item of batch.items) item.input.disabled = true;
+  for (const item of entries) item.result.textContent = "待測";
+  $("offer-batch-start").hidden = true;
+  $("offer-batch-close").disabled = true;
+  $("offer-batch-stop").hidden = false;
+  $("offer-batch-stop").focus();
+  let completed = 0, succeeded = 0, reason = "";
+  const progress = $("offer-batch-progress");
+  try {
+    for (const entry of entries) {
+      if (batch.stop || state.page !== "models" || state.modelGroup !== batch.group) {
+        reason = "已停止";
+        break;
+      }
+      progress.textContent = "測試 " + (completed + 1) + " / " + entries.length + " · " + entry.v.provider;
+      entry.result.textContent = "測試中";
+      let result;
+      try {
+        result = await testOffer(entry.v);
+      } catch (error) {
+        entry.result.textContent = "結果未確認";
+        reason = "本筆結果未確認 · " + error.message;
+        break;
+      }
+      completed++;
+      if (result.outcome === "SUCCESS") succeeded++;
+      const status = result.http_status ?? result.details?.http_status;
+      const ttft = result.ttft_ms ?? result.details?.ttft_ms;
+      entry.result.textContent = (statuses[result.outcome] || result.outcome) + (status ? " · HTTP " + status : "") +
+        (ttft == null ? "" : " · 首字 " + delay(ttft));
+      if (status === 429 || status === 402 || ["RATE_LIMITED", "PAYMENT_REQUIRED", "REQUEST_IN_PROGRESS", "CANCELLED", "TELEMETRY_SAVE"].includes(result.outcome)) {
+        reason = statuses[result.outcome] || "上游額度或服務限制";
+        break;
+      }
+    }
+  } finally {
+    for (const entry of entries) {
+      if (entry.result.textContent === "待測") entry.result.textContent = "未執行";
+    }
+    let summary = "已完成 " + completed + " / " + entries.length + "，成功 " + succeeded + (reason ? " · " + reason : "");
+    if (state.page === "models" && state.modelGroup === batch.group) {
+      try { await loadOffers(true, Math.min(200, Math.max(50, state.offers.length))); }
+      catch { summary += " · 清單更新失敗，請重新整理。"; }
+    }
+    progress.textContent = summary;
+    $("offer-batch-summary").textContent = summary;
+    $("offer-batch-summary").dataset.group = batch.group.id;
+    batch.running = false;
+    renderOfferBatch();
+    $("offer-batch-stop").hidden = true;
+    $("offer-batch-close").disabled = false;
+    $("offer-batch-close").focus();
+  }
+}
 
 async function showModelView() {
   const group = state.modelGroup;
+  if ($("offer-batch-summary").dataset.group !== group?.id) {
+    $("offer-batch-summary").textContent = "";
+  }
   $("model-index").hidden = !!group;
   $("model-detail").hidden = !group;
   if (group) {
     $("model-title").textContent = group.name;
     $("model-canonical").textContent = group.id === group.name ? "" : group.id;
     $("route-pick").hidden = true;
+    if (!state.offers.length) {
+      $("offer-count").textContent = "";
+      $("offer-list").replaceChildren(empty("讀取連線中…"));
+      $("offers-more").hidden = true;
+      renderOfferBatch();
+    }
     return loadOffers(true);
   }
   return loadGroups(true);
@@ -57,14 +171,14 @@ async function loadGroups(reset) {
   $("model-list").replaceChildren(...(nodes.length ? nodes : [empty("這裡會列出你的模型。可新增供應商、同步目錄或手動加入模型 ID。")]));
 }
 
-async function loadOffers(reset) {
+async function loadOffers(reset, limit = 50) {
   const group = state.modelGroup;
   if (!group) return;
   offerRead?.abort();
   const read = new AbortController();
   offerRead = read;
   const params = new URLSearchParams({
-    limit: "50", offset: String(reset ? 0 : state.offers.length), canonical_id: group.id, sort: $("offer-sort").value
+    limit: String(limit), offset: String(reset ? 0 : state.offers.length), canonical_id: group.id, sort: $("offer-sort").value
   });
   $("offer-list").setAttribute("aria-busy", "true");
   $("offers-more").disabled = true;
@@ -91,18 +205,66 @@ function performanceCells(p) {
   return metrics;
 }
 
+async function openOfferDetail(v) {
+  historyRead?.abort();
+  const read = new AbortController();
+  historyRead = read;
+  const p = v.performance;
+  const dialog = $("offer-detail");
+  const history = $("offer-history");
+  renderDetailFields($("offer-detail-fields"), [
+    ["供應商", v.provider], ["帳戶", v.account], ["Key 標籤", v.credential], ["群組", v.group || "預設"],
+    ["上游模型 ID", v.model_id], ["模型歸類", v.canonical_id], ["端點", v.endpoint],
+    ["連線狀態", v.enabled ? "可用" : "停用或不可用"],
+    ["近 7 天成功率", p.samples ? ratio(p.successes, p.samples) + " · " + p.successes + " / " + p.samples + " 次" : "未實測"],
+    ["平均首位元組", delay(p.ttfb_ms)], ["平均首字等待", delay(p.ttft_ms)], ["平均總延遲", delay(p.latency_ms)],
+    ["平均生成速度", p.tps == null ? "—" : number(p.tps, 1) + " tok/s"]
+  ]);
+  history.replaceChildren(empty("讀取連線紀錄中…"));
+  dialog.showModal();
+  try {
+    const samples = await api("/gateway/offering-history?" + new URLSearchParams(selection(v)), undefined, read.signal);
+    if (historyRead !== read || !dialog.open) return;
+    const timestamp = new Intl.DateTimeFormat("zh-TW", {dateStyle: "short", timeStyle: "medium"});
+    const sources = {GATEWAY: "分發請求", GATEWAY_TEST: "模型實測", MANUAL_TEST: "模型實測", CHAT: "工作區對話"};
+    const rows = samples.map(sample => {
+      const row = el("article", undefined, "history-sample");
+      const heading = el("header", undefined, "section-inline");
+      heading.append(el("strong", timestamp.format(sample.at)), usageResult(sample));
+      const fields = el("dl", undefined, "detail-fields");
+      renderDetailFields(fields, [["來源", sources[sample.source] || sample.source], ["首位元組", delay(sample.ttfb_ms)],
+        ["首字等待", delay(sample.ttft_ms)], ["總延遲", delay(sample.latency_ms)],
+        ["生成速度", sample.tps == null ? "—" : number(sample.tps, 1) + " tok/s"],
+        ["輸入 / 輸出 Token", number(sample.input_tokens) + " / " + number(sample.output_tokens)]]);
+      row.append(heading, fields);
+      return row;
+    });
+    history.replaceChildren(...(rows.length ? rows : [empty("這條連線還沒有紀錄。")]));
+  } catch (error) {
+    if (historyRead === read && dialog.open && error.name !== "AbortError") history.replaceChildren(empty(error.message));
+  }
+}
+
 function renderOffers() {
   const cards = state.offers.map(v => {
-    const row = el("article", undefined, "entry");
+    const row = el("article", undefined, "entry offering-entry");
     const relayable = v.operation === "CHAT_COMPLETIONS";
-    const testable = ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE"].includes(v.operation);
     const probe = button("測試", async () => {
-      const result = await api(relayable ? "/gateway/probe" : "/models/test", selection(v));
-      await loadOffers(true);
-      notice(v.provider + " · " + (statuses[result.outcome] || result.outcome || "測試完成"), result.outcome !== "SUCCESS");
+      if (offerBatch?.running) return;
+      const group = state.modelGroup;
+      singleOfferTests++;
+      renderOfferBatch();
+      try {
+        const result = await testOffer(v);
+        if (state.modelGroup === group) await loadOffers(true);
+        notice(v.provider + " · " + (statuses[result.outcome] || result.outcome || "測試完成"), result.outcome !== "SUCCESS");
+      } finally {
+        singleOfferTests--;
+        renderOfferBatch();
+      }
     });
     probe.disabled = !v.enabled;
-    probe.hidden = !testable;
+    probe.hidden = !offerTestable(v);
     const picked = state.routes.some(route => scopeID(route) === scopeID(v));
     const choose = button(picked ? "移除路由" : "加入路由", () => {
       if (picked) {
@@ -129,7 +291,7 @@ function renderOffers() {
     });
     const details = identity(v.provider, [[v.account, v.credential, v.group].filter(Boolean).join(" · "),
       v.model_id + " · " + (operationNames[v.operation] || v.operation), v.enabled ? "" : "連線停用或不可用"]);
-    row.append(details, performanceCells(v.performance), controls(probe, choose, align));
+    row.append(details, performanceCells(v.performance), controls(probe, button("連線詳情", () => openOfferDetail(v)), choose, align));
     return row;
   });
   const group = state.modelGroup;
@@ -137,6 +299,7 @@ function renderOffers() {
   $("route-pick").setAttribute("aria-pressed", String(state.routePicking));
   $("offer-count").textContent = group.providers + " 家供應商 · " + group.connections + " 個連線";
   $("offer-list").replaceChildren(...(cards.length ? cards : [empty("這個模型目前沒有連線。")]));
+  renderOfferBatch();
 }
 
 function checkinSummary(p) {
@@ -375,6 +538,27 @@ for (const [id, load] of [["model", loadGroups], ["provider", loadProviderList]]
 }
 $("offer-sort").addEventListener("change", () => action(null, () => loadOffers(true)));
 $("offers-more").addEventListener("click", () => action(null, () => loadOffers(false)));
+$("offer-batch").addEventListener("click", openOfferBatch);
+$("offer-batch-list").addEventListener("change", updateBatchSelection);
+submit("offer-batch-form", runOfferBatch);
+$("offer-batch-stop").addEventListener("click", () => {
+  offerBatch.stop = true;
+  $("offer-batch-stop").disabled = true;
+  $("offer-batch-progress").textContent = "本筆完成後停止…";
+});
+$("offer-batch-dialog").addEventListener("cancel", event => {
+  if (offerBatch?.running) event.preventDefault();
+});
+$("offer-batch-dialog").addEventListener("close", () => {
+  if ($("offer-batch-dialog").open) return;
+  offerBatch = null;
+  $("offer-batch-list").replaceChildren();
+});
+$("offer-detail").addEventListener("close", () => {
+  if ($("offer-detail").open) return;
+  historyRead?.abort();
+  $("offer-history").replaceChildren();
+});
 $("route-pick").addEventListener("click", () => {
   state.routePicking = !state.routePicking;
   renderOffers();

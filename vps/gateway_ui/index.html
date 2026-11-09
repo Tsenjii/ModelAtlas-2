@@ -74,6 +74,7 @@
       <div class="card overview">
         <div class="section-inline"><h2>各家連線速度</h2><label>排序<select id="offer-sort"><option value="ttft">首字最快</option><option value="tps">生成最快</option><option value="success">成功率最高</option><option value="latency">總延遲最低</option></select></label></div>
         <div class="line-meta"><span id="offer-count" role="status"></span><span>近 7 天實測，每個連線最多 100 筆</span></div>
+        <div class="line-meta"><button id="offer-batch" type="button" disabled>批次測速</button><span id="offer-batch-summary" role="status"></span></div>
         <div id="route-tray" class="route-tray" hidden><strong id="route-count"></strong><button id="configure-route" type="button">前往分發</button></div>
         <div id="offer-list" class="rows" aria-live="polite"></div>
         <button id="offers-more" type="button" hidden>載入更多連線</button>
@@ -258,6 +259,26 @@
     <header class="section-inline"><h2 id="usage-detail-title">調用詳情</h2><button type="button" data-close="usage-detail">關閉</button></header>
     <dl id="usage-detail-fields" class="detail-fields"></dl>
   </div>
+</dialog>
+<dialog id="offer-detail" aria-labelledby="offer-detail-title">
+  <div class="stack">
+    <header class="section-inline"><h2 id="offer-detail-title">連線詳情</h2><button type="button" data-close="offer-detail">關閉</button></header>
+    <dl id="offer-detail-fields" class="detail-fields"></dl>
+    <h3>最近 20 筆連線紀錄</h3>
+    <div id="offer-history" class="rows" aria-live="polite"></div>
+  </div>
+</dialog>
+<dialog id="offer-batch-dialog" aria-labelledby="offer-batch-title">
+  <form id="offer-batch-form" class="stack">
+    <header class="section-inline"><h2 id="offer-batch-title">批次測速</h2><button id="offer-batch-close" type="button" data-close="offer-batch-dialog">關閉</button></header>
+    <p class="quiet">勾選已載入的連線，最多 100 條。系統會逐一實測並使用上游額度。</p>
+    <div id="offer-batch-list" class="rows"></div>
+    <p id="offer-batch-progress" role="status"></p>
+    <footer class="section-inline">
+      <button id="offer-batch-start" class="primary" type="submit">開始測速</button>
+      <button id="offer-batch-stop" type="button" hidden>本筆完成後停止</button>
+    </footer>
+  </form>
 </dialog>
 <dialog id="issued-dialog" aria-labelledby="issued-title">
   <div class="stack">

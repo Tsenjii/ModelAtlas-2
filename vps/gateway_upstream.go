@@ -250,6 +250,8 @@ type gatewayPerformance struct {
 	TPS       *float64 `json:"tps"`
 }
 
+const gatewayOfferScopeSQL = "provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=?"
+
 const gatewayPerformanceSQL = `SELECT json_object(
 	'samples',COUNT(*),'successes',COALESCE(SUM(outcome='SUCCESS'),0),
 	'ttft_ms',AVG(CASE WHEN outcome='SUCCESS' THEN ttft_ms END),
@@ -261,7 +263,7 @@ const gatewayPerformanceSQL = `SELECT json_object(
 	ORDER BY created_at DESC,id DESC LIMIT 100)`
 
 func (s *Server) gatewayPerformance(ctx context.Context, v Selection) (gatewayPerformance, error) {
-	return s.gatewayReadPerformance(ctx, "provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=?",
+	return s.gatewayReadPerformance(ctx, gatewayOfferScopeSQL,
 		v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint, now()-7*86400000)
 }
 
@@ -359,6 +361,50 @@ func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
 		Offerings []gatewayOffering `json:"offerings"`
 		More      bool              `json:"more"`
 	}{out, more})
+}
+
+type gatewayOfferSample struct {
+	At           int64    `json:"at"`
+	Source       string   `json:"source"`
+	Outcome      string   `json:"outcome"`
+	HTTPStatus   *int64   `json:"http_status"`
+	TTFB         *int64   `json:"ttfb_ms"`
+	TTFT         *int64   `json:"ttft_ms"`
+	Latency      *int64   `json:"latency_ms"`
+	TPS          *float64 `json:"tps"`
+	InputTokens  *int64   `json:"input_tokens"`
+	OutputTokens *int64   `json:"output_tokens"`
+}
+
+func (s *Server) gatewayOfferHistory(w http.ResponseWriter, r *http.Request) {
+	v := selectionQuery(r)
+	if !validScope(v) || !r.URL.Query().Has("group") {
+		http.Error(w, "full selected scope required", 400)
+		return
+	}
+	rows, err := s.Store.DB.QueryContext(r.Context(), `SELECT created_at,source,outcome,status_code,ttfb_ms,ttft_ms,
+		latency_ms,`+numericTPS+`,input_tokens,output_tokens FROM telemetry WHERE `+gatewayOfferScopeSQL+`
+		ORDER BY created_at DESC,id DESC LIMIT 20`, v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint)
+	if err != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	defer rows.Close()
+	samples := make([]gatewayOfferSample, 0, 20)
+	for rows.Next() {
+		var sample gatewayOfferSample
+		if err := rows.Scan(&sample.At, &sample.Source, &sample.Outcome, &sample.HTTPStatus, &sample.TTFB,
+			&sample.TTFT, &sample.Latency, &sample.TPS, &sample.InputTokens, &sample.OutputTokens); err != nil {
+			http.Error(w, "database error", 500)
+			return
+		}
+		samples = append(samples, sample)
+	}
+	if rows.Err() != nil {
+		http.Error(w, "database error", 500)
+		return
+	}
+	jsonOK(w, 200, samples)
 }
 
 func (p gatewayPerformance) health() int {

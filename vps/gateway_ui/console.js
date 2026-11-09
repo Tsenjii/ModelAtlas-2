@@ -307,6 +307,14 @@ function usageResult(v) {
   const tone = v.outcome === "SUCCESS" ? "success" : ["RUNNING", "CANCELLED", "INTERRUPTED"].includes(v.outcome) ? "quiet" : "danger";
   return badge((statuses[v.outcome] || v.outcome) + (code ? " · " + code : ""), tone);
 }
+function renderDetailFields(fields, values) {
+  fields.replaceChildren();
+  for (const [name, value] of values) {
+    const item = el("dd");
+    item.append(value);
+    fields.append(el("dt", name), item);
+  }
+}
 function openUsageDetail(v) {
   const values = [
     ["請求 ID", v.id], ["調用時間", localDate(v.at, consoleState.usage.timezone)],
@@ -316,13 +324,7 @@ function openUsageDetail(v) {
     ["上游嘗試次數", number(v.attempts)], ["首字等待", delay(v.ttft_ms)], ["總延遲", delay(v.latency_ms)],
     ["輸入 / 輸出 Token", number(v.input_tokens) + " / " + number(v.output_tokens)]
   ];
-  const fields = $("usage-detail-fields");
-  fields.replaceChildren();
-  for (const [name, value] of values) {
-    const item = el("dd");
-    item.append(value);
-    fields.append(el("dt", name), item);
-  }
+  renderDetailFields($("usage-detail-fields"), values);
   $("usage-detail").showModal();
 }
 

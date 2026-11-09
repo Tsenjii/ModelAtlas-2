@@ -81,6 +81,7 @@ func (s *Server) gatewayHandler() http.Handler {
 	admin.HandleFunc("POST /gateway/sync", s.gatewaySync)
 	admin.HandleFunc("POST /gateway/upstream-model", s.gatewayAddUpstreamModel)
 	admin.HandleFunc("GET /gateway/offerings", s.gatewayOfferings)
+	admin.HandleFunc("GET /gateway/offering-history", s.gatewayOfferHistory)
 	admin.HandleFunc("GET /gateway/model-groups", s.gatewayModelGroups)
 	admin.HandleFunc("POST /gateway/model-group", s.gatewayAlignModel)
 	admin.HandleFunc("POST /gateway/probe", s.gatewayProbe)

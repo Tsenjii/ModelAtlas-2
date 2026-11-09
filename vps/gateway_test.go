@@ -21,7 +21,8 @@ const gatewayTestPAT = "upstream-account-fixture-PAT_0123456789"
 
 type gatewayFixture struct {
 	*httptest.Server
-	a, b atomic.Int32
+	a, b         atomic.Int32
+	bRateLimitAt atomic.Int32
 }
 
 func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixture {
@@ -100,7 +101,10 @@ func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixtur
 				return
 			}
 		} else {
-			f.b.Add(1)
+			if f.b.Add(1) == f.bRateLimitAt.Load() {
+				http.Error(w, "upstream capacity", 429)
+				return
+			}
 			time.Sleep(50 * time.Millisecond)
 		}
 		if prompt == "upstream-error" {

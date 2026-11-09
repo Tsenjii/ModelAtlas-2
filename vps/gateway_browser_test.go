@@ -17,6 +17,7 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 	s := testServer(t)
 	s.distribution = true
 	f := newGatewayFixture(t, s, [2]string{"deepseek-v4.1-flash", "DeepSeek-V4_1-Flash"})
+	f.bRateLimitAt.Store(5)
 	// A dated archive fixture exercises the same stored measurement and
 	// aggregation path as the two live model probes below.
 	for day, count := range []int{0, 8, 4, 11, 7, 3, 5} {
@@ -45,8 +46,8 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 		t.Fatalf("distribution browser: %v\n%s", err, out)
 	}
 	t.Log(string(out))
-	if f.a.Load() != 2 || f.b.Load() != 2 {
-		t.Fatalf("expected one probe per upstream and one failover: %d / %d", f.a.Load(), f.b.Load())
+	if f.a.Load() != 3 || f.b.Load() != 5 {
+		t.Fatalf("expected two probes and one relay attempt per upstream, then two batches stopped at B: %d / %d", f.a.Load(), f.b.Load())
 	}
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM gateway_requests WHERE outcome='SUCCESS' AND attempts=2")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM gateway_keys WHERE enabled=0")

@@ -11,7 +11,7 @@ const statuses = {
   TIMEOUT: "逾時", NETWORK: "連線失敗", PARSER: "回應格式錯誤", INVALID_REQUEST: "上游拒絕請求",
   AUTH_INVALID: "上游 Key 無效", AUTH: "上游驗證失敗", INFERENCE_DENIED: "上游拒絕存取",
   PAYMENT_REQUIRED: "額度不足", HTTP_ERROR: "上游拒絕請求", TELEMETRY_SAVE: "紀錄暫不可寫入",
-  SECRET_IN_RESPONSE: "上游回應含私密資料"
+  SECRET_IN_RESPONSE: "上游回應含私密資料", REQUEST_IN_PROGRESS: "已有請求執行中"
 };
 const errors = {
   "valid name and HTTPS base URL required": "請填名稱和有效的 HTTPS Base URL。",
