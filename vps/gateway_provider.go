@@ -38,7 +38,10 @@ type gatewayQuota struct {
 	ObservedAt   int64  `json:"observed_at"`
 }
 
-const gatewayAccountQuota = "MANUAL_ACCOUNT_QUOTA"
+const (
+	gatewayAccountQuota    = "MANUAL_ACCOUNT_QUOTA"
+	gatewayCredentialQuota = "MANUAL_CREDENTIAL_QUOTA"
+)
 
 func (s *Server) gatewayProviders(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -46,10 +49,10 @@ func (s *Server) gatewayProviders(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageRange(r, 25)
 	id, search := q.Get("provider_id"), strings.TrimSpace(q.Get("q"))
 	rows, err := s.Store.DB.QueryContext(ctx, `SELECT p.id,p.name,p.base_url,p.description,p.auth_mode,
-		(SELECT COUNT(*) FROM accounts a WHERE a.provider_id=p.id),
+		(SELECT COUNT(*) FROM accounts a WHERE a.provider_id=p.id AND `+gatewayActiveAccount+`),
 		(SELECT COUNT(*) FROM credentials c WHERE c.provider_id=p.id AND c.role='INFERENCE' AND c.enabled=1),
 		(SELECT COUNT(DISTINCT m.model_id) FROM my_models m WHERE m.provider_id=p.id)
-		FROM providers p WHERE (?='' OR p.id=?) AND instr(lower(p.name||' '||p.description||' '||p.base_url),lower(?))>0
+		FROM providers p WHERE `+gatewayActiveProvider+` AND (?='' OR p.id=?) AND instr(lower(p.name||' '||p.description||' '||p.base_url),lower(?))>0
 		ORDER BY p.name COLLATE NOCASE,p.id LIMIT ? OFFSET ?`, id, id, search, limit+1, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
@@ -82,7 +85,7 @@ func (s *Server) gatewayProviders(w http.ResponseWriter, r *http.Request) {
 		p.PendingCheckins = 0
 		if p.RequiresCheckin {
 			err = s.Store.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM accounts a
-				WHERE a.provider_id=? AND NOT EXISTS(SELECT 1 FROM account_checkins c
+				WHERE a.provider_id=? AND `+gatewayActiveAccount+` AND NOT EXISTS(SELECT 1 FROM account_checkins c
 					WHERE c.provider_id=a.provider_id AND c.account_id=a.id AND c.date=?)`, p.ID, date).Scan(&p.PendingCheckins)
 		}
 		if err == nil {
@@ -149,8 +152,17 @@ func (s *Server) gatewayProviderQuotas(ctx context.Context, provider string, lim
 		FROM accounts a JOIN observations o ON o.rowid=(SELECT rowid FROM observations
 			WHERE scope_key=atlas_scope_key(a.provider_id,a.id,'','','','') AND kind=? AND source='MANUAL' AND status='SUCCESS'
 			ORDER BY observed_at DESC,rowid DESC LIMIT 1)
-		WHERE a.provider_id=?
-	ORDER BY observed_at DESC LIMIT ?`, provider, gatewayAccountQuota, provider, limit)
+		WHERE a.provider_id=? AND `+gatewayActiveAccount+` AND json_extract(o.facts_json,'$.remaining')<>''
+	UNION ALL
+	SELECT a.id,a.label,c.id,c.label,'INFERENCE',o.facts_json,o.source,o.observed_at
+		FROM credentials c JOIN accounts a ON a.provider_id=c.provider_id AND a.id=c.account_id
+		JOIN observations o ON o.rowid=(SELECT rowid FROM observations
+			WHERE scope_key=atlas_scope_key(c.provider_id,c.account_id,c.id,'','','') AND kind=? AND source='MANUAL' AND status='SUCCESS'
+			AND json_extract(facts_json,'$.credential_version')=(SELECT COALESCE(MAX(v.version),0) FROM credential_secret_versions v
+				WHERE v.provider_id=c.provider_id AND v.account_id=c.account_id AND v.credential_id=c.id)
+			ORDER BY observed_at DESC,rowid DESC LIMIT 1)
+		WHERE c.provider_id=? AND c.role='INFERENCE' AND json_extract(o.facts_json,'$.remaining')<>''
+	ORDER BY observed_at DESC LIMIT ?`, provider, gatewayAccountQuota, provider, gatewayCredentialQuota, provider, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -167,14 +179,14 @@ func (s *Server) gatewayProviderQuotas(ctx context.Context, provider string, lim
 			continue
 		}
 		v.Unit = "站方額度"
-		switch v.Role {
-		case "ACCOUNT":
+		switch {
+		case v.Source == "MANUAL":
 			v.Unit = stringField(facts, "unit")
 			v.Remaining = stringField(facts, "remaining")
-		case "ACCOUNT_PAT":
+		case v.Role == "ACCOUNT_PAT":
 			v.Remaining = gatewayQuotaNumber(facts, "quota")
 			v.Used = gatewayQuotaNumber(facts, "used_quota")
-		case "INFERENCE":
+		case v.Role == "INFERENCE":
 			v.Remaining = gatewayQuotaNumber(facts, "total_available")
 			v.Used = gatewayQuotaNumber(facts, "total_used")
 			v.Granted = gatewayQuotaNumber(facts, "total_granted")
@@ -248,32 +260,47 @@ func (s *Server) gatewaySaveProvider(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) gatewaySaveQuota(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		ProviderID string `json:"provider_id"`
-		AccountID  string `json:"account_id"`
-		Amount     string `json:"remaining"`
-		Unit       string `json:"unit"`
+		syncRequest
+		Amount string `json:"remaining"`
+		Unit   string `json:"unit"`
+		Clear  bool   `json:"clear"`
 	}
 	if !decodeJSON(w, r, &in) {
 		return
 	}
+	if !validID(in.ProviderID) || !validID(in.AccountID) || in.CredentialID != "" && !validID(in.CredentialID) {
+		http.Error(w, "valid credential scope required", 400)
+		return
+	}
 	in.Amount = strings.TrimSpace(in.Amount)
-	if !validID(in.ProviderID) || !validID(in.AccountID) ||
-		!oneOf(in.Unit, "USD", "TWD", "點", "次", "Token") ||
+	if in.Clear {
+		in.Amount, in.Unit = "", ""
+	} else if !oneOf(in.Unit, "USD", "TWD", "CNY", "HKD", "EUR", "點", "次", "Token") ||
 		len(in.Amount) > 32 || strings.ContainsAny(in.Amount, "-+eE") || !decimalPattern.MatchString(in.Amount) {
 		http.Error(w, "valid non-negative amount and unit required", 400)
 		return
 	}
-	ctx := r.Context()
-	raw, _ := json.Marshal(map[string]string{"remaining": in.Amount, "unit": in.Unit})
-	result, err := s.Store.DB.ExecContext(ctx, `INSERT INTO observations(id,scope_key,kind,source,status,facts_json,observed_at)
-		SELECT ?,?,?,'MANUAL','SUCCESS',?,? FROM accounts WHERE provider_id=? AND id=?`,
-		newID(), scopeKey(Selection{ProviderID: in.ProviderID, AccountID: in.AccountID}), gatewayAccountQuota, string(raw), now(), in.ProviderID, in.AccountID)
+	scope := scopeKey(Selection{ProviderID: in.ProviderID, AccountID: in.AccountID, CredentialID: in.CredentialID})
+	const insert = `INSERT INTO observations(id,scope_key,kind,source,status,facts_json,observed_at)
+		SELECT ?,?,?,'MANUAL','SUCCESS',`
+	query := insert + `json_object('remaining',?,'unit',?),?
+		FROM accounts a WHERE a.provider_id=? AND a.id=? AND ` + gatewayActiveAccount
+	args := []any{newID(), scope, gatewayAccountQuota, in.Amount, in.Unit, now(), in.ProviderID, in.AccountID}
+	if in.CredentialID != "" {
+		query = insert + `json_object('remaining',?,'unit',?,'credential_version',
+			(SELECT COALESCE(MAX(v.version),0) FROM credential_secret_versions v
+			 WHERE v.provider_id=c.provider_id AND v.account_id=c.account_id AND v.credential_id=c.id)),?
+			FROM credentials c WHERE c.provider_id=? AND c.account_id=? AND c.id=? AND c.role='INFERENCE'`
+		args[2] = gatewayCredentialQuota
+		args = append(args, in.CredentialID)
+	}
+	result, err := s.Store.DB.ExecContext(r.Context(), query, args...)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
 	if n, _ := result.RowsAffected(); n != 1 {
-		http.Error(w, "account not found", 404)
+		http.Error(w, "management item missing", 404)
 		return
 	}
 	jsonOK(w, 200, map[string]bool{"saved": true})

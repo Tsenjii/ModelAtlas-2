@@ -2,7 +2,7 @@
 
 const management = {
   groups: [], providers: [], provider: null, accounts: [], credentials: [],
-  checkins: null, account: null, connection: null, align: null
+  checkins: null, account: null, connection: null, align: null, quotaScope: null
 };
 const operationNames = {
   CHAT_COMPLETIONS: "Chat Completions", RESPONSES: "Responses", ANTHROPIC_MESSAGES: "Messages",
@@ -10,9 +10,99 @@ const operationNames = {
   AUDIO: "語音轉寫", AUDIO_SPEECH: "語音合成", GEMINI_SPEECH: "Gemini 語音",
   EMBEDDINGS: "嵌入", RERANK: "重排", CUSTOM: "自訂端點"
 };
-let groupRead, offerRead, providerRead, detailRead, historyRead;
+let groupRead, offerRead, providerRead, detailRead;
 let offerBatch = null;
 let singleOfferTests = 0;
+
+const removeConnectionImpact = "已儲存的分發路由會同步移除。沒有其他路由的公開模型會停用。實測與用量紀錄會保留。";
+
+function deleteButton(label, handler, iconOnly = true) {
+  const node = button(label, handler, {glyph: "trash", iconOnly});
+  node.classList.add("danger-button");
+  return node;
+}
+
+function confirmRemoval(title, item, impact, data, after) {
+  const dialog = $("remove-dialog");
+  const form = $("remove-form");
+  const submitButton = form.querySelector("button[type='submit']");
+  const cancel = $("cancel-removal");
+  $("remove-title").textContent = title;
+  $("remove-item").textContent = item;
+  $("remove-description").textContent = impact;
+  form.onsubmit = event => {
+    event.preventDefault();
+    void action(submitButton, async () => {
+      cancel.disabled = true;
+      try {
+        await api("/gateway/remove", {...data, confirm: true});
+      } finally {
+        cancel.disabled = false;
+      }
+      dialog.close();
+      try {
+        await after();
+        notice("已刪除。");
+      } catch (error) {
+        notice("已刪除，重新整理畫面時遇到問題。 " + error.message, true);
+      }
+    });
+  };
+  dialog.showModal();
+}
+$("remove-dialog").addEventListener("cancel", event => {
+  if ($("cancel-removal").disabled) event.preventDefault();
+});
+
+function pruneDraft(predicate) {
+  state.routes = state.routes.filter(route => !predicate(route));
+  if (!state.routes.length) state.routeGroup = null;
+  renderRoutes();
+}
+function removeOffer(v) {
+  const group = state.modelGroup;
+  confirmRemoval("刪除連線", v.provider + " / " + v.account + " / " + v.credential + " / " + v.model_id,
+    "只移除這條模型連線。 " + removeConnectionImpact,
+    {kind: "CONNECTION", ...selection(v)}, async () => {
+      $("offer-detail").close();
+      pruneDraft(route => scopeID(route) === scopeID(v));
+      if (state.modelGroup !== group) return;
+      const next = await api("/gateway/model-groups?" + new URLSearchParams({id: group.id, limit: 1}));
+      if (state.modelGroup !== group) return;
+      state.modelGroup = next.models[0] ?? null;
+      state.offers = [];
+      await showModelView();
+    });
+}
+$("remove-model-group").addEventListener("click", () => {
+  const group = state.modelGroup;
+  if (!group || offerBatch?.running || singleOfferTests) return;
+  const known = new Set(state.offers.map(scopeID));
+  confirmRemoval("刪除整組模型", group.name,
+    "會移除各家供應商在這組模型下的連線，包含已封存的連線。 " + removeConnectionImpact,
+    {kind: "MODEL_GROUP", canonical_id: group.id}, async () => {
+      const onlyThisGroup = state.routeGroup === group.id && !$("public-model").readOnly;
+      pruneDraft(route => onlyThisGroup || known.has(scopeID(route)));
+      state.modelGroup = null;
+      state.offers = [];
+      await showModelView();
+    });
+});
+function removeProviderItem(kind, label, scope) {
+  const title = {PROVIDER: "刪除供應商", ACCOUNT: "刪除帳戶", CREDENTIAL: "刪除上游 Key"}[kind];
+  const impact = kind === "CREDENTIAL" ? "這把 Key、已儲存的舊版本和相關模型連線會被刪除。"
+    : "會刪除這裡的所有上游 Key 和相關模型連線。";
+  confirmRemoval(title, label, impact + " " + removeConnectionImpact, {kind, ...scope}, async () => {
+    pruneDraft(route => route.provider_id === scope.provider_id &&
+      (!scope.account_id || route.account_id === scope.account_id) &&
+      (!scope.credential_id || route.credential_id === scope.credential_id));
+    if (kind === "PROVIDER" && state.providerID === scope.provider_id) {
+      state.providerID = "";
+      if (state.modelProvider?.id === scope.provider_id) state.modelProvider = null;
+    }
+    await showProviderView();
+  });
+}
 
 function offerTestable(v) {
   return ["CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE"].includes(v.operation);
@@ -135,9 +225,10 @@ async function showModelView() {
   $("model-index").hidden = !!group;
   $("model-detail").hidden = !group;
   if (group) {
-    $("model-title").textContent = group.name;
+    $("model-title").replaceChildren(modelIcon(group.id, group.name), el("span", group.name));
     $("model-canonical").textContent = group.id === group.name ? "" : group.id;
     $("route-pick").hidden = true;
+    $("remove-model-group").hidden = true;
     if (!state.offers.length) {
       $("offer-count").textContent = "";
       $("offer-list").replaceChildren(empty("讀取連線中…"));
@@ -173,7 +264,7 @@ async function loadGroups(reset) {
     tile.className = "model-tile";
     const label = el("span", undefined, "model-tile-label");
     label.append(el("strong", group.name), el("small", group.providers + " 家供應商 · " + group.connections + " 個連線"));
-    tile.append(itemIcon("model"), label, icon("chevron"));
+    tile.append(modelIcon(group.id, group.name), label, icon("chevron"));
     return tile;
   });
   $("model-list").replaceChildren(...(nodes.length ? nodes : [empty("這裡會列出你的模型。可新增供應商、同步目錄或手動加入模型 ID。")]));
@@ -211,85 +302,6 @@ function performanceCells(p) {
     metric("生成速度", p.tps == null ? "—" : number(p.tps, 1) + " tok/s", "", "bolt"),
     metric("成功率", ratio(p.successes, p.samples), p.samples ? p.successes + " / " + p.samples + " 次" : "未實測", "check"));
   return metrics;
-}
-
-function renderOfferTrend(samples) {
-  const trend = $("offer-trend");
-  const label = el("label", "趨勢指標");
-  const metric = el("select");
-  const chart = el("div");
-  const measured = samples.filter(sample => !["RUNNING", "CANCELLED", "INTERRUPTED"].includes(sample.outcome));
-  metric.append(option("ttft_ms", "首字等待"), option("tps", "生成速度"),
-    option("latency_ms", "總延遲"), option("success", "成功／失敗"));
-  label.append(metric);
-  trend.replaceChildren(el("h3", "實測趨勢"), label, chart);
-  const draw = () => {
-    const binary = metric.value === "success";
-    chart.replaceChildren();
-    metricPlot(chart, {
-      title: metric.selectedOptions[0].textContent,
-      unit: binary ? "" : metric.value === "tps" ? "tok/s" : "ms",
-      binary,
-      points: measured.map(sample => ({
-        at: sample.at,
-        value: binary ? Number(sample.outcome === "SUCCESS") : sample[metric.value],
-        note: (statuses[sample.outcome] || sample.outcome) + (sample.http_status ? " · HTTP " + sample.http_status : "")
-      })),
-      description: "這條連線最近 " + samples.length + " 筆紀錄。選取圖點可查看時間和數值。",
-      allowExport: false,
-      appendAction(parent, text, handler) {
-        const node = button(text, handler);
-        parent.append(node);
-        return node;
-      }
-    });
-  };
-  metric.addEventListener("change", draw);
-  draw();
-  trend.hidden = false;
-}
-
-async function openOfferDetail(v) {
-  historyRead?.abort();
-  const read = new AbortController();
-  historyRead = read;
-  const p = v.performance;
-  const dialog = $("offer-detail");
-  const history = $("offer-history");
-  $("offer-trend").hidden = true;
-  $("offer-trend").replaceChildren();
-  renderDetailFields($("offer-detail-fields"), [
-    ["供應商", v.provider], ["帳戶", v.account], ["Key 標籤", v.credential], ["群組", v.group || "預設"],
-    ["上游模型 ID", v.model_id], ["模型歸類", v.canonical_id], ["端點", v.endpoint],
-    ["連線狀態", v.enabled ? "可用" : "停用或不可用"],
-    ["近 7 天成功率", p.samples ? ratio(p.successes, p.samples) + " · " + p.successes + " / " + p.samples + " 次" : "未實測"],
-    ["平均首位元組", delay(p.ttfb_ms)], ["平均首字等待", delay(p.ttft_ms)], ["平均總延遲", delay(p.latency_ms)],
-    ["平均生成速度", p.tps == null ? "—" : number(p.tps, 1) + " tok/s"]
-  ]);
-  history.replaceChildren(empty("讀取連線紀錄中…"));
-  dialog.showModal();
-  try {
-    const samples = await api("/gateway/offering-history?" + new URLSearchParams(selection(v)), undefined, read.signal);
-    if (historyRead !== read || !dialog.open) return;
-    if (samples.length) renderOfferTrend(samples);
-    const timestamp = new Intl.DateTimeFormat("zh-TW", {dateStyle: "short", timeStyle: "medium"});
-    const sources = {GATEWAY: "分發請求", GATEWAY_TEST: "模型實測", MANUAL_TEST: "模型實測", CHAT: "工作區對話"};
-    const rows = samples.map(sample => {
-      const row = el("article", undefined, "history-sample");
-      const heading = el("header", undefined, "section-inline");
-      heading.append(el("strong", timestamp.format(sample.at)), usageResult(sample));
-      const fields = el("dl", undefined, "detail-fields");
-      renderDetailFields(fields, [["來源", sources[sample.source] || sample.source], ["首位元組", delay(sample.ttfb_ms)],
-        ["首字等待", delay(sample.ttft_ms)], ["總延遲", delay(sample.latency_ms)],
-        ["生成速度", sample.tps == null ? "—" : number(sample.tps, 1) + " tok/s"],
-        ["輸入 / 輸出 Token", number(sample.input_tokens) + " / " + number(sample.output_tokens)]]);
-      row.append(heading, fields);
-      return row;
-    });
-    history.replaceChildren(...(rows.length ? rows : [empty("這條連線還沒有紀錄。")]));
-  } catch (error) {
-    if (historyRead === read && dialog.open && error.name !== "AbortError") history.replaceChildren(empty(error.message));
-  }
 }
 
 function renderOffers() {
@@ -338,11 +350,12 @@ function renderOffers() {
     }, {glyph: "tag"});
     const details = identity(v.provider, [[v.account, v.credential, v.group].filter(Boolean).join(" · "),
       v.model_id + " · " + (operationNames[v.operation] || v.operation), v.enabled ? "" : "連線停用或不可用"]);
-    const history = button("連線詳情", () => openOfferDetail(v), {glyph: "info", iconOnly: true});
+    const history = button("連線詳情", () => openOfferDetail(v), {glyph: "info"});
     row.append(details, performanceCells(v.performance), controls(probe, history, choose, align));
     return row;
   });
   const group = state.modelGroup;
+  $("remove-model-group").hidden = !state.offers.length;
   $("route-pick").hidden = !state.offers.some(v => v.operation === "CHAT_COMPLETIONS");
   $("route-pick").setAttribute("aria-pressed", String(state.routePicking));
   $("offer-count").textContent = group.providers + " 家供應商 · " + group.connections + " 個連線";
@@ -362,7 +375,7 @@ function quotaValue(q) {
   return "剩餘待確認";
 }
 function quotaSource(q) {
-  if (q.role === "ACCOUNT") return q.account + " · 手動";
+  if (q.source === "MANUAL") return [q.account, q.credential, "手動"].filter(Boolean).join(" · ");
   if (q.role === "ACCOUNT_PAT") return q.account + " · 站方帳戶";
   return q.account + " / " + q.credential;
 }
@@ -477,6 +490,19 @@ function openAccountDialog(account, kind) {
   $(kind + "-form").reset();
   $(kind + "-dialog").showModal();
 }
+function openQuota(scope, quota, label) {
+  management.quotaScope = scope;
+  const form = $("quota-form");
+  form.reset();
+  $("quota-dialog-title").textContent = scope.credential_id ? "設定 Key 額度" : "記錄帳戶額度";
+  $("quota-scope").textContent = label + " · 手動填寫，可隨時調整。";
+  $("clear-manual-quota").hidden = !quota;
+  if (quota) {
+    form.elements.remaining.value = quota.remaining;
+    form.elements.unit.value = quota.unit;
+  }
+  $("quota-dialog").showModal();
+}
 function quotaDetail(q) {
   const extras = [q.used === "" ? "" : "已用 " + q.used, q.granted === "" ? "" : "總額 " + q.granted].filter(Boolean);
   return [quotaValue(q), ...extras, new Date(q.observed_at).toLocaleString("zh-TW")].join(" · ");
@@ -484,12 +510,16 @@ function quotaDetail(q) {
 function renderCredential(p, c) {
   const v = {...c, credential_id: c.id};
   const row = el("article", undefined, "entry compact-entry");
-  const quota = p.quotas.find(q => q.credential_id === c.id && q.account_id === c.account_id);
+  const quotas = p.quotas.filter(q => q.credential_id === c.id && q.account_id === c.account_id);
+  const quota = quotas.find(q => q.source !== "MANUAL");
+  const manual = quotas.find(q => q.source === "MANUAL");
   const inference = c.role === "INFERENCE";
   const anonymous = inference && (c.auth_mode || p.auth_mode) === "NONE";
   row.append(identity(c.label || "Key", [
     [inference ? "推論 Key" : "帳戶 PAT", c.enabled ? "已啟用" : "已停用", c.group].filter(Boolean).join(" · "),
-    c.base_url !== p.base_url ? c.base_url : "", c.note, quota ? quotaDetail(quota) : ""
+    c.base_url !== p.base_url ? c.base_url : "", c.note,
+    manual ? "手動額度 · " + quotaDetail(manual) : "",
+    quota ? "站方額度 · " + quotaDetail(quota) : ""
   ]));
   const actions = controls();
   if (inference) {
@@ -500,7 +530,7 @@ function renderCredential(p, c) {
     }, {glyph: "refresh"});
     const add = button("手動加模型", () => openConnectionDialog(v, "model"), {glyph: "plus"});
     sync.disabled = add.disabled = !c.enabled;
-    actions.append(sync, add);
+    actions.append(sync, add, button("設定 Key 額度", () => openQuota(connectionFields(v), manual, c.label), {glyph: "wallet"}));
   }
   if (!anonymous) {
     const quotaButton = button("更新額度", async () => {
@@ -509,21 +539,25 @@ function renderCredential(p, c) {
       notice("已讀取站方額度。");
     }, {glyph: "wallet"});
     quotaButton.disabled = !c.enabled;
-    actions.append(quotaButton, button("換 Key", () => openConnectionDialog(v, "key"), {glyph: "key"}));
+    actions.append(quotaButton, button("換 Key", () => openConnectionDialog(v, "key"), {glyph: "key"}), credentialCopyButton(v));
   }
   actions.append(button(c.enabled ? "停用" : "啟用", async () => {
     await api("/credentials/toggle", {provider_id: p.id, account_id: c.account_id, ids: [c.id], enabled: !c.enabled});
     await loadProvider();
     notice(c.enabled ? "Key 已停用。" : "Key 已啟用。");
   }, {glyph: c.enabled ? "pause" : "play"}));
+  actions.append(deleteButton("刪除上游 Key", () => removeProviderItem("CREDENTIAL", c.label, connectionFields(v))));
   row.append(actions);
   return row;
 }
 function renderAccount(p, a) {
   const card = el("div", undefined, "card");
   const heading = el("div", undefined, "section-inline");
+  const manual = p.quotas.find(q => q.role === "ACCOUNT" && q.account_id === a.id && q.source === "MANUAL");
+  const scope = {provider_id: p.id, account_id: a.id};
   heading.append(el("h2", a.label || "帳戶"), controls(button("新增 Key", () => openAccountDialog(a, "credential"), {glyph: "plus"}),
-    button("記錄額度", () => openAccountDialog(a, "quota"), {glyph: "wallet"})));
+    button("記錄額度", () => openQuota(scope, manual, a.label), {glyph: "wallet"}),
+    deleteButton("刪除帳戶", () => removeProviderItem("ACCOUNT", a.label, scope))));
   card.append(heading);
   for (const q of p.quotas.filter(q => q.account_id === a.id && q.role !== "INFERENCE")) {
     card.append(el("p", quotaSource(q) + " · " + quotaDetail(q), "quota-line"));
@@ -570,6 +604,7 @@ function renderProvider() {
   }, {glyph: "calendar"}));
   const link = httpsLink("開啟網站", p.website);
   if (link) tools.append(link);
+  tools.append(deleteButton("刪除供應商", () => removeProviderItem("PROVIDER", p.name, {provider_id: p.id})));
   profile.append(tools);
   const accounts = el("div", undefined, "section-inline");
   accounts.append(el("h2", "帳戶與 Key"), button("新增帳戶", () => openAccountDialog(null, "account"), {glyph: "plus"}));
@@ -625,12 +660,6 @@ $("offer-batch-dialog").addEventListener("close", () => {
   if ($("offer-batch-dialog").open) return;
   offerBatch = null;
   $("offer-batch-list").replaceChildren();
-});
-$("offer-detail").addEventListener("close", () => {
-  if ($("offer-detail").open) return;
-  historyRead?.abort();
-  $("offer-trend").replaceChildren();
-  $("offer-history").replaceChildren();
 });
 $("route-pick").addEventListener("click", () => {
   state.routePicking = !state.routePicking;
@@ -688,10 +717,16 @@ submit("credential-form", async form => {
   $("credential-dialog").close();
   await loadProvider();
 });
-submit("quota-form", async form => {
-  await api("/gateway/quota", {...Object.fromEntries(new FormData(form)), provider_id: management.provider.id, account_id: management.account.id});
-  $("quota-dialog").close();
-  await loadProvider();
-});
+async function saveManualQuota(data) {
+  const scope = management.quotaScope;
+  await api("/gateway/quota", {...scope, ...data});
+  if (management.quotaScope === scope) $("quota-dialog").close();
+  if (state.providerID === scope.provider_id) await loadProvider();
+  notice(data.clear ? "已清除手動額度。" : "已儲存手動額度。");
+}
+submit("quota-form", form => saveManualQuota(Object.fromEntries(new FormData(form))));
+$("clear-manual-quota").addEventListener("click", event => action(event.currentTarget, () => {
+  if (window.confirm("要清除這筆手動額度嗎？站方回報仍會保留。")) return saveManualQuota({clear: true});
+}));
 
 action(null, refresh);

@@ -17,6 +17,9 @@ var gatewayCSS string
 //go:embed gateway_ui/app.js
 var gatewayJS string
 
+//go:embed gateway_ui/connection.js
+var gatewayConnectionJS string
+
 //go:embed gateway_ui/management.js
 var gatewayManagementJS string
 
@@ -33,7 +36,7 @@ var metricPlotJS string
 var gatewayMarkSVG string
 
 var gatewayStyleAsset = staticAsset{raw: gatewayCSS, revalidate: true}
-var gatewayScriptAsset = staticAsset{raw: gatewayJS + "\n" + gatewayConsoleJS + "\n" + metricPlotJS + "\n" + gatewayManagementJS + "\n" + gatewayUpdateJS, revalidate: true}
+var gatewayScriptAsset = staticAsset{raw: gatewayJS + "\n" + gatewayConsoleJS + "\n" + metricPlotJS + "\n" + gatewayConnectionJS + "\n" + gatewayManagementJS + "\n" + gatewayUpdateJS, revalidate: true}
 var gatewayMarkAsset = staticAsset{raw: gatewayMarkSVG, revalidate: true}
 
 func (s *Server) gatewayPage(next http.HandlerFunc) http.HandlerFunc {

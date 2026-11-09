@@ -73,6 +73,7 @@ func (s *Server) gatewayAdminRoutes() *http.ServeMux {
 	admin.HandleFunc("GET /status", s.status)
 	admin.HandleFunc("GET /system", s.systemStatus)
 	admin.HandleFunc("GET /gateway/providers", s.gatewayProviders)
+	admin.HandleFunc("POST /gateway/remove", s.gatewayRemove)
 	admin.HandleFunc("POST /gateway/provider", s.gatewaySaveProvider)
 	admin.HandleFunc("POST /gateway/quota", s.gatewaySaveQuota)
 	admin.HandleFunc("POST /gateway/quota/refresh", s.gatewayRefreshQuota)
@@ -82,6 +83,9 @@ func (s *Server) gatewayAdminRoutes() *http.ServeMux {
 	admin.HandleFunc("POST /gateway/upstream-model", s.gatewayAddUpstreamModel)
 	admin.HandleFunc("GET /gateway/offerings", s.gatewayOfferings)
 	admin.HandleFunc("GET /gateway/offering-history", s.gatewayOfferHistory)
+	admin.HandleFunc("GET /gateway/offering-performance", s.gatewayOfferPerformance)
+	admin.HandleFunc("GET /gateway/offering-site", s.gatewayOfferSite)
+	admin.HandleFunc("POST /gateway/offering-site", s.gatewayOfferSite)
 	admin.HandleFunc("GET /gateway/model-groups", s.gatewayModelGroups)
 	admin.HandleFunc("POST /gateway/model-group", s.gatewayAlignModel)
 	admin.HandleFunc("POST /gateway/probe", s.gatewayProbe)
@@ -120,6 +124,7 @@ func (s *Server) gatewayWebRoutes(root *http.ServeMux, admin *http.ServeMux, wor
 	root.HandleFunc("GET /v1/models", s.gatewayPublicModels)
 	root.HandleFunc("POST /v1/chat/completions", s.gatewayChat)
 	// Web sign-in and programmatic credentials authorize separate entry points.
+	root.Handle("POST /ui/api/gateway/credential/copy", s.gatewayBrowserAPI(http.HandlerFunc(s.gatewayCopyCredential)))
 	root.Handle("/ui/api/", s.gatewayBrowserAPI(http.StripPrefix("/ui/api", admin)))
 	s.gatewayUIRoutes(root, workspace)
 }
@@ -209,7 +214,7 @@ func (s *Server) gatewayPublicModels(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) gatewayAdminModels(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,routes_json,enabled,created_at FROM gateway_models ORDER BY id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,routes_json,enabled,created_at FROM gateway_models WHERE "+gatewayLivePublicModel+" ORDER BY id")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -260,10 +265,17 @@ func (s *Server) gatewaySaveModel(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	raw, _ := json.Marshal(v.Routes)
-	_, err = s.Store.DB.ExecContext(ctx, `INSERT INTO gateway_models(id,routes_json,enabled,created_at) VALUES(?,?,?,?)
-		ON CONFLICT(id) DO UPDATE SET routes_json=excluded.routes_json,enabled=excluded.enabled`, v.ID, string(raw), v.Enabled, now())
+	result, err := s.Store.DB.ExecContext(ctx, `INSERT INTO gateway_models(id,routes_json,enabled,created_at)
+		SELECT ?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM gateway_removals
+			WHERE kind='PUBLIC_MODEL' AND provider_id='' AND account_id='' AND item_id=?)
+		AND NOT EXISTS(SELECT 1 FROM json_each(?) route WHERE `+gatewayRemovedRoute+`)
+		ON CONFLICT(id) DO UPDATE SET routes_json=excluded.routes_json,enabled=excluded.enabled`, v.ID, string(raw), v.Enabled, now(), v.ID, string(raw))
 	if err != nil {
 		http.Error(w, "database error", 500)
+		return
+	}
+	if n, _ := result.RowsAffected(); n != 1 {
+		http.Error(w, "public ID or upstream route removed", 409)
 		return
 	}
 	jsonOK(w, 200, map[string]string{"id": v.ID})

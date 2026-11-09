@@ -29,23 +29,27 @@ const gatewayPreferredModelIDSQL = `NULLIF(CASE WHEN json_extract(md.metadata_js
 
 // Match the existing metadata precedence. The group is an index for reading
 // measurements, while inference and publication still use exact selections.
-const gatewayCatalogSQL = `WITH scopes AS (
+const gatewayCatalogBaseSQL = `WITH scopes AS (
 	SELECT m.provider_id,m.account_id,m.credential_id,m.model_id,m.group_id,m.endpoint,
 		p.name AS provider,a.label AS account,c.label AS credential,c.enabled,
+		COALESCE(o.base_url,p.base_url) AS base_url,c.encrypted_key<>'' AS has_api_key,
 		COALESCE(e.operation,m.endpoint) AS operation,
 		COALESCE(NULLIF(d.display_name,''),m.model_id) AS display_name,
 		COALESCE(` + gatewayPreferredModelIDSQL + `,atlas_canonical_id(m.model_id)) AS canonical_id
 	FROM my_models m JOIN providers p ON p.id=m.provider_id
 	JOIN accounts a ON a.provider_id=m.provider_id AND a.id=m.account_id
 	JOIN credentials c ON c.provider_id=m.provider_id AND c.account_id=m.account_id AND c.id=m.credential_id
+	LEFT JOIN credential_origins o ON o.provider_id=m.provider_id AND o.account_id=m.account_id AND o.credential_id=m.credential_id
 	LEFT JOIN models d ON d.provider_id=m.provider_id AND d.id=m.model_id
 	LEFT JOIN endpoint_profiles e ON e.provider_id=m.provider_id AND e.id=m.endpoint
 	LEFT JOIN model_metadata md ON md.provider_id=m.provider_id AND md.model_id=m.model_id
 	LEFT JOIN knowledge_active ka ON ka.kind='MODEL_ALIAS_RULE' AND ka.subject=m.provider_id||'/'||m.model_id
 	LEFT JOIN knowledge_versions k ON k.id=ka.version_id
 	LEFT JOIN membership_state ms ON ms.scope_key=atlas_scope_key(m.provider_id,m.account_id,m.credential_id,m.model_id,m.group_id,m.endpoint)
-	WHERE c.role='INFERENCE' AND COALESCE(ms.state,'ACTIVE')='ACTIVE'
-)`
+	WHERE c.role='INFERENCE'`
+
+const gatewayCatalogSQL = gatewayCatalogBaseSQL + ` AND COALESCE(ms.state,'ACTIVE')='ACTIVE')`
+const gatewayAllCatalogSQL = gatewayCatalogBaseSQL + `)`
 
 type gatewayModelGroup struct {
 	ID          string `json:"id"`
@@ -60,10 +64,10 @@ func (s *Server) gatewayModelGroups(w http.ResponseWriter, r *http.Request) {
 	term, provider := strings.TrimSpace(q.Get("q")), q.Get("provider_id")
 	rows, err := s.Store.DB.QueryContext(r.Context(), gatewayCatalogSQL+`
 		SELECT canonical_id,COALESCE(MIN(NULLIF(display_name,model_id)),MIN(model_id)) AS name,COUNT(DISTINCT provider_id),COUNT(*)
-		FROM scopes GROUP BY canonical_id
+		FROM scopes WHERE (?='' OR canonical_id=?) GROUP BY canonical_id
 		HAVING (?='' OR MAX(provider_id=?)=1) AND
 			(MAX(instr(lower(display_name||' '||model_id||' '||provider),lower(?)))>0 OR instr(lower(canonical_id),atlas_canonical_id(?))>0)
-		ORDER BY name COLLATE NOCASE,canonical_id LIMIT ? OFFSET ?`, provider, provider, term, term, limit+1, offset)
+		ORDER BY name COLLATE NOCASE,canonical_id LIMIT ? OFFSET ?`, q.Get("id"), q.Get("id"), provider, provider, term, term, limit+1, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

@@ -395,3 +395,19 @@ dialog.side-sheet { position: fixed; inset: 14px 14px 14px auto; margin: 0; widt
   .summary-grid .card { padding: 8px; }
   .brand strong { font-size: .91rem; }
 }
+
+html[data-text-size="compact"] { font-size: 93.75%; }
+html[data-text-size="large"] { font-size: 112.5%; }
+html[data-motion="reduced"] main > section:not([hidden]) { animation: none; }
+.model-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.item-icon.brand-icon { color: var(--ink); }
+.item-icon.brand-icon svg { width: 21px; height: 21px; fill: currentColor; stroke: none; }
+#offer-site-data,#offer-local-summary { min-width: 0; }
+#offer-window-form { grid-template-columns: minmax(0,1fr); }
+
+#offer-actions,#offer-site > .row-actions,#offer-site-data > .row-actions { justify-content: flex-start; }
+#offer-detail [aria-pressed="true"] { background: var(--accent); color: var(--primary); }
+#offer-custom-range { display: grid; gap: 8px; }
+#offer-custom-range input { width: 100%; }
+#remove-item { font-weight: 650; overflow-wrap: anywhere; }
+#offer-local-status:empty,#offer-site-status:empty { display: none; }

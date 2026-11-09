@@ -121,6 +121,7 @@ const fs = require("node:fs/promises");
     await tile.waitFor();
     assert.equal(await tile.count(), 1, "same model appeared more than once");
     assert((await tile.innerText()).includes("2 家供應商 · 2 個連線"));
+    assert.equal(await tile.locator(".brand-icon use").getAttribute("href"), "#icon-brand-deepseek");
     await tile.click();
     await page.waitForFunction(() => document.querySelectorAll("#offer-list article").length === 2);
     for (const name of ["潮汐 API", "曙光 API"]) {
@@ -265,6 +266,42 @@ const fs = require("node:fs/promises");
     await history.getByText("分發請求", { exact: true }).waitFor();
     assert.equal(await history.locator(".history-sample").count(), 2);
     await history.getByText("上游限流 · 429", { exact: true }).waitFor();
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], {origin});
+    await history.getByRole("button", {name: "複製模型 ID", exact: true}).click();
+    await history.getByText("已複製", {exact: true}).waitFor();
+    assert(await page.evaluate(async () => await navigator.clipboard.readText() === "deepseek-v4.1-flash"), "copied the wrong model ID");
+    const keyCopied = page.waitForResponse(response => response.url().endsWith("/gateway/credential/copy") && response.ok());
+    await history.getByRole("button", {name: "複製 API Key", exact: true}).click();
+    await keyCopied;
+    await history.getByText("已複製上游 Key", {exact: true}).waitFor();
+    assert(await page.evaluate(async expected => await navigator.clipboard.readText() === expected, process.env.MODELATLAS_TEST_UPSTREAM_A),
+      "copied an API Key from the wrong connection");
+    assert.equal(await page.locator("#upstream-copy-value").inputValue(), "", "plaintext persisted in the UI after clipboard success");
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, "clipboard", {configurable: true, value: undefined});
+    });
+    await history.getByRole("button", {name: "複製 API Key", exact: true}).click();
+    const copyFallback = page.locator("#upstream-copy-dialog");
+    await copyFallback.getByRole("heading", {name: "複製上游 Key"}).waitFor();
+    assert(await copyFallback.getByLabel("上游 Key", {exact: true}).inputValue() === process.env.MODELATLAS_TEST_UPSTREAM_A,
+      "manual clipboard fallback selected the wrong value");
+    await copyFallback.getByRole("button", {name: "關閉", exact: true}).click();
+    await page.waitForFunction(() => document.querySelector("#upstream-copy-value").value === "");
+    await page.evaluate(() => { delete navigator.clipboard; });
+
+    await history.getByRole("button", {name: "站方效能", exact: true}).click();
+    const official = history.getByRole("region", {name: "站方效能", exact: true});
+    await official.locator(".metrics").getByText("81 ms", {exact: true}).waitFor();
+    await official.locator(".metrics").getByText("98.7%", {exact: true}).waitFor();
+    await official.getByLabel("站方群組").selectOption("standard");
+    await official.locator(".metrics").getByText("82 ms", {exact: true}).waitFor();
+    await official.getByLabel("站方趨勢指標").selectOption("success_rate");
+    await official.getByRole("group", {name: /^成功率/}).waitFor();
+    await official.getByLabel("站方時間範圍").selectOption("1");
+    await official.locator(".metrics").getByText("81 ms", {exact: true}).waitFor();
+    await assertLayout();
+    assert.equal(await history.locator("#offer-local").isVisible(), false);
+    await history.getByRole("button", {name: "我的實測", exact: true}).click();
     const trend = history.getByRole("region", {name: "實測趨勢"});
     const trendMetric = trend.getByLabel("趨勢指標");
     const selectedPoint = trend.locator(".plot-selected");
@@ -282,6 +319,11 @@ const fs = require("node:fs/promises");
     await history.getByText("分發請求", { exact: true }).waitFor();
     assert.equal(await history.locator(".history-sample").count(), 2);
     assert.equal(await history.getByText("上游限流 · 429", { exact: true }).count(), 0);
+    await history.getByRole("button", {name: "站方效能", exact: true}).click();
+    await official.locator(".metrics").getByText("197 ms", {exact: true}).waitFor();
+    await history.getByRole("button", {name: "我的實測", exact: true}).click();
+    await history.getByLabel("實測時間範圍").selectOption("24h");
+    await history.locator("#offer-local-status").getByText("讀取實測效能中…", {exact: true}).waitFor({state: "hidden"});
     assert.equal(await trendMetric.inputValue(), "ttft_ms");
     await trend.getByRole("group", {name: /^首字等待/}).waitFor();
     await trendMetric.selectOption("tps");
@@ -398,7 +440,35 @@ const fs = require("node:fs/promises");
     assert.deepEqual(rejectedInference, {status: 404, body: "manual conversation missing"});
     await page.getByRole("link", { name: "回管理首頁", exact: true }).click();
     await page.waitForURL(workspace + "/");
-    await page.locator("#model-list").getByRole("button", { name: /DeepSeek 4\.1 Flash/ }).waitFor();
+    await page.locator("#model-list").getByRole("button", { name: /DeepSeek 4\.1 Flash/ }).click();
+    await offering("潮汐 API").getByRole("button", {name: "連線詳情", exact: true}).click();
+    await history.getByRole("button", {name: "刪除連線", exact: true}).click();
+    const remove = page.locator("#remove-dialog");
+    await remove.getByText(/潮汐 API/).waitFor();
+    await remove.getByRole("button", {name: "取消", exact: true}).click();
+    await offering("潮汐 API").waitFor();
+    await history.getByRole("button", {name: "刪除連線", exact: true}).click();
+    await assertLayout();
+    await remove.getByRole("button", {name: "確認刪除", exact: true}).click();
+    await offering("潮汐 API").waitFor({state: "detached"});
+    await offering("曙光 API").waitFor();
+    await page.locator("#offer-count").getByText("1 家供應商 · 1 個連線", {exact: true}).waitFor();
+
+    await go("供應商");
+    await page.locator("#provider-list").getByRole("button", {name: "管理 潮汐 API", exact: true}).click();
+    await provider.getByRole("button", {name: "設定 Key 額度", exact: true}).click();
+    const quota = page.locator("#quota-form");
+    await quota.getByLabel("剩餘額度", {exact: true}).fill("123.45");
+    await quota.getByLabel("單位", {exact: true}).selectOption("TWD");
+    await quota.getByRole("button", {name: "儲存額度", exact: true}).click();
+    await provider.getByText("手動額度 · 123.45 TWD", {exact: false}).waitFor();
+    await provider.getByRole("button", {name: "設定 Key 額度", exact: true}).click();
+    assert.equal(await quota.getByLabel("剩餘額度", {exact: true}).inputValue(), "123.45");
+    await quota.getByLabel("剩餘額度", {exact: true}).fill("0");
+    await quota.getByRole("button", {name: "儲存額度", exact: true}).click();
+    await provider.getByText("手動額度 · 0 TWD", {exact: false}).waitFor();
+    await provider.getByText("站方額度 · 0 站方額度", {exact: false}).waitFor();
+    await assertLayout();
     await page.getByRole("button", { name: "設定", exact: true }).click();
     await page.getByRole("button", { name: "安裝新版", exact: true }).click();
     await page.getByText("正在備份、試跑新版並重啟。服務回來後請重新登入。", { exact: true }).waitFor();
@@ -408,7 +478,8 @@ const fs = require("node:fs/promises");
       accountCheckin: true, streamedFailover: true, narrowDarkLargeText: true, activityCharts: true, keyPolicy: true,
       scopedOfferHistory: true, batchProbes: true, batchStop: true, batchRateLimit: true,
       providerCardHitArea: true, scopedKeyUsage: true, batchSelectAll: true, dialogCopyFeedback: true, browserSignIn: true,
-      sharedWorkspace: true, settingsUpdate: true, connectionTrend: true }));
+      sharedWorkspace: true, settingsUpdate: true, connectionTrend: true, scopedSitePerformance: true,
+      copiedUpstreamIDAndKey: true, scopedRemoval: true, manualKeyQuota: true }));
   } finally {
     await client.dispose();
     await browser.close();

@@ -63,6 +63,10 @@ function renderKeys() {
       revoke.classList.add("danger-button");
       actions.append(pause, revoke);
     }
+    actions.append(deleteButton("刪除分發 Key", () => confirmRemoval(
+      "刪除分發 Key", k.label, "這把分發 Key 會立即失效。用量仍可在歷史中查詢。",
+      {kind: "PUBLIC_KEY", id: k.id}, loadShare
+    )));
     card.append(actions);
     return card;
   });
@@ -116,8 +120,8 @@ function syncUsageKeyFilter() {
   $("usage-key").disabled = $("usage-source").value === "tests";
 }
 async function showUsage(keyID) {
-  if (!keyID) state.keys = await api("/gateway/keys");
-  putOptions($("usage-key"), [["", "全部 Key"], ...state.keys.map(k => [k.id, k.label])]);
+  const keys = await api("/gateway/keys?include_removed=true");
+  putOptions($("usage-key"), [["", "全部 Key"], ...keys.map(k => [k.id, k.label])]);
   if (keyID) {
     $("usage-source").value = "gateway";
     $("usage-key").value = keyID;

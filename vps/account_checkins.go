@@ -39,7 +39,7 @@ func (s *Server) accountCheckinsHTTP(w http.ResponseWriter, r *http.Request) {
  FROM accounts a JOIN providers p ON p.id=a.provider_id
  LEFT JOIN provider_config c ON c.provider_id=a.provider_id
  LEFT JOIN account_checkins x ON x.provider_id=a.provider_id AND x.account_id=a.id AND x.date=?
- WHERE (?='' OR a.provider_id=?) ORDER BY a.provider_id,a.id`, date, provider, provider)
+ WHERE (?='' OR a.provider_id=?) AND `+gatewayActiveAccount+` ORDER BY a.provider_id,a.id`, date, provider, provider)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -104,7 +104,7 @@ func (s *Server) completeAccountCheckin(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var exists int
-	if err = s.Store.DB.QueryRowContext(r.Context(), "SELECT 1 FROM accounts WHERE provider_id=? AND id=?", v.ProviderID, v.AccountID).Scan(&exists); err != nil {
+	if err = s.Store.DB.QueryRowContext(r.Context(), "SELECT 1 FROM accounts a WHERE a.provider_id=? AND a.id=? AND "+gatewayActiveAccount, v.ProviderID, v.AccountID).Scan(&exists); err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "account not found", 422)
 		} else {

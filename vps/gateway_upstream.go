@@ -218,7 +218,9 @@ func (s *Server) gatewayApplyCatalog(w http.ResponseWriter, ctx context.Context,
 			return
 		}
 		scope.ModelID = entry.ID
-		res, err := tx.ExecContext(ctx, "INSERT INTO my_models VALUES(?,?,?,?,?,?,?) ON CONFLICT DO NOTHING", scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, now())
+		res, err := tx.ExecContext(ctx, `INSERT INTO my_models
+			SELECT ?,?,?,?,?,?,? WHERE ?='MANUAL' OR NOT EXISTS(SELECT 1 FROM membership_state WHERE scope_key=? AND state='REMOVED')
+			ON CONFLICT DO NOTHING`, scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, now(), source, scopeKey(scope))
 		if err != nil {
 			http.Error(w, "database error", 500)
 			return
@@ -227,6 +229,12 @@ func (s *Server) gatewayApplyCatalog(w http.ResponseWriter, ctx context.Context,
 		if err != nil || n == 1 && bumpMembership(tx, scope) != nil {
 			http.Error(w, "database error", 500)
 			return
+		}
+		if source == "MANUAL" {
+			if _, err = tx.ExecContext(ctx, "UPDATE membership_state SET state='ACTIVE' WHERE scope_key=? AND state='REMOVED'", scopeKey(scope)); err != nil {
+				http.Error(w, "database error", 500)
+				return
+			}
 		}
 		added += int(n)
 	}
@@ -284,6 +292,8 @@ type gatewayOffering struct {
 	Provider    string             `json:"provider"`
 	Account     string             `json:"account"`
 	Credential  string             `json:"credential"`
+	BaseURL     string             `json:"base_url"`
+	HasAPIKey   bool               `json:"has_api_key"`
 	DisplayName string             `json:"display_name"`
 	Canonical   string             `json:"canonical_id"`
 	Operation   string             `json:"operation"`
@@ -315,7 +325,7 @@ func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
 	id := q.Get("canonical_id")
 	args = append(args, id, id, q.Get("provider_id"), q.Get("provider_id"), q.Get("account_id"), q.Get("account_id"), q.Get("credential_id"), q.Get("credential_id"), q.Get("q"), limit+1, offset)
 	rows, err := s.Store.DB.QueryContext(ctx, gatewayCatalogSQL+` SELECT m.provider_id,m.account_id,m.credential_id,m.model_id,m.group_id,m.endpoint,
-		m.provider,m.account,m.credential,m.display_name,m.canonical_id,m.operation,m.enabled,`+perf+` AS perf
+		m.provider,m.account,m.credential,m.base_url,m.has_api_key,m.display_name,m.canonical_id,m.operation,m.enabled,`+perf+` AS perf
 		FROM scopes m WHERE (?='' OR m.canonical_id=?)
 		AND (?='' OR m.provider_id=?) AND (?='' OR m.account_id=?) AND (?='' OR m.credential_id=?)
 		AND instr(lower(m.model_id||' '||m.display_name||' '||m.provider),lower(?))>0
@@ -328,7 +338,7 @@ func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var v gatewayOffering
 		var raw []byte
-		if err = rows.Scan(&v.ProviderID, &v.AccountID, &v.CredentialID, &v.ModelID, &v.Group, &v.Endpoint, &v.Provider, &v.Account, &v.Credential, &v.DisplayName, &v.Canonical, &v.Operation, &v.Enabled, &raw); err != nil ||
+		if err = rows.Scan(&v.ProviderID, &v.AccountID, &v.CredentialID, &v.ModelID, &v.Group, &v.Endpoint, &v.Provider, &v.Account, &v.Credential, &v.BaseURL, &v.HasAPIKey, &v.DisplayName, &v.Canonical, &v.Operation, &v.Enabled, &raw); err != nil ||
 			raw != nil && json.Unmarshal(raw, &v.Performance) != nil {
 			rows.Close()
 			http.Error(w, "database error", 500)

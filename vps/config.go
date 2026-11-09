@@ -164,7 +164,7 @@ func (s *Server) setConfig(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) provider(ctx context.Context, id string) (Provider, error) {
 	var p Provider
-	err := s.Store.DB.QueryRowContext(ctx, "SELECT id,name,base_url,description,auth_mode FROM providers WHERE id=?", id).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode)
+	err := s.Store.DB.QueryRowContext(ctx, "SELECT p.id,p.name,p.base_url,p.description,p.auth_mode FROM providers p WHERE p.id=? AND "+gatewayActiveProvider, id).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode)
 	return p, err
 }
 func endpointURL(p Provider, c ProviderConfig, kind, model string) (string, error) {

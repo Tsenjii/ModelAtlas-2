@@ -15,6 +15,11 @@ const statuses = {
 };
 const errors = {
   "valid name and HTTPS base URL required": "請填名稱和有效的 HTTPS Base URL。",
+  "public ID or upstream route removed": "這個公開 ID 或其中一條上游路由已刪除。",
+  "management item missing": "找不到這個項目，請重新整理。",
+  "no stored API key": "這條連線沒有儲存可複製的 API Key。",
+  "invalid custom time window": "請選擇有效的開始與結束時間。",
+  "upstream refresh already running or service busy": "目前正在更新或服務忙碌，請稍後再試。",
   "invalid upstream credential": "上游 Key 格式有誤。",
   "upstream connection unavailable": "這個連線目前無法使用，請檢查上游 Key。",
   "upstream changed during discovery; retry": "同步期間連線設定有變更，請重新同步。",
@@ -51,6 +56,19 @@ function itemIcon(name) {
   mark.append(icon(name));
   return mark;
 }
+function modelIcon(...names) {
+  const id = names.join(" ").toLowerCase();
+  const brands = [
+    ["deepseek", /(?:^|[^a-z0-9])deepseek(?=$|[^a-z0-9]|v?\d)/],
+    ["gemini", /(?:^|[^a-z0-9])gemini(?=$|[^a-z0-9]|\d)/],
+    ["openai", /(?:^|[^a-z0-9])(?:gpt(?=$|[^a-z0-9]|\d)|chatgpt(?=$|[^a-z0-9])|o[134](?=$|[^a-z0-9]))/],
+    ["zhipu", /(?:^|[^a-z0-9])(?:chatglm|glm)(?=$|[^a-z0-9]|\d)/]
+  ];
+  const brand = brands.find(([, pattern]) => pattern.test(id));
+  const mark = itemIcon(brand ? "brand-" + brand[0] : "model");
+  if (brand) mark.classList.add("brand-icon");
+  return mark;
+}
 function button(text, handler, {glyph, iconOnly} = {}) {
   const node = el("button", iconOnly ? undefined : text);
   node.type = "button";
@@ -77,7 +95,7 @@ function empty(text) {
   return el("p", text, "empty");
 }
 function notice(text, error = false) {
-  const dialog = document.querySelector("dialog[open]");
+  const dialog = [...document.querySelectorAll("dialog[open]")].at(-1);
   const global = $("notice");
   let node = global;
   if (dialog) {
@@ -259,7 +277,13 @@ function renderShare() {
       await api("/gateway/models", {id: v.id, routes: v.routes, enabled: !v.enabled});
       await loadShare();
       notice(v.enabled ? "公開模型已停用。" : "公開模型已啟用。");
-    }, {glyph: v.enabled ? "pause" : "play"})))) : [empty("先從上游選一個模型，就能發布成對外 ID。")]));
+    }, {glyph: v.enabled ? "pause" : "play"}), deleteButton("刪除公開模型", () => confirmRemoval(
+      "刪除公開模型", v.id, "這個公開 ID 會停止提供服務並保留供歷史辨識。請求紀錄仍可查詢。",
+      {kind: "PUBLIC_MODEL", id: v.id}, async () => {
+        if ($("public-model").readOnly && $("public-model").value === v.id) resetModelDraft();
+        await loadShare();
+      }
+    ))))) : [empty("先從上游選一個模型，就能發布成對外 ID。")]));
   renderKeys();
   renderRoutes();
 }
@@ -280,6 +304,10 @@ function bindSettings() {
     if (value === "system") delete root.dataset.theme;
     else root.dataset.theme = value;
   });
+  bind("text-size", "modelatlas.textSize", "normal", value => { root.dataset.textSize = value; });
+  bind("motion", "modelatlas.motion", "system", value => { root.dataset.motion = value; });
+  bind("default-performance-source", "modelatlas.performanceSource", "local");
+  bind("default-performance-window", "modelatlas.performanceWindow", "7d");
   bind("wallpaper", "modelatlas.wallpaper", "elaina", value => { root.dataset.wallpaper = value; });
   bind("default-offer-sort", "modelatlas.offerSort", "ttft");
   bind("default-usage-range", "modelatlas.usageRange", "24h", value => {

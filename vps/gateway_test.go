@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -23,6 +24,7 @@ type gatewayFixture struct {
 	*httptest.Server
 	a, b         atomic.Int32
 	bRateLimitAt atomic.Int32
+	perfDown     atomic.Bool
 }
 
 func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixture {
@@ -37,6 +39,37 @@ func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixtur
 			}
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, `{"success":true,"data":{"version":"v1.0.0-rc.25","checkin_enabled":true}}`)
+			return
+		case "/api/perf-metrics":
+			if auth != "" || r.Header.Get("Cookie") != "" {
+				t.Error("public model performance received private authentication")
+			}
+			model := r.URL.Query().Get("model")
+			var ttft int
+			switch model {
+			case models[0]:
+				ttft = 81
+			case models[1]:
+				ttft = 197
+			default:
+				http.Error(w, "wrong model", 404)
+				return
+			}
+			if f.perfDown.Load() {
+				http.Error(w, "provider performance unavailable", 503)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			hour := time.Now().Unix() / 3600 * 3600
+			series := []string{}
+			for i := 2; i >= 0; i-- {
+				if r.URL.Query().Get("hours") == "1" && i != 0 {
+					continue
+				}
+				series = append(series, fmt.Sprintf(`{"ts":%d,"avg_ttft_ms":%d,"avg_tps":46.5,"avg_latency_ms":683,"success_rate":98.7}`, hour-int64(i)*3600, ttft+i*14))
+			}
+			points := strings.Join(series, ",")
+			fmt.Fprintf(w, `{"success":true,"data":{"model_name":%q,"series_schema":"v1","groups":[{"group":"standard","avg_ttft_ms":%d,"avg_tps":46.5,"avg_latency_ms":683,"success_rate":98.7,"request_count":7,"series":[%s]}],"summary":{"avg_ttft_ms":%d,"avg_tps":46.5,"avg_latency_ms":683,"success_rate":98.7,"request_count":7},"series":[%s]}}`, model, ttft+1, points, ttft, points)
 			return
 		case "/api/usage/token/":
 			if auth != "Bearer "+gatewayTestKeyA {
@@ -364,4 +397,194 @@ func TestGatewayDistributionWorkflow(t *testing.T) {
 		}
 	}
 	checkGatewayUpdateWorkflow(t, s)
+	checkGatewayConnectionManagement(t, s, f, routeA, routeB, k.ID, k.Token, failureKey.ID, failureKey.Token)
+}
+
+func checkGatewayConnectionManagement(t *testing.T, s *Server, f *gatewayFixture, a, b Selection, revokedID, revokedToken, activeID, activeToken string) {
+	t.Helper()
+	const admin = "/api/v1/gateway"
+	query := func(v Selection) string {
+		return (url.Values{"provider_id": {v.ProviderID}, "account_id": {v.AccountID}, "credential_id": {v.CredentialID},
+			"model_id": {v.ModelID}, "group": {v.Group}, "endpoint": {v.Endpoint}}).Encode()
+	}
+	copyPath := "/ui/api/gateway/credential/copy"
+	credential := syncRequest{a.ProviderID, a.AccountID, a.CredentialID}
+	encoded, _ := json.Marshal(credential)
+	requireCode(t, req(t, s, "POST", admin+"/credential/copy", credential), 404)
+	requireCode(t, req(t, s, "POST", copyPath, credential), 403)
+	server := httptest.NewTLSServer(s.Handler())
+	defer server.Close()
+	origin := server.URL
+	login := httptest.NewRequest("POST", origin+"/login", strings.NewReader((url.Values{"username": {"admin"}, "password": {s.Token}}).Encode()))
+	login.Header.Set("Origin", origin)
+	login.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	auth := httptest.NewRecorder()
+	s.Handler().ServeHTTP(auth, login)
+	requireCode(t, auth, 303)
+	cookie := auth.Result().Cookies()[0]
+	copyCall := func(target string, session bool, scope []byte) *httptest.ResponseRecorder {
+		r := httptest.NewRequest("POST", origin+copyPath, bytes.NewReader(scope))
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Origin", target)
+		if session {
+			r.AddCookie(cookie)
+		}
+		out := httptest.NewRecorder()
+		s.Handler().ServeHTTP(out, r)
+		return out
+	}
+	requireCode(t, copyCall(origin, false, encoded), 401)
+	requireCode(t, copyCall("https://example.net", true, encoded), 403)
+	wrong, _ := json.Marshal(syncRequest{a.ProviderID, a.AccountID, b.CredentialID})
+	requireCode(t, copyCall(origin, true, wrong), 404)
+	copyResponse := copyCall(origin, true, encoded)
+	value := gatewayDecode[map[string]string](t, copyResponse, 200)
+	if value["api_key"] != gatewayTestKeyA || len(value) != 1 || copyResponse.Header().Get("Cache-Control") != "no-store" {
+		t.Fatal("credential copy did not return the exact stored Key in a non-cacheable response")
+	}
+
+	for i := range 25 {
+		outcome := "SUCCESS"
+		if i == 24 {
+			outcome = "CANCELLED"
+		}
+		if _, err := s.Store.DB.Exec(`INSERT INTO telemetry(id,provider_id,account_id,credential_id,model_id,group_id,endpoint,
+			operation,source,outcome,ttft_ms,latency_ms,created_at)
+			VALUES(?,?,?,?,?,?,?,'CHAT_COMPLETIONS','MANUAL_TEST',?,80,900,?)`,
+			newID(), a.ProviderID, a.AccountID, a.CredentialID, a.ModelID, a.Group, a.Endpoint, outcome, now()-7200000+int64(i)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	type localResult struct {
+		Selection Selection
+		Local     struct {
+			Samples, Cancelled int
+			Source             string
+			History            []gatewayOfferSample
+		}
+	}
+	local := func(window string) localResult {
+		return gatewayDecode[localResult](t, req(t, s, "GET", admin+"/offering-performance?"+query(a)+"&window="+window, nil), 200)
+	}
+	lastHour, lastDay := local("1h"), local("24h")
+	if lastDay.Selection != a || lastDay.Local.Source != "MY_KEY_LOCAL" || lastDay.Local.Cancelled != 1 ||
+		lastDay.Local.Samples != lastHour.Local.Samples+24 || len(lastDay.Local.History) <= 20 {
+		t.Fatal("performance window ignored older samples or counted a cancellation")
+	}
+	type siteRequest struct {
+		Selection
+		Hours int `json:"hours"`
+	}
+	path := admin + "/offering-site"
+	requireCode(t, req(t, s, "POST", path, siteRequest{a, 721}), 400)
+	wrongScope := a
+	wrongScope.Group = "different"
+	requireCode(t, req(t, s, "POST", path, siteRequest{wrongScope, 168}), 404)
+	cache := func(v Selection) string { return path + "?" + query(v) + "&hours=168" }
+	before := gatewayDecode[*NewApiResult](t, req(t, s, "GET", cache(a), nil), 200)
+	if before != nil {
+		t.Fatal("unexpected initial site snapshot")
+	}
+	for _, v := range []Selection{a, b} {
+		fresh := gatewayDecode[NewApiResult](t, req(t, s, "POST", path, siteRequest{v, 168}), 200)
+		cached := gatewayDecode[NewApiResult](t, req(t, s, "GET", cache(v), nil), 200)
+		if fresh.ProviderID != v.ProviderID || fresh.Role != "ANONYMOUS" || fresh.AccountID != "" || fresh.CredentialID != "" ||
+			fresh.Facts["model_name"] != v.ModelID || cached.Facts["model_name"] != v.ModelID || cached.Facts["origin"] != fresh.Facts["origin"] {
+			t.Fatal("incorrect exact public snapshot")
+		}
+	}
+	f.perfDown.Store(true)
+	requireCode(t, req(t, s, "POST", path, siteRequest{a, 168}), 502)
+	if cached := gatewayDecode[NewApiResult](t, req(t, s, "GET", cache(a), nil), 200); cached.Facts["model_name"] != a.ModelID {
+		t.Fatal("a failed refresh erased the last-good result")
+	}
+
+	setQuota := func(amount string, clear bool) {
+		requireCode(t, req(t, s, "POST", admin+"/quota", map[string]any{"provider_id": a.ProviderID, "account_id": a.AccountID,
+			"credential_id": a.CredentialID, "unit": "TWD", "remaining": amount, "clear": clear}), 200)
+	}
+	manualAmount := func() string {
+		view := gatewayDecode[struct{ Providers []gatewayProvider }](t, req(t, s, "GET", admin+"/providers?provider_id="+a.ProviderID, nil), 200)
+		for _, quota := range view.Providers[0].Quotas {
+			if quota.CredentialID == a.CredentialID && quota.Source == "MANUAL" {
+				return quota.Remaining
+			}
+		}
+		return ""
+	}
+	setQuota("53.25", false)
+	if manualAmount() != "53.25" {
+		t.Fatal("missing manual key quota")
+	}
+	setQuota("0", false)
+	if manualAmount() != "0" {
+		t.Fatal("manual zero did not update the exact key")
+	}
+	setQuota("", true)
+	if manualAmount() != "" {
+		t.Fatal("clearing manual quota revived the previous value")
+	}
+
+	remove := func(in gatewayRemoval, want int) {
+		requireCode(t, req(t, s, "POST", admin+"/remove", in), want)
+	}
+	remove(gatewayRemoval{Selection: a, Kind: "CONNECTION"}, 400)
+	remove(gatewayRemoval{Selection: a, Kind: "CONNECTION", Confirm: true}, 200)
+	aliases := gatewayDecode[[]gatewayModel](t, req(t, s, "GET", admin+"/models", nil), 200)
+	for _, alias := range aliases {
+		if alias.ID == "atlas-chat" && (!alias.Enabled || len(alias.Routes) != 1 || alias.Routes[0] != b) {
+			t.Fatal("deleting one connection removed its sibling route")
+		}
+	}
+	if !s.selectionUsable(context.Background(), b) || s.selectionUsable(context.Background(), a) {
+		t.Fatal("removal changed the wrong model scope")
+	}
+	if synced := gatewayDecode[map[string]int](t, req(t, s, "POST", admin+"/sync", credential), 200); synced["added"] != 0 {
+		t.Fatal("catalog sync reintroduced a removed connection")
+	}
+	if retained := local("24h"); retained.Local.Samples != lastDay.Local.Samples {
+		t.Fatal("deleting a model connection removed telemetry")
+	}
+	requireCode(t, req(t, s, "POST", admin+"/upstream-model", struct {
+		syncRequest
+		ModelID string `json:"model_id"`
+	}{credential, a.ModelID}), 200)
+	if !s.selectionUsable(context.Background(), a) {
+		t.Fatal("explicit re-add of a removed model failed")
+	}
+	remove(gatewayRemoval{Kind: "MODEL_GROUP", Canonical: "family-model", Confirm: true}, 200)
+	if s.selectionUsable(context.Background(), a) || s.selectionUsable(context.Background(), b) {
+		t.Fatal("deleting a group left an active model connection")
+	}
+	requireCode(t, gatewayClient(s, activeToken, "POST", "/v1/chat/completions", gatewayTestChat("atlas-chat", "removed", false)), 404)
+	remove(gatewayRemoval{Kind: "PUBLIC_MODEL", ID: "atlas-chat", Confirm: true}, 200)
+	requireCode(t, req(t, s, "POST", admin+"/models", gatewayModel{ID: "atlas-chat", Routes: []Selection{a}, Enabled: false}), 409)
+	remove(gatewayRemoval{Kind: "PUBLIC_KEY", ID: activeID, Confirm: true}, 200)
+	remove(gatewayRemoval{Kind: "PUBLIC_KEY", ID: revokedID, Confirm: true}, 200)
+	requireCode(t, gatewayClient(s, activeToken, "GET", "/v1/models", nil), 401)
+	requireCode(t, gatewayClient(s, revokedToken, "GET", "/v1/models", nil), 401)
+	keys := gatewayDecode[[]gatewayKey](t, req(t, s, "GET", admin+"/keys", nil), 200)
+	for _, key := range keys {
+		if key.ID == activeID || key.ID == revokedID {
+			t.Fatal("removed key still appears in management")
+		}
+	}
+	assertSQLInt(t, s, 3, "SELECT COUNT(*) FROM gateway_requests WHERE key_id=?", revokedID)
+
+	setQuota("10", false)
+	requireCode(t, req(t, s, "POST", "/api/v1/credentials/rotate", map[string]any{"provider_id": a.ProviderID, "account_id": a.AccountID,
+		"credential_id": a.CredentialID, "secret": "synthetic-rotated-key", "confirm": true}), 200)
+	if manualAmount() != "" {
+		t.Fatal("manual quota followed a rotated credential")
+	}
+	remove(gatewayRemoval{Selection: a, Kind: "CREDENTIAL", Confirm: true}, 200)
+	requireCode(t, copyCall(origin, true, encoded), 404)
+	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", a.ProviderID, a.AccountID, a.CredentialID)
+	remove(gatewayRemoval{Selection: Selection{ProviderID: b.ProviderID, AccountID: b.AccountID}, Kind: "ACCOUNT", Confirm: true}, 200)
+	assertSQLInt(t, s, 0, "SELECT COUNT(*) FROM credentials WHERE provider_id=? AND account_id=?", b.ProviderID, b.AccountID)
+	remove(gatewayRemoval{Selection: Selection{ProviderID: a.ProviderID}, Kind: "PROVIDER", Confirm: true}, 200)
+	view := gatewayDecode[struct{ Providers []gatewayProvider }](t, req(t, s, "GET", admin+"/providers", nil), 200)
+	if len(view.Providers) != 1 || view.Providers[0].ID != b.ProviderID || view.Providers[0].Accounts != 0 {
+		t.Fatal("provider/account deletion failed to update management lists")
+	}
 }

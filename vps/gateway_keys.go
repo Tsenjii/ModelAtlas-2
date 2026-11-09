@@ -23,7 +23,8 @@ func (s *Server) gatewayListKeys(w http.ResponseWriter, r *http.Request) {
 		COALESCE(p.paused,0),k.created_at,p.expires_at,
 		(SELECT COUNT(*) FROM gateway_requests r WHERE r.key_id=k.id AND r.created_at>=?)
 		FROM gateway_keys k LEFT JOIN gateway_key_policies p ON p.key_id=k.id
-		ORDER BY k.created_at DESC,k.id`, gatewayDayStart(time.Now()))
+		WHERE (?='true' OR NOT EXISTS(SELECT 1 FROM gateway_removals x WHERE x.kind='PUBLIC_KEY' AND x.provider_id='' AND x.account_id='' AND x.item_id=k.id))
+		ORDER BY k.created_at DESC,k.id`, gatewayDayStart(time.Now()), r.URL.Query().Get("include_removed"))
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

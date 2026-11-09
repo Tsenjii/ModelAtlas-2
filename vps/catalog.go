@@ -60,7 +60,7 @@ type Selection struct {
 }
 
 func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,name,base_url,description,auth_mode FROM providers ORDER BY name,id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT p.id,p.name,p.base_url,p.description,p.auth_mode FROM providers p WHERE "+gatewayActiveProvider+" ORDER BY p.name,p.id")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -132,7 +132,7 @@ func (s *Server) addProvider(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) listAccounts(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Query().Get("provider_id")
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,label FROM accounts WHERE (?='' OR provider_id=?) ORDER BY provider_id,id", p, p)
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT a.id,a.provider_id,a.label FROM accounts a WHERE (?='' OR a.provider_id=?) AND "+gatewayActiveAccount+" ORDER BY a.provider_id,a.id", p, p)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -311,7 +311,7 @@ func (s *Server) toggleCredentials(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) listModels(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageRange(r, 200)
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,id,display_name,price_state,quota_state,provenance FROM models ORDER BY provider_id,id LIMIT ? OFFSET ?", limit, offset)
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT m.provider_id,m.id,m.display_name,m.price_state,m.quota_state,m.provenance FROM models m JOIN providers p ON p.id=m.provider_id WHERE "+gatewayActiveProvider+" ORDER BY m.provider_id,m.id LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

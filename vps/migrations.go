@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 40
+const schemaVersion = 41
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -371,6 +371,11 @@ func migrate(db *sql.DB) error {
 	}
 	if version < 40 {
 		if _, err = tx.Exec(gatewayConsoleSchema + "PRAGMA user_version=40;"); err != nil {
+			return err
+		}
+	}
+	if version < 41 {
+		if _, err = tx.Exec(gatewayRemovalSchema + "PRAGMA user_version=41;"); err != nil {
 			return err
 		}
 	}
