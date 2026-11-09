@@ -56,8 +56,13 @@ const fs = require("node:fs/promises");
 
   try {
     await page.goto(origin);
-    await add("潮汐 API", "a", process.env.MODELATLAS_TEST_UPSTREAM_A, "日常主力模型站");
+    const description = "日常主力模型站\n\n" + "各模型額度與適用場景依帳戶而異。".repeat(16);
+    await add("潮汐 API", "a", process.env.MODELATLAS_TEST_UPSTREAM_A, description);
     const provider = page.locator("#provider-detail");
+    const about = provider.locator(".provider-about");
+    assert.equal(await about.getAttribute("open"), null);
+    await about.getByText("供應商介紹", { exact: true }).click();
+    assert.equal(await about.locator(".provider-description").textContent(), description);
     await provider.getByRole("button", { name: "編輯資料" }).click();
     await page.locator("#provider-form").getByLabel("需要每日簽到").check();
     await page.locator("#provider-form").getByLabel("簽到網址").fill(upstream + "/checkin");
@@ -211,9 +216,11 @@ const fs = require("node:fs/promises");
     await page.emulateMedia({ colorScheme: "dark" });
     await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
     await assertLayout();
-    await page.getByRole("button", { name: "外觀設定" }).click();
+    await page.getByRole("button", { name: "設定" }).click();
     await page.getByLabel("背景").selectOption("elaina-chibi");
     await page.getByLabel("色彩").selectOption("dark");
+    await page.getByLabel("模型比較排序").selectOption("success");
+    await page.getByLabel("用量期間").selectOption("30d");
     await assertLayout();
     await page.getByRole("dialog").getByRole("button", { name: "完成" }).click();
     await go("分發");
@@ -296,6 +303,10 @@ const fs = require("node:fs/promises");
     await page.reload();
     assert.equal(await page.locator("html").getAttribute("data-wallpaper"), "elaina-chibi");
     assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
+    await page.locator("#model-list").getByRole("button", { name: /DeepSeek 4\.1 Flash/ }).click();
+    assert.equal(await page.locator("#offer-sort").inputValue(), "success");
+    await go("用量");
+    assert.equal(await page.locator("#usage-range").inputValue(), "30d");
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log(JSON.stringify({ result: "PASS", screenshots: 6, realTLSUpstreams: 2, groupedModel: true, scopedQuota: true,

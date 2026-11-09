@@ -17,7 +17,7 @@
   <symbol id="icon-key" viewBox="0 0 24 24"><path d="M15.7 12.5a5.2 5.2 0 1 0-4.2-4.2L3.5 16.4V21H8v-3h3v-3z"/><path d="M16.8 6.8h.1"/></symbol>
   <symbol id="icon-usage" viewBox="0 0 24 24"><path d="M4 4v16h16M7.5 15l4-5 3.7 2.7 4.8-6.2"/></symbol>
   <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 4v5h-5M4 20v-5h5M5.4 8a7.5 7.5 0 0 1 12.5-2L20 9M4 15l2.1 3a7.5 7.5 0 0 0 12.5-2"/></symbol>
-  <symbol id="icon-theme" viewBox="0 0 24 24"><path d="M12 3c3.7 4.3 6.6 7.4 6.6 11a6.6 6.6 0 0 1-13.2 0c0-3.6 2.9-6.7 6.6-11zM9 15a3.3 3.3 0 0 0 3 2.7"/></symbol>
+  <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M4 6h6m4 0h6M4 12h10m4 0h2M4 18h2m4 0h10"/><circle cx="12" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="18" r="2"/></symbol>
   <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
   <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></symbol>
@@ -58,7 +58,7 @@
   <div class="header-actions glass">
     <span class="edition-label"><i aria-hidden="true"></i>Lite</span>
     <button id="refresh" class="icon-button" type="button" aria-label="重新整理" title="重新整理"><svg aria-hidden="true"><use href="#icon-refresh"/></svg></button>
-    <button id="appearance-open" class="icon-button" type="button" aria-label="外觀設定" title="外觀設定"><svg aria-hidden="true"><use href="#icon-theme"/></svg></button>
+    <button id="settings-open" class="icon-button" type="button" aria-label="設定" title="設定"><svg aria-hidden="true"><use href="#icon-settings"/></svg></button>
   </div>
 </header>
 <div class="navigation-shell shell-width">
@@ -205,7 +205,7 @@
   <form id="upstream-form" class="stack">
     <div class="section-inline"><h2 id="upstream-dialog-title">新增供應商</h2><button type="button" data-close="upstream-dialog" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
     <label>名稱<input name="name" placeholder="例如 潮汐 API" maxlength="120" required></label>
-    <label>簡介<textarea name="description" maxlength="1000" rows="2" placeholder="選填，記下站點特色"></textarea></label>
+    <label>簡介<textarea name="description" maxlength="1000" rows="3" placeholder="選填，可分段記錄站點特色"></textarea></label>
     <label>Base URL<input name="base_url" type="url" placeholder="https://api.example.com/v1" maxlength="4096" required></label>
     <label>上游 API Key<input name="api_key" type="password" autocomplete="new-password" maxlength="8192" placeholder="匿名連線可留空"></label>
     <button type="submit" class="primary"><svg aria-hidden="true"><use href="#icon-check"/></svg>儲存並同步模型</button>
@@ -232,7 +232,7 @@
   <form id="provider-form" class="stack">
     <div class="section-inline"><h2 id="provider-dialog-title">供應商資料</h2><button type="button" data-close="provider-dialog" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
     <label>名稱<input name="name" maxlength="120" required></label>
-    <label>簡介<textarea name="description" maxlength="1000" rows="3"></textarea></label>
+    <label>簡介<textarea name="description" maxlength="1000" rows="6" placeholder="可分段記錄站點特色"></textarea></label>
     <label>網站<input name="website" type="url" placeholder="https://"></label>
     <label class="check"><input type="checkbox" name="requires_checkin">需要每日簽到</label>
     <label>簽到網址<input name="checkin_url" type="url" placeholder="https://"></label>
@@ -321,11 +321,20 @@
     <button id="copy-key" type="button" class="primary"><svg aria-hidden="true"><use href="#icon-copy"/></svg>複製 API Key</button>
   </div>
 </dialog>
-<dialog id="appearance-dialog" aria-labelledby="appearance-title">
+<dialog id="settings-dialog" aria-labelledby="settings-title">
   <div class="stack">
-    <div class="section-inline"><h2 id="appearance-title">Aqua 外觀</h2><button type="button" data-close="appearance-dialog"><svg aria-hidden="true"><use href="#icon-check"/></svg>完成</button></div>
+    <div class="section-inline"><h2 id="settings-title">Lite 設定</h2><button type="button" data-close="settings-dialog"><svg aria-hidden="true"><use href="#icon-check"/></svg>完成</button></div>
+    <fieldset class="stack">
+      <legend>外觀</legend>
     <label>色彩<select id="theme"><option value="system">跟隨系統</option><option value="light">淺色</option><option value="dark">深色</option></select></label>
-    <label>背景<select id="wallpaper"><option value="kotoha-chibi">Kotoha Q 版</option><option value="elaina-chibi">伊蕾娜 Q 版</option><option value="kotoha">Kotoha 原圖</option><option value="elaina">伊蕾娜原圖</option></select></label>
+    <label>背景<select id="wallpaper"><option value="kotoha-chibi">Kotoha Q 版</option><option value="elaina-chibi">伊蕾娜 Q 版</option><option value="kotoha">Kotoha 原圖</option><option value="elaina">伊蕾娜原圖</option><option value="plain">純色</option></select></label>
+    </fieldset>
+    <fieldset class="stack">
+      <legend>預設檢視</legend>
+      <label>模型比較排序<select id="default-offer-sort"><option value="ttft">首字最快</option><option value="tps">生成最快</option><option value="success">成功率最高</option><option value="latency">總延遲最低</option></select></label>
+      <label>用量期間<select id="default-usage-range"><option value="24h">近 24 小時</option><option value="7d">近 7 日</option><option value="30d">近 30 日</option></select></label>
+    </fieldset>
+    <p class="quiet">偏好儲存在這個瀏覽器。</p>
   </div>
 </dialog>
 <p id="notice" role="status" aria-live="polite" hidden></p>

@@ -166,7 +166,7 @@ async function loadGroups(reset) {
     const tile = button("", async () => {
       state.modelGroup = group;
       state.offers = [];
-      $("offer-sort").value = "ttft";
+      $("offer-sort").value = $("default-offer-sort").value;
       await showPage("models");
       $("model-title").focus({preventScroll: true});
     });
@@ -381,7 +381,8 @@ async function loadProviderList(reset) {
   $("provider-count").textContent = "已載入 " + management.providers.length + " 家 · 近 7 天本站實測";
   const cards = management.providers.map(p => {
     const row = el("article", undefined, "entry provider-tile");
-    const intro = identity(p.name, [p.description || "尚未填寫簡介", p.base_url, p.accounts + " 個帳戶 · " + p.keys + " 把啟用的推論 Key"], "provider");
+    const intro = identity(p.name, [p.base_url, p.accounts + " 個帳戶 · " + p.keys + " 把啟用的推論 Key"], "provider");
+    if (p.description) intro.querySelector("h3").after(el("p", p.description, "provider-preview"));
     const view = button("管理 " + p.name, async () => {
       state.providerID = p.id;
       $("provider-detail-content").replaceChildren();
@@ -515,7 +516,7 @@ function renderProvider() {
   $("provider-edit").disabled = false;
   const profile = el("div", undefined, "card stack");
   const base = el("code", p.base_url);
-  profile.append(el("p", p.description || "尚未填寫簡介"), base, providerFacts(p, false),
+  profile.append(base, providerFacts(p, false),
     el("p", "近 7 天 · 最近 100 筆本站實測", "quiet"));
   const copyURL = button("複製 Base URL", () => copy(p.base_url, base), {glyph: "copy", iconOnly: true});
   const tools = controls(copyURL, button("看這家的模型", async () => {
@@ -533,7 +534,12 @@ function renderProvider() {
   profile.append(tools);
   const accounts = el("div", undefined, "section-inline");
   accounts.append(el("h2", "帳戶與 Key"), button("新增帳戶", () => openAccountDialog(null, "account"), {glyph: "plus"}));
-  content.replaceChildren(profile, accounts, ...management.accounts.map(a => renderAccount(p, a)));
+  const about = el("details", undefined, "card details-card provider-about");
+  about.open = content.querySelector(".provider-about")?.open ?? Boolean(p.description && p.description.length <= 140 && !p.description.includes("\n"));
+  const summary = el("summary", "供應商介紹");
+  summary.prepend(icon("chevron"));
+  about.append(summary, el("p", p.description || "尚未填寫簡介", "provider-description"));
+  content.replaceChildren(profile, about, accounts, ...management.accounts.map(a => renderAccount(p, a)));
 }
 
 for (const id of ["model-add-provider", "add-upstream"]) $(id).addEventListener("click", () => $("upstream-dialog").showModal());

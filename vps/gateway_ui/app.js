@@ -259,24 +259,30 @@ function renderShare() {
   renderKeys();
   renderRoutes();
 }
-function bindAppearance() {
-  const set = (id, storage, fallback) => {
+function bindSettings() {
+  const bind = (id, storage, fallback, apply) => {
     const input = $(id);
     let value;
     try { value = localStorage.getItem(storage); } catch {}
-    input.value = [...input.options].some(o => o.value === value) ? value : fallback;
-    const apply = () => {
-      if (id === "theme" && input.value === "system") delete document.documentElement.dataset.theme;
-      else document.documentElement.dataset[id] = input.value;
-    };
+    input.value = [...input.options].some(option => option.value === value) ? value : fallback;
     input.addEventListener("change", () => {
-      apply();
+      apply?.(input.value);
       try { localStorage.setItem(storage, input.value); } catch {}
     });
-    apply();
+    apply?.(input.value);
   };
-  set("theme", "modelatlas.appearance", "system");
-  set("wallpaper", "modelatlas.wallpaper", "elaina");
+  const root = document.documentElement;
+  bind("theme", "modelatlas.appearance", "system", value => {
+    if (value === "system") delete root.dataset.theme;
+    else root.dataset.theme = value;
+  });
+  bind("wallpaper", "modelatlas.wallpaper", "elaina", value => { root.dataset.wallpaper = value; });
+  bind("default-offer-sort", "modelatlas.offerSort", "ttft");
+  bind("default-usage-range", "modelatlas.usageRange", "24h", value => {
+    const range = $("usage-range");
+    for (const option of range.options) option.defaultSelected = option.value === value;
+    range.value = value;
+  });
 }
 function submit(id, work) {
   $(id).addEventListener("submit", event => {
@@ -298,7 +304,7 @@ for (const dialog of document.querySelectorAll("dialog")) dialog.addEventListene
   dialog.querySelector(".dialog-message")?.remove();
   for (const field of dialog.querySelectorAll("input[type='password'],#issued-key")) field.value = "";
 });
-$("appearance-open").addEventListener("click", () => $("appearance-dialog").showModal());
+$("settings-open").addEventListener("click", () => $("settings-dialog").showModal());
 $("refresh").addEventListener("click", () => action($("refresh"), refresh));
 $("share-history").addEventListener("click", () => action(null, () => showPage("usage")));
 $("configure-route").addEventListener("click", () => action(null, async () => {
@@ -322,5 +328,5 @@ submit("model-form", async form => {
   await loadShare();
   notice("已發布 " + id + "。");
 });
-bindAppearance();
+bindSettings();
 renderRoutes();
