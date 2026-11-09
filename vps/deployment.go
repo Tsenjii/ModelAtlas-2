@@ -19,6 +19,7 @@ type deploymentConfig struct {
 	desktopReady                  string
 	maintenanceFile               string
 	backupDestination             string
+	updateRoot, updateTrialGate   string
 	key                           []byte
 	distribution                  bool
 }
@@ -159,7 +160,7 @@ func (c deploymentConfig) handler(next http.Handler) http.Handler {
 			http.Error(w, "origin mismatch", http.StatusForbidden)
 			return
 		}
-		if c.distribution {
+		if c.desktopReady == "" {
 			r = r.WithContext(context.WithValue(r.Context(), verifiedPublicOrigin{}, c.publicOrigin))
 		}
 		next.ServeHTTP(w, r)

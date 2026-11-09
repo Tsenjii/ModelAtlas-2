@@ -216,6 +216,7 @@ jobs:
         working-directory: vps
         env:
           MODELATLAS_CLOUD_BACKUP_TEST: "1"
+          MODELATLAS_PORTABLE_UPDATE_TEST: "1"
         run: |
           set -o pipefail
           mkdir -p portable-test-results

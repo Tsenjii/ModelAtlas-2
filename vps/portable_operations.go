@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -9,13 +10,14 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Portable state belongs to the invoking user, independently of the unpacked
 // release. No root, systemd, Docker daemon or provider-specific path is needed.
 func portableCommand(args []string, out io.Writer) error {
-	if len(args) == 0 || !oneOf(args[0], "init", "run") {
-		return errors.New("usage: portable init|run --directory ABSOLUTE_STATE_DIRECTORY [--public-origin HTTPS_ORIGIN]")
+	if len(args) == 0 || !oneOf(args[0], "init", "run", "ready") {
+		return errors.New("usage: portable init|run|ready --directory ABSOLUTE_STATE_DIRECTORY [--update-root ABSOLUTE_RELEASE_DIRECTORY]")
 	}
 	f := flag.NewFlagSet("portable", flag.ContinueOnError)
 	f.SetOutput(io.Discard)
@@ -24,11 +26,15 @@ func portableCommand(args []string, out io.Writer) error {
 	listen := f.String("listen", "127.0.0.1:8787", "numeric listener for a new deployment")
 	backup := f.String("backup-destination", "", "explicit private backup destination for run")
 	edition := f.String("edition", "", "workspace or lite for run")
+	updateRoot := f.String("update-root", "", "private persistent directory for self-updates")
 	if f.Parse(args[1:]) != nil || f.NArg() != 0 || !filepath.IsAbs(*directory) || filepath.Clean(*directory) != *directory || strings.ContainsAny(*directory, "\r\n\x00\"\\") {
 		return errors.New("portable operations require an absolute private state directory and valid options")
 	}
 	env := filepath.Join(*directory, "config", "modelatlas.env")
-	if args[0] == "run" {
+	if *updateRoot != "" && !validUpdateDirectory(*updateRoot) {
+		return errors.New("updates require an absolute private release directory")
+	}
+	if args[0] != "init" {
 		if *origin != "" || *listen != "127.0.0.1:8787" {
 			return errors.New("configure an existing deployment in its private environment file")
 		}
@@ -36,7 +42,39 @@ func portableCommand(args []string, out io.Writer) error {
 		if err != nil {
 			return err
 		}
+		if args[0] == "ready" {
+			expected := versionInfo()
+			if *updateRoot != "" {
+				state, err := readUpdateJournal(*updateRoot)
+				if err != nil {
+					return err
+				}
+				version := state.Current
+				if state.Snapshot != "" {
+					version = state.Trial
+				}
+				if version != nil {
+					expected = version.Version
+				}
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+			defer cancel()
+			return verifyServiceVersion(ctx, config, expected, false)
+		}
+		if *updateRoot != "" {
+			childArgs := []string{"portable", "run", "--directory", *directory, "--backup-destination", *backup, "--edition", *edition}
+			return supervisePortable(*updateRoot, env, childArgs, config)
+		}
+		if root := os.Getenv("MODELATLAS_SUPERVISED_ROOT"); validUpdateDirectory(root) {
+			config.updateRoot = root
+			if gate := os.Getenv("MODELATLAS_TRIAL_GATE"); gate == filepath.Join(root, ".trial-gate") {
+				config.updateTrialGate = gate
+			}
+		}
 		return runConfiguredApplication(config)
+	}
+	if *updateRoot != "" {
+		return errors.New("select the release directory on portable run")
 	}
 	if *backup != "" {
 		return errors.New("select the backup destination on portable run or in the private environment")

@@ -4,6 +4,24 @@
 
 維運切片 VPS-OPS-006：完整套件、資料庫升級前快照、預檢、健康檢查與更新失敗回復。只使用通過該版本必要 CI 的套件；最新結果見 [PR #20](https://github.com/Tsenjii/ModelAtlas-2/pull/20)。這些流程不代表已替使用者部署到遠端主機，也不代表完整研究願望清單已完成。
 
+## 網頁更新
+
+完整版和 Lite 共用「設定 → 系統更新」。管理員先檢查版本與說明，再按「安裝新版」。穩定通道只選正式版，預覽通道也會檢查已公開的較新預覽版。更新從本專案的 GitHub Releases 取得對應 CPU 的套件，依序核對 GitHub 資產雜湊、發布 manifest、外層校驗與包內的版本及各檔校驗。
+
+新版的 Docker Compose 以持久卷 `/data` 啟用更新。原生 Linux 或使用自訂啟動命令的主機，第一次用新版程式停止舊程序後，以同一個資料目錄和原有版別啟動。以下以現有的 Lite 部署為例，兩個路徑應指向該服務可寫的持久磁碟。
+
+```sh
+ATLAS_STATE="$HOME/modelatlas-state"
+ATLAS_RELEASES="$HOME/modelatlas-updates"
+install -d -m 700 "$ATLAS_RELEASES"
+./modelatlas-vps portable run --directory "$ATLAS_STATE" \
+  --update-root "$ATLAS_RELEASES" --edition lite
+```
+
+完整版使用 `--edition workspace`。保留原有的 HTTPS 入口、資料目錄、主金鑰與備份設定。首次改用這個啟動模式後，監督程序會在同一個服務內切換版本。發行檔、啟動日誌 `boot.json` 和回復快照分別在更新根目錄的 `releases`、根目錄及 `recovery`。請為舊版本及資料庫快照保留空間。
+
+試行前先停止舊程序並建立一致快照，讓新版在副本上跑遷移。試行期間暫停一般請求及背景工作。通過精確版本、資料庫連線和金鑰庫的就緒檢查後才啟用新版。試行失敗時會回復對應的資料庫快照並啟動舊版。重啟後可重新登入，在同一個更新區查看結果。一般 systemd 套件安裝也可繼續使用下方的套件更新流程。
+
 ## 一般 VPS：Debian／Ubuntu + systemd
 
 優先從該版本 GitHub Release 下載對應 tar.gz 與 .sha256；Actions 只供正在驗證中的候選。在該 SHA 的 VPS Actions 亦可下載 `modelatlas-vps-linux-amd64` 或 `modelatlas-vps-linux-arm64` artifact。`uname -m` 為 x86_64 選 amd64；aarch64／arm64 選 arm64。解開 artifact ZIP 後會有單一 binary、完整 tar.gz 與外層校驗檔。正式運行不需要 Go、Node、Python 或瀏覽器。

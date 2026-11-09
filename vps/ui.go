@@ -7,6 +7,16 @@ import (
 
 func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if r.URL.Path == "/workspace" {
+		page := strings.NewReplacer(
+			`<html lang="zh-Hant"`, `<html lang="zh-Hant" data-api-base="/workspace/api"`,
+			`<div class="header-actions">`, `<div class="header-actions"><a class="link-button icon-button" href="/" aria-label="回管理首頁" title="回管理首頁"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/></svg></a>`,
+			`href="/api/v1/backup"`, `href="/workspace/api/backup"`,
+			`<p id="system-status-summary"`, `<a class="link-button" href="/?settings=updates">開啟系統更新</a><p id="system-status-summary"`,
+		).Replace(homeHTML)
+		_, _ = w.Write([]byte(page))
+		return
+	}
 	if s.desktop {
 		_, _ = w.Write([]byte(strings.Replace(homeHTML, `<html lang="zh-Hant"`, `<html lang="zh-Hant" data-desktop-media="true"`, 1)))
 		return

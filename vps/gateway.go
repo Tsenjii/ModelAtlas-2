@@ -68,7 +68,7 @@ type gatewayKey struct {
 	ExpiresAt  *int64   `json:"expires_at"`
 }
 
-func (s *Server) gatewayHandler() http.Handler {
+func (s *Server) gatewayAdminRoutes() *http.ServeMux {
 	admin := http.NewServeMux()
 	admin.HandleFunc("GET /status", s.status)
 	admin.HandleFunc("GET /system", s.systemStatus)
@@ -103,15 +103,25 @@ func (s *Server) gatewayHandler() http.Handler {
 	admin.HandleFunc("POST /gateway/keys/pause", s.gatewayPauseKey)
 	admin.HandleFunc("POST /gateway/keys/revoke", s.gatewayRevokeKey)
 	admin.HandleFunc("GET /gateway/usage", s.gatewayUsage)
+	s.updateRoutes(admin)
+	return admin
+}
+
+func (s *Server) gatewayHandler() http.Handler {
+	admin := s.gatewayAdminRoutes()
 	root := http.NewServeMux()
 	root.HandleFunc("GET /healthz", s.health)
+	root.Handle("/api/v1/", s.auth(http.StripPrefix("/api/v1", admin)))
+	s.gatewayWebRoutes(root, admin, false)
+	return s.maintenanceHandler(root)
+}
+
+func (s *Server) gatewayWebRoutes(root *http.ServeMux, admin *http.ServeMux, workspace bool) {
 	root.HandleFunc("GET /v1/models", s.gatewayPublicModels)
 	root.HandleFunc("POST /v1/chat/completions", s.gatewayChat)
-	root.Handle("/api/v1/", s.auth(http.StripPrefix("/api/v1", admin)))
 	// Web sign-in and programmatic credentials authorize separate entry points.
 	root.Handle("/ui/api/", s.gatewayBrowserAPI(http.StripPrefix("/ui/api", admin)))
-	s.gatewayUIRoutes(root)
-	return s.maintenanceHandler(root)
+	s.gatewayUIRoutes(root, workspace)
 }
 
 func gatewayError(w http.ResponseWriter, status int, code, message string) {

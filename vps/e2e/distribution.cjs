@@ -6,7 +6,7 @@ const fs = require("node:fs/promises");
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
-  const [origin, upstream] = process.argv.slice(2);
+  const [origin, upstream, workspace] = process.argv.slice(2);
   const context = await browser.newContext({
     viewport: { width: 402, height: 874 }, isMobile: true, hasTouch: true, reducedMotion: "reduce",
     ignoreHTTPSErrors: true
@@ -17,7 +17,9 @@ const fs = require("node:fs/promises");
   const errors = [];
   const external = [];
   page.on("pageerror", error => errors.push(error.message));
-  page.on("request", req => { if (!req.url().startsWith(origin + "/")) external.push(req.url()); });
+  page.on("request", req => {
+    if (!req.url().startsWith(origin + "/") && !req.url().startsWith(workspace + "/")) external.push(req.url());
+  });
   await fs.mkdir("e2e/screenshots", { recursive: true });
   const go = name => page.getByRole("navigation").getByRole("button", { name, exact: true }).click();
   const assertLayout = async () => {
@@ -325,6 +327,9 @@ const fs = require("node:fs/promises");
     await go("用量");
     assert.equal(await page.locator("#usage-range").inputValue(), "30d");
     await page.getByRole("button", { name: "設定", exact: true }).click();
+    await page.getByText("此部署使用外部更新工具。", { exact: false }).waitFor();
+    assert(await page.getByRole("button", {name: "檢查更新", exact: true}).isDisabled());
+    assert.equal(await page.getByRole("link", {name: "進階工作區", exact: true}).count(), 0);
     await page.getByRole("button", { name: "登出", exact: true }).click();
     await page.waitForURL(origin + "/login");
     await page.getByRole("heading", { name: "管理員登入", exact: true }).waitFor();
@@ -337,12 +342,43 @@ const fs = require("node:fs/promises");
     await page.getByRole("heading", { name: "管理員登入", exact: true }).waitFor();
     const basic = Buffer.from("admin:" + process.env.MODELATLAS_TEST_TOKEN).toString("base64");
     assert.equal((await client.get(origin + "/api/v1/status", { headers: { Authorization: "Basic " + basic } })).status(), 200);
+    await page.goto(workspace + "/workspace");
+    await page.waitForURL(workspace + "/login");
+    await page.getByLabel("密碼", { exact: true }).fill(process.env.MODELATLAS_TEST_TOKEN);
+    await page.getByRole("button", { name: "登入", exact: true }).click();
+    await page.waitForURL(workspace + "/");
+    await page.locator("#model-list").getByRole("button", { name: /DeepSeek 4\.1 Flash/ }).waitFor();
+    await page.setViewportSize({width: 320, height: 750});
+    await page.emulateMedia({colorScheme: "dark"});
+    await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+    await assertLayout();
+    await page.getByRole("button", { name: "設定", exact: true }).click();
+    await page.getByRole("button", { name: "檢查更新", exact: true }).click();
+    await page.getByText("可更新 v0.8.6-preview.1", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "版本說明", exact: true }).getAttribute("href"),
+      "https://github.com/Tsenjii/ModelAtlas-2/releases/tag/v0.8.6-preview.1");
+    assert(await page.getByRole("button", { name: "安裝新版", exact: true }).isEnabled());
+    await page.locator("#update-settings").scrollIntoViewIfNeeded();
+    await assertLayout();
+    await page.getByRole("button", { name: "完成", exact: true }).click();
+    await page.getByRole("link", { name: "進階工作區", exact: true }).click();
+    await page.waitForURL(workspace + "/workspace");
+    await page.waitForFunction(() => document.documentElement.dataset.workspaceReady === "true");
+    assert.equal((await context.request.get(workspace + "/workspace/api/providers")).status(), 200);
+    assert.equal((await context.request.get(workspace + "/api/v1/providers")).status(), 401);
+    await page.getByRole("link", { name: "回管理首頁", exact: true }).click();
+    await page.waitForURL(workspace + "/");
+    await page.locator("#model-list").getByRole("button", { name: /DeepSeek 4\.1 Flash/ }).waitFor();
+    await page.getByRole("button", { name: "設定", exact: true }).click();
+    await page.getByRole("button", { name: "安裝新版", exact: true }).click();
+    await page.getByText("正在備份、試跑新版並重啟。服務回來後請重新登入。", { exact: true }).waitFor();
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log(JSON.stringify({ result: "PASS", screenshots: 6, realTLSUpstreams: 2, groupedModel: true, scopedQuota: true,
       accountCheckin: true, streamedFailover: true, narrowDarkLargeText: true, activityCharts: true, keyPolicy: true,
       scopedOfferHistory: true, batchProbes: true, batchStop: true, batchRateLimit: true,
-      providerCardHitArea: true, scopedKeyUsage: true, batchSelectAll: true, dialogCopyFeedback: true, browserSignIn: true }));
+      providerCardHitArea: true, scopedKeyUsage: true, batchSelectAll: true, dialogCopyFeedback: true, browserSignIn: true,
+      sharedWorkspace: true, settingsUpdate: true }));
   } finally {
     await client.dispose();
     await browser.close();

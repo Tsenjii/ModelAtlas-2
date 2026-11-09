@@ -6,6 +6,13 @@
 vps/*_test.go
 !vps/go.mod
 !vps/go.sum
+!vps/gateway_ui/
+!vps/gateway_ui/*.css
+!vps/gateway_ui/*.html
+!vps/gateway_ui/*.js
+!vps/gateway_ui/mark.svg
+!release/
+!release/version.properties
 !vps/assets/
 !vps/assets/aqua-kotoha-v1.jpg
 !vps/assets/aqua-elaina-v1.jpg

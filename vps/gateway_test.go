@@ -363,4 +363,5 @@ func TestGatewayDistributionWorkflow(t *testing.T) {
 			t.Fatal("listing returned a full secret")
 		}
 	}
+	checkGatewayUpdateWorkflow(t, s)
 }

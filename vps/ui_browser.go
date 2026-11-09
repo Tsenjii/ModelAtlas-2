@@ -4,6 +4,7 @@ const appJS = jsCore + jsAqua + jsWorkspaceRecovery + jsViews + jsChat + jsMedia
 const jsCore = `
 "use strict";
 const $=id=>document.getElementById(id);
+const workspaceAPI=document.documentElement.dataset.apiBase||"/api/v1";
 let endpointProfiles=[],providers=[],accounts=[],credentials=[],models=[],myModels=[],sessions=[],settings={},busy=false,refreshVersion=0,loadVersion=0,attachments=[],controller=null,currentReview=null;
 let pendingTools=[];
 let conversationLibraryCleanup=null;
@@ -16,8 +17,12 @@ async function api(path,opts={}){
  const abort=()=>readController?.abort(),timer=reading?setTimeout(()=>{timedOut=true;readController.abort();},20000):null;
  if(reading){sourceSignal?.addEventListener("abort",abort,{once:true});if(sourceSignal?.aborted)abort();}
  try{
-  const r=await fetch("/api/v1"+path,{credentials:"same-origin",cache:"no-store",...opts,signal:readController?.signal||sourceSignal});
-  if(!r.ok){const error=Error(readableProblem(await r.text(),r.status));error.status=r.status;throw error;}
+  const r=await fetch(workspaceAPI+path,{credentials:"same-origin",cache:"no-store",...opts,signal:readController?.signal||sourceSignal});
+  if(!r.ok){
+   const problem=await r.text();
+   if(workspaceAPI!=="/api/v1"&&r.status===401&&problem.includes('"LOGIN_REQUIRED"'))location.replace("/login");
+   const error=Error(readableProblem(problem,r.status));error.status=r.status;throw error;
+  }
   return await r.json();
  }catch(error){
   if(timedOut){const timeout=Error("讀取逾時，請重試連線。");timeout.code="READ_TIMEOUT";throw timeout;}

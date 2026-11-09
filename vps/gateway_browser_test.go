@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -41,12 +44,36 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 	app.Config.Handler = config.handler(s.Handler())
 	app.StartTLS()
 	defer app.Close()
-	cmd := exec.Command("node", "e2e/distribution.cjs", app.URL, f.URL)
+	workspace := httptest.NewUnstartedServer(nil)
+	full := &Server{Store: s.Store, Token: s.Token, Key: s.Key, Client: s.Client, webConsole: true}
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, "releases"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	updateStaged := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	version := binaryVersion{fixtureReleaseCommit, "2026-11-09T08:00:00Z", "linux", runtime.GOARCH, schemaVersion}
+	full.updates = &webUpdater{root: root, tag: "v0.8.5-preview.1", ctx: ctx, stop: func() { close(updateStaged) },
+		client: fixtureUpdateClient(t, fixtureUpdateArchive(t, version, []byte("browser staging fixture")))}
+	workspace.Config.Handler = (deploymentConfig{publicOrigin: "https://" + workspace.Listener.Addr().String()}).handler(full.Handler())
+	workspace.StartTLS()
+	defer workspace.Close()
+	cmd := exec.Command("node", "e2e/distribution.cjs", app.URL, f.URL, workspace.URL)
 	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token, "MODELATLAS_TEST_UPSTREAM_A="+gatewayTestKeyA,
 		"MODELATLAS_TEST_UPSTREAM_B="+gatewayTestKeyB, "MODELATLAS_TEST_UPSTREAM_PAT="+gatewayTestPAT)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("distribution browser: %v\n%s", err, out)
+	}
+	select {
+	case <-updateStaged:
+		state, err := readUpdateJournal(root)
+		if err != nil || state.Trial == nil || state.Trial.Version != version {
+			t.Fatal("settings install failed to queue the verified version", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("settings install failed to request a restart")
 	}
 	t.Log(string(out))
 	if f.a.Load() != 3 || f.b.Load() != 5 {

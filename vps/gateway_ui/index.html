@@ -57,6 +57,7 @@
   <div class="brand glass"><img src="/gateway-mark.svg" width="42" height="42" alt=""><div><strong>ModelAtlas</strong><small>模型工作台</small></div></div>
   <div class="header-actions glass">
     <span class="edition-label"><i aria-hidden="true"></i>Lite</span>
+    <!-- workspace-entry -->
     <button id="refresh" class="icon-button" type="button" aria-label="重新整理" title="重新整理"><svg aria-hidden="true"><use href="#icon-refresh"/></svg></button>
     <button id="settings-open" class="icon-button" type="button" aria-label="設定" title="設定"><svg aria-hidden="true"><use href="#icon-settings"/></svg></button>
   </div>
@@ -323,7 +324,7 @@
 </dialog>
 <dialog id="settings-dialog" aria-labelledby="settings-title">
   <div class="stack">
-    <div class="section-inline"><h2 id="settings-title">Lite 設定</h2><button type="button" data-close="settings-dialog"><svg aria-hidden="true"><use href="#icon-check"/></svg>完成</button></div>
+    <div class="section-inline"><h2 id="settings-title">設定</h2><button type="button" data-close="settings-dialog"><svg aria-hidden="true"><use href="#icon-check"/></svg>完成</button></div>
     <fieldset class="stack">
       <legend>外觀</legend>
     <label>色彩<select id="theme"><option value="system">跟隨系統</option><option value="light">淺色</option><option value="dark">深色</option></select></label>
@@ -335,6 +336,19 @@
       <label>用量期間<select id="default-usage-range"><option value="24h">近 24 小時</option><option value="7d">近 7 日</option><option value="30d">近 30 日</option></select></label>
     </fieldset>
     <p class="quiet">偏好儲存在這個瀏覽器。</p>
+    <fieldset id="update-settings" class="stack">
+      <legend>系統更新</legend>
+      <div class="section-inline">
+        <span>目前版本 <code id="update-current">—</code></span>
+        <span class="badge" id="update-available" hidden></span>
+      </div>
+      <p id="update-status" class="quiet" role="status" aria-live="polite">正在讀取版本。</p>
+      <div class="row-actions">
+        <button id="update-check" type="button" disabled><svg aria-hidden="true"><use href="#icon-refresh"/></svg>檢查更新</button>
+        <button id="update-install" type="button" class="primary" hidden>安裝新版</button>
+        <a id="update-notes" class="link-button" target="_blank" rel="noopener noreferrer" hidden>版本說明</a>
+      </div>
+    </fieldset>
     <fieldset>
       <legend>登入狀態</legend>
       <div class="section-inline">

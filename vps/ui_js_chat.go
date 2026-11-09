@@ -18,7 +18,7 @@ async function sendChat(toolResults=[],retryID=""){
  try{
   await saveChatSettings();const payload={session_id,prompt,attachments:selected,tool_results:toolResults,retry_id:retryID};
   if($("tools-json").value.trim())payload.tools=JSON.parse($("tools-json").value);
-  const resp=await fetch("/api/v1/infer",{method:"POST",credentials:"same-origin",signal:requestController.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const resp=await fetch(workspaceAPI+"/infer",{method:"POST",credentials:"same-origin",signal:requestController.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
   sampleID=resp.headers.get("X-ModelAtlas-Sample-ID");if(!resp.ok||!resp.body){const raw=await resp.text(),error=Error(readableProblem(raw,resp.status));try{error.code=JSON.parse(raw)?.error?.code;}catch{}throw error;}
   if(prompt)bubble("user",prompt);answer=bubble("assistant","");answerText=streamText(answer,()=>chatChanged());if(!retryID&&!toolResults.length)$("prompt").value="";
   reader=resp.body.getReader();const decoder=new TextDecoder();let pending="";

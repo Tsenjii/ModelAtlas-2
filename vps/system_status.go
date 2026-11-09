@@ -19,6 +19,11 @@ type systemState struct {
 }
 
 func (s *Server) maintenancePending() bool {
+	if s.updateTrialGate != "" {
+		if _, err := os.Stat(s.updateTrialGate); !os.IsNotExist(err) {
+			return true
+		}
+	}
 	if s.maintenanceFile == "" {
 		return false
 	}

@@ -42,9 +42,12 @@ type Server struct {
 	MaxFlights      int
 	AutoSync        bool
 	desktop         bool
+	webConsole      bool
 	distribution    bool
 	gatewaySessions gatewayBrowserSessions
 	maintenanceFile string
+	updateTrialGate string
+	updates         *webUpdater
 	vaultVerified   bool
 	backups         *cloudBackupService
 	scheduleMu      sync.Mutex
@@ -394,12 +397,23 @@ func (s *Server) Handler() http.Handler {
 	root.Handle("/api/workspace/transfers/ack", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkAckHTTP)))
 	root.Handle("/api/workspace/transfers/abort", s.workspaceDeviceAuth(http.HandlerFunc(s.workspaceChunkAbortHTTP)))
 	root.HandleFunc("GET /healthz", s.health)
-	root.Handle("GET /{$}", s.auth(http.HandlerFunc(s.home)))
-	root.Handle("GET /app.css", s.auth(http.HandlerFunc(s.stylesheet)))
-	root.Handle("GET /aqua.css", s.auth(http.HandlerFunc(s.aquaStylesheet)))
-	root.Handle("GET /app.js", s.auth(http.HandlerFunc(s.script)))
-	for asset := range aquaArtworks {
-		root.Handle("GET "+asset, s.auth(http.HandlerFunc(s.aquaWallpaper)))
+	if s.webConsole {
+		management := s.gatewayAdminRoutes()
+		s.gatewayWebRoutes(root, management, true)
+		root.HandleFunc("GET /workspace", s.gatewayPage(s.home))
+		root.HandleFunc("GET /app.css", s.gatewayPrivateAsset(s.stylesheet))
+		root.HandleFunc("GET /aqua.css", s.gatewayPrivateAsset(s.aquaStylesheet))
+		root.HandleFunc("GET /app.js", s.gatewayPrivateAsset(s.script))
+		root.Handle("/workspace/api/", s.gatewayBrowserAPI(http.StripPrefix("/workspace/api", api)))
+		root.Handle("/api/v1/gateway/", s.auth(http.StripPrefix("/api/v1", management)))
+	} else {
+		root.Handle("GET /{$}", s.auth(http.HandlerFunc(s.home)))
+		root.Handle("GET /app.css", s.auth(http.HandlerFunc(s.stylesheet)))
+		root.Handle("GET /aqua.css", s.auth(http.HandlerFunc(s.aquaStylesheet)))
+		root.Handle("GET /app.js", s.auth(http.HandlerFunc(s.script)))
+		for asset := range aquaArtworks {
+			root.Handle("GET "+asset, s.auth(http.HandlerFunc(s.aquaWallpaper)))
+		}
 	}
 	root.Handle("GET /assets/", s.auth(http.NotFoundHandler()))
 	root.Handle("/api/v1/", s.auth(http.StripPrefix("/api/v1", api)))
@@ -465,11 +479,23 @@ func runApplication() error {
 }
 
 func runConfiguredApplication(config deploymentConfig) error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if config.updateRoot != "" || config.desktopReady != "" {
+		go func() {
+			// EOF from the supervising parent also covers parent crashes.
+			_, _ = io.Copy(io.Discard, os.Stdin)
+			stop()
+		}()
+	}
 	store, err := openStore(config.db, true, config.key)
 	if err != nil {
 		return fmt.Errorf("database initialization failed: %w", err)
 	}
 	defer store.Close()
+	if ctx.Err() != nil {
+		return nil
+	}
 	listener, err := net.Listen("tcp", config.addr)
 	if err != nil {
 		return fmt.Errorf("HTTP server stopped: %w", err)
@@ -480,14 +506,16 @@ func runConfiguredApplication(config deploymentConfig) error {
 	if config.distribution && os.Getenv("MODELATLAS_MAX_FLIGHTS") == "" {
 		flights = 2
 	}
-	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: !config.distribution, MaxFlights: flights, desktop: config.desktopReady != "", distribution: config.distribution, maintenanceFile: config.maintenanceFile, vaultVerified: len(config.key) == 32}
+	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: !config.distribution, MaxFlights: flights, desktop: config.desktopReady != "", webConsole: config.desktopReady == "", distribution: config.distribution, maintenanceFile: config.maintenanceFile, vaultVerified: len(config.key) == 32}
 	if !config.distribution && os.Getenv("MODELATLAS_FACTORY_DEFAULTS") != "0" {
 		if _, err = srv.installKiloFactory(context.Background(), true); err != nil {
 			return fmt.Errorf("factory defaults initialization failed: %w", err)
 		}
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	if config.updateRoot != "" {
+		srv.updateTrialGate = config.updateTrialGate
+		srv.updates = &webUpdater{root: config.updateRoot, tag: buildReleaseTag, ctx: ctx, stop: stop, client: updateReleaseClient()}
+	}
 	if config.backupDestination != "" {
 		srv.backups = newCloudBackupService(ctx, config.backupDestination, config.db, config.key)
 		defer srv.backups.Close()
@@ -497,11 +525,6 @@ func runConfiguredApplication(config deploymentConfig) error {
 			return err
 		}
 		defer os.Remove(config.desktopReady)
-		go func() {
-			// The native parent keeps this pipe open. EOF also covers parent crashes.
-			_, _ = io.Copy(io.Discard, os.Stdin)
-			stop()
-		}()
 	}
 	workerDone := make(chan struct{})
 	if !config.distribution || srv.backups != nil {

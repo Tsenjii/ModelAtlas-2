@@ -149,6 +149,8 @@ button.primary:hover { filter: brightness(1.11); }
 .icon-button { width: 48px; flex: none; padding: 7px; border-radius: 12px; background: transparent; border-color: transparent; }
 .icon-button > svg { width: 20px; height: 20px; }
 .header-actions .icon-button { border-radius: 50%; }
+.header-actions .workspace-entry { justify-content: center; }
+#update-settings .row-actions { justify-content: flex-start; flex-wrap: wrap; }
 .row-actions .icon-button,.input-action .icon-button { border-color: var(--line); }
 .danger-button { color: var(--danger); }
 .quiet-button { color: var(--primary); background: transparent; border-color: transparent; }
