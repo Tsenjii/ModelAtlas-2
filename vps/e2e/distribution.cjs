@@ -371,6 +371,11 @@ const fs = require("node:fs/promises");
     await page.waitForFunction(() => document.documentElement.dataset.workspaceReady === "true");
     assert.equal((await context.request.get(workspace + "/workspace/api/providers")).status(), 200);
     assert.equal((await context.request.get(workspace + "/api/v1/providers")).status(), 401);
+    const rejectedInference = await page.evaluate(async () => {
+      const response = await fetch(workspaceAPI + "/infer", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
+      return {status: response.status, body: (await response.text()).trim()};
+    });
+    assert.deepEqual(rejectedInference, {status: 404, body: "manual conversation missing"});
     await page.getByRole("link", { name: "回管理首頁", exact: true }).click();
     await page.waitForURL(workspace + "/");
     await page.locator("#model-list").getByRole("button", { name: /DeepSeek 4\.1 Flash/ }).waitFor();

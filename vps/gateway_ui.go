@@ -37,10 +37,15 @@ func (s *Server) gatewayPage(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		security(w)
 		origin := gatewayBrowserOrigin(r)
-		navigation := r.Header.Get("Sec-Fetch-Mode") == "navigate" || strings.Contains(r.Header.Get("Accept"), "text/html")
-		if !s.gatewaySessions.use(gatewaySessionID(r, origin), time.Now()) && (navigation || !s.authorized(r)) {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
+		if !s.gatewaySessions.use(gatewaySessionID(r, origin), time.Now()) {
+			if r.Header.Get("Sec-Fetch-Mode") == "navigate" || strings.Contains(r.Header.Get("Accept"), "text/html") {
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			}
+			if !s.authorized(r) {
+				http.Error(w, "authorization required", http.StatusUnauthorized)
+				return
+			}
 		}
 		w.Header().Set("Referrer-Policy", "same-origin")
 		next(w, r)
