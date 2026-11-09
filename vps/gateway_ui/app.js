@@ -46,9 +46,20 @@ function icon(name) {
   node.append(svgNode("use", {href: "#icon-" + name}));
   return node;
 }
-function button(text, handler) {
-  const node = el("button", text);
+function itemIcon(name) {
+  const mark = el("span", undefined, "item-icon");
+  mark.append(icon(name));
+  return mark;
+}
+function button(text, handler, {glyph, iconOnly} = {}) {
+  const node = el("button", iconOnly ? undefined : text);
   node.type = "button";
+  if (glyph) node.prepend(icon(glyph));
+  if (iconOnly) {
+    node.classList.add("icon-button");
+    node.setAttribute("aria-label", text);
+    node.title = text;
+  }
   node.addEventListener("click", () => action(node, handler));
   return node;
 }
@@ -69,9 +80,9 @@ function notice(text, error = false) {
   const dialog = document.querySelector("dialog[open]");
   const global = $("notice");
   let node = global;
-  if (dialog && error) {
+  if (dialog) {
     node = dialog.querySelector(".dialog-message") || el("p", undefined, "dialog-message");
-    node.setAttribute("role", "alert");
+    node.setAttribute("role", error ? "alert" : "status");
     if (!node.isConnected) dialog.append(node);
   }
   node.textContent = text;
@@ -138,16 +149,21 @@ function number(value, digits = 0) {
 function ratio(successes, total) {
   return total ? number(100 * successes / total, 1) + "%" : "—";
 }
-function metric(label, value, detail) {
+function metric(label, value, detail, glyph) {
   const node = el("div", undefined, "metric");
-  node.append(el("small", label), el("strong", value));
+  const caption = el("small", label, glyph ? "icon-label" : undefined);
+  if (glyph) caption.prepend(icon(glyph));
+  node.append(caption, el("strong", value));
   if (detail) node.append(el("em", detail));
   return node;
 }
-function identity(title, lines) {
-  const node = el("div", undefined, "identity");
-  node.append(el("h3", title));
-  for (const line of lines.filter(Boolean)) node.append(el("small", line));
+function identity(title, lines, glyph) {
+  const content = el("div", undefined, glyph ? "identity-text" : "identity");
+  content.append(el("h3", title));
+  for (const line of lines.filter(Boolean)) content.append(el("small", line));
+  if (!glyph) return content;
+  const node = el("div", undefined, "identity marked-identity");
+  node.append(itemIcon(glyph), content);
   return node;
 }
 function controls(...buttons) {
@@ -180,7 +196,7 @@ async function copy(value, field) {
     notice("已選取文字，可使用系統複製功能。");
   }
 }
-async function showPage(page) {
+async function showPage(page, load = refresh) {
   state.page = page;
   for (const id of ["models", "providers", "share", "usage"]) $("page-" + id).hidden = id !== page;
   for (const nav of document.querySelectorAll("[data-page]")) {
@@ -189,7 +205,7 @@ async function showPage(page) {
     else nav.removeAttribute("aria-current");
   }
   window.scrollTo(0, 0);
-  await refresh();
+  await load();
 }
 async function refresh() {
   if (state.page === "models") return showModelView();
@@ -205,7 +221,7 @@ function renderRoutes() {
       state.routes = state.routes.filter(row => scopeID(row) !== scopeID(v));
       if (!state.routes.length) state.routeGroup = null;
       renderRoutes();
-    })
+    }, {glyph: "minus", iconOnly: true})
   ))) : [empty("從上游模型清單挑選同一模型的連線。")]));
 }
 function resetModelDraft() {
@@ -235,11 +251,11 @@ function renderShare() {
       $("model-editor").open = true;
       renderRoutes();
       $("model-editor").scrollIntoView({block: "nearest"});
-    }), button(v.enabled ? "停用" : "啟用", async () => {
+    }, {glyph: "route"}), button(v.enabled ? "停用" : "啟用", async () => {
       await api("/gateway/models", {id: v.id, routes: v.routes, enabled: !v.enabled});
       await loadShare();
       notice(v.enabled ? "公開模型已停用。" : "公開模型已啟用。");
-    })))) : [empty("先從上游選一個模型，就能發布成對外 ID。")]));
+    }, {glyph: v.enabled ? "pause" : "play"})))) : [empty("先從上游選一個模型，就能發布成對外 ID。")]));
   renderKeys();
   renderRoutes();
 }
@@ -296,6 +312,7 @@ $("select-routes").addEventListener("click", () => action(null, () => {
 }));
 $("cancel-model").addEventListener("click", resetModelDraft);
 $("copy-base").addEventListener("click", () => copy(baseURL(), $("gateway-url")));
+$("copy-issued-base").addEventListener("click", () => copy($("issued-base").value, $("issued-base")));
 $("copy-key").addEventListener("click", () => copy($("issued-key").value, $("issued-key")));
 submit("model-form", async form => {
   if (!state.routes.length) throw new Error("請先選擇上游路由。");

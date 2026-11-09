@@ -1,14 +1,15 @@
 "use strict";
 
 const keyStates = {
-  active: ["啟用中", "success"], paused: ["已暫停", "quiet"],
-  expired: ["已到期", "danger"], revoked: ["已撤銷", "quiet"]
+  active: ["啟用中", "success", "check"], paused: ["已暫停", "quiet", "pause"],
+  expired: ["已到期", "danger", "clock"], revoked: ["已撤銷", "quiet", "ban"]
 };
 const consoleState = {edit: null, usage: null, items: [], filter: null, read: null, mode: "requests"};
 
-function badge(text, tone) {
+function badge(text, tone = "neutral", glyph) {
   const node = el("span", text, "badge");
   node.dataset.tone = tone;
+  if (glyph) node.prepend(icon(glyph));
   return node;
 }
 function meter(value, maximum, label) {
@@ -44,22 +45,25 @@ function renderKeys() {
     quota.append(meter(k.used_today, k.daily_limit, "今日請求量"));
     policy.append(quota, metric("到期時間", k.expires_at == null ? "持續有效" : localDate(k.expires_at)));
     card.append(header, policy, el("p", k.models.join("、"), "quiet"));
+    const history = button("查看此 Key 用量", () => showPage("usage", () => showUsage(k.id)), {glyph: "usage", iconOnly: true});
+    const actions = controls(history);
     if (k.enabled) {
-      card.append(controls(
-        button("編輯", () => openKeyEditor(k)),
-        button(k.paused ? "恢復" : "暫停", async () => {
-          await api("/gateway/keys/pause", {id: k.id, paused: !k.paused});
-          await loadShare();
-          notice(k.paused ? "Key 已恢復。" : "Key 已暫停。");
-        }),
-        button("撤銷", async () => {
-          if (!window.confirm("要撤銷「" + k.label + "」嗎？這把 Key 會立即失效。")) return;
-          await api("/gateway/keys/revoke", {id: k.id});
-          await loadShare();
-          notice("分發 Key 已撤銷。");
-        })
-      ));
+      actions.prepend(button("編輯", () => openKeyEditor(k), {glyph: "edit", iconOnly: true}));
+      const pause = button(k.paused ? "恢復" : "暫停", async () => {
+        await api("/gateway/keys/pause", {id: k.id, paused: !k.paused});
+        await loadShare();
+        notice(k.paused ? "Key 已恢復。" : "Key 已暫停。");
+      }, {glyph: k.paused ? "play" : "pause"});
+      const revoke = button("撤銷", async () => {
+        if (!window.confirm("要撤銷「" + k.label + "」嗎？這把 Key 會立即失效。")) return;
+        await api("/gateway/keys/revoke", {id: k.id});
+        await loadShare();
+        notice("分發 Key 已撤銷。");
+      }, {glyph: "ban"});
+      revoke.classList.add("danger-button");
+      actions.append(pause, revoke);
     }
+    card.append(actions);
     return card;
   });
   $("key-list").replaceChildren(...(rows.length ? rows : [empty(state.keys.length ? "沒有符合條件的 Key。" : "還沒有分發 Key。")]));
@@ -82,7 +86,7 @@ function openKeyEditor(key) {
   form.reset();
   $("key-model-search").value = "";
   $("key-editor-title").textContent = key ? "編輯分發 Key" : "建立分發 Key";
-  $("issue-key").textContent = key ? "儲存設定" : "產生 Key";
+  $("issue-key-label").textContent = key ? "儲存設定" : "產生 Key";
   const selected = new Set(key?.models ?? []);
   const available = state.models.filter(v => v.enabled || selected.has(v.id));
   if (key) {
@@ -108,9 +112,19 @@ function openKeyEditor(key) {
   $("key-editor").showModal();
 }
 
-async function showUsage() {
-  state.keys = await api("/gateway/keys");
+function syncUsageKeyFilter() {
+  $("usage-key").disabled = $("usage-source").value === "tests";
+}
+async function showUsage(keyID) {
+  if (!keyID) state.keys = await api("/gateway/keys");
   putOptions($("usage-key"), [["", "全部 Key"], ...state.keys.map(k => [k.id, k.label])]);
+  if (keyID) {
+    $("usage-source").value = "gateway";
+    $("usage-key").value = keyID;
+    $("usage-model").value = "";
+    $("usage-status").value = "";
+  }
+  syncUsageKeyFilter();
   return loadUsage(true);
 }
 async function loadUsage(reset) {
@@ -148,9 +162,7 @@ function renderUsage() {
   const {summary, ranking} = consoleState.usage;
   const stat = (glyph, label, value, detail, decoration) => {
     const card = el("div", undefined, "card");
-    const mark = el("span", undefined, "item-icon");
-    mark.append(icon(glyph));
-    card.append(decoration || mark, metric(label, value, detail));
+    card.append(decoration || itemIcon(glyph), metric(label, value, detail));
     return card;
   };
   let ring;
@@ -297,7 +309,7 @@ function renderUsageRows() {
     add(usageResult(v), v.attempts > 1 ? "含備援 · 共 " + v.attempts + " 次上游請求" : "");
     add(delay(v.ttft_ms) + " / " + delay(v.latency_ms));
     add(number(v.input_tokens) + " / " + number(v.output_tokens));
-    add(button("詳情", () => openUsageDetail(v)));
+    add(button("詳情", () => openUsageDetail(v), {glyph: "info", iconOnly: true}));
   }
   list.replaceChildren(table);
 }
@@ -305,7 +317,8 @@ function delay(ms) { return ms == null ? "—" : number(ms) + " ms"; }
 function usageResult(v) {
   const code = v.http_status ?? v.upstream_status;
   const tone = v.outcome === "SUCCESS" ? "success" : ["RUNNING", "CANCELLED", "INTERRUPTED"].includes(v.outcome) ? "quiet" : "danger";
-  return badge((statuses[v.outcome] || v.outcome) + (code ? " · " + code : ""), tone);
+  return badge((statuses[v.outcome] || v.outcome) + (code ? " · " + code : ""), tone,
+    tone === "success" ? "check" : tone === "quiet" ? "clock" : "alert");
 }
 function renderDetailFields(fields, values) {
   fields.replaceChildren();
@@ -333,7 +346,12 @@ $("key-search").addEventListener("input", renderKeys);
 $("key-status").addEventListener("change", renderKeys);
 $("key-model-search").addEventListener("input", keySelection);
 $("key-models").addEventListener("change", keySelection);
-$("usage-source").addEventListener("change", () => { $("usage-key").disabled = $("usage-source").value === "tests"; });
+$("usage-source").addEventListener("change", syncUsageKeyFilter);
+$("clear-usage-filters").addEventListener("click", event => action(event.currentTarget, () => {
+  $("usage-filters").reset();
+  syncUsageKeyFilter();
+  return loadUsage(true);
+}));
 $("usage-filters").addEventListener("submit", event => {
   event.preventDefault();
   action(event.submitter, () => loadUsage(true));

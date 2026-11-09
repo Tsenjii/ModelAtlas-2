@@ -28,11 +28,14 @@ const fs = require("node:fs/promises");
         [...document.querySelectorAll("main h1")].find(node => node.checkVisibility()).getBoundingClientRect().top,
       controls: [...document.querySelectorAll('button,summary,input:not([type=checkbox]),select,textarea,.check,.choice,.link-button')]
         .filter(node => node.checkVisibility() && node.getBoundingClientRect().height < 47.9)
-        .map(node => node.id || node.textContent)
+        .map(node => node.id || node.textContent),
+      iconControls: [...document.querySelectorAll('button.icon-button')].filter(node => node.checkVisibility() &&
+        (!node.getAttribute('aria-label') || node.getBoundingClientRect().width < 47.9)).map(node => node.id || node.title)
     }));
     assert(layout.scroll <= layout.width, "horizontal overflow " + JSON.stringify(layout));
     assert(!layout.headerOverlaps, "header overlays the page title");
     assert.deepEqual(layout.controls, [], "tap targets shorter than 48px");
+    assert.deepEqual(layout.iconControls, [], "icon buttons without names or 48px width");
   };
   const shot = async name => {
     await assertLayout();
@@ -47,14 +50,14 @@ const fs = require("node:fs/promises");
     await form.getByLabel("Base URL", { exact: true }).fill(upstream + "/" + side + "/v1");
     await form.getByLabel("上游 API Key", { exact: true }).fill(key);
     await form.getByRole("button", { name: "儲存並同步模型" }).click();
-    await page.locator("#provider-detail-content").getByRole("heading", { name, exact: true }).waitFor();
+    await page.locator("#provider-detail").getByRole("heading", { name, exact: true }).waitFor();
   };
   const offering = name => page.locator("#offer-list article").filter({ hasText: name });
 
   try {
     await page.goto(origin);
     await add("潮汐 API", "a", process.env.MODELATLAS_TEST_UPSTREAM_A, "日常主力模型站");
-    const provider = page.locator("#provider-detail-content");
+    const provider = page.locator("#provider-detail");
     await provider.getByRole("button", { name: "編輯資料" }).click();
     await page.locator("#provider-form").getByLabel("需要每日簽到").check();
     await page.locator("#provider-form").getByLabel("簽到網址").fill(upstream + "/checkin");
@@ -110,6 +113,9 @@ const fs = require("node:fs/promises");
     await page.locator("#provider-count").getByText("已載入 2 家", { exact: false }).waitFor();
     await page.locator("#provider-list article").filter({ hasText: "潮汐 API" }).getByText("100%", { exact: true }).waitFor();
     await shot("providers-402-light");
+    const providerTile = page.locator("#provider-list article").filter({ hasText: "潮汐 API" });
+    await providerTile.click({ position: { x: 18, y: 18 } });
+    await provider.getByRole("heading", { name: "潮汐 API", exact: true }).waitFor();
     await go("模型");
     await page.getByRole("button", { name: "選取分發連線" }).click();
     for (const name of ["潮汐 API", "曙光 API"]) await offering(name).getByRole("button", { name: "加入路由" }).click();
@@ -127,6 +133,8 @@ const fs = require("node:fs/promises");
     await page.locator("#issued-dialog").waitFor();
     const token = await page.locator("#issued-key").inputValue();
     assert(token.startsWith("sk-ma-"), "no distribution key issued");
+    await page.locator("#issued-dialog").getByRole("button", { name: "複製 Base URL", exact: true }).click();
+    await page.locator("#issued-dialog").getByText(/已複製|已選取文字/).waitFor();
     await page.locator("#issued-dialog").getByRole("button", { name: "完成" }).click();
     await page.waitForFunction(() => document.querySelector("#issued-key").value === "");
     const headers = { Authorization: "Bearer " + token };
@@ -150,11 +158,19 @@ const fs = require("node:fs/promises");
     assert.equal(result.status(), 200);
     assert((await result.text()).includes("data: [DONE]"), "missing forwarded SSE completion");
 
+    const usage = page.locator("#usage-filters");
+    await keyRow.getByRole("button", { name: "查看此 Key 用量", exact: true }).click();
+    await page.locator("#usage-count").getByText("已顯示 1 / 1 筆", { exact: true }).waitFor();
+    assert.equal(await usage.locator("#usage-source").inputValue(), "gateway");
+    assert.equal(await usage.locator("#usage-key option:checked").innerText(), "手機");
+    await usage.getByRole("button", { name: "清除篩選", exact: true }).click();
+    await page.locator("#usage-list").getByText("模型實測", { exact: true }).first().waitFor();
+    assert.equal(await usage.locator("#usage-key").inputValue(), "");
+    await go("分發");
     await page.getByRole("button", { name: "查看用量", exact: true }).click();
     const forwarded = page.locator("#usage-list tbody tr").filter({ hasText: "曙光 API / DeepSeek-V4_1-Flash" }).filter({ hasText: "atlas-chat" });
     await forwarded.getByText("曙光 API / DeepSeek-V4_1-Flash", { exact: true }).waitFor();
     assert(await forwarded.getByText("含備援 · 共 2 次上游請求", { exact: true }).isVisible());
-    const usage = page.locator("#usage-filters");
     const apply = () => usage.getByRole("button", { name: "套用篩選", exact: true }).click();
     await usage.locator("#usage-range").selectOption("7d");
     await apply();
@@ -231,11 +247,16 @@ const fs = require("node:fs/promises");
     const start = batch.getByRole("button", { name: "開始測速" });
     const close = batch.getByRole("button", { name: "關閉" });
     await openBatch();
-    const choices = batch.getByRole("checkbox");
+    const choices = batch.locator("#offer-batch-list").getByRole("checkbox");
+    const selectAll = batch.getByRole("checkbox", { name: "全選連線", exact: true });
     assert.equal(await choices.count(), 2);
     for (const choice of await choices.all()) await choice.uncheck();
     assert(await start.isDisabled());
-    for (const choice of await choices.all()) await choice.check();
+    await selectAll.check();
+    for (const choice of await choices.all()) assert(await choice.isChecked());
+    await choices.first().uncheck();
+    assert(await selectAll.evaluate(input => input.indeterminate));
+    await selectAll.check();
     await assertLayout();
     await start.click();
     await batch.getByText("已完成 2 / 2，成功 2", { exact: true }).waitFor();
@@ -279,7 +300,8 @@ const fs = require("node:fs/promises");
     assert.deepEqual(external, []);
     console.log(JSON.stringify({ result: "PASS", screenshots: 6, realTLSUpstreams: 2, groupedModel: true, scopedQuota: true,
       accountCheckin: true, streamedFailover: true, narrowDarkLargeText: true, activityCharts: true, keyPolicy: true,
-      scopedOfferHistory: true, batchProbes: true, batchStop: true, batchRateLimit: true }));
+      scopedOfferHistory: true, batchProbes: true, batchStop: true, batchRateLimit: true,
+      providerCardHitArea: true, scopedKeyUsage: true, batchSelectAll: true, dialogCopyFeedback: true }));
   } finally {
     await client.dispose();
     await browser.close();

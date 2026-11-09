@@ -28,12 +28,20 @@ function renderOfferBatch() {
 
 function updateBatchSelection() {
   const count = offerBatch.items.filter(item => item.input.checked).length;
+  const all = $("offer-batch-all");
+  all.checked = count === offerBatch.items.length;
+  all.indeterminate = count > 0 && !all.checked;
   $("offer-batch-start").disabled = !count;
   $("offer-batch-progress").textContent = "已選 " + count + " / " + offerBatch.items.length + " 條連線";
 }
 
 function openOfferBatch() {
-  const entries = state.offers.filter(v => v.enabled && offerTestable(v)).slice(0, 100);
+  const candidates = new Map();
+  for (const v of state.offers) {
+    if (v.enabled && offerTestable(v)) candidates.set(scopeID(v), v);
+    if (candidates.size === 100) break;
+  }
+  const entries = [...candidates.values()];
   if (!entries.length) return;
   const items = entries.map(v => {
     const label = el("label", undefined, "choice batch-choice");
@@ -49,6 +57,7 @@ function openOfferBatch() {
   });
   offerBatch = {group: state.modelGroup, items, running: false, stop: false};
   $("offer-batch-list").replaceChildren(...items.map(item => item.label));
+  $("offer-batch-all").disabled = false;
   $("offer-batch-start").hidden = false;
   $("offer-batch-stop").disabled = false;
   updateBatchSelection();
@@ -62,6 +71,7 @@ async function runOfferBatch() {
   if (!entries.length) return;
   batch.running = true;
   renderOfferBatch();
+  $("offer-batch-all").disabled = true;
   for (const item of batch.items) item.input.disabled = true;
   for (const item of entries) item.result.textContent = "待測";
   $("offer-batch-start").hidden = true;
@@ -163,9 +173,7 @@ async function loadGroups(reset) {
     tile.className = "model-tile";
     const label = el("span", undefined, "model-tile-label");
     label.append(el("strong", group.name), el("small", group.providers + " 家供應商 · " + group.connections + " 個連線"));
-    const mark = el("span", undefined, "item-icon");
-    mark.append(icon("model"));
-    tile.append(mark, label, icon("chevron"));
+    tile.append(itemIcon("model"), label, icon("chevron"));
     return tile;
   });
   $("model-list").replaceChildren(...(nodes.length ? nodes : [empty("這裡會列出你的模型。可新增供應商、同步目錄或手動加入模型 ID。")]));
@@ -199,9 +207,9 @@ async function loadOffers(reset, limit = 50) {
 function performanceCells(p) {
   const metrics = el("div", undefined, "metrics");
   metrics.append(metric("首字等待", p.ttft_ms == null ? "—" : number(p.ttft_ms) + " ms",
-      p.latency_ms == null ? "" : "總延遲 " + number(p.latency_ms) + " ms"),
-    metric("生成速度", p.tps == null ? "—" : number(p.tps, 1) + " tok/s"),
-    metric("成功率", ratio(p.successes, p.samples), p.samples ? p.successes + " / " + p.samples + " 次" : "未實測"));
+      p.latency_ms == null ? "" : "總延遲 " + number(p.latency_ms) + " ms", "clock"),
+    metric("生成速度", p.tps == null ? "—" : number(p.tps, 1) + " tok/s", "", "bolt"),
+    metric("成功率", ratio(p.successes, p.samples), p.samples ? p.successes + " / " + p.samples + " 次" : "未實測", "check"));
   return metrics;
 }
 
@@ -262,7 +270,7 @@ function renderOffers() {
         singleOfferTests--;
         renderOfferBatch();
       }
-    });
+    }, {glyph: "gauge"});
     probe.disabled = !v.enabled;
     probe.hidden = !offerTestable(v);
     const picked = state.routes.some(route => scopeID(route) === scopeID(v));
@@ -279,7 +287,7 @@ function renderOffers() {
       }
       renderRoutes();
       renderOffers();
-    });
+    }, {glyph: picked ? "minus" : "plus"});
     choose.hidden = !relayable || !state.routePicking;
     choose.disabled = !v.enabled && !picked;
     choose.setAttribute("aria-pressed", String(picked));
@@ -288,10 +296,11 @@ function renderOffers() {
       $("group-scope").textContent = v.provider + " / " + v.model_id;
       $("group-form").elements.canonical_id.value = v.canonical_id;
       $("group-dialog").showModal();
-    });
+    }, {glyph: "tag"});
     const details = identity(v.provider, [[v.account, v.credential, v.group].filter(Boolean).join(" · "),
       v.model_id + " · " + (operationNames[v.operation] || v.operation), v.enabled ? "" : "連線停用或不可用"]);
-    row.append(details, performanceCells(v.performance), controls(probe, button("連線詳情", () => openOfferDetail(v)), choose, align));
+    const history = button("連線詳情", () => openOfferDetail(v), {glyph: "info", iconOnly: true});
+    row.append(details, performanceCells(v.performance), controls(probe, history, choose, align));
     return row;
   });
   const group = state.modelGroup;
@@ -322,6 +331,7 @@ function httpsLink(label, url) {
   if (!url) return null;
   try { if (new URL(url).protocol !== "https:") return null; } catch { return null; }
   const link = el("a", label, "link-button");
+  link.append(icon("external"));
   link.href = url;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
@@ -330,21 +340,32 @@ function httpsLink(label, url) {
 function providerFacts(p, summary) {
   const facts = el("div", undefined, "provider-facts");
   facts.append(performanceCells(p.performance));
-  const limits = el("div", undefined, "quota-facts");
-  limits.append(el("small", "剩餘額度", "quiet"));
-  if (p.quotas.length) {
+  const meta = el("div", undefined, "provider-meta");
+  if (p.quotas.length || !summary) {
+    const limits = el("div");
+    const caption = el("small", "剩餘額度", "quiet icon-label");
+    caption.prepend(icon("wallet"));
+    limits.append(caption);
     for (const q of p.quotas.slice(0, summary ? 2 : 3)) {
       limits.append(el("div", quotaValue(q) + " · " + quotaSource(q), "quota-line"));
     }
-  } else limits.append(el("div", "待查詢", "quota-line"));
-  facts.append(limits, el("span", checkinSummary(p), "badge"));
+    if (!p.quotas.length) limits.append(el("div", "待查詢", "quota-line"));
+    meta.append(limits);
+  }
+  meta.append(badge(checkinSummary(p), undefined, "calendar"));
+  facts.append(meta);
   return facts;
 }
 
 async function showProviderView() {
   $("provider-index").hidden = !!state.providerID;
   $("provider-detail").hidden = !state.providerID;
-  if (state.providerID) return loadProvider();
+  if (state.providerID) {
+    const current = management.provider?.id === state.providerID;
+    $("provider-title").textContent = current ? management.provider.name : "供應商";
+    $("provider-edit").disabled = !current;
+    return loadProvider();
+  }
   return loadProviderList(true);
 }
 
@@ -360,12 +381,14 @@ async function loadProviderList(reset) {
   $("provider-count").textContent = "已載入 " + management.providers.length + " 家 · 近 7 天本站實測";
   const cards = management.providers.map(p => {
     const row = el("article", undefined, "entry provider-tile");
-    const intro = identity(p.name, [p.description || "尚未填寫簡介", p.base_url, p.accounts + " 個帳戶 · " + p.keys + " 把啟用的推論 Key"]);
-    const view = button("管理 " + p.name, () => {
+    const intro = identity(p.name, [p.description || "尚未填寫簡介", p.base_url, p.accounts + " 個帳戶 · " + p.keys + " 把啟用的推論 Key"], "provider");
+    const view = button("管理 " + p.name, async () => {
       state.providerID = p.id;
       $("provider-detail-content").replaceChildren();
-      return showPage("providers");
-    });
+      await showPage("providers");
+      if (state.page === "providers" && state.providerID === p.id) $("provider-title").focus({preventScroll: true});
+    }, {glyph: "chevron", iconOnly: true});
+    view.classList.add("provider-open");
     row.append(intro, providerFacts(p, true), controls(view));
     return row;
   });
@@ -434,8 +457,8 @@ function renderCredential(p, c) {
       const result = await api("/gateway/sync", connectionFields(v));
       await loadProvider();
       notice("同步完成 · " + result.models_seen + " 個模型");
-    });
-    const add = button("手動加模型", () => openConnectionDialog(v, "model"));
+    }, {glyph: "refresh"});
+    const add = button("手動加模型", () => openConnectionDialog(v, "model"), {glyph: "plus"});
     sync.disabled = add.disabled = !c.enabled;
     actions.append(sync, add);
   }
@@ -444,23 +467,23 @@ function renderCredential(p, c) {
       await api("/gateway/quota/refresh", {...connectionFields(v), role: c.role});
       await loadProvider();
       notice("已讀取站方額度。");
-    });
+    }, {glyph: "wallet"});
     quotaButton.disabled = !c.enabled;
-    actions.append(quotaButton, button("換 Key", () => openConnectionDialog(v, "key")));
+    actions.append(quotaButton, button("換 Key", () => openConnectionDialog(v, "key"), {glyph: "key"}));
   }
   actions.append(button(c.enabled ? "停用" : "啟用", async () => {
     await api("/credentials/toggle", {provider_id: p.id, account_id: c.account_id, ids: [c.id], enabled: !c.enabled});
     await loadProvider();
     notice(c.enabled ? "Key 已停用。" : "Key 已啟用。");
-  }));
+  }, {glyph: c.enabled ? "pause" : "play"}));
   row.append(actions);
   return row;
 }
 function renderAccount(p, a) {
   const card = el("div", undefined, "card");
   const heading = el("div", undefined, "section-inline");
-  heading.append(el("h2", a.label || "帳戶"), controls(button("新增 Key", () => openAccountDialog(a, "credential")),
-    button("記錄額度", () => openAccountDialog(a, "quota"))));
+  heading.append(el("h2", a.label || "帳戶"), controls(button("新增 Key", () => openAccountDialog(a, "credential"), {glyph: "plus"}),
+    button("記錄額度", () => openAccountDialog(a, "quota"), {glyph: "wallet"})));
   card.append(heading);
   for (const q of p.quotas.filter(q => q.account_id === a.id && q.role !== "INFERENCE")) {
     card.append(el("p", quotaSource(q) + " · " + quotaDetail(q), "quota-line"));
@@ -468,7 +491,7 @@ function renderAccount(p, a) {
   const check = management.checkins?.accounts.find(v => v.account_id === a.id);
   if (check?.required) {
     const line = el("div", undefined, "checkin-line");
-    line.append(el("span", check.completed_at ? "今日簽到已記錄" : "今日尚未記錄簽到", "badge"));
+    line.append(badge(check.completed_at ? "今日簽到已記錄" : "今日尚未記錄簽到", check.completed_at ? "success" : "quiet", "calendar"));
     const link = httpsLink("前往站點簽到", check.checkin_url);
     if (link) line.append(link);
     if (!check.completed_at) line.append(button("我已簽到", async () => {
@@ -476,7 +499,7 @@ function renderAccount(p, a) {
       await api("/checkins/accounts", {provider_id: p.id, account_id: a.id, timezone, date});
       await loadProvider();
       notice("已記錄這個帳戶的簽到。");
-    }));
+    }, {glyph: "check"}));
     card.append(line);
   }
   const list = el("div", undefined, "rows");
@@ -488,33 +511,33 @@ function renderAccount(p, a) {
 function renderProvider() {
   const p = management.provider;
   const content = $("provider-detail-content");
-  const heading = el("div", undefined, "page-heading");
-  const title = el("div");
-  title.append(el("p", "Provider overview", "eyebrow"), el("h1", p.name));
-  heading.append(title, button("編輯資料", () => openProviderProfile(p)));
+  $("provider-title").textContent = p.name;
+  $("provider-edit").disabled = false;
   const profile = el("div", undefined, "card stack");
   const base = el("code", p.base_url);
   profile.append(el("p", p.description || "尚未填寫簡介"), base, providerFacts(p, false),
     el("p", "近 7 天 · 最近 100 筆本站實測", "quiet"));
-  const tools = controls(button("複製 Base URL", () => copy(p.base_url, base)), button("看這家的模型", async () => {
+  const copyURL = button("複製 Base URL", () => copy(p.base_url, base), {glyph: "copy", iconOnly: true});
+  const tools = controls(copyURL, button("看這家的模型", async () => {
     state.modelGroup = null;
     state.modelProvider = p;
     $("model-search").value = "";
     await showPage("models");
-  }), button("查詢站方簽到", async () => {
+  }, {glyph: "model"}), button("查詢站方簽到", async () => {
     await api("/newapi/status", {provider_id: p.id});
     await loadProvider();
     notice("已讀取站方狀態。");
-  }));
+  }, {glyph: "calendar"}));
   const link = httpsLink("開啟網站", p.website);
   if (link) tools.append(link);
   profile.append(tools);
   const accounts = el("div", undefined, "section-inline");
-  accounts.append(el("h2", "帳戶與 Key"), button("新增帳戶", () => openAccountDialog(null, "account")));
-  content.replaceChildren(heading, profile, accounts, ...management.accounts.map(a => renderAccount(p, a)));
+  accounts.append(el("h2", "帳戶與 Key"), button("新增帳戶", () => openAccountDialog(null, "account"), {glyph: "plus"}));
+  content.replaceChildren(profile, accounts, ...management.accounts.map(a => renderAccount(p, a)));
 }
 
 for (const id of ["model-add-provider", "add-upstream"]) $(id).addEventListener("click", () => $("upstream-dialog").showModal());
+$("provider-edit").addEventListener("click", () => openProviderProfile(management.provider));
 $("models-back").addEventListener("click", () => action(null, () => {
   state.modelGroup = null;
   return showPage("models");
@@ -540,6 +563,10 @@ $("offer-sort").addEventListener("change", () => action(null, () => loadOffers(t
 $("offers-more").addEventListener("click", () => action(null, () => loadOffers(false)));
 $("offer-batch").addEventListener("click", openOfferBatch);
 $("offer-batch-list").addEventListener("change", updateBatchSelection);
+$("offer-batch-all").addEventListener("change", event => {
+  for (const item of offerBatch.items) item.input.checked = event.target.checked;
+  updateBatchSelection();
+});
 submit("offer-batch-form", runOfferBatch);
 $("offer-batch-stop").addEventListener("click", () => {
   offerBatch.stop = true;
