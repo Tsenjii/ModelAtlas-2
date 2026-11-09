@@ -77,6 +77,6 @@ func (a *staticAsset) serve(w http.ResponseWriter, r *http.Request, contentType 
 }
 
 var cssAsset = staticAsset{raw: appCSS, revalidate: true}
-var jsAsset = staticAsset{raw: appJS, revalidate: true}
+var jsAsset = staticAsset{raw: appJS + "\n" + metricPlotJS, revalidate: true}
 
 var errConversationLimit = errors.New("conversation limit; history retained, start a new conversation")

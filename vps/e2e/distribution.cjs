@@ -265,12 +265,32 @@ const fs = require("node:fs/promises");
     await history.getByText("分發請求", { exact: true }).waitFor();
     assert.equal(await history.locator(".history-sample").count(), 2);
     await history.getByText("上游限流 · 429", { exact: true }).waitFor();
+    const trend = history.getByRole("region", {name: "實測趨勢"});
+    const trendMetric = trend.getByLabel("趨勢指標");
+    const selectedPoint = trend.locator(".plot-selected");
+    assert.equal(await trendMetric.inputValue(), "ttft_ms");
+    await trend.getByRole("group", {name: /^首字等待/}).waitFor();
+    await trendMetric.selectOption("success");
+    await selectedPoint.getByText(/HTTP 429/).waitFor();
+    await selectedPoint.getByText("失敗", {exact: true}).waitFor();
+    await trend.getByRole("button", {name: "上一筆", exact: true}).click();
+    await selectedPoint.getByText("成功", {exact: true}).waitFor();
+    assert(await trend.evaluate(node => node.scrollWidth <= node.clientWidth + 1), "connection chart overflow");
     await assertLayout();
     await history.getByRole("button", { name: "關閉" }).click();
     await offering("曙光 API").getByRole("button", { name: "連線詳情" }).click();
     await history.getByText("分發請求", { exact: true }).waitFor();
     assert.equal(await history.locator(".history-sample").count(), 2);
     assert.equal(await history.getByText("上游限流 · 429", { exact: true }).count(), 0);
+    assert.equal(await trendMetric.inputValue(), "ttft_ms");
+    await trend.getByRole("group", {name: /^首字等待/}).waitFor();
+    await trendMetric.selectOption("tps");
+    await trend.getByRole("heading", {name: "生成速度", exact: true}).waitFor();
+    await trendMetric.selectOption("latency_ms");
+    await trend.getByRole("group", {name: /^總延遲/}).waitFor();
+    await trendMetric.selectOption("success");
+    await selectedPoint.getByText("成功", {exact: true}).waitFor();
+    assert.equal(await selectedPoint.getByText(/HTTP 429/).count(), 0);
     await history.getByRole("button", { name: "關閉" }).click();
 
     const batch = page.locator("#offer-batch-dialog");
@@ -388,7 +408,7 @@ const fs = require("node:fs/promises");
       accountCheckin: true, streamedFailover: true, narrowDarkLargeText: true, activityCharts: true, keyPolicy: true,
       scopedOfferHistory: true, batchProbes: true, batchStop: true, batchRateLimit: true,
       providerCardHitArea: true, scopedKeyUsage: true, batchSelectAll: true, dialogCopyFeedback: true, browserSignIn: true,
-      sharedWorkspace: true, settingsUpdate: true }));
+      sharedWorkspace: true, settingsUpdate: true, connectionTrend: true }));
   } finally {
     await client.dispose();
     await browser.close();

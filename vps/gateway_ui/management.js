@@ -213,6 +213,42 @@ function performanceCells(p) {
   return metrics;
 }
 
+function renderOfferTrend(samples) {
+  const trend = $("offer-trend");
+  const label = el("label", "趨勢指標");
+  const metric = el("select");
+  const chart = el("div");
+  const measured = samples.filter(sample => !["RUNNING", "CANCELLED", "INTERRUPTED"].includes(sample.outcome));
+  metric.append(option("ttft_ms", "首字等待"), option("tps", "生成速度"),
+    option("latency_ms", "總延遲"), option("success", "成功／失敗"));
+  label.append(metric);
+  trend.replaceChildren(el("h3", "實測趨勢"), label, chart);
+  const draw = () => {
+    const binary = metric.value === "success";
+    chart.replaceChildren();
+    metricPlot(chart, {
+      title: metric.selectedOptions[0].textContent,
+      unit: binary ? "" : metric.value === "tps" ? "tok/s" : "ms",
+      binary,
+      points: measured.map(sample => ({
+        at: sample.at,
+        value: binary ? Number(sample.outcome === "SUCCESS") : sample[metric.value],
+        note: (statuses[sample.outcome] || sample.outcome) + (sample.http_status ? " · HTTP " + sample.http_status : "")
+      })),
+      description: "這條連線最近 " + samples.length + " 筆紀錄。選取圖點可查看時間和數值。",
+      allowExport: false,
+      appendAction(parent, text, handler) {
+        const node = button(text, handler);
+        parent.append(node);
+        return node;
+      }
+    });
+  };
+  metric.addEventListener("change", draw);
+  draw();
+  trend.hidden = false;
+}
+
 async function openOfferDetail(v) {
   historyRead?.abort();
   const read = new AbortController();
@@ -220,6 +256,8 @@ async function openOfferDetail(v) {
   const p = v.performance;
   const dialog = $("offer-detail");
   const history = $("offer-history");
+  $("offer-trend").hidden = true;
+  $("offer-trend").replaceChildren();
   renderDetailFields($("offer-detail-fields"), [
     ["供應商", v.provider], ["帳戶", v.account], ["Key 標籤", v.credential], ["群組", v.group || "預設"],
     ["上游模型 ID", v.model_id], ["模型歸類", v.canonical_id], ["端點", v.endpoint],
@@ -233,6 +271,7 @@ async function openOfferDetail(v) {
   try {
     const samples = await api("/gateway/offering-history?" + new URLSearchParams(selection(v)), undefined, read.signal);
     if (historyRead !== read || !dialog.open) return;
+    if (samples.length) renderOfferTrend(samples);
     const timestamp = new Intl.DateTimeFormat("zh-TW", {dateStyle: "short", timeStyle: "medium"});
     const sources = {GATEWAY: "分發請求", GATEWAY_TEST: "模型實測", MANUAL_TEST: "模型實測", CHAT: "工作區對話"};
     const rows = samples.map(sample => {
@@ -590,6 +629,7 @@ $("offer-batch-dialog").addEventListener("close", () => {
 $("offer-detail").addEventListener("close", () => {
   if ($("offer-detail").open) return;
   historyRead?.abort();
+  $("offer-trend").replaceChildren();
   $("offer-history").replaceChildren();
 });
 $("route-pick").addEventListener("click", () => {

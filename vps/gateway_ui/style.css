@@ -306,6 +306,17 @@ code { font: .83rem/1.55 ui-monospace,SFMono-Regular,monospace; overflow-wrap: a
 .usage-table button { min-width: 48px; }
 .detail-fields { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); margin: 0; gap: 8px; font-size: .88rem; }
 .detail-fields dt { color: var(--muted); }
+.offer-trend .plot-card { display: grid; gap: 8px; min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--well); }
+.offer-trend .plot-heading,.offer-trend .plot-dates,.offer-trend .plot-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+.offer-trend .plot-heading h4 { margin: 0; font-size: .87rem; }
+.offer-trend .plot-heading small,.offer-trend .plot-dates,.offer-trend .plot-selected small,.offer-trend .section-description { color: var(--muted); font-size: .75rem; }
+.offer-trend .metric-plot { display: block; width: 100%; height: clamp(112px, 24vw, 166px); stroke: none; touch-action: pan-y; }
+.offer-trend .metric-plot text { fill: var(--muted); font-size: 19px; }
+.offer-trend .plot-line { stroke: var(--primary); stroke-width: 2; fill: none; vector-effect: non-scaling-stroke; }
+.offer-trend .plot-dot { fill: var(--paper); stroke: var(--primary); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.offer-trend .plot-grid { stroke: var(--line); vector-effect: non-scaling-stroke; }
+.offer-trend .plot-selected { display: grid; gap: 4px; overflow-wrap: anywhere; }
+.offer-trend .plot-actions { justify-content: flex-start; }
 .history-sample { display: grid; gap: 8px; padding: 9px; background: var(--well); border: 1px solid var(--border); border-radius: 12px; }
 .history-sample header strong { min-width: 0; overflow-wrap: anywhere; font-size: .83rem; }
 .batch-choice { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: start; padding: 7px; }

@@ -26,11 +26,14 @@ var gatewayConsoleJS string
 //go:embed gateway_ui/update.js
 var gatewayUpdateJS string
 
+//go:embed gateway_ui/metric-plot.js
+var metricPlotJS string
+
 //go:embed gateway_ui/mark.svg
 var gatewayMarkSVG string
 
 var gatewayStyleAsset = staticAsset{raw: gatewayCSS, revalidate: true}
-var gatewayScriptAsset = staticAsset{raw: gatewayJS + "\n" + gatewayConsoleJS + "\n" + gatewayManagementJS + "\n" + gatewayUpdateJS, revalidate: true}
+var gatewayScriptAsset = staticAsset{raw: gatewayJS + "\n" + gatewayConsoleJS + "\n" + metricPlotJS + "\n" + gatewayManagementJS + "\n" + gatewayUpdateJS, revalidate: true}
 var gatewayMarkAsset = staticAsset{raw: gatewayMarkSVG, revalidate: true}
 
 func (s *Server) gatewayPage(next http.HandlerFunc) http.HandlerFunc {
