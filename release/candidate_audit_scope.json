@@ -101,6 +101,7 @@
     "TestBrowserDistributionWorkflow": "skip",
     "TestGatewayDistributionWorkflow": "pass",
     "TestGatewayKeyPolicyEnforced": "pass",
+    "TestGatewayRememberBrowser": "pass",
     "TestGatewayUsageIntervalsAndSources": "pass",
     "TestVPSNativeSpeechPreservesUpstreamBytes": "pass",
     "TestConnectorPrivateMappingExplicitReadKeepsPublicAnonymousAndSecretsOut": "pass",
