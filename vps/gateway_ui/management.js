@@ -1,6 +1,14 @@
 "use strict";
 
 const modelGroupPageSize = 40;
+const unclassifiedBrand = "unclassified";
+const modelBrandLabels = new Map([
+  ["", "全部品牌"],
+  ...modelBrands.map(([brand, , name]) => [brand, name]),
+  [unclassifiedBrand, "未歸類"]
+]);
+let brandCounts = new Map([["", 0]]);
+let brandProviderID = "";
 const management = {
   groups: [], modelBrand: "", groupLimit: modelGroupPageSize, providers: [], provider: null, accounts: [], credentials: [],
   checkins: null, account: null, connection: null, align: null, quotaScope: null
@@ -15,6 +23,7 @@ let groupRead, offerRead, providerRead, detailRead;
 let providerReturn = null;
 let offerBatch = null;
 const offerTests = new Set();
+const providerCatalogIssues = new Map();
 
 const removeConnectionImpact = "相關分發路由也會移除。沒有路由的公開模型會停用。紀錄保留。";
 
@@ -271,45 +280,78 @@ async function loadGroups(reset) {
     params.set("offset", String(offset));
     page = await api("/gateway/model-groups?" + params, undefined, read.signal);
     if (groupRead !== read || read.signal.aborted) return;
-    for (const group of page.models) groups.set(group.id, {...group, brand: modelBrand(group.id, group.name)});
+    for (const group of page.models) groups.set(group.id, {...group, brand: modelBrand(group.id, group.name) || unclassifiedBrand});
     offset += page.models.length;
   } while (page.more && page.models.length);
   management.groups = [...groups.values()];
   management.groupLimit = modelGroupPageSize;
-  renderModelBrandOptions(Boolean(params.get("q")));
+  updateModelBrandOptions(params);
   renderModelGroups();
 }
 
-function renderModelBrandOptions(searching) {
-  const row = $("model-brand-options");
-  const brands = new Set(management.groups.map(group => group.brand));
-  if (searching) for (const chip of row.children) brands.add(chip.dataset.brand);
-  const options = [["", "全部"], ...modelBrands.filter(([brand]) => brands.has(brand)).map(([brand, , label]) => [brand, label])];
-  const signature = options.map(([brand]) => brand).join("|");
-  if (!brands.has(management.modelBrand)) management.modelBrand = "";
-  if (signature !== row.dataset.brands) {
-    row.replaceChildren(...options.map(([brand, label]) => {
-      const chip = button(label, () => {
-        management.modelBrand = brand;
-        management.groupLimit = modelGroupPageSize;
-        updateModelBrandSelection();
-        renderModelGroups();
-      });
-      chip.dataset.brand = brand;
-      if (brand) {
-        chip.setAttribute("aria-label", label);
-        chip.prepend(icon("brand-" + brand, "/gateway-model-brands.svg"));
-      }
-      return chip;
-    }));
-    row.dataset.brands = signature;
+function updateModelBrandOptions(params) {
+  const providerID = params.get("provider_id") || "";
+  const counts = new Map([["", management.groups.length]]);
+  if (params.get("q") && providerID === brandProviderID) {
+    for (const brand of brandCounts.keys()) if (brand) counts.set(brand, 0);
   }
-  updateModelBrandSelection();
+  for (const {brand} of management.groups) counts.set(brand, (counts.get(brand) || 0) + 1);
+  brandCounts = counts;
+  brandProviderID = providerID;
+  if (!counts.has(management.modelBrand)) management.modelBrand = "";
+  renderBrandPickerTrigger();
+  if ($("brand-picker-dialog").open) renderBrandChoices();
 }
 
-function updateModelBrandSelection() {
-  for (const chip of $("model-brand-options").children) {
-    chip.setAttribute("aria-pressed", String(chip.dataset.brand === management.modelBrand));
+function brandPickerIcon(brand) {
+  if (!brand || brand === unclassifiedBrand) return icon("model");
+  const mark = icon("brand-" + brand, "/gateway-model-brands.svg");
+  mark.classList.add("brand-picker-logo");
+  return mark;
+}
+
+function renderBrandPickerTrigger() {
+  const trigger = $("brand-picker-trigger");
+  const brand = management.modelBrand;
+  const name = brand ? modelBrandLabels.get(brand) : "選擇品牌";
+  trigger.firstElementChild.replaceWith(brandPickerIcon(brand));
+  trigger.querySelector("span").textContent = name;
+  trigger.setAttribute("aria-label", brand ? "選擇品牌，目前為 " + name : name);
+}
+
+function renderBrandChoices() {
+  const grid = $("brand-picker-choices");
+  const focused = grid.contains(document.activeElement) ? document.activeElement.dataset.brand : undefined;
+  const choices = [];
+  for (const [brand, name] of modelBrandLabels) {
+    if (!brandCounts.has(brand)) continue;
+    const choice = button("", () => {
+      management.modelBrand = brand;
+      management.groupLimit = modelGroupPageSize;
+      renderBrandPickerTrigger();
+      renderModelGroups();
+      $("brand-picker-dialog").close();
+    });
+    choice.className = "brand-picker-choice";
+    choice.dataset.brand = brand;
+    choice.setAttribute("aria-label", name);
+    const selected = brand === management.modelBrand;
+    choice.setAttribute("aria-pressed", String(selected));
+    const mark = el("span", undefined, "item-icon");
+    mark.append(brandPickerIcon(brand));
+    const label = el("span", undefined, "brand-picker-choice-label");
+    label.append(el("strong", name), el("small", brandCounts.get(brand) + " 個模型"));
+    if (selected) {
+      const check = icon("check");
+      check.classList.add("brand-picker-check");
+      mark.append(check);
+    }
+    choice.append(mark, label);
+    choices.push(choice);
+  }
+  grid.replaceChildren(...choices);
+  if (focused !== undefined) {
+    (choices.find(choice => choice.dataset.brand === focused) || choices[0]).focus({preventScroll: true});
   }
 }
 
@@ -597,6 +639,19 @@ function quotaDetail(q) {
   const extras = [q.used === "" ? "" : "已用 " + q.used, q.granted === "" ? "" : "總額 " + q.granted].filter(Boolean);
   return [quotaValue(q), ...extras, new Date(q.observed_at).toLocaleString("zh-TW")].join(" · ");
 }
+async function syncProviderCatalog(v) {
+  const id = v.credential_id;
+  try {
+    const result = await api("/gateway/sync", connectionFields(v));
+    if (result.models_seen) providerCatalogIssues.delete(id);
+    else providerCatalogIssues.set(id, "站方沒有列出模型。");
+    return result;
+  } catch (error) {
+    if (error.name === "AbortError") throw error;
+    providerCatalogIssues.set(id, "讀取站方模型清單失敗。 " + error.message);
+  }
+}
+
 function renderCredential(p, c, expanded) {
   const v = {...c, credential_id: c.id};
   const row = el("article", undefined, "entry compact-entry credential-row");
@@ -620,16 +675,25 @@ function renderCredential(p, c, expanded) {
   more.open = expanded.has(c.id);
   more.append(summary, extra);
   if (!anonymous) actions.append(credentialCopyButton(v));
+  let catalogHelp;
   if (inference) {
     const sync = button("同步模型", async () => {
-      const result = await api("/gateway/sync", connectionFields(v));
+      const result = await syncProviderCatalog(v);
+      if (state.page !== "providers" || state.providerID !== p.id) return;
       await loadProvider();
-      notice("同步完成 · " + result.models_seen + " 個模型");
+      if (result?.models_seen) notice("同步完成 · " + result.models_seen + " 個模型");
     }, {glyph: "refresh"});
     const add = button("手動加模型", () => openConnectionDialog(v, "model"), {glyph: "plus"});
     sync.disabled = add.disabled = !c.enabled;
     actions.append(sync);
-    extra.append(add, button("設定 Key 額度", () => openQuota(connectionFields(v), manual, c.label), {glyph: "wallet"}));
+    const issue = c.enabled && providerCatalogIssues.get(c.id);
+    if (issue) {
+      catalogHelp = el("div", undefined, "section-inline catalog-recovery");
+      catalogHelp.append(el("p", issue, "quiet"), add);
+    } else {
+      extra.append(add);
+    }
+    extra.append(button("設定 Key 額度", () => openQuota(connectionFields(v), manual, c.label), {glyph: "wallet"}));
   }
   if (!anonymous) {
     const quotaButton = button("更新額度", async () => {
@@ -648,6 +712,7 @@ function renderCredential(p, c, expanded) {
   }, {glyph: c.enabled ? "pause" : "play"}));
   extra.append(deleteButton("刪除上游 Key", () => removeProviderItem("CREDENTIAL", c.label, connectionFields(v)), false));
   row.append(actions, more);
+  if (catalogHelp) row.append(catalogHelp);
   return row;
 }
 function renderAccount(p, a, expanded) {
@@ -761,6 +826,10 @@ $("clear-model-provider").addEventListener("click", () => action(null, () => {
   state.modelProvider = null;
   return loadGroups(true);
 }));
+$("brand-picker-trigger").addEventListener("click", () => {
+  renderBrandChoices();
+  $("brand-picker-dialog").showModal();
+});
 for (const [id, load, abort] of [
   ["model", loadGroups, () => groupRead?.abort()], ["provider", loadProviderList, () => providerRead?.abort()]
 ]) {
@@ -817,11 +886,9 @@ submit("upstream-form", async form => {
   providerReturn = null;
   state.providerID = v.provider_id;
   $("provider-detail-content").replaceChildren();
-  let result;
-  try { result = await api("/gateway/sync", connectionFields(v)); }
-  catch (error) { notice("供應商已儲存，可重試同步或手動加入模型。 " + error.message, true); }
+  const result = await syncProviderCatalog(v);
   await showPage("providers");
-  if (result) notice("同步完成 · " + result.models_seen + " 個模型");
+  notice(result?.models_seen ? "同步完成 · " + result.models_seen + " 個模型" : "供應商已儲存。");
 });
 submit("connection-form", async form => {
   const value = new FormData(form).get("value").trim();

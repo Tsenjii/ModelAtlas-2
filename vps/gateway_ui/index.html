@@ -77,14 +77,11 @@
         <form id="model-filters" class="stack">
           <label>搜尋模型<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input id="model-search" type="search" placeholder="例如 DeepSeek 4.1 Flash"></span></label>
           <div id="model-provider-filter" class="section-inline" hidden><span id="model-provider-name"></span><button id="clear-model-provider" class="icon-button" type="button" aria-label="顯示所有供應商" title="顯示所有供應商"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
-          <div class="model-brand-filter">
-            <span id="model-brand-label">模型品牌</span>
-            <div id="model-brand-options" role="group" aria-labelledby="model-brand-label"></div>
-          </div>
         </form>
         <div class="line-meta">
           <span id="model-count" role="status"></span>
-          <div class="model-actions">
+          <div class="model-actions model-directory-actions">
+            <button id="brand-picker-trigger" class="link-button" type="button" aria-haspopup="dialog" aria-controls="brand-picker-dialog"><svg aria-hidden="true"><use href="#icon-model"/></svg><span>選擇品牌</span><svg class="brand-picker-caret" aria-hidden="true"><use href="#icon-chevron"/></svg></button>
             <a class="link-button" href="/tools/models"><svg aria-hidden="true"><use href="#icon-search"/></svg>模型目錄</a>
           </div>
         </div>
@@ -223,6 +220,14 @@
     </section>
   </section>
 </main>
+
+<dialog id="brand-picker-dialog" aria-labelledby="brand-picker-title">
+  <header class="brand-picker-heading">
+    <h2 id="brand-picker-title">選擇品牌</h2>
+    <button type="button" class="icon-button" data-close="brand-picker-dialog" aria-label="關閉品牌選擇" autofocus><svg aria-hidden="true"><use href="#icon-close"/></svg></button>
+  </header>
+  <div id="brand-picker-choices"></div>
+</dialog>
 
 <dialog id="upstream-dialog" aria-labelledby="upstream-dialog-title">
   <form id="upstream-form" class="stack">
