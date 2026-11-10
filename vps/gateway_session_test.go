@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -137,4 +138,66 @@ func checkGatewayBrowserLogin(t *testing.T, s *Server) {
 	if sessions.use(digest, now.Add(gatewaySessionLifetime)) {
 		t.Fatal("active session exceeded its absolute lifetime")
 	}
+}
+
+func TestGatewayRememberBrowser(t *testing.T) {
+	const origin = "https://atlas.example"
+	path := filepath.Join(t.TempDir(), "modelatlas.sqlite")
+	store, err := OpenStore(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if store != nil {
+			_ = store.Close()
+		}
+	}()
+	token := "fixture-remember-browser-token"
+	s := &Server{Store: store, Token: token, distribution: true}
+	call := func(server *Server, target, method, route string, form url.Values, cookie *http.Cookie, want int) *httptest.ResponseRecorder {
+		t.Helper()
+		r := httptest.NewRequest(method, target+route, strings.NewReader(form.Encode()))
+		if method == "POST" {
+			r.Header.Set("Origin", target)
+			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		}
+		if cookie != nil {
+			r.AddCookie(cookie)
+		}
+		w := httptest.NewRecorder()
+		server.Handler().ServeHTTP(w, r)
+		requireCode(t, w, want)
+		return w
+	}
+	form := url.Values{"username": {"admin"}, "password": {token}, "remember_browser": {"1"}}
+	login := call(s, origin, "POST", "/login", form, nil, http.StatusSeeOther)
+	cookies := login.Result().Cookies()
+	if len(cookies) != 1 {
+		t.Fatal("login did not issue a session cookie")
+	}
+	cookie := cookies[0]
+	if cookie.MaxAge != int(gatewayRememberLifetime/time.Second) || cookie.Expires.IsZero() || !cookie.Secure || !cookie.HttpOnly || cookie.SameSite != http.SameSiteLaxMode {
+		t.Fatal("unexpected remembered browser cookie")
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	store, err = OpenStore(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s = &Server{Store: store, Token: token, distribution: true}
+	call(s, origin, "GET", "/gateway.js", nil, cookie, http.StatusOK)
+	call(s, origin, "GET", "/ui/api/status", nil, cookie, http.StatusOK)
+	call(s, "https://other.example", "GET", "/ui/api/status", nil, cookie, http.StatusUnauthorized)
+	rotated := &Server{Store: store, Token: "new-fixture-admin-token", distribution: true}
+	call(rotated, origin, "GET", "/ui/api/status", nil, cookie, http.StatusUnauthorized)
+
+	r := httptest.NewRequest("GET", origin+"/", nil)
+	r.AddCookie(cookie)
+	if !s.useGatewaySession(r, origin, cookie.Expires.Add(-time.Second)) || s.useGatewaySession(r, origin, cookie.Expires) {
+		t.Fatal("remembered browser session did not honor its deadline")
+	}
+	call(s, origin, "POST", "/logout", nil, cookie, http.StatusSeeOther)
+	call(s, origin, "GET", "/ui/api/status", nil, cookie, http.StatusUnauthorized)
 }

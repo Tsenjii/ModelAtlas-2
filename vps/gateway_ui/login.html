@@ -17,9 +17,10 @@
     </div>
     <div><h1 id="login-title">管理員登入</h1><p class="page-caption">使用部署時設定的管理員帳號與密碼。</p></div>
     <form class="stack" method="post" action="/login">
-      {{if .}}<p class="login-error" role="alert">{{.}}</p>{{end}}
+      {{if .Message}}<p class="login-error" role="alert">{{.Message}}</p>{{end}}
       <label>帳號<input name="username" value="admin" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
       <label>密碼<input name="password" type="password" autocomplete="current-password" required></label>
+      <label class="check"><input name="remember_browser" type="checkbox" value="1" {{if .Remember}}checked{{end}}>記住這個瀏覽器（30 天）</label>
       <button class="primary" type="submit">登入</button>
     </form>
   </section>

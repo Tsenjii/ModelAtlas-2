@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	_ "embed"
@@ -21,10 +23,19 @@ var gatewayLoginHTML string
 var gatewayLoginTemplate = template.Must(template.New("login").Parse(gatewayLoginHTML))
 
 const (
-	gatewaySessionIdle     = time.Hour
-	gatewaySessionLifetime = 12 * time.Hour
-	gatewaySessionLimit    = 64
+	gatewaySessionIdle      = time.Hour
+	gatewaySessionLifetime  = 12 * time.Hour
+	gatewaySessionLimit     = 64
+	gatewayRememberLifetime = 30 * 24 * time.Hour
+	gatewayRememberPrefix   = "r."
 )
+
+const gatewayRememberSchema = `
+CREATE TABLE IF NOT EXISTS gateway_browser_sessions (
+	id BLOB PRIMARY KEY NOT NULL,
+	expires_at INTEGER NOT NULL
+) WITHOUT ROWID;
+`
 
 type gatewayBrowserSession struct {
 	expires, idleUntil time.Time
@@ -39,12 +50,19 @@ type gatewayBrowserSessions struct {
 	active map[[32]byte]gatewayBrowserSession
 }
 
-func (s *gatewayBrowserSessions) open(now time.Time, previous [32]byte) (string, error) {
+func newGatewaySessionValue() (string, error) {
 	var secret [32]byte
 	if _, err := rand.Read(secret[:]); err != nil {
 		return "", err
 	}
-	value := base64.RawURLEncoding.EncodeToString(secret[:])
+	return base64.RawURLEncoding.EncodeToString(secret[:]), nil
+}
+
+func (s *gatewayBrowserSessions) open(now time.Time, previous [32]byte) (string, error) {
+	value, err := newGatewaySessionValue()
+	if err != nil {
+		return "", err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.active == nil {
@@ -132,21 +150,81 @@ func gatewaySessionCookie(origin string) http.Cookie {
 	return cookie
 }
 
-func gatewaySessionID(r *http.Request, origin string) [32]byte {
+func gatewaySessionValue(r *http.Request, origin string) string {
 	if origin != "" {
 		cookie, err := r.Cookie(gatewaySessionCookie(origin).Name)
-		if err == nil && len(cookie.Value) == base64.RawURLEncoding.EncodedLen(32) {
-			return sha256.Sum256([]byte(cookie.Value))
+		if err == nil {
+			return cookie.Value
 		}
 	}
-	return [32]byte{}
+	return ""
 }
 
-func renderGatewayLogin(w http.ResponseWriter, status int, message string) {
+func isGatewayRemembered(value string) bool {
+	return len(value) == len(gatewayRememberPrefix)+base64.RawURLEncoding.EncodedLen(32) && strings.HasPrefix(value, gatewayRememberPrefix)
+}
+
+func (s *Server) gatewayRememberedID(origin, value string) []byte {
+	mac := hmac.New(sha256.New, []byte(s.Token))
+	mac.Write([]byte("modelatlas-browser-session\x00" + origin + "\x00" + value))
+	return mac.Sum(nil)
+}
+
+func (s *Server) rememberGatewaySession(ctx context.Context, origin, previous string, now time.Time) (string, error) {
+	secret, err := newGatewaySessionValue()
+	if err != nil {
+		return "", err
+	}
+	value := gatewayRememberPrefix + secret
+	tx, err := s.Store.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, "DELETE FROM gateway_browser_sessions WHERE expires_at <= ? OR id = ?", now.Unix(), s.gatewayRememberedID(origin, previous)); err != nil {
+		return "", err
+	}
+	if _, err = tx.ExecContext(ctx, "DELETE FROM gateway_browser_sessions WHERE id IN (SELECT id FROM gateway_browser_sessions ORDER BY expires_at DESC, id LIMIT -1 OFFSET ?)", gatewaySessionLimit-1); err != nil {
+		return "", err
+	}
+	if _, err = tx.ExecContext(ctx, "INSERT INTO gateway_browser_sessions(id, expires_at) VALUES (?, ?)", s.gatewayRememberedID(origin, value), now.Add(gatewayRememberLifetime).Unix()); err != nil {
+		return "", err
+	}
+	if err = tx.Commit(); err != nil {
+		return "", err
+	}
+	s.gatewaySessions.close(sha256.Sum256([]byte(previous)))
+	return value, nil
+}
+
+func (s *Server) useGatewaySession(r *http.Request, origin string, now time.Time) bool {
+	value := gatewaySessionValue(r, origin)
+	if isGatewayRemembered(value) {
+		var present int
+		return s.Store.DB.QueryRowContext(r.Context(), "SELECT 1 FROM gateway_browser_sessions WHERE id = ? AND expires_at > ?",
+			s.gatewayRememberedID(origin, value), now.Unix()).Scan(&present) == nil
+	}
+	return len(value) == base64.RawURLEncoding.EncodedLen(32) && s.gatewaySessions.use(sha256.Sum256([]byte(value)), now)
+}
+
+func (s *Server) revokeGatewaySession(r *http.Request, origin string) error {
+	value := gatewaySessionValue(r, origin)
+	if isGatewayRemembered(value) {
+		_, err := s.Store.DB.ExecContext(r.Context(), "DELETE FROM gateway_browser_sessions WHERE id = ?", s.gatewayRememberedID(origin, value))
+		return err
+	}
+	s.gatewaySessions.close(sha256.Sum256([]byte(value)))
+	return nil
+}
+
+func renderGatewayLogin(w http.ResponseWriter, status int, message string, remember bool) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Referrer-Policy", "same-origin")
 	w.WriteHeader(status)
-	_ = gatewayLoginTemplate.Execute(w, message)
+	_ = gatewayLoginTemplate.Execute(w, struct {
+		Message  string
+		Remember bool
+	}{message, remember})
 }
 
 func (s *Server) gatewayLogin(w http.ResponseWriter, r *http.Request) {
@@ -156,14 +234,12 @@ func (s *Server) gatewayLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "請使用已設定的 HTTPS 入口或本機網址登入。", http.StatusUpgradeRequired)
 		return
 	}
-	id := gatewaySessionID(r, origin)
-	now := time.Now()
 	if r.Method != http.MethodPost {
-		if s.gatewaySessions.use(id, now) {
+		if s.useGatewaySession(r, origin, time.Now()) {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
-		renderGatewayLogin(w, http.StatusOK, "")
+		renderGatewayLogin(w, http.StatusOK, "", false)
 		return
 	}
 	if !gatewaySameOrigin(r, origin) {
@@ -185,17 +261,35 @@ func (s *Server) gatewayLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid login form", http.StatusBadRequest)
 		return
 	}
+	remember := r.PostForm.Get("remember_browser") == "1"
 	if !s.matchesAdminToken(r.PostForm.Get("password")) || r.PostForm.Get("username") != "admin" {
-		renderGatewayLogin(w, http.StatusUnauthorized, "帳號或密碼不正確。")
+		renderGatewayLogin(w, http.StatusUnauthorized, "帳號或密碼不正確。", remember)
 		return
 	}
-	value, err := s.gatewaySessions.open(time.Now(), id)
+	now := time.Now()
+	previous := gatewaySessionValue(r, origin)
+	var value string
+	var err error
+	if remember {
+		value, err = s.rememberGatewaySession(r.Context(), origin, previous, now)
+	} else {
+		if isGatewayRemembered(previous) {
+			err = s.revokeGatewaySession(r, origin)
+		}
+		if err == nil {
+			value, err = s.gatewaySessions.open(now, sha256.Sum256([]byte(previous)))
+		}
+	}
 	if err != nil {
-		renderGatewayLogin(w, http.StatusServiceUnavailable, "暫時無法登入，請稍後再試。")
+		renderGatewayLogin(w, http.StatusServiceUnavailable, "暫時無法登入，請稍後再試。", remember)
 		return
 	}
 	cookie := gatewaySessionCookie(origin)
 	cookie.Value = value
+	if remember {
+		cookie.Expires = now.Add(gatewayRememberLifetime)
+		cookie.MaxAge = int(gatewayRememberLifetime / time.Second)
+	}
 	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
@@ -207,7 +301,10 @@ func (s *Server) gatewayLogout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "origin mismatch", http.StatusForbidden)
 		return
 	}
-	s.gatewaySessions.close(gatewaySessionID(r, origin))
+	if err := s.revokeGatewaySession(r, origin); err != nil {
+		http.Error(w, "暫時無法登出，請稍後再試。", http.StatusServiceUnavailable)
+		return
+	}
 	cookie := gatewaySessionCookie(origin)
 	cookie.MaxAge = -1
 	http.SetCookie(w, &cookie)
@@ -232,7 +329,7 @@ func (s *Server) gatewayBrowserAPI(next http.Handler) http.Handler {
 			http.Error(w, "cross-site request denied", http.StatusForbidden)
 			return
 		}
-		if !s.gatewaySessions.use(gatewaySessionID(r, origin), time.Now()) {
+		if !s.useGatewaySession(r, origin, time.Now()) {
 			jsonOK(w, http.StatusUnauthorized, map[string]string{"code": "LOGIN_REQUIRED"})
 			return
 		}

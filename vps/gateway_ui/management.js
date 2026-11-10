@@ -392,19 +392,17 @@ function httpsLink(label, url) {
 function providerFacts(p, summary) {
   const facts = el("div", undefined, "provider-facts");
   facts.append(performanceCells(p.performance));
+  if (summary) return facts;
   const meta = el("div", undefined, "provider-meta");
-  if (p.quotas.length || !summary) {
-    const limits = el("div");
-    const caption = el("small", "剩餘額度", "quiet icon-label");
-    caption.prepend(icon("wallet"));
-    limits.append(caption);
-    for (const q of p.quotas.slice(0, summary ? 2 : 3)) {
-      limits.append(el("div", quotaValue(q) + " · " + quotaSource(q), "quota-line"));
-    }
-    if (!p.quotas.length) limits.append(el("div", "待查詢", "quota-line"));
-    meta.append(limits);
+  const limits = el("div");
+  const caption = el("small", "剩餘額度", "quiet icon-label");
+  caption.prepend(icon("wallet"));
+  limits.append(caption);
+  for (const q of p.quotas.slice(0, 3)) {
+    limits.append(el("div", quotaValue(q) + " · " + quotaSource(q), "quota-line"));
   }
-  meta.append(badge(checkinSummary(p), undefined, "calendar"));
+  if (!p.quotas.length) limits.append(el("div", "待查詢", "quota-line"));
+  meta.append(limits, badge(checkinSummary(p), undefined, "calendar"));
   facts.append(meta);
   return facts;
 }

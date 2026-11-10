@@ -266,6 +266,8 @@ const fs = require("node:fs/promises");
     await page.locator("#provider-list article").filter({ hasText: "潮汐 API" }).getByText("100%", { exact: true }).waitFor();
     await shot("providers-402-light");
     const providerTile = page.locator("#provider-list article").filter({ hasText: "潮汐 API" });
+    await providerTile.waitFor();
+    assert.equal(await providerTile.locator(".provider-meta").count(), 0, "provider list exposes quota or check-in detail");
     await providerTile.click({ position: { x: 18, y: 18 } });
     await provider.getByRole("heading", { name: "潮汐 API", exact: true }).waitFor();
     await go("模型");

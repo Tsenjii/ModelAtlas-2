@@ -47,7 +47,7 @@ func (s *Server) gatewayPage(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		security(w)
 		origin := gatewayBrowserOrigin(r)
-		if !s.gatewaySessions.use(gatewaySessionID(r, origin), time.Now()) {
+		if !s.useGatewaySession(r, origin, time.Now()) {
 			if r.Header.Get("Sec-Fetch-Mode") == "navigate" || strings.Contains(r.Header.Get("Accept"), "text/html") {
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
@@ -69,7 +69,7 @@ func (s *Server) gatewayPrivateAsset(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "cross-site request denied", http.StatusForbidden)
 			return
 		}
-		if !s.authorized(r) && !s.gatewaySessions.use(gatewaySessionID(r, gatewayBrowserOrigin(r)), time.Now()) {
+		if !s.authorized(r) && !s.useGatewaySession(r, gatewayBrowserOrigin(r), time.Now()) {
 			http.Error(w, "authorization required", http.StatusUnauthorized)
 			return
 		}
