@@ -116,10 +116,19 @@ const fs = require("node:fs/promises");
     await about.getByText("供應商介紹", { exact: true }).click();
     assert.equal(await about.locator(".provider-description").textContent(), description);
     await provider.getByRole("button", { name: "編輯資料" }).click();
-    await page.locator("#provider-form").getByLabel("需要每日簽到").check();
-    await page.locator("#provider-form").getByLabel("簽到網址").fill(upstream + "/checkin");
+    const checkinForm = page.locator("#provider-form");
+    await checkinForm.getByLabel("需要每日簽到").check();
+    const checkinField = checkinForm.getByLabel("簽到網址");
+    assert.equal(await checkinField.getAttribute("required"), "");
+    const checkinURL = upstream + "/checkin";
+    await checkinField.fill(checkinURL);
     await page.getByRole("button", { name: "儲存供應商資料" }).click();
-    await provider.getByRole("link", { name: "前往站點簽到" }).waitFor();
+    const checkin = provider.getByRole("link", { name: "前往簽到", exact: true });
+    await checkin.waitFor();
+    assert.equal(await checkin.count(), 1);
+    assert.equal(await checkin.getAttribute("href"), checkinURL);
+    assert.equal(await checkin.getAttribute("target"), "_blank");
+    assert.equal(await checkin.getAttribute("rel"), "noopener noreferrer");
     await provider.getByRole("button", { name: "我已簽到" }).click();
     await provider.locator(".checkin-line").getByText("今日簽到已記錄", { exact: true }).waitFor();
     await provider.getByRole("button", { name: "記錄額度", exact: true }).click();
@@ -141,8 +150,19 @@ const fs = require("node:fs/promises");
     await account.getByText("45600 站方額度", { exact: false }).first().waitFor();
     await page.locator("#providers-back").click();
     await add("曙光 API", "b", process.env.MODELATLAS_TEST_UPSTREAM_B, "備援模型站");
-    await provider.getByRole("button", { name: "查詢站方簽到", exact: true }).click();
+    const providerList = await context.request.get(origin + "/ui/api/gateway/providers");
+    assert.equal(providerList.status(), 200);
+    const standby = (await providerList.json()).providers.find(row => row.name === "曙光 API");
+    assert(standby, "standby provider is missing");
+    const status = await client.post(origin + "/api/v1/newapi/status", {
+      headers: { Authorization: "Bearer " + process.env.MODELATLAS_TEST_TOKEN },
+      data: { provider_id: standby.id }
+    });
+    assert.equal(status.status(), 200);
+    await page.getByRole("button", { name: "重新整理", exact: true }).click();
     await provider.getByText("站方提供簽到", { exact: true }).waitFor();
+    assert.equal(await provider.getByRole("button", { name: "查詢站方簽到", exact: true }).count(), 0);
+    assert.equal(await checkin.count(), 0, "station support must not enable manual check-in");
 
     await go("模型");
     const tile = page.locator("#model-list").getByRole("button", { name: /DeepSeek 4\.1 Flash/ });

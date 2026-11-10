@@ -237,7 +237,8 @@
     <label>簡介<textarea name="description" maxlength="1000" rows="6" placeholder="可分段記錄站點特色"></textarea></label>
     <label>網站<input name="website" type="url" placeholder="https://"></label>
     <label class="check"><input type="checkbox" name="requires_checkin">需要每日簽到</label>
-    <label>簽到網址<input name="checkin_url" type="url" placeholder="https://"></label>
+    <label>簽到網址<input name="checkin_url" type="url" placeholder="https://provider.example/check-in" maxlength="4096" aria-describedby="provider-checkin-help"></label>
+    <p id="provider-checkin-help" class="quiet">填入供應商的 HTTPS 簽到頁網址。儲存後，可在供應商詳情點「前往簽到」。</p>
     <button type="submit" class="primary"><svg aria-hidden="true"><use href="#icon-check"/></svg>儲存供應商資料</button>
   </form>
 </dialog>

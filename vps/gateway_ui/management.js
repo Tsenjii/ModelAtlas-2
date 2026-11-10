@@ -472,6 +472,7 @@ function openProviderProfile(p) {
   const form = $("provider-form");
   for (const field of ["name", "description", "website", "checkin_url"]) form.elements[field].value = p[field] || "";
   form.elements.requires_checkin.checked = p.requires_checkin;
+  form.elements.checkin_url.required = p.requires_checkin;
   $("provider-dialog").showModal();
 }
 
@@ -566,8 +567,6 @@ function renderAccount(p, a) {
   if (check?.required) {
     const line = el("div", undefined, "checkin-line");
     line.append(badge(check.completed_at ? "今日簽到已記錄" : "今日尚未記錄簽到", check.completed_at ? "success" : "quiet", "calendar"));
-    const link = httpsLink("前往站點簽到", check.checkin_url);
-    if (link) line.append(link);
     if (!check.completed_at) line.append(button("我已簽到", async () => {
       const {date, timezone} = management.checkins;
       await api("/checkins/accounts", {provider_id: p.id, account_id: a.id, timezone, date});
@@ -597,11 +596,14 @@ function renderProvider() {
     state.modelProvider = p;
     $("model-search").value = "";
     await showPage("models");
-  }, {glyph: "model"}), button("查詢站方簽到", async () => {
-    await api("/newapi/status", {provider_id: p.id});
-    await loadProvider();
-    notice("已讀取站方狀態。");
-  }, {glyph: "calendar"}));
+  }, {glyph: "model"}));
+  if (p.requires_checkin) {
+    const checkin = httpsLink("前往簽到", p.checkin_url);
+    tools.prepend(checkin || button("設定簽到網址", () => {
+      openProviderProfile(p);
+      $("provider-form").elements.checkin_url.focus();
+    }, {glyph: "calendar"}));
+  }
   const link = httpsLink("開啟網站", p.website);
   if (link) tools.append(link);
   tools.append(deleteButton("刪除供應商", () => removeProviderItem("PROVIDER", p.name, {provider_id: p.id})));
@@ -618,6 +620,10 @@ function renderProvider() {
 
 for (const id of ["model-add-provider", "add-upstream"]) $(id).addEventListener("click", () => $("upstream-dialog").showModal());
 $("provider-edit").addEventListener("click", () => openProviderProfile(management.provider));
+$("provider-form").elements.requires_checkin.addEventListener("change", event => {
+  const required = event.currentTarget;
+  required.form.elements.checkin_url.required = required.checked;
+});
 $("models-back").addEventListener("click", () => action(null, () => {
   state.modelGroup = null;
   return showPage("models");
