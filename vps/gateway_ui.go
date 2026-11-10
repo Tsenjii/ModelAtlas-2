@@ -11,6 +11,12 @@ import (
 //go:embed gateway_ui/index.html
 var gatewayHomeHTML string
 
+//go:embed gateway_ui/scene.html
+var gatewaySceneHTML string
+
+//go:embed gateway_ui/appearance.css
+var gatewayAppearanceCSS string
+
 //go:embed gateway_ui/style.css
 var gatewayCSS string
 
@@ -38,7 +44,7 @@ var gatewayMarkSVG string
 //go:embed gateway_ui/model-brands.svg
 var gatewayModelBrandsSVG string
 
-var gatewayStyleAsset = staticAsset{raw: gatewayCSS, revalidate: true}
+var gatewayStyleAsset = staticAsset{raw: gatewayAppearanceCSS + gatewayCSS, revalidate: true}
 var gatewayScriptAsset = staticAsset{raw: gatewayJS + "\n" + gatewayConsoleJS + "\n" + metricPlotJS + "\n" + gatewayConnectionJS + "\n" + gatewayManagementJS + "\n" + gatewayUpdateJS, revalidate: true}
 var gatewayMarkAsset = staticAsset{raw: gatewayMarkSVG, revalidate: true}
 var gatewayModelBrandsAsset = staticAsset{raw: gatewayModelBrandsSVG, revalidate: true}
@@ -81,7 +87,7 @@ func (s *Server) gatewayUIRoutes(root *http.ServeMux, workspace bool) {
 	root.HandleFunc("GET /login", s.gatewayLogin)
 	root.HandleFunc("POST /login", s.gatewayLogin)
 	root.HandleFunc("POST /logout", s.gatewayLogout)
-	page := gatewayHomeHTML
+	page := strings.Replace(gatewayHomeHTML, "<!-- atlas-scene -->\n", gatewaySceneHTML, 1)
 	if workspace {
 		page = strings.NewReplacer(
 			">Lite</span>", ">完整版</span>",

@@ -16,7 +16,7 @@ var gatewayToolsJS string
 var gatewayToolsCSS string
 
 var gatewayToolsScript = staticAsset{raw: gatewayToolsJS, revalidate: true}
-var gatewayToolsStyles = staticAsset{raw: gatewayToolsCSS, revalidate: true}
+var gatewayToolsStyles = staticAsset{raw: gatewayAppearanceCSS + gatewayToolsCSS, revalidate: true}
 
 func (s *Server) gatewayToolRoutes(root *http.ServeMux) {
 	api := http.NewServeMux()
@@ -29,7 +29,6 @@ func (s *Server) gatewayToolRoutes(root *http.ServeMux) {
 	root.Handle("/tools/api/", s.gatewayBrowserAPI(http.StripPrefix("/tools/api", api)))
 	root.HandleFunc("GET /tools/{tool}", s.gatewayPage(gatewayToolPage))
 	root.HandleFunc("GET /tools/app.css", s.gatewayPrivateAsset(s.stylesheet))
-	root.HandleFunc("GET /tools/aqua.css", s.gatewayPrivateAsset(s.aquaStylesheet))
 	root.HandleFunc("GET /tools/app.js", s.gatewayPrivateAsset(s.script))
 	root.HandleFunc("GET /tools/tools.js", s.gatewayPrivateAsset(func(w http.ResponseWriter, r *http.Request) {
 		gatewayToolsScript.serve(w, r, "text/javascript; charset=utf-8")
@@ -136,16 +135,19 @@ func gatewayToolPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	page := strings.NewReplacer(
-		`<html lang="zh-Hant"`, `<html lang="zh-Hant" data-api-base="/tools/api" data-lite-tool="`+tool+`"`,
-		`href="/aqua.css"`, `href="/tools/aqua.css"`,
+		`<html lang="zh-Hant"`, `<html lang="zh-Hant" data-wallpaper="elaina" data-api-base="/tools/api" data-lite-tool="`+tool+`"`,
+		`<title>ModelAtlas</title>`, `<title>ModelAtlas · Lite 管理工具</title><link rel="icon" href="/gateway-mark.svg" type="image/svg+xml">`,
 		`href="/app.css"`, `href="/tools/app.css"><link rel="stylesheet" href="/tools/tools.css"`,
 		`src="/app.js"`, `src="/tools/app.js" defer></script><script src="/tools/tools.js"`,
 		`href="/api/v1/backup"`, `href="/tools/api/backup"`,
+		"<body>\n<div class=\"shell\">\n<header>", "<body>\n"+gatewaySceneHTML+`<header class="gateway-bar">`,
+		`</header>`, "</header>\n"+`<div class="shell">`,
+		`<div class="brand">`, `<div class="brand glass">`,
 		`<span class="mark" aria-hidden="true">M</span>`, `<img class="tool-mark" src="/gateway-mark.svg" alt="" width="36" height="36">`,
-		`<small>你的模型工作台</small>`, `<small>Lite · 管理工具</small>`,
-		`<div class="header-actions">`, `<div class="header-actions"><a id="lite-tool-back" class="link-button" href="/">返回 Lite</a>`,
+		`<small>你的模型工作台</small>`, `<small>模型工作台</small>`,
+		`<div class="header-actions">`, `<div class="header-actions glass"><a id="lite-tool-back" class="link-button" data-icon="back" href="/">返回 Lite</a>`,
 		`正在讀取你的供應商、模型與對話。`, `正在讀取管理資料。`,
-		`<section id="playground"`, `<section id="lite-tool-content" class="pane" aria-labelledby="lite-tool-title" hidden><div class="heading"><h1 id="lite-tool-title"></h1></div><div id="lite-tool-results"></div></section><section id="playground"`,
+		`<section id="playground"`, `<section id="lite-tool-content" class="pane" aria-labelledby="lite-tool-title" hidden><div class="heading"><p id="lite-tool-eyebrow" class="page-eyebrow"></p><h1 id="lite-tool-title"></h1><p id="lite-tool-model" hidden></p></div><div id="lite-tool-results"></div></section><section id="playground"`,
 	).Replace(homeHTML)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = io.WriteString(w, page)

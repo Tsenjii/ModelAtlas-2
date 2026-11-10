@@ -4,8 +4,13 @@ const jsDetails = `
 function detailForm(box,title,form){const section=el("details"),summary=el("summary",title);section.className="detail-form";section.append(summary,form);box.append(section);}
 async function providerDetail(p,initial="overview"){
  const box=modal(p.name),ticket=detailVersion;$("detail").dataset.kind="provider";
- detailHero(box,"provider",adapterLabels[p.config.adapter]||p.config.adapter||"供應商",p.description||p.base_url);
+ detailHero(box,"provider",adapterLabels[p.config.adapter]||p.config.adapter||"供應商",liteTool==="providers"?p.base_url:p.description||p.base_url);
  const tabs=detailTabs(box,"provider",[["overview","概覽"],["keys","帳戶與 Key"],["catalog","Catalog"],["endpoints","端點"],["settings","設定"],["site","站方資料"]],initial),panels=tabs.panels;
+ if(liteTool==="providers"&&p.description){
+  const about=el("details",undefined,"card tool-provider-about");
+  about.append(el("summary","供應商簡介"),el("p",p.description,"section-description"));
+  panels.overview.append(about);
+ }
  const updateProviderView=async()=>{if(!detailCurrent(ticket))return;p=providers.find(v=>v.id===p.id)||p;rows=credentials.filter(c=>c.provider_id===p.id);members=myModels.filter(m=>m.provider_id===p.id&&m.state==="ACTIVE");renderProviderSummary();renderProviderModels();renderSyncTools();renderKeys();renderAccountOptions();renderRotateOptions();renderEndpoints();renderProviderCatalog();providerFacts.querySelector("pre").textContent=JSON.stringify(p.config,null,2);};
  let rows=credentials.filter(c=>c.provider_id===p.id),members=myModels.filter(m=>m.provider_id===p.id&&m.state==="ACTIVE");
  const tools=el("div",undefined,"actions");panels.overview.append(tools);

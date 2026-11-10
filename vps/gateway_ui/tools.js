@@ -1,12 +1,24 @@
 const toolQuery = new URLSearchParams(location.search);
 const toolModel = toolQuery.get("model") || "";
 const toolProvider = toolQuery.get("provider") || "";
-const toolTitles = {prices: "價格比較", verification: "模型驗證", requests: "完整請求紀錄"};
+const toolHeadings = {
+  prices: ["價格比較", "Model pricing", "依連線查看站方標價和已確認的 Key 費率。"],
+  verification: ["模型驗證", "Model verification"],
+  requests: ["完整請求紀錄", "Request history"]
+};
 let toolOffers = [];
 let toolOffersMore = false;
 let verificationPending = false;
 
 async function startLiteTool() {
+  const appearance = document.documentElement.dataset;
+  try {
+    const wallpaper = localStorage.getItem("modelatlas.wallpaper");
+    const textSize = localStorage.getItem("modelatlas.textSize");
+    if (Object.hasOwn(aquaWallpapers, wallpaper) || wallpaper === "plain") appearance.wallpaper = wallpaper;
+    if (["compact", "normal", "large"].includes(textSize)) appearance.textSize = textSize;
+    if (localStorage.getItem("modelatlas.motion") === "reduced") appearance.reduceMotion = "true";
+  } catch {}
   const back = new URLSearchParams();
   if (toolModel) back.set("model", toolModel);
   else if (toolProvider) back.set("provider", toolProvider);
@@ -17,6 +29,7 @@ async function startLiteTool() {
   $("header-refresh").addEventListener("click", () => refresh().catch(() => {}));
   if (liteTool === "models") {
     show("models");
+    $("models-title").textContent = "模型工具";
     if (toolQuery.get("tab") === "catalog") workspace("models", "models-catalog");
     const external = el("a", "LMSpeed 外部參考", "link-button");
     external.href = "/tools/data?tab=services";
@@ -25,17 +38,26 @@ async function startLiteTool() {
     show("providers");
     if (toolQuery.get("tab") === "import") {
       workspace("providers", "providers-new");
-      const panel = $("import-form").closest("details");
-      if (panel) panel.open = true;
+      const panel = $("import-form").closest("details"), single = $("onboarding-form").closest("details");
+      single.open = false;
+      single.before(panel);
+      panel.open = true;
     }
   } else if (liteTool === "data") {
     show("settings");
     const external = toolQuery.get("tab") === "services";
     $("settings-title").textContent = external ? "外部效能資料" : "備份與同步";
-    if (external) $("lite-tool-back").href = "/tools/models";
+    $("settings-title").nextElementSibling.textContent = external ? "查看外部模型資料及同步紀錄。" : "管理本機設定、加密備份與裝置配對。";
+    if (external) {
+      $("lite-tool-back").href = "/tools/models";
+      $("service-history").classList.add("card");
+    }
     workspace("settings", external ? "settings-services" : "settings-data");
   } else {
-    $("lite-tool-title").textContent = toolTitles[liteTool];
+    const [title, eyebrow, summary] = toolHeadings[liteTool];
+    $("lite-tool-title").textContent = title;
+    $("lite-tool-eyebrow").textContent = eyebrow;
+    if (summary) $("lite-tool-title").parentElement.append(el("p", summary, "tool-heading-note"));
     show("lite-tool-content");
   }
   try {
@@ -63,14 +85,15 @@ async function refreshLiteToolSnapshot(requested) {
     const values = await Promise.all([api("/providers"), api("/accounts"), api("/credentials")]);
     if (requested !== workspaceRefreshRequested) return;
     [providers, accounts, credentials] = values;
-    const results = $("lite-tool-results");
-    results.replaceChildren();
+    const panel = el("div", undefined, "card tool-request-panel");
+    $("lite-tool-results").replaceChildren(panel);
     const selected = scope(Object.fromEntries(toolQuery));
     const selection = selected.provider_id && selected.account_id && selected.credential_id && selected.model_id && selected.endpoint ? selected : null;
-    await renderRequestHistory(results, {selection}, () => requested === workspaceRefreshRequested);
+    await renderRequestHistory(panel, {selection}, () => requested === workspaceRefreshRequested);
   } else {
+    if (liteTool === "verification" && verificationPending) return;
     const page = await readToolOffers(0);
-    if (requested !== workspaceRefreshRequested) return;
+    if (requested !== workspaceRefreshRequested || (liteTool === "verification" && verificationPending)) return;
     toolOffers = page.offerings;
     toolOffersMore = page.more;
     if (liteTool === "prices") renderPriceTool();
@@ -91,7 +114,9 @@ function prepareToolModelRows() {
   accounts = toolOffers.map(row => ({id: row.account_id, provider_id: row.provider_id, label: row.account}));
   credentials = toolOffers.map(row => ({id: row.credential_id, provider_id: row.provider_id, account_id: row.account_id, label: row.credential}));
   myModels = toolOffers.map(row => ({...row, state: "ACTIVE", metadata: {canonical_id: row.canonical_id}, offer: row.prices}));
-  $("lite-tool-title").textContent = toolTitles[liteTool] + (toolOffers.length ? " · " + toolOffers[0].display_name : "");
+  const caption = $("lite-tool-model");
+  caption.textContent = toolOffers[0]?.display_name || toolModel;
+  caption.hidden = !caption.textContent;
 }
 
 function moreToolOffers(parent, render) {
@@ -106,9 +131,8 @@ function moreToolOffers(parent, render) {
 function renderPriceTool() {
   prepareToolModelRows();
   const results = $("lite-tool-results");
-  results.replaceChildren(el("p", "每條連線各自顯示站方標價和已確認的 Key 費率。同步價格會讀取該站的價目表。", "section-description"));
   const list = el("div", undefined, "tool-row-list");
-  results.append(list);
+  results.replaceChildren(list);
   for (const model of myModels) {
     const card = el("article", undefined, "card");
     card.append(el("h2", model.provider), el("p", connectionLabel(model) + " · " + model.model_id, "section-description"));
@@ -164,124 +188,189 @@ function renderVerificationTool() {
   const results = $("lite-tool-results");
   const old = $("verification-connection")?.value;
   const rows = myModels.filter(model => chatOperation(model.operation));
-  results.replaceChildren(el("p", "選一條連線後手動測試。題目與輸出上限固定，可用同一條連線的歷次作品觀察變化。", "section-description"));
+  results.replaceChildren();
   if (!rows.length) {
-    results.append(el("p", "這個模型目前沒有文字對話連線。"));
+    const empty = el("div", "這個模型目前沒有文字對話連線。", "card");
+    results.append(empty);
     moreToolOffers(results, renderVerificationTool);
     return;
   }
-  const tools = el("section", undefined, "card"), label = el("label", "驗證連線"), picker = el("select");
+  const tools = el("section", undefined, "card tool-test"), heading = el("div", undefined, "tool-section-heading");
+  const mark = el("span", undefined, "identity-avatar"), title = el("div");
+  mark.append(icon("bicycle"));
+  title.append(el("h2", "鵜鶘騎單車"), el("p", "用同一道 SVG 題目，對照同一條連線的歷次作品。", "section-description"));
+  heading.append(mark, title, el("span", "手動測試 · v1", "tool-badge"));
+  const label = el("label", "驗證連線"), picker = el("select");
   picker.id = "verification-connection";
-  picker.setAttribute("aria-label", "驗證連線");
-  for (const model of rows) option(picker, key(model), model.provider + " · " + connectionLabel(model) + " · " + model.model_id);
+  picker.setAttribute("aria-label", label.textContent);
+  const connectionNames = rows.map(model => model.provider + " · " + connectionLabel(model));
+  const nameCounts = new Map();
+  for (const name of connectionNames) nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
+  for (const [index, model] of rows.entries()) {
+    const operation = operationLabels[model.operation] || model.operation;
+    const name = connectionNames[index], detail = nameCounts.get(name) > 1 ? model.model_id + " · " + operation : "";
+    option(picker, key(model), [name, detail,
+      model.enabled ? "" : "已停用"].filter(Boolean).join(" · "));
+  }
   if (rows.some(model => key(model) === old)) picker.value = old;
   label.append(picker);
-  tools.append(label);
-  const status = el("p", undefined, "section-description");
+  const connection = el("div");
+  const selectedScope = el("small", undefined, "tool-scope");
+  selectedScope.id = "verification-scope";
+  picker.setAttribute("aria-describedby", selectedScope.id);
+  connection.append(label, selectedScope);
+  const status = el("p", undefined, "tool-run-status");
   status.setAttribute("role", "status");
-  const actions = el("div", undefined, "actions");
-  const gallery = el("section", undefined, "card");
+  const actions = el("div", undefined, "tool-test-actions");
+  const gallery = el("section", undefined, "card tool-gallery");
   const active = () => rows.find(row => key(row) === picker.value);
   let historyVersion = 0, previewVersion = 0, runs = [];
   const runPath = () => "/verification/runs?" + query(active());
-  const left = el("select"), right = el("select"), previews = el("div", undefined, "tool-compare");
-  const selectors = el("div", undefined, "tool-compare");
-  for (const [labelText, select] of [["第一筆作品", left], ["第二筆作品", right]]) {
-    const field = el("label", labelText);
+  const compare = el("div", undefined, "tool-compare");
+  const slots = ["作品 A", "作品 B"].map(name => {
+    const column = el("div", undefined, "tool-compare-slot"), field = el("label", name), select = el("select");
+    const preview = el("div", undefined, "tool-preview");
+    select.setAttribute("aria-label", name);
     field.append(select);
-    selectors.append(field);
-  }
-  const describeRun = run => {
-    const status = {SUCCESS: "已保存", INVALID_SVG: "回應無法預覽", UNCONFIRMED: "結果待確認"};
-    return [new Date(run.created_at).toLocaleString(), run.credential_version == null ? "" : "Key v" + run.credential_version,
-      status[run.outcome] || outcomeLabels[run.outcome] || run.outcome].filter(Boolean).join(" · ");
-  };
+    column.append(field, preview);
+    compare.append(column);
+    return {name, column, select, preview};
+  });
+  const timeOptions = {month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"};
+  const timeFormat = new Intl.DateTimeFormat("zh-TW", {...timeOptions, year: "numeric"});
+  const optionTimeFormat = new Intl.DateTimeFormat("zh-TW", {month: "2-digit", day: "2-digit"});
+  const runOutcome = run => ({SUCCESS: "作品已儲存", INVALID_SVG: "回應無法預覽", UNCONFIRMED: "結果待確認"})[run.outcome]
+    || outcomeLabels[run.outcome] || run.outcome;
+
   async function showPair() {
     const version = ++previewVersion, path = runPath();
-    previews.setAttribute("aria-busy", "true");
+    const ids = [...new Set(slots.map(({select}) => select.value).filter(Boolean))];
+    compare.setAttribute("aria-busy", "true");
+    for (const {preview} of slots) preview.replaceChildren(el("p", "正在讀取作品…", "tool-drawing-empty"));
     try {
-      const ids = [...new Set([left.value, right.value].filter(Boolean))];
       const pairs = await Promise.all(ids.map(id => api(path + "&id=" + encodeURIComponent(id))));
       if (version !== previewVersion) return;
-      previews.replaceChildren();
-      for (const run of pairs) {
-        const card = el("article", undefined, "card");
-        card.append(el("h3", describeRun(run)));
+      for (const {name, select, preview} of slots) {
+        const run = pairs.find(entry => entry.id === select.value);
+        preview.replaceChildren();
+        if (!run) {
+          preview.append(el("p", "選一筆紀錄來比較", "tool-drawing-empty"));
+          continue;
+        }
+        const date = new Date(run.created_at), time = el("time", timeFormat.format(date));
+        time.dateTime = date.toISOString();
         if (run.drawing) {
           const img = el("img", undefined, "tool-drawing");
-          img.alt = "鵜鶘騎單車 · " + new Date(run.created_at).toLocaleString();
+          img.alt = "鵜鶘騎單車 · " + time.textContent;
           img.src = "data:image/svg+xml," + encodeURIComponent(run.drawing);
-          card.append(img);
+          const zoom = el("button", undefined, "tool-drawing-trigger"), glyph = el("span", undefined, "tool-drawing-zoom");
+          zoom.type = "button";
+          zoom.setAttribute("aria-label", "放大" + name);
+          glyph.append(icon("search"));
+          zoom.append(img, glyph);
+          zoom.addEventListener("click", () => {
+            const box = modal("鵜鶘騎單車 · " + name), expanded = img.cloneNode();
+            expanded.className = "tool-drawing-expanded";
+            box.append(expanded, el("p", time.textContent, "section-description"));
+          });
+          preview.append(zoom);
+        } else {
+          preview.append(el("p", runOutcome(run), "tool-drawing-empty"));
         }
-        requestLink(card, run.sample_id);
-        previews.append(card);
+        const meta = el("div", undefined, "tool-run-meta");
+        meta.append(time, el("span", (run.credential_version == null ? "" : "Key v" + run.credential_version + " · ") + runOutcome(run)));
+        preview.append(meta);
+        requestLink(preview, run.sample_id);
       }
+    } catch (error) {
+      if (version !== previewVersion) return;
+      for (const {preview} of slots) preview.replaceChildren(el("p", "暫時無法讀取作品。", "tool-drawing-empty"));
+      throw error;
     } finally {
-      if (version === previewVersion) previews.removeAttribute("aria-busy");
+      if (version === previewVersion) compare.removeAttribute("aria-busy");
     }
   }
   async function readHistory(append = false) {
     const version = ++historyVersion;
-    previewVersion++;
-    const page = await api(runPath() + "&limit=20&offset=" + (append ? runs.length : 0));
+    const page = await api(runPath() + "&limit=20&offset=" + (append ? runs.length : 0)).catch(error => {
+      if (version === historyVersion) throw error;
+    });
     if (version !== historyVersion) return;
     runs = append ? runs.concat(page.runs) : page.runs;
-    for (const select of [left, right]) {
+    slots.forEach(({column, select}, index) => {
       const previous = select.value;
       select.replaceChildren();
-      option(select, "", "選擇測試紀錄");
-      for (const run of runs) option(select, run.id, describeRun(run));
-      if (append && runs.some(run => run.id === previous)) select.value = previous;
-    }
-    if (!append) {
-      left.value = runs[0]?.id || "";
-      right.value = runs[1]?.id || "";
-    }
+      option(select, "", "選擇紀錄");
+      runs.forEach((run, offset) => {
+        const position = offset === 0 ? "最新" : "第 " + (offset + 1) + " 筆";
+        const date = new Date(run.created_at);
+        option(select, run.id, position + " · " + optionTimeFormat.format(date));
+      });
+      select.value = append ? previous : runs[index]?.id || "";
+      column.hidden = index >= runs.length;
+    });
     earlier.hidden = !page.more;
-    selectors.hidden = runs.length === 0;
+    compare.hidden = runs.length === 0;
+    emptyTitle.textContent = "尚無這條連線的測試紀錄。";
+    emptyCopy.hidden = false;
     emptyHistory.hidden = runs.length > 0;
-    await showPair();
+    if (runs.length) await showPair();
   }
-  const runButton = action(actions, "執行鵜鶘騎單車測試", async () => {
-    if (verificationPending) return;
+  const runButton = action(actions, "執行測試", async () => {
     const model = active();
+    if (verificationPending || !model?.enabled) return;
     verificationPending = picker.disabled = true;
-    status.textContent = "正在等待這家供應商回覆…";
+    status.textContent = "正在等待 " + model.provider + " 的回覆…";
     try {
       const run = await submit("/verification/runs", {id: crypto.randomUUID(), selection: scope(model)});
-      status.textContent = describeRun(run);
+      status.textContent = runOutcome(run);
     } catch (error) {
       status.textContent = "這次結果待確認。";
       notice(error.message, true);
     } finally {
-      verificationPending = picker.disabled = false;
-      if (tools.isConnected) await readHistory();
-      else await refresh();
+      try {
+        if (tools.isConnected) await readHistory();
+      } finally {
+        verificationPending = picker.disabled = false;
+      }
+      if (!tools.isConnected) await refresh();
     }
   }, false);
-  action(actions, "模型真實性證據", () => {
+  runButton.prepend(icon("play"));
+  const evidence = action(actions, "模型真實性證據", () => {
     const box = modal("模型真實性證據 · " + active().provider);
     modelAuthenticity(box, active(), detailVersion);
     box.querySelector("details[data-authenticity]").open = true;
   });
-  tools.append(el("p", "測試 v1 · 鵜鶘騎單車 SVG · 使用所選連線的額度，輸出上限 4,096 tokens", "section-description"), actions, status);
-  const emptyHistory = el("p", "尚無這條連線的測試紀錄。");
-  gallery.append(el("h2", "作品對照"), emptyHistory, selectors, previews);
-  selectors.hidden = true;
-  const historyActions = el("div", undefined, "actions");
-  action(historyActions, "更新測試紀錄", () => readHistory());
+  evidence.prepend(icon("file"));
+  tools.append(heading, connection, el("p", "每次使用所選 Key 發送一個請求，最多輸出 4,096 tokens。", "section-description"), actions, status);
+  const emptyHistory = el("div", undefined, "tool-history-empty");
+  const emptyTitle = el("strong"), emptyCopy = el("span", "執行上方測試後，作品會保存在這裡。");
+  emptyHistory.append(emptyTitle, emptyCopy);
+  gallery.append(el("h2", "作品對照"), el("p", "比較鳥嘴、車輪和踩踏姿勢。同一模型每次畫出的作品也可能不同。", "section-description"), emptyHistory, compare);
+  const historyActions = el("div", undefined, "actions tool-history-actions");
+  action(historyActions, "更新測試紀錄", () => readHistory()).prepend(icon("refresh"));
   const earlier = action(historyActions, "載入更早紀錄", () => readHistory(true));
-  earlier.hidden = true;
   gallery.append(historyActions);
-  results.append(tools, gallery, el("p", "同一模型的表現會有波動。作品適合用來觀察能力變化，身份證據可另外檢查。", "section-description"));
+  results.append(tools, gallery);
   moreToolOffers(results, renderVerificationTool);
   function switchConnection() {
-    runButton.disabled = !active().enabled || verificationPending;
-    previews.replaceChildren();
-    selectors.hidden = true;
-    readHistory().catch(error => notice(error.message, true));
+    const model = active();
+    runButton.disabled = !model.enabled || verificationPending;
+    selectedScope.textContent = model.model_id + " · " + (operationLabels[model.operation] || model.operation);
+    previewVersion++;
+    compare.removeAttribute("aria-busy");
+    runs = [];
+    for (const {preview} of slots) preview.replaceChildren();
+    compare.hidden = earlier.hidden = emptyCopy.hidden = true;
+    emptyHistory.hidden = false;
+    emptyTitle.textContent = "正在讀取測試紀錄…";
+    readHistory().catch(error => {
+      emptyTitle.textContent = "暫時無法讀取紀錄。";
+      notice(error.message, true);
+    });
   }
   picker.addEventListener("change", () => { status.textContent = ""; switchConnection(); });
-  for (const select of [left, right]) select.addEventListener("change", () => showPair().catch(error => notice(error.message, true)));
+  for (const {select} of slots) select.addEventListener("change", () => showPair().catch(error => notice(error.message, true)));
   switchConnection();
 }
