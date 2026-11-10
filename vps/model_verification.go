@@ -10,7 +10,7 @@ import (
 )
 
 const modelVerificationSchema = `
-CREATE TABLE model_verification_runs (
+CREATE TABLE IF NOT EXISTS model_verification_runs (
 	id TEXT PRIMARY KEY REFERENCES sessions(id),
 	scope_key TEXT NOT NULL,
 	created_at INTEGER NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE model_verification_runs (
 	sample_id TEXT NOT NULL DEFAULT '',
 	drawing TEXT NOT NULL DEFAULT ''
 );
-CREATE INDEX model_verification_scope ON model_verification_runs(scope_key,created_at DESC,id DESC);
+CREATE INDEX IF NOT EXISTS model_verification_scope ON model_verification_runs(scope_key,created_at DESC,id DESC);
 `
 
 const pelicanPrompt = "Draw an SVG of a pelican riding a bicycle. Show the pelican seated on the bicycle, a long bill, two wheels, handlebars and pedals. Use xmlns=\"http://www.w3.org/2000/svg\" and viewBox=\"0 0 640 480\". Return only the complete SVG."
