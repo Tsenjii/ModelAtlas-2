@@ -84,7 +84,7 @@
           <label>搜尋模型<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input id="model-search" type="search" placeholder="例如 DeepSeek 4.1 Flash"></span></label>
           <div id="model-provider-filter" class="section-inline" hidden><span id="model-provider-name"></span><button id="clear-model-provider" class="icon-button" type="button" aria-label="顯示所有供應商" title="顯示所有供應商"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
         </form>
-        <div class="line-meta"><span id="model-count" role="status"></span><span>選一個模型，比較各站的實測</span></div>
+        <div class="line-meta"><span id="model-count" role="status"></span><a class="link-button" href="/tools/models">模型工具</a></div>
         <div id="model-list" class="rows" aria-live="polite"></div>
         <button id="models-more" type="button" hidden class="load-more"><svg aria-hidden="true"><use href="#icon-chevron"/></svg>載入更多模型</button>
       </div>
@@ -102,6 +102,10 @@
         <div class="offer-tools"><label class="offer-sort"><span class="icon-label"><svg aria-hidden="true"><use href="#icon-sort"/></svg>排序</span><select id="offer-sort"><option value="ttft">首字最快</option><option value="tps">生成最快</option><option value="success">成功率最高</option><option value="latency">總延遲最低</option></select></label>
           <button id="offer-batch" type="button" disabled><svg aria-hidden="true"><use href="#icon-gauge"/></svg>批次測速</button><button id="remove-model-group" class="danger-button icon-button" type="button" aria-label="刪除整組模型" title="刪除整組模型" hidden><svg aria-hidden="true"><use href="#icon-trash"/></svg></button><span id="offer-batch-summary" class="quiet" role="status"></span>
         </div>
+        <details class="model-tool-menu" id="model-tool-menu">
+          <summary><svg aria-hidden="true"><use href="#icon-chevron"/></svg>更多模型工具</summary>
+          <div class="row-actions" id="model-tool-links"></div>
+        </details>
         <div id="route-tray" class="route-tray" hidden><strong id="route-count"></strong><button id="configure-route" type="button"><svg aria-hidden="true"><use href="#icon-key"/></svg>前往分發</button></div>
         <div id="offer-list" class="rows" aria-live="polite"></div>
         <button id="offers-more" type="button" hidden class="load-more"><svg aria-hidden="true"><use href="#icon-chevron"/></svg>載入更多連線</button>
@@ -114,7 +118,7 @@
       <div class="page-heading"><div><p class="eyebrow">Providers</p><h1>供應商</h1><p class="page-caption">管理站點、帳戶、額度與簽到。</p></div><button id="add-upstream" type="button" class="primary"><svg aria-hidden="true"><use href="#icon-plus"/></svg>新增供應商</button></div>
       <div class="card overview">
         <form id="provider-filters" class="stack"><label>搜尋供應商<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input id="provider-search" type="search" placeholder="名稱或網址"></span></label></form>
-        <div class="line-meta"><span id="provider-count" role="status"></span><span>額度依帳戶或 Key 顯示</span></div>
+        <div class="line-meta"><span id="provider-count" role="status"></span><a class="link-button" href="/tools/providers?tab=import">批次匯入</a></div>
         <div id="provider-list" class="rows" aria-live="polite"></div>
         <button id="providers-more" type="button" hidden class="load-more"><svg aria-hidden="true"><use href="#icon-chevron"/></svg>載入更多供應商</button>
       </div>
@@ -169,6 +173,7 @@
   <section id="page-usage" hidden aria-labelledby="usage-heading">
     <div class="page-heading">
       <div><p class="eyebrow">Activity</p><h1 id="usage-heading">用量與調用</h1><p class="page-caption">看趨勢，再追到每一筆請求。</p></div>
+      <a class="link-button" href="/tools/requests">完整請求紀錄</a>
     </div>
     <div class="card usage-toolbar">
       <form id="usage-filters" class="filter-grid">
@@ -306,6 +311,7 @@
     <details id="offer-scope" class="details-card">
       <summary><svg aria-hidden="true"><use href="#icon-chevron"/></svg>帳戶、Key 與端點</summary>
       <dl id="offer-scope-fields" class="detail-fields"></dl>
+      <div class="row-actions" id="offer-tool-links"></div>
     </details>
     <div class="connection-grid" role="group" aria-label="效能資料來源">
       <button id="offer-source-local" type="button" aria-pressed="true"><svg aria-hidden="true"><use href="#icon-gauge"/></svg>我的實測</button>
@@ -396,6 +402,7 @@
       <label>用量期間<select id="default-usage-range"><option value="24h">近 24 小時</option><option value="7d">近 7 日</option><option value="30d">近 30 日</option></select></label>
     </fieldset>
     <p class="quiet">偏好儲存在這個瀏覽器。</p>
+    <a class="link-button" href="/tools/data">備份與同步</a>
     <fieldset id="update-settings" class="stack">
       <legend>系統更新</legend>
       <div class="section-inline">

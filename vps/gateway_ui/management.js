@@ -227,6 +227,12 @@ async function showModelView() {
   if (group) {
     $("model-title").replaceChildren(modelIcon(group.id, group.name), el("span", group.name));
     $("model-canonical").textContent = group.id === group.name ? "" : group.id;
+    const links = $("model-tool-links");
+    if (links.dataset.model !== group.id) {
+      links.dataset.model = group.id;
+      $("model-tool-menu").open = false;
+      links.replaceChildren(toolLink("價格比較", "prices", {model: group.id}), toolLink("模型驗證", "verification", {model: group.id}));
+    }
     $("route-pick").hidden = true;
     $("remove-model-group").hidden = true;
     if (!state.offers.length) {
@@ -619,7 +625,12 @@ function renderProvider() {
   const summary = el("summary", "供應商介紹");
   summary.prepend(icon("chevron"));
   about.append(summary, el("p", p.description || "尚未填寫簡介", "provider-description"));
-  content.replaceChildren(profile, about, accounts, ...management.accounts.map(a => renderAccount(p, a)));
+  const advanced = el("details", undefined, "card details-card");
+  advanced.append(el("summary", "進階管理"), controls(
+    toolLink("站方資料", "providers", {provider: p.id, tab: "site"}),
+    toolLink("Key 版本與端點", "providers", {provider: p.id})
+  ));
+  content.replaceChildren(profile, about, accounts, ...management.accounts.map(a => renderAccount(p, a)), advanced);
 }
 
 for (const id of ["model-add-provider", "add-upstream"]) $(id).addEventListener("click", () => $("upstream-dialog").showModal());
@@ -739,4 +750,15 @@ $("clear-manual-quota").addEventListener("click", event => action(event.currentT
   if (window.confirm("要清除這筆手動額度嗎？站方回報仍會保留。")) return saveManualQuota({clear: true});
 }));
 
-action(null, refresh);
+action(null, async () => {
+  const params = new URLSearchParams(location.search);
+  const model = params.get("model"), provider = params.get("provider");
+  if (model) {
+    const result = await api("/gateway/model-groups?" + new URLSearchParams({id: model, limit: "1"}));
+    if (result.models.length) state.modelGroup = result.models[0];
+  }
+  if (provider) return openProvider(provider);
+  if (params.get("settings") === "open") $("settings-dialog").showModal();
+  if (["providers", "usage"].includes(params.get("view"))) return showPage(params.get("view"));
+  await refresh();
+});

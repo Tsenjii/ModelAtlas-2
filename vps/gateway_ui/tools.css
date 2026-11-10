@@ -1,0 +1,22 @@
+html[data-lite-tool] .shell {
+  max-width: 1060px;
+  padding: 0 clamp(14px, 4vw, 32px) calc(24px + env(safe-area-inset-bottom));
+}
+html[data-lite-tool] :is(.desktop-sidebar, .bottom-nav, #sidebar-toggle, #header-assistant,
+  #settings-toggle, #playground, #settings-back, #settings .workspace-tabs, #factory-kilo-card,
+  #research-workspace-tab, #knowledge-panel-tab, #service-aa, #settings-services > .card:first-child) {
+  display: none !important;
+}
+html[data-lite-tool] header { position: static; }
+.tool-mark { border-radius: 11px; }
+.tool-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tool-compare > .card { min-width: 0; }
+.tool-drawing {
+  display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain;
+  background: white; border: 1px solid var(--border); border-radius: 10px;
+}
+.tool-row-list { display: grid; gap: 10px; }
+.tool-row-list .card { margin: 0; }
+@media (max-width: 560px) {
+  .tool-compare { grid-template-columns: minmax(0, 1fr); }
+}

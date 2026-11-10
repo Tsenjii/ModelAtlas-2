@@ -215,6 +215,7 @@ function openOfferDetail(v) {
     ["帳戶", v.account], ["Key 標籤", v.credential], ["群組", v.group || "未指定"],
     ["模型歸類", v.canonical_id], ["端點", v.endpoint], ["連線狀態", v.enabled ? "可用" : "停用或不可用"]
   ]);
+  $("offer-tool-links").replaceChildren(toolLink("此連線的完整請求紀錄", "requests", {...selection(v), model: v.canonical_id}));
   const [, idField, urlField] = fields.querySelectorAll("dd");
   const key = v.has_api_key ? [credentialCopyButton(scope, dialog)] : [];
   $("offer-actions").replaceChildren(

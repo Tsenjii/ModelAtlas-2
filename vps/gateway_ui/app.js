@@ -139,6 +139,12 @@ function button(text, handler, {glyph, iconOnly} = {}) {
   node.addEventListener("click", () => action(node, handler));
   return node;
 }
+function toolLink(label, tool, params = {}) {
+  const link = el("a", label, "link-button");
+  const query = new URLSearchParams(params);
+  link.href = "/tools/" + tool + (query.size ? "?" + query : "");
+  return link;
+}
 function option(value, text) {
   const node = el("option", text);
   node.value = value;

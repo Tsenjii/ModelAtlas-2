@@ -115,6 +115,7 @@ func (s *Server) gatewayHandler() http.Handler {
 	admin := s.gatewayAdminRoutes()
 	root := http.NewServeMux()
 	root.HandleFunc("GET /healthz", s.health)
+	s.workspacePeerRoutes(root)
 	root.Handle("/api/v1/", s.auth(http.StripPrefix("/api/v1", admin)))
 	s.gatewayWebRoutes(root, admin, false)
 	return s.maintenanceHandler(root)
@@ -127,6 +128,7 @@ func (s *Server) gatewayWebRoutes(root *http.ServeMux, admin *http.ServeMux, wor
 	root.Handle("POST /ui/api/gateway/credential/copy", s.gatewayBrowserAPI(http.HandlerFunc(s.gatewayCopyCredential)))
 	root.Handle("/ui/api/", s.gatewayBrowserAPI(http.StripPrefix("/ui/api", admin)))
 	s.gatewayUIRoutes(root, workspace)
+	s.gatewayToolRoutes(root)
 }
 
 func gatewayError(w http.ResponseWriter, status int, code, message string) {

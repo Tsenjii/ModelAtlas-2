@@ -221,6 +221,9 @@ code { font: .83rem/1.55 ui-monospace,SFMono-Regular,monospace; overflow-wrap: a
   overflow: hidden; font-size: .8rem; margin: 3px 0;
 }
 .provider-description { white-space: pre-wrap; line-height: 1.65; }
+.model-tool-menu { margin-bottom: 8px; }
+.model-tool-menu > summary { display: flex; align-items: center; gap: 5px; color: var(--primary); }
+.model-tool-menu .row-actions { justify-content: flex-start; }
 
 .provider-tile { position: relative; }
 .provider-open::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }

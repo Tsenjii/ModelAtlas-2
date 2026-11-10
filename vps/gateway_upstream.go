@@ -299,6 +299,7 @@ type gatewayOffering struct {
 	Operation   string             `json:"operation"`
 	Enabled     bool               `json:"enabled"`
 	Performance gatewayPerformance `json:"performance"`
+	Prices      map[string]any     `json:"prices,omitempty"`
 }
 
 func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
@@ -359,6 +360,11 @@ func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
 	for i := range out {
 		v := &out[i]
 		v.Enabled = v.Enabled && s.selectionUsable(ctx, v.Selection)
+		if q.Get("prices") == "1" {
+			offer := s.offerSummary(ctx, v.Selection)
+			v.Prices = map[string]any{"nominal_price": offer["nominal_price"], "price": offer["price"], "effective_price": offer["effective_price"],
+				"published_groups": s.gatewayPublishedGroupPrices(ctx, *v)}
+		}
 		if order == "" {
 			v.Performance, err = s.gatewayPerformance(ctx, v.Selection)
 			if err != nil {

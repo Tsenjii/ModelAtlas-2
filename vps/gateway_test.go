@@ -23,6 +23,7 @@ const gatewayTestPAT = "upstream-account-fixture-PAT_0123456789"
 type gatewayFixture struct {
 	*httptest.Server
 	a, b         atomic.Int32
+	verification atomic.Int32
 	bRateLimitAt atomic.Int32
 	perfDown     atomic.Bool
 }
@@ -38,7 +39,22 @@ func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixtur
 				t.Error("public provider status received a credential")
 			}
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprint(w, `{"success":true,"data":{"version":"v1.0.0-rc.25","checkin_enabled":true}}`)
+			fmt.Fprint(w, `{"success":true,"data":{"version":"v1.0.0-rc.25","checkin_enabled":true,"quota_per_unit":500000}}`)
+			return
+		case "/api/pricing":
+			if auth != "" || r.Header.Get("Cookie") != "" {
+				t.Error("public pricing received private authentication")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `{"success":true,"data":[{"model_name":%q,"quota_type":0,"model_ratio":1,"completion_ratio":2,"enable_groups":["standard"],"supported_endpoint_types":["openai"]}],"group_ratio":{"standard":1}}`, models[0])
+			return
+		case "/api/notice":
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"success":true,"data":"站方測試公告"}`)
+			return
+		case "/api/perf-metrics/summary":
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"success":true,"data":{"models":[]}}`)
 			return
 		case "/api/perf-metrics":
 			if auth != "" || r.Header.Get("Cookie") != "" {
@@ -114,9 +130,10 @@ func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixtur
 			return
 		}
 		var in struct {
-			Model    string `json:"model"`
-			Stream   bool   `json:"stream"`
-			Messages []struct {
+			Model     string `json:"model"`
+			Stream    bool   `json:"stream"`
+			MaxTokens int    `json:"max_tokens"`
+			Messages  []struct {
 				Content string `json:"content"`
 			} `json:"messages"`
 			Tools []json.RawMessage `json:"tools"`
@@ -127,6 +144,16 @@ func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixtur
 			return
 		}
 		prompt := in.Messages[0].Content
+		if prompt == pelicanPrompt {
+			if in.Stream || in.MaxTokens != pelicanMaxTokens || side != "a" {
+				t.Error("verification did not use the exact selected scope and fixed prompt settings")
+			}
+			n := f.verification.Add(1)
+			drawing := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"><circle cx="%d" cy="100" r="40"/></svg>`, 80+n*20)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `{"model":%q,"choices":[{"message":{"role":"assistant","content":%q}}],"usage":{"prompt_tokens":30,"completion_tokens":100}}`, model, drawing)
+			return
+		}
 		if side == "a" {
 			f.a.Add(1)
 			if prompt == "fallback" {

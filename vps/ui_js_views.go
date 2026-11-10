@@ -8,10 +8,12 @@ function renderSettingsForm(){
  for(const [name,value]of Object.entries(values)){if(settingsEdits.has(name))continue;const input=form.elements.namedItem(name);if(input.type==="checkbox")input.checked=value;else input.value=value;}
 }
 async function refreshWorkspaceSnapshot(requested){
+ if(liteTool&&!["models","providers"].includes(liteTool))return refreshLiteToolSnapshot(requested);
  const version=++refreshVersion,readController=new AbortController(),opts={signal:readController.signal},reads=[api("/providers",opts),api("/accounts",opts),api("/credentials",opts),apiPages("/models",opts),apiPages("/my-models?all=true",opts),api("/settings",opts),api("/endpoints",opts)];
  let values;try{values=await Promise.all(reads);}catch(error){readController.abort();await Promise.allSettled(reads);throw error;}
  if(version!==refreshVersion||requested!==workspaceRefreshRequested)return;
  [providers,accounts,credentials,models,myModels,settings,endpointProfiles]=values;workspaceHasData=true;workspaceReadStatus("loading");refreshAccountCheckins();renderSettingsForm();modelCatalogIndex=new Map(models.map(m=>[JSON.stringify([m.provider_id,m.id]),m]));modelFilterOptions();catalogIndexes();renderProviders();renderModels();renderCatalog();assistantTargets();
+ if(liteTool){if($("detail").open&&$("detail").dataset.kind==="provider")await $("detail-content").providerReload?.();return;}
  const oldTarget=$("target").value;$("target").replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled&&operationLabels[targetOperation(m)]).forEach(m=>option($("target"),key(m),modelDisplayName(m)+" · "+operationLabels[targetOperation(m)]+" · "+(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" / "+connectionLabel(m)));if([...$("target").options].some(o=>o.value===oldTarget))$("target").value=oldTarget;else if(!oldTarget&&providers.length===1&&providers[0].id==="builtin-kilo-anonymous"){const initial=[...$("target").options].find(o=>JSON.parse(o.value).model_id==="nvidia/nemotron-3.5-lightning:free");if(initial)$("target").value=initial.value;}
  if($("detail").open&&$("detail").dataset.kind==="provider")await $("detail-content").providerReload?.();if($("detail").open&&$("detail").dataset.kind==="model")$("detail-content").modelConnectionsReload?.();modelPickerReady=true;syncModelPickerButton();syncNativeShell();const target=$("target").value;if(oldTarget!==target||!composerDraftOwner)prepareComposerSelection();await sessionSelectRefresh();if(version!==refreshVersion)return;
  if(oldTarget!==target)resetMediaDraft();updatePlayground();

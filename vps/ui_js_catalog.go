@@ -73,7 +73,7 @@ function catalogDetail(m){
   if(adding)return;const c=catalogCredentialIndex.get(select.value);if(!c||!inferenceEndpoints(c).some(ep=>ep.id===endpoint.value)){update();return;}
   const selection=catalogSelection(c,m.id,endpoint.value),existing=catalogScopeIndex.get(key(selection));if(existing){modelDetail(existing);return;}
   adding=true;catalogError(error,"");update();
-  try{await submit("/my-models",selection);rememberCatalogMembership(selection);if(detailCurrent(ticket))$("detail").close();try{await refresh();notice("已加入；Intelligence 會自動同步");}catch(e){notice("模型已加入；清單重新載入失敗："+e.message,true);}}
+  try{await submit("/my-models",selection);rememberCatalogMembership(selection);if(detailCurrent(ticket))$("detail").close();try{await refresh();notice(liteTool?"已加入我的模型":"已加入；Intelligence 會自動同步");}catch(e){notice("模型已加入；清單重新載入失敗："+e.message,true);}}
   catch(e){if(detailCurrent(ticket))catalogError(error,"加入失敗："+e.message);}
   finally{adding=false;if(detailCurrent(ticket))update();}
  });
@@ -96,7 +96,7 @@ async function addManualModel(e){
  if(!c||!modelID||!displayName||!inferenceEndpoints(c).some(ep=>ep.id===endpoint)){catalogError(error,"請填寫模型名稱，並選擇完整的 Key 與端點。");return;}
  const selection=catalogSelection(c,modelID,endpoint),existing=catalogScopeIndex.get(key(selection));if(existing){modelDetail(existing);return;}
  manualAdding=true;manualEndpoints();catalogError(error,"");let saved=false;
- try{await submit("/models",{provider_id:c.provider_id,id:modelID,display_name:displayName});saved=true;await submit("/my-models",selection);rememberCatalogMembership(selection);try{await refresh();notice("已加入模型；Intelligence 會自動同步");}catch(e){catalogError(error,"模型已加入；清單重新載入失敗："+e.message);}}
+ try{await submit("/models",{provider_id:c.provider_id,id:modelID,display_name:displayName});saved=true;await submit("/my-models",selection);rememberCatalogMembership(selection);try{await refresh();notice(liteTool?"已加入我的模型":"已加入模型；Intelligence 會自動同步");}catch(e){catalogError(error,"模型已加入；清單重新載入失敗："+e.message);}}
  catch(e){catalogError(error,(saved?"型錄已保存，連線尚未加入：":"加入失敗：")+e.message);}
  finally{manualAdding=false;manualEndpoints();}
 }
