@@ -12,7 +12,7 @@ let verificationPending = false;
 let verificationOverviewRead;
 
 function liteModelTitle(panel) {
-  return panel === "models-hidden" ? "隱藏與封存" : panel === "models-owned" ? "跨模型批次" : "模型目錄";
+  return panel === "models-hidden" ? "已隱藏與封存" : panel === "models-owned" ? "批次測試與整理" : "模型目錄";
 }
 
 async function startLiteTool() {
@@ -52,7 +52,20 @@ async function startLiteTool() {
     search.parentElement.replaceChildren(document.createTextNode("搜尋模型"), search);
     const membership = $("catalog-membership");
     membership.value = catalogDefault("catalog-membership");
-    catalog.querySelector(".catalog-searchbar").append(membership.parentElement);
+    const searchbar = catalog.querySelector(".catalog-searchbar");
+    searchbar.append(membership.parentElement);
+    const modelTools = el("nav", undefined, "catalog-model-tools");
+    modelTools.setAttribute("aria-label", "整理已加入的模型");
+    for (const [key, id] of [["batch", "models-owned"], ["retained", "models-hidden"]]) {
+      const link = el("a", liteModelTitle(id));
+      link.href = location.pathname + "?tab=" + key;
+      modelTools.append(link);
+    }
+    searchbar.after(modelTools);
+    if (panel !== "models-catalog") {
+      $("lite-tool-back").href = location.pathname;
+      $("lite-tool-back").replaceChildren(icon("back"), document.createTextNode("返回模型目錄"));
+    }
     $("catalog-more").textContent = "載入更多模型";
     $("catalog-reset").textContent = "清除篩選";
     $("manual-add").textContent = "加入我的模型";

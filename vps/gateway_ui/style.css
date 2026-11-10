@@ -111,6 +111,18 @@ code { font: .83rem/1.55 ui-monospace,SFMono-Regular,monospace; overflow-wrap: a
 .rows,.stack { display: grid; gap: 7px; min-width: 0; }
 .rows + button,.usage-list + button { margin-top: 11px; }
 #model-filters { grid-template-columns: minmax(0,420px) minmax(0,1fr); }
+.model-brand-filter {
+  grid-column: 1/-1; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center;
+  gap: 8px; color: var(--muted); font-size: .81rem;
+}
+#model-brand-label { white-space: nowrap; font-weight: 620; }
+#model-brand-options {
+  display: flex; gap: 6px; overflow-x: auto; overscroll-behavior-inline: contain;
+  scrollbar-width: thin; padding: 4px;
+}
+#model-brand-options button { flex: none; gap: 5px; padding-inline: 9px; white-space: nowrap; }
+#model-brand-options button[aria-pressed="true"] { background: var(--accent); border-color: var(--primary); }
+#model-brand-options button > svg { width: 17px; height: 17px; fill: currentColor; stroke: none; }
 #model-list { grid-template-columns: repeat(auto-fit,minmax(min(100%,245px),1fr)); }
 .model-tile {
   justify-content: flex-start; text-align: start; min-height: 56px; padding: 8px 11px;

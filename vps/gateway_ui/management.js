@@ -1,7 +1,8 @@
 "use strict";
 
+const modelGroupPageSize = 40;
 const management = {
-  groups: [], providers: [], provider: null, accounts: [], credentials: [],
+  groups: [], modelBrand: "", groupLimit: modelGroupPageSize, providers: [], provider: null, accounts: [], credentials: [],
   checkins: null, account: null, connection: null, align: null, quotaScope: null
 };
 const operationNames = {
@@ -252,19 +253,72 @@ async function showModelView() {
 }
 
 async function loadGroups(reset) {
+  if (!reset) {
+    management.groupLimit += modelGroupPageSize;
+    renderModelGroups();
+    return;
+  }
   groupRead?.abort();
   const read = new AbortController();
   groupRead = read;
-  const params = new URLSearchParams({limit: "40", offset: String(reset ? 0 : management.groups.length), q: $("model-search").value.trim()});
+  const params = new URLSearchParams({limit: "200", q: $("model-search").value.trim()});
   if (state.modelProvider) params.set("provider_id", state.modelProvider.id);
   $("model-provider-filter").hidden = !state.modelProvider;
   $("model-provider-name").textContent = state.modelProvider ? state.modelProvider.name + " 提供的模型" : "";
-  const data = await api("/gateway/model-groups?" + params, undefined, read.signal);
-  if (groupRead !== read) return;
-  management.groups = reset ? data.models : management.groups.concat(data.models);
-  $("models-more").hidden = !data.more;
-  $("model-count").textContent = (data.more ? "已載入 " : "") + management.groups.length + " 個模型";
-  const nodes = management.groups.map(group => {
+  const groups = new Map();
+  let offset = 0, page;
+  do {
+    params.set("offset", String(offset));
+    page = await api("/gateway/model-groups?" + params, undefined, read.signal);
+    if (groupRead !== read || read.signal.aborted) return;
+    for (const group of page.models) groups.set(group.id, {...group, brand: modelBrand(group.id, group.name)});
+    offset += page.models.length;
+  } while (page.more && page.models.length);
+  management.groups = [...groups.values()];
+  management.groupLimit = modelGroupPageSize;
+  renderModelBrandOptions(Boolean(params.get("q")));
+  renderModelGroups();
+}
+
+function renderModelBrandOptions(searching) {
+  const row = $("model-brand-options");
+  const brands = new Set(management.groups.map(group => group.brand));
+  if (searching) for (const chip of row.children) brands.add(chip.dataset.brand);
+  const options = [["", "全部"], ...modelBrands.filter(([brand]) => brands.has(brand)).map(([brand, , label]) => [brand, label])];
+  const signature = options.map(([brand]) => brand).join("|");
+  if (!brands.has(management.modelBrand)) management.modelBrand = "";
+  if (signature !== row.dataset.brands) {
+    row.replaceChildren(...options.map(([brand, label]) => {
+      const chip = button(label, () => {
+        management.modelBrand = brand;
+        management.groupLimit = modelGroupPageSize;
+        updateModelBrandSelection();
+        renderModelGroups();
+      });
+      chip.dataset.brand = brand;
+      if (brand) {
+        chip.setAttribute("aria-label", label);
+        chip.prepend(icon("brand-" + brand, "/gateway-model-brands.svg"));
+      }
+      return chip;
+    }));
+    row.dataset.brands = signature;
+  }
+  updateModelBrandSelection();
+}
+
+function updateModelBrandSelection() {
+  for (const chip of $("model-brand-options").children) {
+    chip.setAttribute("aria-pressed", String(chip.dataset.brand === management.modelBrand));
+  }
+}
+
+function renderModelGroups() {
+  const matches = management.modelBrand ? management.groups.filter(group => group.brand === management.modelBrand) : management.groups;
+  const visible = matches.slice(0, management.groupLimit);
+  $("models-more").hidden = visible.length === matches.length;
+  $("model-count").textContent = matches.length + " 個模型";
+  const nodes = visible.map(group => {
     const tile = button("", async () => {
       state.modelGroup = group;
       state.offers = [];
@@ -278,7 +332,8 @@ async function loadGroups(reset) {
     tile.append(modelIcon(group.id, group.name), label, icon("chevron"));
     return tile;
   });
-  $("model-list").replaceChildren(...(nodes.length ? nodes : [empty(params.has("provider_id") || params.get("q") ? "找不到符合的模型。" : "新增供應商後，模型會出現在這裡。")]));
+  const filtered = state.modelProvider || management.modelBrand || $("model-search").value.trim();
+  $("model-list").replaceChildren(...(nodes.length ? nodes : [empty(filtered ? "找不到符合的模型。" : "新增供應商後，模型會出現在這裡。")]));
 }
 
 async function loadOffers(reset, limit = 50) {
@@ -653,6 +708,7 @@ function renderProvider() {
   const tools = controls(button("查看模型", async () => {
     state.modelGroup = null;
     state.modelProvider = p;
+    management.modelBrand = "";
     $("model-search").value = "";
     await showPage("models");
   }, {glyph: "model"}));

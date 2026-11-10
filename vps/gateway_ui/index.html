@@ -77,18 +77,15 @@
         <form id="model-filters" class="stack">
           <label>搜尋模型<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input id="model-search" type="search" placeholder="例如 DeepSeek 4.1 Flash"></span></label>
           <div id="model-provider-filter" class="section-inline" hidden><span id="model-provider-name"></span><button id="clear-model-provider" class="icon-button" type="button" aria-label="顯示所有供應商" title="顯示所有供應商"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
+          <div class="model-brand-filter">
+            <span id="model-brand-label">模型品牌</span>
+            <div id="model-brand-options" role="group" aria-labelledby="model-brand-label"></div>
+          </div>
         </form>
         <div class="line-meta">
           <span id="model-count" role="status"></span>
           <div class="model-actions">
             <a class="link-button" href="/tools/models"><svg aria-hidden="true"><use href="#icon-search"/></svg>模型目錄</a>
-            <details class="model-tool-menu">
-              <summary><svg aria-hidden="true"><use href="#icon-settings"/></svg>管理</summary>
-              <div class="model-management-actions">
-                <a class="link-button" href="/tools/models?tab=batch">跨模型批次</a>
-                <a class="link-button" href="/tools/models?tab=retained">隱藏與封存</a>
-              </div>
-            </details>
           </div>
         </div>
         <div id="model-list" class="rows" aria-live="polite"></div>

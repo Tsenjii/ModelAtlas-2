@@ -58,6 +58,12 @@
 }
 [data-lite-tool] #models > .heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 7px; }
 [data-lite-tool="models"] .catalog-searchbar { grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); }
+.catalog-model-tools { display: flex; flex-wrap: wrap; gap: 0 12px; margin: 3px 0; font-size: .82rem; }
+.catalog-model-tools a {
+  display: inline-flex; align-items: center; min-height: 48px; padding-inline: 6px;
+  border-radius: 8px; color: var(--muted); text-decoration: none;
+}
+.catalog-model-tools a:hover { background: var(--accent); color: var(--ink); }
 [data-lite-tool] :is(h2, h3) { overflow-wrap: anywhere; }
 [data-lite-tool] h2 { font-size: .96rem; font-weight: 680; }
 [data-lite-tool] :is(button.ghost, .link-button, input, select, textarea) { border-color: var(--line); }
