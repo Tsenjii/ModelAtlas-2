@@ -105,13 +105,39 @@ const modelBrands = [
   ["luma", "luma(?=$|[-_. ]?(?:ai|labs|[0-9]))|dream[-_. ]machine|ray(?=[-_. ]?[23])"],
   ["elevenlabs", "eleven[-_. ]?(?:labs|multilingual|turbo|flash|monolingual|v[0-9])|scribe[-_. ]v"],
   ["suno", "suno"],
-  ["udio", "udio"]
+  ["udio", "udio"],
+  ["agnesai", "(?:sapiens(?:[-_. ]+ai)?[-_. ]+)?agnes?(?:[-_. ]?ai)?"],
+  ["ai2", "(?:ai2|allenai|olmoe?|molmo)"],
+  ["arcee", "arcee(?:[-_. ]?ai)?|trinity(?=[-_. ](?:large|mini|nano)(?=$|[^a-z]))"],
+  ["baai", "baai|bge"],
+  ["dbrx", "dbrx"],
+  ["essentialai", "essential[-_. ]?ai|rnj"],
+  ["liquid", "liquid[-_. ]?ai|lfm"],
+  ["nousresearch", "nous[-_. ]?research|(?:deep[-_. ]?)?hermes(?=$|[-_. ]?[0-9])"],
+  ["reka", "reka"],
+  ["sakana", "sakana(?:[-_. ]?ai)?"],
+  ["tii", "tii|falcon"],
+  ["upstage", "upstage|solar(?=$|[-_. ](?:pro|mini|chat|instruct|embedding|[0-9])(?=$|[^a-z]))"],
+  ["kling", "kling(?:[-_. ]?ai)?|kolors"],
+  ["ideogram", "ideogram"],
+  ["midjourney", "midjourney"],
+  ["adobefirefly", "(?:adobe[-_. ]*)?firefly"],
+  ["vidu", "vidu(?:q(?=[0-9]))?"],
+  ["pika", "pika(?:frames|scenes|effects|swaps|additions|twists)?"],
+  ["happyhorse", "happy[-_. ]?horse"],
+  ["fishaudio", "fish[-_. ]?audio|fish[-_. ]speech"],
+  ["venice", "venice(?=$|[-_. ]uncensored(?=$|[^a-z]))"]
 ].map(([brand, family]) => [brand, new RegExp("^(?:" + family + ")(?=$|[^a-z]|v[0-9])")]);
 const modelBrandNamespaces = new Map([
   ...modelBrands.map(([brand]) => [brand, brand]),
   ["01-ai", "yi"], ["anthropic", "claude"], ["black-forest-labs", "bfl"], ["deepseek-ai", "deepseek"],
   ["inclusionai", "antgroup"], ["lgai-exaone", "lg"], ["meta-llama", "meta"], ["mistralai", "mistral"],
-  ["moonshotai", "kimi"], ["xiaomi", "mimo"], ["x-ai", "grok"], ["xai", "grok"], ["zai-org", "zhipu"]
+  ["moonshotai", "kimi"], ["xiaomi", "mimo"], ["x-ai", "grok"], ["xai", "grok"], ["zai-org", "zhipu"],
+  ["agne", "agnesai"], ["agnes", "agnesai"], ["agnes-ai", "agnesai"], ["sapiens-ai", "agnesai"],
+  ["sapiensai", "agnesai"], ["allenai", "ai2"], ["arcee-ai", "arcee"], ["databricks", "dbrx"],
+  ["essential-ai", "essentialai"], ["liquidai", "liquid"], ["liquid-ai", "liquid"], ["nous-research", "nousresearch"],
+  ["sakanaai", "sakana"], ["sakana-ai", "sakana"], ["tiiuae", "tii"], ["klingai", "kling"],
+  ["kling-ai", "kling"], ["adobe-firefly", "adobefirefly"], ["fish-audio", "fishaudio"], ["venice-ai", "venice"]
 ]);
 
 function modelIcon(...names) {
