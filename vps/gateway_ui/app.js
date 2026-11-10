@@ -141,8 +141,9 @@ function button(text, handler, {glyph, iconOnly} = {}) {
   node.addEventListener("click", () => action(node, handler));
   return node;
 }
-function toolLink(label, tool, params = {}) {
+function toolLink(label, tool, params = {}, glyph) {
   const link = el("a", label, "link-button");
+  if (glyph) link.prepend(icon(glyph));
   const query = new URLSearchParams(params);
   link.href = "/tools/" + tool + (query.size ? "?" + query : "");
   return link;

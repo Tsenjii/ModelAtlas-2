@@ -84,7 +84,7 @@ function renderOfferTrend(local) {
         value: binary ? Number(sample.outcome === "SUCCESS") : sample[measure.value],
         note: (statuses[sample.outcome] || sample.outcome) + (sample.http_status ? " · HTTP " + sample.http_status : "")
       })),
-      description: "繪出此期間最近 " + local.history.length + " / " + local.history_total + " 筆完成請求。選取圖點可查看時間和數值。"
+      description: "最近 " + local.history.length + " / " + local.history_total + " 筆完成請求"
     });
   };
   measure.addEventListener("change", draw);
@@ -94,24 +94,35 @@ function renderOfferTrend(local) {
 
 function renderLocalPerformance(local) {
   const metrics = el("div", undefined, "metrics");
-  const stat = (label, v, fmt, glyph) => metric(label, fmt(v?.mean),
-    v?.p95 == null ? "" : "P50 " + fmt(v.p50) + " · P95 " + fmt(v.p95), glyph);
   const speed = v => v == null ? "—" : number(v, 1) + " tok/s";
-  metrics.append(stat("平均首字等待", local.ttft, delay, "clock"),
-    stat("平均生成速度", local.tps, speed, "bolt"),
-    stat("平均總延遲", local.latency, delay, "gauge"),
+  const timings = [
+    ["平均首字等待", local.ttft, delay, "clock"],
+    ["平均生成速度", local.tps, speed, "bolt"],
+    ["平均總延遲", local.latency, delay, "gauge"]
+  ];
+  for (const [label, value, format, glyph] of timings) metrics.append(metric(label, format(value?.mean), "", glyph));
+  metrics.append(
     metric("成功率", local.success_rate == null ? "—" : number(local.success_rate * 100, 1) + "%",
-      local.samples + " 筆完成 · " + local.cancelled + " 筆取消 · " + local.interrupted + " 筆中斷", "check"));
+      local.samples ? local.samples + " 筆完成" : "", "check"));
   const details = el("details", undefined, "details-card");
+  const summary = el("summary", "統計細節");
+  summary.prepend(icon("chevron"));
+  const fields = el("dl", undefined, "detail-fields");
+  renderDetailFields(fields, [
+    ...timings.map(([label, value, format]) => [label,
+      value?.p95 == null ? "—" : "P50 " + format(value.p50) + " · P95 " + format(value.p95)]),
+    ["近 60 秒用量", number(local.observed_rpm) + " RPM · " + number(local.observed_total_tpm) + " TPM"],
+    ["取消／中斷", local.cancelled + " 筆取消 · " + local.interrupted + " 筆中斷"]
+  ]);
   const failures = Object.entries(local.failures || {});
-  details.append(el("summary", "近 60 秒用量與失敗原因"), el("p",
-    "觀測 RPM " + number(local.observed_rpm) + " · 觀測 TPM " + number(local.observed_total_tpm), "quiet"));
+  details.append(summary, fields);
   if (failures.length) {
     const list = el("ul");
     for (const [outcome, count] of failures) list.append(el("li", (statuses[outcome] || outcome) + " · " + count + " 筆"));
-    details.append(list);
+    details.append(el("p", "失敗原因", "quiet"), list);
   }
-  $("offer-local-summary").replaceChildren(metrics, details);
+  $("offer-local-summary").replaceChildren(metrics);
+  $("offer-local-stats").replaceChildren(details);
   renderOfferTrend(local);
 }
 
@@ -186,11 +197,14 @@ function validSitePerformance(value, scope, hours, origin) {
 function renderRecentConnections(samples) {
   const sources = {GATEWAY: "分發請求", GATEWAY_TEST: "模型實測", MANUAL_TEST: "模型實測", CHAT: "工作區對話"};
   const rows = samples.map(sample => {
-    const row = el("article", undefined, "history-sample");
-    const heading = el("header", undefined, "section-inline");
-    heading.append(el("strong", connectionTime.format(sample.at)), usageResult(sample));
+    const row = el("details", undefined, "history-sample");
+    const heading = el("summary");
+    const time = el("span", undefined, "history-time");
+    time.append(el("strong", connectionTime.format(sample.at)),
+      el("small", sources[sample.source] || sample.source, "quiet"));
+    heading.append(icon("chevron"), time, usageResult(sample));
     const fields = el("dl", undefined, "detail-fields");
-    renderDetailFields(fields, [["來源", sources[sample.source] || sample.source], ["首位元組", delay(sample.ttfb_ms)],
+    renderDetailFields(fields, [["首位元組", delay(sample.ttfb_ms)],
       ["首字等待", delay(sample.ttft_ms)], ["總延遲", delay(sample.latency_ms)],
       ["生成速度", sample.tps == null ? "—" : number(sample.tps, 1) + " tok/s"],
       ["輸入 / 輸出 Token", number(sample.input_tokens) + " / " + number(sample.output_tokens)]]);
@@ -215,10 +229,10 @@ function openOfferDetail(v) {
     ["帳戶", v.account], ["Key 標籤", v.credential], ["群組", v.group || "未指定"],
     ["模型歸類", v.canonical_id], ["端點", v.endpoint], ["連線狀態", v.enabled ? "可用" : "停用或不可用"]
   ]);
-  $("offer-tool-links").replaceChildren(
-    toolLink("完整請求紀錄", "requests", {...scope, model: v.canonical_id}),
+  $("offer-management-actions").replaceChildren(
     button("調整歸類", () => openModelGrouping(v), {glyph: "tag"})
   );
+  $("offer-history-link").replaceChildren(toolLink("完整請求紀錄", "requests", {...scope, model: v.canonical_id}, "usage"));
   const [, idField, urlField] = fields.querySelectorAll("dd");
   const key = v.has_api_key ? [credentialCopyButton(scope, dialog)] : [];
   $("offer-actions").replaceChildren(
@@ -235,6 +249,7 @@ function openOfferDetail(v) {
   $("offer-custom-range").hidden = true;
   $("offer-from").value = $("offer-to").value = "";
   $("offer-local-summary").replaceChildren();
+  $("offer-local-stats").replaceChildren();
   $("offer-trend").hidden = true;
   $("offer-trend").replaceChildren();
   $("offer-site-data").replaceChildren();
@@ -341,5 +356,5 @@ function openOfferDetail(v) {
 $("offer-detail").addEventListener("close", () => {
   if ($("offer-detail").open) return;
   offerDetailRead?.abort();
-  for (const id of ["offer-trend", "offer-history", "offer-local-summary", "offer-site-data", "offer-actions"]) $(id).replaceChildren();
+  for (const id of ["offer-trend", "offer-history", "offer-local-summary", "offer-local-stats", "offer-site-data", "offer-actions"]) $(id).replaceChildren();
 });

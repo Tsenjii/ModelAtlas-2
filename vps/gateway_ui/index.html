@@ -45,6 +45,7 @@
   <symbol id="icon-wallet" viewBox="0 0 24 24"><path d="M20 8H6a2 2 0 0 1 0-4h11M4 6v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8m0 4h-5v4h5"/></symbol>
   <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 4v4m8-4v4M4 10h16m-11 5 2 2 4-4"/></symbol>
   <symbol id="icon-external" viewBox="0 0 24 24"><path d="M14 4h6v6m0-6-9 9m7 0v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></symbol>
+  <symbol id="icon-bicycle" viewBox="0 0 24 24"><circle cx="5" cy="17" r="3.5"/><circle cx="19" cy="17" r="3.5"/><path d="m5 17 4-7 4 7H5m8 0 3-9h3M7 10h4"/></symbol>
 </svg>
 <!-- atlas-scene -->
 <header class="gateway-bar shell-width">
@@ -77,30 +78,34 @@
           <label>搜尋模型<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input id="model-search" type="search" placeholder="例如 DeepSeek 4.1 Flash"></span></label>
           <div id="model-provider-filter" class="section-inline" hidden><span id="model-provider-name"></span><button id="clear-model-provider" class="icon-button" type="button" aria-label="顯示所有供應商" title="顯示所有供應商"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
         </form>
-        <div class="line-meta"><span id="model-count" role="status"></span><a class="link-button" href="/tools/models">模型工具</a></div>
+        <div class="line-meta"><span id="model-count" role="status"></span><a class="link-button" href="/tools/models">模型目錄與管理</a></div>
         <div id="model-list" class="rows" aria-live="polite"></div>
         <button id="models-more" type="button" hidden class="load-more"><svg aria-hidden="true"><use href="#icon-chevron"/></svg>載入更多模型</button>
       </div>
     </div>
     <div id="model-detail" hidden>
-      <div class="page-heading"><div class="page-lead">
-        <button id="models-back" class="icon-button" type="button" aria-label="返回我的模型" title="返回我的模型"><svg aria-hidden="true"><use href="#icon-back"/></svg></button>
-        <h1 id="model-title" class="model-heading" tabindex="-1"></h1>
-      </div>
+      <div class="page-heading">
+        <div class="page-lead">
+          <button id="models-back" class="icon-button" type="button" aria-label="返回我的模型" title="返回我的模型"><svg aria-hidden="true"><use href="#icon-back"/></svg></button>
+          <h1 id="model-title" class="model-heading" tabindex="-1"></h1>
+        </div>
+        <div class="model-actions" role="group" aria-label="模型操作">
+          <div id="model-tool-links"></div>
+          <details class="model-tool-menu" id="model-tool-menu" hidden>
+            <summary><svg aria-hidden="true"><use href="#icon-settings"/></svg>管理</summary>
+            <div class="model-management-actions">
+              <button id="route-pick" type="button" aria-pressed="false" hidden><svg aria-hidden="true"><use href="#icon-route"/></svg>選取分發連線</button>
+              <button id="remove-model-group" class="danger-button" type="button" hidden><svg aria-hidden="true"><use href="#icon-trash"/></svg>刪除整組模型</button>
+            </div>
+          </details>
+        </div>
       </div>
       <div class="card overview">
-        <div class="section-inline"><h2>連線比較</h2><span class="quiet">近 7 天 · 每條最多 100 筆</span></div>
-        <p id="offer-count" class="quiet" role="status"></p>
+        <h2>連線比較</h2>
+        <div class="line-meta"><span id="offer-count" role="status"></span><span>近 7 天實測 · 每條最多 100 筆</span></div>
         <div class="offer-tools"><label class="offer-sort"><span class="icon-label"><svg aria-hidden="true"><use href="#icon-sort"/></svg>排序</span><select id="offer-sort"><option value="ttft">首字最快</option><option value="tps">生成最快</option><option value="success">成功率最高</option><option value="latency">總延遲最低</option></select></label>
           <button id="offer-batch" type="button" disabled><svg aria-hidden="true"><use href="#icon-gauge"/></svg>批次測速</button><span id="offer-batch-summary" class="quiet" role="status"></span>
         </div>
-        <details class="model-tool-menu" id="model-tool-menu">
-          <summary><svg aria-hidden="true"><use href="#icon-chevron"/></svg>更多模型工具</summary>
-          <div class="row-actions"><div id="model-tool-links"></div>
-            <button id="route-pick" type="button" aria-pressed="false" hidden><svg aria-hidden="true"><use href="#icon-route"/></svg>選取分發連線</button>
-            <button id="remove-model-group" class="danger-button" type="button" hidden><svg aria-hidden="true"><use href="#icon-trash"/></svg>刪除整組模型</button>
-          </div>
-        </details>
         <div id="route-tray" class="route-tray" hidden><strong id="route-count" role="status"></strong><div class="row-actions"><button id="configure-route" type="button" class="primary">前往分發</button><button id="exit-route-pick" class="icon-button" type="button" aria-label="結束選取" title="結束選取"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div></div>
         <div id="offer-list" class="rows" aria-live="polite"></div>
         <button id="offers-more" type="button" hidden class="load-more"><svg aria-hidden="true"><use href="#icon-chevron"/></svg>載入更多連線</button>
@@ -313,7 +318,7 @@
     <details id="offer-scope" class="details-card">
       <summary><svg aria-hidden="true"><use href="#icon-chevron"/></svg>帳戶、Key 與端點</summary>
       <dl id="offer-scope-fields" class="detail-fields"></dl>
-      <div class="row-actions" id="offer-tool-links"></div>
+      <div class="row-actions" id="offer-management-actions"></div>
     </details>
     <div class="connection-grid" role="group" aria-label="效能資料來源">
       <button id="offer-source-local" type="button" aria-pressed="true"><svg aria-hidden="true"><use href="#icon-gauge"/></svg>我的實測</button>
@@ -331,7 +336,8 @@
       <p id="offer-local-status" class="quiet" role="status"></p>
       <div id="offer-local-summary"></div>
       <section id="offer-trend" class="offer-trend stack" aria-label="實測趨勢" hidden></section>
-      <h3>最近 20 筆連線紀錄</h3>
+      <div id="offer-local-stats"></div>
+      <div class="section-inline"><h3>最近 20 筆連線紀錄</h3><div id="offer-history-link"></div></div>
       <div id="offer-history" class="rows" aria-live="polite"></div>
     </section>
     <section id="offer-site" class="stack offer-trend" aria-label="站方效能" hidden>

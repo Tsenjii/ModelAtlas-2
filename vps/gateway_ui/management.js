@@ -235,7 +235,8 @@ async function showModelView() {
     if (links.dataset.model !== group.id) {
       links.dataset.model = group.id;
       $("model-tool-menu").open = false;
-      links.replaceChildren(toolLink("價格比較", "prices", {model: group.id}), toolLink("模型驗證", "verification", {model: group.id}));
+      links.replaceChildren(toolLink("鵜鶘測試", "verification", {model: group.id}, "bicycle"),
+        toolLink("價格比較", "prices", {model: group.id}, "tag"));
     }
     $("route-pick").hidden = true;
     $("remove-model-group").hidden = true;
@@ -319,11 +320,11 @@ function renderOffers() {
     const row = el("article", undefined, "entry offering-entry");
     const relayable = v.operation === "CHAT_COMPLETIONS";
     const scope = scopeID(v);
-    const probe = button(offerTests.has(scope) ? "測試中…" : "測試", async () => {
+    const probe = button(offerTests.has(scope) ? "測速中…" : "測速", async () => {
       if (offerBatch?.running || offerTests.has(scope)) return;
       const group = state.modelGroup;
       offerTests.add(scope);
-      probe.lastChild.textContent = "測試中…";
+      probe.lastChild.textContent = "測速中…";
       renderOfferBatch();
       let result;
       try {
@@ -332,13 +333,13 @@ function renderOffers() {
         offerTests.delete(scope);
         const current = [...$("offer-list").querySelectorAll("[data-test-scope]")].find(node => node.dataset.testScope === scope);
         if (current) {
-          current.lastChild.textContent = "測試";
+          current.lastChild.textContent = "測速";
           current.disabled = !state.offers.find(row => scopeID(row) === scope)?.enabled;
         }
         renderOfferBatch();
       }
       if (state.modelGroup === group) await loadOffers(true, Math.min(200, Math.max(50, state.offers.length)));
-      notice(v.provider + " · " + (statuses[result.outcome] || result.outcome || "測試完成"), result.outcome !== "SUCCESS");
+      notice(v.provider + " · " + (statuses[result.outcome] || result.outcome || "測速完成"), result.outcome !== "SUCCESS");
     }, {glyph: "gauge"});
     probe.dataset.testScope = scope;
     probe.disabled = !v.enabled || offerTests.has(scope);
@@ -372,6 +373,7 @@ function renderOffers() {
     return row;
   });
   const group = state.modelGroup;
+  $("model-tool-menu").hidden = !state.offers.length;
   $("remove-model-group").hidden = !state.offers.length;
   $("route-pick").hidden = !state.offers.some(v => v.operation === "CHAT_COMPLETIONS");
   $("route-pick").setAttribute("aria-pressed", String(state.routePicking));
@@ -556,7 +558,7 @@ function renderCredential(p, c, expanded) {
   ]));
   const actions = controls();
   const more = el("details", undefined, "details-card credential-tools");
-  const summary = el("summary", "更多操作");
+  const summary = el("summary", "Key 設定");
   summary.prepend(icon("chevron"));
   const extra = controls();
   more.dataset.credential = c.id;
@@ -629,11 +631,24 @@ function renderProvider() {
   const expanded = new Set([...content.querySelectorAll(".credential-tools[open]")].map(node => node.dataset.credential));
   $("provider-title").textContent = p.name;
   $("provider-edit").disabled = false;
-  const profile = el("div", undefined, "card stack");
+  const profile = el("div", undefined, "card stack provider-profile");
   const base = el("code", p.base_url);
   const copyURL = button("複製 Base URL", () => copy(p.base_url, base), {glyph: "copy", iconOnly: true});
   const endpoint = el("div", undefined, "provider-endpoint");
   endpoint.append(base, copyURL);
+  if (p.description) {
+    if (p.description.length > 140) {
+      const intro = el("details", undefined, "details-card provider-about");
+      intro.open = content.querySelector(".provider-about")?.open ?? false;
+      const summary = el("summary", "供應商介紹");
+      summary.prepend(icon("chevron"));
+      const preview = p.description.slice(0, 140).trimEnd() + "…";
+      intro.append(summary, el("p", p.description, "provider-description"));
+      profile.append(el("p", preview, "provider-description-preview"), intro);
+    } else {
+      profile.append(el("p", p.description, "provider-description"));
+    }
+  }
   profile.append(endpoint, providerFacts(p, false), el("p", "近 7 天實測", "quiet"));
   const tools = controls(button("查看模型", async () => {
     state.modelGroup = null;
@@ -650,26 +665,17 @@ function renderProvider() {
   }
   const link = httpsLink("開啟網站", p.website);
   if (link) tools.append(link);
+  tools.append(toolLink("站方資料", "providers", {provider: p.id, tab: "site"}, "provider"));
   profile.append(tools);
   const accounts = el("div", undefined, "section-inline");
   accounts.append(el("h2", "帳戶與 Key"), button("新增帳戶", () => openAccountDialog(null, "account"), {glyph: "plus"}));
-  const about = [];
-  if (p.description) {
-    const intro = el("details", undefined, "card details-card provider-about");
-    intro.open = content.querySelector(".provider-about")?.open ?? (p.description.length <= 140 && !p.description.includes("\n"));
-    const summary = el("summary", "供應商介紹");
-    summary.prepend(icon("chevron"));
-    intro.append(summary, el("p", p.description, "provider-description"));
-    about.push(intro);
-  }
   const advanced = el("details", undefined, "card details-card provider-advanced");
   advanced.open = content.querySelector(".provider-advanced")?.open ?? false;
   advanced.append(el("summary", "進階管理"), controls(
-    toolLink("站方資料", "providers", {provider: p.id, tab: "site"}),
     toolLink("Key 版本與端點", "providers", {provider: p.id}),
     deleteButton("刪除供應商", () => removeProviderItem("PROVIDER", p.name, {provider_id: p.id}), false)
   ));
-  content.replaceChildren(profile, ...about, accounts, ...management.accounts.map(a => renderAccount(p, a, expanded)), advanced);
+  content.replaceChildren(profile, accounts, ...management.accounts.map(a => renderAccount(p, a, expanded)), advanced);
 }
 
 for (const id of ["model-add-provider", "add-upstream"]) $(id).addEventListener("click", () => $("upstream-dialog").showModal());

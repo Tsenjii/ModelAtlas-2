@@ -114,8 +114,10 @@ const fs = require("node:fs/promises");
     const provider = page.locator("#provider-detail");
     const about = provider.locator(".provider-about");
     assert.equal(await about.getAttribute("open"), null);
+    await provider.locator(".provider-description-preview").waitFor();
     await about.getByText("供應商介紹", { exact: true }).click();
     assert.equal(await about.locator(".provider-description").textContent(), description);
+    assert(!(await provider.locator(".provider-description-preview").isVisible()));
     await provider.getByRole("button", { name: "編輯資料" }).click();
     const checkinForm = page.locator("#provider-form");
     await checkinForm.getByLabel("需要每日簽到").check();
@@ -258,18 +260,18 @@ const fs = require("node:fs/promises");
     try {
       await Promise.all([
         page.waitForRequest(origin + "/ui/api/gateway/probe"),
-        tidal.getByRole("button", {name: "測試", exact: true}).click()
+        tidal.getByRole("button", {name: "測速", exact: true}).click()
       ]);
       await page.locator("#offer-sort").selectOption("latency");
       await page.waitForFunction(() => !document.querySelector("#offer-list").hasAttribute("aria-busy"));
-      assert(await tidal.getByRole("button", {name: "測試中…", exact: true}).isDisabled(), "sorting unlocked a pending single test");
+      assert(await tidal.getByRole("button", {name: "測速中…", exact: true}).isDisabled(), "sorting unlocked a pending single test");
       assert(await page.locator("#offer-batch").isDisabled());
     } finally {
       finishSingle();
     }
     for (const name of ["潮汐 API", "曙光 API"]) {
       const row = offering(name);
-      if (name === "曙光 API") await row.getByRole("button", { name: "測試", exact: true }).click();
+      if (name === "曙光 API") await row.getByRole("button", { name: "測速", exact: true }).click();
       await row.getByText("1 / 1 次", { exact: true }).waitFor();
       assert((await row.locator(".metrics").innerText()).includes("100%"));
     }
@@ -462,6 +464,12 @@ const fs = require("node:fs/promises");
     await history.getByText("分發請求", { exact: true }).waitFor();
     assert.equal(await history.locator(".history-sample").count(), 2);
     await history.getByText("上游限流 · 429", { exact: true }).waitFor();
+    const recent = history.locator(".history-sample").first();
+    assert(!(await recent.locator("dl").isVisible()), "a recent request expands by default");
+    await recent.locator("summary").click();
+    await recent.getByText("首位元組", {exact: true}).waitFor();
+    const archive = history.getByRole("link", {name: "完整請求紀錄", exact: true});
+    assert((await archive.getAttribute("href")).includes("credential_id="), "request archive lost its connection scope");
     await context.grantPermissions(["clipboard-read", "clipboard-write"], {origin});
     await history.getByRole("button", {name: "複製模型 ID", exact: true}).click();
     await history.getByText("已複製", {exact: true}).waitFor();
@@ -620,9 +628,12 @@ const fs = require("node:fs/promises");
       await page.locator(".atlas-scene").waitFor();
       await assertLayout();
     };
-    const toolMenu = page.locator("#model-tool-menu");
-    await toolMenu.locator("summary").click();
-    await toolMenu.getByRole("link", {name: "價格比較", exact: true}).click();
+    const modelActions = page.getByRole("group", {name: "模型操作", exact: true});
+    const pelicanLink = modelActions.getByRole("link", {name: "鵜鶘測試", exact: true});
+    await pelicanLink.waitFor();
+    assert.equal(await page.locator("#model-tool-menu").getAttribute("open"), null, "daily tools should not need the management menu");
+    assert.equal(await pelicanLink.evaluate(link => getComputedStyle(link).textDecorationLine), "none");
+    await modelActions.getByRole("link", {name: "價格比較", exact: true}).click();
     await page.getByRole("heading", {name: "價格比較", exact: true}).waitFor();
     const priceCard = page.locator(".tool-row-list .card").filter({has: page.getByRole("heading", {name: "潮汐 API", exact: true})});
     await priceCard.waitFor();
@@ -637,10 +648,9 @@ const fs = require("node:fs/promises");
     await priceCard.getByRole("button", {name: "價格與歷史", exact: true}).click();
     await page.locator("#detail").getByRole("heading", {name: "站方標價", exact: true}).waitFor();
     await page.locator("#detail-close").click();
-    await page.getByRole("link", {name: "返回 Lite", exact: true}).click();
-    await toolMenu.locator("summary").click();
-    await toolMenu.getByRole("link", {name: "模型驗證", exact: true}).click();
-    await page.getByRole("heading", {name: "模型驗證", exact: true}).waitFor();
+    await page.getByRole("link", {name: "返回模型", exact: true}).click();
+    await pelicanLink.click();
+    await page.getByRole("heading", {name: "鵜鶘騎單車", exact: true}).waitFor();
     const connection = page.getByLabel("驗證連線", {exact: true});
     const firstConnection = await connection.locator("option").filter({hasText: "潮汐 API"}).getAttribute("value");
     assert.equal(await page.locator("#lite-tool-model").textContent(), "DeepSeek 4.1 Flash");
@@ -705,7 +715,7 @@ const fs = require("node:fs/promises");
     await page.unroute(failedDrawing);
     await refreshWorks.click();
     await drawings.nth(1).waitFor();
-    const backToLite = page.getByRole("link", {name: "返回 Lite", exact: true});
+    const backToLite = page.getByRole("link", {name: "返回模型", exact: true});
     await page.setViewportSize({width: 1280, height: 900});
     await page.evaluate(() => window.scrollTo(0, 0));
     await assertToolAppearance();
@@ -716,7 +726,7 @@ const fs = require("node:fs/promises");
     await backToLite.click();
     await offering("潮汐 API").waitFor();
     await page.getByRole("button", {name: "返回我的模型", exact: true}).click();
-    await page.getByRole("link", {name: "模型工具", exact: true}).click();
+    await page.getByRole("link", {name: "模型目錄與管理", exact: true}).click();
     await page.getByRole("tab", {name: "探索 Catalog", exact: true}).click();
     await page.locator("#models-catalog").getByRole("heading", {name: "探索模型", exact: true}).waitFor();
     await assertToolAppearance();

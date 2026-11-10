@@ -147,7 +147,7 @@ func gatewayToolPage(w http.ResponseWriter, r *http.Request) {
 		`<small>你的模型工作台</small>`, `<small>模型工作台</small>`,
 		`<div class="header-actions">`, `<div class="header-actions glass"><a id="lite-tool-back" class="link-button" data-icon="back" href="/">返回 Lite</a>`,
 		`正在讀取你的供應商、模型與對話。`, `正在讀取管理資料。`,
-		`<section id="playground"`, `<section id="lite-tool-content" class="pane" aria-labelledby="lite-tool-title" hidden><div class="heading"><p id="lite-tool-eyebrow" class="page-eyebrow"></p><h1 id="lite-tool-title"></h1><p id="lite-tool-model" hidden></p></div><div id="lite-tool-results"></div></section><section id="playground"`,
+		`<section id="playground"`, `<section id="lite-tool-content" class="pane" aria-labelledby="lite-tool-title" hidden><div class="heading"><h1 id="lite-tool-title"></h1><p id="lite-tool-model" hidden></p></div><div id="lite-tool-results"></div></section><section id="playground"`,
 	).Replace(homeHTML)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = io.WriteString(w, page)

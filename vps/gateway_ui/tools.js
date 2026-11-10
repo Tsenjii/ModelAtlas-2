@@ -2,9 +2,9 @@ const toolQuery = new URLSearchParams(location.search);
 const toolModel = toolQuery.get("model") || "";
 const toolProvider = toolQuery.get("provider") || "";
 const toolHeadings = {
-  prices: ["價格比較", "Model pricing", "依連線查看站方標價和已確認的 Key 費率。"],
-  verification: ["模型驗證", "Model verification"],
-  requests: ["完整請求紀錄", "Request history"]
+  prices: ["價格比較", "各站標價與已確認的 Key 費率"],
+  verification: ["鵜鶘騎單車"],
+  requests: ["完整請求紀錄"]
 };
 let toolOffers = [];
 let toolOffersMore = false;
@@ -26,10 +26,11 @@ async function startLiteTool() {
   else if (liteTool === "providers") back.set("view", "providers");
   else if (liteTool === "data") back.set("settings", "open");
   $("lite-tool-back").href = back.size ? "/?" + back : "/";
+  if (toolModel) $("lite-tool-back").replaceChildren(icon("back"), document.createTextNode("返回模型"));
   $("header-refresh").addEventListener("click", () => refresh().catch(() => {}));
   if (liteTool === "models") {
     show("models");
-    $("models-title").textContent = "模型工具";
+    $("models-title").textContent = "模型目錄與管理";
     if (toolQuery.get("tab") === "catalog") workspace("models", "models-catalog");
     const external = el("a", "LMSpeed 外部參考", "link-button");
     external.href = "/tools/data?tab=services";
@@ -54,9 +55,8 @@ async function startLiteTool() {
     }
     workspace("settings", external ? "settings-services" : "settings-data");
   } else {
-    const [title, eyebrow, summary] = toolHeadings[liteTool];
+    const [title, summary] = toolHeadings[liteTool];
     $("lite-tool-title").textContent = title;
-    $("lite-tool-eyebrow").textContent = eyebrow;
     if (summary) $("lite-tool-title").parentElement.append(el("p", summary, "tool-heading-note"));
     show("lite-tool-content");
   }
@@ -196,11 +196,7 @@ function renderVerificationTool() {
     moreToolOffers(results, renderVerificationTool);
     return;
   }
-  const tools = el("section", undefined, "card tool-test"), heading = el("div", undefined, "tool-section-heading");
-  const mark = el("span", undefined, "identity-avatar"), title = el("div");
-  mark.append(icon("bicycle"));
-  title.append(el("h2", "鵜鶘騎單車"), el("p", "同一道題，比較歷次作品。", "section-description"));
-  heading.append(mark, title, el("span", "手動測試 · v1", "tool-badge"));
+  const tools = el("section", undefined, "card tool-test");
   const label = el("label", "驗證連線"), picker = el("select");
   picker.id = "verification-connection";
   picker.setAttribute("aria-label", label.textContent);
@@ -213,7 +209,12 @@ function renderVerificationTool() {
     option(picker, key(model), [name, detail,
       model.enabled ? "" : "已停用"].filter(Boolean).join(" · "));
   }
-  if (rows.some(model => key(model) === old)) picker.value = old;
+  const previous = rows.find(model => key(model) === old);
+  if (previous) picker.value = old;
+  else if (!rows[0].enabled) {
+    const firstEnabled = rows.find(model => model.enabled);
+    if (firstEnabled) picker.value = key(firstEnabled);
+  }
   label.append(picker);
   const connection = el("div");
   const selectedScope = el("small", undefined, "tool-scope");
@@ -363,8 +364,9 @@ function renderVerificationTool() {
     modelAuthenticity(box, active(), detailVersion);
     box.querySelector("details[data-authenticity]").open = true;
   });
-  evidence.prepend(icon("file"));
-  tools.append(heading, connection, el("p", "每次使用所選 Key 發送一個請求，最多輸出 4,096 tokens。", "section-description"), actions, status);
+  evidence.classList.add("ghost");
+  tools.append(connection, actions,
+    el("p", "每次使用所選 Key 發送一個請求，最多輸出 4,096 tokens。", "section-description tool-test-note"), status);
   const emptyHistory = el("div", undefined, "tool-history-empty");
   const emptyTitle = el("strong"), emptyCopy = el("span", "執行上方測試後，作品會保存在這裡。");
   emptyHistory.append(emptyTitle, emptyCopy);
