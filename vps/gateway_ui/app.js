@@ -16,6 +16,8 @@ const statuses = {
 const errors = {
   "valid name and HTTPS base URL required": "請填名稱和有效的 HTTPS Base URL。",
   "public ID or upstream route removed": "這個公開 ID 或其中一條上游路由已刪除。",
+  "public model ID already in use or unavailable": "這個公開模型 ID 已被使用或保留。請改用其他 ID。",
+  "published model changed": "公開模型或路由已變更。請重新整理。",
   "management item missing": "找不到這個項目，請重新整理。",
   "no stored API key": "這條連線沒有儲存可複製的 API Key。",
   "invalid custom time window": "請選擇有效的開始與結束時間。",
@@ -300,15 +302,18 @@ async function refresh() {
   return showUsage();
 }
 function renderRoutes() {
-  $("route-tray").hidden = state.routes.length === 0;
-  $("route-count").textContent = "已選 " + state.routes.length + " 個路由";
+  $("route-tray").hidden = !state.routePicking;
+  $("route-count").textContent = state.routes.length ? "已選 " + state.routes.length + " 條路由" : "選取上游連線";
+  $("configure-route").disabled = !state.routes.length;
+  $("publish-model").hidden = !state.routes.length;
+  $("route-order-hint").hidden = state.routes.length < 2;
   $("selected-routes").replaceChildren(...(state.routes.length ? state.routes.map((v, i) => compact((i + 1) + ". " + routeLabel(v), [], controls(
     button("移除", () => {
       state.routes = state.routes.filter(row => scopeID(row) !== scopeID(v));
       if (!state.routes.length) state.routeGroup = null;
       renderRoutes();
     }, {glyph: "minus", iconOnly: true})
-  ))) : [empty("從上游模型清單挑選同一模型的連線。")]));
+  ))) : []));
 }
 function resetModelDraft() {
   state.routes = [];
@@ -317,6 +322,7 @@ function resetModelDraft() {
   $("public-model").value = "";
   $("public-model").readOnly = false;
   $("model-editor-title").textContent = "新增公開模型";
+  $("publish-model-label").textContent = "發布模型";
   $("model-editor").open = false;
   renderRoutes();
 }
@@ -324,21 +330,29 @@ async function loadShare() {
   [state.models, state.keys, state.upstreams] = await Promise.all([api("/gateway/models"), api("/gateway/keys"), api("/gateway/upstreams")]);
   renderShare();
 }
+function showModelEditor() {
+  $("model-editor").open = true;
+  $("model-editor").scrollIntoView({block: "start"});
+  $("public-model").focus({preventScroll: true});
+}
 function renderShare() {
   $("gateway-url").textContent = baseURL();
+  $("new-key").disabled = false;
+  $("new-key-label").textContent = state.models.some(v => v.enabled) ? "建立 Key" : state.models.length ? "管理公開模型" : "新增公開模型";
   $("public-models").replaceChildren(...(state.models.length ? state.models.map(v => compact(v.id,
     [v.enabled ? "已啟用 · " + v.routes.length + " 個路由" : "已停用", v.routes.map(routeLabel).join(" ｜ ")],
     controls(button("編輯路由", () => {
       state.routes = v.routes.map(selection);
       state.routeGroup = null;
+      state.routePicking = false;
       $("public-model").value = v.id;
       $("public-model").readOnly = true;
       $("model-editor-title").textContent = "編輯 " + v.id;
-      $("model-editor").open = true;
+      $("publish-model-label").textContent = "儲存路由";
       renderRoutes();
-      $("model-editor").scrollIntoView({block: "nearest"});
+      showModelEditor();
     }, {glyph: "route"}), button(v.enabled ? "停用" : "啟用", async () => {
-      await api("/gateway/models", {id: v.id, routes: v.routes, enabled: !v.enabled});
+      await api("/gateway/models", {id: v.id, enabled: !v.enabled, change: "enabled"});
       await loadShare();
       notice(v.enabled ? "公開模型已停用。" : "公開模型已啟用。");
     }, {glyph: v.enabled ? "pause" : "play"}), deleteButton("刪除公開模型", () => confirmRemoval(
@@ -347,7 +361,7 @@ function renderShare() {
         if ($("public-model").readOnly && $("public-model").value === v.id) resetModelDraft();
         await loadShare();
       }
-    ))))) : [empty("先從上游選一個模型，就能發布成對外 ID。")]));
+    ))))) : [empty("尚無公開模型。")]));
   renderKeys();
   renderRoutes();
 }
@@ -378,6 +392,7 @@ function bindSettings() {
     const range = $("usage-range");
     for (const option of range.options) option.defaultSelected = option.value === value;
     range.value = value;
+    if (state.page === "usage") void action(null, changeUsageRange);
   });
 }
 function submit(id, work) {
@@ -404,9 +419,10 @@ $("settings-open").addEventListener("click", () => $("settings-dialog").showModa
 $("refresh").addEventListener("click", () => action($("refresh"), refresh));
 $("share-history").addEventListener("click", () => action(null, () => showPage("usage")));
 $("configure-route").addEventListener("click", () => action(null, async () => {
+  state.routePicking = false;
+  renderRoutes();
   await showPage("share");
-  $("model-editor").open = true;
-  $("public-model").focus();
+  if (state.page === "share") showModelEditor();
 }));
 $("select-routes").addEventListener("click", () => action(null, () => {
   state.routePicking = true;
@@ -419,10 +435,11 @@ $("copy-key").addEventListener("click", () => copy($("issued-key").value, $("iss
 submit("model-form", async form => {
   if (!state.routes.length) throw new Error("請先選擇上游路由。");
   const id = new FormData(form).get("id").trim();
-  await api("/gateway/models", {id, routes: state.routes, enabled: true});
+  const editing = $("public-model").readOnly;
+  await api("/gateway/models", {id, routes: state.routes, enabled: !editing, change: editing ? "routes" : "create"});
   resetModelDraft();
   await loadShare();
-  notice("已發布 " + id + "。");
+  notice(editing ? "路由已儲存。" : "已發布 " + id + "。");
 });
 bindSettings();
 renderRoutes();

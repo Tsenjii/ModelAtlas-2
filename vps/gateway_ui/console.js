@@ -54,17 +54,13 @@ function renderKeys() {
         await loadShare();
         notice(k.paused ? "Key 已恢復。" : "Key 已暫停。");
       }, {glyph: k.paused ? "play" : "pause"});
-      const revoke = button("撤銷", async () => {
-        if (!window.confirm("要撤銷「" + k.label + "」嗎？這把 Key 會立即失效。")) return;
-        await api("/gateway/keys/revoke", {id: k.id});
-        await loadShare();
-        notice("分發 Key 已撤銷。");
-      }, {glyph: "ban"});
+      const revoke = button("撤銷", () => confirmChange("撤銷分發 Key", k.label, "Key 會立即失效，用量紀錄保留。",
+        () => api("/gateway/keys/revoke", {id: k.id}), loadShare, "確認撤銷", "Key 已撤銷。"), {glyph: "ban"});
       revoke.classList.add("danger-button");
       actions.append(pause, revoke);
     }
     actions.append(deleteButton("刪除分發 Key", () => confirmRemoval(
-      "刪除分發 Key", k.label, "這把分發 Key 會立即失效。用量仍可在歷史中查詢。",
+      "刪除分發 Key", k.label, "Key 會立即失效，用量紀錄保留。",
       {kind: "PUBLIC_KEY", id: k.id}, loadShare
     )));
     card.append(actions);
@@ -93,6 +89,8 @@ function openKeyEditor(key) {
   $("issue-key-label").textContent = key ? "儲存設定" : "產生 Key";
   const selected = new Set(key?.models ?? []);
   const available = state.models.filter(v => v.enabled || selected.has(v.id));
+  $("key-model-search-field").hidden = available.length < 5;
+  if (!key && available.length === 1) selected.add(available[0].id);
   if (key) {
     form.elements.label.value = key.label;
     form.elements.daily_limit.value = key.daily_limit;
@@ -117,7 +115,38 @@ function openKeyEditor(key) {
 }
 
 function syncUsageKeyFilter() {
-  $("usage-key").disabled = $("usage-source").value === "tests";
+  const source = $("usage-source").value;
+  if (source !== "gateway") $("usage-key").value = "";
+  $("usage-key").disabled = source === "tests";
+}
+function showUsageFilters(open) {
+  $("usage-filter-fields").hidden = !open;
+  $("usage-filter-toggle").setAttribute("aria-expanded", String(open));
+}
+function readUsageFilters() {
+  return {
+    range: $("usage-range").value, source: $("usage-source").value, key_id: $("usage-key").value,
+    model: $("usage-model").value.trim(), status: $("usage-status").value
+  };
+}
+function renderUsageFilters() {
+  const {range, source, key_id, model, status} = consoleState.filter;
+  const keyLabel = [...$("usage-key").options].find(option => option.value === key_id)?.textContent;
+  const label = [key_id ? "Key " + (keyLabel || key_id) : {gateway: "分發請求", tests: "模型實測"}[source],
+    model, {success: "成功", failed: "失敗"}[status]].filter(Boolean).join(" · ");
+  $("usage-filter-summary").textContent = label;
+  $("usage-filter-summary").hidden = !label;
+  $("clear-usage-filters").hidden = !label && range === $("default-usage-range").value;
+}
+async function changeUsageRange() {
+  const control = $("usage-range"), range = control.value;
+  const filter = consoleState.filter ?? readUsageFilters();
+  try {
+    await loadUsage(true, {...filter, range});
+  } catch (error) {
+    if (error.name !== "AbortError" && control.value === range) control.value = filter.range;
+    throw error;
+  }
 }
 async function showUsage(keyID) {
   const keys = await api("/gateway/keys?include_removed=true");
@@ -127,22 +156,18 @@ async function showUsage(keyID) {
     $("usage-key").value = keyID;
     $("usage-model").value = "";
     $("usage-status").value = "";
+    showUsageFilters(false);
   }
   syncUsageKeyFilter();
-  return loadUsage(true);
+  const previous = consoleState.filter;
+  return loadUsage(true, !keyID && previous ? {...previous, range: $("usage-range").value} : readUsageFilters());
 }
-async function loadUsage(reset) {
+async function loadUsage(reset, draft = readUsageFilters()) {
   consoleState.read?.abort();
   const read = new AbortController();
   consoleState.read = read;
   const offset = reset ? 0 : consoleState.items.length;
-  const filter = reset ? {
-    range: $("usage-range").value,
-    source: $("usage-source").value,
-    key_id: $("usage-source").value === "tests" ? "" : $("usage-key").value,
-    model: $("usage-model").value.trim(),
-    status: $("usage-status").value
-  } : {...consoleState.filter, as_of: consoleState.usage.as_of};
+  const filter = reset ? draft : {...consoleState.filter, as_of: consoleState.usage.as_of};
   const params = new URLSearchParams({...filter, limit: "30", offset: String(offset)});
   $("usage-more").disabled = true;
   $("usage-list").setAttribute("aria-busy", "true");
@@ -154,6 +179,7 @@ async function loadUsage(reset) {
     consoleState.items = reset ? data.items : consoleState.items.concat(data.items);
     $("usage-more").hidden = !data.more;
     renderUsage();
+    return true;
   } finally {
     if (consoleState.read === read) {
       $("usage-more").disabled = false;
@@ -164,6 +190,7 @@ async function loadUsage(reset) {
 
 function renderUsage() {
   const {summary, ranking} = consoleState.usage;
+  renderUsageFilters();
   const stat = (glyph, label, value, detail, decoration) => {
     const card = el("div", undefined, "card");
     card.append(decoration || itemIcon(glyph), metric(label, value, detail));
@@ -177,11 +204,12 @@ function renderUsage() {
         "stroke-linecap": "round", "stroke-dasharray": (100 * summary.successes / summary.completed) + " 100"}));
   }
   $("usage-summary").replaceChildren(
-    stat("usage", "調用請求", number(summary.requests), "依目前篩選"),
-    stat("check", "成功率", ratio(summary.successes, summary.completed), summary.completed ? summary.successes + " / " + summary.completed + " 筆有結果" : "尚無完成的請求", ring),
+    stat("usage", "請求數", number(summary.requests)),
+    stat("check", "成功率", ratio(summary.successes, summary.completed), summary.completed ? summary.successes + " / " + summary.completed + " 筆" : "", ring),
     stat("token", "輸入 / 輸出 Token", number(summary.input_tokens) + " / " + number(summary.output_tokens),
-      "輸入 " + summary.input_reported + " 筆 · 輸出 " + summary.output_reported + " 筆回報"),
-    stat("clock", "平均首字", summary.mean_ttft_ms == null ? "—" : number(summary.mean_ttft_ms) + " ms", "依已量到首字的請求")
+      summary.input_reported === summary.output_reported ? "各 " + summary.input_reported + " 筆回報" :
+        "輸入 " + summary.input_reported + " 筆 · 輸出 " + summary.output_reported + " 筆回報"),
+    stat("clock", "平均首字", summary.mean_ttft_ms == null ? "—" : number(summary.mean_ttft_ms) + " ms")
   );
   const max = ranking[0]?.requests;
   $("usage-ranking").replaceChildren(...(ranking.length ? ranking.map(v => {
@@ -190,7 +218,7 @@ function renderUsage() {
     head.append(el("strong", v.model), el("span", (v.source === "tests" ? "實測" : "分發") + " · " + number(v.requests) + " 次"));
     item.append(head, meter(v.requests, max, v.model + " 調用量"));
     return item;
-  }) : [empty("目前沒有模型調用。")]));
+  }) : [empty("無模型請求。")]));
   $("usage-count").textContent = "已顯示 " + number(consoleState.items.length) + " / " + number(summary.requests) + " 筆";
   renderTrend();
   renderUsageRows();
@@ -280,7 +308,7 @@ function renderTrend() {
     event.preventDefault();
     inspect(event.key === "Home" ? 0 : event.key === "End" ? trend.length - 1 : selected + (event.key === "ArrowLeft" ? -1 : 1));
   });
-  info.textContent = "選取時間段查看數字。";
+  info.textContent = "點選時段看明細";
 }
 
 function renderUsageRows() {
@@ -345,20 +373,37 @@ function openUsageDetail(v) {
   $("usage-detail").showModal();
 }
 
-$("new-key").addEventListener("click", () => openKeyEditor());
+$("new-key").addEventListener("click", () => {
+  if (state.models.some(v => v.enabled)) openKeyEditor();
+  else if (state.models.length) $("public-models-title").focus();
+  else showModelEditor();
+});
 $("key-search").addEventListener("input", renderKeys);
 $("key-status").addEventListener("change", renderKeys);
 $("key-model-search").addEventListener("input", keySelection);
 $("key-models").addEventListener("change", keySelection);
 $("usage-source").addEventListener("change", syncUsageKeyFilter);
-$("clear-usage-filters").addEventListener("click", event => action(event.currentTarget, () => {
+$("usage-key").addEventListener("change", () => {
+  if ($("usage-key").value) $("usage-source").value = "gateway";
+});
+$("usage-range").addEventListener("change", () => action(null, changeUsageRange));
+$("usage-filter-toggle").addEventListener("click", () => showUsageFilters($("usage-filter-fields").hidden));
+$("clear-usage-filters").addEventListener("click", event => action(event.currentTarget, async () => {
   $("usage-filters").reset();
   syncUsageKeyFilter();
-  return loadUsage(true);
+  if (await loadUsage(true)) {
+    showUsageFilters(false);
+    $("usage-filter-toggle").focus({preventScroll: true});
+  }
 }));
 $("usage-filters").addEventListener("submit", event => {
   event.preventDefault();
-  action(event.submitter, () => loadUsage(true));
+  action(event.submitter, async () => {
+    if (await loadUsage(true)) {
+      showUsageFilters(false);
+      $("usage-filter-toggle").focus({preventScroll: true});
+    }
+  });
 });
 $("usage-more").addEventListener("click", () => action(null, () => loadUsage(false)));
 for (const mode of ["requests", "tokens"]) $("chart-" + mode).addEventListener("click", () => {

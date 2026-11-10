@@ -240,8 +240,16 @@ func (s *Server) gatewayAdminModels(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) gatewaySaveModel(w http.ResponseWriter, r *http.Request) {
-	var v gatewayModel
-	if !decodeJSON(w, r, &v) {
+	var write struct {
+		gatewayModel
+		Change string `json:"change,omitempty"`
+	}
+	if !decodeJSON(w, r, &write) {
+		return
+	}
+	v := write.gatewayModel
+	if !oneOf(write.Change, "", "create", "routes", "enabled") {
+		http.Error(w, "invalid model change", 400)
 		return
 	}
 	ctx := r.Context()
@@ -250,7 +258,31 @@ func (s *Server) gatewaySaveModel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "vault unavailable", 503)
 		return
 	}
-	if !validID(v.ID) || safeText(v.ID, 256, secrets...) != v.ID || len(v.Routes) < 1 || len(v.Routes) > gatewayMaxRoutes {
+	if !validID(v.ID) || safeText(v.ID, 256, secrets...) != v.ID {
+		http.Error(w, "choose a model ID and 1–8 routes", 400)
+		return
+	}
+	var previousRoutes string
+	var previousEnabled bool
+	if write.Change == "routes" || write.Change == "enabled" {
+		err := s.Store.DB.QueryRowContext(ctx, "SELECT routes_json,enabled FROM gateway_models WHERE id=? AND "+gatewayLivePublicModel,
+			v.ID).Scan(&previousRoutes, &previousEnabled)
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "published model changed", 409)
+			return
+		}
+		if err != nil {
+			http.Error(w, "database error", 500)
+			return
+		}
+		if write.Change == "routes" {
+			v.Enabled = previousEnabled
+		} else if json.Unmarshal([]byte(previousRoutes), &v.Routes) != nil {
+			http.Error(w, "database error", 500)
+			return
+		}
+	}
+	if len(v.Routes) < 1 || len(v.Routes) > gatewayMaxRoutes {
 		http.Error(w, "choose a model ID and 1–8 routes", 400)
 		return
 	}
@@ -271,12 +303,22 @@ func (s *Server) gatewaySaveModel(w http.ResponseWriter, r *http.Request) {
 		SELECT ?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM gateway_removals
 			WHERE kind='PUBLIC_MODEL' AND provider_id='' AND account_id='' AND item_id=?)
 		AND NOT EXISTS(SELECT 1 FROM json_each(?) route WHERE `+gatewayRemovedRoute+`)
-		ON CONFLICT(id) DO UPDATE SET routes_json=excluded.routes_json,enabled=excluded.enabled`, v.ID, string(raw), v.Enabled, now(), v.ID, string(raw))
+		ON CONFLICT(id) DO UPDATE SET routes_json=excluded.routes_json,enabled=excluded.enabled
+		WHERE ?<>'create' AND (?='' OR (gateway_models.routes_json=? AND gateway_models.enabled=?))`,
+		v.ID, string(raw), v.Enabled, now(), v.ID, string(raw), write.Change, write.Change, previousRoutes, previousEnabled)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
 	if n, _ := result.RowsAffected(); n != 1 {
+		if write.Change == "create" {
+			http.Error(w, "public model ID already in use or unavailable", 409)
+			return
+		}
+		if write.Change != "" {
+			http.Error(w, "published model changed", 409)
+			return
+		}
 		http.Error(w, "public ID or upstream route removed", 409)
 		return
 	}

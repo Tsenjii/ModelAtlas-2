@@ -69,7 +69,7 @@
   <section id="page-models" aria-label="模型">
     <div id="model-index">
       <div class="page-heading">
-        <div><p class="eyebrow">Model library</p><h1>我的模型</h1><p class="page-caption">同一個模型，直接比較各家連線。</p></div>
+        <h1>我的模型</h1>
         <button id="model-add-provider" type="button" class="primary"><svg aria-hidden="true"><use href="#icon-plus"/></svg>新增供應商</button>
       </div>
       <div class="card overview">
@@ -85,21 +85,23 @@
     <div id="model-detail" hidden>
       <div class="page-heading"><div class="page-lead">
         <button id="models-back" class="icon-button" type="button" aria-label="返回我的模型" title="返回我的模型"><svg aria-hidden="true"><use href="#icon-back"/></svg></button>
-        <div><p class="eyebrow">Connection performance</p><h1 id="model-title" class="model-heading" tabindex="-1"></h1><p id="model-canonical" class="quiet"></p></div>
+        <h1 id="model-title" class="model-heading" tabindex="-1"></h1>
       </div>
-        <button id="route-pick" type="button" aria-pressed="false" aria-label="選取分發連線" title="選取分發連線" hidden><svg aria-hidden="true"><use href="#icon-route"/></svg>分發路由</button>
       </div>
       <div class="card overview">
-        <div class="section-inline"><h2>各家連線速度</h2></div>
-        <div class="line-meta"><span id="offer-count" role="status"></span><span>近 7 天實測，每個連線最多 100 筆</span></div>
+        <div class="section-inline"><h2>連線比較</h2><span class="quiet">近 7 天 · 每條最多 100 筆</span></div>
+        <p id="offer-count" class="quiet" role="status"></p>
         <div class="offer-tools"><label class="offer-sort"><span class="icon-label"><svg aria-hidden="true"><use href="#icon-sort"/></svg>排序</span><select id="offer-sort"><option value="ttft">首字最快</option><option value="tps">生成最快</option><option value="success">成功率最高</option><option value="latency">總延遲最低</option></select></label>
-          <button id="offer-batch" type="button" disabled><svg aria-hidden="true"><use href="#icon-gauge"/></svg>批次測速</button><button id="remove-model-group" class="danger-button icon-button" type="button" aria-label="刪除整組模型" title="刪除整組模型" hidden><svg aria-hidden="true"><use href="#icon-trash"/></svg></button><span id="offer-batch-summary" class="quiet" role="status"></span>
+          <button id="offer-batch" type="button" disabled><svg aria-hidden="true"><use href="#icon-gauge"/></svg>批次測速</button><span id="offer-batch-summary" class="quiet" role="status"></span>
         </div>
         <details class="model-tool-menu" id="model-tool-menu">
           <summary><svg aria-hidden="true"><use href="#icon-chevron"/></svg>更多模型工具</summary>
-          <div class="row-actions" id="model-tool-links"></div>
+          <div class="row-actions"><div id="model-tool-links"></div>
+            <button id="route-pick" type="button" aria-pressed="false" hidden><svg aria-hidden="true"><use href="#icon-route"/></svg>選取分發連線</button>
+            <button id="remove-model-group" class="danger-button" type="button" hidden><svg aria-hidden="true"><use href="#icon-trash"/></svg>刪除整組模型</button>
+          </div>
         </details>
-        <div id="route-tray" class="route-tray" hidden><strong id="route-count"></strong><button id="configure-route" type="button"><svg aria-hidden="true"><use href="#icon-key"/></svg>前往分發</button></div>
+        <div id="route-tray" class="route-tray" hidden><strong id="route-count" role="status"></strong><div class="row-actions"><button id="configure-route" type="button" class="primary">前往分發</button><button id="exit-route-pick" class="icon-button" type="button" aria-label="結束選取" title="結束選取"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div></div>
         <div id="offer-list" class="rows" aria-live="polite"></div>
         <button id="offers-more" type="button" hidden class="load-more"><svg aria-hidden="true"><use href="#icon-chevron"/></svg>載入更多連線</button>
       </div>
@@ -108,7 +110,7 @@
 
   <section id="page-providers" hidden aria-label="供應商">
     <div id="provider-index">
-      <div class="page-heading"><div><p class="eyebrow">Providers</p><h1>供應商</h1><p class="page-caption">管理站點、帳戶、額度與簽到。</p></div><button id="add-upstream" type="button" class="primary"><svg aria-hidden="true"><use href="#icon-plus"/></svg>新增供應商</button></div>
+      <div class="page-heading"><h1>供應商</h1><button id="add-upstream" type="button" class="primary"><svg aria-hidden="true"><use href="#icon-plus"/></svg>新增供應商</button></div>
       <div class="card overview">
         <form id="provider-filters" class="stack"><label>搜尋供應商<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input id="provider-search" type="search" placeholder="名稱或網址"></span></label></form>
         <div class="line-meta"><span id="provider-count" role="status"></span><a class="link-button" href="/tools/providers?tab=import">批次匯入</a></div>
@@ -120,7 +122,7 @@
       <div class="page-heading">
         <div class="page-lead">
           <button id="providers-back" class="icon-button" type="button" aria-label="返回供應商列表" title="返回供應商列表"><svg aria-hidden="true"><use href="#icon-back"/></svg></button>
-          <div><p class="eyebrow">Provider overview</p><h1 id="provider-title" tabindex="-1">供應商</h1></div>
+          <h1 id="provider-title" tabindex="-1">供應商</h1>
         </div>
         <button id="provider-edit" class="icon-button" type="button" aria-label="編輯資料" title="編輯資料" disabled><svg aria-hidden="true"><use href="#icon-edit"/></svg></button>
       </div>
@@ -130,8 +132,8 @@
 
   <section id="page-share" hidden aria-labelledby="share-heading">
     <div class="page-heading">
-      <div><p class="eyebrow">API access</p><h1 id="share-heading">分發 Key</h1><p class="page-caption">發給應用程式，個別設定額度與可用模型。</p></div>
-      <button id="new-key" type="button" class="primary"><svg aria-hidden="true"><use href="#icon-plus"/></svg>建立 Key</button>
+      <h1 id="share-heading">分發 Key</h1>
+      <button id="new-key" type="button" class="primary" disabled><svg aria-hidden="true"><use href="#icon-plus"/></svg><span id="new-key-label">建立 Key</span></button>
     </div>
     <div class="key-layout">
       <section class="card" aria-labelledby="key-list-title">
@@ -145,7 +147,7 @@
       </section>
       <aside class="key-side" aria-label="分發設定">
         <div class="card endpoint-card">
-          <div><p class="eyebrow">連線位址</p><h2>Base URL</h2><code id="gateway-url"></code></div>
+          <div><h2>Base URL</h2><code id="gateway-url"></code></div>
           <button id="copy-base" class="icon-button" type="button" aria-label="複製網址" title="複製網址"><svg aria-hidden="true"><use href="#icon-copy"/></svg></button>
         </div>
         <details id="model-editor" class="card details-card">
@@ -154,47 +156,54 @@
             <label>對外模型 ID<input id="public-model" name="id" maxlength="256" placeholder="例如 atlas-chat" required></label>
             <div class="section-inline"><strong>上游路由</strong><button id="select-routes" type="button"><svg aria-hidden="true"><use href="#icon-route"/></svg>挑選上游</button></div>
             <div id="selected-routes" class="rows"></div>
-            <p class="quiet">最多 8 個連線。沒有足夠實測時，依這裡的順序選站。</p>
-            <div class="section-inline"><button id="publish-model" type="submit" class="primary"><svg aria-hidden="true"><use href="#icon-check"/></svg>發布模型</button><button id="cancel-model" type="button">取消</button></div>
+            <p id="route-order-hint" class="quiet" hidden>實測不足時，依清單順序選站。</p>
+            <div class="section-inline"><button id="publish-model" type="submit" class="primary"><svg aria-hidden="true"><use href="#icon-check"/></svg><span id="publish-model-label">發布模型</span></button><button id="cancel-model" type="button">取消</button></div>
           </form>
         </details>
-        <div class="card"><h2>已發布模型</h2><div id="public-models" class="rows"></div></div>
+        <div class="card"><h2 id="public-models-title" tabindex="-1">已發布模型</h2><div id="public-models" class="rows"></div></div>
       </aside>
     </div>
   </section>
 
   <section id="page-usage" hidden aria-labelledby="usage-heading">
     <div class="page-heading">
-      <div><p class="eyebrow">Activity</p><h1 id="usage-heading">用量與調用</h1><p class="page-caption">看趨勢，再追到每一筆請求。</p></div>
+      <h1 id="usage-heading">用量</h1>
       <a class="link-button" href="/tools/requests">完整請求紀錄</a>
     </div>
     <div class="card usage-toolbar">
-      <form id="usage-filters" class="filter-grid">
-        <label>期間<select id="usage-range"><option value="24h">近 24 小時</option><option value="7d">近 7 日</option><option value="30d">近 30 日</option></select></label>
-        <label>來源<select id="usage-source"><option value="all">所有調用</option><option value="gateway">分發請求</option><option value="tests">模型實測</option></select></label>
-        <label>分發 Key<select id="usage-key"><option value="">全部 Key</option></select></label>
-        <label>模型<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input type="search" id="usage-model" maxlength="256" placeholder="模型名稱或 ID"></span></label>
-        <label>結果<select id="usage-status"><option value="">全部結果</option><option value="success">成功</option><option value="failed">失敗</option></select></label>
-        <div class="filter-actions"><button class="primary" type="submit"><svg aria-hidden="true"><use href="#icon-filter"/></svg>套用篩選</button><button id="clear-usage-filters" class="icon-button" type="button" aria-label="清除篩選" title="清除篩選"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
+      <form id="usage-filters" class="stack">
+        <div class="usage-filter-bar">
+          <select id="usage-range" aria-label="期間"><option value="24h">近 24 小時</option><option value="7d">近 7 日</option><option value="30d">近 30 日</option></select>
+          <button id="usage-filter-toggle" type="button" aria-controls="usage-filter-fields" aria-expanded="false"><svg aria-hidden="true"><use href="#icon-filter"/></svg>篩選</button>
+          <p id="usage-filter-summary" class="quiet" role="status" hidden></p>
+          <button id="clear-usage-filters" class="icon-button" type="button" aria-label="清除篩選" title="清除篩選" hidden><svg aria-hidden="true"><use href="#icon-close"/></svg></button>
+        </div>
+        <div id="usage-filter-fields" class="filter-grid" hidden>
+          <label>來源<select id="usage-source"><option value="all">全部來源</option><option value="gateway">分發請求</option><option value="tests">模型實測</option></select></label>
+          <label>分發 Key<select id="usage-key"><option value="">全部 Key</option></select></label>
+          <label>模型<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input type="search" id="usage-model" maxlength="256" placeholder="名稱或 ID"></span></label>
+          <label>結果<select id="usage-status"><option value="">全部結果</option><option value="success">成功</option><option value="failed">失敗</option></select></label>
+          <button class="primary" type="submit">套用篩選</button>
+        </div>
       </form>
     </div>
     <div id="usage-summary" class="summary-grid" aria-label="用量摘要"></div>
     <div class="analytics-layout">
       <section class="card chart-card" aria-labelledby="trend-title">
         <div class="section-inline">
-          <div><p class="eyebrow">Timeline</p><h2 id="trend-title">調用趨勢</h2></div>
+          <h2 id="trend-title">請求趨勢</h2>
           <div class="segmented" aria-label="圖表指標"><button type="button" id="chart-requests" aria-pressed="true">請求</button><button type="button" id="chart-tokens" aria-pressed="false">Token</button></div>
         </div>
         <div id="usage-chart" class="chart-content"></div>
         <p id="usage-bucket" class="quiet chart-bucket" role="status"></p>
       </section>
       <section class="card" aria-labelledby="usage-rank-title">
-        <p class="eyebrow">By model</p><h2 id="usage-rank-title">模型調用排行</h2>
+        <h2 id="usage-rank-title">模型排行</h2>
         <div id="usage-ranking" class="rows"></div>
       </section>
     </div>
     <section class="card" aria-labelledby="usage-log-title">
-      <div class="section-inline"><h2 id="usage-log-title">調用明細</h2><p id="usage-count" class="quiet" role="status"></p></div>
+      <div class="section-inline"><h2 id="usage-log-title">請求明細</h2><p id="usage-count" class="quiet" role="status"></p></div>
       <div id="usage-list" class="usage-list" aria-live="polite"></div>
       <button id="usage-more" type="button" hidden class="load-more"><svg aria-hidden="true"><use href="#icon-chevron"/></svg>載入更多紀錄</button>
     </section>
@@ -224,7 +233,7 @@
     <div class="section-inline"><h2 id="group-dialog-title">調整模型歸類</h2><button type="button" data-close="group-dialog" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
     <p id="group-scope" class="quiet"></p>
     <label>模型歸類 ID<input name="canonical_id" maxlength="256" required></label>
-    <p class="quiet">相同歸類 ID 會在同一頁比較。原站的模型 ID 會保留。</p>
+    <p class="quiet">相同歸類 ID 會合在一起比較。</p>
     <button type="submit" class="primary"><svg aria-hidden="true"><use href="#icon-check"/></svg>儲存歸類</button>
   </form>
 </dialog>
@@ -236,7 +245,7 @@
     <label>網站<input name="website" type="url" placeholder="https://"></label>
     <label class="check"><input type="checkbox" name="requires_checkin">需要每日簽到</label>
     <label>簽到網址<input name="checkin_url" type="url" placeholder="https://provider.example/check-in" maxlength="4096" aria-describedby="provider-checkin-help"></label>
-    <p id="provider-checkin-help" class="quiet">填入供應商的 HTTPS 簽到頁網址。儲存後，可在供應商詳情點「前往簽到」。</p>
+    <p id="provider-checkin-help" class="quiet">填入 HTTPS 簽到頁網址。</p>
     <button type="submit" class="primary"><svg aria-hidden="true"><use href="#icon-check"/></svg>儲存供應商資料</button>
   </form>
 </dialog>
@@ -271,7 +280,7 @@
 </dialog>
 <dialog id="key-editor" class="side-sheet" aria-labelledby="key-editor-title">
   <form id="key-form" class="stack">
-    <header class="section-inline"><div><p class="eyebrow">API access</p><h2 id="key-editor-title">建立分發 Key</h2></div><button type="button" data-close="key-editor" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>
+    <header class="section-inline"><h2 id="key-editor-title">建立分發 Key</h2><button type="button" data-close="key-editor" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>
     <fieldset class="stack">
       <legend>基本設定</legend>
       <label>Key 名稱<input name="label" placeholder="例如 OpenCode 或手機" maxlength="120" required></label>
@@ -279,11 +288,11 @@
         <label>每日請求上限<input type="number" name="daily_limit" min="1" max="1000000" step="1" value="100" required></label>
         <label>到期時間<input type="datetime-local" name="expires_at"></label>
       </div>
-      <p class="quiet">每日上限於台灣時間 08:00 更新。到期時間留白即持續有效。</p>
+      <p class="quiet">每日 08:00（台灣）重設上限。到期時間可留空。</p>
     </fieldset>
     <fieldset class="stack">
       <legend>可用模型</legend>
-      <label>搜尋可用模型<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input type="search" id="key-model-search" placeholder="對外模型 ID"></span></label>
+      <label id="key-model-search-field">搜尋可用模型<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input type="search" id="key-model-search" placeholder="對外模型 ID"></span></label>
       <div id="key-models" class="choices"></div>
       <p class="quiet" id="key-selected" role="status"></p>
     </fieldset>
@@ -292,7 +301,7 @@
 </dialog>
 <dialog id="usage-detail" aria-labelledby="usage-detail-title">
   <div class="stack">
-    <header class="section-inline"><h2 id="usage-detail-title">調用詳情</h2><button type="button" data-close="usage-detail" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>
+    <header class="section-inline"><h2 id="usage-detail-title">請求詳情</h2><button type="button" data-close="usage-detail" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>
     <dl id="usage-detail-fields" class="detail-fields"></dl>
   </div>
 </dialog>
@@ -347,7 +356,7 @@
 <dialog id="offer-batch-dialog" aria-labelledby="offer-batch-title">
   <form id="offer-batch-form" class="stack">
     <header class="section-inline"><h2 id="offer-batch-title">批次測速</h2><button id="offer-batch-close" type="button" data-close="offer-batch-dialog" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>
-    <p class="quiet">勾選已載入的連線，最多 100 條。系統會逐一實測並使用上游額度。</p>
+    <p class="quiet">最多 100 條，逐一測試並使用上游額度。</p>
     <label class="check"><input id="offer-batch-all" type="checkbox">全選連線</label>
     <div id="offer-batch-list" class="rows"></div>
     <p id="offer-batch-progress" role="status"></p>
@@ -373,7 +382,7 @@
     <p id="remove-description" class="quiet"></p>
     <div class="row-actions">
       <button id="cancel-removal" type="button" data-close="remove-dialog" autofocus>取消</button>
-      <button type="submit" class="danger-button"><svg aria-hidden="true"><use href="#icon-trash"/></svg>確認刪除</button>
+      <button type="submit" class="danger-button"><svg aria-hidden="true"><use href="#icon-trash"/></svg><span id="confirm-action-label">確認刪除</span></button>
     </div>
   </form>
 </dialog>
@@ -394,7 +403,6 @@
       <label>模型效能期間<select id="default-performance-window"><option value="1h">近 1 小時</option><option value="24h">近 24 小時</option><option value="7d">近 7 天</option><option value="30d">近 30 天</option></select></label>
       <label>用量期間<select id="default-usage-range"><option value="24h">近 24 小時</option><option value="7d">近 7 日</option><option value="30d">近 30 日</option></select></label>
     </fieldset>
-    <p class="quiet">偏好儲存在這個瀏覽器。</p>
     <a class="link-button" href="/tools/data">備份與同步</a>
     <fieldset id="update-settings" class="stack">
       <legend>系統更新</legend>
