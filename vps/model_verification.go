@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -96,15 +98,29 @@ func (s *Server) listModelVerificationRuns(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "full selected scope required", 400)
 		return
 	}
-	if id := r.URL.Query().Get("id"); id != "" {
+	query := r.URL.Query()
+	id := query.Get("id")
+	if id != "" || query.Get("latest") == "1" {
 		var run modelVerificationRun
-		err := s.Store.DB.QueryRowContext(r.Context(), `SELECT r.id,r.created_at,r.outcome,r.sample_id,r.drawing,t.credential_version
-			FROM model_verification_runs r LEFT JOIN telemetry t ON t.id=r.sample_id WHERE r.scope_key=? AND r.id=?`, scopeKey(v), id).Scan(&run.ID, &run.At, &run.Outcome, &run.SampleID, &run.Drawing, &run.CredentialVersion)
-		if err != nil {
-			http.Error(w, "verification run unavailable", 404)
-			return
+		statement := `SELECT r.id,r.created_at,r.outcome,r.sample_id,r.drawing,t.credential_version
+			FROM model_verification_runs r LEFT JOIN telemetry t ON t.id=r.sample_id WHERE r.scope_key=?`
+		args := []any{scopeKey(v)}
+		if id == "" {
+			statement += " ORDER BY r.created_at DESC,r.id DESC LIMIT 1"
+		} else {
+			statement += " AND r.id=?"
+			args = append(args, id)
 		}
-		jsonOK(w, 200, run)
+		err := s.Store.DB.QueryRowContext(r.Context(), statement, args...).Scan(&run.ID, &run.At, &run.Outcome, &run.SampleID, &run.Drawing, &run.CredentialVersion)
+		if errors.Is(err, sql.ErrNoRows) && id == "" {
+			jsonOK(w, 200, nil)
+		} else if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "verification run unavailable", 404)
+		} else if err != nil {
+			http.Error(w, "verification history unavailable", 500)
+		} else {
+			jsonOK(w, 200, run)
+		}
 		return
 	}
 	limit, offset := pageRange(r, 20)

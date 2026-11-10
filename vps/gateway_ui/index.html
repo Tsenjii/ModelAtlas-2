@@ -78,7 +78,19 @@
           <label>搜尋模型<span class="search-field"><svg aria-hidden="true"><use href="#icon-search"/></svg><input id="model-search" type="search" placeholder="例如 DeepSeek 4.1 Flash"></span></label>
           <div id="model-provider-filter" class="section-inline" hidden><span id="model-provider-name"></span><button id="clear-model-provider" class="icon-button" type="button" aria-label="顯示所有供應商" title="顯示所有供應商"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
         </form>
-        <div class="line-meta"><span id="model-count" role="status"></span><a class="link-button" href="/tools/models">模型目錄與管理</a></div>
+        <div class="line-meta">
+          <span id="model-count" role="status"></span>
+          <div class="model-actions">
+            <a class="link-button" href="/tools/models"><svg aria-hidden="true"><use href="#icon-search"/></svg>模型目錄</a>
+            <details class="model-tool-menu">
+              <summary><svg aria-hidden="true"><use href="#icon-settings"/></svg>管理</summary>
+              <div class="model-management-actions">
+                <a class="link-button" href="/tools/models?tab=batch">跨模型批次</a>
+                <a class="link-button" href="/tools/models?tab=retained">隱藏與封存</a>
+              </div>
+            </details>
+          </div>
+        </div>
         <div id="model-list" class="rows" aria-live="polite"></div>
         <button id="models-more" type="button" hidden class="load-more"><svg aria-hidden="true"><use href="#icon-chevron"/></svg>載入更多模型</button>
       </div>
@@ -409,7 +421,10 @@
       <label>模型效能期間<select id="default-performance-window"><option value="1h">近 1 小時</option><option value="24h">近 24 小時</option><option value="7d">近 7 天</option><option value="30d">近 30 天</option></select></label>
       <label>用量期間<select id="default-usage-range"><option value="24h">近 24 小時</option><option value="7d">近 7 日</option><option value="30d">近 30 日</option></select></label>
     </fieldset>
-    <a class="link-button" href="/tools/data">備份與同步</a>
+    <div class="row-actions settings-links">
+      <a class="link-button" href="/tools/data">備份與同步</a>
+      <a class="link-button" href="/tools/data?tab=services">外部效能資料</a>
+    </div>
     <fieldset id="update-settings" class="stack">
       <legend>系統更新</legend>
       <div class="section-inline">

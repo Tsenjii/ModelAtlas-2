@@ -3,6 +3,7 @@ package main
 const jsCatalog = `
 let catalogOrdered=[],catalogSearchIndex=new Map(),catalogMemberships=new Map(),catalogScopeIndex=new Map(),catalogCredentialIndex=new Map(),manualAdding=false;
 const catalogFilterIDs=["catalog-search","catalog-provider","catalog-category","catalog-capability","catalog-membership"];
+const catalogDefault=id=>liteTool==="models"&&id==="catalog-membership"?"new":"";
 const catalogID=m=>JSON.stringify([m.provider_id,m.id||m.model_id]);
 const credentialChoiceID=c=>JSON.stringify([c.provider_id,c.account_id,c.id]);
 function catalogIndexes(){
@@ -19,7 +20,7 @@ function catalogMatches(m){
  const q=normalizedSearch($("catalog-search").value),joined=(catalogMemberships.get(catalogID(m))||[]).length,meta=m.metadata||{};
  return (!q||(catalogSearchIndex.get(catalogID(m))||[]).some(v=>v.includes(q)||(q.length>=4&&fuzzyNear(v,q))))&&(!$("catalog-provider").value||m.provider_id===$("catalog-provider").value)&&(!$("catalog-category").value||meta.primary_category===$("catalog-category").value)&&(!$("catalog-capability").value||(meta.capabilities||[]).includes($("catalog-capability").value))&&(!$("catalog-membership").value||($("catalog-membership").value==="joined"?joined>0:joined===0));
 }
-function resetCatalogFilters(){for(const id of catalogFilterIDs)$(id).value="";catalogDisplayLimit=100;renderCatalog();}
+function resetCatalogFilters(){for(const id of catalogFilterIDs)$(id).value=catalogDefault(id);catalogDisplayLimit=100;renderCatalog();}
 function openCatalogForProvider(id){resetCatalogFilters();$("catalog-provider").value=id;renderCatalog();show("models");workspace("models","models-catalog",true);}
 function renderCatalog(){
  const box=$("catalog"),matching=catalogOrdered.filter(catalogMatches);box.replaceChildren();
@@ -28,9 +29,16 @@ function renderCatalog(){
   body.append(el("small",m.id,"model-id"));const count=(catalogMemberships.get(catalogID(m))||[]).length;
   if(count)body.append(el("span","已加入 "+count+" 個連線","state-chip"));
  }
- $("catalog-result-count").textContent="顯示 "+Math.min(matching.length,catalogDisplayLimit)+" / "+matching.length+" 個模型";
- $("catalog-more").hidden=matching.length<=catalogDisplayLimit;$("catalog-reset").hidden=!catalogFilterIDs.some(id=>$(id).value);
- if(!matching.length)workspaceEmpty(box,models.length?"沒有符合的 Catalog 模型":"Catalog 尚無資料",models.length?"調整供應商、名稱或篩選條件。":"先連接供應商並同步模型，也可以手動加入。","models",models.length?"清除 Catalog 篩選":"連接供應商",()=>{if(models.length)resetCatalogFilters();else{show("providers");workspace("providers","providers-new",true);}});
+ const compact=liteTool==="models",more=matching.length>catalogDisplayLimit,filtered=catalogFilterIDs.some(id=>$(id).value!==catalogDefault(id));
+ $("catalog-result-count").textContent=compact&&!more?matching.length+" 個模型":"顯示 "+Math.min(matching.length,catalogDisplayLimit)+" / "+matching.length+" 個模型";
+ $("catalog-more").hidden=!more;$("catalog-reset").hidden=!filtered;
+ if(!matching.length){
+  if(compact&&models.length&&!filtered){
+   workspaceEmpty(box,"目前的目錄模型都已加入","","models","顯示全部模型",()=>{$("catalog-membership").value="";renderCatalog();});
+  }else{
+   workspaceEmpty(box,models.length?(compact?"找不到符合的模型":"沒有符合的 Catalog 模型"):(compact?"目錄尚無模型":"Catalog 尚無資料"),models.length?"調整供應商、名稱或篩選條件。":"先連接供應商並同步模型，也可以手動加入。","models",models.length?(compact?"清除篩選":"清除 Catalog 篩選"):"連接供應商",()=>{if(models.length)resetCatalogFilters();else if(compact)location.assign("/?view=providers");else{show("providers");workspace("providers","providers-new",true);}});
+  }
+ }
 }
 function inferenceEndpoints(c){
  if(!c)return [];const p=providers.find(p=>p.id===c.provider_id);if(!p)return [];
@@ -50,9 +58,10 @@ function connectionSetup(box,c,provider){
 }
 function catalogDetail(m){
  const box=modal(m.display_name||m.id),ticket=detailVersion,p=providers.find(p=>p.id===m.provider_id);$("detail").dataset.kind="catalog";
+ const compact=liteTool==="models";
  detailHero(box,"models",p?.name||m.provider_id,m.id);
  const error=el("div",undefined,"detail-state detail-state-error");error.setAttribute("role","alert");error.hidden=true;box.prepend(error);
- box.append(el("p","選擇這次要加入的連線。型錄標示不代表這把 Key 的價格、能力或可用性已確認。","section-description"));
+ if(!compact)box.append(el("p","選擇這次要加入的連線。型錄標示不代表這把 Key 的價格、能力或可用性已確認。","section-description"));
  const select=el("select"),label=el("label","使用的 Key"),endpoint=el("select"),endpointLabel=el("label","端點");select.setAttribute("aria-label","使用的 Key");endpoint.setAttribute("aria-label","端點");
  for(const c of catalogCredentialIndex.values())if(c.provider_id===m.provider_id)option(select,credentialChoiceID(c),credentialChoiceLabel(c));
  label.append(select);endpointLabel.append(endpoint);box.append(label,endpointLabel);
@@ -63,9 +72,10 @@ function catalogDetail(m){
   selectionRows.replaceChildren();selectionSummary.hidden=!profile;
   if(profile)detailRows(selectionRows,[["帳戶",accounts.find(a=>a.provider_id===c.provider_id&&a.id===c.account_id)?.label||c.account_id],["Key",c.label],["Group",c.group||"預設 Group"],["用途",operationLabels[profile.operation]||profile.operation],["網址",profile.url]]);
   if(!c||!endpoint.value)connectionSetup(state,c,p);
-  else if(existing)state.append(el("p","此連線已加入 · "+({ACTIVE:"使用中",HIDDEN:"已隱藏",ARCHIVED:"已封存"}[existing.state]||existing.state)+"。開啟詳情可管理狀態。"));
-  else state.append(el("p","加入後會同步可取得的模型資料；不會自動發送推論。","section-description"));
-  button.textContent=existing?"查看已加入的連線":"加入 My Models";button.disabled=adding||!selected;select.disabled=endpoint.disabled=adding;
+  else if(existing)state.append(el("p","此連線已加入 · "+({ACTIVE:"使用中",HIDDEN:"已隱藏",ARCHIVED:"已封存"}[existing.state]||existing.state)+(compact?"。":"。開啟詳情可管理狀態。")));
+  else if(!compact)state.append(el("p","加入後會同步可取得的模型資料；不會自動發送推論。","section-description"));
+  button.textContent=existing?(compact?"已加入":"查看已加入的連線"):(compact?"加入我的模型":"加入 My Models");
+  button.disabled=adding||!selected||(compact&&!!existing);select.disabled=endpoint.disabled=adding;
  };
  select.addEventListener("change",()=>{chooseInferenceEndpoints(endpoint,catalogCredentialIndex.get(select.value));catalogError(error,"");update();});endpoint.addEventListener("change",()=>{catalogError(error,"");update();});
  chooseInferenceEndpoints(endpoint,catalogCredentialIndex.get(select.value));update();
@@ -78,7 +88,7 @@ function catalogDetail(m){
   finally{adding=false;if(detailCurrent(ticket))update();}
  });
  const members=catalogMemberships.get(catalogID(m))||[];
- if(members.length){const list=el("details"),summary=el("summary","已加入的連線（"+members.length+"）");list.append(summary);for(const member of members)item(list,connectionLabel(member),({ACTIVE:"使用中",HIDDEN:"已隱藏",ARCHIVED:"已封存"}[member.state]||member.state)+" · "+(operationLabels[targetOperation(member)]||member.endpoint),()=>modelDetail(member));box.append(list);}
+ if(!compact&&members.length){const list=el("details"),summary=el("summary","已加入的連線（"+members.length+"）");list.append(summary);for(const member of members)item(list,connectionLabel(member),({ACTIVE:"使用中",HIDDEN:"已隱藏",ARCHIVED:"已封存"}[member.state]||member.state)+" · "+(operationLabels[targetOperation(member)]||member.endpoint),()=>modelDetail(member));box.append(list);}
  factsView(box,"型錄分類與來源",m.metadata);
 }
 function manualConnections(){

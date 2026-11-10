@@ -145,11 +145,14 @@ func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixtur
 		}
 		prompt := in.Messages[0].Content
 		if prompt == pelicanPrompt {
-			if in.Stream || in.MaxTokens != pelicanMaxTokens || side != "a" {
+			if in.Stream || in.MaxTokens != pelicanMaxTokens {
 				t.Error("verification did not use the exact selected scope and fixed prompt settings")
 			}
 			n := f.verification.Add(1)
 			drawing := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"><circle cx="%d" cy="100" r="40"/></svg>`, 80+n*20)
+			if side == "b" && n == 3 {
+				drawing = "upstream returned text instead of an SVG"
+			}
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprintf(w, `{"model":%q,"choices":[{"message":{"role":"assistant","content":%q}}],"usage":{"prompt_tokens":30,"completion_tokens":100}}`, model, drawing)
 			return

@@ -146,7 +146,7 @@ code { font: .83rem/1.55 ui-monospace,SFMono-Regular,monospace; overflow-wrap: a
   overflow: hidden; white-space: pre-line; color: var(--muted);
 }
 .provider-profile:has(.provider-about[open]) .provider-description-preview { display: none; }
-#model-detail .page-heading { position: relative; z-index: 3; }
+#model-detail .page-heading,#model-index .line-meta { position: relative; z-index: 3; }
 .model-actions,#model-tool-links { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .model-tool-menu { position: relative; }
 .model-tool-menu > summary {
@@ -159,7 +159,8 @@ code { font: .83rem/1.55 ui-monospace,SFMono-Regular,monospace; overflow-wrap: a
   width: max-content; max-width: calc(100vw - 36px); padding: 7px;
   border: 1px solid var(--border); border-radius: 12px; background: var(--paper); box-shadow: var(--shadow);
 }
-.model-management-actions > button { justify-content: flex-start; text-align: start; }
+.model-management-actions > :is(button, a) { justify-content: flex-start; text-align: start; }
+.settings-links { justify-content: flex-start; }
 
 .provider-tile { position: relative; }
 .provider-open::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }

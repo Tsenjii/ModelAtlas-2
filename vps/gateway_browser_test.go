@@ -79,10 +79,11 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 	if f.a.Load() != 3 || f.b.Load() != 5 {
 		t.Fatalf("expected two probes and one relay attempt per upstream, then two batches stopped at B: %d / %d", f.a.Load(), f.b.Load())
 	}
-	if f.verification.Load() != 2 {
-		t.Fatalf("expected only the two manually requested drawings, got %d", f.verification.Load())
+	if f.verification.Load() != 4 {
+		t.Fatalf("expected only the four manually requested tests, got %d", f.verification.Load())
 	}
-	assertSQLInt(t, s, 2, "SELECT COUNT(*) FROM model_verification_runs WHERE outcome='SUCCESS'")
+	assertSQLInt(t, s, 3, "SELECT COUNT(*) FROM model_verification_runs WHERE outcome='SUCCESS'")
+	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM model_verification_runs WHERE outcome='INVALID_SVG'")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM gateway_requests WHERE outcome='SUCCESS' AND attempts=2")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM gateway_keys WHERE enabled=0")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM account_checkins WHERE source='MANUAL_COMPLETION'")

@@ -13,6 +13,7 @@ function workspace(group,id,focus=false){
  const pane=selected.closest(".pane");if(group==="playground"&&!$("work-chat").hidden)workspaceChatReading={session:$("session").value,position:chatReadPosition()};
  pane.querySelectorAll('[data-workspace-panel="'+group+'"]').forEach(panel=>{panel.hidden=panel.id!==id;if(panel.tagName==="DETAILS")panel.open=panel.id===id;});
  tabs.forEach(tab=>{const active=tab===selected;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;});
+ if(liteTool==="models"&&group==="models")$("models-title").textContent=liteModelTitle(id);
  syncModelCollection(group,id);syncSettingsPanels(group,id);if(focus)selected.focus({preventScroll:true});revealWorkspaceTab(selected);if(group==="playground"&&id==="work-chat"){const reading=workspaceChatReading?.session===$("session").value?workspaceChatReading.position:null;if(reading)restoreChatReadPosition(reading);else chatChanged(false,false);}
 }
 let previousPane="playground",currentPane="playground",noticeTimer=null;

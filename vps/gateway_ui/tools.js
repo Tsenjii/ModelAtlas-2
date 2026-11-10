@@ -9,6 +9,11 @@ const toolHeadings = {
 let toolOffers = [];
 let toolOffersMore = false;
 let verificationPending = false;
+let verificationOverviewRead;
+
+function liteModelTitle(panel) {
+  return panel === "models-hidden" ? "隱藏與封存" : panel === "models-owned" ? "跨模型批次" : "模型目錄";
+}
 
 async function startLiteTool() {
   const appearance = document.documentElement.dataset;
@@ -27,14 +32,31 @@ async function startLiteTool() {
   else if (liteTool === "data") back.set("settings", "open");
   $("lite-tool-back").href = back.size ? "/?" + back : "/";
   if (toolModel) $("lite-tool-back").replaceChildren(icon("back"), document.createTextNode("返回模型"));
+  else if (liteTool === "models") $("lite-tool-back").replaceChildren(icon("back"), document.createTextNode("返回我的模型"));
   $("header-refresh").addEventListener("click", () => refresh().catch(() => {}));
   if (liteTool === "models") {
     show("models");
-    $("models-title").textContent = "模型目錄與管理";
-    if (toolQuery.get("tab") === "catalog") workspace("models", "models-catalog");
-    const external = el("a", "LMSpeed 外部參考", "link-button");
-    external.href = "/tools/data?tab=services";
-    $("models").querySelector(".heading").append(external);
+    const tab = toolQuery.get("tab");
+    const panel = tab === "batch" ? "models-owned" : tab === "retained" ? "models-hidden" : "models-catalog";
+    $("models-title").nextElementSibling.hidden = true;
+    $("models").querySelector(".workspace-tabs").hidden = true;
+    for (const id of ["models-owned", "models-hidden", "models-catalog"]) {
+      $(id).removeAttribute("role");
+      $(id).setAttribute("aria-labelledby", "models-title");
+    }
+    const catalog = $("models-catalog");
+    catalog.querySelector(":scope > summary").hidden = true;
+    catalog.querySelector(".section-heading").hidden = true;
+    catalog.querySelector(".catalog-filters > summary").textContent = "更多篩選";
+    const search = $("catalog-search");
+    search.parentElement.replaceChildren(document.createTextNode("搜尋模型"), search);
+    const membership = $("catalog-membership");
+    membership.value = catalogDefault("catalog-membership");
+    catalog.querySelector(".catalog-searchbar").append(membership.parentElement);
+    $("catalog-more").textContent = "載入更多模型";
+    $("catalog-reset").textContent = "清除篩選";
+    $("manual-add").textContent = "加入我的模型";
+    workspace("models", panel);
   } else if (liteTool === "providers") {
     show("providers");
     if (toolQuery.get("tab") === "import") {
@@ -50,7 +72,6 @@ async function startLiteTool() {
     $("settings-title").textContent = external ? "外部效能資料" : "備份與同步";
     $("settings-title").nextElementSibling.textContent = external ? "查看外部模型資料及同步紀錄。" : "管理本機設定、加密備份與裝置配對。";
     if (external) {
-      $("lite-tool-back").href = "/tools/models";
       $("service-history").classList.add("card");
     }
     workspace("settings", external ? "settings-services" : "settings-data");
@@ -120,9 +141,11 @@ function prepareToolModelRows() {
 }
 
 function moreToolOffers(parent, render) {
-  if (toolOffersMore) action(parent, "載入更多連線", async () => {
-    const page = await readToolOffers(toolOffers.length);
-    toolOffers.push(...page.offerings);
+  if (toolOffersMore) return action(parent, "載入更多連線", async () => {
+    const current = toolOffers;
+    const page = await readToolOffers(current.length);
+    if (current !== toolOffers || (liteTool === "verification" && verificationPending)) return;
+    toolOffers = current.concat(page.offerings);
     toolOffersMore = page.more;
     render();
   });
@@ -183,11 +206,44 @@ async function openPublishedPriceHistory(model, group) {
   if (!tracks.size) box.append(el("p", "此範圍尚無價格紀錄。"));
 }
 
+const verificationTime = new Intl.DateTimeFormat("zh-TW", {
+  year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+});
+const verificationShortTime = new Intl.DateTimeFormat("zh-TW", {
+  month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+});
+const verificationOutcome = run => ({SUCCESS: "作品已儲存", INVALID_SVG: "回應無法預覽", UNCONFIRMED: "結果待確認"})[run.outcome]
+  || outcomeLabels[run.outcome] || run.outcome;
+const verificationPath = model => "/verification/runs?" + query(model);
+
+function verificationArtwork(run, name) {
+  const timestamp = verificationTime.format(new Date(run.created_at));
+  const image = el("img", undefined, "tool-drawing");
+  image.alt = "鵜鶘騎單車 · " + timestamp;
+  image.src = "data:image/svg+xml," + encodeURIComponent(run.drawing);
+  const zoom = el("button", undefined, "tool-drawing-trigger");
+  const glyph = el("span", undefined, "tool-drawing-zoom");
+  zoom.type = "button";
+  zoom.setAttribute("aria-label", "放大" + name);
+  glyph.append(icon("search"));
+  zoom.append(image, glyph);
+  zoom.addEventListener("click", () => {
+    const box = modal("鵜鶘騎單車 · " + name), expanded = image.cloneNode();
+    expanded.className = "tool-drawing-expanded";
+    box.append(expanded, el("p", timestamp, "section-description"));
+  });
+  return zoom;
+}
+
 function renderVerificationTool() {
   prepareToolModelRows();
   const results = $("lite-tool-results");
-  const old = $("verification-connection")?.value;
-  const oldPair = [...results.querySelectorAll(".tool-compare-slot select")].map(select => select.value);
+  const previousStrip = $("verification-providers");
+  const previousSelections = new Map([...results.querySelectorAll(".tool-provider-card")].map(card => [card.dataset.provider, card.dataset.scope]));
+  const previousScope = $("verification-history")?.dataset.scope;
+  const previousPair = [...results.querySelectorAll(".tool-compare-slot select")].map(select => select.value);
+  verificationOverviewRead?.abort();
+  const read = verificationOverviewRead = new AbortController();
   const rows = myModels.filter(model => chatOperation(model.operation));
   results.replaceChildren();
   if (!rows.length) {
@@ -196,38 +252,162 @@ function renderVerificationTool() {
     moreToolOffers(results, renderVerificationTool);
     return;
   }
-  const tools = el("section", undefined, "card tool-test");
-  const label = el("label", "驗證連線"), picker = el("select");
-  picker.id = "verification-connection";
-  picker.setAttribute("aria-label", label.textContent);
-  const connectionNames = rows.map(model => model.provider + " · " + connectionLabel(model));
-  const nameCounts = new Map();
-  for (const name of connectionNames) nameCounts.set(name, (nameCounts.get(name) || 0) + 1);
-  for (const [index, model] of rows.entries()) {
-    const operation = operationLabels[model.operation] || model.operation;
-    const name = connectionNames[index], detail = nameCounts.get(name) > 1 ? model.model_id + " · " + operation : "";
-    option(picker, key(model), [name, detail,
-      model.enabled ? "" : "已停用"].filter(Boolean).join(" · "));
+  const groups = new Map();
+  for (const model of rows) {
+    if (!groups.has(model.provider_id)) groups.set(model.provider_id, []);
+    groups.get(model.provider_id).push(model);
   }
-  const previous = rows.find(model => key(model) === old);
-  if (previous) picker.value = old;
-  else if (!rows[0].enabled) {
-    const firstEnabled = rows.find(model => model.enabled);
-    if (firstEnabled) picker.value = key(firstEnabled);
+  const overview = el("section", undefined, "card tool-verification-overview");
+  const title = el("h2", "各家最新結果");
+  title.id = "verification-overview-title";
+  const heading = el("div", undefined, "tool-overview-heading");
+  heading.append(title, el("small", groups.size + " 家供應商", "tool-strip-count"));
+  const strip = el("div", undefined, "tool-provider-strip");
+  strip.id = "verification-providers";
+  strip.tabIndex = 0;
+  strip.setAttribute("role", "region");
+  strip.setAttribute("aria-labelledby", title.id);
+  strip.style.setProperty("--provider-columns", String(Math.min(groups.size, 4)));
+  overview.append(heading, strip, el("p", "每次測試使用所選 Key 發送一個請求。", "section-description tool-verification-note"));
+  const history = el("section", undefined, "card tool-gallery");
+  history.id = "verification-history";
+  history.hidden = true;
+  results.append(overview, history);
+  let reloadHistory;
+  const updateControls = [];
+  const openHistory = (model, trigger, pair, focus) => {
+    history.hidden = false;
+    history.dataset.scope = key(model);
+    strip.querySelectorAll("[aria-controls]").forEach(button => button.setAttribute("aria-expanded", String(button === trigger)));
+    reloadHistory = renderVerificationHistory(history, model, pair, () => {
+      history.hidden = true;
+      delete history.dataset.scope;
+      history.replaceChildren();
+      trigger.setAttribute("aria-expanded", "false");
+      trigger.focus();
+    });
+    if (focus) history.querySelector("h2").focus();
+  };
+
+  for (const [providerID, connections] of groups) {
+    const byScope = new Map(connections.map(model => [key(model), model]));
+    let model = byScope.get(previousSelections.get(providerID)) ?? connections.find(item => item.enabled) ?? connections[0];
+    const card = el("article", undefined, "tool-provider-card");
+    card.dataset.provider = providerID;
+    const cardTitle = el("h3", model.provider);
+    const connection = el("small", undefined, "tool-scope");
+    const picker = el("select");
+    picker.hidden = connections.length === 1;
+    picker.setAttribute("aria-label", model.provider + " 連線");
+    for (const [id, item] of byScope) {
+      const name = [connectionLabel(item), item.model_id, operationLabels[item.operation] || item.operation];
+      if (!item.enabled) name.push("已停用");
+      option(picker, id, name.join(" · "));
+    }
+    picker.value = key(model);
+    const header = el("div", undefined, "tool-provider-heading");
+    header.append(cardTitle, picker, connection);
+    const preview = el("div", undefined, "tool-provider-preview");
+    const badge = el("span", undefined, "tool-provider-badge");
+    badge.setAttribute("role", "status");
+    const time = el("time");
+    const meta = el("div", undefined, "tool-provider-meta");
+    meta.append(badge, time);
+    const artwork = el("div", undefined, "tool-provider-result");
+    artwork.append(preview, meta);
+    const actions = el("div", undefined, "tool-provider-actions");
+    const run = el("button", "執行測試");
+    run.type = "button";
+    const past = action(actions, "歷次作品", () => openHistory(model, past, [], true));
+    past.setAttribute("aria-controls", history.id);
+    past.setAttribute("aria-expanded", "false");
+    actions.prepend(run);
+    card.append(header, artwork, actions);
+    strip.append(card);
+
+    let readVersion = 0;
+    function showLatest(result, status = "尚未測試", kind = "") {
+      badge.textContent = result ? verificationOutcome(result) : status;
+      badge.dataset.outcome = result?.outcome || kind;
+      time.hidden = !result;
+      if (result) {
+        const date = new Date(result.created_at);
+        time.dateTime = date.toISOString();
+        time.textContent = verificationShortTime.format(date);
+        time.title = verificationTime.format(date);
+      }
+      const placeholder = el("div", undefined, "tool-drawing-empty");
+      placeholder.append(icon("bicycle"));
+      preview.replaceChildren(result?.drawing ? verificationArtwork(result, model.provider + "作品") : placeholder);
+    }
+    async function loadLatest() {
+      const version = ++readVersion;
+      showLatest(null, "讀取中…");
+      try {
+        const result = await api(verificationPath(model) + "&latest=1", {signal: read.signal});
+        if (version === readVersion && card.isConnected) showLatest(result);
+      } catch {
+        if (!read.signal.aborted && version === readVersion && card.isConnected) showLatest(null, "紀錄讀取失敗", "READ_FAILED");
+      }
+    }
+    function syncControls() {
+      run.disabled = verificationPending || !model.enabled;
+      picker.disabled = verificationPending;
+    }
+    function applySelection() {
+      card.dataset.scope = key(model);
+      connection.textContent = (connections.length === 1 ? connectionLabel(model) + " · " : "") +
+        model.model_id + (model.enabled ? "" : " · 已停用");
+      syncControls();
+      void loadLatest();
+    }
+    picker.addEventListener("change", () => {
+      const historyWasOpen = history.dataset.scope === key(model);
+      model = byScope.get(picker.value);
+      applySelection();
+      if (historyWasOpen) openHistory(model, past, [], false);
+    });
+    run.addEventListener("click", async () => {
+      if (verificationPending || !model.enabled) return;
+      verificationPending = true;
+      updateControls.forEach(update => update());
+      readVersion++;
+      run.textContent = "測試中…";
+      showLatest(null, "正在等待回覆…");
+      const id = crypto.randomUUID();
+      let newest;
+      try {
+        newest = await submit("/verification/runs", {id, selection: scope(model)});
+        showLatest(newest);
+      } catch (error) {
+        const recovered = await api(verificationPath(model) + "&id=" + encodeURIComponent(id), {signal: read.signal}).catch(() => null);
+        if (recovered) {
+          newest = recovered;
+          showLatest(recovered);
+        } else {
+          showLatest(null, "結果待確認", "UNCONFIRMED");
+        }
+        notice(error.message, true);
+      } finally {
+        verificationPending = false;
+        run.textContent = "執行測試";
+        updateControls.forEach(update => update());
+      }
+      if (history.dataset.scope === key(model)) {
+        await reloadHistory({prefer: newest?.id}).catch(error => notice(error.message, true));
+      }
+    });
+    updateControls.push(syncControls);
+    applySelection();
+    if (key(model) === previousScope) openHistory(model, past, previousPair, false);
   }
-  label.append(picker);
-  const connection = el("div");
-  const selectedScope = el("small", undefined, "tool-scope");
-  selectedScope.id = "verification-scope";
-  picker.setAttribute("aria-describedby", selectedScope.id);
-  connection.append(label, selectedScope);
-  const status = el("p", undefined, "tool-run-status");
-  status.setAttribute("role", "status");
-  const actions = el("div", undefined, "tool-test-actions");
-  const gallery = el("section", undefined, "card tool-gallery");
-  const active = () => rows.find(row => key(row) === picker.value);
+  if (previousStrip) strip.scrollLeft = previousStrip.scrollLeft;
+  moreToolOffers(overview, renderVerificationTool);
+}
+
+function renderVerificationHistory(gallery, model, previousPair = [], close) {
   let historyVersion = 0, previewVersion = 0, runs = [];
-  const runPath = () => "/verification/runs?" + query(active());
+  const runPath = verificationPath(model);
   const compare = el("div", undefined, "tool-compare");
   const slots = ["作品 A", "作品 B"].map(name => {
     const column = el("div", undefined, "tool-compare-slot"), field = el("label", name), select = el("select");
@@ -238,15 +418,10 @@ function renderVerificationTool() {
     compare.append(column);
     return {name, column, select, preview};
   });
-  const timeOptions = {month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"};
-  const timeFormat = new Intl.DateTimeFormat("zh-TW", {...timeOptions, year: "numeric"});
-  const optionTimeFormat = new Intl.DateTimeFormat("zh-TW", {month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23"});
-  const runOutcome = run => ({SUCCESS: "作品已儲存", INVALID_SVG: "回應無法預覽", UNCONFIRMED: "結果待確認"})[run.outcome]
-    || outcomeLabels[run.outcome] || run.outcome;
   const savedDrawings = new Map();
 
   async function showPair() {
-    const version = ++previewVersion, path = runPath();
+    const version = ++previewVersion;
     const ids = [...new Set(slots.map(({select}) => select.value).filter(Boolean))];
     compare.setAttribute("aria-busy", "true");
     for (const {select, preview} of slots) {
@@ -256,8 +431,8 @@ function renderVerificationTool() {
       }
     }
     try {
-      const pairs = await Promise.allSettled(ids.map(id => savedDrawings.get(id) || api(path + "&id=" + encodeURIComponent(id))));
-      if (version !== previewVersion) return;
+      const pairs = await Promise.allSettled(ids.map(id => savedDrawings.get(id) || api(runPath + "&id=" + encodeURIComponent(id))));
+      if (!compare.isConnected || version !== previewVersion) return;
       const loaded = new Map();
       pairs.forEach((result, index) => {
         if (result.status !== "fulfilled" || result.value.id !== ids[index]) return;
@@ -277,29 +452,16 @@ function renderVerificationTool() {
           preview.append(el("p", select.value ? "讀取失敗，可更新紀錄重試。" : "選一筆紀錄來比較", "tool-drawing-empty"));
           continue;
         }
-        const date = new Date(run.created_at), time = el("time", timeFormat.format(date));
+        const date = new Date(run.created_at), time = el("time", verificationTime.format(date));
         time.dateTime = date.toISOString();
         if (run.drawing) {
-          const img = el("img", undefined, "tool-drawing");
-          img.alt = "鵜鶘騎單車 · " + time.textContent;
-          img.src = "data:image/svg+xml," + encodeURIComponent(run.drawing);
-          const zoom = el("button", undefined, "tool-drawing-trigger"), glyph = el("span", undefined, "tool-drawing-zoom");
-          zoom.type = "button";
-          zoom.setAttribute("aria-label", "放大" + name);
-          glyph.append(icon("search"));
-          zoom.append(img, glyph);
-          zoom.addEventListener("click", () => {
-            const box = modal("鵜鶘騎單車 · " + name), expanded = img.cloneNode();
-            expanded.className = "tool-drawing-expanded";
-            box.append(expanded, el("p", time.textContent, "section-description"));
-          });
-          preview.append(zoom);
+          preview.append(verificationArtwork(run, name));
           preview.dataset.run = run.id;
         } else {
-          preview.append(el("p", runOutcome(run), "tool-drawing-empty"));
+          preview.append(el("p", verificationOutcome(run), "tool-drawing-empty"));
         }
         const meta = el("div", undefined, "tool-run-meta");
-        meta.append(time, el("span", (run.credential_version == null ? "" : "Key v" + run.credential_version + " · ") + runOutcome(run)));
+        meta.append(time, el("span", (run.credential_version == null ? "" : "Key v" + run.credential_version + " · ") + verificationOutcome(run)));
         preview.append(meta);
         requestLink(preview, run.sample_id);
       }
@@ -310,10 +472,10 @@ function renderVerificationTool() {
   async function readHistory({append = false, prefer = "", previous = slots.map(({select}) => select.value)} = {}) {
     const version = ++historyVersion;
     const limit = append ? 20 : Math.min(200, Math.max(20, runs.length + Number(Boolean(prefer))));
-    const page = await api(runPath() + "&limit=" + limit + "&offset=" + (append ? runs.length : 0)).catch(error => {
-      if (version === historyVersion) throw error;
+    const page = await api(runPath + "&limit=" + limit + "&offset=" + (append ? runs.length : 0)).catch(error => {
+      if (compare.isConnected && version === historyVersion) throw error;
     });
-    if (version !== historyVersion) return;
+    if (!compare.isConnected || version !== historyVersion) return;
     runs = append ? runs.concat(page.runs) : page.runs;
     const exists = id => runs.some(run => run.id === id);
     const first = [prefer, previous[0], runs[0]?.id].find(exists) || "";
@@ -324,7 +486,7 @@ function renderVerificationTool() {
       option(select, "", "選擇紀錄");
       runs.forEach((run, offset) => {
         const date = new Date(run.created_at);
-        option(select, run.id, "#" + (offset + 1) + " · " + optionTimeFormat.format(date));
+        option(select, run.id, "#" + (offset + 1) + " · " + verificationShortTime.format(date));
       });
       select.value = chosen[index];
       column.hidden = index >= runs.length;
@@ -336,68 +498,32 @@ function renderVerificationTool() {
     emptyHistory.hidden = runs.length > 0;
     if (runs.length) await showPair();
   }
-  const runButton = action(actions, "執行測試", async () => {
-    const model = active();
-    if (verificationPending || !model?.enabled) return;
-    verificationPending = picker.disabled = true;
-    status.textContent = "正在等待 " + model.provider + " 的回覆…";
-    let newest = "";
-    try {
-      const run = await submit("/verification/runs", {id: crypto.randomUUID(), selection: scope(model)});
-      newest = run.id;
-      status.textContent = runOutcome(run);
-    } catch (error) {
-      status.textContent = "這次結果待確認。";
-      notice(error.message, true);
-    } finally {
-      try {
-        if (tools.isConnected) await readHistory({prefer: newest});
-      } finally {
-        verificationPending = picker.disabled = false;
-      }
-      if (!tools.isConnected) await refresh();
-    }
-  }, false);
-  runButton.prepend(icon("play"));
-  const evidence = action(actions, "模型真實性證據", () => {
-    const box = modal("模型真實性證據 · " + active().provider);
-    modelAuthenticity(box, active(), detailVersion);
-    box.querySelector("details[data-authenticity]").open = true;
-  });
-  evidence.classList.add("ghost");
-  tools.append(connection, actions,
-    el("p", "每次使用所選 Key 發送一個請求，最多輸出 4,096 tokens。", "section-description tool-test-note"), status);
   const emptyHistory = el("div", undefined, "tool-history-empty");
-  const emptyTitle = el("strong"), emptyCopy = el("span", "執行上方測試後，作品會保存在這裡。");
+  const emptyTitle = el("strong", "正在讀取測試紀錄…");
+  const emptyCopy = el("span", "執行上方測試後，作品會保存在這裡。");
+  emptyCopy.hidden = true;
   emptyHistory.append(emptyTitle, emptyCopy);
-  gallery.append(el("h2", "作品對照"), emptyHistory, compare);
+  compare.hidden = true;
+  const title = el("h2", model.provider + " · 歷次作品");
+  title.tabIndex = -1;
+  const heading = el("div", undefined, "tool-overview-heading");
+  heading.append(title);
+  action(heading, "收起歷次作品", close);
   const historyActions = el("div", undefined, "actions tool-history-actions");
   action(historyActions, "更新測試紀錄", () => readHistory()).prepend(icon("refresh"));
   const earlier = action(historyActions, "載入更早紀錄", () => readHistory({append: true}));
-  gallery.append(historyActions);
-  results.append(tools, gallery);
-  moreToolOffers(results, renderVerificationTool);
-  function switchConnection(previous = []) {
-    const model = active();
-    runButton.disabled = !model.enabled || verificationPending;
-    selectedScope.textContent = model.model_id + " · " + (operationLabels[model.operation] || model.operation);
-    previewVersion++;
-    savedDrawings.clear();
-    compare.removeAttribute("aria-busy");
-    runs = [];
-    for (const {preview} of slots) {
-      delete preview.dataset.run;
-      preview.replaceChildren();
-    }
-    compare.hidden = earlier.hidden = emptyCopy.hidden = true;
-    emptyHistory.hidden = false;
-    emptyTitle.textContent = "正在讀取測試紀錄…";
-    readHistory({previous}).catch(error => {
-      emptyTitle.textContent = "暫時無法讀取紀錄。";
-      notice(error.message, true);
-    });
-  }
-  picker.addEventListener("change", () => { status.textContent = ""; switchConnection(); });
+  earlier.hidden = true;
+  action(historyActions, "模型真實性證據", () => {
+    const box = modal("模型真實性證據 · " + model.provider);
+    modelAuthenticity(box, model, detailVersion);
+    box.querySelector("details[data-authenticity]").open = true;
+  });
+  gallery.replaceChildren(heading, el("small", connectionLabel(model) + " · " + model.model_id, "tool-scope"),
+    emptyHistory, compare, historyActions);
   for (const {select} of slots) select.addEventListener("change", () => showPair().catch(error => notice(error.message, true)));
-  switchConnection(picker.value === old ? oldPair : []);
+  readHistory({previous: previousPair}).catch(error => {
+    emptyTitle.textContent = "暫時無法讀取紀錄。";
+    notice(error.message, true);
+  });
+  return readHistory;
 }
