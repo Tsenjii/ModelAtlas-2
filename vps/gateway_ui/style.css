@@ -212,6 +212,10 @@ code { font: .83rem/1.55 ui-monospace,SFMono-Regular,monospace; overflow-wrap: a
 .identity-text { min-width: 0; }
 .identity p,.identity small { display: block; color: var(--muted); overflow-wrap: anywhere; }
 .identity small { font-size: .77rem; }
+.provider-name {
+  min-width: 48px; max-width: 100%; padding: 0; border: 0;
+  justify-content: flex-start; text-align: start; font: inherit;
+}
 .identity .provider-preview {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
   overflow: hidden; font-size: .8rem; margin: 3px 0;

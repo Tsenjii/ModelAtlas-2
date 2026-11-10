@@ -350,6 +350,10 @@ function renderOffers() {
     }, {glyph: "tag"});
     const details = identity(v.provider, [[v.account, v.credential, v.group].filter(Boolean).join(" · "),
       v.model_id + " · " + (operationNames[v.operation] || v.operation), v.enabled ? "" : "連線停用或不可用"]);
+    const view = button(v.provider, () => openProvider(v.provider_id));
+    view.classList.add("quiet-button", "provider-name");
+    view.append(icon("chevron"));
+    details.querySelector("h3").replaceChildren(view);
     const history = button("連線詳情", () => openOfferDetail(v), {glyph: "info"});
     row.append(details, performanceCells(v.performance), controls(probe, history, choose, align));
     return row;
@@ -419,6 +423,13 @@ async function showProviderView() {
   return loadProviderList(true);
 }
 
+async function openProvider(id) {
+  state.providerID = id;
+  $("provider-detail-content").replaceChildren();
+  await showPage("providers");
+  if (state.page === "providers" && state.providerID === id) $("provider-title").focus({preventScroll: true});
+}
+
 async function loadProviderList(reset) {
   providerRead?.abort();
   const read = new AbortController();
@@ -433,12 +444,7 @@ async function loadProviderList(reset) {
     const row = el("article", undefined, "entry provider-tile");
     const intro = identity(p.name, [p.base_url, p.accounts + " 個帳戶 · " + p.keys + " 把啟用的推論 Key"], "provider");
     if (p.description) intro.querySelector("h3").after(el("p", p.description, "provider-preview"));
-    const view = button("管理 " + p.name, async () => {
-      state.providerID = p.id;
-      $("provider-detail-content").replaceChildren();
-      await showPage("providers");
-      if (state.page === "providers" && state.providerID === p.id) $("provider-title").focus({preventScroll: true});
-    }, {glyph: "chevron", iconOnly: true});
+    const view = button("管理 " + p.name, () => openProvider(p.id), {glyph: "chevron", iconOnly: true});
     view.classList.add("provider-open");
     row.append(intro, providerFacts(p, true), controls(view));
     return row;

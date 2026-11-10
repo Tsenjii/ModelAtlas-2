@@ -260,7 +260,13 @@ const fs = require("node:fs/promises");
     await shot("model-1344-light");
 
     await page.setViewportSize({ width: 402, height: 874 });
-    await go("供應商");
+    await offering("曙光 API").getByRole("button", { name: "曙光 API", exact: true }).tap();
+    await provider.getByRole("heading", { name: "曙光 API", exact: true }).waitFor();
+    await provider.getByText("備援模型站", { exact: true }).waitFor();
+    await go("模型");
+    await offering("潮汐 API").getByRole("button", { name: "潮汐 API", exact: true }).press("Enter");
+    await provider.getByRole("heading", { name: "潮汐 API", exact: true }).waitFor();
+    await provider.getByText("45600 站方額度", { exact: false }).first().waitFor();
     await page.locator("#providers-back").click();
     await page.locator("#provider-count").getByText("已載入 2 家", { exact: false }).waitFor();
     await page.locator("#provider-list article").filter({ hasText: "潮汐 API" }).getByText("100%", { exact: true }).waitFor();
