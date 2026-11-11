@@ -200,7 +200,17 @@
     "TestModelBatchExactScopesReceiptsAndPreflight": "pass",
     "TestModelBatchStopsAtRateLimitWithoutRetry": "pass",
     "TestModelBatchCancellationStopsActiveSocketAndPendingModels": "pass",
-    "TestBrowserModelBatchTestWorkflow": "skip"
+    "TestBrowserModelBatchTestWorkflow": "skip",
+    "TestProviderProxyRoutesTLSRequestsIndependentlyAndFailsClosed": "pass",
+    "TestProviderProxyRoutesTLSRequestsIndependentlyAndFailsClosed/http": "pass",
+    "TestProviderProxyRoutesTLSRequestsIndependentlyAndFailsClosed/https": "pass",
+    "TestProviderProxyRoutesTLSRequestsIndependentlyAndFailsClosed/socks5h": "pass",
+    "TestProviderProxyVaultConflictExportAndMissingDeviceBinding": "pass",
+    "TestProviderProxyPublicConnectorRetainsPrivateDestinationProtection": "pass",
+    "TestProviderProxyPublicHTTPSIsPinnedInsideAuthenticatedProxy": "pass",
+    "TestProviderProxyPublicHTTPSIsPinnedInsideAuthenticatedProxy/false": "pass",
+    "TestProviderProxyPublicHTTPSIsPinnedInsideAuthenticatedProxy/true": "pass",
+    "TestProviderProxySyncKeepsDeviceBindingsSeparate": "pass"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",
