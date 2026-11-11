@@ -4,9 +4,9 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 //go:embed gateway_ui/tools.js
@@ -134,16 +134,10 @@ func (s *Server) gatewayPublishedGroupPrices(ctx context.Context, offer gatewayO
 	return prices
 }
 
-func gatewayToolPage(w http.ResponseWriter, r *http.Request) {
-	tool := r.PathValue("tool")
-	switch tool {
-	case "models", "providers", "requests", "data", "prices", "verification":
-	default:
-		http.NotFound(w, r)
-		return
-	}
+var gatewayToolPages = sync.OnceValue(func() map[string]http.HandlerFunc {
+	const toolMarker = `data-lite-tool=""`
 	page := strings.NewReplacer(
-		`<html lang="zh-Hant"`, `<html lang="zh-Hant" data-wallpaper="elaina" data-api-base="/tools/api" data-lite-tool="`+tool+`"`,
+		`<html lang="zh-Hant"`, `<html lang="zh-Hant" data-wallpaper="elaina" data-api-base="/tools/api" `+toolMarker,
 		`<title>ModelAtlas</title>`, `<title>ModelAtlas · Lite 管理工具</title><link rel="icon" href="/gateway-mark.svg" type="image/svg+xml">`,
 		`href="/app.css"`, `href="/tools/app.css"><link rel="stylesheet" href="/tools/tools.css"`,
 		`src="/app.js"`, `src="/tools/app.js" defer></script><script src="/tools/tools.js"`,
@@ -157,6 +151,20 @@ func gatewayToolPage(w http.ResponseWriter, r *http.Request) {
 		`正在讀取你的供應商、模型與對話。`, `正在讀取管理資料。`,
 		`<section id="playground"`, `<section id="lite-tool-content" class="pane" aria-labelledby="lite-tool-title" hidden><div class="heading"><h1 id="lite-tool-title"></h1><p id="lite-tool-model" hidden></p></div><div id="lite-tool-results"></div></section><section id="playground"`,
 	).Replace(homeHTML)
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = io.WriteString(w, page)
+	// All tool pages share the same large shell. Only the selected tool differs.
+	before, after, _ := strings.Cut(page, toolMarker)
+	tools := map[string]http.HandlerFunc{}
+	for _, name := range []string{"models", "providers", "requests", "data", "prices", "verification"} {
+		tools[name] = staticHTML(before, `data-lite-tool="`+name+`"`, after)
+	}
+	return tools
+})
+
+func gatewayToolPage(w http.ResponseWriter, r *http.Request) {
+	page := gatewayToolPages()[r.PathValue("tool")]
+	if page == nil {
+		http.NotFound(w, r)
+		return
+	}
+	page(w, r)
 }

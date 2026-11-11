@@ -443,6 +443,7 @@ const fs = require("node:fs/promises");
     await page.setViewportSize({ width: 402, height: 874 });
     await page.evaluate(() => window.scrollTo(0, 0));
     await shot("usage-402-light");
+    const firstUsageRow = await page.locator("#usage-list tbody tr").first().elementHandle();
     await Promise.all([
       page.waitForRequest(request => {
         const url = new URL(request.url());
@@ -452,6 +453,8 @@ const fs = require("node:fs/promises");
     ]);
     await page.locator("#usage-count").getByText("已顯示 41 / 41 筆", { exact: true }).waitFor();
     assert.equal(await page.locator("#usage-list tbody tr").count(), 41);
+    assert(await firstUsageRow.evaluate(row => row.isConnected), "paging recreated previously rendered usage rows");
+    await firstUsageRow.dispose();
     assert.equal(await ranking.getByText("qwen-3-8-max", { exact: true }).count(), 1);
     await page.getByRole("button", { name: "Token", exact: true }).click();
     const plot = page.locator("#usage-chart .chart-svg");
@@ -499,8 +502,11 @@ const fs = require("node:fs/promises");
     await page.locator("#key-list").getByText("1 / 3", { exact: true }).waitFor();
     await assertLayout();
     const revoke = page.getByRole("button", { name: "撤銷", exact: true });
-    await revoke.evaluate(button => button.scrollIntoView({ block: "center" }));
-    assert((await revoke.boundingBox()).y + (await revoke.boundingBox()).height < (await page.getByRole("navigation").boundingBox()).y);
+    await revoke.evaluate(button => button.scrollIntoView({block: "center", behavior: "instant"}));
+    const revokeControl = await revoke.elementHandle();
+    await page.waitForFunction(button => button.isConnected &&
+      button.getBoundingClientRect().bottom < document.querySelector(".gateway-nav").getBoundingClientRect().top, revokeControl);
+    await revokeControl.dispose();
     await revoke.click();
     const revokeDialog = page.locator("#remove-dialog");
     await revokeDialog.getByRole("button", { name: "取消", exact: true }).click();

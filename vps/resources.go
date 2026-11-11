@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -38,20 +39,64 @@ func pageRange(r *http.Request, defaultLimit int) (int, int) {
 }
 
 type staticAsset struct {
-	once       sync.Once
+	etagOnce   sync.Once
+	gzipOnce   sync.Once
 	raw        string
 	compressed []byte
 	etag       string
 	revalidate bool
 }
 
+func compressAsset(level int, parts ...string) []byte {
+	var b bytes.Buffer
+	z, _ := gzip.NewWriterLevel(&b, level)
+	for _, part := range parts {
+		_, _ = io.WriteString(z, part)
+	}
+	_ = z.Close()
+	return b.Bytes()
+}
+
+func acceptsAssetGzip(header string) bool {
+	for item := range strings.SplitSeq(header, ",") {
+		coding, parameters, _ := strings.Cut(item, ";")
+		if !strings.EqualFold(strings.TrimSpace(coding), "gzip") {
+			continue
+		}
+		quality := 1.0
+		for parameter := range strings.SplitSeq(parameters, ";") {
+			key, value, ok := strings.Cut(parameter, "=")
+			if ok && strings.EqualFold(strings.TrimSpace(key), "q") {
+				quality, _ = strconv.ParseFloat(strings.TrimSpace(value), 64)
+			}
+		}
+		if quality > 0 && quality <= 1 {
+			return true
+		}
+	}
+	return false
+}
+
+// HTML shells contain static markup. Keep authorization and cache headers
+// from the caller and assemble a compressed copy only when a client wants it.
+func staticHTML(parts ...string) http.HandlerFunc {
+	gz := sync.OnceValue(func() []byte { return compressAsset(gzip.DefaultCompression, parts...) })
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Add("Vary", "Accept-Encoding")
+		if acceptsAssetGzip(r.Header.Get("Accept-Encoding")) {
+			w.Header().Set("Content-Encoding", "gzip")
+			_, _ = w.Write(gz())
+			return
+		}
+		for _, part := range parts {
+			_, _ = io.WriteString(w, part)
+		}
+	}
+}
+
 func (a *staticAsset) serve(w http.ResponseWriter, r *http.Request, contentType string) {
-	a.once.Do(func() {
-		var b bytes.Buffer
-		z, _ := gzip.NewWriterLevel(&b, gzip.BestSpeed)
-		_, _ = z.Write([]byte(a.raw))
-		_ = z.Close()
-		a.compressed = b.Bytes()
+	a.etagOnce.Do(func() {
 		a.etag = fmt.Sprintf("\"%x\"", sha256.Sum256([]byte(a.raw)))
 	})
 	w.Header().Set("Content-Type", contentType)
@@ -68,11 +113,12 @@ func (a *staticAsset) serve(w http.ResponseWriter, r *http.Request, contentType 
 		w.WriteHeader(304)
 		return
 	}
-	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+	if acceptsAssetGzip(r.Header.Get("Accept-Encoding")) {
+		a.gzipOnce.Do(func() { a.compressed = compressAsset(gzip.BestSpeed, a.raw) })
 		w.Header().Set("Content-Encoding", "gzip")
 		_, _ = w.Write(a.compressed)
 	} else {
-		_, _ = w.Write([]byte(a.raw))
+		_, _ = io.WriteString(w, a.raw)
 	}
 }
 

@@ -4,7 +4,8 @@ const keyStates = {
   active: ["啟用中", "success", "check"], paused: ["已暫停", "quiet", "pause"],
   expired: ["已到期", "danger", "clock"], revoked: ["已撤銷", "quiet", "ban"]
 };
-const consoleState = {edit: null, usage: null, items: [], filter: null, read: null, mode: "requests"};
+const consoleState = {edit: null, usage: null, itemCount: 0, filter: null, read: null, mode: "requests"};
+let dateFormatter, dateFormatterZone;
 
 function badge(text, tone = "neutral", glyph) {
   const node = el("span", text, "badge");
@@ -70,7 +71,11 @@ function renderKeys() {
 }
 
 function localDate(at, zone) {
-  return new Intl.DateTimeFormat("zh-TW", {timeZone: zone, dateStyle: "short", timeStyle: "short"}).format(at);
+  if (!dateFormatter || dateFormatterZone !== zone) {
+    dateFormatter = new Intl.DateTimeFormat("zh-TW", {timeZone: zone, dateStyle: "short", timeStyle: "short"});
+    dateFormatterZone = zone;
+  }
+  return dateFormatter.format(at);
 }
 function keySelection() {
   const list = $("key-models");
@@ -166,23 +171,23 @@ async function loadUsage(reset, draft = readUsageFilters()) {
   consoleState.read?.abort();
   const read = new AbortController();
   consoleState.read = read;
-  const offset = reset ? 0 : consoleState.items.length;
+  const offset = reset ? 0 : consoleState.itemCount;
   const filter = reset ? draft : {...consoleState.filter, as_of: consoleState.usage.as_of};
   const params = new URLSearchParams({...filter, limit: "30", offset: String(offset)});
   if (!reset) params.set("items_only", "1");
   $("usage-more").disabled = true;
   $("usage-list").setAttribute("aria-busy", "true");
   try {
-    const data = await api("/gateway/usage?" + params, undefined, read.signal);
+    const {items, ...usage} = await api("/gateway/usage?" + params, undefined, read.signal);
     if (consoleState.read !== read) return;
     if (reset) {
-      consoleState.usage = data;
+      consoleState.usage = usage;
       consoleState.filter = filter;
     }
-    consoleState.items = reset ? data.items : consoleState.items.concat(data.items);
-    $("usage-more").hidden = !data.more;
-    if (reset) renderUsage();
-    else renderUsageRows();
+    consoleState.itemCount = offset + items.length;
+    $("usage-more").hidden = !usage.more;
+    if (reset) renderUsage(items);
+    else renderUsageRows(items, true);
     return true;
   } finally {
     if (consoleState.read === read) {
@@ -192,7 +197,7 @@ async function loadUsage(reset, draft = readUsageFilters()) {
   }
 }
 
-function renderUsage() {
+function renderUsage(items) {
   const {summary, ranking} = consoleState.usage;
   renderUsageFilters();
   const stat = (glyph, label, value, detail, decoration) => {
@@ -224,7 +229,7 @@ function renderUsage() {
     return item;
   }) : [empty("無模型請求。")]));
   renderTrend();
-  renderUsageRows();
+  renderUsageRows(items);
 }
 
 function renderTrend() {
@@ -314,28 +319,34 @@ function renderTrend() {
   info.textContent = "點選時段看明細";
 }
 
-function renderUsageRows() {
-  $("usage-count").textContent = "已顯示 " + number(consoleState.items.length) + " / " + number(consoleState.usage.summary.requests) + " 筆";
+const usageColumnLabels = ["時間", "模型 / 供應商", "Key / 來源", "結果", "首字 / 總延遲", "輸入 / 輸出", "操作"];
+
+function renderUsageRows(items, append = false) {
+  const {itemCount, usage} = consoleState;
+  $("usage-count").textContent = "已顯示 " + number(itemCount) + " / " + number(usage.summary.requests) + " 筆";
   const list = $("usage-list");
-  if (!consoleState.items.length) {
+  if (!itemCount) {
     list.replaceChildren(empty("這個範圍還沒有請求。"));
     return;
   }
-  const labels = ["時間", "模型 / 供應商", "Key / 來源", "結果", "首字 / 總延遲", "輸入 / 輸出", "操作"];
-  const table = el("table", undefined, "usage-table");
-  table.setAttribute("aria-label", "調用明細");
-  const head = table.createTHead().insertRow();
-  for (const label of labels) {
-    const cell = el("th", label);
-    cell.scope = "col";
-    head.append(cell);
+  const existing = append && list.querySelector(".usage-table");
+  const table = existing || el("table", undefined, "usage-table");
+  if (!existing) {
+    table.setAttribute("aria-label", "調用明細");
+    const head = table.createTHead().insertRow();
+    for (const label of usageColumnLabels) {
+      const cell = el("th", label);
+      cell.scope = "col";
+      head.append(cell);
+    }
+    table.createTBody();
   }
-  const body = table.createTBody();
-  for (const v of consoleState.items) {
-    const row = body.insertRow();
+  const rows = document.createDocumentFragment();
+  for (const v of items) {
+    const row = el("tr");
     const add = (value, detail) => {
       const td = row.insertCell();
-      td.dataset.label = labels[td.cellIndex];
+      td.dataset.label = usageColumnLabels[td.cellIndex];
       td.append(value);
       if (detail) td.append(el("small", detail));
     };
@@ -346,8 +357,10 @@ function renderUsageRows() {
     add(delay(v.ttft_ms) + " / " + delay(v.latency_ms));
     add(number(v.input_tokens) + " / " + number(v.output_tokens));
     add(button("詳情", () => openUsageDetail(v), {glyph: "info", iconOnly: true}));
+    rows.append(row);
   }
-  list.replaceChildren(table);
+  table.tBodies[0].append(rows);
+  if (!existing) list.replaceChildren(table);
 }
 function delay(ms) { return ms == null ? "—" : number(ms) + " ms"; }
 function usageResult(v) {

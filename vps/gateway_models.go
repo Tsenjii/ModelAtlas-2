@@ -98,11 +98,18 @@ func gatewayModelType(operation, category string, imageOutput bool) string {
 func (s *Server) gatewayModelGroups(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	limit, offset := pageRange(r, 40)
-	term, provider := strings.TrimSpace(q.Get("q")), q.Get("provider_id")
+	term, id := strings.TrimSpace(q.Get("q")), q.Get("id")
+	filter := "WHERE (?='' OR canonical_id=?)"
+	args := []any{id, id}
+	if provider := q.Get("provider_id"); provider != "" {
+		// An equality lets SQLite seek to this provider's models.
+		filter += " AND provider_id=?"
+		args = append(args, provider)
+	}
 	// Resolve the filtered catalog once. Inlining it in the page join can
 	// repeat the catalog joins and canonical ID calculation for every group.
 	rows, err := s.Store.DB.QueryContext(r.Context(), gatewayCatalogSQL+`, filtered AS MATERIALIZED (
-		SELECT * FROM scopes WHERE (?='' OR canonical_id=?) AND (?='' OR provider_id=?)
+		SELECT * FROM scopes `+filter+`
 	), page AS (
 		SELECT canonical_id,COALESCE(MIN(NULLIF(display_name,model_id)),MIN(model_id)) AS name,
 			COUNT(DISTINCT provider_id) AS providers,COUNT(*) AS connections
@@ -113,7 +120,7 @@ func (s *Server) gatewayModelGroups(w http.ResponseWriter, r *http.Request) {
 			m.operation,m.model_category,m.image_output,m.enabled AND m.current_group,`+gatewayTermColumns+`
 		FROM page JOIN filtered m ON m.canonical_id=page.canonical_id
 		ORDER BY page.name COLLATE NOCASE,page.canonical_id,m.scope_key`,
-		q.Get("id"), q.Get("id"), provider, provider, term, term, limit+1, offset)
+		append(args, term, term, limit+1, offset)...)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

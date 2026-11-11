@@ -2,7 +2,6 @@ package main
 
 import (
 	_ "embed"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -101,10 +100,7 @@ func (s *Server) gatewayUIRoutes(root *http.ServeMux, workspace bool) {
 			"<!-- workspace-entry -->", `<a class="icon-button link-button workspace-entry" href="/workspace" aria-label="進階工作區" title="進階工作區"><svg aria-hidden="true"><use href="#icon-model"/></svg></a>`,
 		).Replace(page)
 	}
-	root.HandleFunc("GET /{$}", s.gatewayPage(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = io.WriteString(w, page)
-	}))
+	root.HandleFunc("GET /{$}", s.gatewayPage(staticHTML(page)))
 	root.HandleFunc("GET /gateway.css", func(w http.ResponseWriter, r *http.Request) {
 		security(w)
 		gatewayStyleAsset.serve(w, r, "text/css; charset=utf-8")
