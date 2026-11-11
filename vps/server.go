@@ -18,6 +18,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -51,6 +52,7 @@ type Server struct {
 	updates         *webUpdater
 	vaultVerified   bool
 	backups         *cloudBackupService
+	managedBackups  *managedCloudBackup
 	scheduleMu      sync.Mutex
 	scheduleClock   func() time.Time
 	wake            chan struct{}
@@ -437,6 +439,13 @@ func runConfiguredApplication(config deploymentConfig) error {
 	if config.backupDestination != "" {
 		srv.backups = newCloudBackupService(ctx, config.backupDestination, config.db, config.key)
 		defer srv.backups.Close()
+	} else if config.desktopReady == "" && config.db != ":memory:" && len(config.key) == 32 {
+		source, err := filepath.Abs(config.db)
+		if err != nil {
+			return fmt.Errorf("cannot resolve backup database path: %w", err)
+		}
+		srv.managedBackups = newManagedCloudBackup(ctx, source, config.key)
+		defer srv.managedBackups.Close()
 	}
 	if config.desktopReady != "" {
 		if err = publishDesktopReady(config.desktopReady, listener.Addr().String()); err != nil {
@@ -445,7 +454,7 @@ func runConfiguredApplication(config deploymentConfig) error {
 		defer os.Remove(config.desktopReady)
 	}
 	workerDone := make(chan struct{})
-	if !config.distribution || srv.backups != nil {
+	if !config.distribution || srv.backups != nil || srv.managedBackups != nil {
 		go func() { defer close(workerDone); srv.worker(ctx) }()
 	} else {
 		close(workerDone)

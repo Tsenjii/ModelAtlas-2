@@ -992,6 +992,20 @@ const fs = require("node:fs/promises");
     await page.getByRole("link", {name: "返回 Lite", exact: true}).click();
     await page.getByRole("button", {name: "設定", exact: true}).click();
     await page.getByRole("link", {name: "備份與同步", exact: true}).click();
+    const backup = page.getByRole("region", {name: "加密雲端備份", exact: true});
+    await backup.getByText("設定備份目的地", {exact: true}).click();
+    await backup.getByLabel("雲端儲存", {exact: true}).selectOption("b2");
+    await backup.getByLabel("S3 端點", {exact: true}).fill("https://s3.us-west-004.backblazeb2.com");
+    await backup.getByLabel("Bucket 名稱", {exact: true}).fill("atlas-test-bucket");
+    await backup.getByLabel("Access Key ID", {exact: true}).fill("synthetic-b2-access-id");
+    await backup.getByLabel("Secret Access Key", {exact: true}).fill("synthetic-b2-secret");
+    await backup.getByLabel("我已在其他地方安全保存 ModelAtlas 主金鑰", {exact: true}).check();
+    await assertToolAppearance();
+    await backup.getByRole("button", {name: "儲存目的地", exact: true}).click();
+    await backup.getByText("Backblaze B2 · atlas-test-bucket", {exact: true}).waitFor();
+    assert(await backup.getByRole("button", {name: "立即備份目前資料", exact: true}).isEnabled());
+    assert.equal(await backup.getByLabel("定時備份", {exact: true}).isChecked(), false);
+    assert.equal(await backup.locator("input[name=secret_access_key]").inputValue(), "");
     await page.getByRole("heading", {name: "跨裝置同步", exact: true}).waitFor();
     await page.getByRole("link", {name: "匯出設定（不含 Key）", exact: true}).waitFor();
     await page.getByText("此裝置可作同步中心", {exact: false}).waitFor();
@@ -1088,7 +1102,8 @@ const fs = require("node:fs/promises");
       providerCardHitArea: true, scopedKeyUsage: true, batchSelectAll: true, dialogCopyFeedback: true, browserSignIn: true,
       sharedWorkspace: true, settingsUpdate: true, connectionTrend: true, scopedSitePerformance: true,
       copiedUpstreamIDAndKey: true, scopedRemoval: true, manualKeyQuota: true, onDemandTools: true, providerProxy: true,
-      brandPicker: true, catalogRecovery: true, manualVerification: true, manualModelTerms: true, modelType: true, imagePreview: true }));
+      brandPicker: true, catalogRecovery: true, manualVerification: true, manualModelTerms: true, modelType: true, imagePreview: true,
+      cloudBackupSetup: true }));
   } finally {
     await client.dispose();
     await browser.close();

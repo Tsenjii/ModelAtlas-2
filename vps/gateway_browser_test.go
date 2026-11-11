@@ -20,6 +20,8 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 	parallelBrowserFlow(t)
 	s := testServer(t)
 	s.distribution = true
+	s.managedBackups = newManagedCloudBackup(context.Background(), s.Store.path, s.Key)
+	defer s.managedBackups.Close()
 	f := newGatewayFixture(t, s, [2]string{"deepseek-v4.1-flash", "DeepSeek-V4_1-Flash"})
 	f.bRateLimitAt.Store(5)
 	destination, _ := url.Parse(f.URL)

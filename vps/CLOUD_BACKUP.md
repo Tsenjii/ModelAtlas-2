@@ -2,7 +2,7 @@
 
 第一次部署到雲端授權、備份、隔離還原及更新的完整操作入口，見 [DEPLOY_AND_BACKUP.md](DEPLOY_AND_BACKUP.md)；通用部署試跑範例見 [DEPLOYMENT_TRIAL.md](DEPLOYMENT_TRIAL.md)。
 
-VPS-PORTABLE-OPS-016，來源7053所列範圍已工程驗證，2026-10-30。正式入口為設定→資料→加密雲端備份；主機先連接自己的備份目的地，網頁只管理已配置的目的地、排程及工作。此功能不依賴Muse或特定雲端硬碟。
+VPS-PORTABLE-OPS-016，來源 7053 所列範圍已工程驗證，2026-10-30。Lite 的入口在「設定 → 備份與同步 → 加密雲端備份」。有管理員權限的使用者可在這裡設定 Cloudflare R2 或 Backblaze B2。其他 rclone 目的地仍可由主機設定。
 
 ## 保護哪些資料
 
@@ -10,11 +10,19 @@ VPS-PORTABLE-OPS-016，來源7053所列範圍已工程驗證，2026-10-30。正�
 
 每份雲端版本只新增，不雙向同步、不刪除、不覆寫不同內容。上傳後重新下載到獨立私密目錄，比對完整三個檔案、識別碼、雜湊、manifest及vault；只有這一步完成才是SUCCESS。程序exit0、只有上傳、HTTP200或讀不到結果都不能當備份成功。
 
-master key不放入同一份備份。必須另行安全保存原應用程式master key、rclone crypt密碼及可選salt；也保存可恢復的管理密碼／目的地設定。只有DB卻遺失上述復原材料，無法恢復可用憑證。使用獨立密碼管理器或安全離線備份，不將秘密放進Git、聊天、指令參數、公開雲端資料夾或log。
+原應用程式 master key 需要在主機之外另行安全保存。網頁設定的加密密碼由原 master key 衍生，換主機時會以同一把 key 重建。從終端自行設定 rclone 時，也要保存自己設定的 crypt 密碼及可選 salt。雲端存取憑證和主機登入設定各自保管。
 
 原始附件仍沿產品既有規則僅供當次記憶體使用；完整DB備份不冒稱所有附件永久保存。下方「設定匯出」僅為可攜設定，不能代替完整備份。
 
-## 一次連接自己的雲端
+## 在設定中連接 R2 或 B2
+
+1. 在雲端控制台建立私有 Bucket，建立可在該 Bucket 列出、讀取及寫入物件的存取金鑰。
+2. 開啟「設定 → 備份與同步 → 加密雲端備份 → 設定備份目的地」。選擇 Cloudflare R2 或 Backblaze B2，填入 S3 HTTPS 端點、Bucket、備份資料夾和存取金鑰。B2 的 keyID 和 applicationKey 分別填在 Access Key ID 和 Secret Access Key。
+3. 確認已另存原本的 `MODELATLAS_MASTER_KEY`，再儲存目的地。按「立即備份目前資料」，以「已回讀驗證」確認第一次備份。需要定時備份時再啟用排程。
+
+容器映像內建 rclone。以獨立 binary 部署時，主機需先安裝 rclone 並將其放在服務的 PATH。網頁儲存會在資料庫旁的私密目錄建立權限 0600 的專用 rclone 設定，隨部署保存在持久磁碟。
+
+## 從主機設定其他目的地
 
 主機需可執行rclone。容器映像已提供，binary部署由主機管理員安裝可信rclone；正式服務不需要Go、Node或Python。以下使用操作者自己的私密絕對路徑，檔案0600、父目錄0700。
 
@@ -61,7 +69,17 @@ rclone設定內的obscured密碼不是私密設定檔的加密保護。專用設
 
 ## 主機端下載及還原
 
-可在自己的終端立即備份，輸出非秘密的job結果。記下原ID；同ID重送只讀已存在結果，明確 `--retry` 才重試失敗工作。
+可在自己的終端立即備份並讀取工作結果。記下原 ID。同 ID 重送只讀已存在結果，明確 `--retry` 才重試失敗工作。以網頁設定目的地時，指令會從 env 檔的 DB 路徑找到該設定，可省略 `--destination-file`。
+
+換主機時，在新部署的私密 env 檔設好原本的 `MODELATLAS_MASTER_KEY`，連到原 Bucket 和備份資料夾，再列出雲端版本。若原來在終端設定 crypt，請使用原 crypt 密碼及 salt。
+
+```sh
+modelatlas-vps backup list --env-file /private/modelatlas.env
+modelatlas-vps backup fetch --env-file /private/modelatlas.env \
+  --id backup-my-unique-version --output /private/new-recovery-directory
+```
+
+使用自訂目的地檔時可明確指定其路徑。
 
 ```sh
 modelatlas-vps backup run --env-file /private/modelatlas.env \

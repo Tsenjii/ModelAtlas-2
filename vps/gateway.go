@@ -70,6 +70,7 @@ type gatewayKey struct {
 
 func (s *Server) gatewayAdminRoutes() *http.ServeMux {
 	admin := http.NewServeMux()
+	s.cloudBackupRoutes(admin)
 	admin.HandleFunc("GET /status", s.status)
 	admin.HandleFunc("GET /system", s.systemStatus)
 	admin.HandleFunc("GET /providers/proxy", s.getProviderProxy)

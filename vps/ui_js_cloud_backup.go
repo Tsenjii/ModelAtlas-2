@@ -6,6 +6,20 @@ const cloudBackupHTML = `
 <p id="cloud-backup-summary" role="status" aria-live="polite">尚未讀取備份狀態。</p>
 <p id="cloud-backup-problem" class="error" role="alert" hidden></p>
 <dl id="cloud-backup-details" class="system-status-details"></dl>
+<div class="form-actions"><button id="cloud-backup-run" type="button" hidden>立即備份目前資料</button><button id="cloud-backup-cancel" type="button" class="ghost" hidden>取消目前備份</button></div>
+<details id="cloud-backup-setup" hidden>
+<summary id="cloud-backup-setup-title">設定備份目的地</summary>
+<form id="cloud-backup-destination" method="post" autocomplete="off">
+<label>雲端儲存<select name="provider"><option value="r2">Cloudflare R2</option><option value="b2">Backblaze B2</option></select></label>
+<label>S3 端點<input name="endpoint" type="url" required maxlength="200" placeholder="https://帳戶ID.r2.cloudflarestorage.com" spellcheck="false"></label>
+<label>Bucket 名稱<input name="bucket" required maxlength="63" autocapitalize="none" spellcheck="false"></label>
+<label>備份資料夾<input name="prefix" value="ModelAtlas" required maxlength="512" autocapitalize="none" spellcheck="false"></label>
+<label>Access Key ID<input name="access_key_id" required maxlength="512" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
+<label>Secret Access Key<input name="secret_access_key" type="password" required maxlength="512" autocomplete="new-password"></label>
+<label class="check"><input name="key_recovery_confirmed" type="checkbox" required>我已在其他地方安全保存 ModelAtlas 主金鑰</label>
+<div class="form-actions"><button id="cloud-backup-connect" type="submit" disabled>儲存目的地</button></div>
+</form>
+</details>
 <form id="cloud-backup-policy" hidden>
 <label class="check"><input id="cloud-backup-enabled" type="checkbox">定時備份</label>
 <label>備份間隔（分鐘）<input id="cloud-backup-interval" type="number" min="15" max="10080" step="1" inputmode="numeric" required></label>
@@ -14,14 +28,17 @@ const cloudBackupHTML = `
 <p id="cloud-backup-draft" role="status"></p>
 <div class="form-actions"><button id="cloud-backup-save" type="submit">確認並保存</button><button id="cloud-backup-discard" type="button" class="ghost">放棄草稿</button></div>
 </form>
-<div class="form-actions"><button id="cloud-backup-run" type="button" hidden>立即備份目前資料</button><button id="cloud-backup-cancel" type="button" class="ghost" hidden>取消目前備份</button></div>
 <details id="cloud-backup-history-details"><summary>備份紀錄</summary><div id="cloud-backup-history"></div><button id="cloud-backup-more" type="button" class="ghost" hidden>更早的備份</button></details>
-<p class="section-description">備份包含完整資料庫，不會將復原金鑰放進同一份檔案。請另行安全保存備份密碼與金鑰。下載及還原由主機端執行；下方設定匯出仍只包含可攜設定。</p>
+<details id="cloud-backup-recovery"><summary>換主機還原</summary>
+<p>備份包含站點、Base URL、API Key、模型、代理、價格與歷史紀錄。請在新主機使用原本的 <code>MODELATLAS_MASTER_KEY</code>，並連到同一個 Bucket 和備份資料夾。</p>
+<p>在主機用 <code>backup list</code> 找到版本，再用 <code>backup fetch</code> 下載及驗證。停止目標服務後，用 <code>ops restore</code> 套用快照。</p>
+</details>
 </section>
 `
 
 const jsCloudBackup = `
 let cloudBackupState=null,cloudBackupDraft=null,cloudBackupReading=false,cloudBackupWriting=false,cloudBackupAvailable=false,cloudBackupNeedsRead=false,cloudBackupRequestID=null,cloudBackupRequestFingerprint=null,cloudBackupNextBefore=null,cloudBackupTimer=null;
+let cloudBackupSetupRevision=null;
 const cloudBackupRows=new Map(),cloudBackupStates={PENDING:'等待中',SNAPSHOT:'建立一致快照',UPLOADING:'加密上傳中',VERIFYING:'重新下載並驗證',SUCCESS:'已回讀驗證',FAILED:'備份未完成',INTERRUPTED:'程序曾中斷',CANCELLED:'已取消'};
 const cloudBackupEventPages=new Map(),cloudBackupOpenEvents=new Set();
 const cloudBackupErrors={SNAPSHOT_FAILED:'快照尚未通過驗證，已停止建立新快照，請檢查主機後重試。',TRANSFER_FAILED:'上傳未完成，本機快照仍保留。',READBACK_FAILED:'重新下載驗證未完成，尚不能作為已驗備份。',LOCAL_STATE_UNAVAILABLE:'工作狀態需要重新讀取，請保留原識別碼。',PROCESS_INTERRUPTED:'程序在完成確認前中斷，保留原始狀態。',CANCELLED_OR_TIMED_OUT:'傳輸已停止，既有備份保留。'};
@@ -32,6 +49,9 @@ function cloudBackupSetDraft(s){cloudBackupDraft={revision:s.policy.revision,fin
 function cloudBackupCanSave(){const d=cloudBackupDraft,s=cloudBackupState;return cloudBackupAvailable&&!cloudBackupReading&&!cloudBackupWriting&&!cloudBackupNeedsRead&&s&&d&&d.dirty&&d.revision===s.policy.revision&&d.fingerprint===s.fingerprint&&/^\d+$/.test(d.interval)&&cloudBackupInt(Number(d.interval),15,10080)&&(!d.enabled||s.key_recovery_confirmed);}
 function cloudBackupRender(){
  const s=cloudBackupState,locked=!cloudBackupAvailable||cloudBackupReading||cloudBackupWriting||cloudBackupNeedsRead;
+ $('cloud-backup-setup').hidden=cloudBackupSetupRevision===null;
+ $('cloud-backup-setup-title').textContent=cloudBackupSetupRevision?'修改備份目的地':'設定備份目的地';
+ $('cloud-backup-connect').disabled=cloudBackupSetupRevision===null||cloudBackupReading||cloudBackupWriting||cloudBackupNeedsRead||!!(cloudBackupAvailable&&s?.active_id);
  $('cloud-backup-refresh').disabled=cloudBackupReading||cloudBackupWriting;$('cloud-backup-policy').hidden=!s;
  for(const id of ['cloud-backup-enabled','cloud-backup-interval','cloud-backup-keep-local'])$(id).disabled=cloudBackupWriting||!cloudBackupState;
  $('cloud-backup-save').disabled=!cloudBackupCanSave();$('cloud-backup-discard').disabled=cloudBackupReading||cloudBackupWriting||!s;
@@ -42,7 +62,7 @@ function cloudBackupRender(){
  $('cloud-backup-draft').textContent=stale?'設定已被其他操作更新，草稿仍保留；請明確放棄草稿後再編輯。':cloudBackupNeedsRead?'操作結果尚待讀取，請先重新讀取狀態。':cloudBackupDraft?.dirty?'有尚未保存的設定。':s&&!s.policy.binding_valid?'目的地尚未確認綁定，定時備份不會執行。':'';
  if(!s)return;
  const details=$('cloud-backup-details');details.replaceChildren();const row=(title,value)=>details.append(el('dt',title),el('dd',value));
- row('目的地',s.destination);row('最近已驗證快照',s.last_snapshot_at?new Date(s.last_snapshot_at).toLocaleString():'尚無已驗證快照');row('最近驗證完成',s.last_success_at?new Date(s.last_success_at).toLocaleString():'尚無成功紀錄');row('金鑰另存',s.key_recovery_confirmed?'你已確認另存備份密碼與金鑰':'需要先在主機確認另行保存');row('定時備份',s.policy.enabled&&s.policy.binding_valid?'已啟用 · 每 '+s.policy.interval_minutes+' 分鐘':'未啟用');
+ row('目的地',s.destination);row('最近已驗證快照',s.last_snapshot_at?new Date(s.last_snapshot_at).toLocaleString():'尚無已驗證快照');row('最近驗證完成',s.last_success_at?new Date(s.last_success_at).toLocaleString():'尚無成功紀錄');row('金鑰另存',s.key_recovery_confirmed?(cloudBackupSetupRevision?'已確認另存 ModelAtlas 主金鑰':'已確認另存備份密碼與金鑰'):'需要先在主機確認另行保存');row('定時備份',s.policy.enabled&&s.policy.binding_valid?'已啟用 · 每 '+s.policy.interval_minutes+' 分鐘':'未啟用');
  const history=$('cloud-backup-history');history.replaceChildren();
  for(const j of [...cloudBackupRows.values()].sort((a,b)=>b.sequence-a.sequence)){
   const box=el('article',undefined,'card');box.append(el('h3',cloudBackupStates[j.state]),el('p',j.destination+' · '+new Date(j.snapshot_at||j.created_at).toLocaleString()));
@@ -71,7 +91,9 @@ async function loadCloudBackups(discard=false,before=0,poll=false){
  try{
   const lookup=cloudBackupRequestID||cloudBackupState?.active_id,params=new URLSearchParams();if(before)params.set('before',String(before));if(lookup)params.set('id',lookup);let missingOriginal=false,state;try{state=await api('/backup/cloud'+(params.size?'?'+params:''));}catch(error){if(error.status!==404||!cloudBackupRequestID)throw error;state=await api('/backup/cloud');missingOriginal=true;}
   if(!cloudBackupValidState(state))throw Error('無法辨識完整備份狀態，請重新讀取。');
+  cloudBackupSetupRevision=typeof state.setup_revision==='string'?state.setup_revision:null;
   cloudBackupAvailable=state.configured&&state.available;
+  if(!state.configured)cloudBackupNeedsRead=false;
   if(!state.configured){$('cloud-backup-summary').textContent=state.reason;if(!cloudBackupState)$('cloud-backup-history').replaceChildren();else{$('cloud-backup-problem').textContent='主機目前沒有可用備份設定，以下保留上次結果與草稿。';$('cloud-backup-problem').hidden=false;}return true;}
   if(cloudBackupRequestID&&cloudBackupRequestFingerprint!==state.fingerprint)throw Error('備份目的地已變更，請重新開啟此頁；原操作不會轉送到另一目的地。');if(cloudBackupRequestID&&!missingOriginal&&(!state.recovered_job||state.recovered_job.id!==cloudBackupRequestID))throw Error('尚未讀到原識別碼的結果，沒有重新送出備份。');
   if(cloudBackupState&&cloudBackupState.fingerprint!==state.fingerprint){cloudBackupRows.clear();cloudBackupEventPages.clear();cloudBackupOpenEvents.clear();cloudBackupNextBefore=null;}cloudBackupState=state;cloudBackupNeedsRead=false;if(cloudBackupNextBefore===null||before||!poll)cloudBackupNextBefore=state.next_before;
@@ -82,6 +104,40 @@ async function loadCloudBackups(discard=false,before=0,poll=false){
  }catch(error){cloudBackupAvailable=false;$('cloud-backup-problem').textContent=(cloudBackupState?'讀取失敗，保留上次結果與草稿。 ':'')+error.message;$('cloud-backup-problem').hidden=false;return false;}
  finally{cloudBackupReading=false;cloudBackupRender();if(cloudBackupState?.active_id&&currentPane==='settings'&&!$('settings-data').hidden)cloudBackupTimer=setTimeout(()=>loadCloudBackups(false,0,true),1500);}
 }
+const cloudBackupDestinationForm=$('cloud-backup-destination');
+function cloudBackupEndpointHint(){
+ const fields=cloudBackupDestinationForm.elements;
+ fields.endpoint.placeholder=fields.provider.value==='b2'?'https://s3.us-west-004.backblazeb2.com':'https://帳戶ID.r2.cloudflarestorage.com';
+}
+cloudBackupDestinationForm.elements.provider.addEventListener('change',cloudBackupEndpointHint);
+cloudBackupDestinationForm.addEventListener('submit',async event=>{
+ event.preventDefault();
+ if($('cloud-backup-connect').disabled)return;
+ const form=cloudBackupDestinationForm;
+ const data=Object.fromEntries(new FormData(form));
+ data.revision=cloudBackupSetupRevision;
+ data.key_recovery_confirmed=form.elements.key_recovery_confirmed.checked;
+ cloudBackupWriting=true;
+ $('cloud-backup-problem').hidden=true;
+ cloudBackupRender();
+ let saved=false;
+ try{
+  const result=await submit('/backup/cloud/destination',data);
+  if(result?.configured!==true)throw Error('目的地狀態尚待確認。');
+  form.reset();
+  cloudBackupEndpointHint();
+  $('cloud-backup-setup').open=false;
+  saved=true;
+ }catch(error){
+  cloudBackupNeedsRead=!error.status||error.status===409||error.status>=500;
+  $('cloud-backup-problem').textContent=error.message;
+  $('cloud-backup-problem').hidden=false;
+ }finally{
+  cloudBackupWriting=false;
+  cloudBackupRender();
+ }
+ if(saved&&await loadCloudBackups())notice('已儲存目的地。可以開始第一次備份。');
+});
 for(const id of ['cloud-backup-enabled','cloud-backup-interval','cloud-backup-keep-local'])$(id).addEventListener('input',()=>{if(!cloudBackupDraft)return;cloudBackupDraft.enabled=$('cloud-backup-enabled').checked;cloudBackupDraft.interval=$('cloud-backup-interval').value;cloudBackupDraft.keep_local=$('cloud-backup-keep-local').checked;cloudBackupDraft.dirty=true;cloudBackupRender();});
 $('cloud-backup-policy').addEventListener('submit',async event=>{
  event.preventDefault();if(!cloudBackupCanSave())return;const d={...cloudBackupDraft};cloudBackupWriting=true;cloudBackupRender();let saved=false;

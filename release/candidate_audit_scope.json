@@ -166,6 +166,7 @@
     "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed": "pass",
     "TestPortableCloudCommandsRequirePrivateIdentityAndExplicitKeyRecovery": "pass",
     "TestPortableCloudActualScheduleIdempotenceFetchAndCancellation": "skip",
+    "TestPortableManagedCloudBackupConfigurationAndRecovery": "skip",
     "TestPortableOnlineBackupKeepsLiveWriterAndConsistentCompleteHistory": "pass",
     "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup": "pass",
     "TestPortableCloudParentCrashStopsOwnedTransferAndRecoversUncertainty": "skip",

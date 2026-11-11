@@ -78,11 +78,7 @@ func (s *Server) managementToolRoutes(api *http.ServeMux) {
 	api.HandleFunc("GET /system", s.systemStatus)
 	api.HandleFunc("GET /providers/proxy", s.getProviderProxy)
 	api.HandleFunc("POST /providers/proxy", s.saveProviderProxy)
-	api.HandleFunc("GET /backup/cloud", s.getCloudBackup)
-	api.HandleFunc("GET /backup/cloud/events", s.getCloudBackupEvents)
-	api.HandleFunc("POST /backup/cloud/policy", s.saveCloudBackupPolicy)
-	api.HandleFunc("POST /backup/cloud/run", s.startCloudBackup)
-	api.HandleFunc("POST /backup/cloud/cancel", s.cancelCloudBackup)
+	s.cloudBackupRoutes(api)
 }
 
 func (s *Server) workspacePeerRoutes(root *http.ServeMux) {

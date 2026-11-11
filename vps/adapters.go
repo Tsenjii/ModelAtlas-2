@@ -385,9 +385,7 @@ func (s *Server) workerTick(ctx context.Context) {
 		return
 	}
 	if s.distribution {
-		if s.backups != nil {
-			s.backups.tick(ctx)
-		}
+		s.tickCloudBackup(ctx)
 		return
 	}
 	s.backgroundTick(ctx)

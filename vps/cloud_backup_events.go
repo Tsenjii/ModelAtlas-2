@@ -15,7 +15,8 @@ type cloudBackupEvent struct {
 }
 
 func (s *Server) getCloudBackupEvents(w http.ResponseWriter, r *http.Request) {
-	m := s.backups
+	m, release := s.useCloudBackup()
+	defer release()
 	if m == nil || m.db == nil {
 		http.Error(w, "備份紀錄暫時無法讀取。", 503)
 		return
