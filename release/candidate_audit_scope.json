@@ -101,6 +101,7 @@
     "TestBrowserDistributionWorkflow": "skip",
     "TestGatewayDistributionWorkflow": "pass",
     "TestGatewayModelRequestHeadersStayWithConnection": "pass",
+    "TestGatewayOfferingSortKeepsScopeAndMissingMetrics": "pass",
     "TestGatewayKeyPolicyEnforced": "pass",
     "TestGatewayRememberBrowser": "pass",
     "TestGatewayUsageIntervalsAndSources": "pass",
