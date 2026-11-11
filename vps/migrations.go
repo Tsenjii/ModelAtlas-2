@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 44
+const schemaVersion = 45
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -391,6 +391,17 @@ func migrate(db *sql.DB) error {
 	}
 	if version < 44 {
 		if _, err = tx.Exec(providerProxySchema + "PRAGMA user_version=44;"); err != nil {
+			return err
+		}
+	}
+	if version < 45 {
+		if _, err = tx.Exec(`
+            ALTER TABLE provider_proxies ADD COLUMN mode TEXT NOT NULL DEFAULT 'DIRECT' CHECK(mode IN('DIRECT','PROXY'));
+            UPDATE provider_proxies SET mode='PROXY'
+                WHERE COALESCE((SELECT json_extract(config_json,'$.proxy_required') FROM provider_config
+                    WHERE provider_id=provider_proxies.provider_id),0)=1;
+            PRAGMA user_version=45;
+        `); err != nil {
 			return err
 		}
 	}

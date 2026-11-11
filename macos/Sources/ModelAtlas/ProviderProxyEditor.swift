@@ -32,7 +32,7 @@ import SwiftUI
                     .disabled(busy)
                 Text("支援 HTTP、HTTPS 和 SOCKS5，可填入含帳密的網址。留空沿用已儲存的代理。")
                     .font(.caption).foregroundStyle(.secondary)
-                Text("代理位址保存在這台 Mac。")
+                Text("連線方式與代理位址保存在這台 Mac。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             HStack {

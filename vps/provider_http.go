@@ -164,10 +164,15 @@ func (s *Server) doProviderRequest(request *http.Request, p Provider, cfg Provid
 	network := providerNetwork{Mode: "DIRECT"}
 	status := providerProxyStatus{Mode: "DIRECT"}
 	var err error
-	if cfg.ProxyRequired {
-		network.Mode = "PROXY"
-		status, err = s.providerProxy(request.Context(), p.ID, true)
-		if err != nil || !status.Configured || status.target == nil {
+	if p.ID != "" || cfg.ProxyRequired {
+		status, err = s.providerProxy(request.Context(), p.ID, cfg.ProxyRequired)
+		if err != nil {
+			return nil, network, errors.New("provider proxy unavailable")
+		}
+	}
+	network.Mode = status.Mode
+	if status.Mode == "PROXY" {
+		if !status.Configured || status.target == nil {
 			return nil, network, &providerReadError{Code: "PROXY_NOT_CONFIGURED"}
 		}
 		network.Revision = status.Revision

@@ -68,8 +68,8 @@ func (s *Server) providerProxy(ctx context.Context, id string, required bool) (p
 		status.Mode = "PROXY"
 	}
 	err := s.Store.DB.QueryRowContext(ctx,
-		"SELECT encrypted_url,revision FROM provider_proxies WHERE provider_id=?", id).
-		Scan(&status.encrypted, &status.Revision)
+		"SELECT encrypted_url,revision,mode FROM provider_proxies WHERE provider_id=?", id).
+		Scan(&status.encrypted, &status.Revision, &status.Mode)
 	if errors.Is(err, sql.ErrNoRows) {
 		return status, nil
 	}
@@ -77,7 +77,7 @@ func (s *Server) providerProxy(ctx context.Context, id string, required bool) (p
 		return status, err
 	}
 	status.Configured = status.encrypted != ""
-	if !required || !status.Configured {
+	if status.Mode == "DIRECT" || !status.Configured {
 		return status, nil
 	}
 	raw, err := s.decrypt(status.encrypted)
@@ -131,9 +131,9 @@ func (s *Server) saveProviderProxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg := s.config(ctx, p)
-	cfg.ProxyRequired = in.Mode == "PROXY"
+	cfg.ProxyRequired = cfg.ProxyRequired || in.Mode == "PROXY"
 	var replacement string
-	if cfg.ProxyRequired && strings.TrimSpace(in.URL) != "" {
+	if in.Mode == "PROXY" && strings.TrimSpace(in.URL) != "" {
 		target, err := parseProviderProxy(strings.TrimSpace(in.URL))
 		if err != nil {
 			http.Error(w, "invalid provider proxy URL", 400)
@@ -165,7 +165,7 @@ func (s *Server) saveProviderProxy(w http.ResponseWriter, r *http.Request) {
 	if replacement != "" {
 		encrypted = replacement
 	}
-	if cfg.ProxyRequired && encrypted == "" {
+	if in.Mode == "PROXY" && encrypted == "" {
 		http.Error(w, "provider proxy URL required", 422)
 		return
 	}
@@ -174,9 +174,9 @@ func (s *Server) saveProviderProxy(w http.ResponseWriter, r *http.Request) {
 		ON CONFLICT(provider_id) DO UPDATE SET config_json=json_set(provider_config.config_json,'$.proxy_required',json(?))`,
 		p.ID, string(raw), strconv.FormatBool(cfg.ProxyRequired))
 	if err == nil {
-		_, err = tx.ExecContext(ctx, `INSERT INTO provider_proxies VALUES(?,?,?,?)
-			ON CONFLICT(provider_id) DO UPDATE SET encrypted_url=excluded.encrypted_url,revision=excluded.revision,updated_at=excluded.updated_at`,
-			p.ID, encrypted, revision+1, now())
+		_, err = tx.ExecContext(ctx, `INSERT INTO provider_proxies(provider_id,encrypted_url,revision,updated_at,mode) VALUES(?,?,?,?,?)
+            ON CONFLICT(provider_id) DO UPDATE SET encrypted_url=excluded.encrypted_url,revision=excluded.revision,updated_at=excluded.updated_at,mode=excluded.mode`,
+			p.ID, encrypted, revision+1, now(), in.Mode)
 	}
 	if err != nil || tx.Commit() != nil {
 		http.Error(w, "database error", 500)

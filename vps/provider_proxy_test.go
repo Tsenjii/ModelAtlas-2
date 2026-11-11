@@ -285,6 +285,12 @@ func TestProviderProxyVaultConflictExportAndMissingDeviceBinding(t *testing.T) {
 	}), 201)
 	proxyURL := proxyFixtureURL(t, "http://127.0.0.1:7890")
 	saveProxyFixture(t, s, upstream.ProviderID, proxyURL, 0)
+	if _, err := s.Store.DB.Exec("ALTER TABLE provider_proxies DROP COLUMN mode; PRAGMA user_version=44"); err != nil {
+		t.Fatal(err)
+	}
+	if err := migrate(s.Store.DB); err != nil {
+		t.Fatal("existing encrypted proxy migration failed", err)
+	}
 	status := req(t, s, "GET", "/api/v1/providers/proxy?provider_id="+upstream.ProviderID, nil)
 	requireCode(t, status, 200)
 	if strings.Contains(status.Body.String(), fixtureProxyPassword) || strings.Contains(status.Body.String(), fixtureProxyUser) {
@@ -433,5 +439,17 @@ func TestProviderProxySyncKeepsDeviceBindingsSeparate(t *testing.T) {
 	remote, err := peer.providerProxy(context.Background(), selection.ProviderID, true)
 	if err != nil || remote.URL != "socks5://127.0.0.1:1080" {
 		t.Fatal("peer proxy binding was not retained", err)
+	}
+	requireCode(t, req(t, peer, "POST", "/api/v1/providers/proxy", map[string]any{
+		"provider_id": selection.ProviderID, "mode": "DIRECT", "revision": remote.Revision,
+	}), 200)
+	workspaceRunForTest(t, peer)
+	local, err = hub.providerProxy(context.Background(), selection.ProviderID, true)
+	if err != nil || local.Mode != "PROXY" {
+		t.Fatal("peer direct mode disabled the hub proxy", err)
+	}
+	remote, err = peer.providerProxy(context.Background(), selection.ProviderID, true)
+	if err != nil || remote.Mode != "DIRECT" {
+		t.Fatal("peer did not retain its explicit direct route", err)
 	}
 }

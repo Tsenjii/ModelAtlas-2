@@ -272,12 +272,12 @@
   <form id="provider-proxy-form" class="stack">
     <div class="section-inline"><h2 id="provider-proxy-title">連線設定</h2><button type="button" class="icon-button" data-close="provider-proxy-dialog" aria-label="關閉連線設定"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
     <p id="provider-proxy-scope" class="quiet"></p>
-    <label>連線方式<select name="mode"><option value="DIRECT">直連</option><option value="PROXY">指定代理</option></select></label>
+    <label><span id="provider-proxy-mode-label">連線方式</span><select name="mode" aria-labelledby="provider-proxy-mode-label"><option value="DIRECT">直連</option><option value="PROXY">指定代理</option></select></label>
     <div id="provider-proxy-fields" class="stack" hidden>
       <p id="provider-proxy-current" class="quiet" hidden></p>
       <label>代理網址<input name="proxy_url" type="password" autocomplete="new-password" maxlength="4096" placeholder="http://主機:埠 或 socks5://主機:埠" aria-describedby="provider-proxy-help"></label>
       <p id="provider-proxy-help" class="quiet">可填入含帳密的代理網址。留空沿用已儲存的代理。</p>
-      <p class="quiet">代理位址保存在目前裝置。</p>
+      <p class="quiet">連線方式與代理位址保存在目前裝置。</p>
     </div>
     <button type="submit" class="primary"><svg aria-hidden="true"><use href="#icon-check"/></svg>儲存連線設定</button>
   </form>
