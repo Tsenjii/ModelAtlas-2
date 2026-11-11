@@ -99,18 +99,21 @@ func (s *Server) gatewayModelGroups(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	limit, offset := pageRange(r, 40)
 	term, provider := strings.TrimSpace(q.Get("q")), q.Get("provider_id")
-	rows, err := s.Store.DB.QueryContext(r.Context(), gatewayCatalogSQL+`, page AS (
+	// Resolve the filtered catalog once. Inlining it in the page join can
+	// repeat the catalog joins and canonical ID calculation for every group.
+	rows, err := s.Store.DB.QueryContext(r.Context(), gatewayCatalogSQL+`, filtered AS MATERIALIZED (
+		SELECT * FROM scopes WHERE (?='' OR canonical_id=?) AND (?='' OR provider_id=?)
+	), page AS (
 		SELECT canonical_id,COALESCE(MIN(NULLIF(display_name,model_id)),MIN(model_id)) AS name,
 			COUNT(DISTINCT provider_id) AS providers,COUNT(*) AS connections
-		FROM scopes WHERE (?='' OR canonical_id=?) AND (?='' OR provider_id=?) GROUP BY canonical_id
+		FROM filtered GROUP BY canonical_id
 		HAVING MAX(instr(lower(display_name||' '||model_id||' '||provider),lower(?)))>0 OR instr(lower(canonical_id),atlas_canonical_id(?))>0
 		ORDER BY name COLLATE NOCASE,canonical_id LIMIT ? OFFSET ?)
 		SELECT page.canonical_id,page.name,page.providers,page.connections,
 			m.operation,m.model_category,m.image_output,m.enabled AND m.current_group,`+gatewayTermColumns+`
-		FROM page JOIN scopes m ON m.canonical_id=page.canonical_id
-		WHERE (?='' OR m.provider_id=?)
+		FROM page JOIN filtered m ON m.canonical_id=page.canonical_id
 		ORDER BY page.name COLLATE NOCASE,page.canonical_id,m.scope_key`,
-		q.Get("id"), q.Get("id"), provider, provider, term, term, limit+1, offset, provider, provider)
+		q.Get("id"), q.Get("id"), provider, provider, term, term, limit+1, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return

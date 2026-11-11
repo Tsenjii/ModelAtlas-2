@@ -290,9 +290,15 @@ func TestGatewayDistributionWorkflow(t *testing.T) {
 	requireCode(t, req(t, s, "POST", admin+"/model-group", map[string]string{
 		"provider_id": b.ProviderID, "model_id": routeB.ModelID, "canonical_id": "family-model",
 	}), 200)
-	groups := gatewayDecode[struct{ Models []gatewayModelGroup }](t, req(t, s, "GET", admin+"/model-groups?provider_id="+a.ProviderID+"&q=family-model", nil), 200)
-	if len(groups.Models) != 1 || groups.Models[0].Providers != 2 || groups.Models[0].Connections != 2 {
-		t.Fatalf("same model did not group both sites: %+v", groups.Models)
+	readGroups := func(query string) []gatewayModelGroup {
+		return gatewayDecode[struct{ Models []gatewayModelGroup }](t, req(t, s, "GET", admin+"/model-groups?"+query, nil), 200).Models
+	}
+	if groups := readGroups("q=family-model"); len(groups) != 1 || groups[0].Providers != 2 || groups[0].Connections != 2 {
+		t.Fatalf("same model did not group both sites: %+v", groups)
+	}
+	if groups := readGroups("q=family-model&provider_id=" + a.ProviderID); len(groups) != 1 ||
+		groups[0].ID != "family-model" || groups[0].Providers != 1 || groups[0].Connections != 1 {
+		t.Fatalf("provider filter did not preserve the selected model group and its local connections: %+v", groups)
 	}
 	for _, v := range []Selection{routeA, routeB} {
 		for i := 0; i < 3; i++ {
