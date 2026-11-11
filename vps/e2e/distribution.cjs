@@ -936,7 +936,7 @@ const fs = require("node:fs/promises");
     await page.getByRole("button", {name: "返回我的模型", exact: true}).click();
     await tile.getByText("最高 20 次／日", {exact: true}).waitFor();
 
-    const modelType = modelFilter.getByLabel("模型類型", {exact: true});
+    const modelType = modelFilter.getByRole("combobox", {name: "模型類型", exact: true});
     const imageTile = page.locator("#model-list").getByRole("button", {name: /gpt-image-fixture/});
     await filterTrigger.click();
     await modelType.selectOption("text");
