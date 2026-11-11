@@ -23,9 +23,9 @@ function gatewayTermsLabel(terms) {
   if (!terms) return "";
   let price = terms.varied_price ? "查看價格" : gatewayPriceLabel(terms.price);
   let daily = gatewayDailyLabel(terms.daily);
+  if (terms.connections && terms.price?.free) price = "";
   if (terms.connections > 1) {
-    if (terms.price?.free) price = "有免費連線";
-    else if (terms.price?.legs.unit === "USD/request") price = "最低" + (terms.price.basis === "NOMINAL" ? "" : " ") + price;
+    if (price && terms.price?.legs.unit === "USD/request") price = "最低" + (terms.price.basis === "NOMINAL" ? "" : " ") + price;
     if (daily) daily = "最高 " + daily;
   }
   return [price, daily].filter(Boolean).join(" · ");

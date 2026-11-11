@@ -81,8 +81,7 @@
         <div class="line-meta">
           <span id="model-count" role="status"></span>
           <div class="model-actions model-directory-actions">
-            <select id="model-type" aria-label="模型類型"><option value="all">全部類型</option><option value="text">文字</option><option value="image">圖片生成</option><option value="image-edit">圖片編輯</option><option value="audio">語音</option><option value="other">其他</option></select>
-            <button id="brand-picker-trigger" class="link-button" type="button" aria-haspopup="dialog" aria-controls="brand-picker-dialog"><svg aria-hidden="true"><use href="#icon-model"/></svg><span>選擇品牌</span><svg class="brand-picker-caret" aria-hidden="true"><use href="#icon-chevron"/></svg></button>
+            <button id="model-filter-trigger" class="link-button" type="button" aria-haspopup="dialog" aria-controls="model-filter-dialog"><svg aria-hidden="true"><use href="#icon-filter"/></svg>篩選模型</button>
             <a class="link-button" href="/tools/models"><svg aria-hidden="true"><use href="#icon-search"/></svg>模型目錄</a>
           </div>
         </div>
@@ -222,12 +221,30 @@
   </section>
 </main>
 
-<dialog id="brand-picker-dialog" aria-labelledby="brand-picker-title">
-  <header class="brand-picker-heading">
-    <h2 id="brand-picker-title">選擇品牌</h2>
-    <button type="button" class="icon-button" data-close="brand-picker-dialog" aria-label="關閉品牌選擇" autofocus><svg aria-hidden="true"><use href="#icon-close"/></svg></button>
+<dialog id="model-filter-dialog" aria-labelledby="model-filter-title">
+  <header class="model-filter-heading">
+    <h2 id="model-filter-title">篩選模型</h2>
+    <button type="button" class="icon-button" data-close="model-filter-dialog" aria-label="關閉模型篩選" autofocus><svg aria-hidden="true"><use href="#icon-close"/></svg></button>
   </header>
-  <div id="brand-picker-choices"></div>
+  <div class="model-filter-body">
+    <label>模型類型
+      <select id="model-type">
+        <option value="all">全部類型</option>
+        <option value="text">文字</option>
+        <option value="image">圖片生成</option>
+        <option value="image-edit">圖片編輯</option>
+        <option value="audio">語音</option>
+        <option value="other">其他</option>
+      </select>
+    </label>
+    <section aria-labelledby="model-filter-brand-title">
+      <h3 id="model-filter-brand-title">模型品牌</h3>
+      <div id="brand-picker-choices"></div>
+    </section>
+  </div>
+  <footer class="model-filter-footer">
+    <button type="button" class="primary" data-close="model-filter-dialog">完成</button>
+  </footer>
 </dialog>
 
 <dialog id="upstream-dialog" aria-labelledby="upstream-dialog-title">

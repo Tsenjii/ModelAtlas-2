@@ -299,8 +299,7 @@ function updateModelBrandOptions(params) {
   brandCounts = counts;
   brandProviderID = providerID;
   if (!counts.has(management.modelBrand)) management.modelBrand = "";
-  renderBrandPickerTrigger();
-  if ($("brand-picker-dialog").open) renderBrandChoices();
+  if ($("model-filter-dialog").open) renderBrandChoices();
 }
 
 function brandPickerIcon(brand) {
@@ -308,15 +307,6 @@ function brandPickerIcon(brand) {
   const mark = icon("brand-" + brand, "/gateway-model-brands.svg");
   mark.classList.add("brand-picker-logo");
   return mark;
-}
-
-function renderBrandPickerTrigger() {
-  const trigger = $("brand-picker-trigger");
-  const brand = management.modelBrand;
-  const name = brand ? modelBrandLabels.get(brand) : "選擇品牌";
-  trigger.firstElementChild.replaceWith(brandPickerIcon(brand));
-  trigger.querySelector("span").textContent = name;
-  trigger.setAttribute("aria-label", brand ? "選擇品牌，目前為 " + name : name);
 }
 
 function renderBrandChoices() {
@@ -330,10 +320,7 @@ function renderBrandChoices() {
     if (!brandCounts.has(brand)) continue;
     const choice = button("", () => {
       management.modelBrand = brand;
-      management.groupLimit = modelGroupPageSize;
-      renderBrandPickerTrigger();
-      renderModelGroups();
-      $("brand-picker-dialog").close();
+      applyModelFilters();
     });
     choice.className = "brand-picker-choice";
     choice.dataset.brand = brand;
@@ -354,8 +341,14 @@ function renderBrandChoices() {
   }
   grid.replaceChildren(...choices);
   if (focused !== undefined) {
-    (choices.find(choice => choice.dataset.brand === focused) || choices[0]).focus({preventScroll: true});
+    (choices.find(choice => choice.dataset.brand === focused) || choices[0])?.focus({preventScroll: true});
   }
+}
+
+function applyModelFilters() {
+  management.groupLimit = modelGroupPageSize;
+  renderModelGroups();
+  renderBrandChoices();
 }
 
 function modelGroupsByType() {
@@ -365,6 +358,10 @@ function modelGroupsByType() {
 
 function renderModelGroups() {
   const type = $("model-type").value;
+  const trigger = $("model-filter-trigger");
+  const active = type !== "all" || !!management.modelBrand;
+  trigger.toggleAttribute("data-active", active);
+  trigger.setAttribute("aria-label", active ? "篩選模型，已套用篩選" : "篩選模型");
   const matches = modelGroupsByType().filter(group => !management.modelBrand || group.brand === management.modelBrand);
   const visible = matches.slice(0, management.groupLimit);
   $("models-more").hidden = visible.length === matches.length;
@@ -873,14 +870,11 @@ $("clear-model-provider").addEventListener("click", () => action(null, () => {
   state.modelProvider = null;
   return loadGroups(true);
 }));
-$("brand-picker-trigger").addEventListener("click", () => {
+$("model-filter-trigger").addEventListener("click", () => {
   renderBrandChoices();
-  $("brand-picker-dialog").showModal();
+  $("model-filter-dialog").showModal();
 });
-$("model-type").addEventListener("change", () => {
-  management.groupLimit = modelGroupPageSize;
-  renderModelGroups();
-});
+$("model-type").addEventListener("change", applyModelFilters);
 for (const [id, load, abort] of [
   ["model", loadGroups, () => groupRead?.abort()], ["provider", loadProviderList, () => providerRead?.abort()]
 ]) {

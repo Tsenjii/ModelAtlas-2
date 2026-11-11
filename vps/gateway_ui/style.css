@@ -151,10 +151,8 @@ code { font: .83rem/1.55 ui-monospace,SFMono-Regular,monospace; overflow-wrap: a
 .model-actions,#model-tool-links { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .model-actions.model-directory-actions { flex-basis: auto; margin-inline-start: auto; justify-content: flex-end; }
 .model-directory-actions > .link-button { white-space: nowrap; }
-#model-type { width: auto; max-width: 100%; }
-#brand-picker-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#model-filter-trigger[data-active] { color: var(--primary); background: var(--accent); border-color: var(--primary); }
 svg.brand-picker-logo { fill: currentColor; stroke: none; }
-#brand-picker-trigger .brand-picker-caret { transform: rotate(90deg); width: 13px; height: 13px; color: var(--muted); }
 .model-tool-menu { position: relative; }
 .model-tool-menu > summary {
   display: flex; align-items: center; gap: 6px; padding: 7px 10px;
@@ -307,18 +305,25 @@ dialog {
 }
 dialog::backdrop { background: #14243f66; backdrop-filter: blur(4px); }
 dialog h2 { margin: 0; }
-#brand-picker-dialog {
+#model-filter-dialog {
   width: min(570px,calc(100% - 24px)); max-width: none; max-height: min(82dvh,650px);
   padding: 0; overflow: hidden;
 }
-#brand-picker-dialog[open] { display: flex; flex-direction: column; }
-.brand-picker-heading {
+#model-filter-dialog[open] { display: flex; flex-direction: column; }
+.model-filter-heading {
   display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px 4px;
 }
-.brand-picker-heading h2 { font-size: 1.15rem; }
+.model-filter-heading h2 { font-size: 1.15rem; }
+.model-filter-body {
+  display: grid; gap: 12px; min-height: 0; overflow: auto; overscroll-behavior: contain;
+  padding: 6px 14px 14px;
+}
+.model-filter-body h3 { margin: 0 0 5px; font-size: .83rem; }
+.model-filter-footer {
+  display: flex; justify-content: flex-end; padding: 8px 14px 12px; border-top: 1px solid var(--line);
+}
 #brand-picker-choices {
   display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,clamp(7rem,24vw,8.5rem)),1fr)); gap: 8px;
-  min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 6px 14px 14px;
 }
 .brand-picker-choice { justify-content: flex-start; text-align: start; min-height: 58px; padding: 7px; }
 .brand-picker-choice[aria-pressed="true"] { background: var(--accent); border-color: var(--primary); }
