@@ -102,9 +102,8 @@ func (s *Server) gatewayModelGroups(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.Store.DB.QueryContext(r.Context(), gatewayCatalogSQL+`, page AS (
 		SELECT canonical_id,COALESCE(MIN(NULLIF(display_name,model_id)),MIN(model_id)) AS name,
 			COUNT(DISTINCT provider_id) AS providers,COUNT(*) AS connections
-		FROM scopes WHERE (?='' OR canonical_id=?) GROUP BY canonical_id
-		HAVING (?='' OR MAX(provider_id=?)=1) AND
-			(MAX(instr(lower(display_name||' '||model_id||' '||provider),lower(?)))>0 OR instr(lower(canonical_id),atlas_canonical_id(?))>0)
+		FROM scopes WHERE (?='' OR canonical_id=?) AND (?='' OR provider_id=?) GROUP BY canonical_id
+		HAVING MAX(instr(lower(display_name||' '||model_id||' '||provider),lower(?)))>0 OR instr(lower(canonical_id),atlas_canonical_id(?))>0
 		ORDER BY name COLLATE NOCASE,canonical_id LIMIT ? OFFSET ?)
 		SELECT page.canonical_id,page.name,page.providers,page.connections,
 			m.operation,m.model_category,m.image_output,m.enabled AND m.current_group,`+gatewayTermColumns+`

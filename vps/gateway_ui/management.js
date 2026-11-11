@@ -82,7 +82,9 @@ function removeOffer(v) {
       $("offer-detail").close();
       pruneDraft(route => scopeID(route) === scopeID(v));
       if (state.modelGroup !== group) return;
-      const next = await api("/gateway/model-groups?" + new URLSearchParams({id: group.id, limit: 1}));
+      const next = await api("/gateway/model-groups?" + new URLSearchParams({
+        id: group.id, limit: 1, provider_id: state.modelProvider?.id ?? ""
+      }));
       if (state.modelGroup !== group) return;
       state.modelGroup = next.models[0] ?? null;
       state.offers = [];
@@ -91,7 +93,7 @@ function removeOffer(v) {
 }
 $("remove-model-group").addEventListener("click", () => {
   const group = state.modelGroup;
-  if (!group || offerBatch?.running || offerTests.size) return;
+  if (!group || state.modelProvider || offerBatch?.running || offerTests.size) return;
   const known = new Set(state.offers.map(scopeID));
   confirmRemoval("刪除整組模型", group.name,
     "會移除整組連線，含已封存的連線。 " + removeConnectionImpact,
@@ -113,7 +115,11 @@ function removeProviderItem(kind, label, scope) {
       (!scope.credential_id || route.credential_id === scope.credential_id));
     if (kind === "PROVIDER" && state.providerID === scope.provider_id) {
       state.providerID = "";
-      if (state.modelProvider?.id === scope.provider_id) state.modelProvider = null;
+      if (state.modelProvider?.id === scope.provider_id) {
+        state.modelProvider = null;
+        state.modelGroup = null;
+        state.offers = [];
+      }
     }
     await showProviderView();
   });
@@ -251,6 +257,8 @@ async function showModelView() {
     $("route-pick").hidden = true;
     $("remove-model-group").hidden = true;
     if (!state.offers.length) {
+      $("model-tool-menu").hidden = true;
+      $("model-tool-menu").open = false;
       $("offer-count").textContent = "";
       $("offer-list").replaceChildren(empty("讀取連線中…"));
       $("offers-more").hidden = true;
@@ -393,7 +401,8 @@ async function loadOffers(reset, limit = 50) {
   const read = new AbortController();
   offerRead = read;
   const params = new URLSearchParams({
-    limit: String(limit), offset: String(reset ? 0 : state.offers.length), canonical_id: group.id, sort: $("offer-sort").value
+    limit: String(limit), offset: String(reset ? 0 : state.offers.length), canonical_id: group.id,
+    sort: $("offer-sort").value, provider_id: state.modelProvider?.id ?? ""
   });
   $("offer-list").setAttribute("aria-busy", "true");
   $("offers-more").disabled = true;
@@ -485,11 +494,13 @@ function renderOffers() {
     return row;
   });
   const group = state.modelGroup;
-  $("model-tool-menu").hidden = !state.offers.length;
-  $("remove-model-group").hidden = !state.offers.length;
+  const provider = state.modelProvider;
+  $("remove-model-group").hidden = !!provider || !state.offers.length;
   $("route-pick").hidden = !state.offers.some(v => v.operation === "CHAT_COMPLETIONS");
+  $("model-tool-menu").hidden = $("remove-model-group").hidden && $("route-pick").hidden;
   $("route-pick").setAttribute("aria-pressed", String(state.routePicking));
-  $("offer-count").textContent = group.providers + " 家供應商 · " + group.connections + " 個連線";
+  const scopeLabel = provider ? provider.name : group.providers + " 家供應商";
+  $("offer-count").textContent = scopeLabel + " · " + group.connections + " 個連線";
   $("offer-list").replaceChildren(...(cards.length ? cards : [empty("這個模型目前沒有連線。")]));
   renderRoutes();
   renderOfferBatch();
@@ -818,6 +829,9 @@ function renderProvider() {
     state.modelProvider = p;
     management.modelBrand = "";
     $("model-search").value = "";
+    $("model-count").textContent = "";
+    $("model-list").replaceChildren(empty("讀取模型中…"));
+    $("models-more").hidden = true;
     await showPage("models");
   }, {glyph: "model"}));
   if (p.requires_checkin) {

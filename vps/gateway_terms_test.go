@@ -68,7 +68,11 @@ func TestGatewayModelTermsStayWithConnection(t *testing.T) {
 	if saved.Terms.Price == nil || !saved.Terms.Price.Free || saved.Terms.Daily == nil || saved.Terms.Daily.Value != 0 {
 		t.Fatalf("explicit zeros lost: %+v", saved.Terms)
 	}
-	if read(b).Terms.Price != nil || group(b.ProviderID).Terms["all"].Daily != nil {
+	scoped := group(b.ProviderID)
+	if scoped.Providers != 1 || scoped.Connections != 1 {
+		t.Fatalf("provider filter counted connections from another provider: %+v", scoped)
+	}
+	if read(b).Terms.Price != nil || scoped.Terms["all"].Daily != nil {
 		t.Fatal("provider filter borrowed another connection's terms")
 	}
 	save(a, before.Revision, fixed, &twenty, 409)
