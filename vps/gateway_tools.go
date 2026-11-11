@@ -102,10 +102,18 @@ func (s *Server) gatewayRefreshOfferPrice(w http.ResponseWriter, r *http.Request
 
 // Public group prices are shown as a separate price list. An unknown key group
 // must never silently use one of these rates as its effective price.
+const gatewayPublicGroupQuote = `kind='NOMINAL_PRICE' AND source='NEW_API_OFFICIAL' AND status='SUCCESS'
+	AND json_valid(scope_key) AND json_valid(facts_json)`
+
+const gatewayPublicGroupIndex = `CREATE INDEX IF NOT EXISTS gateway_public_group_quotes ON observations(
+	json_extract(scope_key,'$.provider_id'),json_extract(scope_key,'$.account_id'),
+	json_extract(scope_key,'$.model_id'),json_extract(scope_key,'$.endpoint'),
+	json_extract(facts_json,'$.origin'),scope_key) WHERE ` + gatewayPublicGroupQuote
+
 func (s *Server) gatewayPublishedGroupPrices(ctx context.Context, offer gatewayOffering) []Observation {
 	rows, err := s.Store.DB.QueryContext(ctx, `SELECT scope_key,facts_json,observed_at FROM observations
 		WHERE rowid IN (SELECT MAX(rowid) FROM observations
-		WHERE kind='NOMINAL_PRICE' AND source='NEW_API_OFFICIAL' AND status='SUCCESS'
+		WHERE `+gatewayPublicGroupQuote+`
 		AND json_extract(scope_key,'$.provider_id')=? AND json_extract(scope_key,'$.account_id')=?
 		AND json_extract(scope_key,'$.model_id')=? AND json_extract(scope_key,'$.endpoint')=?
 		AND json_extract(facts_json,'$.origin')=? GROUP BY scope_key)

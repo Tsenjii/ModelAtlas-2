@@ -131,6 +131,11 @@ func TestGatewayUsageIntervalsAndSources(t *testing.T) {
 		all.Ranking[1] != (gatewayUsageRank{Source: "tests", Model: "probe-model", Requests: 1}) {
 		t.Fatalf("rank should count relay admission once: %+v", all.Ranking)
 	}
+	next := load("&source=all&limit=1&offset=1&items_only=1")
+	if !next.More || len(next.Items) != 1 || next.Items[0].ID != "cancelled" ||
+		next.Summary.Requests != 0 || next.Trend != nil || next.Ranking != nil {
+		t.Fatalf("record-only page should preserve the anchored order and omit aggregates: %+v", next)
+	}
 	failed := load("&source=all&key_id=key-a&status=failed&model=public")
 	if failed.Summary.Requests != 1 || failed.Summary.Input != nil || len(failed.Items) != 1 || failed.Items[0].ID != "failure" {
 		t.Fatalf("failure filter did not match chart and list: %+v", failed)

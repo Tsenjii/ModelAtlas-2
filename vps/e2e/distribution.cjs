@@ -443,9 +443,16 @@ const fs = require("node:fs/promises");
     await page.setViewportSize({ width: 402, height: 874 });
     await page.evaluate(() => window.scrollTo(0, 0));
     await shot("usage-402-light");
-    await page.locator("#usage-more").click();
+    await Promise.all([
+      page.waitForRequest(request => {
+        const url = new URL(request.url());
+        return url.pathname.endsWith("/gateway/usage") && url.searchParams.get("items_only") === "1";
+      }),
+      page.locator("#usage-more").click()
+    ]);
     await page.locator("#usage-count").getByText("已顯示 41 / 41 筆", { exact: true }).waitFor();
     assert.equal(await page.locator("#usage-list tbody tr").count(), 41);
+    assert.equal(await ranking.getByText("qwen-3-8-max", { exact: true }).count(), 1);
     await page.getByRole("button", { name: "Token", exact: true }).click();
     const plot = page.locator("#usage-chart .chart-svg");
     await plot.focus();

@@ -169,16 +169,20 @@ async function loadUsage(reset, draft = readUsageFilters()) {
   const offset = reset ? 0 : consoleState.items.length;
   const filter = reset ? draft : {...consoleState.filter, as_of: consoleState.usage.as_of};
   const params = new URLSearchParams({...filter, limit: "30", offset: String(offset)});
+  if (!reset) params.set("items_only", "1");
   $("usage-more").disabled = true;
   $("usage-list").setAttribute("aria-busy", "true");
   try {
     const data = await api("/gateway/usage?" + params, undefined, read.signal);
     if (consoleState.read !== read) return;
-    consoleState.usage = data;
-    if (reset) consoleState.filter = filter;
+    if (reset) {
+      consoleState.usage = data;
+      consoleState.filter = filter;
+    }
     consoleState.items = reset ? data.items : consoleState.items.concat(data.items);
     $("usage-more").hidden = !data.more;
-    renderUsage();
+    if (reset) renderUsage();
+    else renderUsageRows();
     return true;
   } finally {
     if (consoleState.read === read) {
@@ -219,7 +223,6 @@ function renderUsage() {
     item.append(head, meter(v.requests, max, v.model + " 調用量"));
     return item;
   }) : [empty("無模型請求。")]));
-  $("usage-count").textContent = "已顯示 " + number(consoleState.items.length) + " / " + number(summary.requests) + " 筆";
   renderTrend();
   renderUsageRows();
 }
@@ -312,6 +315,7 @@ function renderTrend() {
 }
 
 function renderUsageRows() {
+  $("usage-count").textContent = "已顯示 " + number(consoleState.items.length) + " / " + number(consoleState.usage.summary.requests) + " 筆";
   const list = $("usage-list");
   if (!consoleState.items.length) {
     list.replaceChildren(empty("這個範圍還沒有請求。"));

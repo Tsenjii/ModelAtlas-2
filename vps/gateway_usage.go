@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -49,35 +51,37 @@ type gatewayUsageRank struct {
 	Requests int    `json:"requests"`
 }
 
-const gatewayUsageSettled = "outcome NOT IN ('RUNNING','INTERRUPTED','CANCELLED')"
+const gatewayUsageSettled = "NOT IN ('RUNNING','INTERRUPTED','CANCELLED')"
 
 // Only explicit model tests join relay calls. The latter are counted from the
 // admission row once, even if two upstream attempts wrote telemetry.
-const gatewayUsageRows = `WITH activity AS (
-	SELECT g.id,'gateway' AS source,g.key_id,k.label AS key_label,g.model_id AS model,g.model_id AS model_group,
-		COALESCE(p.name,'') AS provider,COALESCE(t.model_id,'') AS upstream_model,g.outcome,g.created_at AS at,
-		g.http_status,t.status_code AS upstream_status,g.latency_ms,t.ttft_ms,t.input_tokens,t.output_tokens,g.attempts
-	FROM gateway_requests g JOIN gateway_keys k ON k.id=g.key_id
-	LEFT JOIN telemetry t ON t.id=g.sample_id LEFT JOIN providers p ON p.id=t.provider_id
-	WHERE :source<>'tests' AND g.created_at>=:since AND g.created_at<:until
-	UNION ALL
-	SELECT t.id,'tests','','',t.model_id,COALESCE(` + gatewayPreferredModelIDSQL + `,atlas_canonical_id(t.model_id)),
-		COALESCE(p.name,t.provider_id),t.model_id,t.outcome,t.created_at,
-		NULL,t.status_code,t.latency_ms,t.ttft_ms,t.input_tokens,t.output_tokens,1
-	FROM telemetry t LEFT JOIN providers p ON p.id=t.provider_id
-	LEFT JOIN model_metadata md ON md.provider_id=t.provider_id AND md.model_id=t.model_id
+const gatewayUsageRelayFrom = ` FROM gateway_requests g JOIN gateway_keys k ON k.id=g.key_id `
+
+var gatewayUsageRelayFilter = ` WHERE :source<>'tests' AND g.created_at>=:since AND g.created_at<:until
+	AND (:key='' OR g.key_id=:key) AND (:model='' OR instr(lower(g.model_id),lower(:model))>0)` + gatewayUsageOutcome("g.outcome")
+
+const gatewayUsageModelGroup = `COALESCE(` + gatewayPreferredModelIDSQL + `,atlas_canonical_id(t.model_id))`
+const gatewayUsageModelJoins = ` LEFT JOIN model_metadata md ON md.provider_id=t.provider_id AND md.model_id=t.model_id
 	LEFT JOIN knowledge_active ka ON ka.kind='MODEL_ALIAS_RULE' AND ka.subject=t.provider_id||'/'||t.model_id
-	LEFT JOIN knowledge_versions k ON k.id=ka.version_id
-	WHERE :source<>'gateway' AND t.source IN ('GATEWAY_TEST','MANUAL_TEST') AND t.created_at>=:since AND t.created_at<:until
-), filtered AS (
-	SELECT * FROM activity
-	WHERE (:key='' OR key_id=:key) AND (instr(lower(model),lower(:model))>0
-		OR source='tests' AND instr(lower(model_group),atlas_canonical_id(:model))>0)
-	AND CASE :status WHEN 'success' THEN outcome='SUCCESS'
-		WHEN 'failed' THEN outcome<>'SUCCESS' AND ` + gatewayUsageSettled + `
-		WHEN 'legacy_failure' THEN outcome NOT IN ('SUCCESS','RUNNING')
-		ELSE 1 END
-) `
+	LEFT JOIN knowledge_versions k ON k.id=ka.version_id `
+
+func gatewayUsageOutcome(field string) string {
+	return ` AND CASE :status WHEN 'success' THEN ` + field + `='SUCCESS'
+		WHEN 'failed' THEN ` + field + `<>'SUCCESS' AND ` + field + ` ` + gatewayUsageSettled + `
+		WHEN 'legacy_failure' THEN ` + field + ` NOT IN ('SUCCESS','RUNNING') ELSE 1 END `
+}
+
+func gatewayUsageTestRows(search string) string {
+	from := " FROM telemetry t "
+	filter := ` WHERE :source<>'gateway' AND :key='' AND t.source IN ('GATEWAY_TEST','MANUAL_TEST')
+		AND t.created_at>=:since AND t.created_at<:until ` + gatewayUsageOutcome("t.outcome")
+	if search != "" {
+		from += gatewayUsageModelJoins
+		filter += ` AND (instr(lower(t.model_id),lower(:model))>0
+			OR instr(lower(` + gatewayUsageModelGroup + `),atlas_canonical_id(:model))>0) `
+	}
+	return from + filter
+}
 
 func gatewayUsagePeriods(end time.Time, period string) []gatewayUsagePoint {
 	var from time.Time
@@ -156,20 +160,9 @@ func (s *Server) gatewayUsage(w http.ResponseWriter, r *http.Request) {
 	}
 	points := gatewayUsagePeriods(time.UnixMilli(until).In(location), period)
 	since := points[0].From
+	model := strings.TrimSpace(q.Get("model"))
 	args := []any{sql.Named("source", source), sql.Named("since", since), sql.Named("until", until),
-		sql.Named("key", q.Get("key_id")), sql.Named("model", strings.TrimSpace(q.Get("model"))), sql.Named("status", status)}
-
-	// Aggregate with one ordered scan and a bounded set of time boundaries.
-	// Each point describes an actual interval, including the partial current one.
-	var buckets strings.Builder
-	buckets.WriteString("CASE")
-	chartArgs := append([]any{}, args...)
-	for i, point := range points[:len(points)-1] {
-		param := "edge" + strconv.Itoa(i)
-		buckets.WriteString(" WHEN at<:" + param + " THEN " + strconv.Itoa(i))
-		chartArgs = append(chartArgs, sql.Named(param, point.Until))
-	}
-	buckets.WriteString(" ELSE " + strconv.Itoa(len(points)-1) + " END")
+		sql.Named("key", q.Get("key_id")), sql.Named("model", model), sql.Named("status", status)}
 
 	tx, err := s.Store.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -177,70 +170,17 @@ func (s *Server) gatewayUsage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	rows, err := tx.QueryContext(ctx, gatewayUsageRows+`SELECT `+buckets.String()+` AS bucket,
-		COUNT(*),SUM(`+gatewayUsageSettled+`),SUM(outcome='SUCCESS'),SUM(input_tokens),SUM(output_tokens),
-		COUNT(input_tokens),COUNT(output_tokens),TOTAL(ttft_ms),COUNT(ttft_ms)
-		FROM filtered GROUP BY bucket`, chartArgs...)
-	if err != nil {
-		http.Error(w, "database error", 500)
-		return
-	}
-	var summary gatewayUsageSummary
-	var ttftTotal float64
-	var ttftReports int
-	for rows.Next() {
-		var i, reports int
-		var ttft float64
-		var point gatewayUsageSummary
-		if err = rows.Scan(&i, &point.Requests, &point.Completed, &point.Successes, &point.Input, &point.Output,
-			&point.InputReported, &point.OutputReported, &ttft, &reports); err != nil || i < 0 || i >= len(points) {
-			rows.Close()
-			http.Error(w, "database error", 500)
-			return
-		}
-		points[i].gatewayUsageSummary = point
-		summary.Requests += point.Requests
-		summary.Completed += point.Completed
-		summary.Successes += point.Successes
-		summary.InputReported += point.InputReported
-		summary.OutputReported += point.OutputReported
-		gatewayUsageAdd(&summary.Input, point.Input)
-		gatewayUsageAdd(&summary.Output, point.Output)
-		ttftTotal += ttft
-		ttftReports += reports
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		http.Error(w, "database error", 500)
-		return
-	}
-	if ttftReports != 0 {
-		mean := ttftTotal / float64(ttftReports)
-		summary.MeanTTFT = &mean
-	}
 
-	rows, err = tx.QueryContext(ctx, gatewayUsageRows+`SELECT source,model_group,COUNT(*) AS n FROM filtered
-		GROUP BY source,model_group ORDER BY n DESC,model_group,source LIMIT 6`, args...)
-	if err != nil {
-		http.Error(w, "database error", 500)
-		return
-	}
-	rank := []gatewayUsageRank{}
-	for rows.Next() {
-		var v gatewayUsageRank
-		if err = rows.Scan(&v.Source, &v.Model, &v.Requests); err != nil {
-			rows.Close()
+	itemsOnly := q.Get("items_only") == "1"
+	tests := gatewayUsageTestRows(model)
+	var summary gatewayUsageSummary
+	var rank []gatewayUsageRank
+	if !itemsOnly {
+		summary, rank, err = readGatewayUsageStats(ctx, tx, points, args, tests)
+		if err != nil {
 			http.Error(w, "database error", 500)
 			return
 		}
-		rank = append(rank, v)
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		http.Error(w, "database error", 500)
-		return
 	}
 
 	if legacyRange {
@@ -250,9 +190,24 @@ func (s *Server) gatewayUsage(w http.ResponseWriter, r *http.Request) {
 			args[5] = sql.Named("status", "legacy_failure")
 		}
 	}
-	rows, err = tx.QueryContext(ctx, gatewayUsageRows+`SELECT id,source,key_label,model,provider,upstream_model,outcome,at,
-		http_status,upstream_status,latency_ms,ttft_ms,input_tokens,output_tokens,attempts
-		FROM filtered ORDER BY at DESC,id,source LIMIT :limit OFFSET :offset`,
+
+	// Page only identities so old rows never need their labels or receipt
+	// payloads read just to determine the visible page.
+	rows, err := tx.QueryContext(ctx, `WITH page AS MATERIALIZED (
+		SELECT g.id AS id,'gateway' AS source,g.created_at AS at`+gatewayUsageRelayFrom+gatewayUsageRelayFilter+`
+		UNION ALL
+		SELECT t.id AS id,'tests' AS source,t.created_at AS at`+tests+`
+		ORDER BY at DESC,id,source LIMIT :limit OFFSET :offset
+	)
+	SELECT e.id,e.source,COALESCE(k.label,''),COALESCE(g.model_id,t.model_id),
+		CASE WHEN e.source='gateway' THEN COALESCE(p.name,'') ELSE COALESCE(p.name,t.provider_id) END,
+		COALESCE(t.model_id,''),COALESCE(g.outcome,t.outcome),e.at,
+		g.http_status,t.status_code,CASE WHEN e.source='gateway' THEN g.latency_ms ELSE t.latency_ms END,
+		t.ttft_ms,t.input_tokens,t.output_tokens,COALESCE(g.attempts,1)
+	FROM page e LEFT JOIN gateway_requests g ON e.source='gateway' AND g.id=e.id
+	LEFT JOIN gateway_keys k ON k.id=g.key_id
+	LEFT JOIN telemetry t ON t.id=CASE WHEN e.source='gateway' THEN g.sample_id ELSE e.id END
+	LEFT JOIN providers p ON p.id=t.provider_id ORDER BY e.at DESC,e.id,e.source`,
 		append(args, sql.Named("limit", limit+1), sql.Named("offset", offset))...)
 	if err != nil {
 		http.Error(w, "database error", 500)
@@ -275,14 +230,111 @@ func (s *Server) gatewayUsage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "database error", 500)
 		return
 	}
-	more := len(items) > limit
+	page := gatewayUsagePage{items[:min(len(items), limit)], until, location.String(), len(items) > limit}
+	if itemsOnly {
+		jsonOK(w, 200, page)
+		return
+	}
 	jsonOK(w, 200, struct {
-		Summary  gatewayUsageSummary `json:"summary"`
-		Items    []gatewayUsageItem  `json:"items"`
-		Trend    []gatewayUsagePoint `json:"trend"`
-		Ranking  []gatewayUsageRank  `json:"ranking"`
-		AsOf     int64               `json:"as_of"`
-		Timezone string              `json:"timezone"`
-		More     bool                `json:"more"`
-	}{summary, items[:min(len(items), limit)], points, rank, until, location.String(), more})
+		gatewayUsagePage
+		Summary gatewayUsageSummary `json:"summary"`
+		Trend   []gatewayUsagePoint `json:"trend"`
+		Ranking []gatewayUsageRank  `json:"ranking"`
+	}{page, summary, points, rank})
+}
+
+type gatewayUsagePage struct {
+	Items    []gatewayUsageItem `json:"items"`
+	AsOf     int64              `json:"as_of"`
+	Timezone string             `json:"timezone"`
+	More     bool               `json:"more"`
+}
+
+func readGatewayUsageStats(ctx context.Context, tx *sql.Tx, points []gatewayUsagePoint, args []any, tests string) (gatewayUsageSummary, []gatewayUsageRank, error) {
+	var summary gatewayUsageSummary
+	// Each point describes an actual interval, including the partial current one.
+	var buckets strings.Builder
+	buckets.WriteString("CASE")
+	chartArgs := append([]any{}, args...)
+	for i, point := range points[:len(points)-1] {
+		param := "edge" + strconv.Itoa(i)
+		buckets.WriteString(" WHEN at<:" + param + " THEN " + strconv.Itoa(i))
+		chartArgs = append(chartArgs, sql.Named(param, point.Until))
+	}
+	buckets.WriteString(" ELSE " + strconv.Itoa(len(points)-1) + " END")
+
+	rows, err := tx.QueryContext(ctx, `WITH activity(at,outcome,input_tokens,output_tokens,ttft_ms) AS (
+		SELECT g.created_at,g.outcome,t.input_tokens,t.output_tokens,t.ttft_ms`+gatewayUsageRelayFrom+
+		`LEFT JOIN telemetry t ON t.id=g.sample_id`+gatewayUsageRelayFilter+`
+		UNION ALL
+		SELECT t.created_at,t.outcome,t.input_tokens,t.output_tokens,t.ttft_ms`+tests+`
+	)
+	SELECT `+buckets.String()+` AS bucket,
+		COUNT(*),SUM(outcome `+gatewayUsageSettled+`),SUM(outcome='SUCCESS'),SUM(input_tokens),SUM(output_tokens),
+		COUNT(input_tokens),COUNT(output_tokens),TOTAL(ttft_ms),COUNT(ttft_ms)
+	FROM activity GROUP BY bucket`, chartArgs...)
+	if err != nil {
+		return summary, nil, err
+	}
+	var ttftTotal float64
+	var ttftReports int
+	for rows.Next() {
+		var i, reports int
+		var ttft float64
+		var point gatewayUsageSummary
+		if err = rows.Scan(&i, &point.Requests, &point.Completed, &point.Successes, &point.Input, &point.Output,
+			&point.InputReported, &point.OutputReported, &ttft, &reports); err != nil {
+			rows.Close()
+			return summary, nil, err
+		}
+		if i < 0 || i >= len(points) {
+			rows.Close()
+			return summary, nil, errors.New("invalid usage bucket")
+		}
+		points[i].gatewayUsageSummary = point
+		summary.Requests += point.Requests
+		summary.Completed += point.Completed
+		summary.Successes += point.Successes
+		summary.InputReported += point.InputReported
+		summary.OutputReported += point.OutputReported
+		gatewayUsageAdd(&summary.Input, point.Input)
+		gatewayUsageAdd(&summary.Output, point.Output)
+		ttftTotal += ttft
+		ttftReports += reports
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return summary, nil, err
+	}
+	if ttftReports != 0 {
+		mean := ttftTotal / float64(ttftReports)
+		summary.MeanTTFT = &mean
+	}
+
+	// Resolve test model aliases after counting each provider/model pair.
+	// Relay counts come directly from admissions and do not need telemetry.
+	rows, err = tx.QueryContext(ctx, `WITH test_counts AS (
+		SELECT t.provider_id,t.model_id,COUNT(*) AS n`+tests+` GROUP BY t.provider_id,t.model_id
+	), ranking AS (
+		SELECT 'gateway' AS source,g.model_id AS model_group,COUNT(*) AS n`+gatewayUsageRelayFrom+gatewayUsageRelayFilter+`
+		GROUP BY g.model_id
+		UNION ALL
+		SELECT 'tests',`+gatewayUsageModelGroup+` AS model_group,SUM(t.n)
+		FROM test_counts t`+gatewayUsageModelJoins+`GROUP BY model_group
+	)
+	SELECT source,model_group,n FROM ranking ORDER BY n DESC,model_group,source LIMIT 6`, args...)
+	if err != nil {
+		return summary, nil, err
+	}
+	defer rows.Close()
+	rank := []gatewayUsageRank{}
+	for rows.Next() {
+		var v gatewayUsageRank
+		if err = rows.Scan(&v.Source, &v.Model, &v.Requests); err != nil {
+			return summary, nil, err
+		}
+		rank = append(rank, v)
+	}
+	return summary, rank, rows.Err()
 }

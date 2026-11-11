@@ -112,6 +112,11 @@ func openStore(path string, autoSnapshot bool, vaultKey ...[]byte) (*Store, erro
 		db.Close()
 		return nil, fmt.Errorf("migration: %w", err)
 	}
+	// Add the compatible lookup index after the observations table exists.
+	if _, err = db.Exec(gatewayPublicGroupIndex); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("public group price index: %w", err)
+	}
 	if err = backfillEndpointBindings(db); err != nil {
 		db.Close()
 		return nil, err
