@@ -76,6 +76,8 @@ func (s *Server) managementToolRoutes(api *http.ServeMux) {
 	api.HandleFunc("POST /assistant/actions/undo", s.undoControlAction)
 	api.HandleFunc("GET /notes", s.listNotes)
 	api.HandleFunc("GET /system", s.systemStatus)
+	api.HandleFunc("GET /providers/proxy", s.getProviderProxy)
+	api.HandleFunc("POST /providers/proxy", s.saveProviderProxy)
 	api.HandleFunc("GET /backup/cloud", s.getCloudBackup)
 	api.HandleFunc("GET /backup/cloud/events", s.getCloudBackupEvents)
 	api.HandleFunc("POST /backup/cloud/policy", s.saveCloudBackupPolicy)

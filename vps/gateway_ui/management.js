@@ -11,7 +11,7 @@ let brandCounts = new Map([["", 0]]);
 let brandProviderID = "";
 const management = {
   groups: [], modelBrand: "", groupLimit: modelGroupPageSize, providers: [], provider: null, accounts: [], credentials: [],
-  checkins: null, account: null, connection: null, align: null, quotaScope: null
+  checkins: null, account: null, connection: null, align: null, quotaScope: null, proxy: null
 };
 const operationNames = {
   CHAT_COMPLETIONS: "Chat Completions", RESPONSES: "Responses", ANTHROPIC_MESSAGES: "Messages",
@@ -617,6 +617,27 @@ function openConnectionDialog(v, operation) {
   $("connection-value-label").textContent = operation === "key" ? "新的 API Key" : "模型 ID";
   $("connection-dialog").showModal();
 }
+function updateProviderProxyFields() {
+  const form = $("provider-proxy-form");
+  const usingProxy = form.elements.mode.value === "PROXY";
+  $("provider-proxy-fields").hidden = !usingProxy;
+  form.elements.proxy_url.disabled = !usingProxy;
+  form.elements.proxy_url.required = usingProxy && !management.proxy?.configured;
+}
+
+function openProviderProxy(p) {
+  const proxy = p.proxy || {mode: "DIRECT", revision: 0, configured: false};
+  management.proxy = {provider_id: p.id, revision: proxy.revision, configured: proxy.configured};
+  const form = $("provider-proxy-form");
+  form.reset();
+  form.elements.mode.value = proxy.mode;
+  $("provider-proxy-scope").textContent = p.name;
+  $("provider-proxy-current").textContent = proxy.url ? "目前代理 · " + proxy.url : "";
+  $("provider-proxy-current").hidden = !proxy.url;
+  updateProviderProxyFields();
+  $("provider-proxy-dialog").showModal();
+}
+
 function openAccountDialog(account, kind) {
   management.account = account;
   $(kind + "-form").reset();
@@ -769,7 +790,12 @@ function renderProvider() {
       profile.append(el("p", p.description, "provider-description"));
     }
   }
-  profile.append(endpoint, providerFacts(p, false), el("p", "近 7 天實測", "quiet"));
+  profile.append(endpoint);
+  if (p.proxy) {
+    const network = p.proxy.mode === "PROXY" ? (p.proxy.configured ? "代理 · " + p.proxy.url : "此裝置尚未設定代理") : "直連";
+    profile.append(el("p", network, "quiet provider-network"));
+  }
+  profile.append(providerFacts(p, false), el("p", "近 7 天實測", "quiet"));
   const tools = controls(button("查看模型", async () => {
     state.modelGroup = null;
     state.modelProvider = p;
@@ -793,6 +819,7 @@ function renderProvider() {
   const advanced = el("details", undefined, "card details-card provider-advanced");
   advanced.open = content.querySelector(".provider-advanced")?.open ?? false;
   advanced.append(el("summary", "進階管理"), controls(
+    button("連線設定", () => openProviderProxy(p), {glyph: "settings"}),
     toolLink("Key 版本與端點", "providers", {provider: p.id}),
     deleteButton("刪除供應商", () => removeProviderItem("PROVIDER", p.name, {provider_id: p.id}), false)
   ));
@@ -916,6 +943,16 @@ submit("provider-form", async form => {
   });
   $("provider-dialog").close();
   await loadProvider();
+});
+$("provider-proxy-form").elements.mode.addEventListener("change", updateProviderProxyFields);
+$("provider-proxy-dialog").addEventListener("close", () => { management.proxy = null; });
+submit("provider-proxy-form", async form => {
+  const scope = management.proxy;
+  await api("/providers/proxy", {provider_id: scope.provider_id, revision: scope.revision, mode: form.elements.mode.value, proxy_url: form.elements.mode.value === "PROXY" ? form.elements.proxy_url.value : ""});
+  form.reset();
+  $("provider-proxy-dialog").close();
+  if (state.page === "providers" && state.providerID === scope.provider_id) await loadProvider();
+  notice("連線設定已儲存。");
 });
 submit("account-form", async form => {
   await api("/accounts", {provider_id: management.provider.id, id: crypto.randomUUID(), label: form.elements.label.value.trim()});

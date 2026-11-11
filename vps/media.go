@@ -275,9 +275,8 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonOK(w, responseStatus, result)
 	}()
-	client := *s.Client
-	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	response, err := client.Do(request)
+	response, network, err := s.doProviderRequest(request, p, cfg, s.Client)
+	result.Details["network"] = network
 	if err != nil {
 		return
 	}

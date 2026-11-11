@@ -112,6 +112,17 @@ const fs = require("node:fs/promises");
     const description = "日常主力模型站\n\n" + "各模型額度與適用場景依帳戶而異。".repeat(16);
     await add("潮汐 API", "a", process.env.MODELATLAS_TEST_UPSTREAM_A, description);
     const provider = page.locator("#provider-detail");
+    await provider.locator(".provider-advanced > summary").click();
+    await provider.getByRole("button", {name: "連線設定", exact: true}).click();
+    const proxyForm = page.getByRole("dialog", {name: "連線設定", exact: true});
+    await proxyForm.getByLabel("連線方式", {exact: true}).selectOption("PROXY");
+    await proxyForm.getByLabel("代理網址", {exact: true}).fill(process.env.MODELATLAS_TEST_PROXY_URL);
+    await assertLayout();
+    await proxyForm.getByRole("button", {name: "儲存連線設定", exact: true}).click();
+    await proxyForm.waitFor({state: "hidden"});
+    await provider.locator(".provider-network").getByText(/^代理 · /).waitFor();
+    await provider.getByRole("button", {name: "同步模型", exact: true}).click();
+    await provider.getByRole("button", {name: "同步模型", exact: true}).waitFor({state: "visible"});
     const about = provider.locator(".provider-about");
     assert.equal(await about.getAttribute("open"), null);
     await provider.locator(".provider-description-preview").waitFor();
@@ -994,7 +1005,7 @@ const fs = require("node:fs/promises");
       scopedOfferHistory: true, batchProbes: true, batchStop: true, batchRateLimit: true,
       providerCardHitArea: true, scopedKeyUsage: true, batchSelectAll: true, dialogCopyFeedback: true, browserSignIn: true,
       sharedWorkspace: true, settingsUpdate: true, connectionTrend: true, scopedSitePerformance: true,
-      copiedUpstreamIDAndKey: true, scopedRemoval: true, manualKeyQuota: true, onDemandTools: true, brandPicker: true, catalogRecovery: true, manualVerification: true }));
+      copiedUpstreamIDAndKey: true, scopedRemoval: true, manualKeyQuota: true, onDemandTools: true, providerProxy: true, brandPicker: true, catalogRecovery: true, manualVerification: true }));
   } finally {
     await client.dispose();
     await browser.close();

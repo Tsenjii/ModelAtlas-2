@@ -11,16 +11,17 @@ import (
 
 type gatewayProvider struct {
 	Provider
-	Website         string             `json:"website"`
-	CheckinURL      string             `json:"checkin_url"`
-	RequiresCheckin bool               `json:"requires_checkin"`
-	CheckinOffered  *bool              `json:"checkin_offered"`
-	PendingCheckins int                `json:"pending_checkins"`
-	Accounts        int                `json:"accounts"`
-	Keys            int                `json:"keys"`
-	Models          int                `json:"models"`
-	Performance     gatewayPerformance `json:"performance"`
-	Quotas          []gatewayQuota     `json:"quotas"`
+	Proxy           providerProxyStatus `json:"proxy"`
+	Website         string              `json:"website"`
+	CheckinURL      string              `json:"checkin_url"`
+	RequiresCheckin bool                `json:"requires_checkin"`
+	CheckinOffered  *bool               `json:"checkin_offered"`
+	PendingCheckins int                 `json:"pending_checkins"`
+	Accounts        int                 `json:"accounts"`
+	Keys            int                 `json:"keys"`
+	Models          int                 `json:"models"`
+	Performance     gatewayPerformance  `json:"performance"`
+	Quotas          []gatewayQuota      `json:"quotas"`
 }
 
 type gatewayQuota struct {
@@ -82,6 +83,11 @@ func (s *Server) gatewayProviders(w http.ResponseWriter, r *http.Request) {
 		p := &list[i]
 		cfg := s.config(ctx, p.Provider)
 		p.Website, p.CheckinURL, p.RequiresCheckin = cfg.Website, cfg.CheckinURL, cfg.RequiresCheckin
+		p.Proxy, err = s.providerProxy(ctx, p.ID, cfg.ProxyRequired)
+		if err != nil {
+			http.Error(w, "provider proxy unavailable", 503)
+			return
+		}
 		p.PendingCheckins = 0
 		if p.RequiresCheckin {
 			err = s.Store.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM accounts a

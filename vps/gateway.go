@@ -72,6 +72,8 @@ func (s *Server) gatewayAdminRoutes() *http.ServeMux {
 	admin := http.NewServeMux()
 	admin.HandleFunc("GET /status", s.status)
 	admin.HandleFunc("GET /system", s.systemStatus)
+	admin.HandleFunc("GET /providers/proxy", s.getProviderProxy)
+	admin.HandleFunc("POST /providers/proxy", s.saveProviderProxy)
 	admin.HandleFunc("GET /gateway/providers", s.gatewayProviders)
 	admin.HandleFunc("POST /gateway/remove", s.gatewayRemove)
 	admin.HandleFunc("POST /gateway/provider", s.gatewaySaveProvider)

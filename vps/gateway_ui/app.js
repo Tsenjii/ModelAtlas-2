@@ -14,6 +14,11 @@ const statuses = {
   SECRET_IN_RESPONSE: "上游回應含私密資料", REQUEST_IN_PROGRESS: "已有請求執行中"
 };
 const errors = {
+  "valid provider proxy mode required": "請選擇直連或指定代理。",
+  "invalid provider proxy URL": "請填有效的 HTTP、HTTPS 或 SOCKS5 代理網址。",
+  "provider proxy URL required": "請填寫此裝置使用的代理網址。",
+  "provider proxy changed; reload before saving": "代理設定已變更，請關閉後重新開啟連線設定。",
+  "provider proxy unavailable": "此裝置的代理設定目前無法讀取。",
   "valid name and HTTPS base URL required": "請填名稱和有效的 HTTPS Base URL。",
   "public ID or upstream route removed": "這個公開 ID 或其中一條上游路由已刪除。",
   "public model ID already in use or unavailable": "這個公開模型 ID 已被使用或保留。請改用其他 ID。",
@@ -238,6 +243,7 @@ async function api(path, data, signal) {
     }
     const status = info?.upstream_status;
     if (info?.code === "UNSUPPORTED_PRIVATE_VERSION") throw new Error("這個站點版本尚未驗證額度查詢。");
+    if (info?.code === "PROXY_NOT_CONFIGURED") throw new Error("請先在供應商的連線設定填寫此裝置使用的代理。");
     if (info?.code === "CREDENTIAL_ROLE") throw new Error("請確認這把 Key 的用途與帳戶。");
     throw new Error(errors[text.trim()] || (status ? "上游回傳 HTTP " + status : "操作未完成（HTTP " + response.status + "）"));
   }

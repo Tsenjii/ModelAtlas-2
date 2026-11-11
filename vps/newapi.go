@@ -65,7 +65,7 @@ func (s *Server) newApiGet(ctx context.Context, p Provider, path, token string) 
 		p.AuthFields = nil
 		p.CredentialMode = ""
 	}
-	root, _, err := s.getJSON(ctx, p, ProviderConfig{AuthMode: mode}, u.String(), token, 4<<20)
+	root, _, err := s.getJSON(ctx, p, ProviderConfig{AuthMode: mode, ProxyRequired: s.config(ctx, p).ProxyRequired}, u.String(), token, 4<<20)
 	if err != nil {
 		return nil, err
 	}

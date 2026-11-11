@@ -80,8 +80,6 @@ func (s *Server) getStructured(ctx context.Context, p Provider, c ProviderConfig
 		selectedClient = s.PublicClient
 		s.flightMu.Unlock()
 	}
-	client := *selectedClient
-	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	if name, _ := ctx.Value(integrationHeaderKey{}).(string); name == "AA" {
 		if err := s.chargeAARequest(ctx); err != nil {
 			return nil, 0, err
@@ -95,8 +93,12 @@ func (s *Server) getStructured(ctx context.Context, p Provider, c ProviderConfig
 	if meter, ok := ctx.Value(extractionMeterKey{}).(*int); ok {
 		*meter++
 	}
-	resp, err := client.Do(req)
+	resp, _, err := s.doProviderRequest(req, p, c, selectedClient)
 	if err != nil {
+		var problem *providerReadError
+		if errors.As(err, &problem) {
+			return nil, 0, problem
+		}
 		code := "UPSTREAM_NETWORK"
 		var timeout net.Error
 		if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &timeout) && timeout.Timeout() {

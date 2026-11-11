@@ -81,7 +81,7 @@ func (s *Server) assistantSecret(ctx context.Context, id string) (SafeSecretRef,
 	return ref, Credential{ID: newID(), Label: ref.Label, Role: ref.Role, Secret: key, AuthFields: auth}, e
 }
 func (s *Server) knownSecrets(ctx context.Context) ([]string, error) {
-	rows, e := s.Store.DB.QueryContext(ctx, "SELECT encrypted_key FROM credentials UNION SELECT encrypted_key FROM credential_secret_versions UNION SELECT encrypted_key FROM integration_credentials UNION SELECT encrypted_key FROM assistant_secret_refs")
+	rows, e := s.Store.DB.QueryContext(ctx, "SELECT encrypted_key FROM credentials UNION SELECT encrypted_key FROM credential_secret_versions UNION SELECT encrypted_key FROM integration_credentials UNION SELECT encrypted_key FROM assistant_secret_refs UNION SELECT encrypted_url FROM provider_proxies")
 	if e != nil {
 		return nil, e
 	}
@@ -104,6 +104,13 @@ func (s *Server) knownSecrets(ctx context.Context) ([]string, error) {
 		}
 		if secret != "" {
 			out = append(out, secret)
+			if proxy, err := parseProviderProxy(secret); err == nil && proxy.User != nil {
+				if password, ok := proxy.User.Password(); ok && password != "" {
+					out = append(out, password)
+				}
+				password, _ := proxy.User.Password()
+				out = append(out, base64.StdEncoding.EncodeToString([]byte(proxy.User.Username()+":"+password)))
+			}
 		}
 	}
 	rows, e = s.Store.DB.QueryContext(ctx, "SELECT fields_json FROM credential_auth_fields UNION SELECT fields_json FROM assistant_secret_refs")

@@ -286,12 +286,13 @@ func (s *Server) gatewayAttempt(ctx context.Context, requestID string, scope Sel
 		return out
 	}
 	out.retry = false
+	var network providerNetwork
 	defer func() {
 		if out.outcome != "SUCCESS" {
 			out.setContextOutcome(ctx)
 		}
 		out.latency = time.Since(started).Milliseconds()
-		details := map[string]any{"streaming": chat.stream}
+		details := map[string]any{"streaming": chat.stream, "network": network}
 		if out.ttft != nil && out.output != nil && *out.output > 1 && out.lastToken > *out.ttft {
 			details["tps"] = float64(*out.output-1) * 1000 / float64(out.lastToken-*out.ttft)
 		}
@@ -306,9 +307,7 @@ func (s *Server) gatewayAttempt(ctx context.Context, requestID string, scope Sel
 			"UPDATE telemetry SET outcome=?,status_code=?,ttfb_ms=?,ttft_ms=?,latency_ms=?,input_tokens=?,output_tokens=?,details_json=? WHERE id=?",
 			out.outcome, status, out.ttfb, out.ttft, out.latency, out.input, out.output, string(raw), sample)
 	}()
-	client := *s.Client
-	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	resp, err := client.Do(up)
+	resp, network, err := s.doProviderRequest(up, p, cfg, s.Client)
 	if err != nil {
 		out.outcome, out.status = "NETWORK", 502
 		// Once a connection was assigned, the request might have reached

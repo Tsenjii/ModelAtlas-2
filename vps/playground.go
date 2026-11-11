@@ -729,9 +729,8 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			_ = s.captureAuthenticity(saveCtx, sampleID, provider.CredentialStamp, authenticityCapture{ConditionHash: conditionHash, ConfigHash: connectorHash(cfg), EndpointHash: authenticityEndpointHash(endpoint, operation), PayloadBytes: body.size, MaxOutputTokens: v.MaxTokens, ToolsOffered: len(tools), ValidToolCalls: len(result.ToolCalls), TextBytes: text.Len(), ReasoningBytes: reasoning.Len()}, authenticityTraffic{ID: sampleID, Selection: scope, Operation: operation, Source: source, Outcome: result.Outcome, CredentialVersion: provider.CredentialVersion, At: started.UnixMilli(), Input: inputs, Output: outputs, Details: string(raw)})
 		}
 	}()
-	client := *s.Client
-	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	resp, err := client.Do(upstream)
+	resp, network, err := s.doProviderRequest(upstream, provider, cfg, s.Client)
+	result.Details["network"] = network
 	if err != nil {
 		return result, 502
 	}

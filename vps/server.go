@@ -31,6 +31,7 @@ type Server struct {
 	Key             []byte
 	Client          *http.Client
 	PublicClient    *http.Client
+	providerHTTP    providerHTTPState
 	workMu          sync.Mutex
 	workspaceMu     workspaceMutex
 	flightMu        sync.Mutex
@@ -423,6 +424,7 @@ func runConfiguredApplication(config deploymentConfig) error {
 		flights = 2
 	}
 	srv := &Server{Store: store, Token: config.token, Key: config.key, Client: client, AutoSync: !config.distribution, MaxFlights: flights, desktop: config.desktopReady != "", webConsole: config.desktopReady == "", distribution: config.distribution, maintenanceFile: config.maintenanceFile, vaultVerified: len(config.key) == 32}
+	defer srv.closeProviderTransport("")
 	if !config.distribution && os.Getenv("MODELATLAS_FACTORY_DEFAULTS") != "0" {
 		if _, err = srv.installKiloFactory(context.Background(), true); err != nil {
 			return fmt.Errorf("factory defaults initialization failed: %w", err)

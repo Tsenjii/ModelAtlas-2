@@ -11,6 +11,8 @@
 
 SwiftUI／AppKit 原生介面，加上內建同源 Go／SQLite 本機引擎、Keychain 與離線資料。保持完整 Playground、Provider／模型管理、來源／圖表／歷史、媒體、研究、Assistant 及安全跨裝置同步。沒有 WebView、Electron 或常駐 Node；不依賴外部 VPS 才能開啟。VPS 的公開排程 UI 尚未移植到 Mac，不承諾睡眠期間24/7可靠排程。
 
+供應商詳情的「設定 → 連線設定」可選擇直連或指定 HTTP、HTTPS、SOCKS5 代理，帳密可包含在安全輸入的代理網址。代理地址保存在這台 Mac，與 VPS 各自配置。需代理的偏好隨供應商同步，缺少本機代理時會提示設定。此入口使用內建同源引擎的管理 API；新的候選仍待其同來源原生 CI 與實機驗證。
+
 完整產品仍 PARTIAL，見 [MASTER_SCOPE.md](MASTER_SCOPE.md)；已驗舊版本的完整 caller／測試和歷史需求保留於對應功能文件。從本片起最新整合結果查 PR #20；PR #21 保留原 Mac 分支歷史。
 
 ## 安裝與版本

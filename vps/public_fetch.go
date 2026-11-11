@@ -71,6 +71,26 @@ var nonPublicRanges = func() []netip.Prefix {
 	return out
 }()
 
+func resolvePublicAddress(ctx context.Context, address string) (string, error) {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return "", errors.New("invalid public address")
+	}
+	ips, err := net.DefaultResolver.LookupIP(ctx, "ip", host)
+	if err != nil {
+		return "", errors.New("DNS unavailable")
+	}
+	if len(ips) == 0 {
+		return "", errors.New("DNS empty")
+	}
+	for _, ip := range ips {
+		if !publicIP(ip) {
+			return "", errors.New("private address denied")
+		}
+	}
+	return net.JoinHostPort(ips[0].String(), port), nil
+}
+
 func newPublicClient() *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.Proxy = nil
@@ -78,24 +98,12 @@ func newPublicClient() *http.Client {
 	transport.MaxIdleConnsPerHost = 1
 	transport.IdleConnTimeout = 30 * time.Second
 	transport.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
-		host, port, e := net.SplitHostPort(address)
-		if e != nil {
-			return nil, errors.New("invalid public address")
-		}
-		ips, e := net.DefaultResolver.LookupIP(ctx, "ip", host)
-		if e != nil {
-			return nil, errors.New("DNS unavailable")
-		}
-		if len(ips) == 0 {
-			return nil, errors.New("DNS empty")
-		}
-		for _, ip := range ips {
-			if !publicIP(ip) {
-				return nil, errors.New("private address denied")
-			}
+		pinned, err := resolvePublicAddress(ctx, address)
+		if err != nil {
+			return nil, err
 		}
 		dial := net.Dialer{Timeout: 10 * time.Second}
-		return dial.DialContext(ctx, network, net.JoinHostPort(ips[0].String(), port))
+		return dial.DialContext(ctx, network, pinned)
 	}
 	return &http.Client{Transport: transport, Timeout: 20 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,6 +22,9 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 	s.distribution = true
 	f := newGatewayFixture(t, s, [2]string{"deepseek-v4.1-flash", "DeepSeek-V4_1-Flash"})
 	f.bRateLimitAt.Store(5)
+	destination, _ := url.Parse(f.URL)
+	proxy, proxyCalls := newProviderHTTPProxy(t, destination.Host, destination.Host, false)
+	t.Cleanup(func() { s.closeProviderTransport("") })
 	// A dated archive fixture exercises the same stored measurement and
 	// aggregation path as the two live model probes below.
 	for day, count := range []int{0, 8, 4, 11, 7, 3, 5} {
@@ -61,7 +65,8 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 	defer workspace.Close()
 	cmd := exec.Command("node", "e2e/distribution.cjs", app.URL, f.URL, workspace.URL)
 	cmd.Env = append(os.Environ(), "MODELATLAS_TEST_TOKEN="+s.Token, "MODELATLAS_TEST_UPSTREAM_A="+gatewayTestKeyA,
-		"MODELATLAS_TEST_UPSTREAM_B="+gatewayTestKeyB, "MODELATLAS_TEST_UPSTREAM_PAT="+gatewayTestPAT)
+		"MODELATLAS_TEST_UPSTREAM_B="+gatewayTestKeyB, "MODELATLAS_TEST_UPSTREAM_PAT="+gatewayTestPAT,
+		"MODELATLAS_TEST_PROXY_URL="+proxyFixtureURL(t, proxy.URL))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("distribution browser: %v\n%s", err, out)
@@ -74,6 +79,9 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("settings install failed to request a restart")
+	}
+	if proxyCalls.Load() == 0 {
+		t.Fatal("browser workflow did not use the configured provider proxy")
 	}
 	t.Log(string(out))
 	if f.a.Load() != 3 || f.b.Load() != 5 {
