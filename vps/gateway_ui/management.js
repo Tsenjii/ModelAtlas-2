@@ -323,6 +323,9 @@ function renderBrandChoices() {
   const grid = $("brand-picker-choices");
   const focused = grid.contains(document.activeElement) ? document.activeElement.dataset.brand : undefined;
   const choices = [];
+  const available = modelGroupsByType();
+  const counts = new Map([["", available.length]]);
+  for (const {brand} of available) counts.set(brand, (counts.get(brand) || 0) + 1);
   for (const [brand, name] of modelBrandLabels) {
     if (!brandCounts.has(brand)) continue;
     const choice = button("", () => {
@@ -340,7 +343,7 @@ function renderBrandChoices() {
     const mark = el("span", undefined, "item-icon");
     mark.append(brandPickerIcon(brand));
     const label = el("span", undefined, "brand-picker-choice-label");
-    label.append(el("strong", name), el("small", brandCounts.get(brand) + " 個模型"));
+    label.append(el("strong", name), el("small", (counts.get(brand) || 0) + " 個模型"));
     if (selected) {
       const check = icon("check");
       check.classList.add("brand-picker-check");
@@ -355,8 +358,14 @@ function renderBrandChoices() {
   }
 }
 
+function modelGroupsByType() {
+  const type = $("model-type").value;
+  return type === "all" ? management.groups : management.groups.filter(group => group.types?.includes(type));
+}
+
 function renderModelGroups() {
-  const matches = management.modelBrand ? management.groups.filter(group => group.brand === management.modelBrand) : management.groups;
+  const type = $("model-type").value;
+  const matches = modelGroupsByType().filter(group => !management.modelBrand || group.brand === management.modelBrand);
   const visible = matches.slice(0, management.groupLimit);
   $("models-more").hidden = visible.length === matches.length;
   $("model-count").textContent = matches.length + " 個模型";
@@ -371,10 +380,12 @@ function renderModelGroups() {
     tile.className = "model-tile";
     const label = el("span", undefined, "model-tile-label");
     label.append(el("strong", group.name), el("small", group.providers + " 家供應商 · " + group.connections + " 個連線"));
+    const terms = gatewayTermsLabel(group.terms?.[type]);
+    if (terms) label.append(el("small", terms, "model-terms-line"));
     tile.append(modelIcon(group.id, group.name), label, icon("chevron"));
     return tile;
   });
-  const filtered = state.modelProvider || management.modelBrand || $("model-search").value.trim();
+  const filtered = state.modelProvider || management.modelBrand || type !== "all" || $("model-search").value.trim();
   $("model-list").replaceChildren(...(nodes.length ? nodes : [empty(filtered ? "找不到符合的模型。" : "新增供應商後，模型會出現在這裡。")]));
 }
 
@@ -459,14 +470,21 @@ function renderOffers() {
     choose.disabled = !v.enabled && !picked;
     choose.setAttribute("aria-pressed", String(picked));
     const details = identity(v.provider, [[v.account, v.credential, v.group].filter(Boolean).join(" · "),
-      v.model_id + (relayable ? "" : " · " + (operationNames[v.operation] || v.operation)), v.enabled ? "" : "連線不可用"]);
+      v.model_id + (relayable ? "" : " · " + (operationNames[v.operation] || v.operation)), gatewayTermsLabel(v.terms),
+      v.enabled ? "" : "連線不可用"]);
     const view = button(v.provider, () => openProvider(v.provider_id, v));
     view.classList.add("quiet-button", "provider-name");
     view.dataset.offerScope = scopeID(v);
     view.append(icon("chevron"));
     details.querySelector("h3").replaceChildren(view);
     const history = button("連線詳情", () => openOfferDetail(v), {glyph: "info"});
-    row.append(details, performanceCells(v.performance), controls(probe, history, choose));
+    const actions = controls(probe, history, choose);
+    if (v.operation === "IMAGES_GENERATION") {
+      const image = button("測試出圖", () => openOfferImageTest(v), {glyph: "model"});
+      image.disabled = !v.enabled;
+      actions.prepend(image);
+    }
+    row.append(details, performanceCells(v.performance), actions);
     return row;
   });
   const group = state.modelGroup;
@@ -607,14 +625,16 @@ function openProviderProfile(p) {
   $("provider-dialog").showModal();
 }
 
-function openConnectionDialog(v, operation) {
+function openConnectionDialog(v, operation, imageModel = "") {
   management.connection = {upstream: v, operation};
   const field = $("connection-value");
-  field.value = "";
+  field.value = imageModel;
   field.type = operation === "key" ? "password" : "text";
   field.maxLength = operation === "key" ? 8192 : 256;
   $("connection-title").textContent = operation === "key" ? "更新上游 Key" : "手動新增模型";
   $("connection-value-label").textContent = operation === "key" ? "新的 API Key" : "模型 ID";
+  $("connection-model-type").hidden = operation !== "model";
+  field.form.elements.endpoint.value = imageModel ? "IMAGES_GENERATION" : "CHAT_COMPLETIONS";
   $("connection-dialog").showModal();
 }
 function updateProviderProxyFields() {
@@ -857,6 +877,10 @@ $("brand-picker-trigger").addEventListener("click", () => {
   renderBrandChoices();
   $("brand-picker-dialog").showModal();
 });
+$("model-type").addEventListener("change", () => {
+  management.groupLimit = modelGroupPageSize;
+  renderModelGroups();
+});
 for (const [id, load, abort] of [
   ["model", loadGroups, () => groupRead?.abort()], ["provider", loadProviderList, () => providerRead?.abort()]
 ]) {
@@ -921,10 +945,13 @@ submit("connection-form", async form => {
   const value = new FormData(form).get("value").trim();
   const {upstream, operation} = management.connection;
   if (operation === "key") await api("/credentials/rotate", {...connectionFields(upstream), secret: value, confirm: true});
-  else await api("/gateway/upstream-model", {...connectionFields(upstream), model_id: value});
+  else await api("/gateway/upstream-model", {...connectionFields(upstream), model_id: value, endpoint: form.elements.endpoint.value});
   form.reset();
   $("connection-dialog").close();
-  await loadProvider();
+  if (state.page === "models" && state.modelGroup) {
+    $("offer-detail").close();
+    await loadOffers(true, Math.min(200, Math.max(50, state.offers.length)));
+  } else await loadProvider();
   notice(operation === "key" ? "上游 Key 已更新。" : "模型已加入。");
 });
 submit("group-form", async form => {

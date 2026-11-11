@@ -54,6 +54,7 @@ func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
 	if e == nil {
 		previousPrice := ""
 		priceCount := 0
+		manualPriceReplaced := false
 		for rows.Next() {
 			if !matchingGroup {
 				continue
@@ -74,6 +75,12 @@ func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
 			}
 			if at < now()-int64(24*time.Hour/time.Millisecond) {
 				continue
+			}
+			if kind == "MANUAL_PRICE" {
+				if manualPriceReplaced {
+					continue
+				}
+				manualPriceReplaced = facts["replaces_manual_price"] == true
 			}
 			if out["effective_price"] == nil && facts["effective_charge"] != nil && oneOf(kind, "PRICING", "GROUP_PRICING", "MANUAL_PRICE") {
 				raw, _ := json.Marshal(facts["effective_charge"])

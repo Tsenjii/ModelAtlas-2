@@ -24,6 +24,7 @@ type gatewayFixture struct {
 	*httptest.Server
 	a, b         atomic.Int32
 	verification atomic.Int32
+	images       atomic.Int32
 	bRateLimitAt atomic.Int32
 	perfDown     atomic.Bool
 }
@@ -123,6 +124,23 @@ func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixtur
 				display = "DeepSeek 4.1 Flash"
 			}
 			fmt.Fprintf(w, `{"data":[{"id":%q,"name":%q},{"id":%q}]}`, model, display, model)
+			return
+		case "/a/v1/images/generations":
+			var image struct {
+				Model  string `json:"model"`
+				Prompt string `json:"prompt"`
+				N      int    `json:"n"`
+				Format string `json:"response_format"`
+			}
+			if json.NewDecoder(r.Body).Decode(&image) != nil || image.Model != "gpt-image-fixture" ||
+				image.Prompt != "fixture image preview" || image.N != 1 || image.Format != "b64_json" {
+				t.Error("image test did not send the chosen scope and prompt")
+				http.Error(w, "wrong image request", 400)
+				return
+			}
+			f.images.Add(1)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `{"data":[{"b64_json":%q}]}`, testPNG(t))
 			return
 		case "/" + side + "/v1/chat/completions":
 		default:

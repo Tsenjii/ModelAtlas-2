@@ -119,6 +119,7 @@ code { font: .83rem/1.55 ui-monospace,SFMono-Regular,monospace; overflow-wrap: a
 .model-tile-label { display: grid; gap: 3px; flex: 1; min-width: 0; }
 .model-tile-label strong { font-size: .92rem; }
 .model-tile-label small { color: var(--muted); font-size: .78rem; font-weight: 500; }
+.model-tile-label .model-terms-line { color: var(--primary); overflow-wrap: anywhere; }
 .item-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: 11px; color: var(--primary); background: var(--accent); }
 .empty { padding: 15px 3px; color: var(--muted); grid-column: 1/-1; }
 .entry {
@@ -150,6 +151,7 @@ code { font: .83rem/1.55 ui-monospace,SFMono-Regular,monospace; overflow-wrap: a
 .model-actions,#model-tool-links { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .model-actions.model-directory-actions { flex-basis: auto; margin-inline-start: auto; justify-content: flex-end; }
 .model-directory-actions > .link-button { white-space: nowrap; }
+#model-type { width: auto; max-width: 100%; }
 #brand-picker-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 svg.brand-picker-logo { fill: currentColor; stroke: none; }
 #brand-picker-trigger .brand-picker-caret { transform: rotate(90deg); width: 13px; height: 13px; color: var(--muted); }
@@ -414,6 +416,11 @@ html[data-motion="reduced"] main > section:not([hidden]) { animation: none; }
 .connection-site-toolbar { align-items: end; }
 #offer-actions { grid-auto-rows: 1fr; }
 #offer-actions > :last-child:nth-child(3) { grid-column: 1/-1; }
+#offer-terms { display: grid; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 11px; }
+#offer-terms h3 { margin: 0; }
+.offer-image-preview { display: block; width: fit-content; max-width: 100%; }
+.offer-image-preview img { display: block; max-width: 100%; max-height: 55vh; border-radius: 11px; object-fit: contain; }
+#offer-terms-status:empty { display: none; }
 #offer-detail .connection-grid [aria-pressed="true"] { background: color-mix(in srgb, var(--ink) 10%, var(--paper)); color: var(--ink); }
 #offer-detail .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
 #offer-detail .metrics .metric { border-radius: 10px; background: var(--well); padding: 7px 9px; }

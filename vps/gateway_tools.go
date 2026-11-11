@@ -15,7 +15,7 @@ var gatewayToolsJS string
 //go:embed gateway_ui/tools.css
 var gatewayToolsCSS string
 
-var gatewayToolsScript = staticAsset{raw: gatewayToolsJS, revalidate: true}
+var gatewayToolsScript = staticAsset{raw: gatewayModelTermsJS + "\n" + gatewayToolsJS, revalidate: true}
 var gatewayToolsStyles = staticAsset{raw: gatewayAppearanceCSS + gatewayToolsCSS, revalidate: true}
 
 func (s *Server) gatewayToolRoutes(root *http.ServeMux) {

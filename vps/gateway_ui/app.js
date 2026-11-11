@@ -26,6 +26,10 @@ const errors = {
   "management item missing": "找不到這個項目，請重新整理。",
   "no stored API key": "這條連線沒有儲存可複製的 API Key。",
   "invalid custom time window": "請選擇有效的開始與結束時間。",
+  "invalid price or daily request limit": "請填非負金額及整數每日次數，或留空。",
+  "model terms changed; reload before saving": "價格或額度已變更，請重新開啟表單。",
+  "selected media capability unavailable": "請確認這條連線已啟用圖片生成能力。",
+  "a matching image generation endpoint is required": "請先為這把 Key 設定對應的圖片生成端點。",
   "upstream refresh already running or service busy": "目前正在更新或服務忙碌，請稍後再試。",
   "invalid upstream credential": "上游 Key 格式有誤。",
   "upstream connection unavailable": "這個連線目前無法使用，請檢查上游 Key。",
@@ -245,6 +249,7 @@ async function api(path, data, signal) {
     if (info?.code === "UNSUPPORTED_PRIVATE_VERSION") throw new Error("這個站點版本尚未驗證額度查詢。");
     if (info?.code === "PROXY_NOT_CONFIGURED") throw new Error("請先在供應商的連線設定填寫此裝置使用的代理。");
     if (info?.code === "CREDENTIAL_ROLE") throw new Error("請確認這把 Key 的用途與帳戶。");
+    if (statuses[info?.outcome]) throw new Error(statuses[info.outcome] + (info.http_status ? " · HTTP " + info.http_status : ""));
     throw new Error(errors[text.trim()] || (status ? "上游回傳 HTTP " + status : "操作未完成（HTTP " + response.status + "）"));
   }
   return JSON.parse(text);

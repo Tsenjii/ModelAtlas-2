@@ -60,6 +60,10 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	if !decodeLimit(w, r, &v, 12<<20) {
 		return
 	}
+	s.runMediaInference(w, r, v, "PLAYGROUND_MEDIA")
+}
+
+func (s *Server) runMediaInference(w http.ResponseWriter, r *http.Request, v MediaRequest, source string) {
 	operation := s.operation(r.Context(), v.Selection)
 	required := map[string]string{"IMAGES_GENERATION": "IMAGE_GENERATION", "IMAGES_EDIT": "IMAGE_EDITING", "AUDIO": "AUDIO_INPUT", "AUDIO_SPEECH": "AUDIO_OUTPUT", "GEMINI_SPEECH": "AUDIO_OUTPUT", "EMBEDDINGS": "EMBEDDING", "RERANK": "RERANK"}[operation]
 	if required == "" || !s.validateSelection(r.Context(), v.Selection) || !s.groupBound(r.Context(), v.Selection) || !oneOf(required, s.capabilities(r.Context(), v.Selection)...) {
@@ -234,7 +238,7 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	}
 	result.Details["sample_id"] = sampleID
 	result.Details["receipt"] = receipt
-	if err = s.startRequestRecord(ctx, sampleID, v.Selection, operation, "PLAYGROUND_MEDIA", started.UnixMilli(), p.CredentialVersion, "", v.RequestID, "", nil, result.Details); err != nil {
+	if err = s.startRequestRecord(ctx, sampleID, v.Selection, operation, source, started.UnixMilli(), p.CredentialVersion, "", v.RequestID, "", nil, result.Details); err != nil {
 		http.Error(w, "telemetry unavailable", 500)
 		return
 	}

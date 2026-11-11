@@ -29,6 +29,12 @@ var gatewayConnectionJS string
 //go:embed gateway_ui/management.js
 var gatewayManagementJS string
 
+//go:embed gateway_ui/model-terms.js
+var gatewayModelTermsJS string
+
+//go:embed gateway_ui/offer-editor.js
+var gatewayOfferEditorJS string
+
 //go:embed gateway_ui/console.js
 var gatewayConsoleJS string
 
@@ -45,7 +51,8 @@ var gatewayMarkSVG string
 var gatewayModelBrandsSVG string
 
 var gatewayStyleAsset = staticAsset{raw: gatewayAppearanceCSS + gatewayCSS, revalidate: true}
-var gatewayScriptAsset = staticAsset{raw: gatewayJS + "\n" + gatewayConsoleJS + "\n" + metricPlotJS + "\n" + gatewayConnectionJS + "\n" + gatewayManagementJS + "\n" + gatewayUpdateJS, revalidate: true}
+var gatewayScriptAsset = staticAsset{raw: strings.Join([]string{gatewayJS, gatewayConsoleJS, metricPlotJS, gatewayModelTermsJS,
+	gatewayConnectionJS, gatewayManagementJS, gatewayOfferEditorJS, gatewayUpdateJS}, "\n"), revalidate: true}
 var gatewayMarkAsset = staticAsset{raw: gatewayMarkSVG, revalidate: true}
 var gatewayModelBrandsAsset = staticAsset{raw: gatewayModelBrandsSVG, revalidate: true}
 

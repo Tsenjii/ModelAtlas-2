@@ -224,6 +224,8 @@ function openOfferDetail(v) {
   const fields = $("offer-detail-fields");
   $("offer-detail-title").replaceChildren(modelIcon(v.canonical_id, v.model_id), el("span", "連線詳情"));
   renderDetailFields(fields, [["供應商", v.provider], ["上游模型 ID", v.model_id], ["Base URL", v.base_url]]);
+  renderOfferTerms(v.terms);
+  $("edit-offer-terms").onclick = () => { void openOfferTermEditor(v); };
   $("offer-scope").open = false;
   renderDetailFields($("offer-scope-fields"), [
     ["帳戶", v.account], ["Key 標籤", v.credential], ["群組", v.group || "未指定"],
@@ -232,6 +234,12 @@ function openOfferDetail(v) {
   $("offer-management-actions").replaceChildren(
     button("調整歸類", () => openModelGrouping(v), {glyph: "tag"})
   );
+  if (v.enabled) {
+    const image = v.operation === "IMAGES_GENERATION"
+      ? button("測試出圖", () => openOfferImageTest(v), {glyph: "model"})
+      : button("新增圖片生成連線", () => openConnectionDialog(v, "model", v.model_id), {glyph: "plus"});
+    $("offer-management-actions").append(image);
+  }
   $("offer-history-link").replaceChildren(toolLink("完整請求紀錄", "requests", {...scope, model: v.canonical_id}, "usage"));
   const [, idField, urlField] = fields.querySelectorAll("dd");
   const key = v.has_api_key ? [credentialCopyButton(scope, dialog)] : [];

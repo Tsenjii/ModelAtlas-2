@@ -81,6 +81,7 @@
         <div class="line-meta">
           <span id="model-count" role="status"></span>
           <div class="model-actions model-directory-actions">
+            <select id="model-type" aria-label="模型類型"><option value="all">全部類型</option><option value="text">文字</option><option value="image">圖片生成</option><option value="image-edit">圖片編輯</option><option value="audio">語音</option><option value="other">其他</option></select>
             <button id="brand-picker-trigger" class="link-button" type="button" aria-haspopup="dialog" aria-controls="brand-picker-dialog"><svg aria-hidden="true"><use href="#icon-model"/></svg><span>選擇品牌</span><svg class="brand-picker-caret" aria-hidden="true"><use href="#icon-chevron"/></svg></button>
             <a class="link-button" href="/tools/models"><svg aria-hidden="true"><use href="#icon-search"/></svg>模型目錄</a>
           </div>
@@ -244,6 +245,7 @@
     <div class="section-inline"><h2 id="connection-title"></h2><button type="button" data-close="connection-dialog" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></div>
     <label id="connection-value-label" for="connection-value"></label>
     <input id="connection-value" name="value" autocomplete="off" required>
+    <label id="connection-model-type" hidden>模型類型<select name="endpoint" aria-label="連線模型類型"><option value="CHAT_COMPLETIONS">文字</option><option value="IMAGES_GENERATION">圖片生成</option></select></label>
     <button type="submit" class="primary"><svg aria-hidden="true"><use href="#icon-check"/></svg>儲存</button>
   </form>
 </dialog>
@@ -343,6 +345,10 @@
     <header class="section-inline"><h2 id="offer-detail-title" class="model-heading">連線詳情</h2><button type="button" data-close="offer-detail" class="icon-button" aria-label="關閉" title="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>
     <dl id="offer-detail-fields" class="detail-fields"></dl>
     <div id="offer-actions" class="connection-grid" role="group" aria-label="連線操作"></div>
+    <section id="offer-terms" class="details-card" aria-labelledby="offer-terms-title">
+      <div class="section-inline"><h3 id="offer-terms-title">價格與額度</h3><button id="edit-offer-terms" type="button"><svg aria-hidden="true"><use href="#icon-tag"/></svg>手填</button></div>
+      <dl id="offer-term-values" class="detail-fields" hidden></dl>
+    </section>
     <details id="offer-scope" class="details-card">
       <summary><svg aria-hidden="true"><use href="#icon-chevron"/></svg>帳戶、Key 與端點</summary>
       <dl id="offer-scope-fields" class="detail-fields"></dl>
@@ -378,6 +384,38 @@
       <div id="offer-site-data" class="stack"></div>
     </section>
   </div>
+</dialog>
+<dialog id="offer-terms-dialog" aria-labelledby="offer-terms-editor-title">
+  <form id="offer-terms-form" class="stack">
+    <header class="section-inline"><h2 id="offer-terms-editor-title">手填價格與額度</h2><button type="button" data-close="offer-terms-dialog" class="icon-button" aria-label="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>
+    <p id="offer-terms-scope" class="quiet"></p>
+    <label>計費方式<select name="mode" aria-label="計費方式"><option value="">未填</option><option value="free">免費</option><option value="request">按次</option><option value="tokens">按 Token</option></select></label>
+    <div id="offer-token-prices" class="stack" hidden>
+      <div class="field-pair">
+        <label>輸入 · USD／千 Token<input name="input" inputmode="decimal" maxlength="128"></label>
+        <label>輸出 · USD／千 Token<input name="output" inputmode="decimal" maxlength="128"></label>
+      </div>
+      <details class="details-card"><summary>快取與固定費</summary>
+        <label>快取 · USD／千 Token<input name="cache" inputmode="decimal" maxlength="128"></label>
+        <label class="check"><input type="checkbox" name="fixed_absent">無固定請求費</label>
+      </details>
+    </div>
+    <label id="offer-fixed-price" hidden>每次請求 · USD<input name="fixed" inputmode="decimal" maxlength="128"></label>
+    <label>每日請求次數<input name="daily" inputmode="numeric" maxlength="19" pattern="[0-9]*"></label>
+    <p class="quiet">未知可留空。每日次數填 0 會保留。</p>
+    <p id="offer-terms-status" role="status" class="quiet"></p>
+    <button type="submit" class="primary" disabled><svg aria-hidden="true"><use href="#icon-check"/></svg>儲存價格與額度</button>
+  </form>
+</dialog>
+<dialog id="offer-image-dialog" aria-labelledby="offer-image-title">
+  <form id="offer-image-form" class="stack">
+    <header class="section-inline"><h2 id="offer-image-title">測試出圖</h2><button type="button" data-close="offer-image-dialog" class="icon-button" aria-label="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>
+    <p id="offer-image-scope" class="quiet"></p>
+    <label>提示詞<textarea name="prompt" rows="3" maxlength="8000" required></textarea></label>
+    <button type="submit" class="primary"><svg aria-hidden="true"><use href="#icon-gauge"/></svg>生成一張</button>
+    <p id="offer-image-status" role="status" class="quiet">會使用該連線的額度。</p>
+    <div id="offer-image-result"></div>
+  </form>
 </dialog>
 <dialog id="upstream-copy-dialog" aria-labelledby="upstream-copy-title">
   <div class="stack">

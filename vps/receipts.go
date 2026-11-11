@@ -89,6 +89,7 @@ func (s *Server) receiptSnapshot(ctx context.Context, v Selection, p Provider, a
 	var quote, effectiveQuote *ReceiptFact
 	pools := []ReceiptFact{}
 	seen := map[string]bool{}
+	manualPriceReplaced := false
 	for rows.Next() {
 		var f ReceiptFact
 		var scope, raw string
@@ -111,6 +112,12 @@ func (s *Server) receiptSnapshot(ctx context.Context, v Selection, p Provider, a
 		origin := str(f.Facts["origin"])
 		if f.Source != "USER" && origin != p.BaseURL {
 			continue
+		}
+		if f.Kind == "MANUAL_PRICE" && scope == scopes[0] {
+			if manualPriceReplaced {
+				continue
+			}
+			manualPriceReplaced = f.Facts["replaces_manual_price"] == true
 		}
 		if effectiveQuote == nil && f.CredentialID == v.CredentialID && f.ModelID == v.ModelID && f.Group == v.Group && oneOf(f.Kind, "PRICING", "GROUP_PRICING", "MANUAL_PRICE") && f.Facts["effective_charge"] != nil {
 			b, _ := json.Marshal(f.Facts["effective_charge"])

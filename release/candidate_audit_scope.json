@@ -210,7 +210,8 @@
     "TestProviderProxyPublicHTTPSIsPinnedInsideAuthenticatedProxy": "pass",
     "TestProviderProxyPublicHTTPSIsPinnedInsideAuthenticatedProxy/false": "pass",
     "TestProviderProxyPublicHTTPSIsPinnedInsideAuthenticatedProxy/true": "pass",
-    "TestProviderProxySyncKeepsDeviceBindingsSeparate": "pass"
+    "TestProviderProxySyncKeepsDeviceBindingsSeparate": "pass",
+    "TestGatewayModelTermsStayWithConnection": "pass"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",

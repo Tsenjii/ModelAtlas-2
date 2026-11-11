@@ -146,13 +146,14 @@ func (s *Server) gatewaySync(w http.ResponseWriter, r *http.Request) {
 		writeProviderProblem(w, err, "catalog")
 		return
 	}
-	s.gatewayApplyCatalog(w, ctx, selection, p, cfg, entries, "PROVIDER_CATALOG")
+	s.gatewayApplyCatalog(w, ctx, selection, p, cfg, entries, "PROVIDER_CATALOG", "CHAT_COMPLETIONS")
 }
 
 func (s *Server) gatewayAddUpstreamModel(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		syncRequest
-		Model string `json:"model_id"`
+		Model    string `json:"model_id"`
+		Endpoint string `json:"endpoint"`
 	}
 	if !decodeJSON(w, r, &in) {
 		return
@@ -162,16 +163,23 @@ func (s *Server) gatewayAddUpstreamModel(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "valid model ID required", 400)
 		return
 	}
+	if in.Endpoint == "" {
+		in.Endpoint = "CHAT_COMPLETIONS"
+	}
+	if !oneOf(in.Endpoint, "CHAT_COMPLETIONS", "IMAGES_GENERATION") {
+		http.Error(w, "invalid manual model endpoint", 400)
+		return
+	}
 	ctx := r.Context()
 	p, _, err := s.endpointAuth(ctx, in.ProviderID, in.AccountID, in.CredentialID)
 	if err != nil {
 		http.Error(w, "upstream connection unavailable", 422)
 		return
 	}
-	s.gatewayApplyCatalog(w, ctx, in.syncRequest, p, s.config(ctx, p), []CatalogEntry{{ID: in.Model, Name: in.Model}}, "MANUAL")
+	s.gatewayApplyCatalog(w, ctx, in.syncRequest, p, s.config(ctx, p), []CatalogEntry{{ID: in.Model, Name: in.Model}}, "MANUAL", in.Endpoint)
 }
 
-func (s *Server) gatewayApplyCatalog(w http.ResponseWriter, ctx context.Context, connection syncRequest, p Provider, cfg ProviderConfig, entries []CatalogEntry, source string) {
+func (s *Server) gatewayApplyCatalog(w http.ResponseWriter, ctx context.Context, connection syncRequest, p Provider, cfg ProviderConfig, entries []CatalogEntry, source, endpoint string) {
 	secrets, err := s.knownSecrets(ctx)
 	if err != nil {
 		http.Error(w, "vault unavailable", 503)
@@ -188,7 +196,7 @@ func (s *Server) gatewayApplyCatalog(w http.ResponseWriter, ctx context.Context,
 		return
 	}
 	defer tx.Rollback()
-	scope := Selection{ProviderID: connection.ProviderID, AccountID: connection.AccountID, CredentialID: connection.CredentialID, Endpoint: "CHAT_COMPLETIONS"}
+	scope := Selection{ProviderID: connection.ProviderID, AccountID: connection.AccountID, CredentialID: connection.CredentialID, Endpoint: endpoint}
 	var cipher, fields string
 	err = tx.QueryRowContext(ctx, `SELECT c.encrypted_key,COALESCE(f.fields_json,''),COALESCE(g.group_id,'') FROM credentials c
 		LEFT JOIN credential_auth_fields f ON f.provider_id=c.provider_id AND f.account_id=c.account_id AND f.credential_id=c.id
@@ -199,7 +207,11 @@ func (s *Server) gatewayApplyCatalog(w http.ResponseWriter, ctx context.Context,
 		return
 	}
 	if len(entries) > 0 && bindSelection(ctx, tx, primary, cfg, scope) != nil {
-		http.Error(w, "a matching Chat Completions endpoint is required", 422)
+		if endpoint == "IMAGES_GENERATION" {
+			http.Error(w, "a matching image generation endpoint is required", 422)
+		} else {
+			http.Error(w, "a matching Chat Completions endpoint is required", 422)
+		}
 		return
 	}
 	seen := make(map[string]bool, len(entries))
@@ -218,6 +230,13 @@ func (s *Server) gatewayApplyCatalog(w http.ResponseWriter, ctx context.Context,
 			return
 		}
 		scope.ModelID = entry.ID
+		if source == "PROVIDER_CATALOG" && knownTermPrice(entry.Price) != nil {
+			evidence := withCredentialObservation(ctx, scope, p)
+			if err = writeObservation(evidence, tx, scope, "CATALOG", cfg.Adapter+"_OFFICIAL", "SUCCESS", map[string]any{"price": entry.Price}); err != nil {
+				http.Error(w, "database error", 500)
+				return
+			}
+		}
 		res, err := tx.ExecContext(ctx, `INSERT INTO my_models
 			SELECT ?,?,?,?,?,?,? WHERE ?='MANUAL' OR NOT EXISTS(SELECT 1 FROM membership_state WHERE scope_key=? AND state='REMOVED')
 			ON CONFLICT DO NOTHING`, scope.ProviderID, scope.AccountID, scope.CredentialID, scope.ModelID, scope.Group, scope.Endpoint, now(), source, scopeKey(scope))
@@ -234,6 +253,12 @@ func (s *Server) gatewayApplyCatalog(w http.ResponseWriter, ctx context.Context,
 			if _, err = tx.ExecContext(ctx, "UPDATE membership_state SET state='ACTIVE' WHERE scope_key=? AND state='REMOVED'", scopeKey(scope)); err != nil {
 				http.Error(w, "database error", 500)
 				return
+			}
+			if endpoint == "IMAGES_GENERATION" {
+				if err = confirmImageConnection(ctx, tx, scope); err != nil {
+					http.Error(w, "database error", 500)
+					return
+				}
 			}
 		}
 		added += int(n)
@@ -300,6 +325,7 @@ type gatewayOffering struct {
 	Enabled     bool               `json:"enabled"`
 	Performance gatewayPerformance `json:"performance"`
 	Prices      map[string]any     `json:"prices,omitempty"`
+	Terms       gatewayTerms       `json:"terms"`
 }
 
 func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
@@ -326,7 +352,7 @@ func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
 	id := q.Get("canonical_id")
 	args = append(args, id, id, q.Get("provider_id"), q.Get("provider_id"), q.Get("account_id"), q.Get("account_id"), q.Get("credential_id"), q.Get("credential_id"), q.Get("q"), limit+1, offset)
 	rows, err := s.Store.DB.QueryContext(ctx, gatewayCatalogSQL+` SELECT m.provider_id,m.account_id,m.credential_id,m.model_id,m.group_id,m.endpoint,
-		m.provider,m.account,m.credential,m.base_url,m.has_api_key,m.display_name,m.canonical_id,m.operation,m.enabled,`+perf+` AS perf
+		m.provider,m.account,m.credential,m.base_url,m.has_api_key,m.display_name,m.canonical_id,m.operation,m.enabled,`+perf+` AS perf,`+gatewayTermColumns+`
 		FROM scopes m WHERE (?='' OR m.canonical_id=?)
 		AND (?='' OR m.provider_id=?) AND (?='' OR m.account_id=?) AND (?='' OR m.credential_id=?)
 		AND instr(lower(m.model_id||' '||m.display_name||' '||m.provider),lower(?))>0
@@ -339,12 +365,14 @@ func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var v gatewayOffering
 		var raw []byte
-		if err = rows.Scan(&v.ProviderID, &v.AccountID, &v.CredentialID, &v.ModelID, &v.Group, &v.Endpoint, &v.Provider, &v.Account, &v.Credential, &v.BaseURL, &v.HasAPIKey, &v.DisplayName, &v.Canonical, &v.Operation, &v.Enabled, &raw); err != nil ||
+		var facts gatewayTermRow
+		if err = rows.Scan(append([]any{&v.ProviderID, &v.AccountID, &v.CredentialID, &v.ModelID, &v.Group, &v.Endpoint, &v.Provider, &v.Account, &v.Credential, &v.BaseURL, &v.HasAPIKey, &v.DisplayName, &v.Canonical, &v.Operation, &v.Enabled, &raw}, facts.scan()...)...); err != nil ||
 			raw != nil && json.Unmarshal(raw, &v.Performance) != nil {
 			rows.Close()
 			http.Error(w, "database error", 500)
 			return
 		}
+		v.Terms = facts.terms()
 		out = append(out, v)
 	}
 	err = rows.Err()

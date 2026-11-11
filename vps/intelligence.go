@@ -153,6 +153,15 @@ type Observation struct {
 }
 
 func (s *Server) observe(ctx context.Context, v Selection, kind, source, status string, facts map[string]any) error {
+	return writeObservation(ctx, s.Store.DB, v, kind, source, status, facts)
+}
+
+type observationWriter interface {
+	statementExecutor
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func writeObservation(ctx context.Context, db observationWriter, v Selection, kind, source, status string, facts map[string]any) error {
 	if snapshot, ok := ctx.Value(credentialObservationKey{}).(credentialObservation); ok && snapshot.Provider == v.ProviderID && snapshot.Account == v.AccountID && validateHTTPS(snapshot.Origin) {
 		copy := map[string]any{}
 		for k, x := range facts {
@@ -167,7 +176,9 @@ func (s *Server) observe(ctx context.Context, v Selection, kind, source, status 
 		if snapshot, ok := ctx.Value(credentialObservationKey{}).(credentialObservation); ok && snapshot.Provider == v.ProviderID && snapshot.Account == v.AccountID && snapshot.Credential == v.CredentialID {
 			version = snapshot.Version
 		} else {
-			s.Store.DB.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&version)
+			if err := db.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&version); err != nil {
+				return err
+			}
 		}
 		copied := map[string]any{}
 		for k, x := range facts {
@@ -180,7 +191,7 @@ func (s *Server) observe(ctx context.Context, v Selection, kind, source, status 
 	if err != nil || len(raw) > 512<<10 {
 		return sql.ErrNoRows
 	}
-	_, err = s.Store.DB.ExecContext(ctx, "INSERT INTO observations VALUES(?,?,?,?,?,?,?)", newID(), scopeKey(v), kind, source, status, string(raw), now())
+	_, err = db.ExecContext(ctx, "INSERT INTO observations VALUES(?,?,?,?,?,?,?)", newID(), scopeKey(v), kind, source, status, string(raw), now())
 	return err
 }
 func (s *Server) observations(ctx context.Context, v Selection) []Observation {

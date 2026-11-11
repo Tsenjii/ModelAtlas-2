@@ -90,6 +90,10 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 	if f.verification.Load() != 4 {
 		t.Fatalf("expected only the four manually requested tests, got %d", f.verification.Load())
 	}
+	if f.images.Load() != 1 {
+		t.Fatalf("expected exactly one explicit image generation, got %d", f.images.Load())
+	}
+	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM telemetry WHERE source='GATEWAY_TEST' AND operation='IMAGES_GENERATION' AND outcome='SUCCESS'")
 	assertSQLInt(t, s, 3, "SELECT COUNT(*) FROM model_verification_runs WHERE outcome='SUCCESS'")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM model_verification_runs WHERE outcome='INVALID_SVG'")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM gateway_requests WHERE outcome='SUCCESS' AND attempts=2")

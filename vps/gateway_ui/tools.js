@@ -174,6 +174,9 @@ function renderPriceTool() {
     card.append(el("h2", model.provider), el("p", connectionLabel(model) + " · " + model.model_id, "section-description"));
     detailQuote(card, "站方標價", model.offer?.nominal_price || model.offer?.price);
     detailQuote(card, "已確認的 Key 費率", model.offer?.effective_price);
+    if (model.terms?.price?.basis === "MANUAL") detailQuote(card, "手填價格", model.terms.price);
+    if (model.terms?.daily) card.append(el("p", "每日額度 · " + gatewayDailyLabel(model.terms.daily) +
+      (model.terms.daily.source === "USER" ? " · 手填" : " · 站方"), "section-description"));
     if (model.offer?.published_groups?.length) {
       const prices = el("details");
       prices.append(el("summary", "站方公布的各群組標價"));
