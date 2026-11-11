@@ -395,13 +395,21 @@ func migrate(db *sql.DB) error {
 		}
 	}
 	if version < 45 {
-		if _, err = tx.Exec(`
+		var hasMode bool
+		if err = tx.QueryRow("SELECT EXISTS(SELECT 1 FROM pragma_table_info('provider_proxies') WHERE name='mode')").Scan(&hasMode); err != nil {
+			return err
+		}
+		if !hasMode {
+			if _, err = tx.Exec(`
             ALTER TABLE provider_proxies ADD COLUMN mode TEXT NOT NULL DEFAULT 'DIRECT' CHECK(mode IN('DIRECT','PROXY'));
             UPDATE provider_proxies SET mode='PROXY'
                 WHERE COALESCE((SELECT json_extract(config_json,'$.proxy_required') FROM provider_config
                     WHERE provider_id=provider_proxies.provider_id),0)=1;
-            PRAGMA user_version=45;
         `); err != nil {
+				return err
+			}
+		}
+		if _, err = tx.Exec("PRAGMA user_version=45"); err != nil {
 			return err
 		}
 	}

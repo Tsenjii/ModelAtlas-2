@@ -452,4 +452,14 @@ func TestProviderProxySyncKeepsDeviceBindingsSeparate(t *testing.T) {
 	if err != nil || remote.Mode != "DIRECT" {
 		t.Fatal("peer did not retain its explicit direct route", err)
 	}
+	if _, err = peer.Store.DB.Exec("PRAGMA user_version=44"); err != nil {
+		t.Fatal(err)
+	}
+	if err = migrate(peer.Store.DB); err != nil {
+		t.Fatal("existing local route migration failed", err)
+	}
+	remote, err = peer.providerProxy(context.Background(), selection.ProviderID, true)
+	if err != nil || remote.Mode != "DIRECT" {
+		t.Fatal("migration replaced the peer's explicit direct route", err)
+	}
 }
