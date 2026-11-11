@@ -194,6 +194,8 @@ func gatewayOutcomeMessage(outcome string) string {
 		return "The upstream request timed out."
 	case "TELEMETRY_SAVE":
 		return "ModelAtlas could not save the request record."
+	case "REQUEST_HEADERS_UNAVAILABLE":
+		return "The selected upstream request headers are unavailable."
 	case "SECRET_IN_RESPONSE":
 		return "The upstream returned private content."
 	case "INVALID_REQUEST":
@@ -259,11 +261,6 @@ func (s *Server) gatewayAttempt(ctx context.Context, requestID string, scope Sel
 	for _, field := range p.AuthFields {
 		extra = append(extra, field.Secret)
 	}
-	secrets = append(secrets, gatewaySecretForms(extra)...)
-	if gatewayHasSecret(chat.body, secrets) {
-		out.outcome, out.status, out.retry = "INVALID_REQUEST", 400, false
-		return out
-	}
 	payload, err := json.Marshal(chat.body)
 	if err != nil {
 		out.outcome, out.status, out.retry = "INVALID_REQUEST", 400, false
@@ -279,6 +276,16 @@ func (s *Server) gatewayAttempt(ctx context.Context, requestID string, scope Sel
 	up.Header.Set("Accept", "application/json")
 	if chat.stream {
 		up.Header.Set("Accept", "text/event-stream")
+	}
+	privateHeaders, _, err := s.applyModelHeaders(up, p, cfg, scope)
+	if err != nil {
+		out.outcome = "REQUEST_HEADERS_UNAVAILABLE"
+		return out
+	}
+	secrets = append(secrets, gatewaySecretForms(append(extra, privateHeaders...))...)
+	if gatewayHasSecret(chat.body, secrets) {
+		out.outcome, out.status, out.retry = "INVALID_REQUEST", 400, false
+		return out
 	}
 	sample := newID()
 	if err = s.gatewayRecordAttempt(ctx, requestID, sample, scope, p, chat.stream, started.UnixMilli()); err != nil {

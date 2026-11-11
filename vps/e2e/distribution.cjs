@@ -513,6 +513,28 @@ const fs = require("node:fs/promises");
     await go("模型");
     const history = page.locator("#offer-detail");
     await offering("潮汐 API").getByRole("button", { name: "連線詳情" }).click();
+    const headerButton = history.getByRole("button", {name: "請求標頭", exact: true});
+    assert(!(await headerButton.isVisible()), "rare request headers are exposed in the default detail view");
+    await history.locator("#offer-scope > summary").click();
+    await headerButton.click();
+    const headerEditor = page.getByRole("dialog", {name: "請求標頭", exact: true});
+    const addHeader = headerEditor.getByRole("button", {name: "新增標頭", exact: true});
+    await addHeader.click();
+    await headerEditor.getByLabel("標頭名稱", {exact: true}).first().fill("User-Agent");
+    await headerEditor.getByLabel("標頭值", {exact: true}).first().fill("Atlas-Allowed-Fixture/1.0");
+    await addHeader.click();
+    await headerEditor.getByLabel("標頭名稱", {exact: true}).nth(1).fill("X-Client-Proof");
+    await headerEditor.getByLabel("私密值", {exact: true}).nth(1).check();
+    await headerEditor.getByLabel("標頭值", {exact: true}).nth(1).fill("synthetic-browser-client-proof");
+    await assertLayout();
+    await headerEditor.getByRole("button", {name: "儲存標頭", exact: true}).click();
+    await headerEditor.waitFor({state: "hidden"});
+    await headerButton.click();
+    await headerEditor.getByPlaceholder("已儲存，留空沿用").waitFor();
+    assert.equal(await headerEditor.getByLabel("標頭值", {exact: true}).first().inputValue(), "Atlas-Allowed-Fixture/1.0");
+    assert.equal(await headerEditor.getByPlaceholder("已儲存，留空沿用").inputValue(), "");
+    await headerEditor.getByRole("button", {name: "關閉", exact: true}).click();
+    await history.locator("#offer-scope > summary").click();
     await history.getByRole("button", {name: "手填", exact: true}).click();
     const terms = page.getByRole("dialog", {name: "手填價格與額度", exact: true});
     await terms.getByLabel("計費方式", {exact: true}).selectOption("request");
@@ -1103,7 +1125,7 @@ const fs = require("node:fs/promises");
       sharedWorkspace: true, settingsUpdate: true, connectionTrend: true, scopedSitePerformance: true,
       copiedUpstreamIDAndKey: true, scopedRemoval: true, manualKeyQuota: true, onDemandTools: true, providerProxy: true,
       brandPicker: true, catalogRecovery: true, manualVerification: true, manualModelTerms: true, modelType: true, imagePreview: true,
-      cloudBackupSetup: true }));
+      cloudBackupSetup: true, modelRequestHeaders: true }));
   } finally {
     await client.dispose();
     await browser.close();

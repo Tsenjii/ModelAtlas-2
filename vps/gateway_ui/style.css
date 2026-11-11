@@ -226,6 +226,8 @@ svg.brand-picker-logo { fill: currentColor; stroke: none; }
 .meter { height: 6px; margin-top: 5px; border-radius: 999px; overflow: hidden; background: var(--line); }
 .meter > span { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
 .field-pair { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr); gap: 10px; }
+#offer-headers-scope { overflow-wrap: anywhere; }
+#offer-headers-fields { border: 0; padding: 0; }
 .input-action { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 7px; }
 #key-models { max-height: 36dvh; overflow-y: auto; }
 .choice { padding-inline: 7px; border-radius: 8px; background: var(--well); }

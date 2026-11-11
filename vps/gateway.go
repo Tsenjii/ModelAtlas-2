@@ -88,6 +88,8 @@ func (s *Server) gatewayAdminRoutes() *http.ServeMux {
 	admin.HandleFunc("GET /gateway/offering-history", s.gatewayOfferHistory)
 	admin.HandleFunc("GET /gateway/offering-terms", s.gatewayGetOfferTerms)
 	admin.HandleFunc("POST /gateway/offering-terms", s.gatewaySaveOfferTerms)
+	admin.HandleFunc("GET /gateway/offering-headers", s.gatewayGetModelHeaders)
+	admin.HandleFunc("POST /gateway/offering-headers", s.gatewaySaveModelHeaders)
 	admin.HandleFunc("POST /gateway/test-image", s.gatewayImageTest)
 	admin.HandleFunc("GET /gateway/offering-performance", s.gatewayOfferPerformance)
 	admin.HandleFunc("GET /gateway/offering-site", s.gatewayOfferSite)

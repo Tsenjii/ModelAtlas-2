@@ -402,6 +402,19 @@
     </section>
   </div>
 </dialog>
+<dialog id="offer-headers-dialog" aria-labelledby="offer-headers-title">
+  <form id="offer-headers-form" class="stack" method="post" autocomplete="off">
+    <header class="section-inline"><h2 id="offer-headers-title">請求標頭</h2><button type="button" data-close="offer-headers-dialog" class="icon-button" aria-label="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>
+    <p id="offer-headers-scope" class="quiet"></p>
+    <p class="quiet">填入站點要求的標頭，例如 User-Agent。設定只套用在這條連線。</p>
+    <fieldset id="offer-headers-fields" class="stack" aria-label="自訂標頭" disabled>
+      <div id="offer-headers-rows" class="stack"></div>
+      <div class="row-actions"><button id="offer-headers-add" type="button"><svg aria-hidden="true"><use href="#icon-plus"/></svg>新增標頭</button></div>
+    </fieldset>
+    <p id="offer-headers-status" role="status" class="quiet"></p>
+    <button type="submit" class="primary" disabled><svg aria-hidden="true"><use href="#icon-check"/></svg>儲存標頭</button>
+  </form>
+</dialog>
 <dialog id="offer-terms-dialog" aria-labelledby="offer-terms-editor-title">
   <form id="offer-terms-form" class="stack">
     <header class="section-inline"><h2 id="offer-terms-editor-title">手填價格與額度</h2><button type="button" data-close="offer-terms-dialog" class="icon-button" aria-label="關閉"><svg aria-hidden="true"><use href="#icon-close"/></svg></button></header>

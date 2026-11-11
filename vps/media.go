@@ -211,12 +211,6 @@ func (s *Server) runMediaInference(w http.ResponseWriter, r *http.Request, v Med
 			return
 		}
 	}
-	for _, secret := range secrets {
-		if secret != "" && (jsonContainsSecret(content, secret) || bytes.Contains(body.Bytes(), []byte(secret))) {
-			http.Error(w, "secret found in media content", 422)
-			return
-		}
-	}
 	request, err := http.NewRequestWithContext(ctx, "POST", endpoint, body)
 	if err != nil {
 		http.Error(w, "endpoint unavailable", 422)
@@ -226,6 +220,18 @@ func (s *Server) runMediaInference(w http.ResponseWriter, r *http.Request, v Med
 	if s.authorizeUpstream(request, p, key, cfg) != nil {
 		http.Error(w, "credential invalid", 422)
 		return
+	}
+	privateHeaders, _, err := s.applyModelHeaders(request, p, cfg, v.Selection)
+	if err != nil {
+		http.Error(w, "model request headers unavailable", 503)
+		return
+	}
+	secrets = append(secrets, privateHeaders...)
+	for _, secret := range secrets {
+		if secret != "" && (jsonContainsSecret(content, secret) || bytes.Contains(body.Bytes(), []byte(secret))) {
+			http.Error(w, "secret found in media content", 422)
+			return
+		}
 	}
 	result := MediaResponse{Outcome: "NETWORK", Selection: v.Selection, RequestID: v.RequestID, Details: map[string]any{"streaming": false, "retry_count": 0, "ttft_ms": nil}}
 	responseStatus := 502

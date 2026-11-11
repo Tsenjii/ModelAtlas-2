@@ -100,6 +100,7 @@
   "go_new_events": {
     "TestBrowserDistributionWorkflow": "skip",
     "TestGatewayDistributionWorkflow": "pass",
+    "TestGatewayModelRequestHeadersStayWithConnection": "pass",
     "TestGatewayKeyPolicyEnforced": "pass",
     "TestGatewayRememberBrowser": "pass",
     "TestGatewayUsageIntervalsAndSources": "pass",

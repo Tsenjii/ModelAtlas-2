@@ -232,7 +232,8 @@ function openOfferDetail(v) {
     ["模型歸類", v.canonical_id], ["端點", v.endpoint], ["連線狀態", v.enabled ? "可用" : "停用或不可用"]
   ]);
   $("offer-management-actions").replaceChildren(
-    button("調整歸類", () => openModelGrouping(v), {glyph: "tag"})
+    button("調整歸類", () => openModelGrouping(v), {glyph: "tag"}),
+    button("請求標頭", () => openOfferHeaderEditor(v), {glyph: "settings"})
   );
   if (v.enabled) {
     const image = v.operation === "IMAGES_GENERATION"

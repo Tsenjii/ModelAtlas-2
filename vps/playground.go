@@ -580,6 +580,16 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if err = s.authorizeUpstream(upstream, provider, key, cfg); err != nil {
 		return result, 422
 	}
+	var headerRevision string
+	if source != "CRAWLER_VERIFY" {
+		var privateHeaders []string
+		privateHeaders, headerRevision, err = s.applyModelHeaders(upstream, provider, cfg, scope)
+		if err != nil {
+			result.Outcome = "REQUEST_HEADERS_UNAVAILABLE"
+			return result, 503
+		}
+		secrets = append(secrets, privateHeaders...)
+	}
 	userID := newID()
 	if body.containsSecret(secrets) {
 		result.Outcome = "SECRET_IN_REQUEST_CONTENT"
@@ -614,6 +624,9 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		pendingMessages = append(pendingMessages, turn)
 	}
 	conditionHash := authenticityCondition(payload, operation, stream, upstream.Header.Get("anthropic-version"), body.size)
+	if headerRevision != "" {
+		conditionHash = contentHash([]byte(conditionHash + ":" + headerRevision))
+	}
 	started := time.Now()
 	sampleID := newID()
 	receipt, err := s.newReceipt(ctx, scope, provider, started.UnixMilli(), secrets)

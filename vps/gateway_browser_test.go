@@ -95,6 +95,9 @@ func TestBrowserDistributionWorkflow(t *testing.T) {
 	if f.images.Load() != 1 {
 		t.Fatalf("expected exactly one explicit image generation, got %d", f.images.Load())
 	}
+	if f.headerCalls.Load() == 0 {
+		t.Fatal("the test upstream did not receive the saved model headers")
+	}
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM telemetry WHERE source='GATEWAY_TEST' AND operation='IMAGES_GENERATION' AND outcome='SUCCESS'")
 	assertSQLInt(t, s, 3, "SELECT COUNT(*) FROM model_verification_runs WHERE outcome='SUCCESS'")
 	assertSQLInt(t, s, 1, "SELECT COUNT(*) FROM model_verification_runs WHERE outcome='INVALID_SVG'")

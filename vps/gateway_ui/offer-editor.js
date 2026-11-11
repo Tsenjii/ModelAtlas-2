@@ -1,7 +1,123 @@
 "use strict";
 
-let offerTermEditor, imageTest;
+let offerTermEditor, imageTest, offerHeaderEditor;
 let lastImagePrompt = {model: "", value: ""};
+
+function addOfferHeaderRow(saved = {}) {
+  const rows = $("offer-headers-rows");
+  const add = $("offer-headers-add");
+  const row = el("div", undefined, "details-card stack");
+  const pair = el("div", undefined, "field-pair");
+  const name = el("input");
+  name.name = "header_name";
+  name.required = true;
+  name.maxLength = 64;
+  name.spellcheck = false;
+  name.autocapitalize = "none";
+  name.placeholder = "User-Agent";
+  name.value = saved.name || "";
+  const value = el("input");
+  value.name = "header_value";
+  value.maxLength = 2048;
+  value.spellcheck = false;
+  value.autocapitalize = "none";
+  value.autocomplete = "off";
+  value.value = saved.value ?? "";
+  const privateValue = el("input");
+  privateValue.type = "checkbox";
+  privateValue.name = "header_private";
+  privateValue.checked = saved.private === true;
+  const retain = () => saved.private && privateValue.checked &&
+    name.value.trim().toLowerCase() === saved.name.toLowerCase();
+  const update = () => {
+    value.type = privateValue.checked ? "password" : "text";
+    value.required = !retain();
+    value.placeholder = retain() ? "已儲存，留空沿用" : "";
+  };
+  name.addEventListener("input", update);
+  privateValue.addEventListener("change", update);
+  update();
+  const nameLabel = el("label", "標頭名稱");
+  nameLabel.append(name);
+  const valueLabel = el("label", "標頭值");
+  valueLabel.append(value);
+  pair.append(nameLabel, valueLabel);
+  const privateLabel = el("label", undefined, "check");
+  privateLabel.append(privateValue, document.createTextNode("私密值"));
+  const actions = el("div", undefined, "row-actions");
+  actions.append(privateLabel, button("移除標頭", () => {
+    row.remove();
+    add.disabled = false;
+    add.focus();
+  }, {glyph: "trash"}));
+  row.append(pair, actions);
+  rows.append(row);
+  add.disabled = rows.children.length >= 8;
+  return name;
+}
+
+async function openOfferHeaderEditor(offer) {
+  offerHeaderEditor?.read.abort();
+  const scope = selection(offer);
+  const editor = {scope, read: new AbortController(), revision: ""};
+  offerHeaderEditor = editor;
+  const dialog = $("offer-headers-dialog");
+  const form = $("offer-headers-form");
+  const fields = $("offer-headers-fields");
+  const save = form.querySelector("button[type='submit']");
+  const status = $("offer-headers-status");
+  fields.disabled = true;
+  save.disabled = true;
+  $("offer-headers-add").disabled = false;
+  $("offer-headers-rows").replaceChildren();
+  $("offer-headers-scope").textContent = [offer.provider, offer.model_id, offer.account, offer.credential, offer.group, offer.endpoint].filter(Boolean).join(" · ");
+  status.textContent = "讀取標頭設定中…";
+  dialog.showModal();
+  try {
+    const result = await api("/gateway/offering-headers?" + new URLSearchParams(scope), undefined, editor.read.signal);
+    if (offerHeaderEditor !== editor || !dialog.open) return;
+    if (scopeID(result) !== scopeID(scope) || !Array.isArray(result.headers)) throw new Error("標頭設定的連線範圍不符。");
+    for (const header of result.headers) addOfferHeaderRow(header);
+    editor.revision = result.revision;
+    fields.disabled = false;
+    save.disabled = false;
+    status.textContent = "";
+  } catch (error) {
+    if (offerHeaderEditor === editor && error.name !== "AbortError") status.textContent = error.message;
+  }
+}
+
+$("offer-headers-add").addEventListener("click", () => addOfferHeaderRow().focus());
+$("offer-headers-dialog").addEventListener("close", () => {
+  if ($("offer-headers-dialog").open) return;
+  offerHeaderEditor?.read.abort();
+  offerHeaderEditor = null;
+  $("offer-headers-rows").replaceChildren();
+});
+submit("offer-headers-form", async () => {
+  const editor = offerHeaderEditor;
+  if (!editor?.revision) return;
+  const fields = $("offer-headers-fields");
+  const status = $("offer-headers-status");
+  const headers = Array.from($("offer-headers-rows").children, row => {
+    const name = row.querySelector('[name="header_name"]').value.trim();
+    const value = row.querySelector('[name="header_value"]').value;
+    return {name, value: value || null, private: row.querySelector('[name="header_private"]').checked};
+  });
+  fields.disabled = true;
+  status.textContent = "";
+  try {
+    await api("/gateway/offering-headers", {...editor.scope, revision: editor.revision, headers});
+    if (offerHeaderEditor === editor) {
+      $("offer-headers-dialog").close();
+      notice("請求標頭已儲存。");
+    }
+  } catch (error) {
+    if (offerHeaderEditor === editor) status.textContent = error.message;
+  } finally {
+    if (offerHeaderEditor === editor) fields.disabled = false;
+  }
+});
 
 function renderOfferTerms(terms) {
   const fields = $("offer-term-values");

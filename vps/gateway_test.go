@@ -19,12 +19,15 @@ import (
 const gatewayTestKeyA = "upstream-a-fixture-Key_abcdefghijklmnopqrstuvwxyz"
 const gatewayTestKeyB = "upstream-b-fixture-Key_ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const gatewayTestPAT = "upstream-account-fixture-PAT_0123456789"
+const gatewayBrowserAgent = "Atlas-Allowed-Fixture/1.0"
+const gatewayBrowserProof = "synthetic-browser-client-proof"
 
 type gatewayFixture struct {
 	*httptest.Server
 	a, b         atomic.Int32
 	verification atomic.Int32
 	images       atomic.Int32
+	headerCalls  atomic.Int32
 	bRateLimitAt atomic.Int32
 	perfDown     atomic.Bool
 }
@@ -34,6 +37,14 @@ func newGatewayFixture(t *testing.T, s *Server, models [2]string) *gatewayFixtur
 	f := &gatewayFixture{}
 	f.Server = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
+		proof := r.Header.Get("X-Client-Proof")
+		if r.UserAgent() == gatewayBrowserAgent || proof != "" {
+			if r.URL.Path != "/a/v1/chat/completions" || r.UserAgent() != gatewayBrowserAgent || proof != gatewayBrowserProof {
+				t.Error("browser header settings were sent outside their exact model connection")
+			} else {
+				f.headerCalls.Add(1)
+			}
+		}
 		switch r.URL.Path {
 		case "/api/status":
 			if auth != "" {

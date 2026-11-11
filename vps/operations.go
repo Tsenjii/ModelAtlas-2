@@ -274,6 +274,7 @@ func verifyVault(ctx context.Context, db *sql.DB, key []byte) error {
 		{"integration_credentials", "encrypted_key", "key"}, {"assistant_secret_refs", "encrypted_key", "key"},
 		{"credential_auth_fields", "fields_json", "fields"}, {"assistant_secret_refs", "fields_json", "fields"},
 		{"workspace_peer", "encrypted_token", "key"}, {"onboarding", "draft_json", "draft"},
+		{"model_request_headers", "encrypted_headers", "key"},
 	}
 	for _, check := range checks {
 		var exists int

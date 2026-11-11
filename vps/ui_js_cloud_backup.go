@@ -10,7 +10,7 @@ const cloudBackupHTML = `
 <details id="cloud-backup-setup" hidden>
 <summary id="cloud-backup-setup-title">設定備份目的地</summary>
 <form id="cloud-backup-destination" method="post" autocomplete="off">
-<label>雲端儲存<select name="provider"><option value="r2">Cloudflare R2</option><option value="b2">Backblaze B2</option></select></label>
+<label>雲端儲存<select name="provider" aria-label="雲端儲存"><option value="r2">Cloudflare R2</option><option value="b2">Backblaze B2</option></select></label>
 <label>S3 端點<input name="endpoint" type="url" required maxlength="200" placeholder="https://帳戶ID.r2.cloudflarestorage.com" spellcheck="false"></label>
 <label>Bucket 名稱<input name="bucket" required maxlength="63" autocapitalize="none" spellcheck="false"></label>
 <label>備份資料夾<input name="prefix" value="ModelAtlas" required maxlength="512" autocapitalize="none" spellcheck="false"></label>

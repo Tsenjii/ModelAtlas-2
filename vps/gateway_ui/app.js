@@ -11,7 +11,8 @@ const statuses = {
   TIMEOUT: "逾時", NETWORK: "連線失敗", PARSER: "回應格式錯誤", INVALID_REQUEST: "上游拒絕請求",
   AUTH_INVALID: "上游 Key 無效", AUTH: "上游驗證失敗", INFERENCE_DENIED: "上游拒絕存取",
   PAYMENT_REQUIRED: "額度不足", HTTP_ERROR: "上游拒絕請求", TELEMETRY_SAVE: "紀錄暫不可寫入",
-  SECRET_IN_RESPONSE: "上游回應含私密資料", REQUEST_IN_PROGRESS: "已有請求執行中"
+  SECRET_IN_RESPONSE: "上游回應含私密資料", REQUEST_IN_PROGRESS: "已有請求執行中",
+  REQUEST_HEADERS_UNAVAILABLE: "請求標頭暫時不可用"
 };
 const errors = {
   "valid provider proxy mode required": "請選擇直連或指定代理。",
@@ -19,6 +20,13 @@ const errors = {
   "provider proxy URL required": "請填寫此裝置使用的代理網址。",
   "provider proxy changed; reload before saving": "代理設定已變更，請關閉後重新開啟連線設定。",
   "provider proxy unavailable": "此裝置的代理設定目前無法讀取。",
+  "model request headers unavailable": "這條連線的請求標頭暫時無法讀取或儲存。",
+  "model request headers changed; reload before saving": "標頭設定已變更，請關閉後重新開啟再儲存。",
+  "invalid model request headers": "請檢查標頭設定，最多可填八組。",
+  "invalid, duplicate or reserved model request header": "有重複、格式錯誤或由 Key 與連線管理的標頭名稱。",
+  "invalid model request header value": "請填入單行的標頭值，最長 2 KB。",
+  "enter a new value before making a header public": "取消私密前請重新輸入標頭值。",
+  "private content in a visible header field": "標頭名稱或可見值含有私密資料。請將私密值勾選為私密。",
   "valid name and HTTPS base URL required": "請填名稱和有效的 HTTPS Base URL。",
   "public ID or upstream route removed": "這個公開 ID 或其中一條上游路由已刪除。",
   "public model ID already in use or unavailable": "這個公開模型 ID 已被使用或保留。請改用其他 ID。",
