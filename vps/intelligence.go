@@ -14,10 +14,20 @@ import (
 )
 
 var decimalPattern = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:[.][0-9]*)?|[.][0-9]+)(?:[eE][+-]?[0-9]{1,4})?$`)
-var normalizeSeparators = regexp.MustCompile(`[_./:@\s-]+`)
+
+func normalizeModelID(raw string) string {
+	parts := strings.FieldsFunc(strings.ToLower(strings.TrimSpace(raw)), func(r rune) bool {
+		switch r {
+		case '_', '.', '/', ':', '@', ' ', '\t', '\n', '\f', '\r', '-':
+			return true
+		}
+		return false
+	})
+	return strings.Join(parts, "-")
+}
 
 func canonicalID(raw string) string {
-	return strings.TrimSuffix(strings.Trim(normalizeSeparators.ReplaceAllString(strings.ToLower(strings.TrimSpace(raw)), "-"), "-"), "-latest")
+	return strings.TrimSuffix(normalizeModelID(raw), "-latest")
 }
 
 type ModelMetadata struct {

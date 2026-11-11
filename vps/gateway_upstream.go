@@ -284,16 +284,19 @@ type gatewayPerformance struct {
 }
 
 const gatewayOfferScopeSQL = "provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=?"
+const gatewayCorrelatedOfferScopeSQL = "provider_id=m.provider_id AND account_id=m.account_id AND credential_id=m.credential_id AND model_id=m.model_id AND group_id=m.group_id AND endpoint=m.endpoint"
+
+const gatewayPerformanceFields = "outcome,ttft_ms,ttfb_ms,latency_ms,details_json"
+const gatewayPerformanceSamplesSQL = ` FROM (SELECT %s FROM telemetry
+	WHERE %s AND created_at>=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED')
+	ORDER BY created_at DESC,id DESC LIMIT 100)`
 
 const gatewayPerformanceSQL = `SELECT json_object(
 	'samples',COUNT(*),'successes',COALESCE(SUM(outcome='SUCCESS'),0),
 	'ttft_ms',AVG(CASE WHEN outcome='SUCCESS' THEN ttft_ms END),
 	'ttfb_ms',AVG(CASE WHEN outcome='SUCCESS' THEN ttfb_ms END),
 	'latency_ms',AVG(CASE WHEN outcome='SUCCESS' THEN latency_ms END),
-	'tps',AVG(CASE WHEN outcome='SUCCESS' THEN ` + numericTPS + ` END))
-	FROM (SELECT outcome,ttft_ms,ttfb_ms,latency_ms,details_json FROM telemetry
-	WHERE %s AND created_at>=? AND outcome NOT IN ('RUNNING','CANCELLED','INTERRUPTED')
-	ORDER BY created_at DESC,id DESC LIMIT 100)`
+	'tps',AVG(CASE WHEN outcome='SUCCESS' THEN ` + numericTPS + ` END))` + gatewayPerformanceSamplesSQL
 
 func (s *Server) gatewayPerformance(ctx context.Context, v Selection) (gatewayPerformance, error) {
 	return s.gatewayReadPerformance(ctx, gatewayOfferScopeSQL,
@@ -303,7 +306,7 @@ func (s *Server) gatewayPerformance(ctx context.Context, v Selection) (gatewayPe
 func (s *Server) gatewayReadPerformance(ctx context.Context, scope string, args ...any) (gatewayPerformance, error) {
 	var p gatewayPerformance
 	var raw []byte
-	query := fmt.Sprintf(gatewayPerformanceSQL, scope)
+	query := fmt.Sprintf(gatewayPerformanceSQL, gatewayPerformanceFields, scope)
 	err := s.Store.DB.QueryRowContext(ctx, query, args...).Scan(&raw)
 	if err != nil {
 		return p, err
@@ -332,25 +335,37 @@ func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	limit, offset := pageRange(r, 50)
 	q := r.URL.Query()
-	var order string
-	switch q.Get("sort") {
+	sortBy := q.Get("sort")
+	var fields, metric, direction string
+	switch sortBy {
 	case "ttft":
-		order = "json_extract(perf,'$.ttft_ms') ASC NULLS LAST, "
+		fields, metric, direction = "outcome,ttft_ms", "AVG(CASE WHEN outcome='SUCCESS' THEN ttft_ms END)", "ASC"
 	case "tps":
-		order = "json_extract(perf,'$.tps') DESC NULLS LAST, "
+		fields, metric, direction = "outcome,details_json", "AVG(CASE WHEN outcome='SUCCESS' THEN "+numericTPS+" END)", "DESC"
 	case "success":
-		order = "1.0 * json_extract(perf,'$.successes') / NULLIF(json_extract(perf,'$.samples'),0) DESC NULLS LAST, "
+		fields, metric, direction = "outcome", "1.0*SUM(outcome='SUCCESS')/NULLIF(COUNT(*),0)", "DESC"
 	case "latency":
-		order = "json_extract(perf,'$.latency_ms') ASC NULLS LAST, "
+		fields, metric, direction = "outcome,latency_ms", "AVG(CASE WHEN outcome='SUCCESS' THEN latency_ms END)", "ASC"
 	}
-	perf := "NULL"
+	order, perf := "", "NULL"
 	var args []any
-	if order != "" {
-		perf = "(" + fmt.Sprintf(gatewayPerformanceSQL, "provider_id=m.provider_id AND account_id=m.account_id AND credential_id=m.credential_id AND model_id=m.model_id AND group_id=m.group_id AND endpoint=m.endpoint") + ")"
-		args = append(args, now()-7*86400000)
+	cutoff := now() - 7*86400000
+	if metric != "" {
+		// Sort using one aggregate. Keep the full performance payload for
+		// the selected rows and the same JSON numeric conversion for averages.
+		perf = "(" + fmt.Sprintf(gatewayPerformanceSQL, gatewayPerformanceFields, gatewayCorrelatedOfferScopeSQL) + ")"
+		if sortBy != "success" {
+			metric = "json_extract(json_array(" + metric + "),'$[0]')"
+		}
+		order = "(SELECT " + metric + fmt.Sprintf(gatewayPerformanceSamplesSQL, fields, gatewayCorrelatedOfferScopeSQL) + ") " + direction + " NULLS LAST, "
+		args = append(args, cutoff)
 	}
 	id := q.Get("canonical_id")
-	args = append(args, id, id, q.Get("provider_id"), q.Get("provider_id"), q.Get("account_id"), q.Get("account_id"), q.Get("credential_id"), q.Get("credential_id"), q.Get("q"), limit+1, offset)
+	args = append(args, id, id, q.Get("provider_id"), q.Get("provider_id"), q.Get("account_id"), q.Get("account_id"), q.Get("credential_id"), q.Get("credential_id"), q.Get("q"))
+	if order != "" {
+		args = append(args, cutoff)
+	}
+	args = append(args, limit+1, offset)
 	rows, err := s.Store.DB.QueryContext(ctx, gatewayCatalogSQL+` SELECT m.provider_id,m.account_id,m.credential_id,m.model_id,m.group_id,m.endpoint,
 		m.provider,m.account,m.credential,m.base_url,m.has_api_key,m.display_name,m.canonical_id,m.operation,m.enabled,`+perf+` AS perf,`+gatewayTermColumns+`
 		FROM scopes m WHERE (?='' OR m.canonical_id=?)

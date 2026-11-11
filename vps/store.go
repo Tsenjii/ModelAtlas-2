@@ -98,7 +98,16 @@ func openStore(path string, autoSnapshot bool, vaultKey ...[]byte) (*Store, erro
 			}
 		}
 	}
-	for _, q := range []string{"PRAGMA foreign_keys=ON", "PRAGMA busy_timeout=5000", "PRAGMA journal_mode=WAL", "PRAGMA cache_size=-2048", "PRAGMA temp_store=FILE", "PRAGMA mmap_size=0"} {
+	// One connection serves the main database. Keep more of its frequently
+	// read history in the page cache while allowing large sorts to spill.
+	for _, q := range []string{
+		"PRAGMA foreign_keys=ON",
+		"PRAGMA busy_timeout=5000",
+		"PRAGMA journal_mode=WAL",
+		"PRAGMA cache_size=-16384",
+		"PRAGMA temp_store=FILE",
+		"PRAGMA mmap_size=0",
+	} {
 		if _, err = db.Exec(q); err != nil {
 			db.Close()
 			return nil, fmt.Errorf("pragma: %w", err)

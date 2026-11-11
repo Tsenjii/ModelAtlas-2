@@ -67,6 +67,69 @@ func TestGatewayKeyPolicyEnforced(t *testing.T) {
 	auth(401)
 }
 
+func TestGatewayOfferingSortKeepsScopeAndMissingMetrics(t *testing.T) {
+	s := testServer(t)
+	scope := seed(t, s, "https://provider.example/v1")
+	for _, id := range []string{"00-no-samples", "model-a", "model-b", "model-c"} {
+		scope.ModelID = id
+		requireCode(t, req(t, s, "POST", "/api/v1/models", Model{ProviderID: scope.ProviderID, ID: id, DisplayName: id}), 201)
+		requireCode(t, req(t, s, "POST", "/api/v1/my-models", scope), 201)
+	}
+	at := now()
+	sample := func(id, model, outcome, details string, ttft, latency any, created int64) {
+		t.Helper()
+		if _, err := s.Store.DB.ExecContext(t.Context(), `INSERT INTO telemetry(
+			id,provider_id,account_id,credential_id,model_id,group_id,endpoint,operation,source,outcome,details_json,ttft_ms,latency_ms,created_at)
+			VALUES(?,?,?,?,?,'','CHAT_COMPLETIONS','CHAT_COMPLETIONS','GATEWAY_TEST',?,?,?,?,?)`,
+			id, scope.ProviderID, scope.AccountID, scope.CredentialID, model, outcome, details, ttft, latency, created); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sample("a-success", "model-a", "SUCCESS", `{"tps":0}`, 8, 90, at)
+	sample("a-failure", "model-a", "UPSTREAM_5XX", `{}`, nil, nil, at)
+	sample("b-success", "model-b", "SUCCESS", `{"tps":12.5}`, 40, 30, at)
+	sample("c-failure", "model-c", "UPSTREAM_5XX", `{}`, nil, nil, at)
+	sample("d-cancelled", "00-no-samples", "CANCELLED", `{"tps":300}`, 1, 1, at)
+	sample("d-old", "00-no-samples", "SUCCESS", `{"tps":300}`, 1, 1, at-8*86400000)
+
+	s.distribution = true
+	type page struct {
+		Offerings []gatewayOffering
+		More      bool
+	}
+	for _, tc := range []struct {
+		sort string
+		ids  [4]string
+	}{
+		{"ttft", [4]string{"model-a", "model-b", "00-no-samples", "model-c"}},
+		{"tps", [4]string{"model-b", "model-a", "00-no-samples", "model-c"}},
+		{"latency", [4]string{"model-b", "model-a", "00-no-samples", "model-c"}},
+		{"success", [4]string{"model-b", "model-a", "model-c", "00-no-samples"}},
+	} {
+		for _, offset := range []int{0, 2} {
+			path := fmt.Sprintf("/api/v1/gateway/offerings?sort=%s&limit=2&offset=%d", tc.sort, offset)
+			result := gatewayDecode[page](t, req(t, s, "GET", path, nil), 200)
+			if len(result.Offerings) != 2 || result.More != (offset == 0) ||
+				result.Offerings[0].ModelID != tc.ids[offset] || result.Offerings[1].ModelID != tc.ids[offset+1] {
+				t.Fatalf("%s page %d sorted the wrong records: %+v", tc.sort, offset, result)
+			}
+			for _, offer := range result.Offerings {
+				p := offer.Performance
+				switch offer.ModelID {
+				case "model-a":
+					if p.Samples != 2 || p.Successes != 1 || p.TPS == nil || *p.TPS != 0 || p.TTFT == nil || *p.TTFT != 8 || p.Latency == nil || *p.Latency != 90 {
+						t.Fatalf("%s changed the complete performance payload: %+v", tc.sort, p)
+					}
+				case "00-no-samples":
+					if p.Samples != 0 || p.Successes != 0 || p.TPS != nil || p.TTFT != nil || p.Latency != nil {
+						t.Fatalf("%s counted an old or cancelled request: %+v", tc.sort, p)
+					}
+				}
+			}
+		}
+	}
+}
+
 func TestGatewayUsageIntervalsAndSources(t *testing.T) {
 	s := testServer(t)
 	s.distribution = true

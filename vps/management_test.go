@@ -206,6 +206,17 @@ func TestSafeBackupV2RoundTripAndUnsafeAtomicRollback(t *testing.T) {
 }
 
 func TestHumanReadableAliasesPreserveRawModelIdentity(t *testing.T) {
+	for _, tc := range []struct{ raw, normalized, canonical string }{
+		{" \tVendor___GPT:4 @LATEST-- ", "vendor-gpt-4-latest", "vendor-gpt-4"},
+		{" /模型\u00a0名//Δ ", "模型\u00a0名-δ", "模型\u00a0名-δ"},
+		{"Foo\t\vBar.-", "foo-\vbar", "foo-\vbar"},
+		{"model-latest-latest", "model-latest-latest", "model-latest"},
+		{" _.- ", "", ""},
+	} {
+		if normalized, canonical := normalizeModelID(tc.raw), canonicalID(tc.raw); normalized != tc.normalized || canonical != tc.canonical {
+			t.Errorf("%q normalized as %q and grouped as %q", tc.raw, normalized, canonical)
+		}
+	}
 	s := testServer(t)
 	seed(t, s, "https://provider.example/v1")
 	metadata := ModelMetadata{ProviderID: "p", ModelID: "m", CanonicalID: "m", Category: "CHAT_REASONING", Aliases: []string{"Synthetic Echo", "模型 別名"}}
