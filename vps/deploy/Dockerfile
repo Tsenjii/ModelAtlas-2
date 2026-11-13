@@ -4,6 +4,7 @@ WORKDIR /source/vps
 COPY vps/go.mod vps/go.sum ./
 RUN go mod download
 COPY vps/ ./
+COPY release/version.properties ../release/version.properties
 ARG SOURCE_COMMIT=development
 RUN MODELATLAS_BUILD_COMMIT="$SOURCE_COMMIT" sh deploy/build.sh /out/modelatlas-vps
 
@@ -25,6 +26,6 @@ WORKDIR /data
 EXPOSE 8787
 STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD ["/usr/local/bin/modelatlas-vps", "ops", "ready", "--env-file", "/data/state/config/modelatlas.env"]
+    CMD ["/usr/local/bin/modelatlas-vps", "portable", "ready", "--directory", "/data/state", "--update-root", "/data"]
 ENTRYPOINT ["/usr/local/bin/modelatlas-entrypoint"]
-CMD ["portable", "run", "--directory", "/data/state"]
+CMD ["portable", "run", "--directory", "/data/state", "--update-root", "/data"]

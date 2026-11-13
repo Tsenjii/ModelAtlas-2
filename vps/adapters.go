@@ -255,9 +255,7 @@ func enrichNvidiaMetrics(s *Server, ctx context.Context, v Selection, p Provider
 	if s.authorizeUpstream(req, p, key, c) != nil {
 		return errors.New("invalid credential")
 	}
-	client := *s.Client
-	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	resp, err := client.Do(req)
+	resp, _, err := s.doProviderRequest(req, p, c, s.Client)
 	if err != nil {
 		return err
 	}
@@ -384,6 +382,10 @@ func (s *Server) runPending(ctx context.Context) {
 }
 func (s *Server) workerTick(ctx context.Context) {
 	if s.maintenancePending() {
+		return
+	}
+	if s.distribution {
+		s.tickCloudBackup(ctx)
 		return
 	}
 	s.backgroundTick(ctx)

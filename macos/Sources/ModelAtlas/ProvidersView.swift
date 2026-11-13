@@ -312,6 +312,7 @@ struct AddProviderView: View {
     private var configContent: some View {
         VStack(spacing: 18) {
         ProviderIdentityEditor(store: store, provider: provider)
+        ProviderProxyEditor(store: store, providerID: id)
         AtlasCard {
             Text("供應商設定").font(.headline)
             FormField(title: "官方網站", text: $website)

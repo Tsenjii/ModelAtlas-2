@@ -580,6 +580,16 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 	if err = s.authorizeUpstream(upstream, provider, key, cfg); err != nil {
 		return result, 422
 	}
+	var headerRevision string
+	if source != "CRAWLER_VERIFY" {
+		var privateHeaders []string
+		privateHeaders, headerRevision, err = s.applyModelHeaders(upstream, provider, cfg, scope)
+		if err != nil {
+			result.Outcome = "REQUEST_HEADERS_UNAVAILABLE"
+			return result, 503
+		}
+		secrets = append(secrets, privateHeaders...)
+	}
 	userID := newID()
 	if body.containsSecret(secrets) {
 		result.Outcome = "SECRET_IN_REQUEST_CONTENT"
@@ -614,6 +624,9 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 		pendingMessages = append(pendingMessages, turn)
 	}
 	conditionHash := authenticityCondition(payload, operation, stream, upstream.Header.Get("anthropic-version"), body.size)
+	if headerRevision != "" {
+		conditionHash = contentHash([]byte(conditionHash + ":" + headerRevision))
+	}
 	started := time.Now()
 	sampleID := newID()
 	receipt, err := s.newReceipt(ctx, scope, provider, started.UnixMilli(), secrets)
@@ -729,9 +742,8 @@ func (s *Server) execute(parent context.Context, v inferRequest, source string, 
 			_ = s.captureAuthenticity(saveCtx, sampleID, provider.CredentialStamp, authenticityCapture{ConditionHash: conditionHash, ConfigHash: connectorHash(cfg), EndpointHash: authenticityEndpointHash(endpoint, operation), PayloadBytes: body.size, MaxOutputTokens: v.MaxTokens, ToolsOffered: len(tools), ValidToolCalls: len(result.ToolCalls), TextBytes: text.Len(), ReasoningBytes: reasoning.Len()}, authenticityTraffic{ID: sampleID, Selection: scope, Operation: operation, Source: source, Outcome: result.Outcome, CredentialVersion: provider.CredentialVersion, At: started.UnixMilli(), Input: inputs, Output: outputs, Details: string(raw)})
 		}
 	}()
-	client := *s.Client
-	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	resp, err := client.Do(upstream)
+	resp, network, err := s.doProviderRequest(upstream, provider, cfg, s.Client)
+	result.Details["network"] = network
 	if err != nil {
 		return result, 502
 	}

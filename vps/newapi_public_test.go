@@ -35,6 +35,20 @@ func TestCertifiedPublicNominalPriceStillReachesSelectedOffer(t *testing.T) {
 	if summary["nominal_price"] == nil || summary["effective_price"] != nil {
 		t.Fatal("public nominal quote lost its account projection or became effective price")
 	}
+	// Older databases may contain an invalid observation. It should not
+	// prevent creating the index or reading valid quotes for this account.
+	if _, err := s.Store.DB.Exec(`DROP INDEX gateway_public_group_quotes;
+		INSERT INTO observations VALUES('legacy-bad-quote','invalid','NOMINAL_PRICE','NEW_API_OFFICIAL','SUCCESS','invalid',0)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Store.DB.Exec(gatewayPublicGroupIndex); err != nil {
+		t.Fatal(err)
+	}
+	offer := gatewayOffering{Selection: v, Operation: v.Endpoint, BaseURL: up.URL + "/v1"}
+	quotes := s.gatewayPublishedGroupPrices(t.Context(), offer)
+	if len(quotes) != 1 || quotes[0].AccountID != v.AccountID || quotes[0].CredentialID != "" || quotes[0].Facts["price"] == nil {
+		t.Fatalf("expected the nominal quote for this account and operation: %+v", quotes)
+	}
 }
 
 func TestNewApiPublicVersionZeroUsesSchemaWithoutSendingInferenceKey(t *testing.T) {

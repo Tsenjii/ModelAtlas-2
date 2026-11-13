@@ -274,6 +274,7 @@ func verifyVault(ctx context.Context, db *sql.DB, key []byte) error {
 		{"integration_credentials", "encrypted_key", "key"}, {"assistant_secret_refs", "encrypted_key", "key"},
 		{"credential_auth_fields", "fields_json", "fields"}, {"assistant_secret_refs", "fields_json", "fields"},
 		{"workspace_peer", "encrypted_token", "key"}, {"onboarding", "draft_json", "draft"},
+		{"model_request_headers", "encrypted_headers", "key"},
 	}
 	for _, check := range checks {
 		var exists int
@@ -402,9 +403,13 @@ func snapshotDatabase(ctx context.Context, db *sql.DB, path string) error {
 }
 
 func verifyReleaseBundle(directory string) error {
+	return verifyBundleFiles(directory, versionInfo())
+}
+
+func verifyBundleFiles(directory string, expected binaryVersion, extraRequired ...string) error {
 	raw, err := os.ReadFile(filepath.Join(directory, "VERSION.json"))
 	var version binaryVersion
-	if err != nil || len(raw) > 4096 || json.Unmarshal(raw, &version) != nil || version != versionInfo() || version.OS != "linux" || len(version.Commit) != 40 {
+	if err != nil || len(raw) > 4096 || json.Unmarshal(raw, &version) != nil || version != expected || version.OS != "linux" || len(version.Commit) != 40 {
 		return errors.New("release manifest does not match this binary / CPU architecture")
 	}
 	if _, err = hex.DecodeString(version.Commit); err != nil {
@@ -440,7 +445,8 @@ func verifyReleaseBundle(directory string) error {
 	if scanner.Err() != nil {
 		return scanner.Err()
 	}
-	for _, name := range []string{"VERSION.json", "bin/modelatlas-vps-linux-" + version.Arch, "deploy/install.sh", "deploy/update.sh", "deploy/manage.sh", "deploy/modelatlas-vps.service", "UPDATE.md", "README.md", "PLATFORM_DEPLOY.md"} {
+	required := []string{"VERSION.json", "bin/modelatlas-vps-linux-" + version.Arch, "deploy/install.sh", "deploy/update.sh", "deploy/manage.sh", "deploy/modelatlas-vps.service", "UPDATE.md", "README.md", "PLATFORM_DEPLOY.md"}
+	for _, name := range append(required, extraRequired...) {
 		if !checks[name] {
 			return errors.New("incomplete release bundle")
 		}
@@ -573,6 +579,10 @@ func restoreSnapshot(ctx context.Context, path, snapshot string, key []byte) err
 }
 
 func verifyRunningService(ctx context.Context, c deploymentConfig, previous bool) error {
+	return verifyServiceVersion(ctx, c, versionInfo(), previous)
+}
+
+func verifyServiceVersion(ctx context.Context, c deploymentConfig, expected binaryVersion, previous bool) error {
 	host, port, _ := net.SplitHostPort(c.addr)
 	if net.ParseIP(host).IsUnspecified() {
 		host = "127.0.0.1"
@@ -610,7 +620,7 @@ func verifyRunningService(ctx context.Context, c deploymentConfig, previous bool
 		return nil
 	}
 	var state systemState
-	if response.StatusCode != 200 || json.NewDecoder(io.LimitReader(response.Body, 16384)).Decode(&state) != nil || state.Status != "ok" || state.Version != versionInfo() || !state.VaultVerified {
+	if response.StatusCode != 200 || json.NewDecoder(io.LimitReader(response.Body, 16384)).Decode(&state) != nil || state.Status != "ok" || state.Version != expected || state.DatabaseSchema != expected.Schema || !state.VaultVerified {
 		return errors.New("service version, authentication, storage or vault readiness mismatch")
 	}
 	return nil

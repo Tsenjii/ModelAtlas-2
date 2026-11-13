@@ -261,7 +261,11 @@ func TestPortableForegroundUsesRealHTTPSAPIAndKeepsVaultAcrossRestart(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer restored.Close()
+	defer func() {
+		if restored != nil {
+			_ = restored.Close()
+		}
+	}()
 	var kept, cipher string
 	if restored.DB.QueryRow("SELECT content FROM messages WHERE id='portable-history'").Scan(&kept) != nil || kept != content {
 		t.Fatal("full original history changed")
@@ -275,5 +279,30 @@ func TestPortableForegroundUsesRealHTTPSAPIAndKeepsVaultAcrossRestart(t *testing
 	after, _ := os.ReadFile(env)
 	if !bytes.Contains(after, []byte(c.token)) {
 		t.Fatal("portable restart replaced the original admin identity")
+	}
+	if os.Getenv("MODELATLAS_PORTABLE_UPDATE_TEST") == "1" {
+		if err := restored.Close(); err != nil {
+			t.Fatal(err)
+		}
+		restored = nil
+		checkSupervisedPortableUpdate(t, binary, directory, c, func(schema int, edition string) {
+			code, raw := request("GET", "/api/v1/system", nil, true)
+			var state systemState
+			if code != 200 || json.Unmarshal(raw, &state) != nil || state.DatabaseSchema != schema || !state.VaultVerified || state.Maintenance {
+				t.Fatalf("wrong database or vault after boot: HTTP %d", code)
+			}
+			code, raw = request("GET", "/api/v1/messages?session_id="+url.QueryEscape(session), nil, true)
+			quoted, _ := json.Marshal(content)
+			if edition == "workspace" && (code != 200 || !bytes.Contains(raw, quoted)) {
+				t.Fatal("complete history was lost during the update")
+			}
+			if edition == "lite" && code != 404 {
+				t.Fatal("Lite restarted with the advanced workspace routes enabled")
+			}
+			code, raw = request("GET", "/api/v1/credentials", nil, true)
+			if code != 200 || bytes.Contains(raw, []byte(rotated)) {
+				t.Fatal("credential read or secret boundary failed after the update")
+			}
+		})
 	}
 }

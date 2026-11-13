@@ -15,8 +15,8 @@ import (
 )
 
 func cloudBackupCommand(args []string, out io.Writer) error {
-	if len(args) == 0 || !oneOf(args[0], "configure", "run", "fetch") {
-		return errors.New("usage: backup configure|run|fetch --env-file PRIVATE_ENV --destination-file PRIVATE_DESTINATION [options]")
+	if len(args) == 0 || !oneOf(args[0], "configure", "run", "list", "fetch") {
+		return errors.New("usage: backup configure|run|list|fetch --env-file PRIVATE_ENV [--destination-file PRIVATE_DESTINATION] [options]")
 	}
 	f := flag.NewFlagSet("backup", flag.ContinueOnError)
 	f.SetOutput(io.Discard)
@@ -32,12 +32,25 @@ func cloudBackupCommand(args []string, out io.Writer) error {
 	id := f.String("id", "", "persistent backup identifier")
 	retry := f.Bool("retry", false, "explicitly retry the same failed backup")
 	output := f.String("output", "", "new private download directory")
-	if f.Parse(args[1:]) != nil || f.NArg() != 0 || !filepath.IsAbs(*destination) || filepath.Clean(*destination) != *destination {
+	if f.Parse(args[1:]) != nil || f.NArg() != 0 || args[0] == "configure" && *destination == "" {
 		return errors.New("invalid backup options; credentials belong in private files")
 	}
 	config, err := operationConfig(*env, "")
 	if err != nil {
 		return err
+	}
+	if *destination == "" {
+		*destination = config.backupDestination
+		if *destination == "" {
+			source, err := filepath.Abs(config.db)
+			if err != nil {
+				return errors.New("cannot resolve the managed backup destination")
+			}
+			*destination = managedBackupPath(source)
+		}
+	}
+	if !filepath.IsAbs(*destination) || filepath.Clean(*destination) != *destination {
+		return errors.New("backup requires an absolute private destination file")
 	}
 	if args[0] == "configure" {
 		if !*confirmed {
@@ -80,10 +93,20 @@ func cloudBackupCommand(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if !cfg.matchesMasterKey(config.key) {
+		return errors.New("this destination requires the original ModelAtlas master key")
+	}
 	parent, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	ctx, cancel := context.WithTimeout(parent, 10*time.Minute)
 	defer cancel()
+	if args[0] == "list" {
+		ids, err := listCloudBackupIDs(ctx, cfg)
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(out).Encode(map[string]any{"backup_ids": ids})
+	}
 	if args[0] == "fetch" {
 		if !validCloudBackupID(*id) || !filepath.IsAbs(*output) || filepath.Clean(*output) != *output {
 			return errors.New("fetch requires a backup id and a new absolute private output directory")

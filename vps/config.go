@@ -24,6 +24,7 @@ type ProviderConfig struct {
 	CheckinURL      string            `json:"checkin_url,omitempty"`
 	Notes           string            `json:"notes,omitempty"`
 	ProjectID       string            `json:"project_id,omitempty"`
+	ProxyRequired   bool              `json:"proxy_required,omitempty"`
 }
 
 var endpointNames = map[string]string{"CHAT_COMPLETIONS": "/chat/completions", "RESPONSES": "/responses", "ANTHROPIC_MESSAGES": "/messages", "GEMINI_NATIVE": "/models/{model}:streamGenerateContent", "MODELS": "/models", "IMAGES_GENERATION": "/images/generations", "IMAGES_EDIT": "/images/edits", "AUDIO": "/audio/transcriptions", "AUDIO_SPEECH": "/audio/speech", "GEMINI_SPEECH": "/models/{model}:generateContent", "CUSTOM": "/custom", "EMBEDDINGS": "/embeddings", "RERANK": "/rerank"}
@@ -151,6 +152,8 @@ func (s *Server) setConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	// An auth-mode change cannot silently reinterpret existing secrets.
 	previous := s.config(r.Context(), p)
+	// Network mode is changed through the dedicated per-device proxy editor.
+	v.Config.ProxyRequired = previous.ProxyRequired
 	if previous.AuthMode != v.Config.AuthMode {
 		http.Error(w, "auth mode is immutable; create a reviewed connection", 409)
 		return
@@ -164,7 +167,7 @@ func (s *Server) setConfig(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) provider(ctx context.Context, id string) (Provider, error) {
 	var p Provider
-	err := s.Store.DB.QueryRowContext(ctx, "SELECT id,name,base_url,description,auth_mode FROM providers WHERE id=?", id).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode)
+	err := s.Store.DB.QueryRowContext(ctx, "SELECT p.id,p.name,p.base_url,p.description,p.auth_mode FROM providers p WHERE p.id=? AND "+gatewayActiveProvider, id).Scan(&p.ID, &p.Name, &p.BaseURL, &p.Description, &p.AuthMode)
 	return p, err
 }
 func endpointURL(p Provider, c ProviderConfig, kind, model string) (string, error) {

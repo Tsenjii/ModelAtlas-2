@@ -6,7 +6,7 @@ import (
 )
 
 // Additive migrations preserve the first VPS database and all observation history.
-const schemaVersion = 38
+const schemaVersion = 46
 
 func migrate(db *sql.DB) error {
 	var version int
@@ -361,6 +361,60 @@ func migrate(db *sql.DB) error {
 	}
 	if version < 38 {
 		if _, err = tx.Exec("CREATE INDEX IF NOT EXISTS research_runs_started ON research_runs(started_at);CREATE INDEX IF NOT EXISTS research_schedule_runs_owner ON research_schedule_runs(schedule_id,run_id);PRAGMA user_version=38;"); err != nil {
+			return err
+		}
+	}
+	if version < 39 {
+		if _, err = tx.Exec(gatewaySchema + "PRAGMA user_version=39;"); err != nil {
+			return err
+		}
+	}
+	if version < 40 {
+		if _, err = tx.Exec(gatewayConsoleSchema + "PRAGMA user_version=40;"); err != nil {
+			return err
+		}
+	}
+	if version < 41 {
+		if _, err = tx.Exec(gatewayRemovalSchema + "PRAGMA user_version=41;"); err != nil {
+			return err
+		}
+	}
+	if version < 42 {
+		if _, err = tx.Exec(gatewayRememberSchema + "PRAGMA user_version=42;"); err != nil {
+			return err
+		}
+	}
+	if version < 43 {
+		if _, err = tx.Exec(modelVerificationSchema + "PRAGMA user_version=43;"); err != nil {
+			return err
+		}
+	}
+	if version < 44 {
+		if _, err = tx.Exec(providerProxySchema + "PRAGMA user_version=44;"); err != nil {
+			return err
+		}
+	}
+	if version < 45 {
+		var hasMode bool
+		if err = tx.QueryRow("SELECT EXISTS(SELECT 1 FROM pragma_table_info('provider_proxies') WHERE name='mode')").Scan(&hasMode); err != nil {
+			return err
+		}
+		if !hasMode {
+			if _, err = tx.Exec(`
+            ALTER TABLE provider_proxies ADD COLUMN mode TEXT NOT NULL DEFAULT 'DIRECT' CHECK(mode IN('DIRECT','PROXY'));
+            UPDATE provider_proxies SET mode='PROXY'
+                WHERE COALESCE((SELECT json_extract(config_json,'$.proxy_required') FROM provider_config
+                    WHERE provider_id=provider_proxies.provider_id),0)=1;
+        `); err != nil {
+				return err
+			}
+		}
+		if _, err = tx.Exec("PRAGMA user_version=45"); err != nil {
+			return err
+		}
+	}
+	if version < 46 {
+		if _, err = tx.Exec(modelRequestHeaderSchema + "PRAGMA user_version=46;"); err != nil {
 			return err
 		}
 	}

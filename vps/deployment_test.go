@@ -181,6 +181,9 @@ func TestPlatformDeploymentProcess(t *testing.T) {
 		if want == 426 && response.Header.Get("WWW-Authenticate") != "" {
 			t.Fatal("plaintext request got a Basic auth challenge")
 		}
+		if want == 303 && (response.Header.Get("Location") != "/login" || response.Header.Get("WWW-Authenticate") != "") {
+			t.Fatal("browser navigation did not receive the standalone login page redirect")
+		}
 		if strings.HasPrefix(base, "https:") && want == 200 && response.Header.Get("Strict-Transport-Security") == "" {
 			t.Fatal("HTTPS response missing HSTS")
 		}
@@ -190,6 +193,9 @@ func TestPlatformDeploymentProcess(t *testing.T) {
 	request(http.DefaultClient, backend.String(), "GET", "/api/v1/status", publicURL.Host, false, nil, nil, 426)
 	request(http.DefaultClient, backend.String(), "GET", "/healthz/", publicURL.Host, false, nil, nil, 426)
 	request(ingress.Client(), ingress.URL, "GET", "/", "", false, nil, nil, 401)
+	browser := *ingress.Client()
+	browser.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	request(&browser, ingress.URL, "GET", "/", "", false, map[string]string{"Accept": "text/html"}, nil, 303)
 	request(ingress.Client(), ingress.URL, "GET", "/app.js", "", false, nil, nil, 401)
 	request(ingress.Client(), ingress.URL, "GET", "/api/v1/status", "evil.example", true, nil, nil, 421)
 	request(ingress.Client(), ingress.URL, "POST", "/api/v1/providers", "", true, map[string]string{"Origin": "http://" + publicURL.Host}, Provider{ID: "bad", Name: "Bad", BaseURL: "https://api.example/v1"}, 403)

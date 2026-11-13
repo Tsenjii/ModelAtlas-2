@@ -38,6 +38,10 @@ services:
       - /data/state
       - --backup-destination
       - ${MODELATLAS_BACKUP_DESTINATION:-}
+      - --edition
+      - ${MODELATLAS_EDITION:-}
+      - --update-root
+      - /data
     depends_on:
       initialize:
         condition: service_completed_successfully

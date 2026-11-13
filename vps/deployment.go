@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"net"
@@ -11,12 +12,16 @@ import (
 	"strings"
 )
 
+type verifiedPublicOrigin struct{}
+
 type deploymentConfig struct {
 	addr, db, token, publicOrigin string
 	desktopReady                  string
 	maintenanceFile               string
 	backupDestination             string
+	updateRoot, updateTrialGate   string
 	key                           []byte
+	distribution                  bool
 }
 
 // Platform mode is an explicit trust boundary: the hosting service must isolate
@@ -43,6 +48,14 @@ func readDeploymentConfig(getenv func(string) string) (deploymentConfig, error) 
 		}
 	}
 	mode := getenv("MODELATLAS_DEPLOYMENT")
+	edition := getenv("MODELATLAS_EDITION")
+	if !oneOf(edition, "", "workspace", "lite") || mode == "desktop" && edition == "lite" {
+		return c, errors.New("invalid MODELATLAS_EDITION for this deployment")
+	}
+	c.distribution = edition == "lite"
+	if c.distribution && len(c.key) != 32 {
+		return c, errors.New("lite edition requires a stable MODELATLAS_MASTER_KEY")
+	}
 	if mode != "" && mode != "local" && mode != "platform" && mode != "desktop" {
 		return c, errors.New("MODELATLAS_DEPLOYMENT must be local, platform or desktop")
 	}
@@ -146,6 +159,9 @@ func (c deploymentConfig) handler(next http.Handler) http.Handler {
 		if origin := r.Header.Get("Origin"); origin != "" && origin != c.publicOrigin {
 			http.Error(w, "origin mismatch", http.StatusForbidden)
 			return
+		}
+		if c.desktopReady == "" {
+			r = r.WithContext(context.WithValue(r.Context(), verifiedPublicOrigin{}, c.publicOrigin))
 		}
 		next.ServeHTTP(w, r)
 	})

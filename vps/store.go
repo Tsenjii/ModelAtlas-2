@@ -98,7 +98,16 @@ func openStore(path string, autoSnapshot bool, vaultKey ...[]byte) (*Store, erro
 			}
 		}
 	}
-	for _, q := range []string{"PRAGMA foreign_keys=ON", "PRAGMA busy_timeout=5000", "PRAGMA journal_mode=WAL", "PRAGMA cache_size=-2048", "PRAGMA temp_store=FILE", "PRAGMA mmap_size=0"} {
+	// One connection serves the main database. Keep more of its frequently
+	// read history in the page cache while allowing large sorts to spill.
+	for _, q := range []string{
+		"PRAGMA foreign_keys=ON",
+		"PRAGMA busy_timeout=5000",
+		"PRAGMA journal_mode=WAL",
+		"PRAGMA cache_size=-16384",
+		"PRAGMA temp_store=FILE",
+		"PRAGMA mmap_size=0",
+	} {
 		if _, err = db.Exec(q); err != nil {
 			db.Close()
 			return nil, fmt.Errorf("pragma: %w", err)
@@ -112,11 +121,16 @@ func openStore(path string, autoSnapshot bool, vaultKey ...[]byte) (*Store, erro
 		db.Close()
 		return nil, fmt.Errorf("migration: %w", err)
 	}
+	// Add the compatible lookup index after the observations table exists.
+	if _, err = db.Exec(gatewayPublicGroupIndex); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("public group price index: %w", err)
+	}
 	if err = backfillEndpointBindings(db); err != nil {
 		db.Close()
 		return nil, err
 	}
-	if _, err = db.Exec("UPDATE telemetry SET outcome='INTERRUPTED' WHERE outcome='RUNNING'"); err != nil {
+	if _, err = db.Exec("UPDATE telemetry SET outcome='INTERRUPTED' WHERE outcome='RUNNING'; UPDATE gateway_requests SET outcome='INTERRUPTED' WHERE outcome='RUNNING'"); err != nil {
 		db.Close()
 		return nil, err
 	}

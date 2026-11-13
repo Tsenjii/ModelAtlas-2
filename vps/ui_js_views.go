@@ -2,26 +2,85 @@ package main
 
 const jsViews = `
 const settingsEdits=new Set();let settingsEditVersion=0;
+let toolMembershipsNeeded=false,toolMembershipsReady=false,toolMembershipsRead=null;
+function isLiteCatalog(){return liteTool==="models"&&!["batch","retained"].includes(toolQuery.get("tab"));}
+function ensureToolMemberships(){
+ if(toolMembershipsReady)return Promise.resolve();
+ if(!toolMembershipsRead){
+  toolMembershipsNeeded=true;
+  toolMembershipsRead=refresh().finally(()=>{toolMembershipsRead=null;});
+ }
+ return toolMembershipsRead;
+}
 function renderSettingsForm(){
  const form=$("settings-form"),values={performance_window:settings.performance_window||"7d",timezone:settings.timezone||"Asia/Taipei",notifications:!!settings.notifications,background_enabled:!!settings.background?.enabled,background_minutes:settings.background?.interval_minutes||60,background_scopes:settings.background?.max_scopes||2,quota_remaining_below:settings.notification_rules?.quota_remaining_below??100};
  notificationRuleNames.forEach(k=>values[k]=!!settings.notification_rules?.[k]);
  for(const [name,value]of Object.entries(values)){if(settingsEdits.has(name))continue;const input=form.elements.namedItem(name);if(input.type==="checkbox")input.checked=value;else input.value=value;}
 }
 async function refreshWorkspaceSnapshot(requested){
- const version=++refreshVersion,readController=new AbortController(),opts={signal:readController.signal},reads=[api("/providers",opts),api("/accounts",opts),api("/credentials",opts),apiPages("/models",opts),apiPages("/my-models?all=true",opts),api("/settings",opts),api("/endpoints",opts)];
+ if(liteTool&&!["models","providers"].includes(liteTool))return refreshLiteToolSnapshot(requested);
+ const version=++refreshVersion,readController=new AbortController(),opts={signal:readController.signal};
+ const catalogOnly=isLiteCatalog()&&!toolMembershipsNeeded;
+ const catalog=liteTool?api("/model-catalog"+(catalogOnly?"?memberships=1":""),opts):apiPages("/models",opts).then(models=>({models}));
+ const members=catalogOnly?null:liteTool?apiPages("/model-memberships",opts,400):apiPages("/my-models?all=true",opts);
+ const reads=[api("/providers",opts),api("/accounts",opts),api("/credentials",opts),catalog,members,api("/settings",opts),api("/endpoints",opts)];
  let values;try{values=await Promise.all(reads);}catch(error){readController.abort();await Promise.allSettled(reads);throw error;}
  if(version!==refreshVersion||requested!==workspaceRefreshRequested)return;
- [providers,accounts,credentials,models,myModels,settings,endpointProfiles]=values;workspaceHasData=true;workspaceReadStatus("loading");refreshAccountCheckins();renderSettingsForm();modelCatalogIndex=new Map(models.map(m=>[JSON.stringify([m.provider_id,m.id]),m]));modelFilterOptions();catalogIndexes();renderProviders();renderModels();renderCatalog();assistantTargets();
+ const [nextProviders,nextAccounts,nextCredentials,index,nextMembers,nextSettings,nextEndpoints]=values;
+ providers=nextProviders;accounts=nextAccounts;credentials=nextCredentials;models=index.models;myModels=nextMembers??index.memberships??[];settings=nextSettings;endpointProfiles=nextEndpoints;
+ toolMembershipsReady=!catalogOnly;
+ workspaceHasData=true;workspaceReadStatus("loading");renderSettingsForm();
+ modelCatalogIndex=new Map(models.map(m=>[JSON.stringify([m.provider_id,m.id]),m]));modelSearchIndex=new WeakMap();catalogIndexes();
+ if(liteTool){
+  if(!catalogOnly||currentPane==="providers"){
+   if(currentPane==="providers")refreshAccountCheckins();
+   renderProviders();
+  }
+  if(!catalogOnly){modelFilterOptions();renderModels();}
+  renderCatalog();
+  if($("detail").open&&$("detail").dataset.kind==="provider")await $("detail-content").providerReload?.();
+  if($("detail").open&&$("detail").dataset.kind==="model")$("detail-content").modelConnectionsReload?.();
+  return;
+ }
+ refreshAccountCheckins();modelFilterOptions();renderProviders();renderModels();renderCatalog();assistantTargets();
  const oldTarget=$("target").value;$("target").replaceChildren();myModels.filter(m=>m.state==="ACTIVE"&&m.enabled&&operationLabels[targetOperation(m)]).forEach(m=>option($("target"),key(m),modelDisplayName(m)+" · "+operationLabels[targetOperation(m)]+" · "+(providers.find(p=>p.id===m.provider_id)?.name||m.provider_id)+" / "+connectionLabel(m)));if([...$("target").options].some(o=>o.value===oldTarget))$("target").value=oldTarget;else if(!oldTarget&&providers.length===1&&providers[0].id==="builtin-kilo-anonymous"){const initial=[...$("target").options].find(o=>JSON.parse(o.value).model_id==="nvidia/nemotron-3.5-lightning:free");if(initial)$("target").value=initial.value;}
  if($("detail").open&&$("detail").dataset.kind==="provider")await $("detail-content").providerReload?.();if($("detail").open&&$("detail").dataset.kind==="model")$("detail-content").modelConnectionsReload?.();modelPickerReady=true;syncModelPickerButton();syncNativeShell();const target=$("target").value;if(oldTarget!==target||!composerDraftOwner)prepareComposerSelection();await sessionSelectRefresh();if(version!==refreshVersion)return;
  if(oldTarget!==target)resetMediaDraft();updatePlayground();
  if(!busy){restoreComposerDraft();await loadChat();}
 }
 function renderProviders(){
- const q=$("provider-search").value.toLowerCase(),box=$("provider-list");box.replaceChildren();
- const rows=providers.slice().sort((a,b)=>{if($("provider-sort").value!=="smart")return a.name.localeCompare(b.name);const x=providerRanking(a),y=providerRanking(b);return x===null||y===null?(x===y?0:x===null?1:-1):y-x;}).filter(p=>(p.name+" "+p.base_url+" "+(p.description||"")).toLowerCase().includes(q)).filter(p=>providerQuick==="free"?myModels.some(m=>m.provider_id===p.id&&m.state==="ACTIVE"&&m.price_state==="FREE_NOW"):providerQuick==="pending"?providerCheckinPending(p):providerQuick==="models"?myModels.some(m=>m.provider_id===p.id&&m.state==="ACTIVE"):true);
+ const q=$("provider-search").value.toLowerCase(),box=$("provider-list"),smart=$("provider-sort").value==="smart";
+ const counts=new Map(),accountCounts=new Map(),keyCounts=new Map(),checkinCounts=new Map();
+ const increment=(map,id)=>map.set(id,(map.get(id)||0)+1);
+ for(const a of accounts)increment(accountCounts,a.provider_id);
+ for(const c of credentials)if(c.enabled&&c.role==="INFERENCE")increment(keyCounts,c.provider_id);
+ const current=checkinSnapshotCurrent();
+ if(current)for(const a of accountCheckins.accounts)if(a.required&&!a.completed_at)increment(checkinCounts,a.provider_id);
+ for(const m of myModels){
+  if(m.state!=="ACTIVE")continue;
+  let entry=counts.get(m.provider_id);
+  if(!entry){entry={models:0,free:false,total:0,ranked:0};counts.set(m.provider_id,entry);}
+  entry.models++;entry.free||=m.price_state==="FREE_NOW";
+  if(smart&&m.enabled){
+   const score=modelRanking(m).score;
+   if(score!==null){entry.total+=score;entry.ranked++;}
+  }
+ }
+ const rows=providers.filter(p=>{
+  if(!(p.name+" "+p.base_url+" "+(p.description||"")).toLowerCase().includes(q))return false;
+  if(providerQuick==="free")return counts.get(p.id)?.free;
+  if(providerQuick==="pending")return p.config?.requires_daily_checkin&&(!current||checkinCounts.has(p.id));
+  if(providerQuick==="models")return counts.has(p.id);
+  return true;
+ }).sort((a,b)=>{
+  if(!smart)return a.name.localeCompare(b.name);
+  const x=counts.get(a.id),y=counts.get(b.id);
+  if(!x?.ranked||!y?.ranked)return Number(!!y?.ranked)-Number(!!x?.ranked);
+  return y.total/y.ranked-x.total/x.ranked;
+ });
+ box.replaceChildren();
  $("provider-result-count").textContent=rows.length+" 個供應商";$("provider-page-count").textContent=providers.length+" 個供應商 · "+accounts.length+" 個帳戶";
- rows.forEach(p=>{const count=myModels.filter(m=>m.provider_id===p.id&&m.state==="ACTIVE").length,{body}=collectionItem(box,"provider",p.name,p.description||adapterLabels[p.config?.adapter]||"自訂連線",()=>providerDetail(p));let host=p.base_url;try{host=new URL(p.base_url).host;}catch(e){}body.append(el("small",host));const metrics=el("div",undefined,"metric-line");metricChip(metrics,"模型",String(count));metricChip(metrics,"帳戶",String(accounts.filter(a=>a.provider_id===p.id).length));metricChip(metrics,"已啟用 Key",String(credentials.filter(c=>c.provider_id===p.id&&c.enabled&&c.role==="INFERENCE").length));if(pendingCheckins(p.id).length)metrics.append(el("span",pendingCheckins(p.id).length+" 個帳戶待簽到","state-chip"));body.append(metrics);});
+ rows.forEach(p=>{const {body}=collectionItem(box,"provider",p.name,p.description||adapterLabels[p.config?.adapter]||"自訂連線",()=>providerDetail(p));let host=p.base_url;try{host=new URL(p.base_url).host;}catch(e){}body.append(el("small",host));const metrics=el("div",undefined,"metric-line");metricChip(metrics,"模型",String(counts.get(p.id)?.models||0));metricChip(metrics,"帳戶",String(accountCounts.get(p.id)||0));metricChip(metrics,"已啟用 Key",String(keyCounts.get(p.id)||0));if(checkinCounts.has(p.id))metrics.append(el("span",checkinCounts.get(p.id)+" 個帳戶待簽到","state-chip"));body.append(metrics);});
  if(!rows.length)workspaceEmpty(box,providerQuick==="pending"?"目前沒有待簽到的帳戶":providers.length?"沒有符合的供應商":"連接你的第一個 Provider",providerQuick==="pending"?"當日完成紀錄會依設定時區更新。":providers.length?"換個名稱或網址搜尋。":"加入 API 連線後，就能探索模型、開始對話。","provider",providers.length?"清除搜尋":"新增連線",()=>{if(providers.length){$("provider-search").value="";providerQuick="all";document.querySelectorAll("[data-provider-quick]").forEach(n=>n.setAttribute("aria-pressed",String(n.dataset.providerQuick==="all")));renderProviders();}else workspace("providers","providers-new",true);});renderCheckinSummary();
 }
 const modelSuccessPercent=new Intl.NumberFormat("zh-TW",{style:"percent",maximumFractionDigits:1});
@@ -45,7 +104,7 @@ function modelPerformanceValues(model,speed){
 }
 function renderModels(){
  const box=$("my-models"),global=$("model-scope").value==="GLOBAL";box.replaceChildren();
- const matching=(global?models.map(catalogOffer):myModels).filter(modelPasses).sort(compareModelSort);$("model-more").hidden=matching.length<=modelDisplayLimit;
+ const matching=matchingModels(global?models.map(catalogOffer):myModels);$("model-more").hidden=matching.length<=modelDisplayLimit;
  const hasPerformance=!global&&matching.length>0,note=$("model-scan-note");
  box.classList.toggle("has-model-performance",hasPerformance);
  note.hidden=!hasPerformance;

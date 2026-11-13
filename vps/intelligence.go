@@ -14,10 +14,20 @@ import (
 )
 
 var decimalPattern = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:[.][0-9]*)?|[.][0-9]+)(?:[eE][+-]?[0-9]{1,4})?$`)
-var normalizeSeparators = regexp.MustCompile(`[_./:@\s-]+`)
+
+func normalizeModelID(raw string) string {
+	parts := strings.FieldsFunc(strings.ToLower(strings.TrimSpace(raw)), func(r rune) bool {
+		switch r {
+		case '_', '.', '/', ':', '@', ' ', '\t', '\n', '\f', '\r', '-':
+			return true
+		}
+		return false
+	})
+	return strings.Join(parts, "-")
+}
 
 func canonicalID(raw string) string {
-	return strings.TrimSuffix(strings.Trim(normalizeSeparators.ReplaceAllString(strings.ToLower(strings.TrimSpace(raw)), "-"), "-"), "-latest")
+	return strings.TrimSuffix(normalizeModelID(raw), "-latest")
 }
 
 type ModelMetadata struct {
@@ -50,24 +60,38 @@ func validStrings(a []string, allowed []string, max int) bool {
 	return true
 }
 func (s *Server) metadata(ctx context.Context, p, m string) ModelMetadata {
-	out := ModelMetadata{ProviderID: p, ModelID: m, CanonicalID: canonicalID(m), Category: "OTHER", Source: "NORMALIZATION", Capabilities: []string{}, Modalities: []string{}, Endpoints: []string{}, Aliases: []string{}}
 	var raw string
-	if s.Store.DB.QueryRowContext(ctx, "SELECT metadata_json FROM model_metadata WHERE provider_id=? AND model_id=?", p, m).Scan(&raw) == nil {
-		_ = json.Unmarshal([]byte(raw), &out)
-	}
+	s.Store.DB.QueryRowContext(ctx, "SELECT metadata_json FROM model_metadata WHERE provider_id=? AND model_id=?", p, m).Scan(&raw)
+	out := modelMetadata(p, m, raw)
 	if out.Source != "MANUAL" {
-		if rule := s.activeKnowledge(ctx, "MODEL_ALIAS_RULE", p+"/"+m); validID(str(rule["canonical_id"])) {
-			out.CanonicalID = str(rule["canonical_id"])
-			out.AliasSource = "USER_APPROVED_ALIAS_RULE"
-		}
+		out.applyAliasRule(s.activeKnowledge(ctx, "MODEL_ALIAS_RULE", p+"/"+m))
 	}
 	return out
+}
+
+func modelMetadata(providerID, modelID, raw string) ModelMetadata {
+	out := ModelMetadata{ProviderID: providerID, ModelID: modelID, CanonicalID: canonicalID(modelID), Category: "OTHER", Source: "NORMALIZATION", Capabilities: []string{}, Modalities: []string{}, Endpoints: []string{}, Aliases: []string{}}
+	if raw != "" {
+		_ = json.Unmarshal([]byte(raw), &out)
+	}
+	return out
+}
+
+func (m *ModelMetadata) applyAliasRule(rule map[string]any) {
+	if id := str(rule["canonical_id"]); m.Source != "MANUAL" && validID(id) {
+		m.CanonicalID = id
+		m.AliasSource = "USER_APPROVED_ALIAS_RULE"
+	}
 }
 func (s *Server) setMetadata(w http.ResponseWriter, r *http.Request) {
 	var m ModelMetadata
 	if !decodeJSON(w, r, &m) {
 		return
 	}
+	s.saveMetadata(w, r, m)
+}
+
+func (s *Server) saveMetadata(w http.ResponseWriter, r *http.Request, m ModelMetadata) {
 	if !validID(m.ProviderID) || !validID(m.ModelID) || !validStrings(m.Capabilities, capabilityNames, 24) || !validStrings(m.Modalities, []string{"TEXT_INPUT", "TEXT_OUTPUT", "IMAGE_INPUT", "IMAGE_OUTPUT", "AUDIO_INPUT", "AUDIO_OUTPUT", "FILE_INPUT"}, 7) || !validStrings(m.Endpoints, []string{"CHAT_COMPLETIONS", "RESPONSES", "ANTHROPIC_MESSAGES", "GEMINI_NATIVE", "IMAGES_GENERATION", "IMAGES_EDIT", "AUDIO", "EMBEDDINGS", "RERANK", "CUSTOM", "AUDIO_SPEECH", "GEMINI_SPEECH"}, 12) || !oneOf(m.Category, "CHAT_REASONING", "CODING", "IMAGE", "AUDIO", "EMBEDDING", "RERANK", "SAFETY", "OTHER") || len(m.Aliases) > 20 || len(m.Description) > 4096 || len(m.Vendor) > 120 || m.ContextTokens != nil && (*m.ContextTokens <= 0 || *m.ContextTokens > 16777216) {
 		http.Error(w, "invalid model metadata", 400)
 		return
@@ -149,6 +173,15 @@ type Observation struct {
 }
 
 func (s *Server) observe(ctx context.Context, v Selection, kind, source, status string, facts map[string]any) error {
+	return writeObservation(ctx, s.Store.DB, v, kind, source, status, facts)
+}
+
+type observationWriter interface {
+	statementExecutor
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func writeObservation(ctx context.Context, db observationWriter, v Selection, kind, source, status string, facts map[string]any) error {
 	if snapshot, ok := ctx.Value(credentialObservationKey{}).(credentialObservation); ok && snapshot.Provider == v.ProviderID && snapshot.Account == v.AccountID && validateHTTPS(snapshot.Origin) {
 		copy := map[string]any{}
 		for k, x := range facts {
@@ -163,7 +196,9 @@ func (s *Server) observe(ctx context.Context, v Selection, kind, source, status 
 		if snapshot, ok := ctx.Value(credentialObservationKey{}).(credentialObservation); ok && snapshot.Provider == v.ProviderID && snapshot.Account == v.AccountID && snapshot.Credential == v.CredentialID {
 			version = snapshot.Version
 		} else {
-			s.Store.DB.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&version)
+			if err := db.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&version); err != nil {
+				return err
+			}
 		}
 		copied := map[string]any{}
 		for k, x := range facts {
@@ -176,7 +211,7 @@ func (s *Server) observe(ctx context.Context, v Selection, kind, source, status 
 	if err != nil || len(raw) > 512<<10 {
 		return sql.ErrNoRows
 	}
-	_, err = s.Store.DB.ExecContext(ctx, "INSERT INTO observations VALUES(?,?,?,?,?,?,?)", newID(), scopeKey(v), kind, source, status, string(raw), now())
+	_, err = db.ExecContext(ctx, "INSERT INTO observations VALUES(?,?,?,?,?,?,?)", newID(), scopeKey(v), kind, source, status, string(raw), now())
 	return err
 }
 func (s *Server) observations(ctx context.Context, v Selection) []Observation {
@@ -204,6 +239,10 @@ func validScope(v Selection) bool {
 	return validID(v.ProviderID) && validID(v.AccountID) && validID(v.CredentialID) && validID(v.ModelID) && safeText(v.Group, 120) == v.Group && validID(v.Endpoint) && v.Endpoint != "MODELS"
 }
 func (s *Server) modelDetail(w http.ResponseWriter, r *http.Request) {
+	s.readModelDetail(w, r, false)
+}
+
+func (s *Server) readModelDetail(w http.ResponseWriter, r *http.Request, includeOffer bool) {
 	v := selectionQuery(r)
 	if !validScope(v) {
 		http.Error(w, "full selected scope required", 400)
@@ -258,10 +297,26 @@ func (s *Server) modelDetail(w http.ResponseWriter, r *http.Request) {
 	providerScope.AccountID = ""
 	providerScope.CredentialID = ""
 	providerScope.Group = ""
-	jsonOK(w, 200, map[string]any{"selection": v, "metadata": meta, "capabilities": s.capabilities(r.Context(), v), "latest": latest, "last_good": lastGood, "history": obs, "local": local, "external": external, "account_facts": accountFacts, "provider_facts": s.observations(r.Context(), providerScope), "resource_pools": s.resourcePools(r.Context(), v)})
+	result := map[string]any{"selection": v, "metadata": meta, "capabilities": s.capabilities(r.Context(), v), "latest": latest, "last_good": lastGood, "history": obs, "local": local, "external": external, "account_facts": accountFacts, "provider_facts": s.observations(r.Context(), providerScope), "resource_pools": s.resourcePools(r.Context(), v)}
+	if includeOffer {
+		offer, err := s.readToolModelOffer(r.Context(), v)
+		if err == sql.ErrNoRows {
+			http.Error(w, "model membership unavailable", 404)
+			return
+		}
+		if err != nil {
+			http.Error(w, "database error", 500)
+			return
+		}
+		result["membership"] = offer
+	}
+	jsonOK(w, 200, result)
 }
 func parseWindow(r *http.Request) int64 {
-	raw := r.URL.Query().Get("window")
+	return performanceWindow(r.URL.Query().Get("window"))
+}
+
+func performanceWindow(raw string) int64 {
 	switch raw {
 	case "custom", "", "7d":
 		return int64(7 * 24 * time.Hour / time.Millisecond)

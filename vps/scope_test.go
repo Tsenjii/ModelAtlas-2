@@ -83,7 +83,8 @@ func TestProtectedResponsiveAssets(t *testing.T) {
 	}
 	js := req(t, s, "GET", "/app.js", nil)
 	requireCode(t, js, 200)
-	if !strings.Contains(js.Body.String(), "/api/v1/infer") {
+	if !strings.Contains(js.Body.String(), `const workspaceAPI=document.documentElement.dataset.apiBase||"/api/v1";`) ||
+		!strings.Contains(js.Body.String(), `fetch(workspaceAPI+"/infer",{method:"POST"`) {
 		t.Fatal("Playground lacks real API wiring")
 	}
 }

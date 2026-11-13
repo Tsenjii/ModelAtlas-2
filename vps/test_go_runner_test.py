@@ -31,6 +31,16 @@ class CompleteGoRegistryTest(unittest.TestCase):
         reports[0]["completed"][groups[0][0]] = "skip"
         verify(cases, reports)
 
+    def test_long_serial_workspace_transfers_use_different_processes(self):
+        history = "TestWorkspaceChunkFormalCallerLargeHistoryAndLostAcknowledgement"
+        resume = "TestWorkspaceChunkLargeRecordResumeRestartAndLostFinishReceipt"
+        encoding = "TestWorkspaceChunkBoundedEncodingAndLegacyCanonicalBytes"
+        conflict = "TestWorkspaceChunkLargeConflictPreviewKeepsFullCASAndHistory"
+        ordered = ["TestEarlierA", encoding, history, conflict, resume, "TestZ"]
+        groups = partition(reversed(ordered))
+        self.assertEqual(groups, [["TestEarlierA", encoding, resume], [history, conflict, "TestZ"]])
+        verify(ordered, [self.report(group) for group in groups])
+
     def test_successful_exit_cannot_hide_a_missing_or_repeated_case(self):
         for reports in [
             [self.report(["TestOne"]), self.report(["TestOne"])],

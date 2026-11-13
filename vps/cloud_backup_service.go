@@ -68,7 +68,7 @@ func newCloudBackupService(parent context.Context, configPath, source string, ke
 	cfg = bindCloudBackupDestination(cfg, source, key)
 	m.cfg = cfg
 	relative, err := filepath.Rel(cfg.Spool, source)
-	if len(key) != 32 || err != nil || relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+	if len(key) != 32 || !cfg.matchesMasterKey(key) || err != nil || relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 		m.problem = "備份需要固定 master key，以及與正式資料庫分開的暫存目錄。"
 		return m
 	}
@@ -215,6 +215,10 @@ func (m *cloudBackupService) start(id, fingerprint string, retry bool) (cloudBac
 	if err != nil {
 		return existing, errors.New("another backup process is already running")
 	}
+	if err = m.available(); err != nil {
+		lease.Close()
+		return existing, err
+	}
 	if !retry {
 		_, err = m.db.ExecContext(m.ctx, "INSERT INTO backup_jobs(id,binding,destination,state,created_at,updated_at) VALUES(?,?,?,'PENDING',?,?)", id, fingerprint, m.cfg.Label, now(), now())
 	}
@@ -307,7 +311,7 @@ func (m *cloudBackupService) execute(ctx context.Context, id string, existing cl
 }
 
 func (m *cloudBackupService) tick(ctx context.Context) {
-	if m.available() != nil {
+	if m.db == nil || m.problem != "" {
 		return
 	}
 	p, err := m.policy(ctx)
@@ -331,13 +335,33 @@ func (m *cloudBackupService) tick(ctx context.Context) {
 	}
 }
 
+func (s *Server) cloudBackupRoutes(api *http.ServeMux) {
+	api.HandleFunc("GET /backup/cloud", s.getCloudBackup)
+	api.HandleFunc("POST /backup/cloud/destination", s.saveCloudBackupDestination)
+	api.HandleFunc("GET /backup/cloud/events", s.getCloudBackupEvents)
+	api.HandleFunc("POST /backup/cloud/policy", s.saveCloudBackupPolicy)
+	api.HandleFunc("POST /backup/cloud/run", s.startCloudBackup)
+	api.HandleFunc("POST /backup/cloud/cancel", s.cancelCloudBackup)
+}
+
 func (s *Server) getCloudBackup(w http.ResponseWriter, r *http.Request) {
-	m := s.backups
+	m, release := s.useCloudBackup()
+	defer release()
+	state := map[string]any{}
+	if s.managedBackups != nil {
+		state["setup_revision"] = managedBackupRevision(managedBackupPath(s.managedBackups.source))
+	}
 	if m == nil {
-		jsonOK(w, 200, map[string]any{"configured": false, "available": false, "reason": "尚未設定主機的加密備份目的地。"})
+		state["configured"], state["available"], state["reason"] = false, false, "尚未設定加密備份目的地。"
+		jsonOK(w, 200, state)
 		return
 	}
 	if m.available() != nil {
+		if s.managedBackups != nil && r.URL.RawQuery == "" {
+			state["configured"], state["available"], state["reason"] = false, false, "目前無法使用此目的地，請檢查主機或重新設定。"
+			jsonOK(w, 200, state)
+			return
+		}
 		http.Error(w, "主機備份設定暫時無法驗證，沒有啟用新的傳輸。", 503)
 		return
 	}
@@ -409,7 +433,12 @@ func (s *Server) getCloudBackup(w http.ResponseWriter, r *http.Request) {
 	m.mu.Lock()
 	active := m.active
 	m.mu.Unlock()
-	jsonOK(w, 200, map[string]any{"configured": true, "available": true, "destination": m.cfg.Label, "fingerprint": m.cfg.fingerprint, "key_recovery_confirmed": m.cfg.KeyRecoveryConfirmed, "policy": p, "active_id": active, "last_success_at": successful, "last_snapshot_at": snapshotAt, "jobs": jobs, "next_before": next, "recovered_job": recovered})
+	state["configured"], state["available"] = true, true
+	state["destination"], state["fingerprint"], state["key_recovery_confirmed"] = m.cfg.Label, m.cfg.fingerprint, m.cfg.KeyRecoveryConfirmed
+	state["policy"], state["active_id"] = p, active
+	state["last_success_at"], state["last_snapshot_at"] = successful, snapshotAt
+	state["jobs"], state["next_before"], state["recovered_job"] = jobs, next, recovered
+	jsonOK(w, 200, state)
 }
 
 func validCloudBackupJob(j cloudBackupJob) bool {
@@ -428,7 +457,8 @@ func (s *Server) saveCloudBackupPolicy(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &input) {
 		return
 	}
-	m := s.backups
+	m, release := s.useCloudBackup()
+	defer release()
 	if m == nil || m.available() != nil {
 		http.Error(w, "主機尚無可用的加密備份目的地。", 503)
 		return
@@ -469,11 +499,13 @@ func (s *Server) startCloudBackup(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &input) {
 		return
 	}
-	if s.backups == nil || !input.Confirm {
+	m, release := s.useCloudBackup()
+	defer release()
+	if m == nil || !input.Confirm {
 		http.Error(w, "請先設定並確認加密備份目的地。", 400)
 		return
 	}
-	job, err := s.backups.start(input.ID, input.Fingerprint, input.Retry)
+	job, err := m.start(input.ID, input.Fingerprint, input.Retry)
 	if err != nil {
 		http.Error(w, "備份尚未核准或已有工作執行；請重新讀取狀態，保留原備份識別碼。", 409)
 		return
@@ -488,7 +520,8 @@ func (s *Server) cancelCloudBackup(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &input) {
 		return
 	}
-	m := s.backups
+	m, release := s.useCloudBackup()
+	defer release()
 	if m == nil {
 		http.Error(w, "no backup service", 404)
 		return

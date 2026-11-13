@@ -3,15 +3,32 @@ package main
 import (
 	"net/http"
 	"strings"
+	"sync"
 )
 
+var homePage = staticHTML(homeHTML)
+var desktopHomePage = sync.OnceValue(func() http.HandlerFunc {
+	return staticHTML(strings.Replace(homeHTML, `<html lang="zh-Hant"`, `<html lang="zh-Hant" data-desktop-media="true"`, 1))
+})
+var workspaceHomePage = sync.OnceValue(func() http.HandlerFunc {
+	return staticHTML(strings.NewReplacer(
+		`<html lang="zh-Hant"`, `<html lang="zh-Hant" data-api-base="/workspace/api"`,
+		`<div class="header-actions">`, `<div class="header-actions"><a class="link-button icon-button" href="/" aria-label="回管理首頁" title="回管理首頁"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/></svg></a>`,
+		`href="/api/v1/backup"`, `href="/workspace/api/backup"`,
+		`<p id="system-status-summary"`, `<a class="link-button" href="/?settings=updates">開啟系統更新</a><p id="system-status-summary"`,
+	).Replace(homeHTML))
+})
+
 func (s *Server) home(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if s.desktop {
-		_, _ = w.Write([]byte(strings.Replace(homeHTML, `<html lang="zh-Hant"`, `<html lang="zh-Hant" data-desktop-media="true"`, 1)))
+	if r.URL.Path == "/workspace" {
+		workspaceHomePage()(w, r)
 		return
 	}
-	_, _ = w.Write([]byte(homeHTML))
+	if s.desktop {
+		desktopHomePage()(w, r)
+		return
+	}
+	homePage(w, r)
 }
 func (s *Server) stylesheet(w http.ResponseWriter, r *http.Request) {
 	cssAsset.serve(w, r, "text/css; charset=utf-8")
@@ -745,6 +762,7 @@ const homeHTML = `<!doctype html>
 </div>
 </div>
 <div id="settings-data" class="workspace-panel" role="tabpanel" aria-labelledby="settings-data-tab" data-workspace-panel="settings" hidden>
+` + cloudBackupHTML + `
 <section class="card" id="system-status-card" aria-labelledby="system-status-title">
 <div class="section-heading"><h2 id="system-status-title">服務與更新</h2><button id="system-status-refresh" type="button" class="ghost">重新檢查</button></div>
 <p id="system-status-summary" role="status" aria-live="polite">尚未讀取服務狀態。</p>
@@ -752,7 +770,7 @@ const homeHTML = `<!doctype html>
 <p id="system-status-problem" class="error" role="alert" hidden></p>
 <p class="section-description">更新會沿用資料和金鑰。完整資料備份由主機保存；下方設定匯出不含對話、請求紀錄及 Key。</p>
 </section>
-` + cloudBackupHTML + workspaceSyncHTML + `
+` + workspaceSyncHTML + `
 <div class="card">
 <h2>備份與還原</h2>
 <p>觀測與歷史持續保留。</p>

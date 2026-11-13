@@ -27,6 +27,20 @@ def partition(cases):
     ordered = sorted(cases)
     if not ordered or len(set(ordered)) != len(ordered):
         raise ValueError("empty or duplicate Go registry")
+
+    # Keep the two long serial workspace transfers on separate processes.
+    # Exchange the history transfer with a short encoding case to preserve
+    # both group sizes and the assignments of unrelated fixtures.
+    history = "TestWorkspaceChunkFormalCallerLargeHistoryAndLostAcknowledgement"
+    resume = "TestWorkspaceChunkLargeRecordResumeRestartAndLostFinishReceipt"
+    encoding = "TestWorkspaceChunkBoundedEncodingAndLegacyCanonicalBytes"
+    slots = {name: index for index, name in enumerate(ordered)}
+    if all(name in slots for name in (history, resume, encoding)):
+        history_slot, resume_slot, encoding_slot = (slots[name] for name in (history, resume, encoding))
+        history_group = history_slot % 2
+        if history_group == resume_slot % 2 and history_group != encoding_slot % 2:
+            ordered[history_slot], ordered[encoding_slot] = encoding, history
+
     groups = [ordered[::2], ordered[1::2]]
     if not all(groups):
         raise ValueError("both Go processes need registered cases")

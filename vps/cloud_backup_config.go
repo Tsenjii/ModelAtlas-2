@@ -15,8 +15,7 @@ import (
 	"unicode"
 )
 
-// Credentials remain in a host-owned rclone configuration. Web clients can
-// select an already configured destination, never submit commands or secrets.
+// Transfers use a dedicated, private rclone configuration on this host.
 type cloudBackupDestination struct {
 	Format               int    `json:"format"`
 	Label                string `json:"label"`
@@ -26,6 +25,7 @@ type cloudBackupDestination struct {
 	Prefix               string `json:"prefix"`
 	Spool                string `json:"spool_directory"`
 	KeyRecoveryConfirmed bool   `json:"key_recovery_confirmed"`
+	MasterKeyBinding     string `json:"master_key_binding,omitempty"`
 	fingerprint          string
 }
 
@@ -66,6 +66,18 @@ func backupPathSegment(value string) bool {
 	}) == -1
 }
 
+func validCloudBackupPrefix(prefix string) bool {
+	if len(prefix) == 0 || len(prefix) > 512 {
+		return false
+	}
+	for _, part := range strings.Split(prefix, "/") {
+		if !backupPathSegment(part) {
+			return false
+		}
+	}
+	return true
+}
+
 func validCloudBackupID(value string) bool {
 	return len(value) > len("backup-") && strings.HasPrefix(value, "backup-") && backupPathSegment(value)
 }
@@ -85,21 +97,21 @@ func readCloudBackupDestination(path string) (cloudBackupDestination, error) {
 	if d.Decode(&cfg) != nil || d.Decode(new(any)) != io.EOF || cfg.Format != 1 || len(cfg.Label) == 0 || len(cfg.Label) > 160 || strings.IndexFunc(cfg.Label, unicode.IsControl) != -1 {
 		return cfg, errors.New("invalid backup destination document")
 	}
-	if !backupPathSegment(cfg.Remote) || strings.Contains(cfg.Remote, ".") || len(cfg.Prefix) == 0 || len(cfg.Prefix) > 512 {
+	if cfg.MasterKeyBinding != "" && !validBackupDigest(cfg.MasterKeyBinding) {
+		return cfg, errors.New("invalid backup master key binding")
+	}
+	if !backupPathSegment(cfg.Remote) || strings.Contains(cfg.Remote, ".") {
 		return cfg, errors.New("invalid configured backup remote or prefix")
 	}
-	for _, part := range strings.Split(cfg.Prefix, "/") {
-		if !backupPathSegment(part) {
-			return cfg, errors.New("backup prefix must contain safe relative path segments")
-		}
+	if !validCloudBackupPrefix(cfg.Prefix) {
+		return cfg, errors.New("backup prefix must contain safe relative path segments")
 	}
 	for _, path := range []string{cfg.Executable, cfg.ConfigFile, cfg.Spool} {
 		if !filepath.IsAbs(path) || filepath.Clean(path) != path || strings.ContainsAny(path, "\r\n\x00") {
 			return cfg, errors.New("backup tool, credentials and spool require absolute host paths")
 		}
 	}
-	info, err := os.Stat(cfg.Executable)
-	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0111 == 0 || info.Mode().Perm()&0022 != 0 {
+	if !backupExecutableAvailable(cfg.Executable) {
 		return cfg, errors.New("configured backup executable is unavailable or writable by others")
 	}
 	secrets, err := privateBackupFile(cfg.ConfigFile, 2<<20)
@@ -129,6 +141,21 @@ func readCloudBackupDestination(path string) (cloudBackupDestination, error) {
 	identity, _ := json.Marshal(sections)
 	cfg.fingerprint = contentHash(append(append([]byte{}, raw...), identity...))
 	return cfg, nil
+}
+
+func backupExecutableAvailable(path string) bool {
+	info, err := os.Stat(path)
+	return filepath.IsAbs(path) && err == nil && info.Mode().IsRegular() && info.Mode().Perm()&0111 != 0 && info.Mode().Perm()&0022 == 0
+}
+
+func cloudBackupMasterKeyBinding(key []byte) string {
+	mac := hmac.New(sha256.New, key)
+	_, _ = io.WriteString(mac, "modelatlas/cloud-backup/key-binding/v1")
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func (cfg cloudBackupDestination) matchesMasterKey(key []byte) bool {
+	return cfg.MasterKeyBinding == "" || hmac.Equal([]byte(cfg.MasterKeyBinding), []byte(cloudBackupMasterKeyBinding(key)))
 }
 
 func validateBackupCryptRemote(raw []byte, remote string) error {

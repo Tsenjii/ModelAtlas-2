@@ -60,7 +60,7 @@ async function runModelBatch(state){
  if(state!==modelBatch||state.running||state.started)return;
  state.started=state.running=true;state.controller=new AbortController();state.render?.();
  try{
-  const response=await fetch("/api/v1/models/test-batch",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:state.id,selections:state.rows.map(scope)}),signal:state.controller.signal});
+  const response=await fetch(workspaceAPI+"/models/test-batch",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:state.id,selections:state.rows.map(scope)}),signal:state.controller.signal});
   if(!response.ok)throw Error(readableProblem(await response.text(),response.status));
   if(!response.headers.get("Content-Type")?.startsWith("application/x-ndjson")||!response.body)throw Error("無法讀取測試進度。");
   const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="";

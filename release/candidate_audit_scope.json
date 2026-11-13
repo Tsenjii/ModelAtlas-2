@@ -98,6 +98,16 @@
     "source": "bc4a735e9144564c5d78433b196038d2452c8def"
   },
   "go_new_events": {
+    "TestBrowserDistributionWorkflow": "skip",
+    "TestGatewayDistributionWorkflow": "pass",
+    "TestGatewayModelRequestHeadersStayWithConnection": "pass",
+    "TestGatewayModelBrowseCountsAndPages": "pass",
+    "TestLiteToolCatalogAndMembershipReads": "pass",
+    "TestGatewayOfferingSortKeepsScopeAndMissingMetrics": "pass",
+    "TestGatewayKeyPolicyEnforced": "pass",
+    "TestGatewayRememberBrowser": "pass",
+    "TestGatewayUsageIntervalsAndSources": "pass",
+    "TestVPSNativeSpeechPreservesUpstreamBytes": "pass",
     "TestConnectorPrivateMappingExplicitReadKeepsPublicAnonymousAndSecretsOut": "pass",
     "TestConnectorPrivateMappingKeyGroupReviewRealUseAndUndo": "pass",
     "TestConnectorPrivateMappingPATKeepsAccountAuthorityAndExactCredits": "pass",
@@ -160,6 +170,7 @@
     "TestPortableCloudHistoryExactRecoveryAndMalformedReadsKeepAuthorityClosed": "pass",
     "TestPortableCloudCommandsRequirePrivateIdentityAndExplicitKeyRecovery": "pass",
     "TestPortableCloudActualScheduleIdempotenceFetchAndCancellation": "skip",
+    "TestPortableManagedCloudBackupConfigurationAndRecovery": "skip",
     "TestPortableOnlineBackupKeepsLiveWriterAndConsistentCompleteHistory": "pass",
     "TestPortableCloudStateAndExecutionAuthorityDoNotTravelWithDatabaseBackup": "pass",
     "TestPortableCloudParentCrashStopsOwnedTransferAndRecoversUncertainty": "skip",
@@ -194,7 +205,18 @@
     "TestModelBatchExactScopesReceiptsAndPreflight": "pass",
     "TestModelBatchStopsAtRateLimitWithoutRetry": "pass",
     "TestModelBatchCancellationStopsActiveSocketAndPendingModels": "pass",
-    "TestBrowserModelBatchTestWorkflow": "skip"
+    "TestBrowserModelBatchTestWorkflow": "skip",
+    "TestProviderProxyRoutesTLSRequestsIndependentlyAndFailsClosed": "pass",
+    "TestProviderProxyRoutesTLSRequestsIndependentlyAndFailsClosed/http": "pass",
+    "TestProviderProxyRoutesTLSRequestsIndependentlyAndFailsClosed/https": "pass",
+    "TestProviderProxyRoutesTLSRequestsIndependentlyAndFailsClosed/socks5h": "pass",
+    "TestProviderProxyVaultConflictExportAndMissingDeviceBinding": "pass",
+    "TestProviderProxyPublicConnectorRetainsPrivateDestinationProtection": "pass",
+    "TestProviderProxyPublicHTTPSIsPinnedInsideAuthenticatedProxy": "pass",
+    "TestProviderProxyPublicHTTPSIsPinnedInsideAuthenticatedProxy/false": "pass",
+    "TestProviderProxyPublicHTTPSIsPinnedInsideAuthenticatedProxy/true": "pass",
+    "TestProviderProxySyncKeepsDeviceBindingsSeparate": "pass",
+    "TestGatewayModelTermsStayWithConnection": "pass"
   },
   "new_browser_images": [
     "connector-private-mapping-source-375-light.png",
@@ -274,7 +296,13 @@
     "model-batch-completed.png",
     "model-batch-limited.png",
     "model-batch-cancelled-320-large.png",
-    "model-batch-unconfirmed.png"
+    "model-batch-unconfirmed.png",
+    "distribution-model-1344-light.png",
+    "distribution-model-402-light.png",
+    "distribution-providers-402-light.png",
+    "distribution-key-402-light.png",
+    "distribution-usage-1344-light.png",
+    "distribution-usage-402-light.png"
   ],
   "rejected_aa_browser": {
     "id": 12625684013,

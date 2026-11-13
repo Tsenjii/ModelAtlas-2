@@ -60,6 +60,10 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	if !decodeLimit(w, r, &v, 12<<20) {
 		return
 	}
+	s.runMediaInference(w, r, v, "PLAYGROUND_MEDIA")
+}
+
+func (s *Server) runMediaInference(w http.ResponseWriter, r *http.Request, v MediaRequest, source string) {
 	operation := s.operation(r.Context(), v.Selection)
 	required := map[string]string{"IMAGES_GENERATION": "IMAGE_GENERATION", "IMAGES_EDIT": "IMAGE_EDITING", "AUDIO": "AUDIO_INPUT", "AUDIO_SPEECH": "AUDIO_OUTPUT", "GEMINI_SPEECH": "AUDIO_OUTPUT", "EMBEDDINGS": "EMBEDDING", "RERANK": "RERANK"}[operation]
 	if required == "" || !s.validateSelection(r.Context(), v.Selection) || !s.groupBound(r.Context(), v.Selection) || !oneOf(required, s.capabilities(r.Context(), v.Selection)...) {
@@ -207,12 +211,6 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	for _, secret := range secrets {
-		if secret != "" && (jsonContainsSecret(content, secret) || bytes.Contains(body.Bytes(), []byte(secret))) {
-			http.Error(w, "secret found in media content", 422)
-			return
-		}
-	}
 	request, err := http.NewRequestWithContext(ctx, "POST", endpoint, body)
 	if err != nil {
 		http.Error(w, "endpoint unavailable", 422)
@@ -222,6 +220,18 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	if s.authorizeUpstream(request, p, key, cfg) != nil {
 		http.Error(w, "credential invalid", 422)
 		return
+	}
+	privateHeaders, _, err := s.applyModelHeaders(request, p, cfg, v.Selection)
+	if err != nil {
+		http.Error(w, "model request headers unavailable", 503)
+		return
+	}
+	secrets = append(secrets, privateHeaders...)
+	for _, secret := range secrets {
+		if secret != "" && (jsonContainsSecret(content, secret) || bytes.Contains(body.Bytes(), []byte(secret))) {
+			http.Error(w, "secret found in media content", 422)
+			return
+		}
 	}
 	result := MediaResponse{Outcome: "NETWORK", Selection: v.Selection, RequestID: v.RequestID, Details: map[string]any{"streaming": false, "retry_count": 0, "ttft_ms": nil}}
 	responseStatus := 502
@@ -234,7 +244,7 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 	}
 	result.Details["sample_id"] = sampleID
 	result.Details["receipt"] = receipt
-	if err = s.startRequestRecord(ctx, sampleID, v.Selection, operation, "PLAYGROUND_MEDIA", started.UnixMilli(), p.CredentialVersion, "", v.RequestID, "", nil, result.Details); err != nil {
+	if err = s.startRequestRecord(ctx, sampleID, v.Selection, operation, source, started.UnixMilli(), p.CredentialVersion, "", v.RequestID, "", nil, result.Details); err != nil {
 		http.Error(w, "telemetry unavailable", 500)
 		return
 	}
@@ -275,9 +285,8 @@ func (s *Server) mediaInference(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonOK(w, responseStatus, result)
 	}()
-	client := *s.Client
-	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	response, err := client.Do(request)
+	response, network, err := s.doProviderRequest(request, p, cfg, s.Client)
+	result.Details["network"] = network
 	if err != nil {
 		return
 	}

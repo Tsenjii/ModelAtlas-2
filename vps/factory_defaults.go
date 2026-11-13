@@ -247,7 +247,7 @@ func (s *Server) guardFactoryKilo(ctx context.Context, v Selection, p Provider, 
 	ctx, stop := context.WithTimeout(ctx, 20*time.Second)
 	defer stop()
 	ctx = context.WithValue(ctx, publicAnonymousOnboardKey{}, true)
-	root, _, e := s.getStructured(ctx, p, ProviderConfig{AuthMode: "NONE"}, kiloFactoryBase+"/models", "", 4<<20)
+	root, _, e := s.getStructured(ctx, p, ProviderConfig{AuthMode: "NONE", ProxyRequired: s.config(ctx, p).ProxyRequired}, kiloFactoryBase+"/models", "", 4<<20)
 	if e != nil {
 		var limit *researchRunBudgetError
 		if errors.As(e, &limit) || researchTransportStopped(admissionContext, e) {

@@ -1,0 +1,90 @@
+:root {
+  font: 100%/1.5 system-ui, -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+  color-scheme: light;
+  color: var(--ink);
+  --ink: #1b2d49;
+  --muted: #526784;
+  --canvas: #eaf1f9;
+  --glass: #f7faffba;
+  --paper: #f9fbffe8;
+  --well: #ffffff9c;
+  --border: #ffffffdc;
+  --line: #c7d7e8;
+  --shadow: 0 9px 26px #18375614, inset 0 1px #ffffff6b;
+  --primary: #245f89;
+  --on-primary: #fff;
+  --accent: #d9ecf8;
+  --indigo: #766fbc;
+  --success: #257f6c;
+  --danger: #ad465c;
+  --pending: #887d9d;
+  --wave-main: #eaf2f9;
+  --wave-light: #eef8ff9c;
+  --wave-edge: #e9f9ffde;
+  --hero: clamp(176px, 17vw, 238px);
+  --nav-clearance: 20px;
+  --page-gap: clamp(16px, 2.4vw, 36px);
+  --content-width: 1420px;
+  --art-y: 24%;
+  --art: url("/assets/aqua-elaina-v1.jpg");
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e5eefb; --muted: #a6bad3; --canvas: #131e31; --glass: #1e2c43db;
+  --paper: #202f45f2; --well: #1a273ccb; --border: #6483a275; --line: #526884;
+  --shadow: 0 9px 26px #0004, inset 0 1px #ffffff15; --primary: #a3ddf6;
+  --on-primary: #142c48; --accent: #304f69; --indigo: #b4a9f5;
+  --success: #91dfc4; --danger: #ffa5b4; --pending: #c9badf;
+  --wave-main: #172439; --wave-light: #435978a1; --wave-edge: #b6d9fca1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ink: #e5eefb; --muted: #a6bad3; --canvas: #131e31; --glass: #1e2c43db;
+    --paper: #202f45f2; --well: #1a273ccb; --border: #6483a275; --line: #526884;
+    --shadow: 0 9px 26px #0004, inset 0 1px #ffffff15; --primary: #a3ddf6;
+    --on-primary: #142c48; --accent: #304f69; --indigo: #b4a9f5;
+    --success: #91dfc4; --danger: #ffa5b4; --pending: #c9badf;
+    --wave-main: #172439; --wave-light: #435978a1; --wave-edge: #b6d9fca1;
+  }
+}
+:root[data-wallpaper="kotoha"] { --art: url("/assets/aqua-kotoha-v1.jpg"); --art-y: 24%; }
+:root[data-wallpaper="elaina"] { --art: url("/assets/aqua-elaina-v1.jpg"); --art-y: 24%; }
+:root[data-wallpaper="kotoha-chibi"] { --art: url("/assets/aqua-kotoha-chibi-v1.webp"); --art-y: 29%; }
+:root[data-wallpaper="elaina-chibi"] { --art: url("/assets/aqua-elaina-chibi-v1.webp"); --art-y: 31%; }
+:root[data-wallpaper="plain"] { --art: none; }
+:root[data-wallpaper="plain"] .atlas-scene { display: none; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; min-height: 100dvh; background: var(--canvas); isolation: isolate; }
+body::before {
+  content: "";
+  position: fixed;
+  inset: -32px;
+  z-index: -2;
+  pointer-events: none;
+  background: var(--art) 50% 45% / cover no-repeat;
+  filter: blur(40px) saturate(.78);
+  opacity: .22;
+}
+.symbol-bank { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+.atlas-scene { height: var(--hero); position: absolute; inset: 0 0 auto; overflow: hidden; z-index: -1; }
+.scene-art {
+  position: absolute; inset: 0;
+  background: linear-gradient(95deg,#b9def32b,#ffffff00 45%,#e0d7fc33), var(--art) center var(--art-y) / cover no-repeat;
+}
+:root[data-wallpaper$="-chibi"] .scene-art {
+  background: var(--art) 61% var(--art-y) / min(55vw,620px) auto no-repeat,
+    linear-gradient(104deg,#b1d4e9,#e2e9f9 53%,#c7c9ec);
+}
+.scene-wave { position: absolute; bottom: -1px; width: 100%; height: 54px; }
+.wave-light { fill: var(--wave-light); }
+.wave-main { fill: var(--wave-main); }
+.wave-edge { fill: none; stroke: var(--wave-edge); stroke-width: 2.5; }
+html[data-text-size="compact"] { font-size: 93.75%; }
+html[data-text-size="large"] { font-size: 112.5%; }
+@media (max-width: 940px) {
+  body::before { inset: 0; filter: none; opacity: .72; background-position: 50% 32%; }
+  .scene-art { display: none; }
+  .scene-wave { height: 38px; opacity: .8; }
+}

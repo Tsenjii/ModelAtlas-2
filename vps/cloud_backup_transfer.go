@@ -80,21 +80,26 @@ func verifyCloudBackupArchive(ctx context.Context, directory, id, expectedHash s
 	return archive, nil
 }
 
-// Use an explicit executable and argv, never a shell. Credentials are not
-// emitted, and inherited RCLONE_* cannot downgrade the configured crypt remote.
-func copyCloudBackup(ctx context.Context, cfg cloudBackupDestination, source, destination string) error {
-	cmd := exec.CommandContext(ctx, cfg.Executable,
-		"copy", "--config", cfg.ConfigFile, "--immutable", "--transfers", "1", "--checkers", "1",
-		"--retries", "1", "--low-level-retries", "1", "--contimeout", "15s", "--timeout", "60s",
-		"--", source, destination)
+// Keep inherited overrides from changing encryption or parallelism.
+func backupRcloneCommand(ctx context.Context, executable string, args ...string) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, executable, args...)
+	cmd.Env = []string{"GOMAXPROCS=1"}
 	for _, value := range os.Environ() {
-		if !strings.HasPrefix(value, "RCLONE_") && !strings.HasPrefix(value, "MODELATLAS_") {
+		if !strings.HasPrefix(value, "RCLONE_") && !strings.HasPrefix(value, "MODELATLAS_") && !strings.HasPrefix(value, "GOMAXPROCS=") {
 			cmd.Env = append(cmd.Env, value)
 		}
 	}
 	cmd.Stdout, cmd.Stderr = io.Discard, io.Discard
 	cmd.WaitDelay = 3 * time.Second
 	configureBackupChild(cmd)
+	return cmd
+}
+
+func copyCloudBackup(ctx context.Context, cfg cloudBackupDestination, source, destination string) error {
+	cmd := backupRcloneCommand(ctx, cfg.Executable,
+		"copy", "--config", cfg.ConfigFile, "--immutable", "--transfers", "1", "--checkers", "1",
+		"--retries", "1", "--low-level-retries", "1", "--contimeout", "15s", "--timeout", "60s",
+		"--", source, destination)
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() != nil {
 			return errors.New("backup transfer cancelled or timed out")
@@ -102,6 +107,34 @@ func copyCloudBackup(ctx context.Context, cfg cloudBackupDestination, source, de
 		return errors.New("encrypted backup transfer failed; existing local and remote backups were retained")
 	}
 	return nil
+}
+
+func listCloudBackupIDs(ctx context.Context, cfg cloudBackupDestination) ([]string, error) {
+	cmd := backupRcloneCommand(ctx, cfg.Executable,
+		"lsf", "--config", cfg.ConfigFile, "--dirs-only", "--max-depth", "1",
+		"--retries", "1", "--low-level-retries", "1", "--contimeout", "15s", "--timeout", "60s",
+		"--", cfg.Remote+":"+cfg.Prefix)
+	cmd.Stdout = nil
+	pipe, err := cmd.StdoutPipe()
+	if err != nil || cmd.Start() != nil {
+		return nil, errors.New("cannot read encrypted backup versions")
+	}
+	const maxListing = 2 << 20
+	data, readErr := io.ReadAll(io.LimitReader(pipe, maxListing+1))
+	if readErr != nil || len(data) > maxListing {
+		_ = cmd.Process.Kill()
+	}
+	if cmd.Wait() != nil || readErr != nil || len(data) > maxListing {
+		return nil, errors.New("cannot read bounded encrypted backup versions")
+	}
+	ids := []string{}
+	for line := range strings.SplitSeq(string(data), "\n") {
+		id := strings.TrimSuffix(line, "/")
+		if validCloudBackupID(id) {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
 }
 
 func uploadAndVerifyCloudBackup(ctx context.Context, cfg cloudBackupDestination, directory string, archive cloudBackupArchive, key []byte) error {

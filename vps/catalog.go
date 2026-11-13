@@ -60,7 +60,7 @@ type Selection struct {
 }
 
 func (s *Server) listProviders(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,name,base_url,description,auth_mode FROM providers ORDER BY name,id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT p.id,p.name,p.base_url,p.description,p.auth_mode FROM providers p WHERE "+gatewayActiveProvider+" ORDER BY p.name,p.id")
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -131,7 +131,8 @@ func (s *Server) addProvider(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, p)
 }
 func (s *Server) listAccounts(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT id,provider_id,label FROM accounts ORDER BY provider_id,id")
+	p := r.URL.Query().Get("provider_id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT a.id,a.provider_id,a.label FROM accounts a WHERE (?='' OR a.provider_id=?) AND "+gatewayActiveAccount+" ORDER BY a.provider_id,a.id", p, p)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -163,7 +164,8 @@ func (s *Server) addAccount(w http.ResponseWriter, r *http.Request) {
 	jsonOK(w, 201, a)
 }
 func (s *Server) listCredentials(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT c.id,c.provider_id,c.account_id,c.label,c.enabled,c.role,COALESCE(x.group_id,''),COALESCE(x.note,''),COALESCE(x.priority,0),COALESCE(o.base_url,p.base_url),COALESCE(o.auth_mode,'') FROM credentials c JOIN providers p ON p.id=c.provider_id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id LEFT JOIN credential_context x ON x.provider_id=c.provider_id AND x.account_id=c.account_id AND x.credential_id=c.id ORDER BY c.provider_id,c.account_id,c.id")
+	p := r.URL.Query().Get("provider_id")
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT c.id,c.provider_id,c.account_id,c.label,c.enabled,c.role,COALESCE(x.group_id,''),COALESCE(x.note,''),COALESCE(x.priority,0),COALESCE(o.base_url,p.base_url),COALESCE(o.auth_mode,'') FROM credentials c JOIN providers p ON p.id=c.provider_id LEFT JOIN credential_origins o ON o.provider_id=c.provider_id AND o.account_id=c.account_id AND o.credential_id=c.id LEFT JOIN credential_context x ON x.provider_id=c.provider_id AND x.account_id=c.account_id AND x.credential_id=c.id WHERE (?='' OR c.provider_id=?) ORDER BY c.provider_id,c.account_id,c.id", p, p)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -185,6 +187,10 @@ func (s *Server) addCredential(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &v) {
 		return
 	}
+	s.saveCredential(w, r, v)
+}
+
+func (s *Server) saveCredential(w http.ResponseWriter, r *http.Request, v Credential) {
 	if v.Role == "" {
 		v.Role = "INFERENCE"
 	}
@@ -305,7 +311,7 @@ func (s *Server) toggleCredentials(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) listModels(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageRange(r, 200)
-	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT provider_id,id,display_name,price_state,quota_state,provenance FROM models ORDER BY provider_id,id LIMIT ? OFFSET ?", limit, offset)
+	rows, err := s.Store.DB.QueryContext(r.Context(), "SELECT m.provider_id,m.id,m.display_name,m.price_state,m.quota_state,m.provenance FROM models m JOIN providers p ON p.id=m.provider_id WHERE "+gatewayActiveProvider+" ORDER BY m.provider_id,m.id LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
