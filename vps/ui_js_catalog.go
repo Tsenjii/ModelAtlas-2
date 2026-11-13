@@ -2,6 +2,7 @@ package main
 
 const jsCatalog = `
 let catalogOrdered=[],catalogSearchIndex=new Map(),catalogMemberships=new Map(),catalogScopeIndex=new Map(),catalogCredentialIndex=new Map(),manualAdding=false;
+let catalogMatches=[],catalogRendered=0;
 const catalogFilterIDs=["catalog-search","catalog-provider","catalog-category","catalog-capability","catalog-membership"];
 const catalogDefault=id=>liteTool==="models"&&id==="catalog-membership"?"new":"";
 const catalogID=m=>JSON.stringify([m.provider_id,m.id||m.model_id]);
@@ -16,23 +17,32 @@ function catalogIndexes(){
  const select=$("catalog-provider"),old=select.value;select.replaceChildren();option(select,"","全部供應商");providers.forEach(p=>option(select,p.id,p.name));if([...select.options].some(o=>o.value===old))select.value=old;
  manualConnections();
 }
-function catalogMatches(m){
- const q=normalizedSearch($("catalog-search").value),joined=(catalogMemberships.get(catalogID(m))||[]).length,meta=m.metadata||{};
- return (!q||(catalogSearchIndex.get(catalogID(m))||[]).some(v=>v.includes(q)||(q.length>=4&&fuzzyNear(v,q))))&&(!$("catalog-provider").value||m.provider_id===$("catalog-provider").value)&&(!$("catalog-category").value||meta.primary_category===$("catalog-category").value)&&(!$("catalog-capability").value||(meta.capabilities||[]).includes($("catalog-capability").value))&&(!$("catalog-membership").value||($("catalog-membership").value==="joined"?joined>0:joined===0));
-}
 function resetCatalogFilters(){for(const id of catalogFilterIDs)$(id).value=catalogDefault(id);catalogDisplayLimit=100;renderCatalog();}
-function openCatalogForProvider(id){resetCatalogFilters();$("catalog-provider").value=id;renderCatalog();show("models");workspace("models","models-catalog",true);}
-function renderCatalog(){
- const box=$("catalog"),matching=catalogOrdered.filter(catalogMatches);box.replaceChildren();
- for(const m of matching.slice(0,catalogDisplayLimit)){
-  const provider=providers.find(p=>p.id===m.provider_id)?.name||m.provider_id,{body}=collectionItem(box,"models",m.display_name||m.id,provider,()=>catalogDetail(m));
+function openCatalogForProvider(id){for(const filter of catalogFilterIDs)$(filter).value=catalogDefault(filter);catalogDisplayLimit=100;$("catalog-provider").value=id;renderCatalog();show("models");workspace("models","models-catalog",true);}
+function renderCatalog(append=false){
+ const box=$("catalog");
+ if(!append){
+  const [search,provider,category,capability,membership]=catalogFilterIDs.map(id=>$(id).value);
+  const term=normalizedSearch(search);
+  catalogMatches=catalogOrdered.filter(m=>{
+   const meta=m.metadata||{},id=catalogID(m),joined=catalogMemberships.has(id);
+   return (!provider||m.provider_id===provider)&&(!category||meta.primary_category===category)&&
+    (!capability||(meta.capabilities||[]).includes(capability))&&(!membership||(membership==="joined"?joined:!joined))&&
+    (!term||(catalogSearchIndex.get(id)||[]).some(value=>value.includes(term)||(term.length>=4&&fuzzyNear(value,term))));
+  });
+  box.replaceChildren();catalogRendered=0;
+ }
+ const fragment=document.createDocumentFragment(),end=Math.min(catalogMatches.length,catalogDisplayLimit);
+ for(const m of catalogMatches.slice(catalogRendered,end)){
+  const provider=providers.find(p=>p.id===m.provider_id)?.name||m.provider_id,{body}=collectionItem(fragment,"models",m.display_name||m.id,provider,()=>catalogDetail(m));
   body.append(el("small",m.id,"model-id"));const count=(catalogMemberships.get(catalogID(m))||[]).length;
   if(count)body.append(el("span","已加入 "+count+" 個連線","state-chip"));
  }
- const compact=liteTool==="models",more=matching.length>catalogDisplayLimit,filtered=catalogFilterIDs.some(id=>$(id).value!==catalogDefault(id));
- $("catalog-result-count").textContent=compact&&!more?matching.length+" 個模型":"顯示 "+Math.min(matching.length,catalogDisplayLimit)+" / "+matching.length+" 個模型";
+ box.append(fragment);catalogRendered=end;
+ const compact=liteTool==="models",more=catalogMatches.length>catalogDisplayLimit,filtered=catalogFilterIDs.some(id=>$(id).value!==catalogDefault(id));
+ $("catalog-result-count").textContent=compact&&!more?catalogMatches.length+" 個模型":"顯示 "+end+" / "+catalogMatches.length+" 個模型";
  $("catalog-more").hidden=!more;$("catalog-reset").hidden=!filtered;
- if(!matching.length){
+ if(!catalogMatches.length&&!append){
   if(compact&&models.length&&!filtered){
    workspaceEmpty(box,"目前的目錄模型都已加入","","models","顯示全部模型",()=>{$("catalog-membership").value="";renderCatalog();});
   }else{
@@ -112,7 +122,7 @@ async function addManualModel(e){
 }
 function bindCatalog(){
  for(const id of catalogFilterIDs)$(id).addEventListener(id==="catalog-search"?"input":"change",()=>{catalogDisplayLimit=100;renderCatalog();});
- $("catalog-reset").addEventListener("click",resetCatalogFilters);$("catalog-more").addEventListener("click",()=>{catalogDisplayLimit+=100;renderCatalog();});
+ $("catalog-reset").addEventListener("click",resetCatalogFilters);$("catalog-more").addEventListener("click",()=>{catalogDisplayLimit+=100;renderCatalog(true);});
  $("manual-target").addEventListener("change",manualEndpoints);$("manual-endpoint").addEventListener("change",manualEndpoints);$("model-form").addEventListener("submit",addManualModel);
  $("manual-setup").addEventListener("click",()=>{const c=catalogCredentialIndex.get($("manual-target").value);if(c)providerDetail(providers.find(p=>p.id===c.provider_id),"endpoints");else{show("providers");workspace("providers","providers-new",true);}});
 }

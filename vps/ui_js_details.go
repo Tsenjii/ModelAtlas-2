@@ -42,6 +42,22 @@ async function providerDetail(p,initial="overview"){
 }
 async function modelDetail(m,window=settings.performance_window||"7d",initial="overview"){
  const selection=scope(m),box=modal(modelDisplayName(m)),ticket=detailVersion;$("detail").dataset.kind="model";
+ const readDetail=period=>api((liteTool?"/model-detail?":"/models/detail?")+query(selection)+"&window="+period);
+ const checkDetail=value=>{
+  if(key(value.selection)!==key(selection)||value.local?.source!=="MY_KEY_LOCAL"||liteTool&&(!value.membership||key(value.membership)!==key(selection)))throw Error("模型資料的連線或來源範圍不符。");
+ };
+ let value;
+ if(liteTool){
+  box.setAttribute("aria-busy","true");const pending=detailState(box,"正在讀取模型詳情…");
+  try{
+   value=await readDetail(window);
+   if(!detailCurrent(ticket))return;
+   checkDetail(value);m={...m,...value.membership};pending.remove();box.removeAttribute("aria-busy");
+  }catch(error){
+   if(!detailCurrent(ticket))return;
+   pending.remove();box.removeAttribute("aria-busy");detailState(box,"無法讀取模型詳情。"+error.message,true,()=>modelDetail(m,window,initial));return;
+  }
+ }
  detailHero(box,/IMAGE/.test(targetOperation(m))?"image":/AUDIO|SPEECH/.test(targetOperation(m))?"audio":"models",providers.find(p=>p.id===m.provider_id)?.name||m.provider_id,connectionLabel(m));
  const tools=el("div",undefined,"actions detail-primary-actions");
  const tabs=detailTabs(box,"model",[["overview","概覽"],["pricing","價格"],["quota","額度"],["performance","效能"],["history","歷史"],["settings","設定"]],initial==="site"?"performance":initial),panels={...tabs.panels};const sources=modelPerformanceSources(panels.performance);panels.local=sources.local;panels.site=sources.provider;panels.external=sources.external;panels.overview.append(tools);
@@ -58,8 +74,7 @@ async function modelDetail(m,window=settings.performance_window||"7d",initial="o
  action(collection,m.favorite?"取消最愛":"加入最愛",async()=>{await submit("/models/lifecycle",{...selection,state:m.state,favorite:!m.favorite,watchlist:m.watchlist});await refresh();await reopen();});
  action(collection,m.watchlist?"取消追蹤":"追蹤",async()=>{await submit("/models/lifecycle",{...selection,state:m.state,favorite:m.favorite,watchlist:!m.watchlist});await refresh();await reopen();});
  action(collection,"查看此連線的請求",()=>requestHistory({selection}));
- let value;
- try{value=await api("/models/detail?"+query(m)+"&window="+window);if(!detailCurrent(ticket))return;if(key(value.selection)!==key(m)||value.local?.source!=="MY_KEY_LOCAL")throw Error("模型資料的連線或來源範圍不符。");pending.forEach(n=>n.remove());box.removeAttribute("aria-busy");}
+ try{if(!value)value=await readDetail(window);if(!detailCurrent(ticket))return;checkDetail(value);pending.forEach(n=>n.remove());box.removeAttribute("aria-busy");}
  catch(e){if(!detailCurrent(ticket))return;pending.forEach(n=>n.remove());box.removeAttribute("aria-busy");for(const panel of [panels.overview,panels.performance,panels.pricing,panels.settings]){const error=detailState(panel,"無法讀取模型詳情。"+e.message,true,()=>modelDetail(m,window,tabs.current()));panel.prepend(error);}return;}
  currentWindow=detailPerformance(panels.local,m,window,value.local,ticket);if(!sources.userSelected())sources.activate(initial==="site"?"provider":Number(value.local?.samples)>0||currentProvider?.config?.adapter!=="NEW_API"?"local":"provider");panels.performance.addEventListener("detailactivate",()=>sources.activate(sources.current()));
  const identity=detailSection(panels.overview,"模型與能力"),renderIdentity=()=>{identity.replaceChildren(el("h3","模型與能力"));detailRows(identity,[["Canonical ID",value.metadata.canonical_id],["類別",value.metadata.primary_category],["已確認能力",value.capabilities.length?value.capabilities.join(" · "):"尚未確認"],["上下文長度",value.metadata.context_tokens]]);};renderIdentity();
@@ -72,7 +87,11 @@ async function modelDetail(m,window=settings.performance_window||"7d",initial="o
  detailObservations(priceFacts,"這個 Key / Group 的最近有效資料",value.last_good);detailObservations(priceFacts,"最近同步狀態",value.latest);
  detailObservations(priceFacts,"站方資料（Provider-wide）",value.provider_facts);detailObservations(panels.quota,"帳戶資料",value.account_facts);
  factsView(priceFacts,"來源觀測歷史",value.history||[]);
- };renderFacts();let factRevision=0;const reloadFacts=async()=>{const id=++factRevision,requestedWindow=currentWindow();const saved=await api("/models/detail?"+query(m)+"&window="+requestedWindow);if(!detailCurrent(ticket)||id!==factRevision||currentWindow()!==requestedWindow)return;if(key(saved.selection)!==key(m)||saved.local?.source!=="MY_KEY_LOCAL")throw Error("模型資料的連線範圍不符。");value=saved;m=myModels.find(v=>key(v)===key(selection))||m;renderFacts();renderIdentity();currentWindow.update?.(saved.local);};box.refreshModelFacts=reloadFacts;
+ };renderFacts();let factRevision=0;const reloadFacts=async()=>{
+  const id=++factRevision,requestedWindow=currentWindow(),saved=await readDetail(requestedWindow);
+  if(!detailCurrent(ticket)||id!==factRevision||currentWindow()!==requestedWindow)return;
+  checkDetail(saved);value=saved;m={...(myModels.find(v=>key(v)===key(selection))||m),...saved.membership};renderFacts();renderIdentity();currentWindow.update?.(saved.local);
+ };box.refreshModelFacts=reloadFacts;
  notesEditor(panels.settings,{selection},m.offer||{});factsView(panels.settings,"綜合排序依據（缺資料保留 Unknown）",modelRanking(m));factsView(panels.settings,"模型分類原始資料",value.metadata);
  const metaForm=el("form");panels.settings.append(el("h3","模型分類與別名"),metaForm);const meta=value.metadata,canonical=field(metaForm,"Canonical ID","text",meta.canonical_id),aliases=field(metaForm,"別名（逗號分隔）","text",(meta.aliases||[]).join(",")),category=field(metaForm,"類別","text",meta.primary_category),capabilities=field(metaForm,"能力（逗號分隔）","text",(meta.capabilities||[]).join(","));metaForm.append(el("button","儲存分類"));providerSubmit(metaForm,ticket,async commit=>{const saved=await commit("/models/metadata",{...meta,...modelMetadataExtras(metaForm),canonical_id:canonical.value,aliases:aliases.value.split(",").map(x=>x.trim()).filter(Boolean),primary_category:category.value,capabilities:capabilities.value.split(",").map(x=>x.trim()).filter(Boolean)});if(detailCurrent(ticket)){value.metadata=saved;renderIdentity();}await refresh();return "已更新分類與別名";});
  enhanceModelMetadata(metaForm,meta);const priceForm=el("form");priceForm.id="model-price-editor";panels.settings.append(el("h3","手動價格與額度"),priceForm);const input=field(priceForm,"輸入價格 · USD / 1K tokens","text"),output=field(priceForm,"輸出價格 · USD / 1K tokens","text"),cache=field(priceForm,"Cache 價格 · USD / 1K tokens","text"),fixed=field(priceForm,"每次請求價格 · USD","text"),note=field(priceForm,"來源或說明","text");const unitLabel=el("label","計費方式"),unit=el("select");unit.setAttribute("aria-label","計費方式");option(unit,"USD/1K tokens","Token 與固定請求費");option(unit,"USD/request","每次請求固定費用");unitLabel.append(unit);priceForm.append(unitLabel);const absentLabel=el("label","我已確認沒有固定請求費","check"),absent=el("input"),effectiveLabel=el("label","這是已確認的這個 Key / Group 實際費率","check"),effective=el("input");absent.type="checkbox";effective.type="checkbox";absentLabel.prepend(absent);effectiveLabel.prepend(effective);priceForm.append(absentLabel,effectiveLabel,el("button","保存手動價格"));providerSubmit(priceForm,ticket,async commit=>{for(const control of [input,output,cache,fixed]){const text=control.value.trim();if(text&&(text.length>128||!Number.isFinite(Number(text))||Number(text)<0))throw Error("價格需為非負有效小數，留空代表未知。");}await commit("/models/facts",{...selection,price:{input:unit.value==="USD/request"?null:input.value||null,output:unit.value==="USD/request"?null:output.value||null,cache:unit.value==="USD/request"?null:cache.value||null,fixed:fixed.value||null,fixed_absent:absent.checked,unit:unit.value},confirmed_effective_price:effective.checked,note:note.value});await refresh();if(detailCurrent(ticket))await reloadFacts();return "手動價格已保存";});

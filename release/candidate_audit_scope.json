@@ -102,6 +102,7 @@
     "TestGatewayDistributionWorkflow": "pass",
     "TestGatewayModelRequestHeadersStayWithConnection": "pass",
     "TestGatewayModelBrowseCountsAndPages": "pass",
+    "TestLiteToolCatalogAndMembershipReads": "pass",
     "TestGatewayOfferingSortKeepsScopeAndMissingMetrics": "pass",
     "TestGatewayKeyPolicyEnforced": "pass",
     "TestGatewayRememberBrowser": "pass",

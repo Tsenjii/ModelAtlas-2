@@ -207,6 +207,16 @@ func TestGatewayUsageIntervalsAndSources(t *testing.T) {
 	if tests.Summary.Requests != 1 || len(tests.Items) != 1 || tests.Items[0].Source != "tests" || tests.Items[0].Model != "Probe_Model" {
 		t.Fatalf("invalid model-test filter: %+v", tests)
 	}
+	exec(`INSERT INTO knowledge_versions(id,kind,subject,version,data_json,evidence_json,reason,status,created_at)
+		VALUES('usage-alias','MODEL_ALIAS_RULE','site-a/Probe_Model',1,'{"canonical_id":"alias-family"}','{}','fixture','APPROVED',?)`, first)
+	exec("INSERT INTO knowledge_active VALUES('MODEL_ALIAS_RULE','site-a/Probe_Model','usage-alias')")
+	sample("same-id-other-provider", "MANUAL_TEST", "Probe_Model", last-2, nil, nil, nil)
+	exec("UPDATE telemetry SET provider_id='site-b' WHERE id='same-id-other-provider'")
+	alias := load("&source=all&model=alias-family")
+	if alias.Summary.Requests != 1 || len(alias.Items) != 1 || alias.Items[0].ID != "direct-probe" ||
+		len(alias.Ranking) != 1 || alias.Ranking[0] != (gatewayUsageRank{Source: "tests", Model: "alias-family", Requests: 1}) {
+		t.Fatalf("alias filter crossed provider scope or excluded a historical model: %+v", alias)
+	}
 
 	for i := range 21 {
 		sample(fmt.Sprintf("history-%d", i), "MANUAL_TEST", "up-b", first+int64(i+1), &zero, nil, &ttft)

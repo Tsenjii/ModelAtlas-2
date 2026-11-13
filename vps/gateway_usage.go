@@ -63,6 +63,8 @@ const gatewayUsageModelGroup = `COALESCE(` + gatewayPreferredModelIDSQL + `,atla
 const gatewayUsageModelJoins = ` LEFT JOIN model_metadata md ON md.provider_id=t.provider_id AND md.model_id=t.model_id
 	LEFT JOIN knowledge_active ka ON ka.kind='MODEL_ALIAS_RULE' AND ka.subject=t.provider_id||'/'||t.model_id
 	LEFT JOIN knowledge_versions k ON k.id=ka.version_id `
+const gatewayUsageModelMatch = ` AND (instr(lower(t.model_id),lower(:model))>0
+	OR instr(lower(` + gatewayUsageModelGroup + `),atlas_canonical_id(:model))>0) `
 
 func gatewayUsageOutcome(field string) string {
 	return ` AND CASE :status WHEN 'success' THEN ` + field + `='SUCCESS'
@@ -76,8 +78,7 @@ func gatewayUsageTestRows(search string) string {
 		AND t.created_at>=:since AND t.created_at<:until ` + gatewayUsageOutcome("t.outcome")
 	if search != "" {
 		from += gatewayUsageModelJoins
-		filter += ` AND (instr(lower(t.model_id),lower(:model))>0
-			OR instr(lower(` + gatewayUsageModelGroup + `),atlas_canonical_id(:model))>0) `
+		filter += gatewayUsageModelMatch
 	}
 	return from + filter
 }
@@ -175,7 +176,7 @@ func (s *Server) gatewayUsage(w http.ResponseWriter, r *http.Request) {
 	var summary gatewayUsageSummary
 	var rank []gatewayUsageRank
 	if !itemsOnly {
-		summary, rank, err = readGatewayUsageStats(ctx, tx, points, args, tests)
+		summary, rank, err = readGatewayUsageStats(ctx, tx, points, args, model != "", tests)
 		if err != nil {
 			http.Error(w, "database error", 500)
 			return
@@ -249,8 +250,25 @@ type gatewayUsagePage struct {
 	More     bool               `json:"more"`
 }
 
-func readGatewayUsageStats(ctx context.Context, tx *sql.Tx, points []gatewayUsagePoint, args []any, tests string) (gatewayUsageSummary, []gatewayUsageRank, error) {
+func readGatewayUsageStats(ctx context.Context, tx *sql.Tx, points []gatewayUsagePoint, args []any, filtered bool, tests string) (gatewayUsageSummary, []gatewayUsageRank, error) {
 	var summary gatewayUsageSummary
+	var rank []gatewayUsageRank
+	var err error
+	if filtered {
+		// Match raw and canonical IDs once per provider/model pair for the
+		// whole window, including tests for models removed from the catalog.
+		var models sql.NullString
+		rank, models, err = readGatewayUsageRanking(ctx, tx, args, true)
+		if err != nil {
+			return summary, nil, err
+		}
+		if models.Valid {
+			tests = gatewayUsageTestRows("") + ` AND (t.provider_id,t.model_id) IN (
+				SELECT json_extract(value,'$[0]'),json_extract(value,'$[1]') FROM json_each(:test_models)
+			) `
+			args = append(append([]any{}, args...), sql.Named("test_models", models.String))
+		}
+	}
 	// Each interval can use the time indexes directly. Avoid sorting all
 	// retained activity into buckets before calculating the chart.
 	chart, err := tx.PrepareContext(ctx, `WITH activity(requests,completed,successes,input_tokens,output_tokens,input_reported,output_reported,ttft,ttft_reported) AS (
@@ -294,32 +312,59 @@ func readGatewayUsageStats(ctx context.Context, tx *sql.Tx, points []gatewayUsag
 		mean := ttftTotal / float64(ttftReports)
 		summary.MeanTTFT = &mean
 	}
+	if rank != nil {
+		return summary, rank, nil
+	}
 
-	// Resolve test model aliases after counting each provider/model pair.
-	// Relay counts come directly from admissions and do not need telemetry.
+	rank, _, err = readGatewayUsageRanking(ctx, tx, args, false)
+	return summary, rank, err
+}
+
+func readGatewayUsageRanking(ctx context.Context, tx *sql.Tx, args []any, filtered bool) ([]gatewayUsageRank, sql.NullString, error) {
+	// Counts are grouped on raw identities first. Alias resolution is shared
+	// with the record list, including saved aliases of removed models.
+	match, materialized, matchedRows := "", "", ""
+	if filtered {
+		match, materialized = gatewayUsageModelMatch, "MATERIALIZED"
+		matchedRows = ` UNION ALL SELECT 'matched',NULL,0,
+			CASE WHEN COUNT(*)<=10000 THEN json_group_array(json_array(provider_id,model_id)) END,1
+			FROM (SELECT provider_id,model_id FROM test_groups LIMIT 10001) `
+	}
 	rows, err := tx.QueryContext(ctx, `WITH test_counts AS (
-		SELECT t.provider_id,t.model_id,COUNT(*) AS n`+tests+` GROUP BY t.provider_id,t.model_id
+		SELECT t.provider_id,t.model_id,COUNT(*) AS n`+gatewayUsageTestRows("")+` GROUP BY t.provider_id,t.model_id
+	), test_groups AS `+materialized+` (
+		SELECT t.provider_id,t.model_id,`+gatewayUsageModelGroup+` AS model_group,t.n
+		FROM test_counts t`+gatewayUsageModelJoins+`WHERE 1`+match+`
 	), ranking AS (
 		SELECT 'gateway' AS source,g.model_id AS model_group,COUNT(*) AS n`+gatewayUsageRelayFrom+gatewayUsageRelayFilter+`
 		GROUP BY g.model_id
-		UNION ALL
-		SELECT 'tests',`+gatewayUsageModelGroup+` AS model_group,SUM(t.n)
-		FROM test_counts t`+gatewayUsageModelJoins+`GROUP BY model_group
+		UNION ALL SELECT 'tests',model_group,SUM(n) FROM test_groups GROUP BY model_group
+	), top_models AS (
+		SELECT source,model_group,n FROM ranking ORDER BY n DESC,model_group,source LIMIT 6
 	)
-	SELECT source,model_group,n FROM ranking ORDER BY n DESC,model_group,source LIMIT 6`, args...)
+	SELECT source,model_group,n,NULL AS matches,0 AS match_row FROM top_models`+matchedRows+`
+	ORDER BY match_row,n DESC,model_group,source`, args...)
+	var matches sql.NullString
 	if err != nil {
-		return summary, nil, err
+		return nil, matches, err
 	}
 	defer rows.Close()
 	rank := []gatewayUsageRank{}
 	for rows.Next() {
-		var v gatewayUsageRank
-		if err = rows.Scan(&v.Source, &v.Model, &v.Requests); err != nil {
-			return summary, nil, err
+		var row gatewayUsageRank
+		var model, encoded sql.NullString
+		var matched bool
+		if err = rows.Scan(&row.Source, &model, &row.Requests, &encoded, &matched); err != nil {
+			return nil, matches, err
 		}
-		rank = append(rank, v)
+		if matched {
+			matches = encoded
+		} else {
+			row.Model = model.String
+			rank = append(rank, row)
+		}
 	}
-	return summary, rank, rows.Err()
+	return rank, matches, rows.Err()
 }
 
 func gatewayUsageAggregate(outcome string) string {

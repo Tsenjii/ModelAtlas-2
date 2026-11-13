@@ -31,24 +31,49 @@ func (s *Server) setting(ctx context.Context, key string, fallback any) any {
 }
 
 func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
-	var version int
-	s.Store.DB.QueryRowContext(ctx, "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?", v.ProviderID, v.AccountID, v.CredentialID).Scan(&version)
-	out := map[string]any{"credential_version": version, "price": nil, "effective_price": nil, "quota": nil, "strength": nil, "provider_performance": nil, "external_performance": nil, "price_changed": false, "newly_added": false, "tags": []string{}, "notes": ""}
-	var created int64
-	s.Store.DB.QueryRowContext(ctx, "SELECT created_at FROM my_models WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=?", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint).Scan(&created)
-	out["created_at"] = created
-	out["newly_added"] = created >= now()-int64(7*24*time.Hour/time.Millisecond)
-	var notes, tags string
-	s.Store.DB.QueryRowContext(ctx, "SELECT notes,tags_json FROM entity_notes WHERE subject_type='MODEL' AND subject_id=?", scopeKey(v)).Scan(&notes, &tags)
+	var input offerSummaryInput
+	s.Store.DB.QueryRowContext(ctx, credentialVersionQuery, v.ProviderID, v.AccountID, v.CredentialID).Scan(&input.version)
+	s.Store.DB.QueryRowContext(ctx, "SELECT created_at FROM my_models WHERE provider_id=? AND account_id=? AND credential_id=? AND model_id=? AND group_id=? AND endpoint=?", v.ProviderID, v.AccountID, v.CredentialID, v.ModelID, v.Group, v.Endpoint).Scan(&input.created)
+	s.Store.DB.QueryRowContext(ctx, "SELECT notes,tags_json FROM entity_notes WHERE subject_type='MODEL' AND subject_id=?", scopeKey(v)).Scan(&input.notes, &input.tags)
+	input.groupBound = s.groupBound(ctx, v)
+	if input.groupBound {
+		input.operation = s.operation(ctx, v)
+		if p, err := boundProvider(ctx, s.Store.DB, v.ProviderID, v.AccountID, v.CredentialID); err == nil {
+			input.origin = &p.BaseURL
+		}
+	}
+	out := s.offerScopeSummary(ctx, v, input)
+	out["strength"] = s.offerStrength(ctx, v.ModelID)
+	out["external_performance"] = s.offerExternal(ctx, s.metadata(ctx, v.ProviderID, v.ModelID).CanonicalID)
+	return out
+}
+
+const credentialVersionQuery = "SELECT COALESCE(MAX(version),0) FROM credential_secret_versions WHERE provider_id=? AND account_id=? AND credential_id=?"
+
+type offerSummaryInput struct {
+	version    int
+	created    int64
+	notes      string
+	tags       string
+	groupBound bool
+	operation  string
+	origin     *string
+}
+
+func (s *Server) offerScopeSummary(ctx context.Context, v Selection, input offerSummaryInput) map[string]any {
+	out := map[string]any{
+		"credential_version": input.version, "price": nil, "effective_price": nil, "quota": nil,
+		"provider_performance": nil, "price_changed": false, "created_at": input.created,
+		"newly_added": input.created >= now()-int64(7*24*time.Hour/time.Millisecond), "tags": []string{}, "notes": input.notes,
+	}
 	var tagList []string
-	json.Unmarshal([]byte(tags), &tagList)
+	json.Unmarshal([]byte(input.tags), &tagList)
 	if tagList != nil {
 		out["tags"] = tagList
 	}
-	out["notes"] = notes
-	matchingGroup := s.groupBound(ctx, v)
-	if !matchingGroup {
+	if !input.groupBound {
 		out["scope_state"] = "GROUP_MISMATCH"
+		return out
 	}
 	rows, e := s.Store.DB.QueryContext(ctx, "SELECT kind,source,facts_json,observed_at FROM observations WHERE scope_key=? AND status='SUCCESS' ORDER BY rowid DESC LIMIT 100", scopeKey(v))
 	if e == nil {
@@ -56,12 +81,9 @@ func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
 		priceCount := 0
 		manualPriceReplaced := false
 		for rows.Next() {
-			if !matchingGroup {
-				continue
-			}
 			var kind, source, raw string
 			var at int64
-			if rows.Scan(&kind, &source, &raw, &at) != nil {
+			if rows.Scan(&kind, &source, &raw, &at) != nil || at < now()-86400000 {
 				continue
 			}
 			var facts map[string]any
@@ -70,10 +92,7 @@ func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
 			if decoder.Decode(&facts) != nil {
 				continue
 			}
-			if n := quotaInteger(facts["credential_version"]); n != nil && int(*n) != version || facts["credential_version"] == nil && version != 0 {
-				continue
-			}
-			if at < now()-int64(24*time.Hour/time.Millisecond) {
+			if n := quotaInteger(facts["credential_version"]); n != nil && int(*n) != input.version || facts["credential_version"] == nil && input.version != 0 {
 				continue
 			}
 			if kind == "MANUAL_PRICE" {
@@ -113,31 +132,34 @@ func (s *Server) offerSummary(ctx context.Context, v Selection) map[string]any {
 		rows.Close()
 	}
 	// A nominal group quote stays independent from this key's effective charge.
-	if matchingGroup {
+	if input.origin != nil {
 		nominal := v
 		nominal.CredentialID = ""
-		nominal.Endpoint = s.operation(ctx, v)
-		p, e := boundProvider(ctx, s.Store.DB, v.ProviderID, v.AccountID, v.CredentialID)
-		if e == nil {
-			for _, quote := range s.observations(ctx, nominal) {
-				if quote.Kind == "NOMINAL_PRICE" && quote.Status == "SUCCESS" && str(quote.Facts["origin"]) == p.BaseURL && quote.ObservedAt >= now()-86400000 {
-					out["nominal_price"] = quote
-					break
-				}
+		nominal.Endpoint = input.operation
+		for _, quote := range s.observations(ctx, nominal) {
+			if quote.Kind == "NOMINAL_PRICE" && quote.Status == "SUCCESS" && str(quote.Facts["origin"]) == *input.origin && quote.ObservedAt >= now()-86400000 {
+				out["nominal_price"] = quote
+				break
 			}
 		}
 	}
-	if score, rank, valid := s.aaModelScore(ctx, Candidate{ProviderID: v.ProviderID, ModelID: v.ModelID}); valid {
-		out["strength"] = map[string]any{"score": score, "rank": rank, "source": "ARTIFICIAL_ANALYSIS"}
+	return out
+}
+
+func (s *Server) offerStrength(ctx context.Context, modelID string) any {
+	if score, rank, valid := s.aaModelScore(ctx, Candidate{ModelID: modelID}); valid {
+		return map[string]any{"score": score, "rank": rank, "source": "ARTIFICIAL_ANALYSIS"}
 	}
-	meta := s.metadata(ctx, v.ProviderID, v.ModelID)
-	for _, facts := range s.externalFor(ctx, meta.CanonicalID) {
+	return nil
+}
+
+func (s *Server) offerExternal(ctx context.Context, canonicalID string) any {
+	for _, facts := range s.externalFor(ctx, canonicalID) {
 		if at := quotaInteger(facts["observed_at"]); at != nil && *at >= now()-86400000 {
-			out["external_performance"] = facts
-			break
+			return facts
 		}
 	}
-	return out
+	return nil
 }
 
 // Configured availability is separate from successful inference history.
@@ -149,6 +171,10 @@ func (s *Server) selectionUsable(ctx context.Context, v Selection) bool {
 	if e != nil {
 		return false
 	}
+	return s.credentialUsable(ctx, v, p)
+}
+
+func (s *Server) credentialUsable(ctx context.Context, v Selection, p Provider) bool {
 	cfg := s.config(ctx, p)
 	if cfg.AuthMode == "NONE" {
 		return true

@@ -31,7 +31,7 @@ async function api(path,opts={}){
   throw error;
  }finally{if(timer!==null)clearTimeout(timer);if(reading)sourceSignal?.removeEventListener("abort",abort);}
 }
-async function apiPages(path,opts={}){const out=[];for(let offset=0;;offset+=200){const rows=await api(path+(path.includes("?")?"&":"?")+"limit=200&offset="+offset,opts);out.push(...rows);if(rows.length<200)return out;}}
+async function apiPages(path,opts={},limit=200){const out=[];for(let offset=0;;offset+=limit){const rows=await api(path+(path.includes("?")?"&":"?")+"limit="+limit+"&offset="+offset,opts);out.push(...rows);if(rows.length<limit)return out;}}
 async function submit(path,value,method="POST"){return api(path,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(value)});}
 function data(form){return Object.fromEntries(new FormData(form).entries());}
 function option(select,value,title){const n=el("option",title);n.value=value;select.append(n);}

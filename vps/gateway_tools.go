@@ -21,6 +21,9 @@ var gatewayToolsStyles = staticAsset{raw: gatewayAppearanceCSS + gatewayToolsCSS
 func (s *Server) gatewayToolRoutes(root *http.ServeMux) {
 	api := http.NewServeMux()
 	s.managementToolRoutes(api)
+	api.HandleFunc("GET /model-catalog", s.toolModelCatalog)
+	api.HandleFunc("GET /model-memberships", s.toolModelMemberships)
+	api.HandleFunc("GET /model-detail", func(w http.ResponseWriter, r *http.Request) { s.readModelDetail(w, r, true) })
 	api.HandleFunc("GET /offerings", s.gatewayOfferings)
 	api.HandleFunc("POST /offerings/prices", s.gatewayRefreshOfferPrice)
 	api.HandleFunc("GET /offerings/price-history", s.gatewayPublishedPriceHistory)
