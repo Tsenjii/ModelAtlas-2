@@ -114,7 +114,14 @@ function manualEndpoints(){
 async function addManualModel(e){
  e.preventDefault();if(manualAdding)return;const form=e.target,c=catalogCredentialIndex.get($("manual-target").value),modelID=form.elements.model_id.value.trim(),displayName=form.elements.display_name.value.trim(),endpoint=$("manual-endpoint").value,error=$("manual-error");
  if(!c||!modelID||!displayName||!inferenceEndpoints(c).some(ep=>ep.id===endpoint)){catalogError(error,"請填寫模型名稱，並選擇完整的 Key 與端點。");return;}
- const selection=catalogSelection(c,modelID,endpoint),existing=catalogScopeIndex.get(key(selection));if(existing){modelDetail(existing);return;}
+ const selection=catalogSelection(c,modelID,endpoint),existing=catalogScopeIndex.get(key(selection));
+ if(existing){
+  try{
+   if(isLiteCatalog())await ensureToolMemberships();
+   await modelDetail(catalogScopeIndex.get(key(selection))||existing);
+  }catch(error){catalogError($("manual-error"),error.message);}
+  return;
+ }
  manualAdding=true;manualEndpoints();catalogError(error,"");let saved=false;
  try{await submit("/models",{provider_id:c.provider_id,id:modelID,display_name:displayName});saved=true;await submit("/my-models",selection);rememberCatalogMembership(selection);try{await refresh();notice(liteTool?"已加入我的模型":"已加入模型；Intelligence 會自動同步");}catch(e){catalogError(error,"模型已加入；清單重新載入失敗："+e.message);}}
  catch(e){catalogError(error,(saved?"型錄已保存，連線尚未加入：":"加入失敗：")+e.message);}

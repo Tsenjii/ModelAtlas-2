@@ -2,6 +2,16 @@ package main
 
 const jsViews = `
 const settingsEdits=new Set();let settingsEditVersion=0;
+let toolMembershipsNeeded=false,toolMembershipsReady=false,toolMembershipsRead=null;
+function isLiteCatalog(){return liteTool==="models"&&!["batch","retained"].includes(toolQuery.get("tab"));}
+function ensureToolMemberships(){
+ if(toolMembershipsReady)return Promise.resolve();
+ if(!toolMembershipsRead){
+  toolMembershipsNeeded=true;
+  toolMembershipsRead=refresh().finally(()=>{toolMembershipsRead=null;});
+ }
+ return toolMembershipsRead;
+}
 function renderSettingsForm(){
  const form=$("settings-form"),values={performance_window:settings.performance_window||"7d",timezone:settings.timezone||"Asia/Taipei",notifications:!!settings.notifications,background_enabled:!!settings.background?.enabled,background_minutes:settings.background?.interval_minutes||60,background_scopes:settings.background?.max_scopes||2,quota_remaining_below:settings.notification_rules?.quota_remaining_below??100};
  notificationRuleNames.forEach(k=>values[k]=!!settings.notification_rules?.[k]);
@@ -10,7 +20,7 @@ function renderSettingsForm(){
 async function refreshWorkspaceSnapshot(requested){
  if(liteTool&&!["models","providers"].includes(liteTool))return refreshLiteToolSnapshot(requested);
  const version=++refreshVersion,readController=new AbortController(),opts={signal:readController.signal};
- const catalogOnly=liteTool==="models"&&toolQuery.get("tab")!=="batch"&&toolQuery.get("tab")!=="retained";
+ const catalogOnly=isLiteCatalog()&&!toolMembershipsNeeded;
  const catalog=liteTool?api("/model-catalog"+(catalogOnly?"?memberships=1":""),opts):apiPages("/models",opts).then(models=>({models}));
  const members=catalogOnly?null:liteTool?apiPages("/model-memberships",opts,400):apiPages("/my-models?all=true",opts);
  const reads=[api("/providers",opts),api("/accounts",opts),api("/credentials",opts),catalog,members,api("/settings",opts),api("/endpoints",opts)];
@@ -18,10 +28,14 @@ async function refreshWorkspaceSnapshot(requested){
  if(version!==refreshVersion||requested!==workspaceRefreshRequested)return;
  const [nextProviders,nextAccounts,nextCredentials,index,nextMembers,nextSettings,nextEndpoints]=values;
  providers=nextProviders;accounts=nextAccounts;credentials=nextCredentials;models=index.models;myModels=nextMembers??index.memberships??[];settings=nextSettings;endpointProfiles=nextEndpoints;
+ toolMembershipsReady=!catalogOnly;
  workspaceHasData=true;workspaceReadStatus("loading");renderSettingsForm();
  modelCatalogIndex=new Map(models.map(m=>[JSON.stringify([m.provider_id,m.id]),m]));modelSearchIndex=new WeakMap();catalogIndexes();
  if(liteTool){
-  if(liteTool==="providers"||currentPane==="providers"){refreshAccountCheckins();renderProviders();}
+  if(!catalogOnly||currentPane==="providers"){
+   if(currentPane==="providers")refreshAccountCheckins();
+   renderProviders();
+  }
   if(!catalogOnly){modelFilterOptions();renderModels();}
   renderCatalog();
   if($("detail").open&&$("detail").dataset.kind==="provider")await $("detail-content").providerReload?.();

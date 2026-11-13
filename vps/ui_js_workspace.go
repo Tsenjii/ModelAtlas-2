@@ -14,6 +14,7 @@ function workspace(group,id,focus=false){
  pane.querySelectorAll('[data-workspace-panel="'+group+'"]').forEach(panel=>{panel.hidden=panel.id!==id;if(panel.tagName==="DETAILS")panel.open=panel.id===id;});
  tabs.forEach(tab=>{const active=tab===selected;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;});
  if(liteTool==="models"&&group==="models")$("models-title").textContent=liteModelTitle(id);
+ if(group==="providers"&&id==="providers-owned"&&currentPane==="providers"&&isLiteCatalog()&&!toolMembershipsReady)ensureToolMemberships().catch(()=>{});
  syncModelCollection(group,id);syncSettingsPanels(group,id);if(focus)selected.focus({preventScroll:true});revealWorkspaceTab(selected);if(group==="playground"&&id==="work-chat"){const reading=workspaceChatReading?.session===$("session").value?workspaceChatReading.position:null;if(reading)restoreChatReadPosition(reading);else chatChanged(false,false);}
 }
 let previousPane="playground",currentPane="playground",noticeTimer=null;

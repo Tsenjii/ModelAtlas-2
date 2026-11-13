@@ -873,6 +873,19 @@ const fs = require("node:fs/promises");
     await page.locator("#catalog").getByRole("button", {name: /Catalog Fixture Model/}).waitFor({state: "hidden"});
     await page.locator("#catalog-membership").selectOption("");
     await page.locator("#catalog").getByText("已加入 1 個連線", {exact: true}).waitFor();
+    await page.locator("#catalog-manual > summary").click();
+    const joinedSelection = await page.evaluate(id => myModels.find(row => row.model_id === id), catalogModel);
+    assert(joinedSelection);
+    await page.locator("#manual-target").selectOption(JSON.stringify([
+      joinedSelection.provider_id, joinedSelection.account_id, joinedSelection.credential_id
+    ]));
+    await page.locator("#manual-endpoint").selectOption(joinedSelection.endpoint);
+    const catalogManualForm = page.locator("#model-form");
+    await catalogManualForm.locator('[name="model_id"]').fill(catalogModel);
+    await catalogManualForm.locator('[name="display_name"]').fill("Catalog Fixture Model");
+    await catalogManualForm.getByRole("button", {name: "加入我的模型", exact: true}).click();
+    await page.locator("#detail .connection-speed-card").first().waitFor();
+    await page.locator("#detail-close").click();
     await assertToolAppearance();
     await page.getByRole("link", {name: "返回我的模型", exact: true}).click();
     const catalogTile = page.locator("#model-list").getByRole("button", {name: /Catalog Fixture Model/});
