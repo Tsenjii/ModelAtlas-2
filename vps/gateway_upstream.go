@@ -347,31 +347,40 @@ func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
 	case "latency":
 		fields, metric, direction = "outcome,latency_ms", "AVG(CASE WHEN outcome='SUCCESS' THEN latency_ms END)", "ASC"
 	}
-	order, perf := "", "NULL"
+	pageMetric, pageOrder, resultOrder := "", "", ""
 	var args []any
 	cutoff := now() - 7*86400000
 	if metric != "" {
-		// Sort using one aggregate. Keep the full performance payload for
-		// the selected rows and the same JSON numeric conversion for averages.
-		perf = "(" + fmt.Sprintf(gatewayPerformanceSQL, gatewayPerformanceFields, gatewayCorrelatedOfferScopeSQL) + ")"
+		// Sort using one aggregate and the same JSON numeric conversion for averages.
 		if sortBy != "success" {
 			metric = "json_extract(json_array(" + metric + "),'$[0]')"
 		}
-		order = "(SELECT " + metric + fmt.Sprintf(gatewayPerformanceSamplesSQL, fields, gatewayCorrelatedOfferScopeSQL) + ") " + direction + " NULLS LAST, "
+		pageMetric = ",(SELECT " + metric + fmt.Sprintf(gatewayPerformanceSamplesSQL, fields, gatewayCorrelatedOfferScopeSQL) + ") AS sort_value"
+		pageOrder = "sort_value " + direction + " NULLS LAST, "
+		resultOrder = "m." + pageOrder
 		args = append(args, cutoff)
 	}
-	id := q.Get("canonical_id")
-	args = append(args, id, id, q.Get("provider_id"), q.Get("provider_id"), q.Get("account_id"), q.Get("account_id"), q.Get("credential_id"), q.Get("credential_id"), q.Get("q"))
-	if order != "" {
-		args = append(args, cutoff)
+	perf := "(" + fmt.Sprintf(gatewayPerformanceSQL, gatewayPerformanceFields, gatewayCorrelatedOfferScopeSQL) + ")"
+	filter := ""
+	for _, key := range []string{"canonical_id", "provider_id", "account_id", "credential_id"} {
+		if value := q.Get(key); value != "" {
+			filter += " AND m." + key + "=?"
+			args = append(args, value)
+		}
 	}
-	args = append(args, limit+1, offset)
-	rows, err := s.Store.DB.QueryContext(ctx, gatewayCatalogSQL+` SELECT m.provider_id,m.account_id,m.credential_id,m.model_id,m.group_id,m.endpoint,
+	if term := q.Get("q"); term != "" {
+		filter += " AND instr(lower(m.model_id||' '||m.display_name||' '||m.provider),lower(?))>0"
+		args = append(args, term)
+	}
+	args = append(args, limit+1, offset, cutoff)
+	// Limit first so observations and the full performance payload are read
+	// only for the selected connections, even when a sort scans a whole group.
+	rows, err := s.Store.DB.QueryContext(ctx, gatewayCatalogSQL+`, page AS MATERIALIZED (
+		SELECT m.*`+pageMetric+` FROM scopes m WHERE 1`+filter+`
+		ORDER BY `+pageOrder+gatewayOfferingOrder+` LIMIT ? OFFSET ?)
+		SELECT m.provider_id,m.account_id,m.credential_id,m.model_id,m.group_id,m.endpoint,
 		m.provider,m.account,m.credential,m.base_url,m.has_api_key,m.display_name,m.canonical_id,m.operation,m.enabled,`+perf+` AS perf,`+gatewayTermColumns+`
-		FROM scopes m WHERE (?='' OR m.canonical_id=?)
-		AND (?='' OR m.provider_id=?) AND (?='' OR m.account_id=?) AND (?='' OR m.credential_id=?)
-		AND instr(lower(m.model_id||' '||m.display_name||' '||m.provider),lower(?))>0
-		ORDER BY `+order+`m.model_id,m.provider,m.provider_id,m.account_id,m.credential_id,m.group_id,m.endpoint LIMIT ? OFFSET ?`, args...)
+		FROM page m ORDER BY `+resultOrder+gatewayOfferingOrder, args...)
 	if err != nil {
 		http.Error(w, "database error", 500)
 		return
@@ -408,19 +417,14 @@ func (s *Server) gatewayOfferings(w http.ResponseWriter, r *http.Request) {
 			v.Prices = map[string]any{"nominal_price": offer["nominal_price"], "price": offer["price"], "effective_price": offer["effective_price"],
 				"published_groups": s.gatewayPublishedGroupPrices(ctx, *v)}
 		}
-		if order == "" {
-			v.Performance, err = s.gatewayPerformance(ctx, v.Selection)
-			if err != nil {
-				http.Error(w, "database error", 500)
-				return
-			}
-		}
 	}
 	jsonOK(w, 200, struct {
 		Offerings []gatewayOffering `json:"offerings"`
 		More      bool              `json:"more"`
 	}{out, more})
 }
+
+const gatewayOfferingOrder = "m.model_id,m.provider,m.provider_id,m.account_id,m.credential_id,m.group_id,m.endpoint"
 
 type gatewayOfferSample struct {
 	At           int64    `json:"at"`

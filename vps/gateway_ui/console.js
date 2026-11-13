@@ -154,7 +154,11 @@ async function changeUsageRange() {
   }
 }
 async function showUsage(keyID) {
-  const keys = await api("/gateway/keys?include_removed=true");
+  consoleState.read?.abort();
+  const read = new AbortController();
+  consoleState.read = read;
+  const keys = await api("/gateway/keys?include_removed=true", undefined, read.signal);
+  if (consoleState.read !== read || read.signal.aborted || state.page !== "usage") return;
   putOptions($("usage-key"), [["", "全部 Key"], ...keys.map(k => [k.id, k.label])]);
   if (keyID) {
     $("usage-source").value = "gateway";

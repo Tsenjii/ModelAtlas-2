@@ -7,10 +7,12 @@ const modelBrandLabels = new Map([
   ...modelBrands.map(([brand, , name]) => [brand, name]),
   [unclassifiedBrand, "未歸類"]
 ]);
-let brandCounts = new Map([["", 0]]);
+let modelFacets = {};
+let modelBrandsAvailable = new Set([""]);
 let brandProviderID = "";
+let modelOffset = null;
 const management = {
-  groups: [], modelBrand: "", groupLimit: modelGroupPageSize, providers: [], provider: null, accounts: [], credentials: [],
+  modelBrand: "", providers: [], provider: null, accounts: [], credentials: [],
   checkins: null, account: null, connection: null, align: null, quotaScope: null, proxy: null
 };
 const operationNames = {
@@ -20,6 +22,16 @@ const operationNames = {
   EMBEDDINGS: "嵌入", RERANK: "重排", CUSTOM: "自訂端點"
 };
 let groupRead, offerRead, providerRead, detailRead;
+function cancelManagementReads(page) {
+  if (page !== "models") {
+    groupRead?.abort();
+    offerRead?.abort();
+  }
+  if (page !== "providers") {
+    providerRead?.abort();
+    detailRead?.abort();
+  }
+}
 let providerReturn = null;
 let offerBatch = null;
 const offerTests = new Set();
@@ -246,7 +258,8 @@ async function showModelView() {
   $("model-index").hidden = !!group;
   $("model-detail").hidden = !group;
   if (group) {
-    $("model-title").replaceChildren(modelIcon(group.id, group.name), el("span", group.name));
+    groupRead?.abort();
+    $("model-title").replaceChildren(group.brand ? modelBrandIcon(group.brand) : modelIcon(group.id, group.name), el("span", group.name));
     const links = $("model-tool-links");
     if (links.dataset.model !== group.id) {
       links.dataset.model = group.id;
@@ -266,48 +279,61 @@ async function showModelView() {
     }
     return loadOffers(true, Math.min(200, Math.max(50, state.offers.length)));
   }
+  offerRead?.abort();
   return loadGroups(true);
 }
 
 async function loadGroups(reset) {
-  if (!reset) {
-    management.groupLimit += modelGroupPageSize;
-    renderModelGroups();
-    return;
-  }
+  if (state.page !== "models" || state.modelGroup) return;
+  const list = $("model-list");
+  const more = $("models-more");
+  const search = $("model-search").value.trim();
+  const providerID = state.modelProvider?.id ?? "";
+  const type = $("model-type").value;
+  const brand = management.modelBrand;
+  const offset = reset ? 0 : modelOffset;
+  if (offset === null) return;
   groupRead?.abort();
   const read = new AbortController();
   groupRead = read;
-  const params = new URLSearchParams({limit: "200", q: $("model-search").value.trim()});
-  if (state.modelProvider) params.set("provider_id", state.modelProvider.id);
+  const params = new URLSearchParams({
+    facets: "1", limit: String(modelGroupPageSize), offset: String(offset), q: search, type, brand, provider_id: providerID
+  });
   $("model-provider-filter").hidden = !state.modelProvider;
   $("model-provider-name").textContent = state.modelProvider ? state.modelProvider.name + " 提供的模型" : "";
-  const groups = new Map();
-  let offset = 0, page;
-  do {
-    params.set("offset", String(offset));
-    page = await api("/gateway/model-groups?" + params, undefined, read.signal);
-    if (groupRead !== read || read.signal.aborted) return;
-    for (const group of page.models) groups.set(group.id, {...group, brand: modelBrand(group.id, group.name) || unclassifiedBrand});
-    offset += page.models.length;
-  } while (page.more && page.models.length);
-  management.groups = [...groups.values()];
-  management.groupLimit = modelGroupPageSize;
-  updateModelBrandOptions(params);
-  renderModelGroups();
-}
-
-function updateModelBrandOptions(params) {
-  const providerID = params.get("provider_id") || "";
-  const counts = new Map([["", management.groups.length]]);
-  if (params.get("q") && providerID === brandProviderID) {
-    for (const brand of brandCounts.keys()) if (brand) counts.set(brand, 0);
+  if (reset) {
+    more.hidden = true;
+    modelOffset = null;
+    $("model-count").textContent = "";
+    list.replaceChildren(empty("讀取模型中…"));
   }
-  for (const {brand} of management.groups) counts.set(brand, (counts.get(brand) || 0) + 1);
-  brandCounts = counts;
-  brandProviderID = providerID;
-  if (!counts.has(management.modelBrand)) management.modelBrand = "";
-  if ($("model-filter-dialog").open) renderBrandChoices();
+  list.setAttribute("aria-busy", "true");
+  const isCurrent = () => groupRead === read && !read.signal.aborted && state.page === "models" && !state.modelGroup;
+  try {
+    const page = await api("/gateway/model-groups?" + params, undefined, read.signal);
+    if (!isCurrent()) return;
+    const available = new Set(Object.keys(page.facets.all));
+    if (search && providerID === brandProviderID) {
+      for (const key of modelBrandsAvailable) available.add(key);
+    }
+    if (reset && !available.has(brand)) {
+      management.modelBrand = "";
+      return await loadGroups(true);
+    }
+    management.modelBrand = brand;
+    modelFacets = page.facets;
+    modelBrandsAvailable = available;
+    brandProviderID = providerID;
+    modelOffset = offset + page.models.length;
+    renderModelGroups(page.models, reset, type, brand, providerID || search);
+    more.hidden = !page.more;
+    if ($("model-filter-dialog").open) renderBrandChoices();
+  } catch (error) {
+    if (isCurrent() && reset && error.name !== "AbortError") list.replaceChildren(empty("讀取模型失敗，請重新整理。"));
+    throw error;
+  } finally {
+    if (groupRead === read) list.removeAttribute("aria-busy");
+  }
 }
 
 function brandPickerIcon(brand) {
@@ -321,14 +347,12 @@ function renderBrandChoices() {
   const grid = $("brand-picker-choices");
   const focused = grid.contains(document.activeElement) ? document.activeElement.dataset.brand : undefined;
   const choices = [];
-  const available = modelGroupsByType();
-  const counts = new Map([["", available.length]]);
-  for (const {brand} of available) counts.set(brand, (counts.get(brand) || 0) + 1);
+  const counts = modelFacets[$("model-type").value] ?? {};
   for (const [brand, name] of modelBrandLabels) {
-    if (!brandCounts.has(brand)) continue;
+    if (!modelBrandsAvailable.has(brand)) continue;
     const choice = button("", () => {
       management.modelBrand = brand;
-      applyModelFilters();
+      return applyModelFilters();
     });
     choice.className = "brand-picker-choice";
     choice.dataset.brand = brand;
@@ -338,7 +362,7 @@ function renderBrandChoices() {
     const mark = el("span", undefined, "item-icon");
     mark.append(brandPickerIcon(brand));
     const label = el("span", undefined, "brand-picker-choice-label");
-    label.append(el("strong", name), el("small", (counts.get(brand) || 0) + " 個模型"));
+    label.append(el("strong", name), el("small", (counts[brand] || 0) + " 個模型"));
     if (selected) {
       const check = icon("check");
       check.classList.add("brand-picker-check");
@@ -354,27 +378,17 @@ function renderBrandChoices() {
 }
 
 function applyModelFilters() {
-  management.groupLimit = modelGroupPageSize;
-  renderModelGroups();
   renderBrandChoices();
+  return loadGroups(true);
 }
 
-function modelGroupsByType() {
-  const type = $("model-type").value;
-  return type === "all" ? management.groups : management.groups.filter(group => group.types?.includes(type));
-}
-
-function renderModelGroups() {
-  const type = $("model-type").value;
+function renderModelGroups(groups, reset, type, brand, filtered) {
   const trigger = $("model-filter-trigger");
-  const active = type !== "all" || !!management.modelBrand;
+  const active = type !== "all" || !!brand;
   trigger.toggleAttribute("data-active", active);
   trigger.setAttribute("aria-label", active ? "篩選模型，已套用篩選" : "篩選模型");
-  const matches = modelGroupsByType().filter(group => !management.modelBrand || group.brand === management.modelBrand);
-  const visible = matches.slice(0, management.groupLimit);
-  $("models-more").hidden = visible.length === matches.length;
-  $("model-count").textContent = matches.length + " 個模型";
-  const nodes = visible.map(group => {
+  $("model-count").textContent = (modelFacets[type]?.[brand] || 0) + " 個模型";
+  const nodes = groups.map(group => {
     const tile = button("", async () => {
       state.modelGroup = group;
       state.offers = [];
@@ -387,16 +401,17 @@ function renderModelGroups() {
     label.append(el("strong", group.name), el("small", group.providers + " 家供應商 · " + group.connections + " 個連線"));
     const terms = gatewayTermsLabel(group.terms?.[type]);
     if (terms) label.append(el("small", terms, "model-terms-line"));
-    tile.append(modelIcon(group.id, group.name), label, icon("chevron"));
+    tile.append(modelBrandIcon(group.brand), label, icon("chevron"));
     return tile;
   });
-  const filtered = state.modelProvider || management.modelBrand || type !== "all" || $("model-search").value.trim();
-  $("model-list").replaceChildren(...(nodes.length ? nodes : [empty(filtered ? "找不到符合的模型。" : "新增供應商後，模型會出現在這裡。")]));
+  const list = $("model-list");
+  if (reset) list.replaceChildren(...(nodes.length ? nodes : [empty(filtered || active ? "找不到符合的模型。" : "新增供應商後，模型會出現在這裡。")]));
+  else list.append(...nodes);
 }
 
 async function loadOffers(reset, limit = 50) {
   const group = state.modelGroup;
-  if (!group) return;
+  if (state.page !== "models" || !group) return;
   offerRead?.abort();
   const read = new AbortController();
   offerRead = read;
@@ -408,10 +423,10 @@ async function loadOffers(reset, limit = 50) {
   $("offers-more").disabled = true;
   try {
     const result = await api("/gateway/offerings?" + params, undefined, read.signal);
-    if (offerRead !== read || state.modelGroup !== group) return;
+    if (offerRead !== read || read.signal.aborted || state.page !== "models" || state.modelGroup !== group) return;
     state.offers = reset ? result.offerings : state.offers.concat(result.offerings);
     $("offers-more").hidden = !result.more;
-    renderOffers();
+    renderOffers(reset ? null : result.offerings);
   } finally {
     if (offerRead === read) {
       $("offer-list").removeAttribute("aria-busy");
@@ -429,8 +444,9 @@ function performanceCells(p) {
   return metrics;
 }
 
-function renderOffers() {
-  const cards = state.offers.map(v => {
+function renderOffers(appendRows = null) {
+  const pickedScopes = new Set(state.routes.map(scopeID));
+  const cards = (appendRows ?? state.offers).map(v => {
     const row = el("article", undefined, "entry offering-entry");
     const relayable = v.operation === "CHAT_COMPLETIONS";
     const scope = scopeID(v);
@@ -458,7 +474,7 @@ function renderOffers() {
     probe.dataset.testScope = scope;
     probe.disabled = !v.enabled || offerTests.has(scope);
     probe.hidden = !offerTestable(v);
-    const picked = state.routes.some(route => scopeID(route) === scopeID(v));
+    const picked = pickedScopes.has(scope);
     const choose = button(picked ? "移除路由" : "加入路由", () => {
       if (picked) {
         state.routes = state.routes.filter(route => scopeID(route) !== scopeID(v));
@@ -480,7 +496,7 @@ function renderOffers() {
       v.enabled ? "" : "連線不可用"]);
     const view = button(v.provider, () => openProvider(v.provider_id, v));
     view.classList.add("quiet-button", "provider-name");
-    view.dataset.offerScope = scopeID(v);
+    view.dataset.offerScope = scope;
     view.append(icon("chevron"));
     details.querySelector("h3").replaceChildren(view);
     const history = button("連線詳情", () => openOfferDetail(v), {glyph: "info"});
@@ -501,7 +517,9 @@ function renderOffers() {
   $("route-pick").setAttribute("aria-pressed", String(state.routePicking));
   const scopeLabel = provider ? provider.name : group.providers + " 家供應商";
   $("offer-count").textContent = scopeLabel + " · " + group.connections + " 個連線";
-  $("offer-list").replaceChildren(...(cards.length ? cards : [empty("這個模型目前沒有連線。")]));
+  const list = $("offer-list");
+  if (appendRows) list.append(...cards);
+  else list.replaceChildren(...(cards.length ? cards : [empty("這個模型目前沒有連線。")]));
   renderRoutes();
   renderOfferBatch();
 }
@@ -571,6 +589,7 @@ async function showProviderView() {
     $("providers-back").title = label;
     return loadProvider();
   }
+  detailRead?.abort();
   return loadProviderList(true);
 }
 
@@ -583,16 +602,17 @@ async function openProvider(id, offer) {
 }
 
 async function loadProviderList(reset) {
+  if (state.page !== "providers" || state.providerID) return;
   providerRead?.abort();
   const read = new AbortController();
   providerRead = read;
   const params = new URLSearchParams({limit: "25", offset: String(reset ? 0 : management.providers.length), q: $("provider-search").value.trim()});
   const data = await api("/gateway/providers?" + params, undefined, read.signal);
-  if (providerRead !== read) return;
+  if (providerRead !== read || read.signal.aborted || state.page !== "providers" || state.providerID) return;
   management.providers = reset ? data.providers : management.providers.concat(data.providers);
   $("providers-more").hidden = !data.more;
   $("provider-count").textContent = (data.more ? "已載入 " : "") + management.providers.length + " 家 · 近 7 天實測";
-  const cards = management.providers.map(p => {
+  const cards = data.providers.map(p => {
     const row = el("article", undefined, "entry provider-tile");
     const intro = identity(p.name, [p.base_url], "provider");
     if (p.description) intro.querySelector("h3").after(el("p", p.description, "provider-preview"));
@@ -602,10 +622,14 @@ async function loadProviderList(reset) {
     row.append(intro, providerFacts(p, true), controls(view));
     return row;
   });
-  $("provider-list").replaceChildren(...(cards.length ? cards : [empty("目前沒有符合的供應商。")]));
+  const list = $("provider-list");
+  if (reset) list.replaceChildren(...(cards.length ? cards : [empty("目前沒有符合的供應商。")]));
+  else list.append(...cards);
 }
 
 async function loadProvider() {
+  if (state.page !== "providers" || !state.providerID) return;
+  providerRead?.abort();
   const id = state.providerID;
   detailRead?.abort();
   const read = new AbortController();
@@ -616,11 +640,11 @@ async function loadProvider() {
     api("/accounts" + params, undefined, read.signal),
     api("/credentials" + params, undefined, read.signal)
   ]);
-  if (detailRead !== read || state.providerID !== id) return;
+  if (detailRead !== read || read.signal.aborted || state.page !== "providers" || state.providerID !== id) return;
   const provider = result.providers[0];
   if (!provider) throw new Error("找不到供應商。");
   const checkins = provider.requires_checkin ? await api("/checkins/accounts" + params + "&timezone=" + encodeURIComponent(result.timezone), undefined, read.signal) : null;
-  if (detailRead !== read || state.providerID !== id) return;
+  if (detailRead !== read || read.signal.aborted || state.page !== "providers" || state.providerID !== id) return;
   Object.assign(management, {provider, accounts, credentials, checkins});
   renderProvider();
 }
@@ -829,9 +853,6 @@ function renderProvider() {
     state.modelProvider = p;
     management.modelBrand = "";
     $("model-search").value = "";
-    $("model-count").textContent = "";
-    $("model-list").replaceChildren(empty("讀取模型中…"));
-    $("models-more").hidden = true;
     await showPage("models");
   }, {glyph: "model"}));
   if (p.requires_checkin) {
@@ -888,7 +909,7 @@ $("model-filter-trigger").addEventListener("click", () => {
   renderBrandChoices();
   $("model-filter-dialog").showModal();
 });
-$("model-type").addEventListener("change", applyModelFilters);
+$("model-type").addEventListener("change", () => action(null, applyModelFilters));
 for (const [id, load, abort] of [
   ["model", loadGroups, () => groupRead?.abort()], ["provider", loadProviderList, () => providerRead?.abort()]
 ]) {
@@ -904,7 +925,9 @@ for (const [id, load, abort] of [
     abort();
     clearTimeout(timer);
     more.hidden = true;
-    timer = setTimeout(search, 180);
+    timer = setTimeout(() => {
+      if (state.page === id + "s" && (id === "model" ? !state.modelGroup : !state.providerID)) void search();
+    }, 180);
   });
   more.addEventListener("click", () => action(more, () => load(false)));
 }

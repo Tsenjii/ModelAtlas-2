@@ -892,6 +892,7 @@ const fs = require("node:fs/promises");
     await deepseekBrand.click();
     await finishFilter.click();
     await modelFilter.waitFor({state: "hidden"});
+    await tile.waitFor();
     assert(await tile.isVisible());
     assert(!(await catalogTile.isVisible()), "brand filter retained an unrelated model");
     await filterTrigger.click();

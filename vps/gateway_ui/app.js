@@ -75,86 +75,11 @@ function itemIcon(name, sprite = "") {
   mark.append(icon(name, sprite));
   return mark;
 }
-const modelBrands = [
-  ["claude", "(?:anthropic[-_. ]+)?claude|anthropic(?=$|[.])", "Claude"],
-  ["deepseek", "deep[-_. ]?seek", "DeepSeek"],
-  ["gemini", "(?:google[-_. ]+)?gemini", "Gemini"],
-  ["openai", "gpt|chatgpt|o[134](?![a-z0-9])|dall[-_. ·]?e|whisper|sora|text[-_. ]embedding[-_. ](?:ada|3)|openai(?=$|[.])", "GPT"],
-  ["gemma", "(?:google[-_. ]+)?(?:gemma|paligemma|shieldgemma)", "Gemma"],
-  ["google", "imagen|veo|lyria|learnlm|google(?=$|[.])", "Google"],
-  ["qwen", "qwen|qwq|qvq|tongyi", "Qwen"],
-  ["meta", "llama|meta[-_. ]llama|muse[-_. ](?:spark|glimmer)|meta(?=$|[.])", "Meta"],
-  ["mistral", "mistral|mixtral|codestral|pixtral|ministral|magistral|devstral|voxtral|mathstral", "Mistral"],
-  ["zhipu", "chatglm|glm|cogview|cogvideo|zhipu|z[-_. ]ai", "GLM"],
-  ["grok", "(?:x[-_. ]?ai[-_. ]+)?grok|xai(?=$|[.])", "Grok"],
-  ["kimi", "kimi|moonshot(?=$|[.])", "Kimi"],
-  ["minimax", "mini[-_. ]?max|hailuo", "MiniMax"],
-  ["mimo", "(?:xiaomi[-_. ]?)?mimo|xiaomi(?=$|[.])", "MiMo"],
-  ["stepfun", "stepfun|step(?=[-_. ]?[0-9])|step[-_. ]?(?:audio|video)", "StepFun"],
-  ["antgroup", "inclusion[-_. ]?ai|ant[-_. ]?group|(?:ling|ring|ming)(?=[-_. ]?(?:[0-9]|(?:flash|mini|lite|omni|max)(?=$|[^a-z])))", "Ant Group"],
-  ["lg", "exaone|lg[-_. ]ai", "LG AI"],
-  ["hunyuan", "hunyuan|tencent(?=$|[.])|hy(?=[-_. ]?[0-9])", "Hunyuan"],
-  ["doubao", "doubao", "Doubao"],
-  ["bytedance", "seed(?=[-_. ]?[0-9])|seed[-_. ](?:ance|ream|edit|tts)|seedance|seedream|bytedance(?=$|[.])", "ByteDance"],
-  ["baidu", "ernie|wenxin|baidu(?=$|[.])", "ERNIE"],
-  ["yi", "01[-_. ]?ai|yi(?=[-_. ](?:[0-9]|coder|large|lightning|vision))", "Yi"],
-  ["nvidia", "nemotron|nvidia(?=$|[.])", "NVIDIA"],
-  ["cohere", "command(?=$|[-_. ](?:a|r|light|nightly)(?=$|[^a-z]))|aya|cohere(?=$|[.])", "Cohere"],
-  ["perplexity", "sonar|perplexity(?=$|[.])", "Perplexity"],
-  ["aws", "amazon[-_. ]nova|nova(?=[-_. ](?:[0-9]|micro|lite|pro|premier|sonic|canvas|reel|act))|amazon(?=$|[.])|aws(?=$|[.])", "AWS"],
-  ["ai21", "ai21|jamba|jurassic", "AI21"],
-  ["microsoft", "phi(?=$|[-_. ]?[0-9])|microsoft(?=$|[.])", "Microsoft"],
-  ["ibm", "granite|ibm(?=$|[.])", "IBM"],
-  ["longcat", "long[-_. ]?cat|meituan(?=$|[.])", "LongCat"],
-  ["internlm", "internlm", "InternLM"],
-  ["baichuan", "bai[-_. ]?chuan", "Baichuan"],
-  ["spark", "iflytek|spark[-_. ](?:max|ultra|lite|desk|x1)", "Spark"],
-  ["sensenova", "sensenova|sensetime(?=$|[.])", "SenseNova"],
-  ["skywork", "skywork|tiangong", "Skywork"],
-  ["huggingface", "hugging[-_. ]?face(?:h4)?|smollm|zephyr", "Hugging Face"],
-  ["jina", "jina", "Jina"],
-  ["voyage", "voyage", "Voyage"],
-  ["snowflake", "snowflake(?=$|[.])|arctic", "Snowflake"],
-  ["bfl", "flux|bfl(?=$|[.])|black[-_. ]forest[-_. ]labs", "Black Forest Labs"],
-  ["stability", "stability(?:ai)?|stable[-_. ]?(?:diffusion|image|audio|video|lm)|sdxl|sd3", "Stability AI"],
-  ["recraft", "recraft", "Recraft"],
-  ["runway", "runway", "Runway"],
-  ["luma", "luma(?=$|[-_. ]?(?:ai|labs|[0-9]))|dream[-_. ]machine|ray(?=[-_. ]?[23])", "Luma"],
-  ["elevenlabs", "eleven[-_. ]?(?:labs|multilingual|turbo|flash|monolingual|v[0-9])|scribe[-_. ]v", "ElevenLabs"],
-  ["suno", "suno", "Suno"],
-  ["udio", "udio", "Udio"],
-  ["agnesai", "(?:sapiens(?:[-_. ]+ai)?[-_. ]+)?agnes?(?:[-_. ]?ai)?", "Agnes AI"],
-  ["ai2", "(?:ai2|allenai|olmoe?|molmo)", "Ai2"],
-  ["arcee", "arcee(?:[-_. ]?ai)?|trinity(?=[-_. ](?:large|mini|nano)(?=$|[^a-z]))", "Arcee"],
-  ["baai", "baai|bge", "BAAI"],
-  ["dbrx", "dbrx", "DBRX"],
-  ["essentialai", "essential[-_. ]?ai|rnj", "Essential AI"],
-  ["liquid", "liquid[-_. ]?ai|lfm", "Liquid AI"],
-  ["nousresearch", "nous[-_. ]?research|(?:deep[-_. ]?)?hermes(?=$|[-_. ]?[0-9])", "Nous Research"],
-  ["reka", "reka", "Reka"],
-  ["sakana", "sakana(?:[-_. ]?ai)?", "Sakana AI"],
-  ["tii", "tii|falcon", "Falcon"],
-  ["upstage", "upstage|solar(?=$|[-_. ](?:pro|mini|chat|instruct|embedding|[0-9])(?=$|[^a-z]))", "Upstage"],
-  ["kling", "kling(?:[-_. ]?ai)?|kolors", "Kling"],
-  ["ideogram", "ideogram", "Ideogram"],
-  ["midjourney", "midjourney", "Midjourney"],
-  ["adobefirefly", "(?:adobe[-_. ]*)?firefly", "Adobe Firefly"],
-  ["vidu", "vidu(?:q(?=[0-9]))?", "Vidu"],
-  ["pika", "pika(?:frames|scenes|effects|swaps|additions|twists)?", "Pika"],
-  ["happyhorse", "happy[-_. ]?horse", "HappyHorse"],
-  ["fishaudio", "fish[-_. ]?audio|fish[-_. ]speech", "Fish Audio"],
-  ["venice", "venice(?=$|[-_. ]uncensored(?=$|[^a-z]))", "Venice"]
-].map(([brand, family, label]) => [brand, new RegExp("^(?:" + family + ")(?=$|[^a-z]|v[0-9])"), label]);
+const modelBrands = gatewayBrandRules.brands.map(([brand, family, label]) =>
+  [brand, new RegExp("^(?:" + family + ")(?=$|[^a-z]|v[0-9])"), label]);
 const modelBrandNamespaces = new Map([
   ...modelBrands.map(([brand]) => [brand, brand]),
-  ["01-ai", "yi"], ["anthropic", "claude"], ["black-forest-labs", "bfl"], ["deepseek-ai", "deepseek"],
-  ["inclusionai", "antgroup"], ["lgai-exaone", "lg"], ["meta-llama", "meta"], ["mistralai", "mistral"],
-  ["moonshotai", "kimi"], ["xiaomi", "mimo"], ["x-ai", "grok"], ["xai", "grok"], ["zai-org", "zhipu"],
-  ["agne", "agnesai"], ["agnes", "agnesai"], ["agnes-ai", "agnesai"], ["sapiens-ai", "agnesai"],
-  ["sapiensai", "agnesai"], ["allenai", "ai2"], ["arcee-ai", "arcee"], ["databricks", "dbrx"],
-  ["essential-ai", "essentialai"], ["liquidai", "liquid"], ["liquid-ai", "liquid"], ["nous-research", "nousresearch"],
-  ["sakanaai", "sakana"], ["sakana-ai", "sakana"], ["tiiuae", "tii"], ["klingai", "kling"],
-  ["kling-ai", "kling"], ["adobe-firefly", "adobefirefly"], ["fish-audio", "fishaudio"], ["venice-ai", "venice"]
+  ...Object.entries(gatewayBrandRules.namespaces)
 ]);
 
 function modelBrand(...names) {
@@ -170,8 +95,10 @@ function modelBrand(...names) {
   return "";
 }
 function modelIcon(...names) {
-  const brand = modelBrand(...names);
-  if (!brand) return itemIcon("model");
+  return modelBrandIcon(modelBrand(...names));
+}
+function modelBrandIcon(brand) {
+  if (!brand || brand === unclassifiedBrand) return itemIcon("model");
   const mark = itemIcon("brand-" + brand, "/gateway-model-brands.svg");
   mark.classList.add("brand-icon");
   return mark;
@@ -336,6 +263,8 @@ async function copy(value, field) {
 }
 async function showPage(page, load = refresh) {
   state.page = page;
+  cancelManagementReads(page);
+  if (page !== "usage") consoleState.read?.abort();
   for (const id of ["models", "providers", "share", "usage"]) $("page-" + id).hidden = id !== page;
   for (const nav of document.querySelectorAll("[data-page]")) {
     nav.classList.toggle("active", nav.dataset.page === page);

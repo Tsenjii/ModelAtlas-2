@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql/driver"
 	"net/http"
 	"strings"
@@ -21,6 +22,12 @@ func init() {
 			ProviderID: args[0].(string), AccountID: args[1].(string), CredentialID: args[2].(string),
 			ModelID: args[3].(string), Group: args[4].(string), Endpoint: args[5].(string),
 		}), nil
+	})
+	sqlite.MustRegisterDeterministicScalarFunction("atlas_model_type", 3, func(_ *sqlite.FunctionContext, args []driver.Value) (driver.Value, error) {
+		operation, _ := args[0].(string)
+		category, _ := args[1].(string)
+		imageOutput, _ := args[2].(int64)
+		return gatewayModelType(operation, category, imageOutput != 0), nil
 	})
 }
 
@@ -65,6 +72,7 @@ type gatewayModelGroup struct {
 	Connections int                           `json:"connections"`
 	Types       []string                      `json:"types"`
 	Terms       map[string]*gatewayGroupTerms `json:"terms,omitempty"`
+	Brand       string                        `json:"brand,omitempty"`
 }
 
 func gatewayModelType(operation, category string, imageOutput bool) string {
@@ -95,72 +103,68 @@ func gatewayModelType(operation, category string, imageOutput bool) string {
 	return "other"
 }
 
-func (s *Server) gatewayModelGroups(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	limit, offset := pageRange(r, 40)
-	term, id := strings.TrimSpace(q.Get("q")), q.Get("id")
-	filter := "WHERE (?='' OR canonical_id=?)"
-	args := []any{id, id}
-	if provider := q.Get("provider_id"); provider != "" {
-		// An equality lets SQLite seek to this provider's models.
-		filter += " AND provider_id=?"
-		args = append(args, provider)
-	}
-	// Resolve the filtered catalog once. Inlining it in the page join can
-	// repeat the catalog joins and canonical ID calculation for every group.
-	rows, err := s.Store.DB.QueryContext(r.Context(), gatewayCatalogSQL+`, filtered AS MATERIALIZED (
-		SELECT * FROM scopes `+filter+`
+func gatewayLegacyModelGroups(ctx context.Context, db queryRows, q gatewayModelGroupQuery, limit, offset int) (gatewayModelGroupPage, error) {
+	// The older JSON entry point also serves direct links and post-edit refreshes.
+	args := append(append([]any{}, q.catalogArgs()...), limit+1, offset)
+	rows, err := db.QueryContext(ctx, gatewayCatalogSQL+`, filtered AS MATERIALIZED (
+		SELECT * FROM scopes WHERE `+q.filter+`
 	), page AS (
-		SELECT canonical_id,COALESCE(MIN(NULLIF(display_name,model_id)),MIN(model_id)) AS name,
+		SELECT canonical_id,`+gatewayModelGroupName+` AS name,
 			COUNT(DISTINCT provider_id) AS providers,COUNT(*) AS connections
-		FROM filtered GROUP BY canonical_id
-		HAVING MAX(instr(lower(display_name||' '||model_id||' '||provider),lower(?)))>0 OR instr(lower(canonical_id),atlas_canonical_id(?))>0
+		FROM filtered GROUP BY canonical_id`+q.search()+`
 		ORDER BY name COLLATE NOCASE,canonical_id LIMIT ? OFFSET ?)
 		SELECT page.canonical_id,page.name,page.providers,page.connections,
 			m.operation,m.model_category,m.image_output,m.enabled AND m.current_group,`+gatewayTermColumns+`
 		FROM page JOIN filtered m ON m.canonical_id=page.canonical_id
-		ORDER BY page.name COLLATE NOCASE,page.canonical_id,m.scope_key`,
-		append(args, term, term, limit+1, offset)...)
+		ORDER BY page.name COLLATE NOCASE,page.canonical_id,m.scope_key`, args...)
 	if err != nil {
-		http.Error(w, "database error", 500)
-		return
+		return gatewayModelGroupPage{}, err
 	}
 	defer rows.Close()
 	groups := []gatewayModelGroup{}
 	for rows.Next() {
-		var g gatewayModelGroup
+		var group gatewayModelGroup
 		var operation, category string
 		var imageOutput, enabled bool
 		var facts gatewayTermRow
-		if err = rows.Scan(append([]any{&g.ID, &g.Name, &g.Providers, &g.Connections, &operation, &category, &imageOutput, &enabled}, facts.scan()...)...); err != nil {
-			http.Error(w, "database error", 500)
-			return
+		if err = rows.Scan(append([]any{&group.ID, &group.Name, &group.Providers, &group.Connections, &operation, &category, &imageOutput, &enabled}, facts.scan()...)...); err != nil {
+			return gatewayModelGroupPage{}, err
 		}
-		if len(groups) == 0 || groups[len(groups)-1].ID != g.ID {
-			g.Terms = map[string]*gatewayGroupTerms{}
-			groups = append(groups, g)
+		if len(groups) == 0 || groups[len(groups)-1].ID != group.ID {
+			groups = append(groups, group)
 		}
-		group := &groups[len(groups)-1]
-		modelType := gatewayModelType(operation, category, imageOutput)
-		if !oneOf(modelType, group.Types...) {
-			group.Types = append(group.Types, modelType)
-		}
-		if enabled {
-			terms := facts.terms()
-			for _, kind := range []string{"all", modelType} {
-				if group.Terms[kind] == nil {
-					group.Terms[kind] = new(gatewayGroupTerms)
-				}
-				group.Terms[kind].add(terms)
-			}
-		}
+		groups[len(groups)-1].addConnection(gatewayModelType(operation, category, imageOutput), enabled, facts)
 	}
-	if rows.Err() != nil {
+	return gatewayModelGroupPage{Models: groups[:min(limit, len(groups))], More: len(groups) > limit}, rows.Err()
+}
+
+func (s *Server) gatewayModelGroups(w http.ResponseWriter, r *http.Request) {
+	values := r.URL.Query()
+	limit, offset := pageRange(r, 40)
+	provider := values.Get("provider_id")
+	q := gatewayModelGroupQuery{filter: "1", term: strings.TrimSpace(values.Get("q"))}
+	if provider != "" {
+		q.filter += " AND provider_id=?"
+		q.args = append(q.args, provider)
+	}
+	if id := values.Get("id"); id != "" {
+		q.filter += " AND canonical_id=?"
+		q.args = append(q.args, id)
+	}
+
+	ctx := r.Context()
+	var page gatewayModelGroupPage
+	var err error
+	if values.Get("facets") == "1" {
+		page, err = s.gatewayBrowseModelGroups(ctx, q, values.Get("brand"), values.Get("type"), limit, offset)
+	} else {
+		page, err = gatewayLegacyModelGroups(ctx, s.Store.DB, q, limit, offset)
+	}
+	if err != nil {
 		http.Error(w, "database error", 500)
 		return
 	}
-	more := len(groups) > limit
-	jsonOK(w, 200, map[string]any{"models": groups[:min(limit, len(groups))], "more": more})
+	jsonOK(w, 200, page)
 }
 
 func (s *Server) gatewayAlignModel(w http.ResponseWriter, r *http.Request) {

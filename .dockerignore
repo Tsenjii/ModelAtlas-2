@@ -11,6 +11,8 @@ vps/*_test.go
 !vps/gateway_ui/*.html
 !vps/gateway_ui/*.js
 !vps/gateway_ui/mark.svg
+!vps/gateway_ui/model-brands.svg
+!vps/gateway_ui/model-brands.json
 !release/
 !release/version.properties
 !vps/assets/

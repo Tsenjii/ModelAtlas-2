@@ -50,7 +50,8 @@ var gatewayMarkSVG string
 var gatewayModelBrandsSVG string
 
 var gatewayStyleAsset = staticAsset{raw: gatewayAppearanceCSS + gatewayCSS, revalidate: true}
-var gatewayScriptAsset = staticAsset{raw: strings.Join([]string{gatewayJS, gatewayConsoleJS, metricPlotJS, gatewayModelTermsJS,
+var gatewayScriptAsset = staticAsset{raw: strings.Join([]string{"\"use strict\";\nconst gatewayBrandRules = " + gatewayBrandRulesJSON + ";",
+	gatewayJS, gatewayConsoleJS, metricPlotJS, gatewayModelTermsJS,
 	gatewayConnectionJS, gatewayManagementJS, gatewayOfferEditorJS, gatewayUpdateJS}, "\n"), revalidate: true}
 var gatewayMarkAsset = staticAsset{raw: gatewayMarkSVG, revalidate: true}
 var gatewayModelBrandsAsset = staticAsset{raw: gatewayModelBrandsSVG, revalidate: true}

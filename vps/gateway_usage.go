@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -252,44 +251,33 @@ type gatewayUsagePage struct {
 
 func readGatewayUsageStats(ctx context.Context, tx *sql.Tx, points []gatewayUsagePoint, args []any, tests string) (gatewayUsageSummary, []gatewayUsageRank, error) {
 	var summary gatewayUsageSummary
-	// Each point describes an actual interval, including the partial current one.
-	var buckets strings.Builder
-	buckets.WriteString("CASE")
-	chartArgs := append([]any{}, args...)
-	for i, point := range points[:len(points)-1] {
-		param := "edge" + strconv.Itoa(i)
-		buckets.WriteString(" WHEN at<:" + param + " THEN " + strconv.Itoa(i))
-		chartArgs = append(chartArgs, sql.Named(param, point.Until))
-	}
-	buckets.WriteString(" ELSE " + strconv.Itoa(len(points)-1) + " END")
-
-	rows, err := tx.QueryContext(ctx, `WITH activity(at,outcome,input_tokens,output_tokens,ttft_ms) AS (
-		SELECT g.created_at,g.outcome,t.input_tokens,t.output_tokens,t.ttft_ms`+gatewayUsageRelayFrom+
+	// Each interval can use the time indexes directly. Avoid sorting all
+	// retained activity into buckets before calculating the chart.
+	chart, err := tx.PrepareContext(ctx, `WITH activity(requests,completed,successes,input_tokens,output_tokens,input_reported,output_reported,ttft,ttft_reported) AS (
+		SELECT `+gatewayUsageAggregate("g.outcome")+gatewayUsageRelayFrom+
 		`LEFT JOIN telemetry t ON t.id=g.sample_id`+gatewayUsageRelayFilter+`
 		UNION ALL
-		SELECT t.created_at,t.outcome,t.input_tokens,t.output_tokens,t.ttft_ms`+tests+`
+		SELECT `+gatewayUsageAggregate("t.outcome")+tests+`
 	)
-	SELECT `+buckets.String()+` AS bucket,
-		COUNT(*),SUM(outcome `+gatewayUsageSettled+`),SUM(outcome='SUCCESS'),SUM(input_tokens),SUM(output_tokens),
-		COUNT(input_tokens),COUNT(output_tokens),TOTAL(ttft_ms),COUNT(ttft_ms)
-	FROM activity GROUP BY bucket`, chartArgs...)
+	SELECT SUM(requests),COALESCE(SUM(completed),0),COALESCE(SUM(successes),0),SUM(input_tokens),SUM(output_tokens),
+		SUM(input_reported),SUM(output_reported),TOTAL(ttft),SUM(ttft_reported)
+	FROM activity`)
 	if err != nil {
 		return summary, nil, err
 	}
+	defer chart.Close()
+	chartArgs := append([]any{}, args...)
 	var ttftTotal float64
 	var ttftReports int
-	for rows.Next() {
-		var i, reports int
+	for i := range points {
+		chartArgs[1] = sql.Named("since", points[i].From)
+		chartArgs[2] = sql.Named("until", points[i].Until)
+		var reports int
 		var ttft float64
 		var point gatewayUsageSummary
-		if err = rows.Scan(&i, &point.Requests, &point.Completed, &point.Successes, &point.Input, &point.Output,
+		if err = chart.QueryRowContext(ctx, chartArgs...).Scan(&point.Requests, &point.Completed, &point.Successes, &point.Input, &point.Output,
 			&point.InputReported, &point.OutputReported, &ttft, &reports); err != nil {
-			rows.Close()
 			return summary, nil, err
-		}
-		if i < 0 || i >= len(points) {
-			rows.Close()
-			return summary, nil, errors.New("invalid usage bucket")
 		}
 		points[i].gatewayUsageSummary = point
 		summary.Requests += point.Requests
@@ -302,11 +290,6 @@ func readGatewayUsageStats(ctx context.Context, tx *sql.Tx, points []gatewayUsag
 		ttftTotal += ttft
 		ttftReports += reports
 	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		return summary, nil, err
-	}
 	if ttftReports != 0 {
 		mean := ttftTotal / float64(ttftReports)
 		summary.MeanTTFT = &mean
@@ -314,7 +297,7 @@ func readGatewayUsageStats(ctx context.Context, tx *sql.Tx, points []gatewayUsag
 
 	// Resolve test model aliases after counting each provider/model pair.
 	// Relay counts come directly from admissions and do not need telemetry.
-	rows, err = tx.QueryContext(ctx, `WITH test_counts AS (
+	rows, err := tx.QueryContext(ctx, `WITH test_counts AS (
 		SELECT t.provider_id,t.model_id,COUNT(*) AS n`+tests+` GROUP BY t.provider_id,t.model_id
 	), ranking AS (
 		SELECT 'gateway' AS source,g.model_id AS model_group,COUNT(*) AS n`+gatewayUsageRelayFrom+gatewayUsageRelayFilter+`
@@ -337,4 +320,9 @@ func readGatewayUsageStats(ctx context.Context, tx *sql.Tx, points []gatewayUsag
 		rank = append(rank, v)
 	}
 	return summary, rank, rows.Err()
+}
+
+func gatewayUsageAggregate(outcome string) string {
+	return `COUNT(*),SUM(` + outcome + " " + gatewayUsageSettled + `),SUM(` + outcome + `='SUCCESS'),
+		SUM(t.input_tokens),SUM(t.output_tokens),COUNT(t.input_tokens),COUNT(t.output_tokens),TOTAL(t.ttft_ms),COUNT(t.ttft_ms)`
 }
