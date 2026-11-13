@@ -479,7 +479,7 @@ def main():
     report["browser_cases"] = browser_cases
     portable = {name: ("skip" if name.startswith("TestPortableContainer") else "pass") for name in expected_events if name.startswith("TestPortable")}
     container = {name: "pass" for name in portable if name.startswith("TestPortableContainer")}
-    require(len(container) == 1 and len(portable) == 22, "portable source registry changed; review new execution scope")
+    require(len(container) == 1 and len(portable) == 23, "portable source registry changed; review new execution scope")
     for arch in ("amd64", "arm64"):
         with archive("modelatlas-vps-portable-"+arch) as z:
             results = portable_contract_results(p.member(z, "portable-contracts.jsonl"), portable)
